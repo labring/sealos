@@ -1,6 +1,6 @@
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Box, useTheme, Flex, Divider } from '@chakra-ui/react';
+import { Box, Flex, Divider } from '@chakra-ui/react';
 import { useAppStore } from '@/store/app';
 import { serviceSideProps } from '@/utils/i18n';
 import DetailLayout from '@/components/layouts/DetailLayout';
@@ -41,8 +41,9 @@ export interface LogsFormData {
   }[];
 }
 
+const borderBase = '1px solid #E8EBF0';
+
 export default function LogsPage({ appName }: { appName: string }) {
-  const theme = useTheme();
   const router = useRouter();
   const { message } = useMessage();
   const { t } = useTranslation();
@@ -230,13 +231,7 @@ export default function LogsPage({ appName }: { appName: string }) {
   return (
     <DetailLayout appName={appName}>
       <Flex flexDirection={'column'} flex={1} borderRadius="lg" overflowY={'auto'}>
-        <Flex
-          mb={'6px'}
-          bg={'white'}
-          flexDir={'column'}
-          border={theme.borders.base}
-          borderRadius={'lg'}
-        >
+        <Flex mb={'6px'} bg={'white'} flexDir={'column'} border={borderBase} borderRadius={'lg'}>
           <Header formHook={formHook} refetchData={refetchData} />
           <Divider />
           <Filter formHook={formHook} refetchData={refetchData} />
@@ -245,7 +240,7 @@ export default function LogsPage({ appName }: { appName: string }) {
           mb={'6px'}
           p={'20px 20px'}
           bg={'white'}
-          border={theme.borders.base}
+          border={borderBase}
           borderRadius={'lg'}
           flexShrink={0}
         >
@@ -254,7 +249,7 @@ export default function LogsPage({ appName }: { appName: string }) {
         <Box
           bg={'white'}
           p={'20px'}
-          border={theme.borders.base}
+          border={borderBase}
           borderRadius={'lg'}
           flex={1}
           height={'0px'}

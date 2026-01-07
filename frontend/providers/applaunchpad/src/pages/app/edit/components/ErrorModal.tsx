@@ -1,19 +1,16 @@
 import React from 'react';
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  Box,
-  ModalFooter,
-  Button
-} from '@chakra-ui/react';
-import MyIcon from '@/components/Icon';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@sealos/shadcn-ui/dialog';
+import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
 import { ResponseCode } from '@/types/response';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { TriangleAlert } from 'lucide-react';
 
 const ErrorModal = ({
   title,
@@ -38,30 +35,29 @@ const ErrorModal = ({
   };
 
   return (
-    <Modal isOpen={true} onClose={onClose}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
-          <MyIcon color={'#CA8A04'} widths={'16px'} height={'16px'} name="warning"></MyIcon>
-          <Box ml={3} fontSize={'xl'}>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="w-[360px] text-foreground">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold leading-none">
+            <TriangleAlert className="h-4 w-4 text-yellow-600" />
             {t(title)}
-          </Box>
-        </ModalHeader>
-        <ModalCloseButton fontSize={'16px'} />
-        <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
-          {content}
-        </ModalBody>
-        <ModalFooter>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="max-h-[50vh] overflow-auto whitespace-pre-wrap text-sm">{content}</div>
+
+        <DialogFooter>
           <Button
-            onClick={() => {
-              onClose();
-            }}
-            variant={'outline'}
+            variant="outline"
+            size="lg"
+            className="shadow-none hover:bg-zinc-50"
+            onClick={onClose}
           >
             {t('Cancel')}
           </Button>
           <Button
-            ml={'12px'}
+            size="lg"
+            className="shadow-none"
             onClick={() => {
               if (errorCode === ResponseCode.BALANCE_NOT_ENOUGH) {
                 openCostCenterApp();
@@ -71,9 +67,9 @@ const ErrorModal = ({
           >
             {errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? t('add_credit') : t('Confirm')}
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

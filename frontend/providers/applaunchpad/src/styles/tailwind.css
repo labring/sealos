@@ -4,7 +4,7 @@
 
 /* 全局样式（高优先级，覆盖 Chakra 注入） */
 html {
-  overflow: hidden;
+  overflow-x: hidden;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -19,7 +19,7 @@ body {
 }
 
 #__next {
-  height: 100%;
+  min-height: 100%;
 }
 
 .icon {
@@ -28,11 +28,6 @@ body {
   vertical-align: -0.15em;
   fill: currentColor;
   overflow: hidden;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--chakra-colors-blackAlpha-400);
 }
 
 /* ========== 滚动条样式 ========== */

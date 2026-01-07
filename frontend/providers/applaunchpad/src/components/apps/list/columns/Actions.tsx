@@ -36,7 +36,7 @@ export const Actions = memo<CellContext<AppListItemType, unknown>>(
         <Button
           variant="ghost"
           size="sm"
-          className="!px-3 !py-2 gap-2 font-medium text-secondary-foreground bg-secondary"
+          className="!px-3 !py-2 gap-2 font-medium text-secondary-foreground bg-secondary shadow-none"
           onClick={() => router.push(`/app/detail?name=${item.name}`)}
         >
           <AlignLeft className="h-4 w-4" />
@@ -44,7 +44,7 @@ export const Actions = memo<CellContext<AppListItemType, unknown>>(
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-zinc-500">
+            <Button variant="ghost" size="sm" className="text-zinc-500 shadow-none">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

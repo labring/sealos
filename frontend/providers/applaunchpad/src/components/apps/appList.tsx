@@ -348,7 +348,7 @@ const AppList = ({
         </div>
         <div className="flex-1"></div>
         <Button
-          className="bg-neutral-950 text-primary-foreground !px-4 py-2 rounded-lg"
+          className="bg-neutral-950 text-primary-foreground !px-4 rounded-lg h-10 shadow-none"
           onClick={handleCreateApp}
         >
           <Plus className="h-4 w-4" />
@@ -475,10 +475,16 @@ const AppList = ({
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpenRemarkModal(false)}>
+            <Button
+              variant="outline"
+              className="shadow-none"
+              onClick={() => setIsOpenRemarkModal(false)}
+            >
               {t('Cancel')}
             </Button>
-            <Button onClick={handleSaveRemark}>{t('Confirm')}</Button>
+            <Button className="shadow-none" onClick={handleSaveRemark}>
+              {t('Confirm')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

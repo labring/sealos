@@ -1,35 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  Box,
-  ModalBody,
-  ModalCloseButton,
-  BoxProps,
-  Flex,
-  Input,
-  ModalFooter,
-  Button,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  Text,
-  Stack,
-  Link,
-  Divider,
-  InputGroup,
-  InputRightElement,
-  Tag,
-  Th,
-  TableContainer,
-  Td,
-  Table,
-  Tr,
-  Thead,
-  Tbody,
-  useDisclosure,
-  Alert,
-  AlertDescription
-} from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRequest } from '@/hooks/useRequest';
 import { postAuthCname, postAuthDomainChallenge } from '@/api/platform';
@@ -40,10 +9,30 @@ import {
   REQUIRES_DOMAIN_REG
 } from '@/store/static';
 import NextLink from 'next/link';
-import { BookOpen, CheckCircle, Copy, AlertTriangle } from 'lucide-react';
+import { BookOpen, CheckCircle, Copy, Loader2 } from 'lucide-react';
 import { DomainNotBoundModal } from './DomainNotBoundModal';
 import { useCopyData } from '@/utils/tools';
-import { useToast } from '@/hooks/useToast';
+import { toast } from 'sonner';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter
+} from '@sealos/shadcn-ui/drawer';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Badge } from '@sealos/shadcn-ui/badge';
+import { Alert, AlertDescription } from '@sealos/shadcn-ui/alert';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@sealos/shadcn-ui/table';
+import { Separator } from '@sealos/shadcn-ui/separator';
 
 export type CustomAccessModalParams = {
   publicDomain: string;
@@ -60,14 +49,17 @@ const CustomAccessModal = ({
 }: CustomAccessModalParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
-  const { toast } = useToast();
 
-  const notBoundDisclosure = useDisclosure();
+  const [notBoundOpen, setNotBoundOpen] = useState(false);
 
   const [processPhase, setProcessPhase] = useState<'INPUT_DOMAIN' | 'VERIFY_DOMAIN' | 'SUCCESS'>(
     'INPUT_DOMAIN'
   );
   const [customDomain, setCustomDomain] = useState(currentCustomDomain);
+  const [previousState, setPreviousState] = useState<{
+    domain: string;
+    phase: 'INPUT_DOMAIN' | 'VERIFY_DOMAIN' | 'SUCCESS';
+  } | null>(null);
   const [verificationMethod, setVerificationMethod] = useState<'CNAME' | 'HTTP_CHALLENGE'>('CNAME');
   const [proxyDetected, setProxyDetected] = useState<{
     isProxy: boolean;
@@ -77,6 +69,10 @@ const CustomAccessModal = ({
 
   const sanitizeDomain = (input: string) =>
     input.match(/((?!-)[a-z0-9-]{1,63}(?<!-)\.)+[a-z]{2,6}/i)?.[0];
+
+  const isValidDomain = useMemo(() => {
+    return !!sanitizeDomain(customDomain);
+  }, [customDomain]);
 
   const { mutate: authDomain, isLoading } = useRequest({
     mutationFn: async (silent: boolean) => {
@@ -131,10 +127,7 @@ const CustomAccessModal = ({
               (data?.error?.error?.message ?? data?.error?.message ?? data?.error);
           }
 
-          toast({
-            title: errorMessage,
-            status: 'error'
-          });
+          toast.error(errorMessage);
         }
 
         return;
@@ -162,329 +155,280 @@ const CustomAccessModal = ({
     }
   }, [processPhase, authDomain]);
 
-  const tableCellStyles: BoxProps = {
-    textTransform: 'none',
-    borderColor: 'gray.200',
-    paddingX: '12px',
-    paddingY: '8px',
-    fontSize: '14px'
-  };
-
   const completePublicDomain = useMemo(() => `${publicDomain}.${domain}`, [publicDomain, domain]);
+
+  const handleClose = () => {
+    if (
+      processPhase !== 'SUCCESS' &&
+      // Do not open the warning modal if not touched.
+      customDomain !== currentCustomDomain
+    ) {
+      setNotBoundOpen(true);
+    } else {
+      onClose();
+    }
+  };
 
   return (
     <>
-      <Modal
-        isOpen
-        onClose={() => {
-          if (
-            processPhase !== 'SUCCESS' &&
-            // Do not open the warning modal if not touched.
-            customDomain !== currentCustomDomain
-          ) {
-            notBoundDisclosure.onOpen();
-          } else {
-            onClose();
-          }
-        }}
-        lockFocusAcrossFrames={false}
-      >
-        <ModalOverlay />
-        <ModalContent maxH={'90vh'} maxW={'90vw'} width={'587px'}>
-          <ModalHeader>{t('Custom Domain')}</ModalHeader>
-          <ModalBody>
-            <ModalCloseButton />
+      <Drawer open onOpenChange={(open) => !open && handleClose()}>
+        <DrawerContent direction="right" className="min-w-[560px] sm:max-w-[560px]">
+          <DrawerHeader>
+            <DrawerTitle>{t('Custom Domain')}</DrawerTitle>
+          </DrawerHeader>
 
-            <Box fontWeight={'bold'} mb={2}>
-              {t('custom_domain_input_title')}
-            </Box>
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+            {/* Domain Input */}
+            <div>
+              <h3 className="font-semibold text-lg text-zinc-900 mb-2">
+                {t('custom_domain_input_title')}
+              </h3>
 
-            {/* Tips */}
-            {REQUIRES_DOMAIN_REG ? (
-              <Stack>
-                <Text>
-                  {t('domain_requires_registration_tip_1')}
-                  <Text as={'b'}>
-                    {t('infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.name')}
-                  </Text>
-                  {t('domain_requires_registration_tip_2')}
-                </Text>
+              {/* Tips */}
+              {REQUIRES_DOMAIN_REG ? (
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm text-zinc-600">
+                    {t('domain_requires_registration_tip_1')}
+                    <span className="font-semibold">
+                      {t('infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.name')}
+                    </span>
+                    {t('domain_requires_registration_tip_2')}
+                  </p>
 
-                <Stack direction={'row'} height={'24px'}>
-                  <Link
-                    as={NextLink}
-                    target="_blank"
-                    color={'brightBlue.600'}
-                    href={t(
-                      'infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.domain_reg_link'
-                    )}
-                  >
-                    {t('domain_registration_provider_link_text')}
-                  </Link>
-
-                  <Divider orientation="vertical" />
-
-                  <Link
-                    as={NextLink}
-                    target="_blank"
-                    color={'brightBlue.600'}
-                    href={DOMAIN_REG_QUERY_LINK}
-                  >
-                    {t('domain_registration_query_link_text')}
-                  </Link>
-                </Stack>
-              </Stack>
-            ) : (
-              <Text>{t('domain_input_tip')}</Text>
-            )}
-
-            {/* Your Domain */}
-            <Stack direction={'row'} mt={4}>
-              <InputGroup>
-                <Input
-                  width={'100%'}
-                  value={customDomain}
-                  onChange={(e) => {
-                    if (processPhase === 'INPUT_DOMAIN') {
-                      const normalizedDomain = e.target.value.trim().toLowerCase();
-                      setCustomDomain(normalizedDomain);
-                    }
-                  }}
-                  bg={'#F7F8FA'}
-                  borderColor={'#E8EBF0'}
-                  style={{
-                    pointerEvents: processPhase !== 'INPUT_DOMAIN' ? 'none' : 'auto'
-                  }}
-                  placeholder={t('Input your custom domain') || 'Input your custom domain'}
-                />
-
-                {processPhase !== 'INPUT_DOMAIN' && (
-                  <InputRightElement width={'auto'} mr={3}>
-                    {processPhase === 'VERIFY_DOMAIN' && (
-                      <Tag
-                        size={'sm'}
-                        colorScheme={'red'}
-                        variant={'outline'}
-                        bg={'#FEF3F2'}
-                        boxShadow={'0px 0px 0px 0.5px #FECDCA'}
-                        color={'#D92D20'}
-                        borderRadius={'full'}
-                        px={2}
-                      >
-                        {t('domain_verification_needed')}
-                      </Tag>
-                    )}
-                    {processPhase === 'SUCCESS' && (
-                      <Tag
-                        size={'sm'}
-                        variant={'outline'}
-                        bg={'#EDFBF3'}
-                        boxShadow={'0px 0px 0px 0.5px #A6EDC3'}
-                        color={'#039855'}
-                        borderRadius={'full'}
-                        px={2}
-                      >
-                        <CheckCircle size={14} />
-                        <Text ml={1}>{t('domain_verified')}</Text>
-                      </Tag>
-                    )}
-                  </InputRightElement>
-                )}
-              </InputGroup>
-
-              {processPhase === 'INPUT_DOMAIN' ? (
-                <>
-                  {currentCustomDomain && (
-                    <Button
-                      variant={'outline'}
-                      height={'32px'}
-                      onClick={() => {
-                        setCustomDomain('');
-                        onSuccess('');
-                        onClose();
-                      }}
+                  <div className="flex items-center gap-2 h-6">
+                    <NextLink
+                      target="_blank"
+                      className="text-sm text-blue-600 hover:underline"
+                      href={t(
+                        'infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.domain_reg_link'
+                      )}
                     >
-                      {t('domain_verification_input_clear')}
-                    </Button>
-                  )}
+                      {t('domain_registration_provider_link_text')}
+                    </NextLink>
 
-                  <Button
-                    height={'32px'}
-                    onClick={() => {
-                      const sanitizedDomain = sanitizeDomain(customDomain);
-                      if (sanitizedDomain) {
-                        setCustomDomain(sanitizedDomain);
-                        setProcessPhase('VERIFY_DOMAIN');
-                        setVerificationMethod('CNAME'); // Reset to try CNAME first
-                        authDomain(true);
-                      } else {
-                        toast({
-                          title: t('domain_invalid_toast', { domain: customDomain }),
-                          status: 'error'
-                        });
+                    <Separator orientation="vertical" className="h-4" />
+
+                    <NextLink
+                      target="_blank"
+                      className="text-sm text-blue-600 hover:underline"
+                      href={DOMAIN_REG_QUERY_LINK}
+                    >
+                      {t('domain_registration_query_link_text')}
+                    </NextLink>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-zinc-600 mb-4">{t('domain_input_tip')}</p>
+              )}
+
+              {/* Your Domain */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 mr-2">
+                  <Input
+                    value={customDomain}
+                    onChange={(e) => {
+                      if (processPhase === 'INPUT_DOMAIN') {
+                        const normalizedDomain = e.target.value.trim().toLowerCase();
+                        setCustomDomain(normalizedDomain);
                       }
                     }}
-                  >
-                    {t('domain_verification_input_save')}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant={'secondary'}
-                    height={'32px'}
-                    fontWeight={'normal'}
-                    onClick={() => authDomain(false)}
-                    isLoading={isLoading}
-                  >
-                    {t('domain_verification_refresh')}
-                  </Button>
-                  <Button
-                    variant={'secondary'}
-                    height={'32px'}
-                    fontWeight={'normal'}
-                    onClick={() => {
-                      setProcessPhase('INPUT_DOMAIN');
-                    }}
-                    disabled={isLoading}
-                  >
-                    {t('domain_verification_input_edit')}
-                  </Button>
-                </>
-              )}
-            </Stack>
+                    className="h-10 bg-white pr-32 rounded-lg"
+                    readOnly={processPhase !== 'INPUT_DOMAIN'}
+                    placeholder={t('Input your custom domain') || 'Input your custom domain'}
+                  />
+
+                  {processPhase !== 'INPUT_DOMAIN' && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {processPhase === 'VERIFY_DOMAIN' && (
+                        <Badge
+                          variant="outline"
+                          className="bg-red-50 border-[0.5px] border-red-200 text-red-600 rounded-full px-2"
+                        >
+                          {t('domain_verification_needed')}
+                        </Badge>
+                      )}
+                      {processPhase === 'SUCCESS' && (
+                        <Badge
+                          variant="outline"
+                          className="bg-green-50 border-[0.5px] border-green-200 text-green-600 rounded-full px-2"
+                        >
+                          <CheckCircle className="w-3 h-3" />
+                          <span>{t('domain_verified')}</span>
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {processPhase === 'INPUT_DOMAIN' ? (
+                  <>
+                    {currentCustomDomain && !previousState && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setCustomDomain('');
+                          onSuccess('');
+                          onClose();
+                        }}
+                        className="h-10 text-sm font-medium px-4 rounded-lg shadow-none hover:bg-zinc-50"
+                      >
+                        {t('domain_verification_input_clear')}
+                      </Button>
+                    )}
+
+                    <Button
+                      disabled={!isValidDomain}
+                      onClick={() => {
+                        const sanitizedDomain = sanitizeDomain(customDomain);
+                        if (sanitizedDomain) {
+                          setCustomDomain(sanitizedDomain);
+                          setProcessPhase('VERIFY_DOMAIN');
+                          setVerificationMethod('CNAME'); // Reset to try CNAME first
+                          setPreviousState(null);
+                          authDomain(true);
+                        }
+                      }}
+                      className="h-10 text-sm font-medium px-4 rounded-lg shadow-none"
+                    >
+                      {t('domain_verification_input_save')}
+                    </Button>
+
+                    {previousState && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setCustomDomain(previousState.domain);
+                          setProcessPhase(previousState.phase);
+                          setPreviousState(null);
+                        }}
+                        className="h-10 text-sm font-medium px-4 rounded-lg shadow-none hover:bg-zinc-50"
+                      >
+                        {t('Cancel')}
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => authDomain(false)}
+                      disabled={isLoading}
+                      className="h-10 text-sm font-medium px-4 rounded-lg shadow-none hover:bg-zinc-50"
+                    >
+                      {isLoading && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                      {t('domain_verification_refresh')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setPreviousState({
+                          domain: customDomain,
+                          phase: processPhase
+                        });
+                        setProcessPhase('INPUT_DOMAIN');
+                      }}
+                      disabled={isLoading}
+                      className="h-10 text-sm font-medium px-4 rounded-lg shadow-none hover:bg-zinc-50"
+                    >
+                      {t('domain_verification_input_edit')}
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
 
             {/* DNS Records */}
             {processPhase !== 'INPUT_DOMAIN' && (
-              <Stack
-                mt={4}
-                padding={4}
-                gap={0}
-                borderWidth={1}
-                borderRadius={'md'}
-                borderStyle={'dashed'}
-                borderColor={'gray.400'}
-              >
-                <Text fontSize={'16px'} fontWeight={'semibold'}>
-                  {t('domain_verification_dns_records')}
-                </Text>
+              <div className="p-4 border border-dashed border-zinc-400 rounded-xl space-y-4">
+                <div className="space-y-2">
+                  <h4 className="text-base font-semibold text-zinc-900">
+                    {t('domain_verification_dns_records')}
+                  </h4>
 
-                <Text mt={2}>
-                  {t('domain_verification_dns_records_tip_1')}
-                  <Text as={'b'}>{completePublicDomain}</Text>
-                  {t('domain_verification_dns_records_tip_2')}
-                </Text>
+                  <p className="text-sm text-zinc-900 font-normal">
+                    {t('domain_verification_dns_records_tip_1')}
+                    <span className="font-semibold">{completePublicDomain}</span>
+                    {t('domain_verification_dns_records_tip_2')}
+                  </p>
+                </div>
 
-                <TableContainer mt={4} borderRadius={'lg'} borderWidth={1} borderColor={'gray.200'}>
-                  <Table variant="unstyled">
-                    <Thead color={'gray.500'} borderBottomWidth={1} borderColor={'gray.200'}>
-                      <Tr>
-                        <Th {...tableCellStyles} borderRightWidth={1}>
-                          {t('domain_verification_dns_records_type')}
-                        </Th>
-                        <Th {...tableCellStyles} borderRightWidth={1}>
-                          {t('domain_verification_dns_records_ttl')}
-                        </Th>
-                        <Th {...tableCellStyles}>{t('domain_verification_dns_records_value')}</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      <Tr>
-                        <Td {...tableCellStyles} borderRightWidth={1}>
-                          {t('domain_verification_dns_records_type_cname')}
-                        </Td>
-                        <Td {...tableCellStyles} borderRightWidth={1}>
-                          {t('domain_verification_dns_records_ttl_auto')}
-                        </Td>
-                        <Td
-                          {...tableCellStyles}
-                          cursor={'pointer'}
-                          onClick={() => {
-                            copyData(completePublicDomain);
-                          }}
+                <div className="bg-white border border-zinc-200 rounded-lg overflow-hidden">
+                  <Table className="[&_th]:h-auto [&_th]:py-2 [&_th]:font-semibold [&_th]:text-zinc-500 [&_th]:bg-white [&_th]:border-b [&_th]:border-r [&_th:last-child]:border-r-0 [&_td]:border-b [&_td]:border-r [&_td:last-child]:border-r-0 [&_tr:last-child_td]:border-b-0">
+                    <TableHeader>
+                      <TableRow className="">
+                        <TableHead>{t('domain_verification_dns_records_type')}</TableHead>
+                        <TableHead>{t('domain_verification_dns_records_ttl')}</TableHead>
+                        <TableHead>{t('domain_verification_dns_records_value')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>{t('domain_verification_dns_records_type_cname')}</TableCell>
+                        <TableCell>{t('domain_verification_dns_records_ttl_auto')}</TableCell>
+                        <TableCell
+                          className="cursor-pointer hover:bg-zinc-50 transition-colors"
+                          onClick={() => copyData(completePublicDomain)}
                         >
-                          <Flex alignItems={'center'} justifyContent={'space-between'} gap={2}>
-                            <Text>{completePublicDomain}</Text>
-                            <Link color={'gray.500'}>
-                              <Copy size={16} />
-                            </Link>
-                          </Flex>
-                        </Td>
-                      </Tr>
-                    </Tbody>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-zinc-900">{completePublicDomain}</span>
+                            <Copy className="w-4 h-4 text-zinc-400" />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
                   </Table>
-                </TableContainer>
+                </div>
 
                 {/* Refer to docs */}
                 {DOMAIN_BINDING_DOCUMENTATION_LINK && (
-                  <Stack direction={'row'} mt={4}>
-                    <Link
-                      as={NextLink}
-                      target="_blank"
-                      href={DOMAIN_BINDING_DOCUMENTATION_LINK}
-                      color={'brightBlue.600'}
-                      display={'flex'}
-                      alignItems={'center'}
-                      gap={2}
-                    >
-                      <BookOpen size={16} />
-                      <Text>{t('domain_verification_dns_records_docs_link_text')}</Text>
-                    </Link>
-                  </Stack>
+                  <NextLink
+                    target="_blank"
+                    href={DOMAIN_BINDING_DOCUMENTATION_LINK}
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    <span>{t('domain_verification_dns_records_docs_link_text')}</span>
+                  </NextLink>
                 )}
-              </Stack>
+              </div>
             )}
-          </ModalBody>
 
-          {processPhase === 'SUCCESS' && (
-            <ModalFooter flexDirection={'column'} gap={3}>
-              <Alert
-                variant="subtle"
-                borderRadius={'lg'}
-                w={'100%'}
-                borderWidth={1}
-                borderColor={'#039855'}
-                bg={'#EDFBF3'}
-              >
-                <AlertDescription textColor={'#059669'} fontWeight={'medium'} w={'full'}>
-                  <Flex alignItems={'center'} justifyContent={'center'} gap={2}>
-                    <CheckCircle size={16} />
-                    {t('domain_verification_success')}
-                  </Flex>
-                </AlertDescription>
-              </Alert>
+            {/* Success */}
+            {processPhase === 'SUCCESS' && (
+              <div className="flex flex-col gap-3 sm:flex-col">
+                <Alert className="w-full bg-green-50 border-green-500 border-[0.5px] flex items-center justify-center">
+                  <AlertDescription className="text-green-600 font-medium">
+                    <div className="flex items-center justify-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      {t('domain_verification_success')}
+                    </div>
+                  </AlertDescription>
+                </Alert>
 
-              {/* Proxy Detection Warning */}
-              {proxyDetected.isProxy && (
-                <Box w={'100%'} mt={'20px'} borderLeft={'2px solid #FED7AA'} px={'16px'}>
-                  <Flex alignItems={'flex-start'} gap={3}>
-                    <Flex flexDirection={'column'} gap={2} flex={1}>
-                      <Text
-                        fontSize={'md'}
-                        fontWeight={500}
-                        color={'#F97316'}
-                        lineHeight={'1.4'}
-                        whiteSpace={'pre-line'}
-                      >
+                {/* Proxy Detection Warning */}
+                {proxyDetected.isProxy && (
+                  <div className="w-full border-l-2 border-orange-300 px-4 py-3">
+                    <div className="space-y-1">
+                      <p className="text-base font-medium text-orange-500 whitespace-pre-line">
                         {t('proxy_detected_title')}
-                      </Text>
-                      <Text fontWeight={400} color={'#F97316'}>
+                      </p>
+                      <p className="text-sm text-orange-500 font-normal">
                         {t('proxy_detected_message')}
-                      </Text>
-                    </Flex>
-                  </Flex>
-                </Box>
-              )}
-            </ModalFooter>
-          )}
-        </ModalContent>
-      </Modal>
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <DomainNotBoundModal
-        isOpen={notBoundDisclosure.isOpen}
-        onClose={notBoundDisclosure.onClose}
+        isOpen={notBoundOpen}
+        onClose={() => setNotBoundOpen(false)}
         onConfirm={() => {
-          notBoundDisclosure.onClose();
+          setNotBoundOpen(false);
           onClose();
         }}
       />

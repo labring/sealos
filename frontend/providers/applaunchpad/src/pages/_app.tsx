@@ -1,13 +1,19 @@
-import { theme } from '@/constants/theme';
+// import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
 import { DESKTOP_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { ChakraProvider } from '@chakra-ui/react';
-import { Toaster } from '@sealos/shadcn-ui/sonner';
+// import { ChakraBaseProvider } from '@chakra-ui/react';
+import { Toaster } from 'sonner';
 import { GeistSans } from 'geist/font/sans';
+import { Fira_Code } from 'next/font/google';
+
+const FiraCode = Fira_Code({
+  subsets: ['latin'],
+  variable: '--font-fira-code'
+});
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
@@ -217,7 +223,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
   }, []);
 
   return (
-    <div className={GeistSans.variable}>
+    <div className={`${GeistSans.variable} ${FiraCode.variable}`}>
       {config?.launchpad?.meta?.title && (
         <Head>
           <title>{config?.launchpad?.meta?.title}</title>
@@ -225,15 +231,13 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
         </Head>
       )}
       <QueryClientProvider client={queryClient}>
-        <ChakraProvider theme={theme} resetCSS={false}>
-          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
-            <Component {...pageProps} />
-            <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
-            <ConfirmChild />
-            <Loading loading={loading} />
-            <Toaster />
-          </QuotaGuardProvider>
-        </ChakraProvider>
+        <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
+          <Component {...pageProps} />
+          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
+          <ConfirmChild />
+          <Loading loading={loading} />
+          <Toaster position="top-center" richColors />
+        </QuotaGuardProvider>
       </QueryClientProvider>
       {config?.launchpad?.meta?.scripts?.map((script, i) => (
         <Script key={i} {...script} />

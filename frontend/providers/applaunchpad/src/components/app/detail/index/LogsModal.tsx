@@ -6,7 +6,6 @@ import {
   ModalContent,
   ModalCloseButton,
   Box,
-  useTheme,
   Flex,
   Button,
   MenuButton,
@@ -73,8 +72,8 @@ const LogsModal = ({
   setLogsPodName: (name: string) => void;
   closeFn: () => void;
 }) => {
+  const borderBase = '1px solid #E8EBF0';
   const { t } = useTranslation();
-  const theme = useTheme();
   const { Loading } = useLoading();
   const [logs, setLogs] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -185,7 +184,7 @@ const LogsModal = ({
                     h={'32px'}
                     textAlign={'start'}
                     bg={'grayModern.100'}
-                    border={theme.borders.base}
+                    border={borderBase}
                     borderRadius={'md'}
                   >
                     <Flex px={4} alignItems={'center'}>
@@ -210,7 +209,7 @@ const LogsModal = ({
                     h={'32px'}
                     textAlign={'start'}
                     bg={'grayModern.100'}
-                    border={theme.borders.base}
+                    border={borderBase}
                     borderRadius={'md'}
                   >
                     <Flex px={4} alignItems={'center'}>

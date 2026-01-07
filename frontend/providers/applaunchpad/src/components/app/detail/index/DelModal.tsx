@@ -130,17 +130,17 @@ const DelModal = ({
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} size="lg">
+          <Button variant="outline" className="shadow-none" onClick={onClose} size="lg">
             {t('Cancel')}
           </Button>
           {activePage === Page.REMINDER ? (
-            <Button onClick={openTemplateApp} size="lg">
+            <Button className="shadow-none" onClick={openTemplateApp} size="lg">
               {t('confirm_to_go')}
             </Button>
           ) : (
             <Button
               variant="outline"
-              className="text-destructive"
+              className="text-destructive shadow-none"
               disabled={inputValue !== appName || loading}
               onClick={handleDelApp}
               size="lg"

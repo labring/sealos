@@ -14,8 +14,7 @@ import {
   Divider,
   Flex,
   Tag,
-  Text,
-  useTheme
+  Text
 } from '@chakra-ui/react';
 import { MyTooltip } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
@@ -27,7 +26,6 @@ const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 
 const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
-  const theme = useTheme();
   const { copyData } = useCopyData();
   const { userSourcePrice } = useUserStore();
   const [detailConfigMap, setDetailConfigMap] = useState<{

@@ -52,7 +52,7 @@ const Empty = () => {
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
       <div className="py-8">{t("You haven't created any application yet")}</div>
       <Button
-        className="create-app-btn mt-5 w-[155px] bg-neutral-950 text-primary-foreground"
+        className="create-app-btn mt-5 w-[155px] bg-neutral-950 text-primary-foreground shadow-none"
         onClick={() => handleCreateApp()}
       >
         <Plus className="h-5 w-5" />

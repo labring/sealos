@@ -1,77 +1,69 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   AlertDialog,
-  AlertDialogBody,
+  AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
-  useDisclosure,
-  Button
-} from '@chakra-ui/react';
+  AlertDialogTitle
+} from '@sealos/shadcn-ui/alert-dialog';
+import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
+import { TriangleAlert } from 'lucide-react';
 
-export const useConfirm = ({ title = 'Warning', content }: { title?: string; content: string }) => {
+export const useConfirm = ({ title = 'Prompt', content }: { title?: string; content: string }) => {
   const { t } = useTranslation();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const cancelRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false);
   const confirmCb = useRef<any>();
   const cancelCb = useRef<any>();
 
   return {
-    openConfirm: useCallback(
-      (confirm?: any, cancel?: any) => {
-        return function () {
-          onOpen();
-          confirmCb.current = confirm;
-          cancelCb.current = cancel;
-        };
-      },
-      [onOpen]
-    ),
+    openConfirm: useCallback((confirm?: any, cancel?: any) => {
+      return function () {
+        setIsOpen(true);
+        confirmCb.current = confirm;
+        cancelCb.current = cancel;
+      };
+    }, []),
     ConfirmChild: useCallback(
       () => (
-        <AlertDialog
-          isOpen={isOpen}
-          leastDestructiveRef={cancelRef}
-          onClose={onClose}
-          closeOnOverlayClick={false}
-        >
-          <AlertDialogOverlay>
-            <AlertDialogContent>
-              <AlertDialogHeader fontSize="lg" fontWeight="bold">
+        <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+          <AlertDialogContent className="w-[360px] text-foreground">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-lg font-semibold leading-none">
+                <TriangleAlert className="h-4 w-4 text-yellow-600" />
                 {t(title)}
-              </AlertDialogHeader>
+              </AlertDialogTitle>
+            </AlertDialogHeader>
 
-              <AlertDialogBody>{t(content)}</AlertDialogBody>
+            <div className="text-sm font-normal">{t(content)}</div>
 
-              <AlertDialogFooter>
-                <Button
-                  width={'88px'}
-                  variant={'outline'}
-                  onClick={() => {
-                    onClose();
-                    typeof cancelCb.current === 'function' && cancelCb.current();
-                  }}
-                >
-                  {t('Cancel')}
-                </Button>
-                <Button
-                  width={'88px'}
-                  ml={3}
-                  onClick={() => {
-                    onClose();
-                    typeof confirmCb.current === 'function' && confirmCb.current();
-                  }}
-                >
-                  {t('Yes')}
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogOverlay>
+            <AlertDialogFooter className="gap-3">
+              <Button
+                variant="outline"
+                size="lg"
+                className="shadow-none"
+                onClick={() => {
+                  setIsOpen(false);
+                  typeof cancelCb.current === 'function' && cancelCb.current();
+                }}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button
+                size="lg"
+                className="shadow-none"
+                onClick={() => {
+                  setIsOpen(false);
+                  typeof confirmCb.current === 'function' && confirmCb.current();
+                }}
+              >
+                {t('Confirm')}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
         </AlertDialog>
       ),
-      [content, isOpen, onClose, t, title]
+      [content, isOpen, t, title]
     )
   };
 };

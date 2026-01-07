@@ -41,8 +41,7 @@ import {
   Th,
   Thead,
   Tr,
-  useDisclosure,
-  useTheme
+  useDisclosure
 } from '@chakra-ui/react';
 import { MyTooltip, SealosMenu, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
@@ -67,8 +66,8 @@ const PodFile = ({
   podAlias: string;
   setPodDetail: (name: string) => void;
 }) => {
+  const borderBase = '1px solid #E8EBF0';
   const { t } = useTranslation();
-  const theme = useTheme();
   const { message } = useMessage();
   const { appDetail = MOCK_APP_DETAIL } = useAppStore();
   const [storeDetail, setStoreDetail] = useState<{
@@ -320,7 +319,7 @@ const PodFile = ({
                     h={'32px'}
                     textAlign={'start'}
                     bg={'grayModern.100'}
-                    border={theme.borders.base}
+                    border={borderBase}
                     borderRadius={'md'}
                   >
                     <Flex alignItems={'center'}>
@@ -347,7 +346,7 @@ const PodFile = ({
                       h={'32px'}
                       textAlign={'start'}
                       bg={'grayModern.100'}
-                      border={theme.borders.base}
+                      border={borderBase}
                       borderRadius={'md'}
                     >
                       <Flex alignItems={'center'}>

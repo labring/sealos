@@ -10,7 +10,6 @@ import {
   Flex,
   Grid,
   Button,
-  useTheme,
   useDisclosure,
   MenuButton
 } from '@chakra-ui/react';
@@ -45,8 +44,8 @@ const Logs = ({
   setPodDetail: (name: string) => void;
   closeFn: () => void;
 }) => {
+  const borderBase = '1px solid #E8EBF0';
   const { t } = useTranslation();
-  const theme = useTheme();
   const controller = useRef(new AbortController());
   const { Loading } = useLoading();
   const { toast } = useToast();
@@ -91,7 +90,7 @@ const Logs = ({
           textOverflow={'ellipsis'}
           color={'grayModern.700'}
           cursor={'default'}
-          border={theme.borders.base}
+          border={borderBase}
           borderRadius={'md'}
         >
           {children}
@@ -170,7 +169,7 @@ const Logs = ({
                   h={'32px'}
                   textAlign={'start'}
                   bg={'grayModern.100'}
-                  border={theme.borders.base}
+                  border={borderBase}
                   borderRadius={'md'}
                 >
                   <Flex px={4} alignItems={'center'}>

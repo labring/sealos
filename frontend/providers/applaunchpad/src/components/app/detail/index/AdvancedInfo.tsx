@@ -12,8 +12,7 @@ import {
   Center,
   Divider,
   Flex,
-  Text,
-  useTheme
+  Text
 } from '@chakra-ui/react';
 import { MyTooltip } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
@@ -23,9 +22,10 @@ import styles from '@/components/app/detail/index/index.module.scss';
 
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 
+const borderBase = '1px solid #E8EBF0';
+
 const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
-  const theme = useTheme();
   const { copyData } = useCopyData();
   const [detailConfigMap, setDetailConfigMap] = useState<{
     mountPath: string;
@@ -132,7 +132,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                     {app.envs?.length > 0 ? (
                       <Flex
                         flexDirection={'column'}
-                        border={theme.borders.base}
+                        border={borderBase}
                         bg={'#fff'}
                         borderRadius={'md'}
                       >
@@ -198,12 +198,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                     mt={'8px'}
                   >
                     {app.configMapList?.length > 0 ? (
-                      <Box
-                        borderRadius={'md'}
-                        overflow={'hidden'}
-                        bg={'#FFF'}
-                        border={theme.borders.base}
-                      >
+                      <Box borderRadius={'md'} overflow={'hidden'} bg={'#FFF'} border={borderBase}>
                         {app.configMapList.map((item) => (
                           <Flex
                             key={item.mountPath}
@@ -212,7 +207,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                             py={'8px'}
                             cursor={'pointer'}
                             _notLast={{
-                              borderBottom: theme.borders.base
+                              borderBottom: borderBase
                             }}
                           >
                             <MyIcon name={'configMap'} width={'24px'} height={'24px'} />
@@ -254,12 +249,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                     mt={'8px'}
                   >
                     {app.storeList?.length > 0 ? (
-                      <Box
-                        borderRadius={'md'}
-                        overflow={'hidden'}
-                        bg={'#FFF'}
-                        border={theme.borders.base}
-                      >
+                      <Box borderRadius={'md'} overflow={'hidden'} bg={'#FFF'} border={borderBase}>
                         {app.storeList.map((item) => (
                           <Flex
                             key={item.path}
@@ -267,7 +257,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                             px={'14px'}
                             py={'8px'}
                             _notLast={{
-                              borderBottom: theme.borders.base
+                              borderBottom: borderBase
                             }}
                           >
                             <MyIcon name={'store'} width={'24px'} height={'24px'} />
