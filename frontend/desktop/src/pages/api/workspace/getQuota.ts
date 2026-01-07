@@ -53,38 +53,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hard = data.quota?.hard || {};
     const used = data.quota?.used || {};
 
-    const quota: WorkspaceQuotaItem[] = [
-      {
+    const quota: WorkspaceQuotaItem[] = [];
+
+    if (hard['limits.cpu'] !== undefined || used['limits.cpu'] !== undefined) {
+      quota.push({
         type: 'cpu',
         limit: cpuFormatToM(hard['limits.cpu'] || ''),
         used: cpuFormatToM(used['limits.cpu'] || '')
-      },
-      {
+      });
+    }
+
+    if (hard['limits.memory'] !== undefined || used['limits.memory'] !== undefined) {
+      quota.push({
         type: 'memory',
         limit: memoryFormatToMi(hard['limits.memory'] || ''),
         used: memoryFormatToMi(used['limits.memory'] || '')
-      },
-      {
+      });
+    }
+
+    if (hard['requests.storage'] !== undefined || used['requests.storage'] !== undefined) {
+      quota.push({
         type: 'storage',
         limit: memoryFormatToMi(hard['requests.storage'] || ''),
         used: memoryFormatToMi(used['requests.storage'] || '')
-      },
-      {
+      });
+    }
+
+    if (hard['services.nodeports'] !== undefined || used['services.nodeports'] !== undefined) {
+      quota.push({
         type: 'nodeport',
         limit: Number(hard['services.nodeports']) || 0,
         used: Number(used['services.nodeports']) || 0
-      },
-      {
+      });
+    }
+
+    if (hard['traffic'] !== undefined || used['traffic'] !== undefined) {
+      quota.push({
         type: 'traffic',
         limit: Number(hard['traffic']) || 0,
         used: Number(used['traffic']) || 0
-      },
-      {
+      });
+    }
+
+    const gpuHardValue = hard['limits.nvidia.com/gpu'] || hard['requests.nvidia.com/gpu'];
+    const gpuUsedValue = used['limits.nvidia.com/gpu'] || used['requests.nvidia.com/gpu'];
+    if (gpuHardValue !== undefined || gpuUsedValue !== undefined) {
+      quota.push({
         type: 'gpu',
-        limit: Number(hard['limits.nvidia.com/gpu'] || hard['requests.nvidia.com/gpu'] || 0),
-        used: Number(used['limits.nvidia.com/gpu'] || used['requests.nvidia.com/gpu'] || 0)
-      }
-    ];
+        limit: Number(gpuHardValue) || 0,
+        used: Number(gpuUsedValue) || 0
+      });
+    }
 
     jsonRes<{
       quota: WorkspaceQuotaItem[];
