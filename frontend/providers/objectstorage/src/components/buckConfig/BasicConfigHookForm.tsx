@@ -9,9 +9,8 @@ import {
   FormHelperText,
   Text
 } from '@chakra-ui/react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-import ExpanMoreIcon from '../Icons/ExpandMoreIcon';
 import InfoCircleIcon from '../Icons/InfoCircleIcon';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -19,13 +18,38 @@ import { MySelect } from '@sealos/ui';
 const BasicConfigHookForm = () => {
   const { register, getFieldState, control, getValues, setValue } = useFormContext<FormSchema>();
   const { t } = useTranslation(['common', 'bucket']);
+
+  const bucketName = useWatch<FormSchema, 'bucketName'>({
+    name: 'bucketName',
+    control
+  });
+
+  const validateBucketName = (value: string) => {
+    if (!value) {
+      return t('bucket:bucketNameInvalid');
+    }
+
+    if (value.length < 3 || value.length > 63) {
+      return t('bucket:bucketNameInvalid');
+    }
+
+    if (!/^[a-z0-9.-]+$/.test(value)) {
+      return t('bucket:bucketNameInvalid');
+    }
+
+    if (!/^[a-z0-9]/.test(value) || !/[a-z0-9]$/.test(value)) {
+      return t('bucket:bucketNameInvalid');
+    }
+
+    return true;
+  };
+
   const authorityTips = useMemo(
     () => ({
       [Authority.private]: t('bucket:privateBucket'),
       [Authority.readonly]: t('bucket:sharedBucketRead'),
       [Authority.readwrite]: t('bucket:sharedBucketReadWrite')
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
   const authorityList = [
@@ -53,22 +77,37 @@ const BasicConfigHookForm = () => {
       <FormControl
         isInvalid={!!getFieldState('bucketName').error}
         display={'flex'}
-        alignItems={'center'}
+        alignItems={'start'}
       >
         <FormLabel w="100px" mr="30px">
           {t('bucket:bucketName')}
         </FormLabel>
-        <Input
-          variant={'outline'}
-          h="32px"
-          w="300px"
-          autoFocus={true}
-          isDisabled={!!router.query.bucketName}
-          {...register('bucketName', {
-            required: 'This is required',
-            minLength: { value: 1, message: 'Minimum length should be 1' }
-          })}
-        />
+        <Flex direction="column" gap="8px" w="300px">
+          <Input
+            variant={'outline'}
+            h="32px"
+            w="100%"
+            autoFocus={true}
+            isDisabled={!!router.query.bucketName}
+            {...register('bucketName', {
+              validate: validateBucketName
+            })}
+          />
+          {bucketName && bucketName.includes('.') && (
+            <FormHelperText
+              mt={0}
+              py="6px"
+              px="12px"
+              borderRadius={'6px'}
+              fontSize={'12px'}
+              bg={'#FFFCE8'}
+              color={'#CB8B02'}
+              lineHeight={'1.5'}
+            >
+              {t('bucket:bucketNameDotWarning')}
+            </FormHelperText>
+          )}
+        </Flex>
       </FormControl>
       <FormControl isInvalid={!!getFieldState('bucketAuthority').error}>
         <Flex align={'center'} mb="9px">

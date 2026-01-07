@@ -1,7 +1,7 @@
 import { FormSchema, TabId } from '@/consts';
 import { json2Bucket } from '@/utils/json2Yaml';
-import { Flex, Box, Stack, IconButton, Text, useTab } from '@chakra-ui/react';
-import { EditTabs, Tabs, YamlCode } from '@sealos/ui';
+import { Flex, Box, Stack, IconButton, Text } from '@chakra-ui/react';
+import { Tabs, YamlCode } from '@sealos/ui';
 import { useState, useEffect, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import CopyIcon from '../Icons/CopyIcon';
@@ -11,6 +11,7 @@ import EditListItem from './EditListItem';
 import BasicConfigHookForm from './BasicConfigHookForm';
 import { useTranslation } from 'next-i18next';
 import { useCopyData } from '@/utils/tools';
+
 const ConfigMain = () => {
   const [activeId, setActiveId] = useState(TabId.Form);
   const { copyData } = useCopyData();
@@ -29,6 +30,7 @@ const ConfigMain = () => {
     else return [];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
+
   return (
     <Flex w="100%" h="100%" justifyContent={'center'} px="32px" gap="36px">
       <Box w="220px">
