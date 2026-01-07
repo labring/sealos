@@ -46,7 +46,7 @@ export default function WorkspaceToggle() {
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'session' && e.newValue && e.oldValue) {
+      if (e.key === 'session' && e.oldValue && e.newValue) {
         try {
           const oldSession = JSON.parse(e.oldValue);
           const newSession = JSON.parse(e.newValue);
@@ -54,7 +54,7 @@ export default function WorkspaceToggle() {
           const oldNsUid = oldSession?.state?.session?.user?.ns_uid;
           const newNsUid = newSession?.state?.session?.user?.ns_uid;
 
-          if (oldNsUid && newNsUid && oldNsUid !== newNsUid) {
+          if (oldNsUid !== newNsUid) {
             queryClient.clear();
             router.reload();
           }
@@ -68,7 +68,7 @@ export default function WorkspaceToggle() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [queryClient, router]);
+  }, [router]);
 
   const mutation = useMutation({
     mutationFn: switchRequest,

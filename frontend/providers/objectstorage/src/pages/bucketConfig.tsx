@@ -1,4 +1,4 @@
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Flex, useToast } from '@chakra-ui/react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Authority, FormSchema, QueryKey, bucketConfigQueryParam } from '@/consts';
 import { inAuthority } from '@/utils/tools';
@@ -12,6 +12,7 @@ import useSessionStore from '@/store/session';
 import { useQuotaGuarded } from '@sealos/shared';
 import { useStorageOperation } from '@/hooks/useStorageOperation';
 import ErrorModal from '@/components/ErrorModal';
+import { useTranslation } from 'next-i18next';
 
 const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   const methods = useForm<FormSchema>({
@@ -24,6 +25,8 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   const router = useRouter();
   const { session } = useSessionStore();
   const { executeOperation, errorModalState, closeErrorModal } = useStorageOperation();
+  const toast = useToast();
+  const { t } = useTranslation(['common', 'bucket']);
 
   const mutation = useMutation({
     mutationFn: createBucket,
@@ -45,18 +48,32 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   });
 
   const submitForm = () => {
-    methods.handleSubmit((data) => {
-      executeOperation(
-        () =>
-          mutation.mutateAsync({
-            bucketName: data.bucketName,
-            bucketPolicy: data.bucketAuthority
-          }),
-        {
-          successMessage: 'apply successfully'
+    methods.handleSubmit(
+      (data) => {
+        executeOperation(
+          () =>
+            mutation.mutateAsync({
+              bucketName: data.bucketName,
+              bucketPolicy: data.bucketAuthority
+            }),
+          {
+            successMessage: 'apply successfully'
+          }
+        );
+      },
+      (errors) => {
+        if (errors.bucketName) {
+          toast({
+            title: t('bucket:bucketCreateFailed'),
+            description: t('bucket:bucketNameInvalid'),
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+            position: 'top'
+          });
         }
-      );
-    })();
+      }
+    )();
   };
 
   const handleSubmit = useQuotaGuarded(
