@@ -66,7 +66,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
         >
           <Image
             src="/images/driver-bg.png"
-            alt="background"
+            alt=""
             position="absolute"
             top="0"
             left="0"
