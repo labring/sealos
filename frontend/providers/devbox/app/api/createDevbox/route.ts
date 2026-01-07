@@ -5,13 +5,14 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
 import {
-  json2Devbox,
+  json2DevboxV2,
   json2Ingress,
   json2Service,
   json2ConfigMap,
   json2PVC
 } from '@/utils/json2Yaml';
 import { RequestSchema } from './schema';
+import { KBDevboxTypeV2 } from '@/types/k8s';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT, NFS_STORAGE_CLASS_NAME } =
+    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE, NFS_STORAGE_CLASS_NAME } =
       process.env;
 
     // Create PVC first (if volumes exist)
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
     const configMap = json2ConfigMap(devboxForm);
 
     // Create Devbox, Service, and Ingress
-    const devbox = json2Devbox(devboxForm, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT);
+    const devbox = json2DevboxV2(devboxForm, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE);
     const service = json2Service(devboxForm);
     const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string);
 

@@ -363,5 +363,28 @@ export const parseTemplateConfig = (config: string) => {
       name: string;
       protocol: string;
     }[];
+    env?: {
+      name: string;
+      value?: string;
+      valueFrom?: {
+        secretKeyRef: {
+          name: string;
+          key: string;
+        };
+      };
+    }[];
+    volumes?: {
+      name: string;
+      configMap?: {
+        name: string;
+      };
+      persistentVolumeClaim?: {
+        claimName: string;
+      };
+    }[];
+    volumeMounts?: {
+      name: string;
+      mountPath: string;
+    }[];
   };
 };
