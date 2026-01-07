@@ -73,7 +73,8 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 	)
 	workspaceSubInfo := struct {
 		*types.WorkspaceSubscription
-		Type string `json:"type"`
+		Type              string `json:"type"`
+		InvoicePaymentURL string `json:"invoicePaymentUrl,omitempty"`
 	}{
 		WorkspaceSubscription: subscription,
 		Type:                  WorkspaceTypeSubscription,
@@ -81,6 +82,57 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 
 	if subscription == nil {
 		workspaceSubInfo.Type = WorkspaceTypePAYG
+	} else {
+		// Check if subscription is expired, unpaid, and uses Stripe payment method
+		// If all conditions are met, try to get the invoice payment link from Stripe
+		now := time.Now().UTC()
+		if subscription.CurrentPeriodEndAt.Before(now) &&
+			(subscription.PayStatus == types.SubscriptionPayStatusUnpaid || subscription.PayStatus == types.SubscriptionPayStatusFailed) &&
+			subscription.PayMethod == types.PaymentMethodStripe &&
+			subscription.Stripe != nil &&
+			subscription.Stripe.SubscriptionID != "" {
+
+			// Query the most recent invoice from Stripe to check payment status
+			latestInvoice, invoiceErr := services.StripeServiceInstance.GetLatestInvoice(
+				subscription.Stripe.SubscriptionID,
+			)
+			if invoiceErr == nil && latestInvoice != nil {
+				// Check invoice payment status
+				// Stripe invoice statuses: draft, open, paid, uncollectible, void
+				// We only provide payment link for invoices that are still payable (open or draft)
+				if latestInvoice.Status == "open" || latestInvoice.Status == "draft" {
+					// Get invoice URL
+					invoiceURL := latestInvoice.HostedInvoiceURL
+					if invoiceURL == "" {
+						return
+					}
+					workspaceSubInfo.InvoicePaymentURL = invoiceURL
+
+					dao.Logger.Infof(
+						"Found payable invoice %s (status: %s) for subscription %s",
+						latestInvoice.ID,
+						latestInvoice.Status,
+						subscription.ID,
+					)
+				} else {
+					// Invoice is not payable (paid, uncollectible, or void)
+					dao.Logger.Infof(
+						"Latest invoice %s has status %s (not payable) for subscription %s",
+						latestInvoice.ID,
+						latestInvoice.Status,
+						subscription.ID,
+					)
+				}
+			}
+			// If there's an error getting the invoice, log it but don't block the response
+			if invoiceErr != nil {
+				dao.Logger.Errorf(
+					"Failed to get latest invoice for subscription %s: %v",
+					subscription.ID,
+					invoiceErr,
+				)
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
