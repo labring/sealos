@@ -6,7 +6,6 @@ import { useEffect, useState, useMemo, useRef } from 'react';
 import bgimage from 'public/images/signin_bg.png';
 import bgimageZh from 'public/images/signin_bg_zh.png';
 import LangSelectSimple from '../LangSelect/simple';
-import InviterPop from './InviterPop';
 import { useTranslation } from 'next-i18next';
 import useSessionStore from '@/stores/session';
 import useSigninPageStore from '@/stores/signinPageStore';
@@ -92,7 +91,6 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
               isOpen={isGitHubReauthPromptOpen}
               onClose={onGitHubReauthPromptClose}
             />
-            {authConfig?.invite?.enabled && <InviterPop />}
             {layoutConfig?.version === 'cn' && <LangSelectSimple />}
           </Flex>
           {children}

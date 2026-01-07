@@ -98,13 +98,6 @@ export default function Account() {
     });
   };
 
-  const openReferralApp = () => {
-    openDesktopApp({
-      appKey: 'system-invite',
-      pathname: '/'
-    });
-  };
-
   const isNarrowScreen =
     useBreakpointValue({
       base: true,
@@ -349,26 +342,6 @@ export default function Account() {
                     </Text>
                   </Flex>
                 </MenuItem>
-
-                {authConfig?.invite.enabled && (
-                  <MenuItem
-                    mt="0px"
-                    py="6px"
-                    px="8px"
-                    borderRadius="8px"
-                    _hover={{ bg: '#F4F4F5' }}
-                    onClick={openReferralApp}
-                  >
-                    <Flex alignItems="center" gap="8px">
-                      <Center w="20px" h="20px">
-                        <Gift size={16} color="#737373" />
-                      </Center>
-                      <Text fontSize="14px" fontWeight="400">
-                        {t('common:referral')}
-                      </Text>
-                    </Flex>
-                  </MenuItem>
-                )}
               </Box>
               <Divider bg={'#E4E4E7'} />
               <Box p={'8px'}>

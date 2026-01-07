@@ -15,7 +15,7 @@ import { SemData } from '@/types/sem';
 import { NSType } from '@/types/team';
 import { AccessTokenPayload } from '@/types/token';
 import { parseOpenappQuery } from '@/utils/format';
-import { sessionConfig, setAdClickData, setInviterId, setUserSemData } from '@/utils/sessionConfig';
+import { sessionConfig, setAdClickData, setUserSemData } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Box, useColorMode, useDisclosure } from '@chakra-ui/react';
@@ -156,10 +156,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         setFirstUse(null);
 
         const { appkey, appQuery, appPath } = parseOpenappQuery((query?.openapp as string) || '');
-        // Invited new user
-        if (query?.uid && typeof query?.uid === 'string') {
-          setInviterId(query.uid);
-        }
 
         // save autolaunch info (for guest and logged in user)
         let workspaceUid: string | undefined;

@@ -4,7 +4,7 @@ import useSessionStore from '@/stores/session';
 import { useSigninFormStore } from '@/stores/signinForm';
 import { ApiResp } from '@/types';
 import { gtmLoginSuccess } from '@/utils/gtm';
-import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { useGuideModalStore } from '@/stores/guideModal';
 import {
   Flex,
@@ -63,7 +63,6 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/phone/verify', {
         id: data.id,
         code: data.code,
-        inviterId: getInviterId(),
         semData: getUserSemData(),
         adClickData: getAdClickData()
       }),

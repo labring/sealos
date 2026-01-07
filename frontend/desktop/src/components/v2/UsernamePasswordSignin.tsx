@@ -22,7 +22,7 @@ import { useMutation } from '@tanstack/react-query';
 
 import { passwordLoginRequest, autoInitRegionToken } from '@/api/auth';
 import useSessionStore from '@/stores/session';
-import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { SemData } from '@/types/sem';
 import { AdClickData } from '@/types/adClick';
 import { getRegionToken } from '@/api/auth';
@@ -63,14 +63,12 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   // Login mutation
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
-      const inviterId = getInviterId();
       const semData: SemData | null = getUserSemData();
       const adClickData: AdClickData | null = getAdClickData();
 
       const result = await passwordLoginRequest({
         user: data.username,
         password: data.password,
-        inviterId,
         semData,
         adClickData
       });
