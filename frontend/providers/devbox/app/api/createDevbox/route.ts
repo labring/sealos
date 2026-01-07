@@ -4,8 +4,13 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
-import { KBDevboxTypeV2 } from '@/types/k8s';
-import { json2DevboxV2, json2Ingress, json2Service } from '@/utils/json2Yaml';
+import {
+  json2Devbox,
+  json2Ingress,
+  json2Service,
+  json2ConfigMap,
+  json2PVC
+} from '@/utils/json2Yaml';
 import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
@@ -73,11 +78,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env;
-    const devbox = json2DevboxV2(devboxForm, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE);
+    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT, NFS_STORAGE_CLASS_NAME } =
+      process.env;
+
+    // Create PVC first (if volumes exist)
+    const pvc = json2PVC(devboxForm, NFS_STORAGE_CLASS_NAME || 'nfs-csi');
+
+    // Create ConfigMap (if configMaps exist)
+    const configMap = json2ConfigMap(devboxForm);
+
+    // Create Devbox, Service, and Ingress
+    const devbox = json2Devbox(devboxForm, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT);
     const service = json2Service(devboxForm);
     const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string);
-    await applyYamlList([devbox, service, ingress], 'create');
+
+    // Apply all YAMLs in order: PVC -> ConfigMap -> Devbox -> Service -> Ingress
+    const yamlList = [pvc, configMap, devbox, service, ingress].filter((yaml) => yaml !== '');
+    await applyYamlList(yamlList, 'create');
 
     // Increment template repository usage count after successful devbox creation
     try {

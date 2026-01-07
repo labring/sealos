@@ -79,8 +79,44 @@ export const RequestSchema = z
       description: 'Network configurations'
     }),
     env: z.array(z.any()).optional().default([]).openapi({
-      description: 'Environment variables'
-    })
+      description: 'Environment variables (advanced, from template config)'
+    }),
+    envs: z
+      .array(
+        z.object({
+          key: z.string(),
+          value: z.string()
+        })
+      )
+      .optional()
+      .default([])
+      .openapi({
+        description: 'Environment variables (simple key-value pairs)'
+      }),
+    configMaps: z
+      .array(
+        z.object({
+          path: z.string(),
+          content: z.string()
+        })
+      )
+      .optional()
+      .default([])
+      .openapi({
+        description: 'ConfigMap configurations'
+      }),
+    volumes: z
+      .array(
+        z.object({
+          path: z.string(),
+          size: z.number()
+        })
+      )
+      .optional()
+      .default([])
+      .openapi({
+        description: 'Volume configurations (NFS PVC)'
+      })
   })
   .transform((data) => {
     return {

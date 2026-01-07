@@ -240,7 +240,9 @@ export enum YamlKindEnum {
   Service = 'Service',
   Ingress = 'Ingress',
   Issuer = 'Issuer',
-  Certificate = 'Certificate'
+  Certificate = 'Certificate',
+  ConfigMap = 'ConfigMap',
+  PersistentVolumeClaim = 'PersistentVolumeClaim'
 }
 
 export enum PodStatusEnum {

@@ -30,6 +30,7 @@ export interface Env {
   enableWebideFeature: string;
   cpuSlideMarkList: string;
   memorySlideMarkList: string;
+  nfsStorageClassName: string;
 }
 
 export interface RuntimeTypeMap {
