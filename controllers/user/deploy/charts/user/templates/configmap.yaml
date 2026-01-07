@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "user.fullname" . }}
+  labels:
+    {{- include "user.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    global:
+      cloudAPIServerDomain: {{ .Values.cloudAPIServerDomain }}
+      cloudAPIServerPort: {{ .Values.cloudAPIServerPort | quote }}

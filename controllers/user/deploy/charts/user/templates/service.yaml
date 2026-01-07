@@ -1,0 +1,32 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-controller-manager-metrics-service
+  labels:
+    control-plane: controller-manager
+    {{- include "user.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: https
+      port: {{ .Values.service.metrics.port }}
+      protocol: TCP
+      targetPort: https
+  selector:
+    control-plane: controller-manager
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-webhook-service
+  labels:
+    control-plane: controller-manager
+    {{- include "user.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.service.webhook.port }}
+      protocol: TCP
+      targetPort: 9443
+  selector:
+    control-plane: controller-manager
