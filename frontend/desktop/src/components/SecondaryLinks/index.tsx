@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { getAmount } from '@/api/auth';
 import Decimal from 'decimal.js';
 import { CurrencySymbol } from '@sealos/ui';
