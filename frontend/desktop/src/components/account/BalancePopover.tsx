@@ -11,7 +11,7 @@ import {
 } from '@chakra-ui/react';
 import useSessionStore from '@/stores/session';
 import { useSubscriptionStore } from '@/stores/subscription';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 import { Button, cn, Separator } from '@sealos/shadcn-ui';
 import { WorkspaceSubscription } from '@/types/plan';
@@ -65,7 +65,7 @@ export function BalancePopover({
 
   const { subscriptionInfo, fetchSubscriptionInfo } = useSubscriptionStore();
 
-  useMemo(() => {
+  useEffect(() => {
     if (workspace) {
       fetchSubscriptionInfo(workspace);
     }

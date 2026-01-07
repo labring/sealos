@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { getAmount } from '@/api/auth';
 import Decimal from 'decimal.js';
 import { CurrencySymbol } from '@sealos/ui';
@@ -92,7 +92,7 @@ export default function SecondaryLinks() {
 
   const { subscriptionInfo, fetchSubscriptionInfo } = useSubscriptionStore();
 
-  useMemo(() => {
+  useEffect(() => {
     if (workspace) {
       fetchSubscriptionInfo(workspace);
     }
