@@ -20,7 +20,7 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import JsYaml from 'js-yaml';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -36,6 +36,7 @@ export default function Header({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const { appendResource } = useResourceStore();
+  const queryClient = useQueryClient();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isOpenDelModal,
@@ -44,6 +45,7 @@ export default function Header({ instanceName }: { instanceName: string }) {
   } = useDisclosure();
   const [displayName, setDisplayName] = useState('');
   const yamlCR = useRef<TemplateInstanceType>();
+  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
   const { setAppType } = useSearchStore();
   const { session } = useSessionStore();
   const { detailCompleted } = useGuideStore();
@@ -60,6 +62,25 @@ export default function Header({ instanceName }: { instanceName: string }) {
       enabled: !!instanceName
     }
   );
+
+  const handleRefresh = () => {
+    if (refreshTimerRef.current) return;
+
+    queryClient.invalidateQueries(['getInstanceByName', instanceName]);
+    queryClient.invalidateQueries(['getAppLaunchpadByName', instanceName]);
+    queryClient.invalidateQueries(['getDBListByName', instanceName]);
+    queryClient.invalidateQueries(['getObjectStorageByName', instanceName]);
+    queryClient.invalidateQueries(['getCronListByName', instanceName]);
+    queryClient.invalidateQueries(['listOtherByName', instanceName]);
+    toast({
+      status: 'success',
+      title: t('Refresh successful')
+    });
+
+    refreshTimerRef.current = setTimeout(() => {
+      refreshTimerRef.current = null;
+    }, 2000);
+  };
 
   const handleDisplayName = async () => {
     try {
@@ -158,21 +179,40 @@ export default function Header({ instanceName }: { instanceName: string }) {
         </Text>
       </Box>
 
-      <Button
-        variant={'outline'}
-        ml="auto"
-        w="140px"
-        h="40px"
-        cursor={'pointer'}
-        onClick={onOpenDelModal}
-        leftIcon={
-          <Icon width="16px" height="17px" viewBox="0 0 16 17" fill="currentcolor">
-            <path d="M4.66667 14.5C4.30001 14.5 3.98601 14.3693 3.72467 14.108C3.46334 13.8467 3.33289 13.5329 3.33334 13.1667V4.5H2.66667V3.16667H6.00001V2.5H10V3.16667H13.3333V4.5H12.6667V13.1667C12.6667 13.5333 12.536 13.8473 12.2747 14.1087C12.0133 14.37 11.6996 14.5004 11.3333 14.5H4.66667ZM11.3333 4.5H4.66667V13.1667H11.3333V4.5ZM6.00001 11.8333H7.33334V5.83333H6.00001V11.8333ZM8.66667 11.8333H10V5.83333H8.66667V11.8333Z" />
+      <Flex ml="auto" gap="12px">
+        <Button
+          variant={'outline'}
+          width={'40px'}
+          height={'40px'}
+          cursor={'pointer'}
+          onClick={handleRefresh}
+        >
+          <Icon width="20px" height="20px" viewBox="0 0 20 20" fill="currentcolor">
+            <path
+              d="M15.1667 10C15.1667 12.7614 12.9281 15 10.1667 15C7.40526 15 5.16667 12.7614 5.16667 10C5.16667 7.23858 7.40526 5 10.1667 5C11.2855 5 12.3146 5.38729 13.125 6.04167M13.125 6.04167V3.33333M13.125 6.04167H10.4167"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
           </Icon>
-        }
-      >
-        {t('Unload')}
-      </Button>
+        </Button>
+        <Button
+          variant={'outline'}
+          w="140px"
+          h="40px"
+          cursor={'pointer'}
+          onClick={onOpenDelModal}
+          leftIcon={
+            <Icon width="16px" height="17px" viewBox="0 0 16 17" fill="currentcolor">
+              <path d="M4.66667 14.5C4.30001 14.5 3.98601 14.3693 3.72467 14.108C3.46334 13.8467 3.33289 13.5329 3.33334 13.1667V4.5H2.66667V3.16667H6.00001V2.5H10V3.16667H13.3333V4.5H12.6667V13.1667C12.6667 13.5333 12.536 13.8473 12.2747 14.1087C12.0133 14.37 11.6996 14.5004 11.3333 14.5H4.66667ZM11.3333 4.5H4.66667V13.1667H11.3333V4.5ZM6.00001 11.8333H7.33334V5.83333H6.00001V11.8333ZM8.66667 11.8333H10V5.83333H8.66667V11.8333Z" />
+            </Icon>
+          }
+        >
+          {t('Unload')}
+        </Button>
+      </Flex>
 
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
