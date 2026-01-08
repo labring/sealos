@@ -121,7 +121,7 @@ func GeneratePodLabels(devbox *devboxv1alpha2.Devbox) map[string]string {
 	return labels
 }
 
-func GeneratePodAnnotations(devbox *devboxv1alpha2.Devbox) map[string]string {
+func GeneratePodAnnotations(devbox *devboxv1alpha2.Devbox, enableBlockIOResource bool) map[string]string {
 	annotations := make(map[string]string)
 	if devbox.Spec.Config.Annotations != nil {
 		for k, v := range devbox.Spec.Config.Annotations {
@@ -129,8 +129,10 @@ func GeneratePodAnnotations(devbox *devboxv1alpha2.Devbox) map[string]string {
 		}
 	}
 	annotations[devboxv1alpha2.AnnotationStorageLimit] = devbox.Spec.StorageLimit
-	// Currently we use hardcoded value for BlockIOResources annotation
-	annotations[devboxv1alpha2.AnnotationBlockIOResources] = "Devbox"
+	// If BlockIOClass is enabled, add the annotation for BlockIOResources, currently we use hardcoded value for BlockIOResources annotation, in the future we can consider to make it configurable by users
+	if enableBlockIOResource {
+		annotations[devboxv1alpha2.AnnotationBlockIOResources] = "Devbox"
+	}
 	return annotations
 }
 
