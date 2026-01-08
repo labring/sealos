@@ -496,10 +496,8 @@ data:
     # leaderElectionReleaseOnCancel: true
   config.yaml: |
     global:
-      cloudDomain: {{ .cloudDomain }}
-    kube:
-      apiServerHost: {{ .cloudDomain }}
-      apiServerPort: "{{ .apiServerPort }}"
+      cloudAPIServerDomain: {{ .cloudDomain }}
+      cloudAPIServerPort: "{{ .apiServerPort }}"
 
 kind: ConfigMap
 metadata:
