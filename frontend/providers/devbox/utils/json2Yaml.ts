@@ -154,7 +154,7 @@ export const json2DevboxV2 = (
 
           data.configMaps.forEach((cm) => {
             const shortId = cm.id || nanoid();
-            const volumeName = `cm-${shortId}`;
+            const volumeName = `${data.name}-volume-cm-${shortId}`;
             const configMapName = `${data.name}-cm-${shortId}`;
 
             draft.volumes!.push({
@@ -182,7 +182,7 @@ export const json2DevboxV2 = (
 
           data.volumes.forEach((vol) => {
             const shortId = vol.id || nanoid();
-            const volumeName = `pvc-${shortId}`;
+            const volumeName = `${data.name}-volume-pvc-${shortId}`;
             const pvcName = `${data.name}-pvc-${shortId}`;
 
             draft.volumes!.push({
