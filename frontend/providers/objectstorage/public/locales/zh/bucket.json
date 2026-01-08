@@ -14,6 +14,5 @@
   "initializing": "正在初始化中",
   "reset_user_sk_title": "确认重置 Secret Key",
   "bucketCreateFailed": "存储桶创建失败",
-  "bucketNameInvalid": "存储桶名称包含无效字符。名称仅允许包含小写字母、数字、连字符 (-) 和点 (.)，且不能以 (-) (.) 开头或结尾。",
-  "bucketNameDotWarning": "注意：包含点 (.) 的名称通常仅用于绑定自定义域名的静态网站。如果您仅用于普通文件存储，请使用连字符 (-) 代替，否则可能导致默认 HTTPS 访问出现证书错误。"
+  "bucketNameInvalid": "存储桶名称包含无效字符。名称仅允许包含小写字母、数字和连字符 (-)，且不能以连字符 (-) 开头或结尾。"
 }
