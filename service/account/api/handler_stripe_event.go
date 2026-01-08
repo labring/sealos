@@ -354,7 +354,8 @@ func handleSubscriptionUpdate(
 		return err
 	}
 	sub.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).UTC()
-	sub.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC()
+	// Add 1 hour to account for invoice confirmation processing time
+	sub.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC().Add(1 * time.Hour)
 	sub.ExpireAt = stripe.Time(sub.CurrentPeriodEndAt)
 
 	if err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
@@ -513,7 +514,8 @@ func handleSubscriptionCreateOrRenew(
 				return nil
 			}
 			ws.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).UTC()
-			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC()
+			// Add 1 hour to account for invoice confirmation processing time
+			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC().Add(1 * time.Hour)
 			ws.ExpireAt = stripe.Time(ws.CurrentPeriodEndAt)
 		}
 
@@ -760,4 +762,57 @@ func sendNotification(
 		logrus.Errorf("unsupported subscription operator: %s", operator)
 		return nil
 	}
+}
+
+// handleWorkspaceSubscriptionInvoiceCreated handles invoice.created events
+// For subscription renewals (subscription_cycle), it auto-confirms and attempts payment
+// This avoids payment delays by immediately finalizing the draft invoice and charging the customer
+// Other cases (subscription_create, subscription_update) do not need special handling
+//
+// Workflow:
+// 1. invoice.created event received (billing_reason=subscription_cycle)
+// 2. Auto-confirm invoice: draft -> open
+// 3. Auto-attempt payment: open -> paid (success) or open -> payment_failed (failure)
+// 4. If payment succeeds: invoice.paid webhook processes the payment
+// 5. If payment fails: invoice.payment_failed webhook handles the failure
+func handleWorkspaceSubscriptionInvoiceCreated(event *stripe.Event) error {
+	// 1. parse event data
+	sessionData, err := services.StripeServiceInstance.ParseWebhookEventData(event)
+	if err != nil {
+		return fmt.Errorf("failed to parse webhook data: %w", err)
+	}
+
+	invoice, ok := sessionData.(*stripe.Invoice)
+	if !ok {
+		return errors.New("invalid session data type, expected invoice")
+	}
+
+	// 2. check if this is a subscription renewal invoice
+	if invoice.BillingReason != "subscription_cycle" {
+		// Only auto-confirm subscription renewal invoices
+		// subscription_create and subscription_update are handled in their own flows
+		logrus.Infof("Skipping invoice.created for billing reason: %s", invoice.BillingReason)
+		return nil
+	}
+
+	// 3. check if invoice is already confirmed/paid
+	if invoice.Status == "paid" || invoice.Status == "void" || invoice.Status == "uncollectible" {
+		logrus.Infof("Invoice %s already processed (status: %s), skipping", invoice.ID, invoice.Status)
+		return nil
+	}
+
+	// 4. check if invoice has auto_advance enabled (should be confirmed automatically)
+	if invoice.AutoAdvance != true {
+		logrus.Infof("Invoice %s does not have auto_advance enabled, skipping", invoice.ID)
+		return nil
+	}
+
+	// 5. confirm invoice and attempt payment (draft -> open -> paid/payment_failed)
+	logrus.Infof("Auto-confirming and paying renewal invoice: %s", invoice.ID)
+	if err := services.StripeServiceInstance.ConfirmInvoice(invoice.ID); err != nil {
+		return fmt.Errorf("failed to auto-confirm invoice %s: %w", invoice.ID, err)
+	}
+
+	logrus.Infof("Successfully processed renewal invoice: %s", invoice.ID)
+	return nil
 }

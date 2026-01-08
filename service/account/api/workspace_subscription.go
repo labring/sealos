@@ -2276,6 +2276,9 @@ func processWorkspaceSubscriptionWebhookEvent(event *stripe.Event) error {
 		return handleWorkspaceSubscriptionSessionExpired(event)
 	case "setup_intent.succeeded":
 		return handleSetupIntentSucceeded(event)
+	case "invoice.created":
+		// Auto-confirm subscription renewal invoices to avoid payment delays
+		return handleWorkspaceSubscriptionInvoiceCreated(event)
 	default:
 		logrus.Infof("Unhandled workspace subscription webhook event type: %s", event.Type)
 		return nil
@@ -2580,12 +2583,11 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 		if ns.Status.Phase == corev1.NamespaceTerminating {
 			return nil
 		}
-
+		original := ns.DeepCopy()
 		// Update the annotation
 		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.NormalDebtNamespaceAnnoStatus
 		ns.Annotations[DebtNamespaceAnnoStatusKey] = ResumeDebtNamespaceAnnoStatus
 		ns.Annotations[NetworkStatusAnnoKey] = ResumeDebtNamespaceAnnoStatus
-		original := ns.DeepCopy()
 		if err := dao.K8sManager.GetClient().Patch(ctx, ns, client.MergeFrom(original)); err != nil {
 			return fmt.Errorf("patch namespace annotation failed: %w", err)
 		}
