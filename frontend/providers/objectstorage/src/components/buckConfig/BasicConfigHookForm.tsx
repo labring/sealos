@@ -103,6 +103,7 @@ const BasicConfigHookForm = () => {
           ></MySelect>
         </Flex>
         <FormHelperText
+          ml={'130px'}
           w="auto"
           display={'inline-flex'}
           py="6px"
