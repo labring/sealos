@@ -34,10 +34,9 @@ import {
 } from 'react';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import styles from './index.module.css';
-import { ArrowRight, Volume2 } from 'lucide-react';
 import { useGuideModalStore } from '@/stores/guideModal';
+import { GlobalAnnouncement } from './GlobalAnnouncement';
 import { currentDriver, destroyDriver } from '../account/driver';
-import { track } from '@sealos/gtm';
 import { throttle } from 'lodash';
 
 const AppItem = ({
@@ -521,8 +520,6 @@ export default function Apps() {
   const [draggedFromFolder, setDraggedFromFolder] = useState(false);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
   const { isGuest, openGuestLoginModal } = useSessionStore();
-
-  const { openGuideModal } = useGuideModalStore();
   const desktopRef = useRef<HTMLDivElement>(null);
   const folderRef = useRef<HTMLDivElement>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
@@ -833,47 +830,7 @@ export default function Apps() {
       </svg>
 
       <Flex width={'full'} height={'full'} overflow={'hidden'} flexDirection={'column'}>
-        {!isGuest() && layoutConfig?.common.announcementEnabled && (
-          <Center mx={'12px'}>
-            <Center
-              width={'fit-content'}
-              borderRadius={'54px'}
-              border={'1px solid rgba(228, 228, 231, 0.50)'}
-              bg={
-                'linear-gradient(90deg, rgba(245, 245, 245, 0.20) 0%, rgba(212, 212, 212, 0.20) 100%)'
-              }
-              gap={'8px'}
-              p={'8px 12px'}
-              cursor={'pointer'}
-              onClick={() => {
-                track('announcement_click', {
-                  module: 'dashboard',
-                  announcement_id: 'onboarding_guide_prompt'
-                });
-                openGuideModal();
-              }}
-            >
-              <Box position="relative" className="gradient-icon">
-                <Volume2 width={16} height={16} />
-              </Box>
-              <Text
-                fontSize={'14px'}
-                fontWeight={'500'}
-                background={'linear-gradient(120deg, #636363 0%, #000 100%)'}
-                backgroundClip={'text'}
-                sx={{
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}
-              >
-                {t('v2:onboard_guide')}
-              </Text>
-              <Box position="relative" className="gradient-icon">
-                <ArrowRight width={16} height={16} />
-              </Box>
-            </Center>
-          </Center>
-        )}
+        {layoutConfig?.common.announcementEnabled && <GlobalAnnouncement />}
 
         <Box p={'12px'} pt={{ base: '56px', sm: '48px' }} w={'full'} h={'full'}>
           <AppGridPagingContainer

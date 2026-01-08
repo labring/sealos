@@ -40,10 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (listData.length > 0) {
       listData.sort(compareByTimestamp);
-      return jsonRes(res, { data: listData[0] });
+      return jsonRes(res, { data: listData });
     }
 
-    jsonRes(res, { data: null });
+    jsonRes(res, { data: [] });
   } catch (err: any) {
     jsonRes(res, { code: 500, data: err?.body });
   }

@@ -19,6 +19,7 @@ export const adaptNotification = (item: NotificationCR): TNotification => {
     desktopPopup: item.spec.desktopPopup || false,
     startTime: item.spec.startTime,
     endTime: item.spec.endTime,
+    from: item.spec.from,
     i18n: {
       en: defaultLanguage,
       zh: item.spec.i18ns?.zh || defaultLanguage
