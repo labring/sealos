@@ -68,6 +68,7 @@ type Config struct {
 	Auth            string          `json:"auth"`
 	Cache           CacheConfig     `json:"cache" yaml:"cache"`
 	Registries      []Registry      `json:"registries" yaml:"registries,omitempty"`
+	OfflinePriority int             `json:"offlinePriority,omitempty" yaml:"offlinePriority,omitempty"` // Custom priority for sealos.hub (default: 1000)
 }
 
 type CacheConfig struct {
@@ -177,7 +178,20 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 			Password:      offlinePasswd,
 			ServerAddress: c.Address,
 		}}
-		shimAuth.OfflinePriority = SealosHubDefaultPriority
+
+		// Handle offline priority: use configured value or default
+		offlinePriority := c.OfflinePriority
+		if offlinePriority == 0 {
+			offlinePriority = SealosHubDefaultPriority
+		} else if offlinePriority < MinPriority {
+			logger.Warn("offline registry priority %d is below minimum, using %d", offlinePriority, MinPriority)
+			offlinePriority = MinPriority
+		} else if offlinePriority > MaxPriority {
+			logger.Warn("offline registry priority %d exceeds maximum, using %d", offlinePriority, MaxPriority)
+			offlinePriority = MaxPriority
+		}
+
+		shimAuth.OfflinePriority = offlinePriority
 		logger.Debug("criOfflineAuth: %+v, priority: %d", shimAuth.OfflineCRIConfigs, shimAuth.OfflinePriority)
 	}
 

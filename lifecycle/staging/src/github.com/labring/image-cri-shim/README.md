@@ -47,7 +47,10 @@ timeout: 15m
 image-cri-shim supports configuring priorities for multiple registries to control the order in which they are tried when pulling images.
 
 **Priority Rules:**
-- **sealos.hub** (offline registry): Default priority = 1000 (highest)
+- **sealos.hub** (offline registry):
+  - Default priority = 1000 (highest)
+  - Can be customized via `offlinePriority` field (optional)
+  - If not specified or set to 0: uses default 1000
 - **User-configured registries**:
   - If `priority` is not specified: Default priority = 500
   - If `priority` is specified: Use the configured value (range: 0-10000)
@@ -66,6 +69,10 @@ auth: admin:passw0rd
 version: v1
 timeout: 15m
 
+# Optional: Customize sealos.hub priority (default: 1000)
+# Set to 0 or omit to use default value
+offlinePriority: 1000
+
 # Registry priority configuration (optional)
 registries:
   # This registry will use default priority (500)
@@ -77,31 +84,65 @@ registries:
     auth: user2:pass2
     priority: 800
 
+  # This registry has higher priority (1200) than sealos.hub (1000)
+  - address: fast-registry.company.com
+    auth: user4:pass4
+    priority: 1200
+
   # This registry has lower priority (100)
   - address: slow-registry.company.com
     auth: user3:pass3
     priority: 100
 ```
 
+**Customizing sealos.hub Priority:**
+
+If you want other registries to be tried before sealos.hub, you can lower sealos.hub's priority:
+
+```yaml
+address: http://sealos.hub:5000
+auth: admin:passw0rd
+
+# Lower sealos.hub priority to try other registries first
+offlinePriority: 700
+
+registries:
+  - address: fast-registry.company.com
+    auth: user:pass
+    priority: 900  # Will be tried before sealos.hub
+
+  - address: docker.io
+    auth: user:pass
+    priority: 500
+```
+
 **Behavior:**
 1. When pulling `nginx:latest`, image-cri-shim will:
-   - First check sealos.hub (priority 1000)
-   - If not found, check registry.example.com (priority 800)
-   - If not found, check docker.io (priority 500)
-   - If not found, check slow-registry.company.com (priority 100)
+   - First check fast-registry.company.com (priority 1200) - **highest**
+   - Then check sealos.hub (priority 1000) - **second**
+   - Then check registry.example.com (priority 800)
+   - Then check docker.io (priority 500)
+   - Finally check slow-registry.company.com (priority 100)
    - If none have the image, use the original image name
 
 2. The matching result is cached, so subsequent pulls of the same image will use the cached registry (within TTL)
 
-3. This ensures sealos.hub (which is typically faster in Sealos clusters) is always tried first, while still allowing users to configure custom priorities for other registries
+3. This provides flexible control over registry selection order while maintaining sensible defaults
+
+**Backward Compatibility:**
+- Existing configurations without `offlinePriority` work unchanged (sealos.hub uses default 1000)
+- The `offlinePriority` field is completely optional
+- Setting `offlinePriority: 0` explicitly uses the default value
 
 
 ## Changelog
 - **Add registry priority support**: Configure custom priorities for registries to control image pull order
   - sealos.hub has highest priority (1000) by default
+  - sealos.hub priority can be customized via optional `offlinePriority` field
   - User-configured registries default to priority 500
   - Priority range: 0-10000, values are clamped if out of range
   - Supports optional `priority` field in registry configuration
+  - Fully backward compatible with existing configurations
 - add grpc timeout in config json ,default `15m`
 - add cri version in config json , default `v1alpha2` suuport value `v1` and `v1alpha2`
 - add grpc default message size is 16MB

@@ -237,11 +237,11 @@ auth: admin:passw0rd
 registries:
   - address: docker.io
     auth: user1:pass1
-    priority: 2000
+    priority: 15000
 `,
 			expectedPriorities: map[string]int{
 				"sealos.hub":      1000,
-				"index.docker.io": 1000, // clamped to MaxPriority
+				"index.docker.io": 10000, // clamped to MaxPriority
 			},
 			expectError: false,
 		},
@@ -298,3 +298,153 @@ func TestRegistryWithPriority(t *testing.T) {
 		Priority: 500,
 	}
 }
+
+func TestOfflinePriorityConfig(t *testing.T) {
+	tests := []struct {
+		name               string
+		configYAML         string
+		expectedPriority   int
+		expectWarn         bool
+	}{
+		{
+			name: "default offline priority when not specified",
+			configYAML: `
+address: https://sealos.hub
+auth: admin:passw0rd
+`,
+			expectedPriority: types.SealosHubDefaultPriority, // 1000
+			expectWarn: false,
+		},
+		{
+			name: "custom offline priority",
+			configYAML: `
+address: https://sealos.hub
+auth: admin:passw0rd
+offlinePriority: 800
+`,
+			expectedPriority: 800,
+			expectWarn: false,
+		},
+		{
+			name: "offline priority below minimum",
+			configYAML: `
+address: https://sealos.hub
+auth: admin:passw0rd
+offlinePriority: -100
+`,
+			expectedPriority: 0, // clamped to MinPriority
+			expectWarn: true,
+		},
+		{
+			name: "offline priority above maximum",
+			configYAML: `
+address: https://sealos.hub
+auth: admin:passw0rd
+offlinePriority: 15000
+`,
+			expectedPriority: 10000, // clamped to MaxPriority
+			expectWarn: true,
+		},
+		{
+			name: "offline priority zero uses default",
+			configYAML: `
+address: https://sealos.hub
+auth: admin:passw0rd
+offlinePriority: 0
+`,
+			expectedPriority: types.SealosHubDefaultPriority, // 0 means use default
+			expectWarn: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := types.UnmarshalData([]byte(tt.configYAML))
+			if err != nil {
+				t.Fatalf("failed to unmarshal config: %v", err)
+			}
+
+			cfg.RuntimeSocket = "/tmp/fake-cri.sock"
+			cfg.Force = true
+
+			authConfig, err := cfg.PreProcess()
+			if err != nil {
+				t.Fatalf("PreProcess failed: %v", err)
+			}
+
+			if authConfig.OfflinePriority != tt.expectedPriority {
+				t.Errorf("expected offline priority %d, got %d", tt.expectedPriority, authConfig.OfflinePriority)
+			}
+		})
+	}
+}
+
+func TestOfflinePriorityWithRegistries(t *testing.T) {
+	configYAML := `
+address: https://sealos.hub
+auth: admin:passw0rd
+offlinePriority: 900  # Lower than default 1000
+registries:
+  - address: docker.io
+    auth: user1:pass1
+    priority: 600
+  - address: registry.example.com
+    auth: user2:pass2
+    priority: 950  # Higher than offlinePriority
+`
+
+	cfg, err := types.UnmarshalData([]byte(configYAML))
+	if err != nil {
+		t.Fatalf("failed to unmarshal config: %v", err)
+	}
+
+	cfg.RuntimeSocket = "/tmp/fake-cri.sock"
+	cfg.Force = true
+
+	authConfig, err := cfg.PreProcess()
+	if err != nil {
+		t.Fatalf("PreProcess failed: %v", err)
+	}
+
+	// Verify offline priority is customized
+	if authConfig.OfflinePriority != 900 {
+		t.Errorf("expected offline priority 900, got %d", authConfig.OfflinePriority)
+	}
+
+	// Create auth store and verify sorting
+	store := NewAuthStore(authConfig)
+	entries := store.GetSortedRegistries()
+
+	// Verify priority order: registry.example.com (950) > sealos.hub (900) > docker.io (600)
+	if len(entries) != 3 {
+		t.Fatalf("expected 3 registries, got %d", len(entries))
+	}
+
+	// First should be registry.example.com (priority 950)
+	if entries[0].Domain != "registry.example.com" {
+		t.Errorf("expected first registry to be registry.example.com (priority 950), got %s (priority %d)",
+			entries[0].Domain, entries[0].Priority)
+	}
+	if entries[0].Priority != 950 {
+		t.Errorf("expected registry.example.com priority 950, got %d", entries[0].Priority)
+	}
+
+	// Second should be sealos.hub (priority 900)
+	if entries[1].Domain != "sealos.hub" {
+		t.Errorf("expected second registry to be sealos.hub (priority 900), got %s (priority %d)",
+			entries[1].Domain, entries[1].Priority)
+	}
+	if entries[1].Priority != 900 {
+		t.Errorf("expected sealos.hub priority 900, got %d", entries[1].Priority)
+	}
+
+	// Third should be docker.io (priority 600)
+	if entries[2].Domain != "index.docker.io" {
+		t.Errorf("expected third registry to be docker.io (priority 600), got %s (priority %d)",
+			entries[2].Domain, entries[2].Priority)
+	}
+	if entries[2].Priority != 600 {
+		t.Errorf("expected docker.io priority 600, got %d", entries[2].Priority)
+	}
+}
+

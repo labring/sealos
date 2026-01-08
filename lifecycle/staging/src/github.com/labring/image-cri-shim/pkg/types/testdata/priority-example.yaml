@@ -11,6 +11,12 @@ version: v1
 timeout: 15m
 debug: false
 
+# Optional: Customize sealos.hub priority
+# Default: 1000 (highest)
+# Set to 0 or omit this field to use default
+# Lower this value if you want other registries to be tried first
+offlinePriority: 1000
+
 # Cache configuration
 cache:
   imageCacheSize: 1024
@@ -56,7 +62,7 @@ registries:
     priority: -50  # Will be clamped to 0
 
 # Priority Order (highest to lowest):
-# 1. sealos.hub (priority 1000, implicit)
+# 1. sealos.hub (priority 1000, set via offlinePriority)
 # 2. another-registry.io (priority 1000, clamped from 2000)
 # 3. registry.example.com (priority 800)
 # 4. gcr.io (priority 600)
@@ -67,8 +73,31 @@ registries:
 # When pulling an image, image-cri-shim will:
 # - First check sealos.hub for the image
 # - If not found, check another-registry.io
-# - If not found, check registry.example.com
 # - Continue down the list until a registry has the image
 # - Use the original image name if no registry has it
 #
 # The result is cached, so subsequent pulls use the cached registry (within TTL)
+
+# ----------------------------------------------------------------------
+# Example: Lowering sealos.hub priority
+# ----------------------------------------------------------------------
+# If you have a faster registry and want it to be tried before sealos.hub:
+#
+# address: http://sealos.hub:5000
+# auth: admin:passw0rd
+# offlinePriority: 700  # Lower than default (1000)
+#
+# registries:
+#   - address: fast-registry.io
+#     auth: fastuser:fastpass
+#     priority: 900  # Higher than sealos.hub, will be tried first
+#
+#   - address: docker.io
+#     auth: dockeruser:dockerpass
+#     # priority: 500 (default)
+#
+# Priority Order in this case:
+# 1. fast-registry.io (priority 900)
+# 2. sealos.hub (priority 700)
+# 3. docker.io (priority 500)
+# ----------------------------------------------------------------------
