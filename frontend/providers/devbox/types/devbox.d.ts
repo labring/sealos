@@ -53,11 +53,13 @@ export interface DevboxEditType {
 }
 
 export interface DevboxConfigMapType {
+  id?: string;
   path: string;
   content: string;
 }
 
 export interface DevboxVolumeType {
+  id?: string;
   path: string;
   size: number;
 }

@@ -96,6 +96,7 @@ export const RequestSchema = z
     configMaps: z
       .array(
         z.object({
+          id: z.string().optional(),
           path: z.string(),
           content: z.string()
         })
@@ -108,6 +109,7 @@ export const RequestSchema = z
     volumes: z
       .array(
         z.object({
+          id: z.string().optional(),
           path: z.string(),
           size: z.number()
         })

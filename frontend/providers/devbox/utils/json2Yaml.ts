@@ -152,9 +152,10 @@ export const json2DevboxV2 = (
             draft.volumeMounts = [];
           }
 
-          data.configMaps.forEach((cm, index) => {
-            const volumeName = `configmap-${index}`;
-            const configMapName = `${data.name}-configmap-${index}`;
+          data.configMaps.forEach((cm) => {
+            const shortId = cm.id || nanoid();
+            const volumeName = `cm-${shortId}`;
+            const configMapName = `${data.name}-cm-${shortId}`;
 
             draft.volumes!.push({
               name: volumeName,
@@ -179,9 +180,10 @@ export const json2DevboxV2 = (
             draft.volumeMounts = [];
           }
 
-          data.volumes.forEach((vol, index) => {
-            const volumeName = `pvc-${index}`;
-            const pvcName = `${data.name}-pvc-${index}`;
+          data.volumes.forEach((vol) => {
+            const shortId = vol.id || nanoid();
+            const volumeName = `pvc-${shortId}`;
+            const pvcName = `${data.name}-pvc-${shortId}`;
 
             draft.volumes!.push({
               name: volumeName,
@@ -451,9 +453,10 @@ export const json2ConfigMap = (data: Pick<DevboxEditTypeV2, 'name' | 'configMaps
   }
 
   return data.configMaps
-    .map((cm, index) => {
-      const configMapName = `${data.name}-configmap-${index}`;
-      const filename = cm.path.split('/').pop() || `config-${index}`;
+    .map((cm) => {
+      const shortId = cm.id || nanoid();
+      const configMapName = `${data.name}-cm-${shortId}`;
+      const filename = cm.path.split('/').pop() || `config-${shortId}`;
 
       const configMap = {
         apiVersion: 'v1',
@@ -483,8 +486,9 @@ export const json2PVC = (
   }
 
   return data.volumes
-    .map((vol, index) => {
-      const pvcName = `${data.name}-pvc-${index}`;
+    .map((vol) => {
+      const shortId = vol.id || nanoid();
+      const pvcName = `${data.name}-pvc-${shortId}`;
 
       const pvc = {
         apiVersion: 'v1',

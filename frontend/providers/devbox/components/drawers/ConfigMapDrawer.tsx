@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { customAlphabet } from 'nanoid';
 
 import {
   Drawer,
@@ -13,10 +14,12 @@ import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Label } from '@sealos/shadcn-ui/label';
 
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
+
 interface ConfigMapDrawerProps {
   onClose: () => void;
-  onSuccess: (configMap: { path: string; content: string }) => void;
-  initialValue?: { path: string; content: string };
+  onSuccess: (configMap: { id?: string; path: string; content: string }) => void;
+  initialValue?: { id?: string; path: string; content: string };
 }
 
 const ConfigMapDrawer = ({ onClose, onSuccess, initialValue }: ConfigMapDrawerProps) => {
@@ -35,7 +38,11 @@ const ConfigMapDrawer = ({ onClose, onSuccess, initialValue }: ConfigMapDrawerPr
       return;
     }
 
-    onSuccess({ path, content });
+    onSuccess({
+      id: initialValue?.id || nanoid(),
+      path,
+      content
+    });
     onClose();
   };
 

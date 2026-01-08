@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Minus, Plus } from 'lucide-react';
+import { customAlphabet } from 'nanoid';
 
 import {
   Drawer,
@@ -13,10 +14,12 @@ import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Label } from '@sealos/shadcn-ui/label';
 
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
+
 interface NetworkStorageDrawerProps {
   onClose: () => void;
-  onSuccess: (storage: { path: string; size: number }) => void;
-  initialValue?: { path: string; size: number };
+  onSuccess: (storage: { id?: string; path: string; size: number }) => void;
+  initialValue?: { id?: string; path: string; size: number };
 }
 
 const NetworkStorageDrawer = ({ onClose, onSuccess, initialValue }: NetworkStorageDrawerProps) => {
@@ -35,7 +38,11 @@ const NetworkStorageDrawer = ({ onClose, onSuccess, initialValue }: NetworkStora
       return;
     }
 
-    onSuccess({ path, size: capacity });
+    onSuccess({
+      id: initialValue?.id || nanoid(),
+      path,
+      size: capacity
+    });
     onClose();
   };
 
