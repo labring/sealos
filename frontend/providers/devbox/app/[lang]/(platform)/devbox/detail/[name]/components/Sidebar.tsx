@@ -1,9 +1,9 @@
 import { useTranslations } from 'next-intl';
-import { FileClock, LayoutDashboard, LineChart } from 'lucide-react';
+import { LayoutDashboard, LineChart, Settings } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
 
-export type TabValue = 'overview' | 'monitor' | 'logs';
+export type TabValue = 'overview' | 'monitor' | 'logs' | 'advancedConfig';
 
 interface SidebarProps {
   currentTab: TabValue;
@@ -23,6 +23,11 @@ const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
       label: t('monitor_tab'),
       value: 'monitor' as TabValue,
       icon: <LineChart className="h-6 w-6" strokeWidth={1.33} />
+    },
+    {
+      label: t('advanced_config_tab'),
+      value: 'advancedConfig' as TabValue,
+      icon: <Settings className="h-6 w-6" strokeWidth={1.33} />
     }
     // {
     //   label: t('logs_tab'),
@@ -44,7 +49,7 @@ const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
             onClick={() => onTabChange(tab.value)}
           >
             <span>{tab.icon}</span>
-            <span className="text-xs font-medium">{tab.label}</span>
+            <span className="text-center text-xs font-medium">{tab.label}</span>
           </div>
         ))}
       </div>

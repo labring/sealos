@@ -36,11 +36,14 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const formValues = watch();
 
   useEffect(() => {
-    if (searchParams.get('scrollTo') === 'network') {
-      const el = document.getElementById('network');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    const scrollTo = searchParams.get('scrollTo');
+    if (scrollTo) {
+      setTimeout(() => {
+        const el = document.getElementById(scrollTo);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
     }
   }, [searchParams]);
 

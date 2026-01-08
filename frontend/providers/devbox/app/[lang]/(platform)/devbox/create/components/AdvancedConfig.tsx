@@ -37,7 +37,7 @@ export default function AdvancedConfig() {
       </div>
 
       {/* Environment Variables */}
-      <div className="flex flex-col gap-3">
+      <div id="env" className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-base font-medium">{t('environment_variables')}</span>
           <Button
@@ -86,7 +86,7 @@ export default function AdvancedConfig() {
       <Separator className="my-1" />
 
       {/* Configmaps */}
-      <div className="flex flex-col gap-3">
+      <div id="configmap" className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-base font-medium">{t('configmaps')}</span>
           <Button
@@ -146,7 +146,7 @@ export default function AdvancedConfig() {
       <Separator className="my-1" />
 
       {/* Network Storage */}
-      <div className="flex flex-col gap-3">
+      <div id="storage" className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-base font-medium">{t('network_storage')}</span>
           <Button

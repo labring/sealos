@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import Basic from './components/Basic';
 import Header from './components/Header';
@@ -13,6 +14,7 @@ import IDEButton from '@/components/IDEButton';
 import { TabValue } from './components/Sidebar';
 import { Loading } from '@sealos/shadcn-ui/loading';
 import LiveMonitoring from './components/LiveMonitoring';
+import AdvancedConfig from './components/AdvancedConfig';
 
 import { useEnvStore } from '@/stores/env';
 import { useGuideStore } from '@/stores/guide';
@@ -20,6 +22,7 @@ import { useDevboxStore } from '@/stores/devbox';
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name;
+  const searchParams = useSearchParams();
   const [currentTab, setCurrentTab] = useState<TabValue>('overview');
 
   const { env } = useEnvStore();
@@ -70,6 +73,13 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const tab = searchParams.get('tab') as TabValue;
+    if (tab && (tab === 'overview' || tab === 'monitor' || tab === 'logs' || tab === 'advancedConfig')) {
+      setCurrentTab(tab);
+    }
+  }, [searchParams]);
+
   if (!initialized || !devboxDetail) return <Loading />;
 
   const renderContent = () => {
@@ -89,6 +99,8 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
         );
       case 'monitor':
         return <Monitor />;
+      case 'advancedConfig':
+        return <AdvancedConfig />;
       // case 'logs':
       //   return <Logs />;
       default:
@@ -99,7 +111,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   return (
     <div className="flex h-[calc(100vh-28px)] min-w-[1200px] flex-col px-6">
       <Header refetchDevboxDetail={refetch} />
-      <div className="flex h-full gap-2">
+      <div className="flex flex-1 gap-2 min-h-0">
         <Sidebar currentTab={currentTab} onTabChange={setCurrentTab} />
         {/* right side */}
         {renderContent()}
