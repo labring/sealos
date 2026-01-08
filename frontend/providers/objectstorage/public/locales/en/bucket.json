@@ -13,6 +13,5 @@
   "initializing": "Initializing",
   "reset_user_sk_title": "Confirm Reset Secret Key",
   "bucketCreateFailed": "Bucket creation failed",
-  "bucketNameInvalid": "The bucket name contains invalid characters. Names can only contain lowercase letters, numbers, hyphens (-), and dots (.). Names must not start or end with a hyphen (-) or a dot (.).",
-  "bucketNameDotWarning": "Note: Names with dots (.) are best for static sites with custom domains. For general storage, use hyphens (-) to avoid certificate errors on default HTTPS connections."
+  "bucketNameInvalid": "The bucket name contains invalid characters. Names can only contain lowercase letters, numbers, and hyphens (-). Names must not start or end with a hyphen (-)."
 }

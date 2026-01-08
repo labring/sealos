@@ -19,11 +19,6 @@ const BasicConfigHookForm = () => {
   const { register, getFieldState, control, getValues, setValue } = useFormContext<FormSchema>();
   const { t } = useTranslation(['common', 'bucket']);
 
-  const bucketName = useWatch<FormSchema, 'bucketName'>({
-    name: 'bucketName',
-    control
-  });
-
   const validateBucketName = (value: string) => {
     if (!value) {
       return t('bucket:bucketNameInvalid');
@@ -33,11 +28,8 @@ const BasicConfigHookForm = () => {
       return t('bucket:bucketNameInvalid');
     }
 
-    if (!/^[a-z0-9.-]+$/.test(value)) {
-      return t('bucket:bucketNameInvalid');
-    }
-
-    if (!/^[a-z0-9]/.test(value) || !/[a-z0-9]$/.test(value)) {
+    const k8sNameRegex = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
+    if (!k8sNameRegex.test(value)) {
       return t('bucket:bucketNameInvalid');
     }
 
@@ -50,8 +42,9 @@ const BasicConfigHookForm = () => {
       [Authority.readonly]: t('bucket:sharedBucketRead'),
       [Authority.readwrite]: t('bucket:sharedBucketReadWrite')
     }),
-    []
+    [t]
   );
+
   const authorityList = [
     {
       label: Authority.private,
@@ -93,20 +86,6 @@ const BasicConfigHookForm = () => {
               validate: validateBucketName
             })}
           />
-          {bucketName && bucketName.includes('.') && (
-            <FormHelperText
-              mt={0}
-              py="6px"
-              px="12px"
-              borderRadius={'6px'}
-              fontSize={'12px'}
-              bg={'#FFFCE8'}
-              color={'#CB8B02'}
-              lineHeight={'1.5'}
-            >
-              {t('bucket:bucketNameDotWarning')}
-            </FormHelperText>
-          )}
         </Flex>
       </FormControl>
       <FormControl isInvalid={!!getFieldState('bucketAuthority').error}>
@@ -124,6 +103,7 @@ const BasicConfigHookForm = () => {
           ></MySelect>
         </Flex>
         <FormHelperText
+          ml={'130px'}
           w="auto"
           display={'inline-flex'}
           py="6px"
