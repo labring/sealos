@@ -129,6 +129,8 @@ func GeneratePodAnnotations(devbox *devboxv1alpha2.Devbox) map[string]string {
 		}
 	}
 	annotations[devboxv1alpha2.AnnotationStorageLimit] = devbox.Spec.StorageLimit
+	// Currently we use hardcoded value for BlockIOResources annotation
+	annotations[devboxv1alpha2.AnnotationBlockIOResources] = "Devbox"
 	return annotations
 }
 
