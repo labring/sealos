@@ -110,6 +110,44 @@ func extractDomainFromImage(image string) string {
 	return normalizeDomainCandidate(domain)
 }
 
+// RegistryWithPriority represents a registry with its priority for sorting
+type RegistryWithPriority struct {
+	Domain   string
+	Config   registry.AuthConfig
+	Priority int
+}
+
+// ReplaceImageWithPriority tries to replace an image using registries in priority order
+// Returns the first successfully replaced image, or the original if all fail
+func ReplaceImageWithPriority(image, action string, registries []RegistryWithPriority) (newImage string, isReplace bool, cfg *registry.AuthConfig) {
+	if len(registries) == 0 {
+		return image, false, nil
+	}
+
+	// Extract domain from image for potential domain cache miss tracking
+	imageDomain := extractDomainFromImage(image)
+
+	// Try each registry in priority order
+	for _, reg := range registries {
+		authMap := map[string]registry.AuthConfig{reg.Domain: reg.Config}
+		result, replaced, authConfig := replaceImage(image, action, authMap)
+		if replaced {
+			logger.Info("priority match: image=%s action=%s matched_registry=%s priority=%d result=%s",
+				image, action, reg.Domain, reg.Priority, result)
+			if authConfig != nil {
+				return result, true, authConfig
+			}
+			return result, true, nil
+		}
+		logger.Debug("priority match: image=%s action=%s registry=%s priority=%d no manifest",
+			image, action, reg.Domain, reg.Priority)
+	}
+
+	// If we get here, no registry matched - this is a domain miss for tracking purposes
+	logger.Debug("priority match: image=%s action=%s no registry found, using original (domain=%s)", image, action, imageDomain)
+	return image, false, nil
+}
+
 func normalizeDomainCandidate(domain string) string {
     switch domain {
     case "", "library", "docker", "index.docker.io", "registry-1.docker.io":

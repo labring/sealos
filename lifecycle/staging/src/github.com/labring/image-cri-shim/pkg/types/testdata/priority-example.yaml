@@ -1,0 +1,74 @@
+# image-cri-shim configuration with registry priority examples
+#
+# This configuration demonstrates how to set up registry priorities
+# to control the order in which registries are tried when pulling images.
+
+shim: /var/run/image-cri-shim.sock
+cri: /var/run/containerd/containerd.sock
+address: http://sealos.hub:5000
+auth: admin:passw0rd
+version: v1
+timeout: 15m
+debug: false
+
+# Cache configuration
+cache:
+  imageCacheSize: 1024
+  imageCacheTTL: 30m
+  domainCacheTTL: 10m
+  statsLogInterval: 1m
+  disableStats: false
+
+# Registry configuration with priorities
+registries:
+  # Example 1: Docker Hub with default priority (500)
+  # When priority is not specified, defaults to 500
+  - address: docker.io
+    auth: dockeruser:dockerpass
+
+  # Example 2: Private registry with higher priority (800)
+  # This registry will be tried before docker.io but after sealos.hub
+  - address: registry.example.com
+    auth: reguser:regpass
+    priority: 800
+
+  # Example 3: Slow registry with low priority (100)
+  # This registry will be tried last
+  - address: slow-registry.company.com
+    auth: slowuser:slowpass
+    priority: 100
+
+  # Example 4: Another registry with medium priority (600)
+  - address: gcr.io
+    auth: gcruser:gcrpass
+    priority: 600
+
+  # Example 5: Registry with priority exceeding maximum (clamped to 1000)
+  # This will have the same priority as sealos.hub, but sealos.hub comes first in tie-breaking
+  - address: another-registry.io
+    auth: anotheruser:anotherpass
+    priority: 2000  # Will be clamped to 1000
+
+  # Example 6: Registry with negative priority (clamped to 0)
+  # This registry will be tried last (lowest priority)
+  - address: backup-registry.io
+    auth: backupuser:backuppass
+    priority: -50  # Will be clamped to 0
+
+# Priority Order (highest to lowest):
+# 1. sealos.hub (priority 1000, implicit)
+# 2. another-registry.io (priority 1000, clamped from 2000)
+# 3. registry.example.com (priority 800)
+# 4. gcr.io (priority 600)
+# 5. docker.io (priority 500, default)
+# 6. slow-registry.company.com (priority 100)
+# 7. backup-registry.io (priority 0, clamped from -50)
+#
+# When pulling an image, image-cri-shim will:
+# - First check sealos.hub for the image
+# - If not found, check another-registry.io
+# - If not found, check registry.example.com
+# - Continue down the list until a registry has the image
+# - Use the original image name if no registry has it
+#
+# The result is cached, so subsequent pulls use the cached registry (within TTL)
