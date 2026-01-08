@@ -101,6 +101,8 @@ func main() {
 	var mergeBaseImageTopLayer bool
 	// default base image flag for setLvRemovable's temp container
 	var defaultBaseImage string
+	// when this option is enabled, the controller will set up the block io resource configuration of a devbox pod
+	var enableBlockIOResouce bool
 	flag.StringVar(
 		&defaultBaseImage,
 		"default-base-image",
@@ -231,6 +233,12 @@ func main() {
 		"merge-base-image-top-layer",
 		false,
 		"If set true, devbox will merge base image top layers during create and remove top layer during commit.",
+	)
+	flag.BoolVar(
+		&enableBlockIOResouce,
+		"enable-block-io-resource",
+		false,
+		"If this option is set to true, the controller will set up the block io resource configuration of a devbox pod",
 	)
 	opts := zap.Options{
 		Development: true,
@@ -378,6 +386,7 @@ func main() {
 		},
 		PodMatchers:               podMatchers,
 		DebugMode:                 debugMode,
+		EnableBlockIOResource:     enableBlockIOResouce,
 		StartupConfigMapName:      startupCMName,
 		StartupConfigMapNamespace: startupCMNamespace,
 		RestartPredicateDuration:  restartPredicateDuration,

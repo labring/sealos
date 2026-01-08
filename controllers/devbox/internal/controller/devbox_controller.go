@@ -66,6 +66,7 @@ type DevboxReconciler struct {
 
 	DebugMode                 bool
 	MergeBaseImageTopLayer    bool
+	EnableBlockIOResource     bool
 	StartupConfigMapName      string
 	StartupConfigMapNamespace string
 
@@ -1206,7 +1207,7 @@ func (r *DevboxReconciler) generateDevboxPod(
 		Name:        devbox.Name,
 		Namespace:   devbox.Namespace,
 		Labels:      helper.GeneratePodLabels(devbox),
-		Annotations: helper.GeneratePodAnnotations(devbox),
+		Annotations: helper.GeneratePodAnnotations(devbox, r.EnableBlockIOResource),
 	}
 
 	// ports := devbox.Spec.Config.Ports
