@@ -274,7 +274,7 @@ export default function Desktop() {
         >
           <Image
             src={backgroundImage || desktopBackgroundImage || '/images/bg-light.svg'}
-            alt="background"
+            alt=""
             width="100%"
             height="100vh"
             objectFit="cover"
