@@ -121,50 +121,41 @@ export const json2DevboxV2 = (
           targetPort: str2Num(item.port)
         }));
 
+        // Clear user-configurable fields to rebuild from form data
+        const newEnv: any[] = [];
+        const newVolumes: any[] = [];
+        const newVolumeMounts: any[] = [];
+
         // Handle env from template config
         if (data.env && data.env.length > 0) {
-          if (!draft.env) {
-            draft.env = [];
-          }
-          draft.env = [...draft.env, ...data.env];
+          newEnv.push(...data.env);
         }
 
         // Handle envs (simple key-value pairs)
         if (data.envs && data.envs.length > 0) {
-          if (!draft.env) {
-            draft.env = [];
-          }
-          draft.env = [
-            ...draft.env,
+          newEnv.push(
             ...data.envs.map((item) => ({
               name: item.key,
               value: item.value
             }))
-          ];
+          );
         }
 
         // Handle configMaps as volumes and volumeMounts
         if (data.configMaps && data.configMaps.length > 0) {
-          if (!draft.volumes) {
-            draft.volumes = [];
-          }
-          if (!draft.volumeMounts) {
-            draft.volumeMounts = [];
-          }
-
           data.configMaps.forEach((cm) => {
             const shortId = cm.id || nanoid();
             const volumeName = `${data.name}-volume-cm-${shortId}`;
             const configMapName = `${data.name}-cm-${shortId}`;
 
-            draft.volumes!.push({
+            newVolumes.push({
               name: volumeName,
               configMap: {
                 name: configMapName
               }
             });
 
-            draft.volumeMounts!.push({
+            newVolumeMounts.push({
               name: volumeName,
               mountPath: cm.path
             });
@@ -173,31 +164,29 @@ export const json2DevboxV2 = (
 
         // Handle NFS volumes (PVC-based)
         if (data.volumes && data.volumes.length > 0) {
-          if (!draft.volumes) {
-            draft.volumes = [];
-          }
-          if (!draft.volumeMounts) {
-            draft.volumeMounts = [];
-          }
-
           data.volumes.forEach((vol) => {
             const shortId = vol.id || nanoid();
             const volumeName = `${data.name}-volume-pvc-${shortId}`;
             const pvcName = `${data.name}-pvc-${shortId}`;
 
-            draft.volumes!.push({
+            newVolumes.push({
               name: volumeName,
               persistentVolumeClaim: {
                 claimName: pvcName
               }
             });
 
-            draft.volumeMounts!.push({
+            newVolumeMounts.push({
               name: volumeName,
               mountPath: vol.path
             });
           });
         }
+
+        // Set the rebuilt fields
+        draft.env = newEnv.length > 0 ? newEnv : undefined;
+        draft.volumes = newVolumes.length > 0 ? newVolumes : undefined;
+        draft.volumeMounts = newVolumeMounts.length > 0 ? newVolumeMounts : undefined;
       }),
       state: 'Running',
       ...gpuMap
