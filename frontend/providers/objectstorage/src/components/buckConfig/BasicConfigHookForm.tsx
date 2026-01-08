@@ -33,11 +33,9 @@ const BasicConfigHookForm = () => {
       return t('bucket:bucketNameInvalid');
     }
 
-    if (!/^[a-z0-9.-]+$/.test(value)) {
-      return t('bucket:bucketNameInvalid');
-    }
-
-    if (!/^[a-z0-9]/.test(value) || !/[a-z0-9]$/.test(value)) {
+    // RFC 1123 subdomain validation (same as k8s metadata.name)
+    const k8sNameRegex = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/;
+    if (!k8sNameRegex.test(value)) {
       return t('bucket:bucketNameInvalid');
     }
 
@@ -50,8 +48,9 @@ const BasicConfigHookForm = () => {
       [Authority.readonly]: t('bucket:sharedBucketRead'),
       [Authority.readwrite]: t('bucket:sharedBucketReadWrite')
     }),
-    []
+    [t]
   );
+
   const authorityList = [
     {
       label: Authority.private,
