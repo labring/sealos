@@ -35,29 +35,33 @@ model Region {
 }
 
 model Account {
-  userUid                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   activityBonus           BigInt
-  encryptBalance          String
-  encryptDeductionBalance String
-  created_at              DateTime @default(now()) @db.Timestamptz(3)
+  created_at              DateTime  @default(now()) @db.Timestamptz(3)
   create_region_id        String
-  updated_at              DateTime @default(now()) @db.Timestamptz(3)
   balance                 BigInt?
   deduction_balance       BigInt?
+  updated_at              DateTime? @default(now()) @db.Timestamptz(3)
+  encryptBalance          String    @default("")
+  encryptDeductionBalance String    @default("")
 }
 
 model AccountTransaction {
   id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   type                     String
-  userUid                  String   @db.Uuid
   deduction_balance        BigInt
-  deduction_balance_before BigInt?
   balance                  BigInt
-  balance_before           BigInt?
   message                  String?
   created_at               DateTime @default(now()) @db.Timestamptz(3)
   updated_at               DateTime @default(now()) @db.Timestamptz(3)
   billing_id               String   @db.Uuid
+  userUid                  String   @db.Uuid
+  balance_before           BigInt?
+  deduction_balance_before BigInt?
+  region                   String?  @db.Uuid
+  deduction_credit         BigInt?
+  billing_id_list          String[]
+  credit_id_list           String[]
 }
 
 model UserInfo {
@@ -65,7 +69,6 @@ model UserInfo {
   userUid         String  @unique @map("user_uid") @db.Uuid
   signUpRegionUid String  @map("sign_up_region_uid") @db.Uuid
   isInited        Boolean @default(false) @map("is_inited")
-  // verify_email    Boolean @default(false)
   config          Json?
   user            User    @relation(fields: [userUid], references: [uid])
 
@@ -105,19 +108,26 @@ model ErrorPaymentCreate {
 }
 
 model Payment {
-  id              String   @id
-  userUid         String   @db.Uuid
-  regionUid       String   @db.Uuid
-  created_at      DateTime @default(now()) @db.Timestamptz(3)
-  regionUserOwner String
-  method          String
-  amount          BigInt
-  gift            BigInt?
-  trade_no        String   @unique
-  code_url        String?
-  invoiced_at     Boolean? @default(false)
-  remark          String?
-  message         String
+  id                        String   @id
+  userUid                   String   @db.Uuid
+  regionUid                 String   @db.Uuid
+  created_at                DateTime @default(now()) @db.Timestamptz(3)
+  regionUserOwner           String
+  method                    String
+  amount                    BigInt
+  gift                      BigInt?
+  trade_no                  String   @unique
+  code_url                  String?
+  invoiced_at               Boolean? @default(false)
+  remark                    String?
+  message                   String
+  activityType              String?
+  card_uid                  String?  @db.Uuid
+  type                      String?
+  charge_source             String?
+  status                    String   @default("PAID")
+  workspace_subscription_id String?  @db.Uuid
+  stripe                    Json?
 }
 
 model User {
@@ -129,8 +139,8 @@ model User {
   nickname                    String
   id                          String                     @unique
   name                        String                     @unique
-  oauthProvider               OauthProvider[]
   status                      UserStatus                 @default(NORMAL_USER)
+  oauthProvider               OauthProvider[]
   oldMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("oldUser")
   newMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("newUser")
   DeleteUserTransactionInfo   DeleteUserTransactionInfo?
@@ -187,9 +197,9 @@ model PrecommitTransaction {
 
 model ErrorPreCommitTransaction {
   uid                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  transactionUid       String               @unique @db.Uuid
   reason               String?
   createdAt            DateTime             @default(now()) @db.Timestamptz(3)
+  transactionUid       String               @unique @db.Uuid
   precommitTransaction PrecommitTransaction @relation(fields: [transactionUid], references: [uid])
 }
 
@@ -251,7 +261,6 @@ model EventLog {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   mainId    String
   eventName String
-  // json
   data      String
 }
 
@@ -341,7 +350,6 @@ model GiftCode {
   comment      String?
 }
 
-
 model UserAccountType {
   id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userUid       String          @unique @db.Uuid
@@ -349,21 +357,386 @@ model UserAccountType {
   productSeries ProductSeries[]
   createdAt     DateTime        @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+
   @@map("UserAccountType")
 }
 
 model GiftCodeCreation {
   id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  giftCodeId       String           @unique @db.Uuid // 添加 @unique
+  giftCodeId       String           @unique @db.Uuid
   createdByUserUid String           @db.Uuid
   rechargeType     RechargeCodeType
   createdAt        DateTime         @default(now()) @db.Timestamptz(3)
+
   @@map("GiftCodeCreation")
 }
 
+model Task {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  description   String
+  reward        BigInt
+  order         Int
+  isActive      Boolean    @default(true)
+  isNewUserTask Boolean    @default(false)
+  taskType      TaskType
+  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
+  userTasks     UserTask[]
+}
+
+model UserTask {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid      String     @db.Uuid
+  taskId       String     @db.Uuid
+  status       TaskStatus
+  rewardStatus TaskStatus
+  completedAt  DateTime
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+  user         User       @relation(fields: [userUid], references: [uid])
+  task         Task       @relation(fields: [taskId], references: [id])
+
+  @@unique([userUid, taskId])
+  @@index([taskId])
+}
+
+model AccountRegionUserTask {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  region_domain String    @db.String(50)
+  user_uid      String    @db.Uuid
+  created_at    DateTime? @db.Timestamptz(6)
+  type          String?
+  start_at      DateTime? @db.Timestamptz(6)
+  end_at        DateTime? @db.Timestamptz(6)
+  status        String?
+
+  @@index([user_uid], map: "idx_AccountRegionUserTask_user_uid")
+}
+
+model CardInfo {
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_uid               String    @db.Uuid
+  card_no                String?
+  card_brand             String?
+  card_token             String?
+  created_at             DateTime? @default(now()) @db.Timestamptz(3)
+  network_transaction_id String?
+  default                Boolean?  @default(false)
+  last_payment_status    String?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Configs {
+  type String? @db.String(255)
+  data Json?
+
+  @@ignore
+}
+
+model Corporate {
+  user_uid              String
+  id                    String    @id
+  receipt_serial_number String
+  payer_name            String    @db.String(255)
+  payment_amount        Decimal   @db.Decimal
+  gift_amount           Decimal   @db.Decimal
+  pay_date              DateTime? @default(now()) @db.Timestamptz(3)
+  creation_date         DateTime? @default(now()) @db.Timestamptz(3)
+}
+
+model Credits {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_uid    String?   @db.Uuid
+  amount      BigInt?
+  used_amount BigInt?
+  from_id     String?
+  from_type   String?
+  expire_at   DateTime? @db.Timestamp(6)
+  created_at  DateTime? @default(now()) @db.Timestamptz(3)
+  start_at    DateTime? @db.Timestamp(6)
+  status      String?
+  updated_at  DateTime? @default(now()) @db.Timestamptz(3)
+}
+
+model CreditsTransaction {
+  id                     String    @id
+  user_uid               String?
+  account_transaction_id String?
+  region_uid             String?
+  credits_id             String?
+  used_amount            BigInt?
+  created_at             DateTime? @db.Timestamptz(6)
+  reason                 String?
+}
+
+model Debt {
+  user_uid            String    @id @db.Uuid
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+  account_debt_status String
+}
+
+model DebtResumeDeductionBalanceTransaction {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_uid                 String    @db.Uuid
+  before_deduction_balance BigInt
+  after_deduction_balance  BigInt
+  before_balance           BigInt
+  created_at               DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model DebtStatusRecord {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_uid       String   @db.Uuid
+  last_status    String?
+  current_status String?
+  create_at      DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model Invoice {
+  id           String    @id
+  user_id      String
+  created_at   DateTime? @default(now()) @db.Timestamptz(3)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(3)
+  detail       String
+  remark       String?
+  total_amount BigInt
+  status       String
+}
+
+model InvoicePayment {
+  invoice_id String?
+  payment_id String  @id
+  amount     BigInt
+}
+
+model PaymentOrder {
+  id                        String    @id
+  userUid                   String    @db.Uuid
+  regionUid                 String    @db.Uuid
+  created_at                DateTime? @default(now()) @db.Timestamptz(3)
+  regionUserOwner           String?
+  method                    String
+  amount                    BigInt
+  gift                      BigInt?
+  trade_no                  String    @unique
+  code_url                  String?
+  invoiced_at               Boolean?  @default(false)
+  remark                    String?
+  activityType              String?
+  message                   String
+  card_uid                  String?   @db.Uuid
+  type                      String?
+  charge_source             String?
+  status                    String
+  workspace_subscription_id String?   @db.Uuid
+  stripe                    Json?
+}
+
+model PaymentRefund {
+  trade_no      String    @db.Uuid
+  id            String    @id
+  method        String    @db.String(255)
+  refund_no     String
+  refund_amount Decimal   @db.Decimal
+  deduct_amount Decimal   @db.Decimal
+  created_at    DateTime? @default(now()) @db.Timestamptz(3)
+  refund_reason String?
+}
+
+model ProductPrice {
+  id             String    @id @db.Uuid
+  product_id     String    @db.Uuid
+  billing_cycle  String    @db.String(20)
+  price          BigInt?
+  created_at     DateTime? @db.Timestamptz(6)
+  updated_at     DateTime? @db.Timestamptz(6)
+  stripe_price   String?   @db.String(100)
+  original_price BigInt?
+
+  @@unique([product_id, billing_cycle], map: "idx_product_cycle")
+}
+
+model RegionConfig {
+  id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key    String?
+  value  String?
+  region String?
+}
+
+model Subscription {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plan_id         String?   @db.Uuid
+  plan_name       String?   @db.String(50)
+  user_uid        String    @unique @db.Uuid
+  status          String?   @db.String(50)
+  start_at        DateTime? @db.Timestamptz(6)
+  update_at       DateTime? @db.Timestamptz(6)
+  expire_at       DateTime? @db.Timestamptz(6)
+  card_id         String?   @db.Uuid
+  next_cycle_date DateTime? @db.Timestamptz(6)
+}
+
+model SubscriptionPlan {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String    @unique
+  description         String?
+  amount              BigInt?
+  gift_amount         BigInt?
+  period              String?   @db.String(50)
+  upgrade_plan_list   String[]
+  downgrade_plan_list String[]
+  max_seats           BigInt
+  max_workspaces      BigInt
+  max_resources       String?
+  created_at          DateTime? @db.Timestamptz(6)
+  updated_at          DateTime? @db.Timestamptz(6)
+  most_popular        Boolean?
+}
+
+model SubscriptionTransaction {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscription_id String    @db.Uuid
+  user_uid        String    @db.Uuid
+  old_plan_id     String?   @db.Uuid
+  new_plan_id     String?   @db.Uuid
+  old_plan_name   String?   @db.String(50)
+  new_plan_name   String?   @db.String(50)
+  old_plan_status String?   @db.String(50)
+  operator        String?   @db.String(50)
+  start_at        DateTime? @db.Timestamptz(6)
+  created_at      DateTime? @db.Timestamptz(6)
+  updated_at      DateTime? @db.Timestamptz(6)
+  status          String?   @db.String(50)
+  pay_status      String?   @db.String(50)
+  pay_id          String?
+  amount          BigInt?
+
+  @@index([subscription_id], map: "idx_SubscriptionTransaction_subscription_id")
+  @@index([user_uid], map: "idx_SubscriptionTransaction_user_uid")
+}
+
+model UserKYC {
+  user_uid   String    @id @db.Uuid
+  status     String?   @db.String(50)
+  created_at DateTime? @db.Timestamptz(6)
+  updated_at DateTime? @db.Timestamptz(6)
+  next_at    DateTime? @db.Timestamptz(6)
+}
+
+model UserTimeRangeTraffic {
+  created_at      DateTime? @default(now()) @db.Timestamptz(3)
+  updated_at      DateTime? @default(now()) @db.Timestamptz(3)
+  next_clean_time DateTime? @db.Timestamptz(3)
+  user_uid        String    @id @db.Uuid
+  sent_bytes      BigInt?   @default(0)
+  status          String?   @default("processing") @db.String(20)
+}
+
+model UserTransfer {
+  id          String
+  uid         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fromUserUid String    @db.Uuid
+  fromUserId  String
+  toUserUid   String    @db.Uuid
+  toUserId    String
+  amount      BigInt
+  remark      String
+  created_at  DateTime? @default(now()) @db.Timestamptz(3)
+
+  @@id([id, uid])
+}
+
+model WorkspaceSubscription {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  plan_name               String?                   @db.String(50)
+  workspace               String?                   @db.String(50)
+  region_domain           String?                   @db.String(50)
+  user_uid                String?                   @db.Uuid
+  status                  subscription_status?
+  pay_status              subscription_pay_status?
+  pay_method              String?
+  stripe                  Json?
+  traffic_status          workspace_traffic_status? @default(active)
+  current_period_start_at DateTime?                 @db.Timestamptz(6)
+  current_period_end_at   DateTime?                 @db.Timestamptz(6)
+  cancel_at_period_end    Boolean?                  @default(false)
+  cancel_at               DateTime?                 @db.Timestamptz(6)
+  create_at               DateTime?                 @db.Timestamptz(6)
+  update_at               DateTime?                 @db.Timestamptz(6)
+  expire_at               DateTime?                 @db.Timestamptz(6)
+
+  @@unique([workspace, region_domain], map: "idx_workspace_region_domain")
+}
+
+model WorkspaceSubscriptionPlan {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String    @unique
+  description         String?
+  upgrade_plan_list   String[]
+  downgrade_plan_list String[]
+  max_seats           BigInt
+  max_resources       String?
+  traffic             BigInt?
+  created_at          DateTime? @db.Timestamptz(6)
+  updated_at          DateTime? @db.Timestamptz(6)
+  tags                String[]
+  order               BigInt?
+}
+
+model WorkspaceSubscriptionTransaction {
+  id              String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  from            String?
+  workspace       String                           @db.String(50)
+  region_domain   String                           @db.String(50)
+  user_uid        String?                          @db.Uuid
+  old_plan_name   String?                          @db.String(50)
+  new_plan_name   String?                          @db.String(50)
+  old_plan_status subscription_status?
+  operator        subscription_operator?
+  start_at        DateTime?                        @db.Timestamptz(6)
+  created_at      DateTime?                        @db.Timestamptz(6)
+  updated_at      DateTime?                        @db.Timestamptz(6)
+  status          subscription_transaction_status?
+  status_desc     String?                          @db.String(255)
+  pay_status      subscription_pay_status?
+  pay_id          String?
+  period          String?
+  amount          BigInt?
+
+  @@index([pay_status, start_at, status, region_domain], map: "idx_pending_transactions")
+  @@index([workspace, region_domain], map: "idx_workspace_region_domain")
+}
+
+model WorkspaceTraffic {
+  id                        String                    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at                DateTime?                 @default(now()) @db.Timestamptz(3)
+  updated_at                DateTime?                 @default(now()) @db.Timestamptz(3)
+  expired_at                DateTime?                 @default(now()) @db.Timestamptz(3)
+  workspace                 String                    @db.String(50)
+  region_domain             String                    @db.String(50)
+  workspace_subscription_id String                    @db.Uuid
+  status                    workspace_traffic_status? @default(active)
+  from                      String?                   @db.String(50)
+  from_id                   String?                   @db.String(50)
+  total_bytes               BigInt?                   @default(0)
+  used_bytes                BigInt?                   @default(0)
+
+  @@id([id, workspace_subscription_id])
+  @@index([workspace, region_domain], map: "idx_workspace_region_domain")
+}
+
+model distributed_locks {
+  lock_name  String   @id
+  holder_id  String
+  expires_at DateTime @db.Timestamptz(6)
+  version    BigInt   @default(1)
+}
+
 enum UserType {
-  EXTERNAL_USER 
-  INTERNAL_EMPLOYEE 
+  EXTERNAL_USER
+  INTERNAL_EMPLOYEE
 }
 
 enum ProductSeries {
@@ -374,10 +747,10 @@ enum ProductSeries {
 }
 
 enum RechargeCodeType {
-  TEST_RECHARGE 
-  COMPENSATION_RECHARGE 
-  ACTIVITY_RECHARGE 
-  CORPORATE_RECHARGE 
+  TEST_RECHARGE
+  COMPENSATION_RECHARGE
+  ACTIVITY_RECHARGE
+  CORPORATE_RECHARGE
 }
 
 enum ProviderType {
@@ -415,37 +788,6 @@ enum UserStatus {
   DELETE_USER
 }
 
-model Task {
-  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title         String
-  description   String
-  reward        BigInt
-  order         Int
-  isActive      Boolean    @default(true)
-  isNewUserTask Boolean    @default(false)
-  taskType      TaskType
-  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
-  userTasks     UserTask[]
-}
-
-model UserTask {
-  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userUid      String     @db.Uuid
-  taskId       String     @db.Uuid
-  status       TaskStatus
-  rewardStatus TaskStatus
-  completedAt  DateTime
-  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
-
-  user User @relation(fields: [userUid], references: [uid])
-  task Task @relation(fields: [taskId], references: [id])
-
-  @@unique([userUid, taskId])
-  @@index([taskId])
-}
-
 enum TaskType {
   LAUNCHPAD
   COSTCENTER
@@ -461,4 +803,50 @@ enum TaskType {
 enum TaskStatus {
   NOT_COMPLETED
   COMPLETED
+}
+
+enum subscription_operator {
+  created
+  upgraded
+  downgraded
+  canceled
+  renewed
+  deleted
+}
+
+enum subscription_pay_status {
+  pending
+  paid
+  no_need
+  failed
+  expired
+  canceled
+}
+
+enum subscription_period {
+  monthly
+  yearly
+}
+
+enum subscription_status {
+  NORMAL
+  DEBT
+  DEBT_PRE_DELETION
+  DEBT_FINAL_DELETION
+  DELETED
+  PAUSED
+}
+
+enum subscription_transaction_status {
+  completed
+  pending
+  processing
+  failed
+}
+
+enum workspace_traffic_status {
+  active
+  exhausted
+  used_up
+  expired
 }
