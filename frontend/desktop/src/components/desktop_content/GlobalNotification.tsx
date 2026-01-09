@@ -13,11 +13,11 @@ function GlobalNotificationComponent() {
   const { message } = useMessage();
   const { closedNotificationId, setClosedNotificationId } = useGlobalNotificationStore();
 
-  const { data: notification } = useQuery({
+  const { data: notifications } = useQuery({
     queryKey: ['globalNotification'],
     queryFn: async () => {
       const { data } = await getGlobalNotification();
-      return data;
+      return data || [];
     },
     staleTime: 5 * 60 * 1000,
     cacheTime: 10 * 60 * 1000,
@@ -28,6 +28,10 @@ function GlobalNotificationComponent() {
     enabled: true
   });
 
+  // Filter 'Desktop-Alert' type
+  const notification = notifications?.find((n) => n?.from === 'Desktop-Alert');
+
+  // [TODO] This is not the correct place to do popup notifications
   useEffect(() => {
     if (!notification || !notification.licenseFrontend) return;
 
@@ -39,9 +43,7 @@ function GlobalNotificationComponent() {
     });
   }, [notification, i18n?.language, message]);
 
-  if (!notification || notification.licenseFrontend) {
-    return null;
-  }
+  if (!notification) return null;
 
   const notificationId = notification?.uid;
   if (!notificationId) {

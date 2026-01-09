@@ -88,7 +88,7 @@ export const getWechatResult = (payload: { code: string }) =>
   });
 
 export const getGlobalNotification = () => {
-  return request.get<any, ApiResp<TNotification>>('/api/notification/global');
+  return request.get<any, ApiResp<TNotification[]>>('/api/notification/global');
 };
 
 export const listNotification = () =>

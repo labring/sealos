@@ -107,7 +107,7 @@ export type NotificationCR = {
     uid: string;
   };
   spec: {
-    from: string;
+    from?: string;
     message: string;
     timestamp: number;
     title: string;
@@ -116,7 +116,7 @@ export type NotificationCR = {
     endTime?: string;
     i18ns?: {
       zh?: {
-        from: string;
+        from?: string;
         message: string;
         title: string;
       };
@@ -135,9 +135,21 @@ export type TNotification = {
   desktopPopup: boolean;
   startTime?: string;
   endTime?: string;
+  from?:
+    | string
+    | 'Debt-System'
+    | 'Active-System'
+    /**
+     * The one above the app grid
+     */
+    | 'Desktop-Announcement'
+    /**
+     * The one above the nav bar
+     */
+    | 'Desktop-Alert';
   i18n: {
     [key in string]: {
-      from: string; // Debt-System Active-System
+      from?: string;
       message: string;
       title: string;
     };
