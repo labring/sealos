@@ -30,6 +30,7 @@ import { useSearchStore } from '@/store/search';
 import { refetchIntervalTime } from './appList';
 import useSessionStore from '@/store/session';
 import { useGuideStore } from '@/store/guide';
+import { RefreshCcw, RotateCw } from 'lucide-react';
 
 export default function Header({ instanceName }: { instanceName: string }) {
   const router = useRouter();
@@ -187,16 +188,13 @@ export default function Header({ instanceName }: { instanceName: string }) {
           cursor={'pointer'}
           onClick={handleRefresh}
         >
-          <Icon width="20px" height="20px" viewBox="0 0 20 20" fill="currentcolor">
-            <path
-              d="M15.1667 10C15.1667 12.7614 12.9281 15 10.1667 15C7.40526 15 5.16667 12.7614 5.16667 10C5.16667 7.23858 7.40526 5 10.1667 5C11.2855 5 12.3146 5.38729 13.125 6.04167M13.125 6.04167V3.33333M13.125 6.04167H10.4167"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-            />
-          </Icon>
+          <RefreshCcw
+            style={{
+              flexShrink: 0
+            }}
+            width={16}
+            height={16}
+          />
         </Button>
         <Button
           variant={'outline'}
