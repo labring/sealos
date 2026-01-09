@@ -559,6 +559,7 @@
   "file_name": "File Name",
   "file_name_placeholder": "File Name: /etc/kubernetes/admin.conf",
   "file_name_cannot_be_empty": "File name cannot be empty",
+  "path_must_be_absolute": "Path must be an absolute path starting with \"/\"",
   "file_name_invalid_format": "Invalid path format. Must start and end with alphanumeric, underscore or slash, and can contain dots and hyphens",
   "file_name_path_conflict": "Path conflict, this path already exists",
   "file_content": "File Content",

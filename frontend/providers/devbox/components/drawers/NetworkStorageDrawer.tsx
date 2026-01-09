@@ -43,6 +43,10 @@ const NetworkStorageDrawer = ({
       return t('mount_path_cannot_be_empty');
     }
 
+    if (!path.startsWith('/')) {
+      return t('path_must_be_absolute');
+    }
+
     const pathPattern = /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/;
     if (!pathPattern.test(path)) {
       return t('mount_path_invalid_format');

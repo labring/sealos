@@ -561,6 +561,7 @@
   "file_name": "文件名",
   "file_name_placeholder": "文件名: /etc/kubernetes/admin.conf",
   "file_name_cannot_be_empty": "文件名不能为空",
+  "path_must_be_absolute": "路径必须是以 \"/\" 开头的绝对路径",
   "file_name_invalid_format": "路径格式无效。必须以字母、数字、下划线或斜杠开头和结尾，可以包含点和连字符",
   "file_name_path_conflict": "路径冲突，该路径已存在",
   "file_content": "文件内容",

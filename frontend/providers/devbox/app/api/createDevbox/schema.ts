@@ -97,7 +97,11 @@ export const RequestSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          path: z.string(),
+          path: z
+            .string()
+            .refine((path) => path.startsWith('/'), {
+              message: 'ConfigMap path must be an absolute path starting with "/"'
+            }),
           content: z.string()
         })
       )
@@ -110,7 +114,11 @@ export const RequestSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          path: z.string(),
+          path: z
+            .string()
+            .refine((path) => path.startsWith('/'), {
+              message: 'Volume path must be an absolute path starting with "/"'
+            }),
           size: z.number().min(1).max(20)
         })
       )
@@ -120,6 +128,28 @@ export const RequestSchema = z
         description: 'Volume configurations (NFS PVC)'
       })
   })
+  .refine(
+    (data) => {
+      if (!data.configMaps || data.configMaps.length === 0) return true;
+      const paths = data.configMaps.map((cm) => cm.path.toLowerCase());
+      return new Set(paths).size === paths.length;
+    },
+    {
+      message: 'Duplicate ConfigMap paths are not allowed',
+      path: ['configMaps']
+    }
+  )
+  .refine(
+    (data) => {
+      if (!data.volumes || data.volumes.length === 0) return true;
+      const paths = data.volumes.map((vol) => vol.path.toLowerCase());
+      return new Set(paths).size === paths.length;
+    },
+    {
+      message: 'Duplicate volume paths are not allowed',
+      path: ['volumes']
+    }
+  )
   .transform((data) => {
     return {
       ...data,
