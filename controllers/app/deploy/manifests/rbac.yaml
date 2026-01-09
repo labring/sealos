@@ -21,6 +21,9 @@ rules:
   - apiGroups: ["app.sealos.io"]
     resources: [ "apps" ]
     verbs: [ "get", "watch", "list"]
+  - apiGroups: [ "license.sealos.io" ]
+    resources: [ "licenses" ]
+    verbs: [ "get", "watch", "list" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

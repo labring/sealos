@@ -18,6 +18,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -70,21 +71,29 @@ type RegionDescription struct {
 }
 
 func RegionDescriptionJSON(data RegionDescription) string {
-	jsonString := `{
-		"provider": "` + data.Provider + `",
-		"serial": "` + data.Serial + `",
-		"description": {`
+	var builder strings.Builder
+	builder.WriteString("{\n\t\t\"provider\": \"")
+	builder.WriteString(data.Provider)
+	builder.WriteString("\",\n\t\t\"serial\": \"")
+	builder.WriteString(data.Serial)
+	builder.WriteString("\",\n\t\t\"description\": {")
 
+	first := true
 	for key, value := range data.Description {
-		jsonString += `"` + key + `": "` + value + `",`
+		if !first {
+			builder.WriteString(",")
+		}
+		builder.WriteString(`"`)
+		builder.WriteString(key)
+		builder.WriteString(`": "`)
+		builder.WriteString(value)
+		builder.WriteString(`"`)
+		first = false
 	}
 
-	jsonString = jsonString[:len(jsonString)-1]
+	builder.WriteString("}\n\t}")
 
-	jsonString += `}
-	}`
-
-	return jsonString
+	return builder.String()
 }
 
 // RegionUserCr is located in the region
