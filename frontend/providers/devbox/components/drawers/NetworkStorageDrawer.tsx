@@ -32,10 +32,31 @@ const NetworkStorageDrawer = ({
   const t = useTranslations();
   const pathRef = useRef<HTMLInputElement>(null);
   const [capacity, setCapacity] = useState(initialValue?.size || 1);
+  const [capacityInput, setCapacityInput] = useState((initialValue?.size || 1).toString());
   const [pathError, setPathError] = useState<string>('');
 
   const handleCapacityChange = (delta: number) => {
-    setCapacity((prev) => Math.min(20, Math.max(1, prev + delta)));
+    const newValue = Math.min(20, Math.max(1, capacity + delta));
+    setCapacity(newValue);
+    setCapacityInput(newValue.toString());
+  };
+
+  const handleCapacityInput = (value: string) => {
+    setCapacityInput(value);
+    const num = parseInt(value);
+    if (!isNaN(num)) {
+      setCapacity(Math.min(20, Math.max(1, num)));
+    }
+  };
+
+  const handleCapacityBlur = () => {
+    if (capacityInput === '' || isNaN(parseInt(capacityInput))) {
+      setCapacityInput(capacity.toString());
+    } else {
+      const num = Math.min(20, Math.max(1, parseInt(capacityInput)));
+      setCapacity(num);
+      setCapacityInput(num.toString());
+    }
   };
 
   const validatePath = (path: string): string => {
@@ -97,9 +118,15 @@ const NetworkStorageDrawer = ({
                 >
                   <Minus className="h-4 w-4 text-zinc-500" />
                 </Button>
-                <div className="flex h-10 w-20 items-center justify-center border-y border-zinc-200 bg-white">
-                  <span className="text-sm font-medium">{capacity}</span>
-                </div>
+                <Input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={capacityInput}
+                  onChange={(e) => handleCapacityInput(e.target.value)}
+                  onBlur={handleCapacityBlur}
+                  className="h-10 w-20 rounded-none border-x-0 text-center text-sm font-medium shadow-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
                 <Button
                   variant="outline"
                   size="icon"
