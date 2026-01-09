@@ -28,6 +28,7 @@ export interface Env {
   currencySymbol: 'shellCoin' | 'cny' | 'usd';
   enableImportFeature: string;
   enableWebideFeature: string;
+  enableAdvancedConfig: string;
   cpuSlideMarkList: string;
   memorySlideMarkList: string;
   nfsStorageClassName: string;

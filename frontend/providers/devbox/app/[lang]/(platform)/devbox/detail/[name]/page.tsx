@@ -75,12 +75,15 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
 
   useEffect(() => {
     const tab = searchParams.get('tab') as TabValue;
-    if (tab && (tab === 'overview' || tab === 'monitor' || tab === 'logs' || tab === 'advancedConfig')) {
+    const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+    if (tab && (tab === 'overview' || tab === 'monitor' || tab === 'logs' || (tab === 'advancedConfig' && showAdvancedConfig))) {
       setCurrentTab(tab);
     }
-  }, [searchParams]);
+  }, [searchParams, env.enableAdvancedConfig]);
 
   if (!initialized || !devboxDetail) return <Loading />;
+
+  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
 
   const renderContent = () => {
     switch (currentTab) {
@@ -100,7 +103,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       case 'monitor':
         return <Monitor />;
       case 'advancedConfig':
-        return <AdvancedConfig />;
+        return showAdvancedConfig ? <AdvancedConfig /> : null;
       // case 'logs':
       //   return <Logs />;
       default:

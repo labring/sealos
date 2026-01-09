@@ -7,7 +7,6 @@ import { useSearchParams } from 'next/navigation';
 
 import { useRouter } from '@/i18n';
 import { obj2Query } from '@/utils/tools';
-import { useDevboxStore } from '@/stores/devbox';
 import type { DevboxEditTypeV2 } from '@/types/devbox';
 
 import Gpu from './Gpu';
@@ -21,6 +20,7 @@ import DevboxName from './DevboxName';
 import AdvancedConfig from './AdvancedConfig';
 
 import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { useEnvStore } from '@/stores/env';
 
 interface FormProps {
   isEdit: boolean;
@@ -32,8 +32,10 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const searchParams = useSearchParams();
   const t = useTranslations();
   const { watch } = useFormContext<DevboxEditTypeV2>();
+  const { env } = useEnvStore();
 
   const formValues = watch();
+  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
 
   useEffect(() => {
     const scrollTo = searchParams.get('scrollTo');
@@ -97,7 +99,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         </div>
 
         {/* Advanced Configurations */}
-        <AdvancedConfig />
+        {showAdvancedConfig && <AdvancedConfig />}
       </div>
     </div>
   );

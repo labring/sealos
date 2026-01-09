@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { LayoutDashboard, LineChart, Settings } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
+import { useEnvStore } from '@/stores/env';
 
 export type TabValue = 'overview' | 'monitor' | 'logs' | 'advancedConfig';
 
@@ -12,8 +13,11 @@ interface SidebarProps {
 
 const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
   const t = useTranslations();
+  const { env } = useEnvStore();
 
-  const tabs = [
+  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+
+  const allTabs = [
     {
       label: t('overview_tab'),
       value: 'overview' as TabValue,
@@ -35,6 +39,10 @@ const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
     //   icon: <FileClock className="h-6 w-6" strokeWidth={1.33} />
     // }
   ];
+
+  const tabs = showAdvancedConfig
+    ? allTabs
+    : allTabs.filter((tab) => tab.value !== 'advancedConfig');
 
   return (
     <div className="flex flex-col rounded-xl border-[0.5px] border-zinc-200 bg-white p-2 shadow-xs">
