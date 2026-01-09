@@ -1645,7 +1645,8 @@ func (p PhaseChangedPredicate) Update(e event.UpdateEvent) bool {
 	oldDevbox, oldOk := e.ObjectOld.(*devboxv1alpha2.Devbox)
 	newDevbox, newOk := e.ObjectNew.(*devboxv1alpha2.Devbox)
 	if oldOk && newOk {
-		return oldDevbox.Status.Phase != newDevbox.Status.Phase || newDevbox.Status.Phase == devboxv1alpha2.DevboxPhaseError
+		return oldDevbox.Status.Phase != newDevbox.Status.Phase ||
+			newDevbox.Status.Phase == devboxv1alpha2.DevboxPhaseError
 	}
 	return false
 }
