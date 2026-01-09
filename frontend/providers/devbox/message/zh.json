@@ -549,6 +549,7 @@
   "optional": "可选",
   "key": "键",
   "value": "值",
+  "env_duplicate_keys": "环境变量中存在重复的键",
   "configmaps": "配置文件",
   "add": "添加",
   "network_storage": "网络存储",

@@ -547,6 +547,7 @@
   "optional": "Optional",
   "key": "Key",
   "value": "Value",
+  "env_duplicate_keys": "Duplicate environment variable keys found",
   "configmaps": "Configmaps",
   "add": "Add",
   "network_storage": "Network Storage",
