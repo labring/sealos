@@ -326,6 +326,8 @@ func main() {
 				&corev1.Pod{}:     {Label: cacheObjLabelSelector},
 				&corev1.Secret{}:  {Label: cacheObjLabelSelector},
 			}
+			// set sync period to 1 hour for devbox controller to reconcile all devboxes.
+			opts.SyncPeriod = ptr.To(time.Hour)
 			return cache.New(config, opts)
 		},
 		Controller: ctrlconfig.Controller{
