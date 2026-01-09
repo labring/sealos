@@ -235,10 +235,19 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	// sync devbox state
-	if (devbox.Status.CommitRecords[devbox.Status.ContentID].Node == r.NodeName ||
-		((devbox.Spec.State == devboxv1alpha2.DevboxStateStopped || devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown) && devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "")) &&
-		r.syncDevboxState(ctx, devbox) {
+	// Sync devbox state.
+	// Only the node that owns the current content should sync state.
+	// Exception: for stop/shutdown transitions, allow syncing when not yet scheduled.
+	contentID := devbox.Status.ContentID
+	commitRecord := devbox.Status.CommitRecords[contentID]
+	ownedByThisNode := commitRecord.Node == r.NodeName
+	stopOrShutdown := devbox.Spec.State == devboxv1alpha2.DevboxStateStopped || devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown
+	unscheduled := commitRecord.Node == ""
+	allowedToSyncState := ownedByThisNode || (stopOrShutdown && unscheduled)
+	needsStateTransition := devbox.Spec.State != devbox.Status.State
+
+	// if the devbox is allowed to sync state and needs state transition, mark the state transition as pending
+	if allowedToSyncState && needsStateTransition {
 		// Mark the state-transition as pending for this Generation. Only the controller
 		// that successfully advances the condition's ObservedGeneration should emit
 		// the state-change event, preventing duplicates in multi-controller setups.
@@ -253,15 +262,8 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, nil
 		}
 
-		logger.Info(
-			"devbox state changed, wait for state change handler to handle the event, requeue after 5 seconds",
-			"from",
-			devbox.Status.State,
-			"to",
-			devbox.Spec.State,
-		)
 		logger.Info("recording state change event", "devbox", devbox.Name, "nodeName", r.NodeName)
-
+		// send state change event to state change handler
 		r.StateChangeRecorder.Eventf(
 			devbox,
 			corev1.EventTypeNormal,
@@ -270,6 +272,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			devbox.Status.State,
 			devbox.Spec.State,
 		)
+		// send state change event to devbox controller
 		r.Recorder.Eventf(
 			devbox,
 			corev1.EventTypeNormal,
@@ -365,14 +368,12 @@ func (r *DevboxReconciler) syncDevboxConditions(ctx context.Context, devbox *dev
 			})
 		}
 
-		// Commit in progress condition (scan all commit records to be robust across ContentID rotation)
-		committing := false
-		if latest.Status.CommitRecords != nil {
-			for _, rec := range latest.Status.CommitRecords {
-				if rec != nil && rec.CommitStatus == devboxv1alpha2.CommitStatusCommitting {
-					committing = true
-					break
-				}
+		// Commit in progress condition (authoritative record is the current ContentID).
+		// Guard against missing commit record to avoid panics.
+		var committing bool
+		if latest.Status.CommitRecords != nil && latest.Status.ContentID != "" {
+			if rec := latest.Status.CommitRecords[latest.Status.ContentID]; rec != nil {
+				committing = rec.CommitStatus == devboxv1alpha2.CommitStatusCommitting
 			}
 		}
 		if committing {
@@ -397,31 +398,6 @@ func (r *DevboxReconciler) syncDevboxConditions(ctx context.Context, devbox *dev
 
 		return r.Status().Update(ctx, latest)
 	})
-}
-
-// sync devbox state, and record the state change event to state change recorder, state change handler will handle the event
-func (r *DevboxReconciler) syncDevboxState(
-	ctx context.Context,
-	devbox *devboxv1alpha2.Devbox,
-) bool {
-	logger := log.FromContext(ctx)
-	logger.Info("syncDevboxState called",
-		"devbox", devbox.Name,
-		"specState", devbox.Spec.State,
-		"statusState", devbox.Status.State,
-		"nodeName", r.NodeName)
-
-	if devbox.Spec.State != devbox.Status.State {
-		logger.Info("devbox state changing",
-			"from", devbox.Status.State,
-			"to", devbox.Spec.State,
-			"devbox", devbox.Name)
-		return true
-	}
-	logger.Info("devbox state unchanged",
-		"devbox", devbox.Name,
-		"state", devbox.Spec.State)
-	return false
 }
 
 func (r *DevboxReconciler) handleStorageDelete(
