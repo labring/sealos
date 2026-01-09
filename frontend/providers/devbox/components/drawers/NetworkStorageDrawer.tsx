@@ -35,7 +35,7 @@ const NetworkStorageDrawer = ({
   const [pathError, setPathError] = useState<string>('');
 
   const handleCapacityChange = (delta: number) => {
-    setCapacity((prev) => Math.max(1, prev + delta));
+    setCapacity((prev) => Math.min(20, Math.max(1, prev + delta)));
   };
 
   const validatePath = (path: string): string => {
