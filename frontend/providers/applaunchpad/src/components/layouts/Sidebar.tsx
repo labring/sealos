@@ -1,8 +1,7 @@
-import { Center, Text, Stack } from '@chakra-ui/react';
-import MyIcon from '../Icon';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { LOG_ENABLED } from '@/store/static';
+import { LayoutDashboard, LineChart, FileClock } from 'lucide-react';
 
 export const ROUTES = {
   OVERVIEW: '/app/detail',
@@ -18,11 +17,10 @@ export default function Sidebar() {
     {
       label: t('overview'),
       icon: (
-        <MyIcon
-          name="pods"
-          w={'24px'}
-          h={'24px'}
-          color={router.pathname === ROUTES.OVERVIEW ? 'grayModern.900' : 'grayModern.500'}
+        <LayoutDashboard
+          className={`w-6 h-6 ${
+            router.pathname === ROUTES.OVERVIEW ? 'text-zinc-900' : 'text-zinc-500'
+          }`}
         />
       ),
       path: ROUTES.OVERVIEW
@@ -30,11 +28,10 @@ export default function Sidebar() {
     {
       label: t('monitor'),
       icon: (
-        <MyIcon
-          name="monitor"
-          w={'24px'}
-          h={'24px'}
-          color={router.pathname === ROUTES.MONITOR ? 'grayModern.900' : 'grayModern.500'}
+        <LineChart
+          className={`w-6 h-6 ${
+            router.pathname === ROUTES.MONITOR ? 'text-zinc-900' : 'text-zinc-500'
+          }`}
         />
       ),
       path: ROUTES.MONITOR
@@ -44,11 +41,10 @@ export default function Sidebar() {
           {
             label: t('Log'),
             icon: (
-              <MyIcon
-                name="log"
-                w={'24px'}
-                h={'24px'}
-                color={router.pathname === ROUTES.LOGS ? 'grayModern.900' : 'grayModern.500'}
+              <FileClock
+                className={`w-6 h-6 ${
+                  router.pathname === ROUTES.LOGS ? 'text-zinc-900' : 'text-zinc-500'
+                }`}
               />
             ),
             path: ROUTES.LOGS
@@ -58,25 +54,15 @@ export default function Sidebar() {
   ];
 
   return (
-    <Stack
-      w={'76px'}
-      py={'12px'}
-      px={'8px'}
-      flexShrink={0}
-      spacing={'8px'}
-      borderRadius={'8px'}
-      bg={'white'}
-    >
+    <div className="w-[76px] py-2 px-2 shrink-0 flex flex-col gap-2 rounded-xl bg-white border-[0.5px] border-zinc-200 font-normal">
       {siderbarMap.map((item) => (
-        <Center
+        <div
           key={item.path}
-          gap={'4px'}
-          flexDirection={'column'}
-          bg={router.pathname === item.path ? 'rgba(150, 153, 180, 0.15)' : 'transparent'}
-          color={'grayModern.900'}
-          borderRadius={'md'}
-          h={'60px'}
-          cursor={'pointer'}
+          className={`flex flex-col items-center justify-center gap-1 h-[60px] rounded-lg cursor-pointer transition-colors ${
+            router.pathname === item.path
+              ? 'bg-zinc-100 text-zinc-900'
+              : 'bg-transparent text-zinc-900 hover:bg-zinc-50'
+          }`}
           onClick={() => {
             console.log(router.query);
             router.push({
@@ -86,11 +72,15 @@ export default function Sidebar() {
           }}
         >
           {item.icon}
-          <Text fontSize={'11px'} fontWeight={'bold'}>
+          <span
+            className={`text-xs ${
+              router.pathname === item.path ? 'text-zinc-900' : 'text-zinc-500'
+            }`}
+          >
             {item.label}
-          </Text>
-        </Center>
+          </span>
+        </div>
       ))}
-    </Stack>
+    </div>
   );
 }

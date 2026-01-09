@@ -1,14 +1,5 @@
 import React from 'react';
-import {
-  Box,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton
-} from '@chakra-ui/react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@sealos/shadcn-ui/dialog';
 
 const ConfigMapDetailModal = ({
   mountPath,
@@ -20,16 +11,16 @@ const ConfigMapDetailModal = ({
   onClose: () => void;
 }) => {
   return (
-    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
-      <ModalOverlay />
-      <ModalContent top={'10vh'} minW={'600px'} backgroundColor={'#F5F5F5'}>
-        <ModalHeader>{mountPath}</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody maxH={'60vh'} overflowY={'auto'} whiteSpace={'pre'}>
-          {value}
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="w-[600px] max-w-[90vw] text-foreground">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold leading-none">{mountPath}</DialogTitle>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto bg-zinc-50 rounded-lg p-4">
+          <pre className="whitespace-pre-wrap text-sm font-mono text-zinc-900">{value}</pre>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

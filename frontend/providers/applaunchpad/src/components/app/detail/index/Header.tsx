@@ -1,5 +1,4 @@
-import React, { useCallback } from 'react';
-import { Box, Flex, Button, useDisclosure, Center } from '@chakra-ui/react';
+import React, { useCallback, useState } from 'react';
 import type { AppStatusMapType, TAppSource } from '@/types/app';
 import { useRouter } from 'next/router';
 import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
@@ -7,10 +6,12 @@ import { useAppOperation } from '@/hooks/useAppOperation';
 import { useConfirm } from '@/hooks/useConfirm';
 import { AppStatusEnum, appStatusMap } from '@/constants/app';
 import AppStatusTag from '@/components/AppStatusTag';
-import MyIcon from '@/components/Icon';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'next-i18next';
 import UpdateModal from './UpdateModal';
+import { Button } from '@sealos/shadcn-ui/button';
+import { ButtonGroup } from '@sealos/shadcn-ui/button-group';
+import { ArrowLeft, Play, Pause, PencilLine, RotateCw, Trash2 } from 'lucide-react';
 
 const DelModal = dynamic(() => import('./DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
@@ -31,16 +32,8 @@ const Header = ({
   const { t } = useTranslation();
   const router = useRouter();
   const { executeOperation, loading, errorModalState, closeErrorModal } = useAppOperation();
-  const {
-    isOpen: isOpenDelModal,
-    onOpen: onOpenDelModal,
-    onClose: onCloseDelModal
-  } = useDisclosure();
-  const {
-    isOpen: isOpenUpdateModal,
-    onOpen: onOpenUpdateModal,
-    onClose: onCloseUpdateModal
-  } = useDisclosure();
+  const [isOpenDelModal, setIsOpenDelModal] = useState(false);
+  const [isOpenUpdateModal, setIsOpenUpdateModal] = useState(false);
 
   const { openConfirm: openRestartConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
     content: 'Confirm to restart this application?'
@@ -73,111 +66,90 @@ const Header = ({
   }, [appName, executeOperation, refetch, t]);
 
   return (
-    <Flex h={'32px'} my={'14px'} alignItems={'center'}>
-      <Center cursor={'pointer'} onClick={() => router.replace('/apps')}>
-        <MyIcon name="arrowLeft" w={'24px'} />
-      </Center>
-      <Box ml={'4px'} mr={3} fontWeight={'bold'} color={'grayModern.900'} fontSize={'18px'}>
-        {appName}
-      </Box>
-      <AppStatusTag status={appStatus} isPause={isPause} showBorder={false} />
-      <Box flex={1} />
+    <div className="flex h-20 w-full items-center px-10 justify-between">
+      <div className="flex items-center gap-3">
+        <div
+          className="flex cursor-pointer items-center gap-1.5"
+          onClick={() => router.replace('/apps')}
+        >
+          <ArrowLeft className="h-6 w-6" />
+          <span className="text-xl font-semibold text-zinc-900">{appName}</span>
+        </div>
+        <div className="">
+          <AppStatusTag status={appStatus} isPause={isPause} showBorder={false} />
+        </div>
+      </div>
 
       {/* btns */}
-      {isPause ? (
+      <div className="flex items-center gap-3">
         <Button
-          minW={'75px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          mr={'12px'}
-          h={'32px'}
-          leftIcon={<MyIcon name="continue" w={'16px'} fill={'#485264'} />}
-          isLoading={loading}
-          onClick={handleStartApp}
+          variant="outline"
+          className="h-10 w-10 rounded-lg hover:bg-zinc-50 hover:text-[#FF324A] text-neutral-500"
+          disabled={loading}
+          onClick={() => setIsOpenDelModal(true)}
         >
-          {t('Continue')}
+          <Trash2 className="w-4 h-4" />
         </Button>
-      ) : (
-        <Button
-          minW={'75px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          mr={'12px'}
-          h={'32px'}
-          leftIcon={<MyIcon name="pause" w={'16px'} fill={'#485264'} />}
-          isLoading={loading}
-          onClick={onOpenPause(handlePauseApp)}
-        >
-          {t('Pause')}
-        </Button>
-      )}
-      {!isPause && (
-        <Button
-          className="driver-detail-update-button"
-          _focusVisible={{ boxShadow: '' }}
-          mr={'12px'}
-          h={'32px'}
-          minW={'75px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name={'change'} w={'16px'} fill={'#485264'} />}
-          isLoading={loading}
-          onClick={() => {
-            if (source?.hasSource && source?.sourceType === 'sealaf') {
-              onOpenUpdateModal();
-            } else {
-              router.push(`/app/edit?name=${appName}`);
-            }
-          }}
-        >
-          {t('Update')}
-        </Button>
-      )}
 
-      {!isPause && (
-        <Button
-          mr={'12px'}
-          h={'32px'}
-          minW={'75px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name="restart" w={'16px'} fill={'#485264'} />}
-          onClick={openRestartConfirm(handleRestartApp)}
-          isLoading={loading}
-        >
-          {t('Restart')}
-        </Button>
-      )}
-      <Button
-        h={'32px'}
-        minW={'75px'}
-        fontSize={'12px'}
-        variant={'outline'}
-        leftIcon={<MyIcon name="delete" w={'16px'} fill={'#485264'} />}
-        _hover={{
-          color: '#FF324A'
-        }}
-        isDisabled={loading}
-        onClick={onOpenDelModal}
-      >
-        {t('Delete')}
-      </Button>
+        {isPause ? (
+          <Button
+            variant="outline"
+            className="h-10 min-w-[88px] rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 flex items-center"
+            disabled={loading}
+            onClick={handleStartApp}
+          >
+            {t('Continue')}
+          </Button>
+        ) : (
+          <ButtonGroup className="rounded-lg">
+            <Button
+              variant="outline"
+              className="h-10 min-w-[88px] hover:bg-zinc-50 flex items-center"
+              disabled={loading}
+              onClick={onOpenPause(handlePauseApp)}
+            >
+              {t('Pause')}
+            </Button>
+            <Button
+              className="h-10 min-w-[88px] hover:bg-zinc-50 flex items-center"
+              variant="outline"
+              disabled={loading}
+              onClick={() => {
+                if (source?.hasSource && source?.sourceType === 'sealaf') {
+                  setIsOpenUpdateModal(true);
+                } else {
+                  router.push(`/app/edit?name=${appName}`);
+                }
+              }}
+            >
+              {t('Update')}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-10 min-w-[88px] hover:bg-zinc-50 flex items-center"
+              disabled={loading}
+              onClick={openRestartConfirm(handleRestartApp)}
+            >
+              {t('Restart')}
+            </Button>
+          </ButtonGroup>
+        )}
+      </div>
+
       <RestartConfirmChild />
       <PauseChild />
       {isOpenDelModal && (
         <DelModal
           appName={appName}
           source={source}
-          onClose={onCloseDelModal}
+          onClose={() => setIsOpenDelModal(false)}
           onSuccess={() => router.replace('/apps')}
         />
       )}
       <UpdateModal
         source={source}
         isOpen={isOpenUpdateModal}
-        onClose={() => {
-          onCloseUpdateModal();
-        }}
+        onClose={() => setIsOpenUpdateModal(false)}
       />
       {errorModalState.visible && (
         <ErrorModal
@@ -187,7 +159,7 @@ const Header = ({
           onClose={closeErrorModal}
         />
       )}
-    </Flex>
+    </div>
   );
 };
 

@@ -2,14 +2,11 @@
 @import '@sealos/shadcn-ui/styles.css';
 @import '@sealos/shared/components/shadcn/styles.css';
 
-/* 全局样式（高优先级，覆盖 Chakra 注入） */
 html {
   overflow-x: hidden;
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif !important;
   font-size: 16px;
   font-weight: 400;
   min-width: 1024px;
@@ -20,6 +17,11 @@ body {
 
 #__next {
   min-height: 100%;
+}
+
+#app-root {
+  min-height: 100%;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 .icon {
@@ -184,4 +186,22 @@ button.rdp-button.rdp-day.rdp-day_range_middle {
 button.rdp-button.rdp-day.rdp-day_range_end {
   background-color: #111824;
   color: white;
+}
+
+/* ========== Animations ========== */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.3s;
 }

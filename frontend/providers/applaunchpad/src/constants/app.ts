@@ -54,19 +54,19 @@ export const podStatusMap = {
   [PodStatusEnum.running]: {
     label: 'running',
     value: PodStatusEnum.running,
-    color: 'green.600'
+    color: '#16a34a'
   },
   [PodStatusEnum.waiting]: {
     label: 'waiting',
     value: PodStatusEnum.waiting,
-    color: '#787A90',
+    color: '#71717a',
     reason: '',
     message: ''
   },
   [PodStatusEnum.terminated]: {
     label: 'terminated',
     value: PodStatusEnum.terminated,
-    color: '#8172D8',
+    color: '#6f5dd7',
     reason: '',
     message: ''
   }

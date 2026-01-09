@@ -3,7 +3,6 @@ import { useToast } from '@/hooks/useToast';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import Header from '@/components/app/detail/index/Header';
 import { useAppStore } from '@/store/app';
-import { Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useRouter } from 'next/router';
@@ -52,13 +51,7 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
   );
 
   return (
-    <Flex
-      flexDirection={'column'}
-      height={'100vh'}
-      backgroundColor={'grayModern.100'}
-      px={'16px'}
-      pb={4}
-    >
+    <div className="flex flex-col h-screen bg-zinc-50">
       <Header
         source={appDetail.source}
         appName={appName}
@@ -66,16 +59,16 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
         isPause={appDetail?.isPause}
         refetch={refetch}
       />
-      <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'6px'}>
+      <div className="relative flex-1 min-h-0 flex gap-1.5 px-6 pb-6">
         <Sidebar />
 
         <Loading
           loading={appDetailInitialLoading || appDetailError}
           fixed={false}
-          backdropProps={{ background: 'rgba(255,255,255,0.75)', borderRadius: '12px' }}
+          backdropProps={{ style: { background: 'rgba(255,255,255,0.75)', borderRadius: '12px' } }}
         />
         {children}
-      </Flex>
-    </Flex>
+      </div>
+    </div>
   );
 }

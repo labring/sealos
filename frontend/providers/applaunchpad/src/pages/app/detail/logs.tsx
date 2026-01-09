@@ -1,6 +1,7 @@
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { Box, Flex, Divider } from '@chakra-ui/react';
+import { Box, Flex, Divider, ChakraProvider } from '@chakra-ui/react';
+import { theme } from '@/constants/theme';
 import { useAppStore } from '@/store/app';
 import { serviceSideProps } from '@/utils/i18n';
 import DetailLayout from '@/components/layouts/DetailLayout';
@@ -229,36 +230,38 @@ export default function LogsPage({ appName }: { appName: string }) {
   };
 
   return (
-    <DetailLayout appName={appName}>
-      <Flex flexDirection={'column'} flex={1} borderRadius="lg" overflowY={'auto'}>
-        <Flex mb={'6px'} bg={'white'} flexDir={'column'} border={borderBase} borderRadius={'lg'}>
-          <Header formHook={formHook} refetchData={refetchData} />
-          <Divider />
-          <Filter formHook={formHook} refetchData={refetchData} />
+    <ChakraProvider theme={theme}>
+      <DetailLayout appName={appName}>
+        <Flex flexDirection={'column'} flex={1} borderRadius="lg" overflowY={'auto'}>
+          <Flex mb={'6px'} bg={'white'} flexDir={'column'} border={borderBase} borderRadius={'lg'}>
+            <Header formHook={formHook} refetchData={refetchData} />
+            <Divider />
+            <Filter formHook={formHook} refetchData={refetchData} />
+          </Flex>
+          <Box
+            mb={'6px'}
+            p={'20px 20px'}
+            bg={'white'}
+            border={borderBase}
+            borderRadius={'lg'}
+            flexShrink={0}
+          >
+            <LogCounts logCountsData={logCounts || []} isLogCountsLoading={isLogCountsLoading} />
+          </Box>
+          <Box
+            bg={'white'}
+            p={'20px'}
+            border={borderBase}
+            borderRadius={'lg'}
+            flex={1}
+            height={'0px'}
+            minH={parsedLogs?.length > 0 ? '400px' : '200px'}
+          >
+            <LogTable data={parsedLogs || []} isLoading={isLoading} formHook={formHook} />
+          </Box>
         </Flex>
-        <Box
-          mb={'6px'}
-          p={'20px 20px'}
-          bg={'white'}
-          border={borderBase}
-          borderRadius={'lg'}
-          flexShrink={0}
-        >
-          <LogCounts logCountsData={logCounts || []} isLogCountsLoading={isLogCountsLoading} />
-        </Box>
-        <Box
-          bg={'white'}
-          p={'20px'}
-          border={borderBase}
-          borderRadius={'lg'}
-          flex={1}
-          height={'0px'}
-          minH={parsedLogs?.length > 0 ? '400px' : '200px'}
-        >
-          <LogTable data={parsedLogs || []} isLoading={isLoading} formHook={formHook} />
-        </Box>
-      </Flex>
-    </DetailLayout>
+      </DetailLayout>
+    </ChakraProvider>
   );
 }
 

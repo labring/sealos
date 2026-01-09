@@ -1,26 +1,20 @@
 import GPUItem from '@/components/GPUItem';
-import MyIcon from '@/components/Icon';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useUserStore } from '@/store/user';
 import type { AppDetailType } from '@/types/app';
 import { printMemory, useCopyData } from '@/utils/tools';
+import { Separator } from '@sealos/shadcn-ui/separator';
 import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
-  Box,
-  Divider,
-  Flex,
-  Tag,
-  Text
-} from '@chakra-ui/react';
-import { MyTooltip } from '@sealos/ui';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@sealos/shadcn-ui/tooltip';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useMemo, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { ArrowUpRight } from 'lucide-react';
 
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 
@@ -87,7 +81,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           : [{ label: `Number of Instances`, value: `${app.replicas}` }]
       }
     ],
-    [app]
+    [app, t, userSourcePrice?.gpu]
   );
 
   const appTags = useMemo(
@@ -124,98 +118,75 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   }, [app.volumes, app.volumeMounts]);
 
   return (
-    <Box px={'32px'} py={'24px'} position={'relative'}>
+    <div className="p-6 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs h-full">
       {appInfoTable.map((info, index) => (
-        <Box key={info.name}>
-          <Flex
-            alignItems={'center'}
-            color={'grayModern.900'}
-            fontSize={'14px'}
-            fontWeight={'bold'}
-          >
-            {t(info.name)}
-          </Flex>
-          <Box mt={'14px'}>
+        <div key={info.name} className="space-y-4">
+          <div className="text-zinc-900 text-lg font-medium">{t(info.name)}</div>
+          <div className="flex flex-col gap-4 text-sm font-normal">
             {app?.source?.hasSource && index === 0 && (
-              <Box fontSize={'12px'}>
-                <Flex
-                  flexWrap={'wrap'}
-                  cursor={'pointer'}
-                  onClick={() => {
-                    if (!app?.source?.sourceName) return;
-                    if (app.source.sourceType === 'app_store') {
-                      sealosApp.runEvents('openDesktopApp', {
-                        appKey: 'system-template',
-                        pathname: '/instance',
-                        query: { instanceName: app.source.sourceName }
-                      });
-                    }
-                    if (app.source.sourceType === 'sealaf') {
-                      sealosApp.runEvents('openDesktopApp', {
-                        appKey: 'system-sealaf',
-                        pathname: '/',
-                        query: { instanceName: app.source.sourceName }
-                      });
-                    }
-                  }}
-                >
-                  <Text flex={'0 0 110px'} w={0} color={'grayModern.600'}>
-                    {t('application_source')}
-                  </Text>
-                  <Flex alignItems={'center'}>
-                    <Text color={'grayModern.900'}>{t(app.source?.sourceType)}</Text>
-                    <Divider
-                      orientation="vertical"
-                      h={'12px'}
-                      mx={'8px'}
-                      borderColor={'grayModern.300'}
-                    />
-                    <Box color={'grayModern.600'}>{t('Manage all resources')}</Box>
-                    <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />
-                  </Flex>
-                </Flex>
-              </Box>
-            )}
-            {info.items.map((item, i) => (
-              <Flex
-                key={item.label || i}
-                flexWrap={'wrap'}
-                _notFirst={{
-                  mt: '12px'
+              <div
+                className="flex flex-wrap cursor-pointer"
+                onClick={() => {
+                  if (!app?.source?.sourceName) return;
+                  if (app.source.sourceType === 'app_store') {
+                    sealosApp.runEvents('openDesktopApp', {
+                      appKey: 'system-template',
+                      pathname: '/instance',
+                      query: { instanceName: app.source.sourceName }
+                    });
+                  }
+                  if (app.source.sourceType === 'sealaf') {
+                    sealosApp.runEvents('openDesktopApp', {
+                      appKey: 'system-sealaf',
+                      pathname: '/',
+                      query: { instanceName: app.source.sourceName }
+                    });
+                  }
                 }}
               >
-                <Box flex={'0 0 110px'} w={0} color={'grayModern.600'} fontSize={'12px'}>
-                  {t(item.label)}
-                </Box>
-                <Box
-                  fontSize={'12px'}
-                  color={'grayModern.900'}
-                  flex={'1 0 0'}
-                  textOverflow={'ellipsis'}
-                  overflow={'hidden'}
-                  whiteSpace={'nowrap'}
-                >
-                  <MyTooltip label={item.value}>
-                    <Box
-                      as="span"
-                      cursor={!!item.copy ? 'pointer' : 'default'}
-                      onClick={() => item.value && !!item.copy && copyData(item.copy)}
-                    >
-                      {item.render ? item.render : item.value}
-                    </Box>
-                  </MyTooltip>
-                </Box>
-              </Flex>
+                <span className="min-w-[120px] w-0 text-zinc-500">{t('application_source')}</span>
+                <div className="flex items-center">
+                  <span className="text-zinc-700">{t(app.source?.sourceType)}</span>
+                  <Separator orientation="vertical" className="h-3 mx-2 bg-zinc-100" />
+                  <span className="text-zinc-500">{t('Manage all resources')}</span>
+                  <ArrowUpRight className="w-4 h-4 text-zinc-500" />
+                </div>
+              </div>
+            )}
+
+            {info.items.map((item, i) => (
+              <div key={item.label || i} className={`flex flex-wrap`}>
+                <div className="min-w-[120px] w-0 text-zinc-500">{t(item.label)}</div>
+                <div className="text-zinc-700 flex-1 min-w-0 truncate">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span
+                          className={item.copy ? 'cursor-pointer' : 'cursor-default'}
+                          onClick={() => item.value && !!item.copy && copyData(item.copy)}
+                        >
+                          {item.render ? item.render : item.value}
+                        </span>
+                      </TooltipTrigger>
+                      {item.value && (
+                        <TooltipContent>
+                          <p>{item.value}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </div>
             ))}
-          </Box>
-          {index !== appInfoTable.length - 1 && <Divider my={'16px'} />}
-        </Box>
+          </div>
+          {index !== appInfoTable.length - 1 && <Separator className="my-4 bg-zinc-100" />}
+        </div>
       ))}
 
       {detailConfigMap && (
         <ConfigMapDetailModal {...detailConfigMap} onClose={() => setDetailConfigMap(undefined)} />
       )}
-    </Box>
+    </div>
   );
 };
 

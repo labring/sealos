@@ -1,5 +1,3 @@
-import MyIcon from '@/components/Icon';
-import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
@@ -7,35 +5,23 @@ import { DOMAIN_PORT } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
-import {
-  Box,
-  Button,
-  Center,
-  Flex,
-  Grid,
-  Popover,
-  PopoverArrow,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-  useDisclosure
-} from '@chakra-ui/react';
+import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import MonitorModal from './MonitorModal';
 import { useQuery } from '@tanstack/react-query';
 import { checkReady } from '@/api/platform';
 import { useGuideStore } from '@/store/guide';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
 import ICPStatus from './ICPStatus';
-import { CircleHelpIcon } from 'lucide-react';
+import { CircleHelpIcon, Copy } from 'lucide-react';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
 
   const { detailCompleted } = useGuideStore();
 
@@ -83,7 +69,8 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               network?.nodePort ? `:${network.nodePort}` : ''
             }`,
             customDomain: null,
-            showReadyStatus: false
+            showReadyStatus: false,
+            port: network.port
           };
         }
 
@@ -99,7 +86,8 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               }`
             : '',
           customDomain: network.openPublicDomain ? network.customDomain : null,
-          showReadyStatus: true
+          showReadyStatus: true,
+          port: network.port
         };
       }),
     [app]
@@ -132,247 +120,190 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const statusMap = useMemo(
     () =>
       networkStatus
-        ? networkStatus.reduce(
-            (acc, item) => {
-              if (item?.url) {
-                acc[item.url] = item;
-              }
-              return acc;
-            },
-            {} as Record<string, { ready: boolean; url: string }>
-          )
+        ? networkStatus.reduce((acc, item) => {
+            if (item?.url) {
+              acc[item.url] = item;
+            }
+            return acc;
+          }, {} as Record<string, { ready: boolean; url: string }>)
         : {},
     [networkStatus]
   );
 
   return (
-    <Box p={'24px'} position={'relative'}>
-      <>
-        <Flex alignItems={'center'} fontSize={'14px'} fontWeight={'bold'}>
-          <Box color={'grayModern.900'}>{t('Real-time Monitoring')}</Box>
-          <Box ml={'8px'} color={'grayModern.600'}>
-            ({t('Update Time')}&ensp;{dayjs().format('HH:mm')})
-          </Box>
-        </Flex>
-        <Grid
-          w={'100%'}
-          templateColumns={'1fr 1fr'}
-          gap={3}
-          mt={'12px'}
-          px={'16px'}
-          py={'12px'}
-          backgroundColor={'#FBFBFC'}
-          borderRadius={'6px'}
-          fontSize={'12px'}
-          color={'grayModern.600'}
-          fontWeight={'bold'}
-          position={'relative'}
-          className="driver-detail-monitor"
-        >
-          <Box>
-            <Box mb={'4px'}>CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)</Box>
-            <Box h={'60px'}>
+    <div className="flex flex-col gap-1.5">
+      {/* Real-time Monitoring Card */}
+      <div className="p-6 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="text-zinc-900 text-lg font-medium">{t('Real-time Monitoring')}</div>
+          <div className="text-neutral-400 text-sm font-normal">
+            {t('Update Time')}&ensp;{dayjs().format('HH:mm')}
+          </div>
+        </div>
+        <div className="w-full grid grid-cols-2 gap-4 text-sm text-zinc-700 relative driver-detail-monitor">
+          <div>
+            <div className="mb-1">
+              CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)
+            </div>
+            <div className="h-15">
               <PodLineChart type={'blue'} data={app.usedCpu} />
-            </Box>
-          </Box>
-          <Box>
-            <Box mb={'4px'}>
+            </div>
+          </div>
+          <div>
+            <div className="mb-1">
               {t('Memory')}&ensp;({app.usedMemory.yData[app.usedMemory.yData.length - 1]}%)
-            </Box>
-            <Box h={'60px'}>
+            </div>
+            <div className="h-15">
               <PodLineChart type={'purple'} data={app.usedMemory} />
-            </Box>
-          </Box>
-        </Grid>
-        <Box id="driver-detail-network">
-          <Flex mt={3} alignItems={'center'} fontSize={'14px'} fontWeight={'bold'}>
-            <Text color={'grayModern.900'}>{t('Network Configuration')}</Text>
-            <Text ml={'8px'} color={'grayModern.600'}>
-              ({networks.length})
-            </Text>
-          </Flex>
-          <Flex mt={'12px'}>
-            <table className={'table-cross'}>
-              <thead>
-                <tr>
-                  <Box as={'th'} fontSize={'12px'}>
-                    {t('Private Address')}
-                  </Box>
-                  <Box as={'th'} fontSize={'12px'}>
-                    {t('Public Address')}
-                  </Box>
-                </tr>
-              </thead>
-              <tbody>
-                {networks.map((network, index) => {
-                  return (
-                    <tr key={network.inline + index}>
-                      <th>
-                        <Flex>
-                          <MyTooltip label={t('Copy')} placement={'bottom-start'}>
-                            <Box
-                              fontSize={'12px'}
-                              cursor={'pointer'}
-                              _hover={{ textDecoration: 'underline' }}
-                              onClick={() => copyData(network.inline)}
-                            >
-                              {network.inline.replace('.svc.cluster.local', '')}
-                            </Box>
-                          </MyTooltip>
-                        </Flex>
-                      </th>
-                      <th>
-                        <Box width={'full'} overflowX={'auto'}>
-                          <Flex
-                            alignItems={'center'}
-                            gap={'2px'}
-                            flexWrap={'nowrap'}
-                            width={'fit-content'}
-                            minW={'full'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Network Configuration Card */}
+      <div
+        id="driver-detail-network"
+        className="min-h-[200px] max-h-[238px] pt-6 px-6 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-4"
+      >
+        <div className="flex items-center justify-between">
+          <div className="text-zinc-900 text-lg font-medium flex items-center gap-2">
+            {t('Network Configuration')}
+            <span className="text-base font-medium leading-none text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5 border-[0.5px] border-zinc-200">
+              {networks.length}
+            </span>
+          </div>
+        </div>
+        <div className="overflow-auto pb-6">
+          <table className="w-full table-fixed">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-zinc-50">
+                <th className="w-[85px] h-10 text-sm font-normal text-zinc-500 px-4 py-3 rounded-l-lg text-left">
+                  {t('Port')}
+                </th>
+                <th className="h-10 text-sm font-normal text-zinc-500 px-4 py-3 text-left">
+                  {t('Private Address')}
+                </th>
+                <th className="h-10 text-sm font-normal text-zinc-500 px-4 py-3 rounded-r-lg text-left">
+                  {t('Public Address')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {networks.map((network, index) => {
+                return (
+                  <tr
+                    key={network.inline + index}
+                    className={`${index !== networks.length - 1 ? 'border-b border-zinc-100' : ''}`}
+                  >
+                    <td className="w-[85px] px-4 py-2">
+                      <div className="text-sm text-zinc-700">{network.port}</div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div
+                            className="text-sm w-fit text-zinc-700 cursor-pointer"
+                            onClick={() => copyData(network.inline)}
                           >
-                            {network.public && network.showReadyStatus && (
-                              <>
-                                {statusMap[network.public]?.ready ? (
-                                  <Center
-                                    fontSize={'12px'}
-                                    fontWeight={400}
-                                    bg={'rgba(3, 152, 85, 0.05)'}
-                                    color={'#039855'}
-                                    borderRadius={'full'}
-                                    p={'2px 8px 2px 4px'}
-                                    gap={'2px'}
-                                    minW={'63px'}
-                                  >
-                                    <Center
-                                      w={'6px'}
-                                      h={'6px'}
-                                      borderRadius={'full'}
-                                      bg={'#039855'}
-                                    ></Center>
-                                    {t('Accessible')}
-                                  </Center>
-                                ) : (
-                                  <Popover trigger="hover">
-                                    <PopoverTrigger>
-                                      <Center
-                                        fontSize={'12px'}
-                                        fontWeight={400}
-                                        bg={'#FAFAFA'}
-                                        color={'#71717A'}
-                                        border={'1px solid #E4E4E7'}
-                                        borderRadius={'full'}
-                                        p={'2px 4px 2px 4px'}
-                                        gap={'2px'}
-                                        minW={'63px'}
-                                        cursor={'pointer'}
-                                        whiteSpace={'nowrap'}
-                                      >
-                                        <Center
-                                          w={'6px'}
-                                          h={'6px'}
-                                          mr={'4px'}
-                                          borderRadius={'full'}
-                                          bg={'#A1A1AA'}
-                                        ></Center>
-
-                                        {t('Ready')}
-
-                                        <Box ml={'4px'}>
-                                          <CircleHelpIcon size={12} color={'#485264'} />
-                                        </Box>
-                                      </Center>
-                                    </PopoverTrigger>
-                                    <PopoverContent w={'254px'} borderRadius={'10px'}>
-                                      <PopoverArrow />
-                                      <PopoverBody p={'10px'}>
-                                        <Box
-                                          color={'grayModern.900'}
-                                          fontSize={'12px'}
-                                          fontWeight={'400'}
-                                          lineHeight={'16px'}
-                                        >
-                                          {network.customDomain
-                                            ? t('network_not_ready_icp_reg')
-                                            : t('network_not_ready')}
-                                        </Box>
-                                      </PopoverBody>
-                                    </PopoverContent>
-                                  </Popover>
-                                )}
-                              </>
+                            {network.inline.replace('.svc.cluster.local', '')}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{t('Copy')}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {network.public && network.showReadyStatus && (
+                          <div className="min-w-[70px]">
+                            {statusMap[network.public]?.ready ? (
+                              <div className="w-fit relative top-[1px] h-5 flex items-center gap-1 text-xs font-medium bg-emerald-50 text-emerald-600 rounded-full px-2 py-0.5 border-[0.5px] border-emerald-200">
+                                <div className="w-1.5 h-1.5 rounded-xs bg-emerald-500"></div>
+                                {t('Accessible')}
+                              </div>
+                            ) : (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <div className="w-fit relative top-[1px] h-5 flex items-center gap-1 text-xs font-medium bg-zinc-50 text-zinc-500 border-[0.5px] border-zinc-200 rounded-full px-2 py-0.5 cursor-pointer">
+                                    <CircleHelpIcon className="w-3 h-3 text-zinc-400" />
+                                    {t('Ready')}
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-64 rounded-xl" side="top">
+                                  <div className="p-2.5">
+                                    <p className="text-zinc-900 text-xs font-normal leading-4">
+                                      {network.customDomain
+                                        ? t('network_not_ready_icp_reg')
+                                        : t('network_not_ready')}
+                                    </p>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                             )}
+                          </div>
+                        )}
 
-                            <MyTooltip
-                              label={network.public ? t('Open Link') : ''}
-                              placement={'bottom-start'}
-                            >
-                              <Box
-                                fontSize={'12px'}
-                                className={'textEllipsis'}
+                        <div className="flex items-center gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div
+                                className={`text-sm ${
+                                  network.public ? 'text-zinc-700 cursor-pointer' : 'text-zinc-500'
+                                }`}
                                 {...(network.public
                                   ? {
-                                      cursor: 'pointer',
-                                      _hover: { textDecoration: 'underline' },
                                       onClick: () => window.open(network.public, '_blank')
                                     }
                                   : {})}
                               >
-                                <Flex alignItems={'center'} gap={2}>
-                                  {network.public || '-'}
-                                </Flex>
-                              </Box>
-                            </MyTooltip>
-
-                            {/* ICP reg status*/}
-                            {network.customDomain !== null &&
-                              network.showReadyStatus === true &&
-                              network.public &&
-                              !statusMap[network.public]?.ready && (
-                                <ICPStatus
-                                  customDomain={network.customDomain}
-                                  enabled={
-                                    !!networkStatus &&
-                                    !!network.customDomain &&
-                                    network.showReadyStatus === true &&
-                                    !!network.public &&
-                                    !statusMap[network.public]?.ready
-                                  }
-                                />
-                              )}
-
-                            {!!network.public && (
-                              <Center
-                                ml={'auto'}
-                                flexShrink={0}
-                                w={'24px'}
-                                h={'24px'}
-                                borderRadius={'6px'}
-                                _hover={{
-                                  bg: 'rgba(17, 24, 36, 0.05)'
-                                }}
-                                cursor={'pointer'}
-                              >
-                                <MyIcon
-                                  name={'copy'}
-                                  w={'16px'}
-                                  color={'#667085'}
-                                  onClick={() => copyData(network.public)}
-                                />
-                              </Center>
+                                {network.public || '-'}
+                              </div>
+                            </TooltipTrigger>
+                            {network.public && (
+                              <TooltipContent>
+                                <p>{t('Open Link')}</p>
+                              </TooltipContent>
                             )}
-                          </Flex>
-                        </Box>
-                      </th>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </Flex>
-        </Box>
-      </>
-      <MonitorModal isOpen={isOpen} onClose={onClose} />
-    </Box>
+                          </Tooltip>
+                          {!!network.public && (
+                            <div
+                              className="relative top-[1px] flex-shrink-0 w-6 h-6 rounded-md hover:bg-zinc-100 cursor-pointer flex items-center justify-center"
+                              onClick={() => copyData(network.public)}
+                            >
+                              <Copy className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* ICP reg status*/}
+                        {network.customDomain !== null &&
+                          network.showReadyStatus === true &&
+                          network.public &&
+                          !statusMap[network.public]?.ready && (
+                            <ICPStatus
+                              customDomain={network.customDomain}
+                              enabled={
+                                !!networkStatus &&
+                                !!network.customDomain &&
+                                network.showReadyStatus === true &&
+                                !!network.public &&
+                                !statusMap[network.public]?.ready
+                              }
+                            />
+                          )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <MonitorModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+    </div>
   );
 };
 

@@ -34,7 +34,7 @@ import * as yaml from 'js-yaml';
 import type { AppConfigType } from '@/types';
 import Script from 'next/script';
 import { GTMScript } from '@sealos/gtm';
-import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
+import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
 import { QuotaGuardProvider } from '@sealos/shared';
 
 //Binding events.
@@ -223,7 +223,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
   }, []);
 
   return (
-    <div className={`${GeistSans.variable} ${FiraCode.variable}`}>
+    <div id="app-root" className={`${GeistSans.variable} ${FiraCode.variable}`}>
       {config?.launchpad?.meta?.title && (
         <Head>
           <title>{config?.launchpad?.meta?.title}</title>

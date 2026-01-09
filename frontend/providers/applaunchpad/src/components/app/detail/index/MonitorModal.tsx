@@ -1,61 +1,43 @@
-import { delAppByName } from '@/api/app';
 import PodLineChart from '@/components/PodLineChart';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
-import {
-  Box,
-  Button,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay
-} from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@sealos/shadcn-ui/dialog';
 import { useTranslation } from 'next-i18next';
-import { useRouter } from 'next/router';
-import { useCallback, useState } from 'react';
-
-const borderBase = '1px solid #E8EBF0';
 
 const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => void }) => {
   const { t } = useTranslation();
-  const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { message: toast } = useMessage();
-  const router = useRouter();
   const { appDetail = MOCK_APP_DETAIL } = useAppStore();
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} autoFocus={false} lockFocusAcrossFrames={false}>
-      <ModalOverlay />
-      <ModalContent maxW={'90vw'}>
-        <ModalHeader>{t('Real-time Monitoring')}</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody fontSize={'12px'} fontWeight={'bold'} color={'grayModern.900'}>
-          <Box p={'24px'} bg={'grayModern.25'} border={borderBase} mb={'16px'} borderRadius={'lg'}>
-            <Box mb={'12px'}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-5xl">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold text-zinc-900">
+            {t('Real-time Monitoring')}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="text-xs font-bold text-zinc-900 space-y-4">
+          <div className="p-6 bg-zinc-50 border border-zinc-200 rounded-lg">
+            <div className="mb-3">
               CPU&ensp;({appDetail.usedCpu.yData[appDetail.usedCpu.yData.length - 1]}%)
-            </Box>
-            <Box height={'100px'}>
+            </div>
+            <div className="h-[100px]">
               <PodLineChart type={'blue'} data={appDetail.usedCpu} isShowLabel />
-            </Box>
-          </Box>
-          <Box p={'24px'} bg={'grayModern.25'} border={borderBase} borderRadius={'lg'}>
-            <Box mb={'12px'}>
+            </div>
+          </div>
+          <div className="p-6 bg-zinc-50 border border-zinc-200 rounded-lg">
+            <div className="mb-3">
               {t('Memory')}&ensp;(
               {appDetail.usedMemory.yData[appDetail.usedMemory.yData.length - 1]}%)
-            </Box>
-            <Box height={'100px'}>
+            </div>
+            <div className="h-[100px]">
               <PodLineChart type={'purple'} data={appDetail.usedMemory} isShowLabel />
-            </Box>
-          </Box>
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

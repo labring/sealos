@@ -2,27 +2,20 @@ import MyIcon from '@/components/Icon';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
+import { Separator } from '@sealos/shadcn-ui/separator';
 import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
-  Box,
-  Center,
-  Divider,
-  Flex,
-  Text
-} from '@chakra-ui/react';
-import { MyTooltip } from '@sealos/ui';
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@sealos/shadcn-ui/tooltip';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import styles from '@/components/app/detail/index/index.module.scss';
 
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
-
-const borderBase = '1px solid #E8EBF0';
 
 const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
@@ -34,108 +27,64 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <Box px={'32px'}>
-      <Accordion allowToggle onChange={(expandedIndex) => setIsExpanded(expandedIndex === 0)}>
-        <AccordionItem border={'none'}>
-          <AccordionButton
-            display={'flex'}
-            height={'52px'}
-            textAlign={'left'}
-            py={4}
-            px={'0px'}
-            _hover={{ backgroundColor: 'transparent' }}
-          >
-            <Box color={'grayModern.900'} fontSize={'14px'} fontWeight={'bold'}>
-              {t('Advanced Configuration')}
-            </Box>
+    <div className="px-8">
+      <div>
+        <button
+          type="button"
+          className="flex items-center w-full h-[52px] text-left py-4 px-0 hover:bg-transparent transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="text-zinc-900 text-sm font-bold">{t('Advanced Configuration')}</div>
 
-            <Flex
-              ml={'20px'}
-              alignItems={'center'}
-              fontSize={'12px'}
-              fontWeight={400}
-              color={'grayModern.600'}
-            >
-              <Text>
-                {t('Command')}: {app.runCMD || 'Not Configured'}
-              </Text>
-              <Divider
-                orientation="vertical"
-                h={'12px'}
-                mx={'16px'}
-                borderColor={'grayModern.300'}
-              />
-              <Text>
-                {t('Environment Variables')}: {app.envs?.length}
-              </Text>
-              <Divider
-                orientation="vertical"
-                h={'12px'}
-                mx={'16px'}
-                borderColor={'grayModern.300'}
-              />
-              <Text>ConfigMaps: {app.configMapList?.length}</Text>
-              <Divider
-                orientation="vertical"
-                h={'12px'}
-                mx={'16px'}
-                borderColor={'grayModern.300'}
-              />
-              <Text>
-                {t('Storage')}: {app.storeList?.length}
-              </Text>
-            </Flex>
+          <div className="ml-5 flex items-center text-xs font-normal text-zinc-600">
+            <span>
+              {t('Command')}: {app.runCMD || 'Not Configured'}
+            </span>
+            <Separator orientation="vertical" className="h-3 mx-4 bg-zinc-300" />
+            <span>
+              {t('Environment Variables')}: {app.envs?.length}
+            </span>
+            <Separator orientation="vertical" className="h-3 mx-4 bg-zinc-300" />
+            <span>ConfigMaps: {app.configMapList?.length}</span>
+            <Separator orientation="vertical" className="h-3 mx-4 bg-zinc-300" />
+            <span>
+              {t('Storage')}: {app.storeList?.length}
+            </span>
+          </div>
 
-            <Box ml={'auto'}>
-              <AccordionIcon />
-            </Box>
-          </AccordionButton>
-          <AccordionPanel>
-            <Flex mt={'8px'} gap={'16px'}>
-              <Box flex={'1 0 0'} width={'0px'}>
-                <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                  <Text>{t('Command')}</Text>
-                  <Box
-                    borderRadius={'4px'}
-                    border={'1px solid #F4F4F7'}
-                    bg={'grayModern.25'}
-                    p={'12px'}
-                    mt={'8px'}
-                  >
+          <div className="ml-auto">
+            <ChevronDown
+              className={`w-5 h-5 text-zinc-600 transition-transform ${
+                isExpanded ? 'rotate-180' : ''
+              }`}
+            />
+          </div>
+        </button>
+        {isExpanded && (
+          <div>
+            <div className="mt-2 flex gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-normal text-zinc-600">
+                  <div>{t('Command')}</div>
+                  <div className="rounded border border-zinc-200 bg-zinc-50 p-3 mt-2">
                     {[
                       { label: 'Command', value: app.runCMD || 'Not Configured' },
                       { label: 'Parameters', value: app.cmdParam || 'Not Configured' }
-                    ].map((item) => (
-                      <Flex
-                        key={item.label}
-                        _notFirst={{
-                          mt: '12px'
-                        }}
-                      >
-                        <Box flex={'0 0 80px'} w={0}>
-                          {t(item.label)}
-                        </Box>
-                        <Box color={'grayModern.900'}>{item.value}</Box>
-                      </Flex>
+                    ].map((item, index) => (
+                      <div key={item.label} className={index > 0 ? 'mt-3' : ''}>
+                        <div className="flex">
+                          <div className="flex-[0_0_80px] min-w-0">{t(item.label)}</div>
+                          <div className="text-zinc-900">{item.value}</div>
+                        </div>
+                      </div>
                     ))}
-                  </Box>
-                </Box>
-                <Box mt={'16px'} fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                  <Text>{t('Environment Variables')}</Text>
-                  <Box
-                    borderRadius={'4px'}
-                    border={'1px solid #F4F4F7'}
-                    bg={'grayModern.25'}
-                    p={'12px'}
-                    mt={'8px'}
-                  >
+                  </div>
+                </div>
+                <div className="mt-4 text-xs font-normal text-zinc-600">
+                  <div>{t('Environment Variables')}</div>
+                  <div className="rounded border border-zinc-200 bg-zinc-50 p-3 mt-2">
                     {app.envs?.length > 0 ? (
-                      <Flex
-                        flexDirection={'column'}
-                        border={borderBase}
-                        bg={'#fff'}
-                        borderRadius={'md'}
-                      >
+                      <div className="flex flex-col border border-zinc-200 bg-white rounded-md">
                         {app.envs.map((env, index) => {
                           const valText = env.value
                             ? env.value
@@ -143,161 +92,119 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                             ? 'value from | ***'
                             : '';
                           return (
-                            <Flex
+                            <div
                               key={env.key}
-                              gap={'24px'}
-                              px="10px"
-                              py="8px"
-                              borderBottom={'1px solid'}
-                              borderBottomColor={
-                                index !== app.envs.length - 1 ? 'grayModern.150' : 'transparent'
-                              }
+                              className={`flex gap-6 px-2.5 py-2 ${
+                                index !== app.envs.length - 1 ? 'border-b border-zinc-200' : ''
+                              }`}
                             >
-                              <Box flex={1} maxW={'40%'} overflowWrap={'break-word'}>
-                                {env.key}
-                              </Box>
-                              <MyTooltip label={valText}>
-                                <Box
-                                  flex={1}
-                                  className={styles.textEllipsis}
-                                  style={{
-                                    userSelect: 'auto',
-                                    cursor: 'pointer'
-                                  }}
-                                  onClick={() => copyData(valText)}
-                                >
-                                  {valText}
-                                </Box>
-                              </MyTooltip>
-                            </Flex>
+                              <div className="flex-1 max-w-[40%] break-words">{env.key}</div>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className={`flex-1 ${styles.textEllipsis}`}
+                                      style={{
+                                        userSelect: 'auto',
+                                        cursor: 'pointer'
+                                      }}
+                                      onClick={() => copyData(valText)}
+                                    >
+                                      {valText}
+                                    </div>
+                                  </TooltipTrigger>
+                                  {valText && (
+                                    <TooltipContent>
+                                      <p>{valText}</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           );
                         })}
-                      </Flex>
+                      </div>
                     ) : (
-                      <Center
-                        w={'100%'}
-                        h={'32px'}
-                        color={'grayModern.600'}
-                        fontSize={'12px'}
-                        borderRadius={'4px'}
-                      >
-                        <Box>{t('no_data_available')}</Box>
-                      </Center>
+                      <div className="flex items-center justify-center w-full h-8 text-zinc-600 text-xs rounded">
+                        {t('no_data_available')}
+                      </div>
                     )}
-                  </Box>
-                </Box>
-              </Box>
-              <Box flex={'1 0 0'}>
-                <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                  <Text>{t('Configuration File')}</Text>
-                  <Box
-                    borderRadius={'4px'}
-                    border={'1px solid #F4F4F7'}
-                    bg={'grayModern.25'}
-                    p={'12px'}
-                    mt={'8px'}
-                  >
+                  </div>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-normal text-zinc-600">
+                  <div>{t('Configuration File')}</div>
+                  <div className="rounded border border-zinc-200 bg-zinc-50 p-3 mt-2">
                     {app.configMapList?.length > 0 ? (
-                      <Box borderRadius={'md'} overflow={'hidden'} bg={'#FFF'} border={borderBase}>
-                        {app.configMapList.map((item) => (
-                          <Flex
+                      <div className="rounded-md overflow-hidden bg-white border border-zinc-200">
+                        {app.configMapList.map((item, index) => (
+                          <div
                             key={item.mountPath}
-                            alignItems={'center'}
-                            px={'14px'}
-                            py={'8px'}
-                            cursor={'pointer'}
-                            _notLast={{
-                              borderBottom: borderBase
-                            }}
+                            className={`flex items-center px-3.5 py-2 cursor-pointer hover:bg-zinc-50 ${
+                              index !== app.configMapList.length - 1
+                                ? 'border-b border-zinc-200'
+                                : ''
+                            }`}
+                            onClick={() =>
+                              setDetailConfigMap({ mountPath: item.mountPath, value: item.value })
+                            }
                           >
                             <MyIcon name={'configMap'} width={'24px'} height={'24px'} />
-                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
-                              <Box fontWeight={'bold'} color={'grayModern.900'}>
-                                {item.mountPath}
-                              </Box>
-                              <Box
-                                className={styles.textEllipsis}
-                                color={'grayModern.600'}
-                                fontSize={'sm'}
-                              >
+                            <div className="ml-4 flex-1 min-w-0">
+                              <div className="font-bold text-zinc-900">{item.mountPath}</div>
+                              <div className={`${styles.textEllipsis} text-zinc-600 text-sm`}>
                                 {item.value}
-                              </Box>
-                            </Box>
-                          </Flex>
+                              </div>
+                            </div>
+                          </div>
                         ))}
-                      </Box>
+                      </div>
                     ) : (
-                      <Center
-                        w={'100%'}
-                        h={'32px'}
-                        color={'grayModern.600'}
-                        fontSize={'12px'}
-                        borderRadius={'4px'}
-                      >
-                        <Box>{t('no_data_available')}</Box>
-                      </Center>
+                      <div className="flex items-center justify-center w-full h-8 text-zinc-600 text-xs rounded">
+                        {t('no_data_available')}
+                      </div>
                     )}
-                  </Box>
-                </Box>
-                <Box mt={'16px'} fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                  <Text>{t('Storage')}</Text>
-                  <Box
-                    borderRadius={'4px'}
-                    border={'1px solid #F4F4F7'}
-                    bg={'grayModern.25'}
-                    p={'12px'}
-                    mt={'8px'}
-                  >
+                  </div>
+                </div>
+                <div className="mt-4 text-xs font-normal text-zinc-600">
+                  <div>{t('Storage')}</div>
+                  <div className="rounded border border-zinc-200 bg-zinc-50 p-3 mt-2">
                     {app.storeList?.length > 0 ? (
-                      <Box borderRadius={'md'} overflow={'hidden'} bg={'#FFF'} border={borderBase}>
-                        {app.storeList.map((item) => (
-                          <Flex
+                      <div className="rounded-md overflow-hidden bg-white border border-zinc-200">
+                        {app.storeList.map((item, index) => (
+                          <div
                             key={item.path}
-                            alignItems={'center'}
-                            px={'14px'}
-                            py={'8px'}
-                            _notLast={{
-                              borderBottom: borderBase
-                            }}
+                            className={`flex items-center px-3.5 py-2 ${
+                              index !== app.storeList.length - 1 ? 'border-b border-zinc-200' : ''
+                            }`}
                           >
                             <MyIcon name={'store'} width={'24px'} height={'24px'} />
-                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
-                              <Box color={'grayModern.900'} fontWeight={'bold'}>
-                                {item.path}
-                              </Box>
-                              <Box
-                                className={styles.textEllipsis}
-                                color={'grayModern.600'}
-                                fontSize={'sm'}
-                              >
+                            <div className="ml-4 flex-1 min-w-0">
+                              <div className="text-zinc-900 font-bold">{item.path}</div>
+                              <div className={`${styles.textEllipsis} text-zinc-600 text-sm`}>
                                 {item.value} Gi
-                              </Box>
-                            </Box>
-                          </Flex>
+                              </div>
+                            </div>
+                          </div>
                         ))}
-                      </Box>
+                      </div>
                     ) : (
-                      <Center
-                        w={'100%'}
-                        h={'32px'}
-                        color={'grayModern.600'}
-                        fontSize={'12px'}
-                        borderRadius={'4px'}
-                      >
-                        <Box>{t('no_data_available')}</Box>
-                      </Center>
+                      <div className="flex items-center justify-center w-full h-8 text-zinc-600 text-xs rounded">
+                        {t('no_data_available')}
+                      </div>
                     )}
-                  </Box>
-                </Box>
-              </Box>
-            </Flex>
-          </AccordionPanel>
-        </AccordionItem>
-      </Accordion>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       {detailConfigMap && (
         <ConfigMapDetailModal {...detailConfigMap} onClose={() => setDetailConfigMap(undefined)} />
       )}
-    </Box>
+    </div>
   );
 };
 
