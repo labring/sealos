@@ -256,6 +256,16 @@ type CommitRecordMap map[string]*CommitRecord
 
 // DevboxStatus defines the observed state of Devbox
 type DevboxStatus struct {
+	// ObservedGeneration is the most recent generation observed by the controller.
+	// It is updated when the controller has reconciled the spec for that generation.
+	// +kubebuilder:validation:Optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
+	// Conditions represent the latest available observations of the Devbox's state.
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={}
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	ContentID string `json:"contentID"`
 	// +kubebuilder:validation:Optional

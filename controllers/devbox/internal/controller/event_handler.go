@@ -181,6 +181,26 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 				return err
 			}
 			latestDevbox.Status.State = targetState
+			// Transition synced; clear pending and advance observedGeneration.
+			if latestDevbox.Spec.State == latestDevbox.Status.State {
+				latestDevbox.Status.ObservedGeneration = latestDevbox.Generation
+				latestDevbox.SetCondition(metav1.Condition{
+					Type:               devboxv1alpha2.DevboxConditionStateTransitionPending,
+					Status:             metav1.ConditionFalse,
+					ObservedGeneration: latestDevbox.Generation,
+					Reason:             devboxv1alpha2.DevboxReasonStateTransitionSynced,
+					Message:            "spec.state matches status.state",
+					LastTransitionTime: metav1.Now(),
+				})
+			}
+			latestDevbox.SetCondition(metav1.Condition{
+				Type:               devboxv1alpha2.DevboxConditionCommitInProgress,
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: latestDevbox.Generation,
+				Reason:             devboxv1alpha2.DevboxReasonCommitNotInProgress,
+				Message:            "no commit workflow in progress",
+				LastTransitionTime: metav1.Now(),
+			})
 			return h.Client.Status().Update(ctx, latestDevbox)
 		})
 		if err != nil {
@@ -231,6 +251,14 @@ func (h *EventHandler) commitDevbox(
 		}
 		latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusCommitting
 		latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].UpdateTime = metav1.Now()
+		latestDevbox.SetCondition(metav1.Condition{
+			Type:               devboxv1alpha2.DevboxConditionCommitInProgress,
+			Status:             metav1.ConditionTrue,
+			ObservedGeneration: latestDevbox.Generation,
+			Reason:             devboxv1alpha2.DevboxReasonCommitStarted,
+			Message:            "commit workflow in progress",
+			LastTransitionTime: metav1.Now(),
+		})
 		return h.Client.Status().Update(ctx, latestDevbox)
 	}); err != nil {
 		h.Logger.Error(err, "failed to update commit status to committing", "devbox", devbox.Name)
@@ -286,6 +314,14 @@ func (h *EventHandler) commitDevbox(
 			}
 			latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusFailed
 			latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].UpdateTime = metav1.Now()
+			latestDevbox.SetCondition(metav1.Condition{
+				Type:               devboxv1alpha2.DevboxConditionCommitInProgress,
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: latestDevbox.Generation,
+				Reason:             devboxv1alpha2.DevboxReasonCommitFailed,
+				Message:            "commit workflow failed",
+				LastTransitionTime: metav1.Now(),
+			})
 			return h.Client.Status().Update(ctx, latestDevbox)
 		})
 		if updateErr != nil {
@@ -312,6 +348,14 @@ func (h *EventHandler) commitDevbox(
 			}
 			latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusFailed
 			latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].UpdateTime = metav1.Now()
+			latestDevbox.SetCondition(metav1.Condition{
+				Type:               devboxv1alpha2.DevboxConditionCommitInProgress,
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: latestDevbox.Generation,
+				Reason:             devboxv1alpha2.DevboxReasonCommitFailed,
+				Message:            "commit workflow failed (push error)",
+				LastTransitionTime: metav1.Now(),
+			})
 			return h.Client.Status().Update(ctx, latestDevbox)
 		})
 		if updateErr != nil {
@@ -349,6 +393,26 @@ func (h *EventHandler) commitDevbox(
 			GenerateTime: metav1.Now(),
 		}
 		latestDevbox.Status.Node = ""
+		// Commit succeeded; clear in-progress, and clear pending transition if synced.
+		latestDevbox.SetCondition(metav1.Condition{
+			Type:               devboxv1alpha2.DevboxConditionCommitInProgress,
+			Status:             metav1.ConditionFalse,
+			ObservedGeneration: latestDevbox.Generation,
+			Reason:             devboxv1alpha2.DevboxReasonCommitSucceeded,
+			Message:            "commit workflow succeeded",
+			LastTransitionTime: metav1.Now(),
+		})
+		if latestDevbox.Spec.State == latestDevbox.Status.State {
+			latestDevbox.Status.ObservedGeneration = latestDevbox.Generation
+			latestDevbox.SetCondition(metav1.Condition{
+				Type:               devboxv1alpha2.DevboxConditionStateTransitionPending,
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: latestDevbox.Generation,
+				Reason:             devboxv1alpha2.DevboxReasonStateTransitionSynced,
+				Message:            "spec.state matches status.state",
+				LastTransitionTime: metav1.Now(),
+			})
+		}
 		return h.Client.Status().Update(ctx, latestDevbox)
 	}); err != nil {
 		h.Logger.Error(err, "failed to update devbox status", "devbox", devbox.Name)

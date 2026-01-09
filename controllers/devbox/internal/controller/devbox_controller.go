@@ -24,6 +24,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/google/uuid"
 	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
 	"github.com/labring/sealos/controllers/devbox/internal/commit"
@@ -52,6 +53,47 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
+
+func (r *DevboxReconciler) setConditionWithRetry(
+	ctx context.Context,
+	devbox *devboxv1alpha2.Devbox,
+	cond metav1.Condition,
+) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latest); err != nil {
+			return err
+		}
+		cond.ObservedGeneration = latest.Generation
+		cond.LastTransitionTime = metav1.Now()
+		latest.SetCondition(cond)
+		return r.Status().Update(ctx, latest)
+	})
+}
+
+func (r *DevboxReconciler) setSyncConditionBestEffort(
+	ctx context.Context,
+	logger logr.Logger,
+	devbox *devboxv1alpha2.Devbox,
+	conditionType string,
+	ok bool,
+	message string,
+) {
+	status := metav1.ConditionFalse
+	reason := devboxv1alpha2.DevboxReasonSyncFailed
+	if ok {
+		status = metav1.ConditionTrue
+		reason = devboxv1alpha2.DevboxReasonSyncSucceeded
+	}
+	if err := r.setConditionWithRetry(ctx, devbox, metav1.Condition{
+		Type:    conditionType,
+		Status:  status,
+		Reason:  reason,
+		Message: message,
+	}); err != nil {
+		logger.Info("failed to update condition (best-effort)", "conditionType", conditionType, "error", err)
+	}
+}
 
 // DevboxReconciler reconciles a Devbox object
 type DevboxReconciler struct {
@@ -242,10 +284,26 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger.Info("syncing secret")
 	if err := r.syncSecret(ctx, devbox, recLabels); err != nil {
 		logger.Error(err, "sync secret failed")
+		r.setSyncConditionBestEffort(
+			ctx,
+			logger,
+			devbox,
+			devboxv1alpha2.DevboxConditionSecretSynced,
+			false,
+			fmt.Sprintf("sync secret failed: %v", err),
+		)
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync secret failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 	logger.Info("sync secret success")
+	r.setSyncConditionBestEffort(
+		ctx,
+		logger,
+		devbox,
+		devboxv1alpha2.DevboxConditionSecretSynced,
+		true,
+		"sync secret succeeded",
+	)
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync secret success", "Sync secret success")
 
 	if r.StartupConfigMapName != "" {
@@ -253,6 +311,14 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		logger.Info("syncing startup configmap")
 		if err := r.syncStartupConfigMap(ctx, devbox, recLabels); err != nil {
 			logger.Error(err, "sync startup configmap failed")
+			r.setSyncConditionBestEffort(
+				ctx,
+				logger,
+				devbox,
+				devboxv1alpha2.DevboxConditionStartupConfigMapSynced,
+				false,
+				fmt.Sprintf("sync startup configmap failed: %v", err),
+			)
 			r.Recorder.Eventf(
 				devbox,
 				corev1.EventTypeWarning,
@@ -263,20 +329,52 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, err
 		}
 		logger.Info("sync startup configmap success")
+		r.setSyncConditionBestEffort(
+			ctx,
+			logger,
+			devbox,
+			devboxv1alpha2.DevboxConditionStartupConfigMapSynced,
+			true,
+			"sync startup configmap succeeded",
+		)
 		r.Recorder.Eventf(
 			devbox,
 			corev1.EventTypeNormal,
 			"Sync startup configmap success",
 			"Sync startup configmap success",
 		)
+	} else {
+		// Make it explicit that this step is not configured.
+		_ = r.setConditionWithRetry(ctx, devbox, metav1.Condition{
+			Type:    devboxv1alpha2.DevboxConditionStartupConfigMapSynced,
+			Status:  metav1.ConditionFalse,
+			Reason:  devboxv1alpha2.DevboxReasonNotConfigured,
+			Message: "startup configmap is not configured",
+		})
 	}
 
 	if err := r.syncNetwork(ctx, devbox, recLabels); err != nil {
 		logger.Error(err, "sync network failed")
+		r.setSyncConditionBestEffort(
+			ctx,
+			logger,
+			devbox,
+			devboxv1alpha2.DevboxConditionNetworkSynced,
+			false,
+			fmt.Sprintf("sync network failed: %v", err),
+		)
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync network failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 	logger.Info("sync network success")
+	r.setSyncConditionBestEffort(
+		ctx,
+		logger,
+		devbox,
+		devboxv1alpha2.DevboxConditionNetworkSynced,
+		true,
+		"sync network succeeded",
+	)
 	r.Recorder.Eventf(
 		devbox,
 		corev1.EventTypeNormal,
@@ -287,23 +385,69 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// sync devbox phase based on desired state and current pod status
 	if err := r.syncDevboxPhase(ctx, devbox, recLabels); err != nil {
 		logger.Error(err, "sync devbox phase failed")
+		r.setSyncConditionBestEffort(
+			ctx,
+			logger,
+			devbox,
+			devboxv1alpha2.DevboxConditionPhaseSynced,
+			false,
+			fmt.Sprintf("sync devbox phase failed: %v", err),
+		)
 		return ctrl.Result{}, err
 	}
+	r.setSyncConditionBestEffort(
+		ctx,
+		logger,
+		devbox,
+		devboxv1alpha2.DevboxConditionPhaseSynced,
+		true,
+		"sync devbox phase succeeded",
+	)
 
 	// create or update pod
 	logger.Info("syncing pod")
 	if err := r.syncPod(ctx, devbox, recLabels); err != nil {
 		logger.Error(err, "sync pod failed")
+		r.setSyncConditionBestEffort(
+			ctx,
+			logger,
+			devbox,
+			devboxv1alpha2.DevboxConditionPodSynced,
+			false,
+			fmt.Sprintf("sync pod failed: %v", err),
+		)
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 	logger.Info("sync pod success")
+	r.setSyncConditionBestEffort(
+		ctx,
+		logger,
+		devbox,
+		devboxv1alpha2.DevboxConditionPodSynced,
+		true,
+		"sync pod succeeded",
+	)
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 
 	// sync devbox state
 	if (devbox.Status.CommitRecords[devbox.Status.ContentID].Node == r.NodeName ||
 		((devbox.Spec.State == devboxv1alpha2.DevboxStateStopped || devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown) && devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "")) &&
 		r.syncDevboxState(ctx, devbox) {
+		// Mark the state-transition as pending for this Generation. Only the controller
+		// that successfully advances the condition's ObservedGeneration should emit
+		// the state-change event, preventing duplicates in multi-controller setups.
+		shouldEmit, err := r.markStateTransitionPendingAndReturnShouldEmit(ctx, devbox)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if !shouldEmit {
+			logger.Info("state transition already marked for this generation, skip emitting event",
+				"devbox", devbox.Name,
+				"generation", devbox.Generation)
+			return ctrl.Result{}, nil
+		}
+
 		logger.Info(
 			"devbox state changed, wait for state change handler to handle the event, requeue after 5 seconds",
 			"from",
@@ -331,8 +475,123 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		)
 	}
 
+	// Best-effort: keep conditions in sync for observability.
+	if err := r.syncDevboxConditions(ctx, devbox); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	logger.Info("devbox reconcile success")
 	return ctrl.Result{}, nil
+}
+
+func (r *DevboxReconciler) markStateTransitionPendingAndReturnShouldEmit(
+	ctx context.Context,
+	devbox *devboxv1alpha2.Devbox,
+) (bool, error) {
+	var shouldEmit bool
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latest); err != nil {
+			return err
+		}
+
+		// If the state is already synced, there's nothing to emit.
+		if latest.Spec.State == latest.Status.State {
+			shouldEmit = false
+			return nil
+		}
+
+		existing := latest.GetCondition(devboxv1alpha2.DevboxConditionStateTransitionPending)
+		if existing != nil &&
+			existing.Status == metav1.ConditionTrue &&
+			existing.ObservedGeneration == latest.Generation &&
+			existing.Reason == devboxv1alpha2.DevboxReasonSpecStateChanged {
+			shouldEmit = false
+			return nil
+		}
+
+		latest.SetCondition(metav1.Condition{
+			Type:               devboxv1alpha2.DevboxConditionStateTransitionPending,
+			Status:             metav1.ConditionTrue,
+			ObservedGeneration: latest.Generation,
+			Reason:             devboxv1alpha2.DevboxReasonSpecStateChanged,
+			Message:            "spec.state differs from status.state; state transition pending",
+			LastTransitionTime: metav1.Now(),
+		})
+		shouldEmit = true
+		return r.Status().Update(ctx, latest)
+	})
+	return shouldEmit, err
+}
+
+func (r *DevboxReconciler) syncDevboxConditions(ctx context.Context, devbox *devboxv1alpha2.Devbox) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latest); err != nil {
+			return err
+		}
+
+		// Only advance ObservedGeneration when the state transition is fully synced.
+		// (Other spec changes are currently reconciled in the same flow; using state
+		// as the hard gate avoids reporting a generation as "observed" while a
+		// transition is still pending.)
+		if latest.Spec.State == latest.Status.State {
+			latest.Status.ObservedGeneration = latest.Generation
+		}
+
+		// State transition pending condition
+		if latest.Spec.State != latest.Status.State {
+			latest.SetCondition(metav1.Condition{
+				Type:               devboxv1alpha2.DevboxConditionStateTransitionPending,
+				Status:             metav1.ConditionTrue,
+				ObservedGeneration: latest.Generation,
+				Reason:             devboxv1alpha2.DevboxReasonSpecStateChanged,
+				Message:            "spec.state differs from status.state; state transition pending",
+				LastTransitionTime: metav1.Now(),
+			})
+		} else {
+			latest.SetCondition(metav1.Condition{
+				Type:               devboxv1alpha2.DevboxConditionStateTransitionPending,
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: latest.Generation,
+				Reason:             devboxv1alpha2.DevboxReasonStateTransitionSynced,
+				Message:            "spec.state matches status.state",
+				LastTransitionTime: metav1.Now(),
+			})
+		}
+
+		// Commit in progress condition (scan all commit records to be robust across ContentID rotation)
+		committing := false
+		if latest.Status.CommitRecords != nil {
+			for _, rec := range latest.Status.CommitRecords {
+				if rec != nil && rec.CommitStatus == devboxv1alpha2.CommitStatusCommitting {
+					committing = true
+					break
+				}
+			}
+		}
+		if committing {
+			latest.SetCondition(metav1.Condition{
+				Type:               devboxv1alpha2.DevboxConditionCommitInProgress,
+				Status:             metav1.ConditionTrue,
+				ObservedGeneration: latest.Generation,
+				Reason:             devboxv1alpha2.DevboxReasonCommitStarted,
+				Message:            "commit workflow in progress",
+				LastTransitionTime: metav1.Now(),
+			})
+		} else {
+			latest.SetCondition(metav1.Condition{
+				Type:               devboxv1alpha2.DevboxConditionCommitInProgress,
+				Status:             metav1.ConditionFalse,
+				ObservedGeneration: latest.Generation,
+				Reason:             devboxv1alpha2.DevboxReasonCommitNotInProgress,
+				Message:            "no commit workflow in progress",
+				LastTransitionTime: metav1.Now(),
+			})
+		}
+
+		return r.Status().Update(ctx, latest)
+	})
 }
 
 func (r *DevboxReconciler) syncStartupConfigMap(
