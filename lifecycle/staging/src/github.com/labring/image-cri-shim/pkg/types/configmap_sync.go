@@ -44,14 +44,15 @@ const (
 var kubeClientFactory = buildKubeClient
 
 type registryConfigSpec struct {
-	Version        string          `yaml:"version"`
-	Sealos         sealedConfig    `yaml:"sealos"`
-	Registries     []registryEntry `yaml:"registries"`
-	ReloadInterval string          `yaml:"reloadInterval"`
-	Force          *bool           `yaml:"force"`
-	Debug          *bool           `yaml:"debug"`
-	Timeout        string          `yaml:"timeout"`
-	Cache          *cacheSpec      `yaml:"cache"`
+	Version         string          `yaml:"version"`
+	Sealos          sealedConfig    `yaml:"sealos"`
+	Registries      []registryEntry `yaml:"registries"`
+	OfflinePriority int             `yaml:"offlinePriority,omitempty"` // Custom priority for sealos.hub
+	ReloadInterval  string          `yaml:"reloadInterval"`
+	Force           *bool           `yaml:"force"`
+	Debug           *bool           `yaml:"debug"`
+	Timeout         string          `yaml:"timeout"`
+	Cache           *cacheSpec      `yaml:"cache"`
 }
 
 type sealedConfig struct {
@@ -60,8 +61,9 @@ type sealedConfig struct {
 }
 
 type registryEntry struct {
-	Address string       `yaml:"address"`
-	Auth    registryAuth `yaml:"auth"`
+	Address  string       `yaml:"address"`
+	Auth     registryAuth `yaml:"auth"`
+	Priority int          `yaml:"priority,omitempty"` // Registry priority (0-10000)
 }
 
 type registryAuth struct {
@@ -99,11 +101,11 @@ func SyncConfigFromConfigMap(ctx context.Context, configPath string) {
 		logger.Debug("failed to read ConfigMap %s/%s: %v", shimConfigMapNamespace, shimConfigMapName, err)
 		return
 	}
-    if !applyConfigMapToFile(configPath, cm) {
-        logger.Debug("ConfigMap %s/%s produced no updates", shimConfigMapNamespace, shimConfigMapName)
-        return
-    }
-    logger.Debug("syncing image-cri-shim config from ConfigMap completed")
+	if !applyConfigMapToFile(configPath, cm) {
+		logger.Debug("ConfigMap %s/%s produced no updates", shimConfigMapNamespace, shimConfigMapName)
+		return
+	}
+	logger.Debug("syncing image-cri-shim config from ConfigMap completed")
 }
 
 func buildKubeClient() (kubernetes.Interface, error) {
@@ -192,7 +194,10 @@ func mergeShimConfig(cfg *Config, spec *registryConfigSpec) {
 		if addr == "" {
 			continue
 		}
-		reg := Registry{Address: addr}
+		reg := Registry{
+			Address:  addr,
+			Priority: item.Priority, // Sync priority from ConfigMap
+		}
 		user := strings.TrimSpace(item.Auth.Username)
 		pass := strings.TrimSpace(item.Auth.Password)
 		if user != "" || pass != "" {
