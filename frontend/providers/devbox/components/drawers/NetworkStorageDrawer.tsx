@@ -20,24 +20,51 @@ interface NetworkStorageDrawerProps {
   onClose: () => void;
   onSuccess: (storage: { id?: string; path: string; size: number }) => void;
   initialValue?: { id?: string; path: string; size: number };
+  existingPaths?: string[];
 }
 
-const NetworkStorageDrawer = ({ onClose, onSuccess, initialValue }: NetworkStorageDrawerProps) => {
+const NetworkStorageDrawer = ({
+  onClose,
+  onSuccess,
+  initialValue,
+  existingPaths = []
+}: NetworkStorageDrawerProps) => {
   const t = useTranslations();
   const pathRef = useRef<HTMLInputElement>(null);
   const [capacity, setCapacity] = useState(initialValue?.size || 1);
+  const [pathError, setPathError] = useState<string>('');
 
   const handleCapacityChange = (delta: number) => {
     setCapacity((prev) => Math.max(1, prev + delta));
   };
 
+  const validatePath = (path: string): string => {
+    if (!path.trim()) {
+      return t('mount_path_cannot_be_empty');
+    }
+
+    const pathPattern = /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/;
+    if (!pathPattern.test(path)) {
+      return t('mount_path_invalid_format');
+    }
+
+    if (existingPaths.includes(path.toLowerCase())) {
+      return t('mount_path_conflict');
+    }
+
+    return '';
+  };
+
   const handleConfirm = () => {
     const path = pathRef.current?.value || '';
 
-    if (!path.trim()) {
+    const error = validatePath(path);
+    if (error) {
+      setPathError(error);
       return;
     }
 
+    setPathError('');
     onSuccess({
       id: initialValue?.id || nanoid(),
       path,
@@ -88,8 +115,10 @@ const NetworkStorageDrawer = ({ onClose, onSuccess, initialValue }: NetworkStora
               ref={pathRef}
               defaultValue={initialValue?.path || ''}
               placeholder={t('mount_path_placeholder')}
-              className="h-10 bg-white"
+              className={`h-10 bg-white ${pathError ? 'border-red-500' : ''}`}
+              onChange={() => setPathError('')}
             />
+            {pathError && <p className="text-sm text-red-500">{pathError}</p>}
           </div>
         </div>
 

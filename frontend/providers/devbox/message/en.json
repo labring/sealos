@@ -557,9 +557,15 @@
   "edit_configmap": "Edit ConfigMap",
   "file_name": "File Name",
   "file_name_placeholder": "File Name: /etc/kubernetes/admin.conf",
+  "file_name_cannot_be_empty": "File name cannot be empty",
+  "file_name_invalid_format": "Invalid path format. Must start and end with alphanumeric, underscore or slash, and can contain dots and hyphens",
+  "file_name_path_conflict": "Path conflict, this path already exists",
   "file_content": "File Content",
   "add_mounted_volumes": "Add Mounted Volumes",
   "storage_capacity": "Capacity",
   "mount_path": "Mount Path",
-  "mount_path_placeholder": "For Example: /data"
+  "mount_path_placeholder": "For Example: /data",
+  "mount_path_cannot_be_empty": "Mount path cannot be empty",
+  "mount_path_invalid_format": "Invalid path format. Must start and end with alphanumeric, underscore or slash, and can contain dots and hyphens",
+  "mount_path_conflict": "Path conflict, this path already exists"
 }

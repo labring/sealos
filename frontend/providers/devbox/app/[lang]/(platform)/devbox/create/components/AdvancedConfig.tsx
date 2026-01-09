@@ -215,6 +215,9 @@ export default function AdvancedConfig() {
           initialValue={
             editingConfigMapIndex !== null ? configMaps[editingConfigMapIndex] : undefined
           }
+          existingPaths={configMaps
+            .filter((_, idx) => idx !== editingConfigMapIndex)
+            .map((item) => item.path.toLowerCase())}
           onClose={() => {
             setIsConfigMapDrawerOpen(false);
             setEditingConfigMapIndex(null);
@@ -234,6 +237,9 @@ export default function AdvancedConfig() {
       {isNetworkStorageDrawerOpen && (
         <NetworkStorageDrawer
           initialValue={editingStorageIndex !== null ? volumes[editingStorageIndex] : undefined}
+          existingPaths={volumes
+            .filter((_, idx) => idx !== editingStorageIndex)
+            .map((item) => item.path.toLowerCase())}
           onClose={() => {
             setIsNetworkStorageDrawerOpen(false);
             setEditingStorageIndex(null);
