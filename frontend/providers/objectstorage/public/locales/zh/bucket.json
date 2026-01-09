@@ -12,5 +12,7 @@
   "enterBucketNameConfirmation": "请输入存储桶名字 {{bucketName}} 确认",
   "enterValidBucketName": "请输入正确的存储桶名字",
   "initializing": "正在初始化中",
-	"reset_user_sk_title": "确认重置 Secret Key"
+  "reset_user_sk_title": "确认重置 Secret Key",
+  "bucketCreateFailed": "存储桶创建失败",
+  "bucketNameInvalid": "存储桶名称包含无效字符。名称仅允许包含小写字母、数字和连字符 (-)，且不能以连字符 (-) 开头或结尾。"
 }
