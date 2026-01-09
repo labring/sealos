@@ -41,14 +41,16 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
       });
       toast({
         title: 'apply successfully',
-        status: 'success'
+        status: 'success',
+        position: 'top'
       });
       router.replace('/');
     },
     onError(data: { message: string }) {
       toast({
         title: data.message,
-        status: 'error'
+        status: 'error',
+        position: 'top'
       });
     }
   });
@@ -85,11 +87,19 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
             submitForm();
           }}
         >
-          <ConfigHeader />
+          <Flex
+            minW={'1024px'}
+            flexDirection={'column'}
+            alignItems={'center'}
+            h={'100vh'}
+            bg={'#F3F4F5'}
+          >
+            <ConfigHeader />
 
-          <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
-            <ConfigMain />
-          </Box>
+            <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
+              <ConfigMain />
+            </Box>
+          </Flex>
         </form>
       </FormProvider>
     </>
