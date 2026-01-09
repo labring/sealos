@@ -48,6 +48,24 @@ interface DeployData {
   labels: {
     [key: string]: string;
   };
+  configMapList?: {
+    mountPath: string;
+    value: string;
+    key: string;
+    volumeName: string;
+    subPath?: string;
+  }[];
+  storeList?: {
+    name: string;
+    path: string;
+    value: number;
+    storageType: string;
+  }[];
+  envs?: {
+    key: string;
+    value: string;
+    valueFrom?: any;
+  }[];
 }
 
 interface DeployDevboxDrawerProps {

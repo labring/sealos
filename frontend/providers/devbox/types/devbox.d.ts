@@ -51,6 +51,19 @@ export interface DevboxEditType {
     customDomain: string; // custom domain
   }[];
 }
+
+export interface DevboxConfigMapType {
+  id?: string;
+  path: string;
+  content: string;
+}
+
+export interface DevboxVolumeType {
+  id?: string;
+  path: string;
+  size: number;
+}
+
 export interface DevboxEditTypeV2 {
   name: string;
   templateUid: string;
@@ -61,6 +74,11 @@ export interface DevboxEditTypeV2 {
   memory: number;
   gpu?: GpuType;
   networks: PortInfos;
+  networkType?: 'NodePort' | 'Tailnet' | 'SSHGate';
+  env?: DevboxEnvType[];
+  envs?: Array<{ key: string; value: string }>;
+  configMaps?: DevboxConfigMapType[];
+  volumes?: DevboxVolumeType[];
 }
 export interface DevboxStatusMapType {
   label: string;

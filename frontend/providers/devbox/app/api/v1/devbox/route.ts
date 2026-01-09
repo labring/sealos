@@ -511,7 +511,7 @@ export async function POST(req: NextRequest) {
       })()
     ]);
 
-    const resp = [devboxBody, [], template] as [KBDevboxTypeV2, [], typeof template];
+    const resp = [devboxBody, [], template, [], []] as [KBDevboxTypeV2, [], typeof template, [], []];
     const adaptedData = adaptDevboxDetailV2(resp);
 
     const response = await k8sCore.readNamespacedSecret(devboxForm.name, namespace);

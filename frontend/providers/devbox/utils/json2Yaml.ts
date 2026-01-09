@@ -120,6 +120,73 @@ export const json2DevboxV2 = (
           protocol: 'TCP',
           targetPort: str2Num(item.port)
         }));
+
+        // Clear user-configurable fields to rebuild from form data
+        const newEnv: any[] = [];
+        const newVolumes: any[] = [];
+        const newVolumeMounts: any[] = [];
+
+        // Handle env from template config
+        if (data.env && data.env.length > 0) {
+          newEnv.push(...data.env);
+        }
+
+        // Handle envs (simple key-value pairs)
+        if (data.envs && data.envs.length > 0) {
+          newEnv.push(
+            ...data.envs.map((item) => ({
+              name: item.key,
+              value: item.value
+            }))
+          );
+        }
+
+        // Handle configMaps as volumes and volumeMounts
+        if (data.configMaps && data.configMaps.length > 0) {
+          data.configMaps.forEach((cm) => {
+            const shortId = cm.id || nanoid();
+            const volumeName = `${data.name}-volume-cm-${shortId}`;
+            const configMapName = `${data.name}-cm-${shortId}`;
+
+            newVolumes.push({
+              name: volumeName,
+              configMap: {
+                name: configMapName
+              }
+            });
+
+            newVolumeMounts.push({
+              name: volumeName,
+              mountPath: cm.path
+            });
+          });
+        }
+
+        // Handle NFS volumes (PVC-based)
+        if (data.volumes && data.volumes.length > 0) {
+          data.volumes.forEach((vol) => {
+            const shortId = vol.id || nanoid();
+            const volumeName = `${data.name}-volume-pvc-${shortId}`;
+            const pvcName = `${data.name}-pvc-${shortId}`;
+
+            newVolumes.push({
+              name: volumeName,
+              persistentVolumeClaim: {
+                claimName: pvcName
+              }
+            });
+
+            newVolumeMounts.push({
+              name: volumeName,
+              mountPath: vol.path
+            });
+          });
+        }
+
+        // Set the rebuilt fields
+        draft.env = newEnv.length > 0 ? newEnv : undefined;
+        draft.volumes = newVolumes.length > 0 ? newVolumes : undefined;
+        draft.volumeMounts = newVolumeMounts.length > 0 ? newVolumeMounts : undefined;
       }),
       state: 'Running',
       ...gpuMap
@@ -369,6 +436,74 @@ export const json2Service = (data: Pick<DevboxEditTypeV2, 'name' | 'networks'>) 
   };
   return yaml.dump(template);
 };
+export const json2ConfigMap = (data: Pick<DevboxEditTypeV2, 'name' | 'configMaps'>) => {
+  if (!data.configMaps || data.configMaps.length === 0) {
+    return '';
+  }
+
+  return data.configMaps
+    .map((cm) => {
+      const shortId = cm.id || nanoid();
+      const configMapName = `${data.name}-cm-${shortId}`;
+      const filename = cm.path.split('/').pop() || `config-${shortId}`;
+
+      const configMap = {
+        apiVersion: 'v1',
+        kind: 'ConfigMap',
+        metadata: {
+          name: configMapName,
+          labels: {
+            [devboxKey]: data.name
+          }
+        },
+        data: {
+          [filename]: cm.content
+        }
+      };
+
+      return yaml.dump(configMap);
+    })
+    .join('\n---\n');
+};
+
+export const json2PVC = (
+  data: Pick<DevboxEditTypeV2, 'name' | 'volumes'>,
+  storageClassName: string = 'nfs-csi'
+) => {
+  if (!data.volumes || data.volumes.length === 0) {
+    return '';
+  }
+
+  return data.volumes
+    .map((vol) => {
+      const shortId = vol.id || nanoid();
+      const pvcName = `${data.name}-pvc-${shortId}`;
+
+      const pvc = {
+        apiVersion: 'v1',
+        kind: 'PersistentVolumeClaim',
+        metadata: {
+          name: pvcName,
+          labels: {
+            [devboxKey]: data.name
+          }
+        },
+        spec: {
+          accessModes: ['ReadWriteMany'],
+          resources: {
+            requests: {
+              storage: `${vol.size}Gi`
+            }
+          },
+          storageClassName
+        }
+      };
+
+      return yaml.dump(pvc);
+    })
+    .join('\n---\n');
+};
+
 export const limitRangeYaml = `
 apiVersion: v1
 kind: LimitRange
@@ -387,9 +522,30 @@ export const generateYamlList = (
     devboxAffinityEnable?: string;
     squashEnable?: string;
     ingressSecret: string;
+    nfsStorageClassName?: string;
   }
 ) => {
+  const storageClassName = env.nfsStorageClassName || 'nfs-csi';
+
   return [
+    // PVC must be created before devbox
+    ...(data.volumes && data.volumes.length > 0
+      ? [
+          {
+            filename: 'pvc.yaml',
+            value: json2PVC(data, storageClassName)
+          }
+        ]
+      : []),
+    // ConfigMap must be created before devbox
+    ...(data.configMaps && data.configMaps.length > 0
+      ? [
+          {
+            filename: 'configmap.yaml',
+            value: json2ConfigMap(data)
+          }
+        ]
+      : []),
     {
       filename: 'devbox.yaml',
       value: json2DevboxV2(data, env.devboxAffinityEnable, env.squashEnable)
