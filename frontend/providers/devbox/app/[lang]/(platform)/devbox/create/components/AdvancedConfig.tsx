@@ -85,7 +85,7 @@ export default function AdvancedConfig() {
 
       <Separator className="my-1" />
 
-      {/* Configmaps */}
+      {/* ConfigMaps */}
       <div id="configmap" className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-base font-medium">{t('configmaps')}</span>
@@ -102,7 +102,7 @@ export default function AdvancedConfig() {
           </Button>
         </div>
 
-        {/* Configmaps List */}
+        {/* ConfigMaps List */}
         <div className="flex flex-col gap-1">
           {configMaps.map((config, idx) => (
             <div
