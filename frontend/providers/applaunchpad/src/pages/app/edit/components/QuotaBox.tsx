@@ -48,7 +48,7 @@ ${t('common.Surplus')}: ${((limit - used) / scale).toFixed(2)} ${unit}`;
   return userQuota.length === 0 ? null : (
     <Card>
       <CardHeader className="gap-0 py-4">
-        <CardTitle className="text-base font-medium">{t('app.Resource Quota')}</CardTitle>
+        <CardTitle className="text-sm font-medium">{t('app.Resource Quota')}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col">
         <TooltipProvider>
@@ -56,7 +56,7 @@ ${t('common.Surplus')}: ${((limit - used) / scale).toFixed(2)} ${unit}`;
             <Tooltip key={item.type}>
               <TooltipTrigger asChild>
                 <div
-                  className={`flex items-center justify-between gap-3 py-3 px-5 cursor-pointer text-base text-zinc-900 border-b border-zinc-100 ${
+                  className={`flex items-center justify-between gap-3 py-3 px-5 cursor-pointer text-sm text-zinc-900 border-b border-zinc-100 ${
                     index === quotaList.length - 1 ? 'border-b-0' : ''
                   }`}
                 >

@@ -43,7 +43,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
           <TabsList className="w-full h-auto bg-zinc-100 rounded-xl">
             <TabsTrigger
               value="form"
-              className="flex-1 h-9 text-base font-normal"
+              className="flex-1 h-9 text-sm font-normal"
               onClick={() =>
                 router.replace(
                   `/app/edit?${obj2Query({
@@ -57,7 +57,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
             </TabsTrigger>
             <TabsTrigger
               value="yaml"
-              className="flex-1 h-9 text-base rounded-lg font-medium shadow-sm"
+              className="flex-1 h-9 text-sm rounded-lg font-medium shadow-sm"
             >
               {t('YAML File')}
             </TabsTrigger>
@@ -84,7 +84,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
                 } shrink-0`}
               />
               <span
-                className={`text-base ${
+                className={`text-sm ${
                   index === selectedIndex ? 'font-normal text-zinc-900' : 'text-zinc-500'
                 }`}
               >

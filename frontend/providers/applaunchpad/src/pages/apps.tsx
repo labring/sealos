@@ -7,7 +7,6 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RequestController, isElementInViewport } from '@/utils/tools';
 import AppList from '@/components/apps/appList';
-import Empty from '@/components/apps/empty';
 import { useGuideStore } from '@/store/guide';
 
 const Home = () => {
@@ -134,17 +133,13 @@ const Home = () => {
 
   return (
     <>
-      {appList.length === 0 && !isLoading ? (
-        <Empty />
-      ) : (
-        <AppList
-          apps={list.current}
-          refetchApps={() => {
-            refetchAppList();
-            refetchAvgMonitorData();
-          }}
-        />
-      )}
+      <AppList
+        apps={list.current}
+        refetchApps={() => {
+          refetchAppList();
+          refetchAvgMonitorData();
+        }}
+      />
       <Loading loading={isLoading} />
     </>
   );

@@ -27,7 +27,7 @@ export const useConfirm = ({ title = 'Prompt', content }: { title?: string; cont
     ConfirmChild: useCallback(
       () => (
         <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-          <AlertDialogContent className="w-[360px] text-foreground">
+          <AlertDialogContent className="w-[360px] text-foreground top-20 left-1/2 -translate-x-1/2 translate-y-0">
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-lg font-semibold leading-none">
                 <TriangleAlert className="h-4 w-4 text-yellow-600" />

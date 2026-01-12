@@ -68,7 +68,7 @@ const PriceBox = ({
   return (
     <Card>
       <CardHeader className="gap-0 py-4">
-        <CardTitle className="text-base font-medium">
+        <CardTitle className="text-sm font-medium">
           {t('AnticipatedPrice')} <span className="font-normal text-zinc-400">{t('Perday')}</span>
         </CardTitle>
       </CardHeader>
@@ -77,7 +77,7 @@ const PriceBox = ({
           {priceList.map((item) => (
             <div
               key={item.label}
-              className={`flex justify-between py-3 px-5 items-center text-base text-zinc-900 border-b border-zinc-100 ${
+              className={`flex justify-between py-3 px-5 items-center text-sm text-zinc-900 border-b border-zinc-100 ${
                 item.isTotal ? 'border-b-0 py-4' : ''
               }`}
             >

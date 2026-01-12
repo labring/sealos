@@ -38,7 +38,7 @@ const UpdateModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[450px] text-foreground">
+      <DialogContent className="w-[360px] text-foreground top-20 left-1/2 -translate-x-1/2 translate-y-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg font-semibold leading-none">
             <TriangleAlert className="h-4 w-4 text-yellow-600" />

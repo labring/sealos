@@ -257,7 +257,7 @@ export function NetworkSection({
                   <div className="flex items-center gap-4 flex-1">
                     {/* Enable Public Access */}
                     <div className="shrink-0 mr-1">
-                      <Label className="text-sm font-medium text-zinc-900 mb-2 block">
+                      <Label className="text-sm font-medium leading-none text-zinc-900 mb-3 block">
                         {t('Open Public Access')}
                       </Label>
                       <div className="flex items-center gap-2 h-10">
@@ -299,7 +299,7 @@ export function NetworkSection({
 
                     {/* Protocol and Domain */}
                     <div className="flex-1 min-w-0">
-                      <Label className="text-sm font-medium text-zinc-900 mb-2 block invisible">
+                      <Label className="text-sm font-medium text-zinc-900 mb-3 leading-none block invisible">
                         {t('Protocol')}
                       </Label>
                       <div className="flex items-center h-10">
@@ -385,7 +385,7 @@ export function NetworkSection({
                     {/* Delete Button */}
                     {networks.length > 1 && (
                       <div className="shrink-0">
-                        <Label className="text-sm font-medium text-zinc-900 mb-2 block invisible">
+                        <Label className="text-sm font-medium text-zinc-900 mb-3 block invisible">
                           {t('Delete')}
                         </Label>
                         <Button

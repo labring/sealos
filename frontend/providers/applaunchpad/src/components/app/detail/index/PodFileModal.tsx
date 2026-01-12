@@ -469,7 +469,7 @@ const PodFile = ({
             </div>
           </DrawerHeader>
 
-          <div className="flex-1 min-h-0 flex flex-col px-6 py-6">
+          <div className="flex-1 min-h-0 flex flex-col px-6 pt-6 pb-[60px]">
             <div className="flex-1 min-h-0 flex flex-col">
               {/* Breadcrumb */}
               <Breadcrumb className="mb-5 shrink-0">
@@ -593,213 +593,217 @@ const PodFile = ({
               </div>
 
               {/* Table */}
-              <div className="h-fit min-h-0 rounded-lg border border-zinc-200 overflow-auto bg-white">
-                <Table className="table-fixed ">
-                  <TableHeader>
-                    <TableRow className="">
-                      <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 pl-5 w-[30%]">
-                        {t('File Name')}
-                      </TableHead>
-                      <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[15%]">
-                        {t('Attribute')}
-                      </TableHead>
-                      <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[15%]">
-                        {t('Owner')} : {t('Group')}
-                      </TableHead>
-                      <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[10%]">
-                        {t('Size')}
-                      </TableHead>
-                      <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[20%]">
-                        {t('Update Time')}
-                      </TableHead>
-                      <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 pr-5 w-[10%]">
-                        {' '}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedData?.map((item) => (
-                      <TableRow
-                        key={item.name}
-                        className="cursor-pointer hover:bg-zinc-50 border-b border-zinc-200"
-                        onClick={() => {
-                          if (item.kind === 'd') {
-                            setBasePath(item.path);
-                          }
-                        }}
-                      >
-                        <TableCell className="text-zinc-900 font-medium py-0 h-full pl-5">
-                          <div className="group/name-column flex items-center h-full gap-2">
-                            {(() => {
-                              const iconInfo = getFileIcon(item);
-                              return (
-                                <MyIcon
-                                  name={iconInfo.name as any}
-                                  width={'24px'}
-                                  height={'24px'}
-                                  color={iconInfo.color}
-                                />
-                              );
-                            })()}
-                            {editingFile === item.path ? (
-                              <div
-                                className="flex items-center gap-3"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Input
-                                  value={editingFileName}
-                                  onChange={(e) => setEditingFileName(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      handleSaveEdit(item);
-                                    } else if (e.key === 'Escape') {
-                                      e.preventDefault();
-                                      handleCancelEdit();
-                                    }
-                                  }}
-                                  autoFocus
-                                  className="h-9 text-sm flex-1 bg-white"
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                                <div className="flex items-center">
-                                  <Button
-                                    variant="ghost"
-                                    className="h-9 w-9 shrink-0"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSaveEdit(item);
-                                    }}
-                                  >
-                                    <Save className="w-6 h-6 text-zinc-500" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    className="h-9 w-9 shrink-0"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleCancelEdit();
-                                    }}
-                                  >
-                                    <X className="w-6 h-6 text-zinc-500" />
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <span className="truncate">{item.name}</span>
-                                <PencilLine
-                                  className="w-4 h-4 text-zinc-500 cursor-pointer opacity-0 shrink-0 group-hover/name-column:opacity-100"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleStartEdit(item);
-                                  }}
-                                />
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-zinc-500 py-2">{item.attr}</TableCell>
-                        <TableCell className="text-zinc-500 py-2">
-                          {item.owner}:{item.group}
-                        </TableCell>
-                        <TableCell className="text-zinc-500 py-2">
-                          {formatSize(item.size)}
-                        </TableCell>
-                        <TableCell className="text-zinc-500 py-2">
-                          {formatTime(item.updateTime, 'YYYY-MM-DD HH:mm')}
-                        </TableCell>
-                        <TableCell className="py-2 pr-5" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center">
-                            {item.kind !== 'd' && (
-                              <>
-                                {fileProgress > 0 &&
-                                fileProgress < 100 &&
-                                currentFile?.path === item.path ? (
-                                  <div className="w-8 h-8 flex items-center justify-center">
-                                    <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                                  </div>
-                                ) : (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-9 w-9"
-                                        onClick={(e) => handleDownload(e, item)}
-                                      >
-                                        <Download className="w-4 h-4 text-zinc-500" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>{t('download')}</TooltipContent>
-                                  </Tooltip>
-                                )}
-                              </>
-                            )}
-                            <Popover
-                              open={deletePopoverOpen === item.path}
-                              onOpenChange={(open) => setDeletePopoverOpen(open ? item.path : null)}
-                            >
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className={`h-9 w-9 hover:text-destructive ${
-                                    deletePopoverOpen === item.path
-                                      ? 'text-destructive'
-                                      : 'text-zinc-500'
-                                  }`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                className="w-[400px] p-6 bg-white rounded-3xl border border-white shadow-[0_2px_10px_0_rgba(19,51,107,0.20),0_0_1px_0_rgba(19,51,107,0.10)]"
-                                align="end"
-                                side="top"
-                                sideOffset={2}
-                                arrowPadding={24}
-                                showArrow
-                              >
-                                <div className="space-y-4">
-                                  <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 leading-none">
-                                    <TriangleAlert className="h-4 w-4 text-yellow-600" />
-                                    {t('Delete')}
-                                  </h3>
-                                  <p className="text-sm font-medium text-zinc-900">
-                                    {t('Are you sure you want to delete the file or folder?')}
-                                  </p>
-                                  <div className="flex justify-end gap-3">
-                                    <Button
-                                      variant="outline"
-                                      className="w-[80px] h-10"
-                                      onClick={() => setDeletePopoverOpen(null)}
-                                    >
-                                      {t('Cancel')}
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      className="w-[80px] h-10 text-destructive shadow-none"
-                                      onClick={() => handleDelete(item)}
-                                    >
-                                      {t('Delete')}
-                                    </Button>
-                                  </div>
-                                </div>
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-                        </TableCell>
+              <div className="flex-1 min-h-0 overflow-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="rounded-xl border border-zinc-200 bg-white mb-6">
+                  <Table className="table-fixed">
+                    <TableHeader>
+                      <TableRow className="">
+                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 pl-5 w-[30%] !rounded-tl-xl">
+                          {t('File Name')}
+                        </TableHead>
+                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[15%]">
+                          {t('Attribute')}
+                        </TableHead>
+                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[15%]">
+                          {t('Owner')} : {t('Group')}
+                        </TableHead>
+                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[10%]">
+                          {t('Size')}
+                        </TableHead>
+                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[20%]">
+                          {t('Update Time')}
+                        </TableHead>
+                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 pr-5 w-[10%] !rounded-tr-xl">
+                          {' '}
+                        </TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedData?.map((item) => (
+                        <TableRow
+                          key={item.name}
+                          className="cursor-pointer hover:bg-zinc-50 border-b border-zinc-200"
+                          onClick={() => {
+                            if (item.kind === 'd') {
+                              setBasePath(item.path);
+                            }
+                          }}
+                        >
+                          <TableCell className="text-zinc-900 font-medium py-0 h-full pl-5">
+                            <div className="group/name-column flex items-center h-full gap-2">
+                              {(() => {
+                                const iconInfo = getFileIcon(item);
+                                return (
+                                  <MyIcon
+                                    name={iconInfo.name as any}
+                                    width={'24px'}
+                                    height={'24px'}
+                                    color={iconInfo.color}
+                                  />
+                                );
+                              })()}
+                              {editingFile === item.path ? (
+                                <div
+                                  className="flex items-center gap-3"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Input
+                                    value={editingFileName}
+                                    onChange={(e) => setEditingFileName(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleSaveEdit(item);
+                                      } else if (e.key === 'Escape') {
+                                        e.preventDefault();
+                                        handleCancelEdit();
+                                      }
+                                    }}
+                                    autoFocus
+                                    className="h-9 text-sm flex-1 bg-white"
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <div className="flex items-center">
+                                    <Button
+                                      variant="ghost"
+                                      className="h-9 w-9 shrink-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSaveEdit(item);
+                                      }}
+                                    >
+                                      <Save className="w-6 h-6 text-zinc-500" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      className="h-9 w-9 shrink-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCancelEdit();
+                                      }}
+                                    >
+                                      <X className="w-6 h-6 text-zinc-500" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <span className="truncate">{item.name}</span>
+                                  <PencilLine
+                                    className="w-4 h-4 text-zinc-500 cursor-pointer opacity-0 shrink-0 group-hover/name-column:opacity-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleStartEdit(item);
+                                    }}
+                                  />
+                                </>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-zinc-500 py-2">{item.attr}</TableCell>
+                          <TableCell className="text-zinc-500 py-2">
+                            {item.owner}:{item.group}
+                          </TableCell>
+                          <TableCell className="text-zinc-500 py-2">
+                            {formatSize(item.size)}
+                          </TableCell>
+                          <TableCell className="text-zinc-500 py-2">
+                            {formatTime(item.updateTime, 'YYYY-MM-DD HH:mm')}
+                          </TableCell>
+                          <TableCell className="py-2 pr-5" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center">
+                              {item.kind !== 'd' && (
+                                <>
+                                  {fileProgress > 0 &&
+                                  fileProgress < 100 &&
+                                  currentFile?.path === item.path ? (
+                                    <div className="w-8 h-8 flex items-center justify-center">
+                                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                                    </div>
+                                  ) : (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-9 w-9"
+                                          onClick={(e) => handleDownload(e, item)}
+                                        >
+                                          <Download className="w-4 h-4 text-zinc-500" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>{t('download')}</TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </>
+                              )}
+                              <Popover
+                                open={deletePopoverOpen === item.path}
+                                onOpenChange={(open) =>
+                                  setDeletePopoverOpen(open ? item.path : null)
+                                }
+                              >
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    className={`h-9 w-9 hover:text-destructive ${
+                                      deletePopoverOpen === item.path
+                                        ? 'text-destructive'
+                                        : 'text-zinc-500'
+                                    }`}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-[400px] p-6 bg-white rounded-3xl border border-white shadow-[0_2px_10px_0_rgba(19,51,107,0.20),0_0_1px_0_rgba(19,51,107,0.10)]"
+                                  align="end"
+                                  side="top"
+                                  sideOffset={2}
+                                  arrowPadding={24}
+                                  showArrow
+                                >
+                                  <div className="space-y-4">
+                                    <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 leading-none">
+                                      <TriangleAlert className="h-4 w-4 text-yellow-600" />
+                                      {t('Delete')}
+                                    </h3>
+                                    <p className="text-sm font-medium text-zinc-900">
+                                      {t('Are you sure you want to delete the file or folder?')}
+                                    </p>
+                                    <div className="flex justify-end gap-3">
+                                      <Button
+                                        variant="outline"
+                                        className="w-[80px] h-10"
+                                        onClick={() => setDeletePopoverOpen(null)}
+                                      >
+                                        {t('Cancel')}
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        className="w-[80px] h-10 text-destructive shadow-none"
+                                        onClick={() => handleDelete(item)}
+                                      >
+                                        {t('Delete')}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Pagination*/}
           {sortData && sortData.length > 0 && (
-            <div className="z-10 flex items-center justify-between bg-white px-5 py-3 text-sm text-zinc-500 border-t border-zinc-200">
+            <div className="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between bg-white px-5 py-3 text-sm text-zinc-500 border-t border-zinc-200">
               <span>{t('Total') + ': ' + sortData.length}</span>
               <div className="flex items-center gap-3">
                 <Pagination

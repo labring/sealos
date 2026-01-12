@@ -1,63 +1,25 @@
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/router';
-import MyIcon from '@/components/Icon';
+import Image from 'next/image';
 import { useTranslation } from 'next-i18next';
-import { useGuideStore } from '@/store/guide';
-import { applistDriverObj, startDriver } from '@/hooks/driver';
-import { useClientSideValue } from '@/hooks/useClientSideValue';
-import { track } from '@sealos/gtm';
-import { useQuotaGuarded } from '@sealos/shared';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Plus } from 'lucide-react';
 
-const Empty = () => {
-  const router = useRouter();
+interface EmptyProps {
+  onCreateApp: () => void;
+}
+
+const Empty = ({ onCreateApp }: EmptyProps) => {
   const { t } = useTranslation();
 
-  const { listCompleted } = useGuideStore();
-  const isClientSide = useClientSideValue(true);
-
-  useEffect(() => {
-    if (!listCompleted && isClientSide) {
-      startDriver(
-        applistDriverObj(t, () => {
-          router.push('/app/edit');
-        })
-      );
-    }
-  }, [listCompleted, router, t, isClientSide]);
-
-  const handleCreateApp = useQuotaGuarded(
-    {
-      requirements: {
-        cpu: 1,
-        memory: 1,
-        nodeport: 1,
-        storage: 1,
-        traffic: true
-      },
-      immediate: false,
-      allowContinue: true
-    },
-    () => {
-      track('deployment_start', {
-        module: 'applaunchpad'
-      });
-      router.push('/app/edit');
-    }
-  );
-
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-zinc-100">
-      <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
-      <div className="py-8">{t("You haven't created any application yet")}</div>
-      <Button
-        className="create-app-btn mt-5 w-[155px] bg-neutral-950 text-primary-foreground shadow-none"
-        onClick={() => handleCreateApp()}
-      >
-        <Plus className="h-5 w-5" />
-        {t('Create Application')}
-      </Button>
+    <div
+      className="relative flex flex-1 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed mb-12"
+      onClick={onCreateApp}
+    >
+      <Image width={900} height={310} alt={'list-empty'} src={'/images/list-empty.svg'} />
+      <div className="absolute top-1/2 left-1/2 flex w-[292px] -translate-x-1/2 translate-y-1/20 flex-col items-center gap-1">
+        <div className="text-2xl font-medium mb-1">{t('create_your_first_application')}</div>
+        <div className="text-center text-base font-normal text-zinc-500">
+          {t('click_here_to_create_application')}
+        </div>
+      </div>
     </div>
   );
 };

@@ -34,9 +34,10 @@ import UpdateModal from '@/components/app/detail/index/UpdateModal';
 import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
-import { BookOpen, Plus } from 'lucide-react';
+import { BookOpen, Plus, TriangleAlert } from 'lucide-react';
 import { track } from '@sealos/gtm';
 import { useQuotaGuarded } from '@sealos/shared';
+import Empty from './empty';
 
 import {
   getCoreRowModel,
@@ -358,81 +359,96 @@ const AppList = ({
 
       {/* Table */}
       <div className="flex flex-1 flex-col justify-between overflow-hidden">
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto scrollbar-hide">
-          {/* Table Header */}
-          <div className="sticky top-0 z-10 flex min-w-[1350px] h-10 shrink-0 items-center text-sm rounded-lg border-[0.5px] bg-white px-6 text-sm text-zinc-500 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)]">
-            {table.getFlatHeaders().map((header) => {
-              const isGrowColumn = ['name', 'cpu', 'memory'].includes(header.id);
-              const columnSize = header.column.columnDef.size;
-              return (
+        {apps.length === 0 ? (
+          <Empty onCreateApp={handleCreateApp} />
+        ) : (
+          <>
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto scrollbar-hide">
+              {/* Table Header */}
+              <div className="sticky top-0 z-10 flex min-w-[1350px] h-10 shrink-0 items-center text-sm rounded-lg border-[0.5px] bg-white px-6 text-sm text-zinc-500 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)]">
+                {table.getFlatHeaders().map((header) => {
+                  const isGrowColumn = ['name', 'cpu', 'memory'].includes(header.id);
+                  const columnSize = header.column.columnDef.size;
+                  return (
+                    <div
+                      key={header.id}
+                      style={columnSize ? { width: columnSize } : undefined}
+                      className={isGrowColumn ? 'shrink-0 grow' : 'shrink-0'}
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Table Body */}
+              {table.getRowModel().rows.map((row) => (
                 <div
-                  key={header.id}
-                  style={columnSize ? { width: columnSize } : undefined}
-                  className={isGrowColumn ? 'shrink-0 grow' : 'shrink-0'}
+                  key={row.id}
+                  className="appListItem group flex h-18 shrink-0 text-sm min-w-[1350px] items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors hover:bg-zinc-50"
+                  data-id={row.original.id}
                 >
-                  {flexRender(header.column.columnDef.header, header.getContext())}
+                  {row.getVisibleCells().map((cell) => {
+                    const isGrowColumn = ['name', 'cpu', 'memory'].includes(cell.column.id);
+                    const columnSize = cell.column.columnDef.size;
+                    return (
+                      <div
+                        key={cell.id}
+                        style={columnSize ? { width: columnSize } : undefined}
+                        className={`${
+                          isGrowColumn ? 'shrink-0 grow' : 'shrink-0'
+                        } first:h-full first:flex first:items-center`}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Table Body */}
-          {table.getRowModel().rows.map((row) => (
-            <div
-              key={row.id}
-              className="appListItem group flex h-18 shrink-0 text-sm min-w-[1350px] items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors hover:bg-zinc-50"
-              data-id={row.original.id}
-            >
-              {row.getVisibleCells().map((cell) => {
-                const isGrowColumn = ['name', 'cpu', 'memory'].includes(cell.column.id);
-                const columnSize = cell.column.columnDef.size;
-                return (
-                  <div
-                    key={cell.id}
-                    style={columnSize ? { width: columnSize } : undefined}
-                    className={`${
-                      isGrowColumn ? 'shrink-0 grow' : 'shrink-0'
-                    } first:h-full first:flex first:items-center`}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </div>
-                );
-              })}
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Pagination */}
-        {table.getRowModel().rows.length > 0 && (
-          <div className="flex items-center justify-between gap-2.5 py-4 text-sm/5 text-zinc-500">
-            <span>{t('Total') + ': ' + table.getFilteredRowModel().rows.length}</span>
-            <div className="flex items-center gap-3">
-              <Pagination
-                currentPage={table.getState().pagination.pageIndex + 1}
-                totalPages={table.getPageCount()}
-                onPageChange={(page) => table.setPageIndex(page - 1)}
-              />
-              <div className="flex items-center gap-1">
-                <span className="text-zinc-900">{table.getState().pagination.pageSize}</span>/
-                <span>{t('Page')}</span>
+            {/* Pagination */}
+            <div className="flex items-center justify-between gap-2.5 py-4 text-sm/5 text-zinc-500">
+              <span>{t('Total') + ': ' + table.getFilteredRowModel().rows.length}</span>
+              <div className="flex items-center gap-3">
+                <Pagination
+                  currentPage={table.getState().pagination.pageIndex + 1}
+                  totalPages={table.getPageCount()}
+                  onPageChange={(page) => table.setPageIndex(page - 1)}
+                />
+                <div className="flex items-center gap-1">
+                  <span className="text-zinc-900">{table.getState().pagination.pageSize}</span>/
+                  <span>{t('Page')}</span>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
       {/* Modals */}
       {/* Pause Confirm Dialog */}
-      <AlertDialog open={pauseDialogOpen} onOpenChange={setPauseDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('Warning')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('pause_message')}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="w-[88px]">{t('Cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              className="w-[88px]"
+      <Dialog open={pauseDialogOpen} onOpenChange={setPauseDialogOpen}>
+        <DialogContent className="w-[360px] text-foreground">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold leading-none">
+              <TriangleAlert className="h-4 w-4 text-yellow-600" />
+              {t('Warning')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-sm font-normal">{t('pause_message')}</div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="lg"
+              className="shadow-none"
+              onClick={() => setPauseDialogOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              size="lg"
+              className="shadow-none"
               onClick={() => {
                 handlePauseApp(pendingPauseAppName);
                 setPauseDialogOpen(false);
@@ -440,10 +456,10 @@ const AppList = ({
               }}
             >
               {t('Yes')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {!!delAppName && (
         <DelModal
           appName={delAppName}
@@ -461,7 +477,7 @@ const AppList = ({
         }}
       />
       <Dialog open={isOpenRemarkModal} onOpenChange={setIsOpenRemarkModal}>
-        <DialogContent>
+        <DialogContent className="w-[450px]">
           <DialogHeader>
             <DialogTitle>{t('set_remarks_title')}</DialogTitle>
           </DialogHeader>

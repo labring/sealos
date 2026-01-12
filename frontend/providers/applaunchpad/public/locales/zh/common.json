@@ -448,5 +448,6 @@
   "within_1_hour": "一小时内",
   "within_5_minute": "五分钟内",
   "No Applications": "暂无应用",
-  "Create your first application": "创建您的第一个应用开始使用"
+  "create_your_first_application": "部署您的第一个应用",
+  "click_here_to_create_application": "点击此处从 Docker 镜像部署应用，仅需几步即可完成"
 }
