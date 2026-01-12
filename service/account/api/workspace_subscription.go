@@ -1205,12 +1205,24 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 		// No additional validation needed for creation
 		if currentSubscription != nil &&
 			currentSubscription.PlanName != types.FreeSubscriptionPlanName {
-			SetErrorResp(
-				c,
-				http.StatusBadRequest,
-				gin.H{"error": "cannot create new subscription with existing subscription"},
-			)
-			return
+
+			// Allow re-creation for overdue subscriptions
+			if currentSubscription.Status == types.SubscriptionStatusDebt {
+				// Overdue status allowed, will cancel old subscription in payment flow
+				logrus.Infof(
+					"Allowing subscription creation for overdue workspace %s/%s, will cancel old subscription",
+					req.Workspace,
+					req.RegionDomain,
+				)
+			} else {
+				// Normal active subscription, reject creation
+				SetErrorResp(
+					c,
+					http.StatusBadRequest,
+					gin.H{"error": "cannot create new subscription with existing active subscription"},
+				)
+				return
+			}
 		}
 		transaction.Amount = planPrice.Price // Full price for new subscription
 	case types.SubscriptionTransactionTypeUpgraded:
@@ -1670,6 +1682,90 @@ func initializeTransactionData(
 	return nil
 }
 
+// cancelOldSubscriptionInTransaction cancels the existing subscription within a transaction
+func cancelOldSubscriptionInTransaction(
+	tx *gorm.DB,
+	workspace string,
+	regionDomain string,
+) error {
+	// Get current subscription
+	subscription, err := dao.DBClient.GetWorkspaceSubscription(workspace, regionDomain)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Subscription doesn't exist, no need to cancel
+			return nil
+		}
+		return fmt.Errorf("failed to get workspace subscription: %w", err)
+	}
+
+	if subscription == nil || subscription.Status == types.SubscriptionStatusDeleted {
+		return nil
+	}
+
+	// Update subscription status to deleted
+	subscription.Status = types.SubscriptionStatusDeleted
+	subscription.PayStatus = types.SubscriptionPayStatusCanceled
+	subscription.CancelAt = time.Now().UTC()
+
+	if err := tx.Save(&subscription).Error; err != nil {
+		return fmt.Errorf("failed to update subscription status: %w", err)
+	}
+
+	// Cancel Stripe subscription
+	if subscription.PayMethod == types.PaymentMethodStripe &&
+		subscription.Stripe != nil &&
+		subscription.Stripe.SubscriptionID != "" {
+
+		_, err := services.StripeServiceInstance.CancelSubscription(
+			subscription.Stripe.SubscriptionID,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to cancel Stripe subscription %s: %w",
+				subscription.Stripe.SubscriptionID,
+				err,
+			)
+		}
+
+		logrus.Infof(
+			"Canceled Stripe subscription %s for workspace %s/%s",
+			subscription.Stripe.SubscriptionID,
+			workspace,
+			regionDomain,
+		)
+	}
+
+	// Create cancellation transaction record
+	cancelTransaction := types.WorkspaceSubscriptionTransaction{
+		ID:            uuid.New(),
+		From:          types.TransactionFromSystem,
+		Workspace:     workspace,
+		RegionDomain:  regionDomain,
+		UserUID:       subscription.UserUID,
+		OldPlanName:   subscription.PlanName,
+		OldPlanStatus: subscription.Status,
+		NewPlanName:   subscription.PlanName,
+		Operator:      types.SubscriptionTransactionTypeCanceled,
+		StartAt:       time.Now().UTC(),
+		CreatedAt:     time.Now().UTC(),
+		Status:        types.SubscriptionTransactionStatusCompleted,
+		PayStatus:     types.SubscriptionPayStatusNoNeed,
+		StatusDesc:    "Auto-canceled before creating new subscription (overdue)",
+	}
+
+	if err := dao.DBClient.CreateWorkspaceSubscriptionTransaction(tx, &cancelTransaction); err != nil {
+		return fmt.Errorf("failed to create cancel transaction: %w", err)
+	}
+
+	logrus.Infof(
+		"Successfully canceled old subscription for workspace %s/%s before creating new one",
+		workspace,
+		regionDomain,
+	)
+
+	return nil
+}
+
 // processNewSubscription handles new subscription creation and renewal
 func processNewSubscription(
 	tx *gorm.DB,
@@ -1678,6 +1774,26 @@ func processNewSubscription(
 	price *types.ProductPrice,
 	transaction types.WorkspaceSubscriptionTransaction,
 ) error {
+	// Handle overdue subscription re-creation: cancel old subscription first
+	if transaction.OldPlanStatus == types.SubscriptionStatusDebt ||
+		(transaction.OldPlanName != "" && transaction.OldPlanName != types.FreeSubscriptionPlanName) {
+
+		if err := cancelOldSubscriptionInTransaction(tx, req.Workspace, req.RegionDomain); err != nil {
+			SetErrorResp(
+				c,
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to cancel old subscription: %v", err)},
+			)
+			return err
+		}
+
+		logrus.Infof(
+			"Canceled old subscription for workspace %s/%s before creating new one",
+			req.Workspace,
+			req.RegionDomain,
+		)
+	}
+
 	// Create transaction record
 	if transaction.Status == "" {
 		transaction.Status = types.SubscriptionTransactionStatusProcessing
