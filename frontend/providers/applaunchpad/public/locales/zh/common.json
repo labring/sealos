@@ -375,6 +375,8 @@
   "set_remarks_placeholder": "设置备注以帮助更轻松地识别此应用或服务。",
   "set_remarks_title": "设置备注",
   "shared": "共享",
+  "remote": "网络",
+  "remote_storage": "网络存储",
   "show hidden files": "显示隐藏文件",
   "skip": "跳过",
   "start": "开始",

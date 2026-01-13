@@ -22,19 +22,22 @@ import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import { MyTooltip } from '@sealos/ui';
+import { StorageType } from '@/types/app';
 
 export type StoreType = {
   id?: string;
   name: string;
   path: string;
   value: number;
+  storageType?: StorageType;
 };
 
 const StoreModal = ({
   defaultValue = {
     name: '',
     path: '',
-    value: 1
+    value: 1,
+    storageType: 'local'
   },
   minValue,
   maxValue,
@@ -188,7 +191,8 @@ const StoreModal = ({
                   id: e.id,
                   name: e.name,
                   path: e.path,
-                  value: clampValue(e.value)
+                  value: clampValue(e.value),
+                  storageType: e.storageType || 'local'
                 });
               })}
             >

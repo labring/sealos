@@ -375,6 +375,8 @@
   "set_remarks_placeholder": "Set remarks to help identify this app or service more easily.",
   "set_remarks_title": "Set Remarks",
   "shared": "Shared",
+  "remote": "Remote",
+  "remote_storage": "Remote Storage",
   "show hidden files": "Show hidden files",
   "skip": "Skip",
   "start": "Start",

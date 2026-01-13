@@ -332,7 +332,17 @@ export const MockAppEditSyncedFields: AppEditSyncedFields = {
   cmdParam: 'sleep 10',
   runCMD: '/bin/bash -c',
   labels: {},
-  configMapList: [],
-  storeList: [],
-  envs: []
+  configMapList: [
+    {
+      mountPath: '/config.yaml',
+      value: 'config.yaml',
+      key: 'config.yaml',
+      volumeName: 'config-volume'
+    }
+  ],
+  envs: [],
+  storeList: [
+    { name: 'store-1', path: '/store-1', value: 1, storageType: 'remote' },
+    { name: 'store-2', path: '/store-2', value: 1, storageType: 'remote' }
+  ]
 };
