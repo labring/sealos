@@ -114,7 +114,7 @@ func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 		&netv1.Ingress{},
 		IngressHostIndex,
 		func(obj client.Object) []string {
-			ingress := obj.(*netv1.Ingress)
+			ingress := obj.(*netv1.Ingress) //nolint:errcheck // IndexField is registered for Ingress objects only
 			var hosts []string
 			for _, rule := range ingress.Spec.Rules {
 				hosts = append(hosts, rule.Host)
