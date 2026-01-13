@@ -170,7 +170,8 @@ const Release = () => {
             name: `${name}-pvc-${vol.id}`,
             path: vol.path,
             value: vol.size,
-            storageType: 'remote'
+            storageType: 'remote',
+            storageClassName: 'nfs-csi'
           })) || [],
         envs:
           envs?.map((env) => ({
