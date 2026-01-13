@@ -234,6 +234,7 @@
   "custom_domain_input_title": "Your Domain",
   "day": "days",
   "delete_app_tip": "Are you sure you want to delete this application? All project data will be permanently lost if you proceed.",
+  "delete_remote_storage_warning": "Remote storage volumes detected. After deleting this application, the storage volumes will remain in the corresponding DevBox. Please go to DevBox to perform further operations (such as modify or delete).",
   "delete_sealaf_app_tip": "The application is deployed via cloud development. \nSimply deleting the app won't clear out all of the app's components, which may still accrue charges. \nTo completely uninstall the app and clean all related components, uninstall the entire app in cloud development.",
   "delete_template_app_tip": "This app is managed by the app store. You are now going to the app store to delete all app components.",
   "domain_cname_verify_failed_toast": "CNAME record verification failed",

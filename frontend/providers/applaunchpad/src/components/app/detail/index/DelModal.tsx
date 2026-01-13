@@ -28,12 +28,14 @@ const DelModal = ({
   appName,
   onClose,
   onSuccess,
-  source
+  source,
+  remoteStoreAmount
 }: {
   appName: string;
   onClose: () => void;
   onSuccess: () => void;
   source?: TAppSource;
+  remoteStoreAmount?: number;
 }) => {
   const { t } = useTranslation();
   const [inputValue, setInputValue] = useState('');
@@ -41,6 +43,9 @@ const DelModal = ({
   const { message: toast } = useMessage();
   const [activePage, setActivePage] = useState<Page>(Page.REMINDER);
   const pageManuallyChangedRef = useRef(false);
+
+  // Check if there are remote storage volumes
+  const hasRemoteStorage = remoteStoreAmount !== undefined && remoteStoreAmount > 0;
 
   useEffect(() => {
     if (!pageManuallyChangedRef.current) {
@@ -110,6 +115,15 @@ const DelModal = ({
               ? deleteTypeTipMap[source?.sourceType]
               : t('delete_app_tip')}
 
+            {/* Remote storage warning */}
+            {hasRemoteStorage && activePage === Page.DELETION_WARNING && (
+              <Box my={'16px'} p={'16px'} bg={'#FEF2F2'} color={'#DC2626'} borderRadius={'8px'}>
+                <Flex alignItems={'flex-start'} fontSize={'14px'} lineHeight={'20px'}>
+                  {t('delete_remote_storage_warning')}
+                </Flex>
+              </Box>
+            )}
+
             {activePage === Page.DELETION_WARNING && (
               <Box my={3}>
                 {t('Please enter')}
@@ -126,6 +140,7 @@ const DelModal = ({
               </Box>
             )}
           </Box>
+
           {activePage === Page.DELETION_WARNING && (
             <Input
               placeholder={t('please enter app name', { appName }) || ''}

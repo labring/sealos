@@ -593,6 +593,7 @@ const AppList = ({
         <DelModal
           appName={delAppName}
           source={apps.find((item) => item.name === delAppName)?.source}
+          remoteStoreAmount={apps.find((item) => item.name === delAppName)?.remoteStoreAmount || 0}
           onClose={() => setDelAppName('')}
           onSuccess={refetchApps}
         />
