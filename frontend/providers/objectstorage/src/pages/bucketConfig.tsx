@@ -1,4 +1,4 @@
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Flex, useToast } from '@chakra-ui/react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Authority, FormSchema, QueryKey, bucketConfigQueryParam } from '@/consts';
 import { inAuthority } from '@/utils/tools';
@@ -7,8 +7,10 @@ import ConfigMain from '@/components/buckConfig/Configmain';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { QueryClient, dehydrate, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createBucket, listBucket } from '@/api/bucket';
-import { useToast } from '@/hooks/useToast';
 import { useRouter } from 'next/router';
+import useSessionStore from '@/store/session';
+import { useTranslation } from 'next-i18next';
+
 const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   const methods = useForm<FormSchema>({
     defaultValues: {
@@ -16,9 +18,12 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
       bucketName
     }
   });
-  const { toast } = useToast();
+  const toast = useToast();
   const client = useQueryClient();
   const router = useRouter();
+  const { session } = useSessionStore();
+  const { t } = useTranslation(['common', 'bucket']);
+
   const mutation = useMutation({
     mutationFn: createBucket,
     async onSuccess(data) {
@@ -36,42 +41,68 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
       });
       toast({
         title: 'apply successfully',
-        status: 'success'
+        status: 'success',
+        position: 'top'
       });
       router.replace('/');
     },
     onError(data: { message: string }) {
       toast({
         title: data.message,
-        status: 'error'
+        status: 'error',
+        position: 'top'
       });
     }
   });
-  return (
-    <FormProvider {...methods}>
-      <form
-        onSubmit={methods.handleSubmit((data) => {
-          mutation.mutate({
-            bucketName: data.bucketName,
-            bucketPolicy: data.bucketAuthority
-          });
-        })}
-      >
-        <Flex
-          minW={'1024px'}
-          flexDirection={'column'}
-          alignItems={'center'}
-          h={'100vh'}
-          bg={'#F3F4F5'}
-        >
-          <ConfigHeader />
 
-          <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
-            <ConfigMain />
-          </Box>
-        </Flex>
-      </form>
-    </FormProvider>
+  const submitForm = () => {
+    methods.handleSubmit(
+      (data) => {
+        mutation.mutateAsync({
+          bucketName: data.bucketName,
+          bucketPolicy: data.bucketAuthority
+        });
+      },
+      (errors) => {
+        if (errors.bucketName) {
+          toast({
+            title: t('bucket:bucketCreateFailed'),
+            description: t('bucket:bucketNameInvalid'),
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+            position: 'top'
+          });
+        }
+      }
+    )();
+  };
+
+  return (
+    <>
+      <FormProvider {...methods}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitForm();
+          }}
+        >
+          <Flex
+            minW={'1024px'}
+            flexDirection={'column'}
+            alignItems={'center'}
+            h={'100vh'}
+            bg={'#F3F4F5'}
+          >
+            <ConfigHeader />
+
+            <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
+              <ConfigMain />
+            </Box>
+          </Flex>
+        </form>
+      </FormProvider>
+    </>
   );
 };
 

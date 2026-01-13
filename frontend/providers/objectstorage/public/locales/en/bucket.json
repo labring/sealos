@@ -11,5 +11,7 @@
   "enterBucketNameConfirmation": "Please enter bucket name {{bucketName}} confirmation",
   "enterValidBucketName": "Please enter a valid bucket name",
   "initializing": "Initializing",
-	"reset_user_sk_title": "Confirm Reset Secret Key"
+  "reset_user_sk_title": "Confirm Reset Secret Key",
+  "bucketCreateFailed": "Bucket creation failed",
+  "bucketNameInvalid": "The bucket name contains invalid characters. Names can only contain lowercase letters, numbers, and hyphens (-). Names must not start or end with a hyphen (-)."
 }
