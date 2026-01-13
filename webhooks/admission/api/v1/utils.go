@@ -24,12 +24,16 @@ import (
 )
 
 const (
-	userServiceAccountPrefix = "system:serviceaccount:ns-"
-	userNamespacePrefix      = "ns-"
+	userControllerServiceAccount      = "system:serviceaccount:user-system:user-controller-manager"
+	userNamespacePrefix               = "ns-"
+	userServiceAccountPrefix          = "system:serviceaccount:user-system:"
+	userNamespaceServiceAccountPrefix = "system:serviceaccount:" + userNamespacePrefix
 )
 
 func isUserServiceAccount(sa string) bool {
-	return strings.HasPrefix(sa, userServiceAccountPrefix)
+	return sa != userControllerServiceAccount &&
+		(strings.HasPrefix(sa, userServiceAccountPrefix) ||
+			strings.HasPrefix(sa, userNamespaceServiceAccountPrefix))
 }
 
 func isUserNamespace(ns string) bool {
