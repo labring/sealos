@@ -129,38 +129,40 @@ func (v *IngressValidator) SetupWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/validate-networking-k8s-io-v1-ingress,mutating=false,failurePolicy=ignore,sideEffects=None,groups=networking.k8s.io,resources=ingresses,verbs=create;update;delete,versions=v1,name=vingress.sealos.io,admissionReviewVersions=v1
 
-func (v *IngressValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (v *IngressValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	i, ok := obj.(*netv1.Ingress)
 	if !ok {
-		return errors.New("obj convert Ingress is error")
+		return nil, errors.New("obj convert Ingress is error")
 	}
 
 	ilog.Info("validating create", "ingress namespace", i.Namespace, "ingress name", i.Name)
-	return v.validate(ctx, i)
+	err := v.validate(ctx, i)
+	return nil, err
 }
 
-func (v *IngressValidator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) error {
+func (v *IngressValidator) ValidateUpdate(ctx context.Context, _, newObj runtime.Object) (admission.Warnings, error) {
 	ni, ok := newObj.(*netv1.Ingress)
 	if !ok {
-		return errors.New("obj convert Ingress is error")
+		return nil, errors.New("obj convert Ingress is error")
 	}
 	//oi, ok := oldObj.(*netv1.Ingress)
 	//if !ok {
 	//	return errors.New("obj convert Ingress is error")
 	//}
 	ilog.Info("validating update", "ingress namespace", ni.Namespace, "ingress name", ni.Name)
-	return v.validate(ctx, ni)
+	err := v.validate(ctx, ni)
+	return nil, err
 }
 
-func (v *IngressValidator) ValidateDelete(_ context.Context, obj runtime.Object) error {
+func (v *IngressValidator) ValidateDelete(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	i, ok := obj.(*netv1.Ingress)
 	if !ok {
-		return errors.New("obj convert Ingress is error")
+		return nil, errors.New("obj convert Ingress is error")
 	}
 
 	ilog.Info("validating delete", "ingress namespace", i.Namespace, "ingress name", i.Name)
 	// delete ingress, pass validate
-	return nil
+	return nil, nil
 }
 
 func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error {
