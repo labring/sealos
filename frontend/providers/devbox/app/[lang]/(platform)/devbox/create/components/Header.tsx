@@ -44,16 +44,18 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
   const isClientSide = useClientSideValue(true);
 
   const handleBack = useCallback(() => {
+    const fromTab = searchParams.get('fromTab');
     if (name) {
       if (from === 'detail') {
-        router.replace(`/devbox/detail/${name}`);
+        const url = fromTab ? `/devbox/detail/${name}?tab=${fromTab}` : `/devbox/detail/${name}`;
+        router.replace(url);
       } else if (from === 'list') {
         router.replace(`/`);
       }
     } else {
       router.push('/template');
     }
-  }, [name, router, from]);
+  }, [name, router, from, searchParams]);
 
   return (
     <>

@@ -67,21 +67,17 @@ const DevboxCreatePage = () => {
     const name = searchParams.get('name');
     const from = searchParams.get('from');
     const scrollTo = searchParams.get('scrollTo');
-    if (name) {
+    if (name && name !== captureDevboxName) {
       setCaptureDevboxName(name);
-      router.replace(`/devbox/create?name=${captureDevboxName}`, undefined);
-      if (from) {
-        setCaptureFrom(from);
-        router.replace(`/devbox/create?name=${captureDevboxName}&from=${captureFrom}`, undefined);
-        if (scrollTo) {
-          setCaptureScrollTo(scrollTo);
-          router.replace(
-            `/devbox/create?name=${captureDevboxName}&scrollTo=${captureScrollTo}`,
-            undefined
-          );
-        }
-      }
-    } else if (from === 'template') {
+    }
+    if (from && from !== captureFrom) {
+      setCaptureFrom(from);
+    }
+    if (scrollTo && scrollTo !== captureScrollTo) {
+      setCaptureScrollTo(scrollTo);
+    }
+
+    if (from === 'template' && !name) {
       const savedFormData = localStorage.getItem('devbox_create_form_data');
       if (savedFormData) {
         try {
@@ -93,7 +89,7 @@ const DevboxCreatePage = () => {
         }
       }
     }
-  }, [searchParams, router, captureDevboxName, captureScrollTo, captureFrom, formHook]);
+  }, [searchParams, captureDevboxName, captureScrollTo, captureFrom, formHook]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);

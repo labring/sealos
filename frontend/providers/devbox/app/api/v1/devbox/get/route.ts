@@ -68,15 +68,23 @@ export async function GET(req: NextRequest) {
       });
     }
     const label = `${devboxKey}=${devboxName}`;
-    // get ingresses and service
-    const [ingressesResponse, serviceResponse] = await Promise.all([
+    // get ingresses, service, configmaps, and pvcs
+    const [ingressesResponse, serviceResponse, configMapsResponse, pvcsResponse] = await Promise.all([
       k8sNetworkingApp
         .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
         .catch(() => null),
-      k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null)
+      k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null),
+      k8sCore
+        .listNamespacedConfigMap(namespace, undefined, undefined, undefined, undefined, label)
+        .catch(() => null),
+      k8sCore
+        .listNamespacedPersistentVolumeClaim(namespace, undefined, undefined, undefined, undefined, label)
+        .catch(() => null)
     ]);
     const ingresses = ingressesResponse?.body.items || [];
     const service = serviceResponse?.body;
+    const configMaps = configMapsResponse?.body.items || [];
+    const pvcs = pvcsResponse?.body.items || [];
 
     const ingressList = ingresses.map((item) => {
       const defaultDomain = item.metadata?.labels?.[publicDomainKey];
@@ -104,7 +112,7 @@ export async function GET(req: NextRequest) {
           customDomain: ingressInfo?.customDomain
         };
       }) || [];
-    const resp = [devboxBody, portInfos, template] as [KBDevboxTypeV2, PortInfos, typeof template];
+    const resp = [devboxBody, portInfos, template, configMaps, pvcs] as [KBDevboxTypeV2, PortInfos, typeof template, typeof configMaps, typeof pvcs];
     const adaptedData = adaptDevboxDetailV2(resp);
 
     // get ssh info

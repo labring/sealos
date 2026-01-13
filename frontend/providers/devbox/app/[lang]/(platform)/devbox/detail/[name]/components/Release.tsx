@@ -123,7 +123,7 @@ const Release = () => {
       const config = parseTemplateConfig(result.template.config);
       const releaseArgs = config.releaseArgs.join(' ');
       const releaseCommand = config.releaseCommand.join(' ');
-      const { cpu, memory, networks, name, gpu } = devbox;
+      const { cpu, memory, networks, name, gpu, configMaps, volumes, envs } = devbox;
       const newNetworks = networks.map((network) => {
         return {
           port: network.port,
@@ -157,7 +157,27 @@ const Release = () => {
         cmdParam: releaseArgs,
         labels: {
           [devboxIdKey]: devbox.id
-        }
+        },
+        configMapList:
+          configMaps?.map((cm) => ({
+            mountPath: cm.path,
+            value: cm.content,
+            key: cm.path.split('/').pop() || 'config',
+            volumeName: `${name}-volume-cm-${cm.id}`
+          })) || [],
+        storeList:
+          volumes?.map((vol) => ({
+            name: `${name}-pvc-${vol.id}`,
+            path: vol.path,
+            value: vol.size,
+            storageType: 'remote',
+            storageClassName: env.nfsStorageClassName
+          })) || [],
+        envs:
+          envs?.map((env) => ({
+            key: env.key,
+            value: env.value
+          })) || []
       };
       setDeployData(transformData);
 

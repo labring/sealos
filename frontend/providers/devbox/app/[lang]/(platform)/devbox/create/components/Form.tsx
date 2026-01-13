@@ -7,7 +7,6 @@ import { useSearchParams } from 'next/navigation';
 
 import { useRouter } from '@/i18n';
 import { obj2Query } from '@/utils/tools';
-import { useDevboxStore } from '@/stores/devbox';
 import type { DevboxEditTypeV2 } from '@/types/devbox';
 
 import Gpu from './Gpu';
@@ -18,8 +17,10 @@ import Runtime from './Runtime';
 import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
 import DevboxName from './DevboxName';
+import AdvancedConfig from './AdvancedConfig';
 
 import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { useEnvStore } from '@/stores/env';
 
 interface FormProps {
   isEdit: boolean;
@@ -31,15 +32,20 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const searchParams = useSearchParams();
   const t = useTranslations();
   const { watch } = useFormContext<DevboxEditTypeV2>();
+  const { env } = useEnvStore();
 
   const formValues = watch();
+  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
 
   useEffect(() => {
-    if (searchParams.get('scrollTo') === 'network') {
-      const el = document.getElementById('network');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    const scrollTo = searchParams.get('scrollTo');
+    if (scrollTo) {
+      setTimeout(() => {
+        const el = document.getElementById(scrollTo);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
     }
   }, [searchParams]);
 
@@ -91,6 +97,9 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         <div id="network">
           <Network isEdit={isEdit} />
         </div>
+
+        {/* Advanced Configurations */}
+        {showAdvancedConfig && <AdvancedConfig />}
       </div>
     </div>
   );
