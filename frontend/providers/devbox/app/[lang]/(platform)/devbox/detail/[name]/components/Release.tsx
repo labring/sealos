@@ -171,7 +171,7 @@ const Release = () => {
             path: vol.path,
             value: vol.size,
             storageType: 'remote',
-            storageClassName: 'nfs-csi'
+            storageClassName: env.nfsStorageClassName
           })) || [],
         envs:
           envs?.map((env) => ({
