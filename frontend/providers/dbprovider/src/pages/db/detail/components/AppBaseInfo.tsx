@@ -699,14 +699,16 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
           {!['milvus'].includes(db.dbType) && (
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
-              {Object.entries(baseSecret).map(([name, value]) => (
-                <Box key={name} flex={1}>
-                  <Box color={'grayModern.600'} textTransform={'capitalize'} mb={'4px'}>
-                    {name}
+              {Object.entries(baseSecret)
+                .filter(([, value]) => !!value)
+                .map(([name, value]) => (
+                  <Box key={name} flex={1}>
+                    <Box color={'grayModern.600'} textTransform={'capitalize'} mb={'4px'}>
+                      {name}
+                    </Box>
+                    <CopyBox value={value} showSecret={showSecret} />
                   </Box>
-                  <CopyBox value={value} showSecret={showSecret} />
-                </Box>
-              ))}
+                ))}
             </Flex>
           )}
 
@@ -715,14 +717,32 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               {t('intranet_address')}
             </Text>
             <Flex gap={'12px'} mt={'8px'}>
-              {Object.entries(otherSecret).map(([name, value], index) => (
-                <Box key={name} flex={index === 0 ? '0 1 280px' : index === 1 ? '0 0 100px' : '1'}>
-                  <Box color={'grayModern.600'} textTransform={'capitalize'} mb={'4px'}>
-                    {name}
+              {Object.entries(otherSecret)
+                .filter(([, value]) => !!value)
+                .filter(([name]) =>
+                  // Do not show connection string for clickhouse
+                  !['clickhouse'].includes(db.dbType) ? true : name !== 'connection'
+                )
+                .map(([name, value]) => (
+                  <Box
+                    key={name}
+                    minWidth={name === 'host' ? '280px' : name === 'port' ? '100px' : 'auto'}
+                    width={
+                      name === 'host'
+                        ? '100%'
+                        : name === 'port'
+                          ? '40%'
+                          : name === 'connection'
+                            ? '160%'
+                            : 'auto'
+                    }
+                  >
+                    <Box color={'grayModern.600'} textTransform={'capitalize'} mb={'4px'}>
+                      {name}
+                    </Box>
+                    <CopyBox value={value} showSecret={showSecret} />
                   </Box>
-                  <CopyBox value={value} showSecret={showSecret} />
-                </Box>
-              ))}
+                ))}
             </Flex>
           </Box>
 
@@ -747,17 +767,32 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             </Flex>
             {isChecked ? (
               <Flex gap={'12px'} mt={'8px'}>
-                {Object.entries(externalNetWork).map(([name, value], index) => (
-                  <Box
-                    key={name}
-                    flex={index === 0 ? '0 1 280px' : index === 1 ? '0 0 100px' : '1'}
-                  >
-                    <Box color={'grayModern.600'} textTransform={'capitalize'} mb={'4px'}>
-                      {name}
+                {Object.entries(externalNetWork)
+                  .filter(([, value]) => !!value)
+                  .filter(([name]) =>
+                    // Do not show connection string for clickhouse
+                    !['clickhouse'].includes(db.dbType) ? true : name !== 'connection'
+                  )
+                  .map(([name, value], index) => (
+                    <Box
+                      key={name}
+                      minWidth={name === 'host' ? '280px' : name === 'port' ? '100px' : 'auto'}
+                      width={
+                        name === 'host'
+                          ? '100%'
+                          : name === 'port'
+                            ? '40%'
+                            : name === 'connection'
+                              ? '160%'
+                              : 'auto'
+                      }
+                    >
+                      <Box color={'grayModern.600'} textTransform={'capitalize'} mb={'4px'}>
+                        {name}
+                      </Box>
+                      <CopyBox value={value} showSecret={showSecret} />
                     </Box>
-                    <CopyBox value={value} showSecret={showSecret} />
-                  </Box>
-                ))}
+                  ))}
               </Flex>
             ) : (
               <Center
