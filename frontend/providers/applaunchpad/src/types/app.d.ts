@@ -59,6 +59,8 @@ export interface AppListItemType {
   minReplicas: number;
   maxReplicas: number;
   storeAmount: number;
+  localStoreAmount: number;
+  remoteStoreAmount: number;
   labels: { [key: string]: string };
   source: TAppSource;
   kind?: 'deployment' | 'statefulset';

@@ -76,12 +76,24 @@ export const getAppSource = (
 
 export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItemType => {
   // compute store amount
-  const storeAmount = app.spec?.volumeClaimTemplates
-    ? app.spec?.volumeClaimTemplates.reduce(
-        (sum, item) => sum + Number(item?.metadata?.annotations?.value),
-        0
-      )
-    : 0;
+  const volumeClaimTemplates = app.spec?.volumeClaimTemplates || [];
+
+  const { storeAmount, localStoreAmount, remoteStoreAmount } = volumeClaimTemplates.reduce(
+    (acc, item) => {
+      const value = Number(item?.metadata?.annotations?.value || 0);
+      const isRemote = item?.metadata?.annotations?.storageType === 'remote';
+
+      acc.storeAmount += value;
+      if (isRemote) {
+        acc.remoteStoreAmount += value;
+      } else {
+        acc.localStoreAmount += value;
+      }
+
+      return acc;
+    },
+    { storeAmount: 0, localStoreAmount: 0, remoteStoreAmount: 0 }
+  );
 
   const gpuNodeSelector = app?.spec?.template?.spec?.nodeSelector;
 
@@ -116,6 +128,8 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     maxReplicas: +(app.metadata?.annotations?.[maxReplicasKey] || app.status?.readyReplicas || 0),
     minReplicas: +(app.metadata?.annotations?.[minReplicasKey] || app.status?.readyReplicas || 0),
     storeAmount,
+    localStoreAmount,
+    remoteStoreAmount,
     labels: app.metadata?.labels || {},
     source: getAppSource(app),
     kind: app.kind?.toLowerCase() as 'deployment' | 'statefulset',
