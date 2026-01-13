@@ -1,5 +1,5 @@
 import { createDatabaseSchemas } from '@/types/apis/v2alpha';
-import { getK8s, K8sApi } from '../kubernetes';
+import { getK8s } from '../kubernetes';
 import { z } from 'zod';
 import { BackupSupportedDBTypeList, DBTypeEnum } from '@/constants/db';
 import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
@@ -8,17 +8,20 @@ import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster, json2ParameterConfig } from '@/utils/json2Yaml';
 import { DBEditType, EditType } from '@/types/db';
 import { getScore } from '@/utils/tools';
+import { fetchDatabaseVersions } from '../db-version';
 
 // Cache for version information to avoid repeated API calls
 const versionCache = new Map<string, { version: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
-//get latest version of database
+/**
+ * Get latest version of database
+ */
 async function getLatestVersion(
-  k8s: Awaited<ReturnType<typeof getK8s>>,
+  k8sClient: Awaited<ReturnType<typeof getK8s>>,
   dbType: string
 ): Promise<string> {
-  const cacheKey = `${k8s.namespace}-${dbType}`;
+  const cacheKey = `${k8sClient.namespace}-${dbType}`;
   const cached = versionCache.get(cacheKey);
   const now = Date.now();
 
@@ -27,47 +30,18 @@ async function getLatestVersion(
   }
 
   try {
-    let listClient = k8s;
-    try {
-      //use platform——kc
-      const kc = K8sApi();
-      const platformK8s = await getK8s({ kubeconfig: kc.exportConfig() });
-      if (platformK8s?.k8sCustomObjects) {
-        listClient = platformK8s;
-      }
-    } catch (platformError) {}
+    let versions = await fetchDatabaseVersions(dbType);
 
-    const { body } = (await listClient.k8sCustomObjects.listClusterCustomObject(
-      'apps.kubeblocks.io',
-      'v1alpha1',
-      'clusterversions'
-    )) as any;
-
-    const items = body?.items || [];
-    const versions: string[] = [];
-    items.forEach((item: any, index: number) => {
-      const clusterDefinitionRef = item?.spec?.clusterDefinitionRef as string;
-
-      if (clusterDefinitionRef === dbType && item?.metadata?.name) {
-        if (dbType === 'mysql' && item.metadata.name === 'mysql-8.0.33') {
-          return;
-        }
-        versions.push(item.metadata.name);
-      }
-    });
+    // Filter out mysql-8.0.33 if it exists
+    if (dbType === 'mysql') {
+      versions = versions.filter((v) => v !== 'mysql-8.0.33');
+    }
 
     if (versions.length === 0) {
       throw new Error(`No version found for database type: ${dbType}`);
     }
 
-    //sort versions
-    const sortedVersions = versions.sort((a, b) => {
-      const versionA = a.replace(/^[a-zA-Z-]+/, '');
-      const versionB = b.replace(/^[a-zA-Z-]+/, '');
-      return versionB.localeCompare(versionA, undefined, { numeric: true });
-    });
-
-    const latestVersion = sortedVersions[0];
+    const latestVersion = versions[0];
 
     versionCache.set(cacheKey, { version: latestVersion, timestamp: now });
 
@@ -180,7 +154,7 @@ export async function createDatabase(
         dynamicMaxConnections
       );
 
-      yamlList.push(config);
+      yamlList.unshift(config);
     }
   }
 
