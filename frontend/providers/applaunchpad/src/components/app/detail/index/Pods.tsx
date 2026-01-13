@@ -319,7 +319,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
           </TableHeader>
           <TableBody>
             {pods.map((app, i) => (
-              <TableRow key={app.podName} className="border-b border-zinc-100">
+              <TableRow key={app.podName} className="!border-b border-zinc-100">
                 {columns.map((col) => (
                   <TableCell key={col.key} className="px-4 py-2">
                     {col.render

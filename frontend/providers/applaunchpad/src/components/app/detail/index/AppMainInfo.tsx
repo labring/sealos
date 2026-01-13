@@ -16,12 +16,15 @@ import { checkReady } from '@/api/platform';
 import { useGuideStore } from '@/store/guide';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
 import ICPStatus from './ICPStatus';
-import { CircleHelpIcon, Copy } from 'lucide-react';
+import { CircleHelpIcon, Copy, Settings2 } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { Button } from '@sealos/shadcn-ui/button';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const { detailCompleted } = useGuideStore();
 
@@ -172,6 +175,13 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               {networks.length}
             </span>
           </div>
+          <Button
+            variant="outline"
+            className="h-9 !px-3 rounded-lg hover:bg-zinc-50 flex items-center"
+            onClick={() => router.push(`/app/edit?name=${app.appName}&scrollTo=network`)}
+          >
+            {t('Manage')}
+          </Button>
         </div>
         <div className="overflow-auto pb-6">
           <table className="w-full table-fixed">
@@ -191,10 +201,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             <tbody>
               {networks.map((network, index) => {
                 return (
-                  <tr
-                    key={network.inline + index}
-                    className={`${index !== networks.length - 1 ? 'border-b border-zinc-100' : ''}`}
-                  >
+                  <tr key={network.inline + index} className="!border-b border-zinc-100">
                     <td className="w-[85px] px-4 py-2">
                       <div className="text-sm text-zinc-700">{network.port}</div>
                     </td>

@@ -197,6 +197,20 @@ const Form = ({
     // eslint-disable-next-line
   }, []);
 
+  // Handle scrollTo query parameter
+  useEffect(() => {
+    if (router.query.scrollTo === 'network') {
+      const el = document.getElementById('network');
+      if (el) {
+        setTimeout(() => {
+          const yOffset = -120;
+          const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, [router.query.scrollTo]);
+
   // GPU select list for shadcn Select
   const gpuSelectList = useMemo(
     () =>

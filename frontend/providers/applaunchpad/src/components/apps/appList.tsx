@@ -13,16 +13,6 @@ import {
   DialogTitle,
   DialogFooter
 } from '@sealos/shadcn-ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction
-} from '@sealos/shadcn-ui/alert-dialog';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Label } from '@sealos/shadcn-ui/label';
 import { Pagination } from '@sealos/shadcn-ui/pagination';

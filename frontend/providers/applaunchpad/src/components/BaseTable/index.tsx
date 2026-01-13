@@ -72,15 +72,7 @@ export function BaseTable<T extends unknown>({
             </TableRow>
           ) : (
             table.getRowModel().rows.map((row, rowIndex) => (
-              <TableRow
-                key={row.id}
-                className={cn(
-                  'text-sm',
-                  rowIndex !== table.getRowModel().rows.length - 1
-                    ? 'border-b border-zinc-100'
-                    : 'border-0'
-                )}
-              >
+              <TableRow key={row.id} className="text-sm !border-b border-zinc-100">
                 {row.getVisibleCells().map((cell) => {
                   const isPinned = cell.column.getIsPinned();
                   return (

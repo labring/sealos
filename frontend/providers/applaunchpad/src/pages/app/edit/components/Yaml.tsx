@@ -100,10 +100,10 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
       {/* Right Content - YAML Code */}
       {!!yamlList[selectedIndex] && (
         <div
-          className={`${styles.codeBox} flex flex-col h-full overflow-hidden border border-zinc-200 rounded-lg relative`}
+          className={`${styles.codeBox} flex flex-col h-full overflow-hidden border border-zinc-200 rounded-xl relative`}
         >
           {/* Header */}
-          <div className="flex items-center px-8 pt-8 pb-5 bg-white">
+          <div className="flex items-center px-8 pt-8 pb-5 bg-white relative">
             <h2 className="flex-1 text-xl font-medium text-zinc-900">
               {yamlList[selectedIndex].filename}
             </h2>
@@ -111,7 +111,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    className="p-2 rounded-md cursor-pointer"
+                    className="p-2 rounded-md cursor-pointer absolute right-7 top-6"
                     onClick={() => handleCopy(yamlList[selectedIndex].value)}
                   >
                     {isCopied ? (
