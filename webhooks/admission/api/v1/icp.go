@@ -46,7 +46,7 @@ type IcpValidator struct {
 	cache *cache.Cache
 }
 
-func NewIcpValidator(icpEnabled bool, icpEndpoint string, icpKey string) *IcpValidator {
+func NewIcpValidator(icpEnabled bool, icpEndpoint, icpKey string) *IcpValidator {
 	return &IcpValidator{
 		enabled:  icpEnabled,
 		endpoint: icpEndpoint,
@@ -64,7 +64,7 @@ func (i *IcpValidator) Query(rule *netv1.IngressRule) (*IcpResponse, error) {
 	// Check if result is already cached
 	cached, found := i.cache.Get(domainName)
 	if found {
-		return cached.(*IcpResponse), nil
+		return cached.(*IcpResponse), nil //nolint:errcheck // cache stores *IcpResponse
 	}
 
 	// Query ICP
