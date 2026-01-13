@@ -158,22 +158,25 @@ const Release = () => {
         labels: {
           [devboxIdKey]: devbox.id
         },
-        configMapList: configMaps?.map((cm) => ({
-          mountPath: cm.path,
-          value: cm.content,
-          key: cm.path.split('/').pop() || 'config',
-          volumeName: `${name}-volume-cm-${cm.id}`
-        })) || [],
-        storeList: volumes?.map((vol) => ({
-          name: `${name}-pvc-${vol.id}`,
-          path: vol.path,
-          value: vol.size,
-          storageType: 'remote'
-        })) || [],
-        envs: envs?.map((env) => ({
-          key: env.key,
-          value: env.value
-        })) || []
+        configMapList:
+          configMaps?.map((cm) => ({
+            mountPath: cm.path,
+            value: cm.content,
+            key: cm.path.split('/').pop() || 'config',
+            volumeName: `${name}-volume-cm-${cm.id}`
+          })) || [],
+        storeList:
+          volumes?.map((vol) => ({
+            name: `${name}-pvc-${vol.id}`,
+            path: vol.path,
+            value: vol.size,
+            storageType: 'remote'
+          })) || [],
+        envs:
+          envs?.map((env) => ({
+            key: env.key,
+            value: env.value
+          })) || []
       };
       setDeployData(transformData);
 

@@ -49,11 +49,14 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
-    gpu: gpuType || gpuAmount ? {
-      type: gpuType || '',
-      amount: Number(gpuAmount || 0),
-      manufacturers: 'nvidia'
-    } : undefined,
+    gpu:
+      gpuType || gpuAmount
+        ? {
+            type: gpuType || '',
+            amount: Number(gpuAmount || 0),
+            manufacturers: 'nvidia'
+          }
+        : undefined,
     usedCpu: {
       name: '',
       xData: new Array(30).fill(0),
@@ -120,9 +123,7 @@ export const adaptDevboxDetailV2 = ([
         const id = match ? match[1] : '';
 
         const k8sConfigMap = k8sConfigMaps.find((cm) => cm.metadata?.name === configMapName);
-        const content = k8sConfigMap?.data
-          ? Object.values(k8sConfigMap.data)[0] || ''
-          : '';
+        const content = k8sConfigMap?.data ? Object.values(k8sConfigMap.data)[0] || '' : '';
 
         configMaps.push({
           id,
@@ -166,7 +167,7 @@ export const adaptDevboxDetailV2 = ([
     memory: memoryFormatToMi(devbox.spec.resource.memory),
     gpu: {
       type: devbox.spec.nodeSelector?.[gpuNodeSelectorKey] || '',
-      amount: Number(devbox.spec.resource[gpuResourceKey] || 1),
+      amount: Number(devbox.spec.resource[gpuResourceKey] || 0),
       manufacturers: 'nvidia'
     },
     usedCpu: {
