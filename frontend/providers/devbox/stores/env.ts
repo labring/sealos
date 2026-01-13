@@ -22,8 +22,10 @@ export const defaultEnv: Env = {
   storageLimit: '10Gi',
   enableImportFeature: 'false',
   enableWebideFeature: 'false',
+  enableAdvancedConfig: 'false',
   cpuSlideMarkList: '1,2,4,8,16',
-  memorySlideMarkList: '2,4,8,16,32'
+  memorySlideMarkList: '2,4,8,16,32',
+  nfsStorageClassName: 'nfs-csi'
 };
 
 type State = {
