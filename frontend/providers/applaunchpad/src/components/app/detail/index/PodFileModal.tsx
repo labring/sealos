@@ -598,22 +598,58 @@ const PodFile = ({
                   <Table className="table-fixed">
                     <TableHeader>
                       <TableRow className="">
-                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 pl-5 w-[30%] !rounded-tl-xl">
+                        <TableHead
+                          className={`text-zinc-500 ${
+                            paginatedData && paginatedData.length > 0
+                              ? 'border-b border-zinc-200'
+                              : ''
+                          } bg-white py-3 pl-5 w-[30%] !rounded-l-xl`}
+                        >
                           {t('File Name')}
                         </TableHead>
-                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[15%]">
+                        <TableHead
+                          className={`text-zinc-500 ${
+                            paginatedData && paginatedData.length > 0
+                              ? 'border-b border-zinc-200'
+                              : ''
+                          } bg-white py-3 w-[15%]`}
+                        >
                           {t('Attribute')}
                         </TableHead>
-                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[15%]">
+                        <TableHead
+                          className={`text-zinc-500 ${
+                            paginatedData && paginatedData.length > 0
+                              ? 'border-b border-zinc-200'
+                              : ''
+                          } bg-white py-3 w-[15%]`}
+                        >
                           {t('Owner')} : {t('Group')}
                         </TableHead>
-                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[10%]">
+                        <TableHead
+                          className={`text-zinc-500 ${
+                            paginatedData && paginatedData.length > 0
+                              ? 'border-b border-zinc-200'
+                              : ''
+                          } bg-white py-3 w-[10%]`}
+                        >
                           {t('Size')}
                         </TableHead>
-                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 w-[20%]">
+                        <TableHead
+                          className={`text-zinc-500 ${
+                            paginatedData && paginatedData.length > 0
+                              ? 'border-b border-zinc-200'
+                              : ''
+                          } bg-white py-3 w-[20%]`}
+                        >
                           {t('Update Time')}
                         </TableHead>
-                        <TableHead className="text-zinc-500 bg-white border-b border-zinc-200 py-3 pr-5 w-[10%] !rounded-tr-xl">
+                        <TableHead
+                          className={`text-zinc-500 ${
+                            paginatedData && paginatedData.length > 0
+                              ? 'border-b border-zinc-200'
+                              : ''
+                          } bg-white py-3 pr-5 w-[10%] !rounded-r-xl`}
+                        >
                           {' '}
                         </TableHead>
                       </TableRow>

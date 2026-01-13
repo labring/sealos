@@ -31,67 +31,69 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
 
   return (
     <div
-      className="h-full grid gap-5 items-start max-w-[1200px] w-full"
+      className="grid gap-5 max-w-[1200px] w-full"
       style={{
         gridTemplateColumns: '266px 1fr'
       }}
     >
       {/* Left Sidebar */}
-      <div className="flex flex-col gap-4">
-        {/* Form/YAML Toggle */}
-        <Tabs defaultValue="yaml" className="w-full">
-          <TabsList className="w-full h-auto bg-zinc-100 rounded-xl">
-            <TabsTrigger
-              value="form"
-              className="flex-1 h-9 text-sm font-normal"
-              onClick={() =>
-                router.replace(
-                  `/app/edit?${obj2Query({
-                    name,
-                    type: 'form'
-                  })}`
-                )
-              }
-            >
-              {t('Config Form')}
-            </TabsTrigger>
-            <TabsTrigger
-              value="yaml"
-              className="flex-1 h-9 text-sm rounded-lg font-medium shadow-sm"
-            >
-              {t('YAML File')}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <div className="h-full relative">
+        <div className="flex flex-col w-[266px] gap-4">
+          {/* Form/YAML Toggle */}
+          <Tabs defaultValue="yaml" className="w-full">
+            <TabsList className="w-full h-auto bg-zinc-100 rounded-xl">
+              <TabsTrigger
+                value="form"
+                className="flex-1 h-9 text-sm font-normal"
+                onClick={() =>
+                  router.replace(
+                    `/app/edit?${obj2Query({
+                      name,
+                      type: 'form'
+                    })}`
+                  )
+                }
+              >
+                {t('Config Form')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="yaml"
+                className="flex-1 h-9 text-sm rounded-lg font-medium shadow-sm"
+              >
+                {t('YAML File')}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-        {/* File List */}
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white overflow-hidden">
-          {yamlList.map((file, index) => (
-            <div
-              key={file.filename}
-              className={`
+          {/* File List */}
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white overflow-hidden">
+            {yamlList.map((file, index) => (
+              <div
+                key={file.filename}
+                className={`
                 flex items-center h-12 gap-2 px-5 text-zinc-500 cursor-pointer transition-colors ${
                   index === yamlList.length - 1 ? 'border-b-0' : 'border-b border-zinc-100'
                 }
                 hover:bg-zinc-100
                 ${index === selectedIndex ? 'bg-zinc-100' : 'text-zinc-900 bg-transparent'}
               `}
-              onClick={() => setSelectedIndex(index)}
-            >
-              <FileCode2
-                className={`w-5 h-5 ${
-                  index === selectedIndex ? 'text-zinc-900' : 'text-zinc-400'
-                } shrink-0`}
-              />
-              <span
-                className={`text-sm ${
-                  index === selectedIndex ? 'font-normal text-zinc-900' : 'text-zinc-500'
-                }`}
+                onClick={() => setSelectedIndex(index)}
               >
-                {file.filename}
-              </span>
-            </div>
-          ))}
+                <FileCode2
+                  className={`w-5 h-5 ${
+                    index === selectedIndex ? 'text-zinc-900' : 'text-zinc-400'
+                  } shrink-0`}
+                />
+                <span
+                  className={`text-sm ${
+                    index === selectedIndex ? 'font-normal text-zinc-900' : 'text-zinc-500'
+                  }`}
+                >
+                  {file.filename}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -102,7 +104,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
         >
           {/* Header */}
           <div className="flex items-center px-8 pt-8 pb-5 bg-white">
-            <h2 className="flex-1 text-xl font-bold text-zinc-900">
+            <h2 className="flex-1 text-xl font-medium text-zinc-900">
               {yamlList[selectedIndex].filename}
             </h2>
             <TooltipProvider>

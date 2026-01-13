@@ -66,10 +66,10 @@ const Header = ({
   }, [appName, executeOperation, refetch, t]);
 
   return (
-    <div className="flex h-20 w-full items-center px-10 justify-between">
+    <div className="flex h-20 w-full items-center px-6 justify-between">
       <div className="flex items-center gap-3">
         <div
-          className="flex cursor-pointer items-center gap-1.5"
+          className="flex cursor-pointer items-center gap-2 pl-2"
           onClick={() => router.replace('/apps')}
         >
           <ArrowLeft className="h-6 w-6" />
@@ -101,10 +101,10 @@ const Header = ({
             {t('Continue')}
           </Button>
         ) : (
-          <ButtonGroup className="rounded-lg">
+          <ButtonGroup className="">
             <Button
               variant="outline"
-              className="h-10 min-w-[88px] hover:bg-zinc-50 flex items-center"
+              className="h-10 min-w-[88px] hover:bg-zinc-50 flex items-center rounded-lg rounded-r-none"
               disabled={loading}
               onClick={onOpenPause(handlePauseApp)}
             >
@@ -126,7 +126,7 @@ const Header = ({
             </Button>
             <Button
               variant="outline"
-              className="h-10 min-w-[88px] hover:bg-zinc-50 flex items-center"
+              className="h-10 min-w-[88px] hover:bg-zinc-50 flex items-center rounded-lg rounded-l-none"
               disabled={loading}
               onClick={openRestartConfirm(handleRestartApp)}
             >

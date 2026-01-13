@@ -9,6 +9,7 @@
   "Accessible": "可访问",
   "Active": "活跃",
   "Add": "新增",
+  "add_conditions": "添加条件",
   "Add Port": "添加端口",
   "Add volume": "新增存储卷",
   "Advanced Configuration": "高级配置",
@@ -101,6 +102,7 @@
   "File Value Placeholder": "文件内容",
   "File is too large tip": "文件 {{name}} 过大，无法上传。",
   "Filename can not empty": "文件名不能为空",
+  "Filter": "筛选",
   "Fixed instance": "固定实例",
   "Folder Name": "文件夹名",
   "GPU": "GPU",
@@ -157,6 +159,7 @@
   "Please enter": "请输入",
   "Pod": "实例",
   "Pod Name": "Pod 名称",
+  "Pods": "Pods",
   "Pods List": "Pod 列表",
   "Port": "端口",
   "Private": "私有",
@@ -408,6 +411,7 @@
   "recently": "最近",
   "refetching_success": "刷新成功",
   "refresh": "刷新",
+  "refresh_interval": "刷新间隔",
   "remark_updated_successfully": "备注更新成功",
   "remarks": "备注",
   "remind": "提醒",
@@ -449,5 +453,10 @@
   "within_5_minute": "五分钟内",
   "No Applications": "暂无应用",
   "create_your_first_application": "部署您的第一个应用",
-  "click_here_to_create_application": "点击此处从 Docker 镜像部署应用，仅需几步即可完成"
+  "click_here_to_create_application": "点击此处从 Docker 镜像部署应用，仅需几步即可完成",
+  "pod_filtering": "Pod 筛选",
+  "container_filtering": "容器筛选",
+  "Refresh": "刷新",
+  "auto_refresh": "自动刷新",
+  "set_automatic_refresh": "设置自动刷新"
 }

@@ -59,7 +59,7 @@
     "nprogress": "^0.2.0",
     "prettier": "^2.8.8",
     "react": "18.3.1",
-    "react-day-picker": "^8.8.2",
+    "react-day-picker": "^9.11.1",
     "react-dom": "18.3.1",
     "react-hook-form": "^7.46.2",
     "react-i18next": "^14.1.2",

@@ -1,19 +1,6 @@
 'use client';
 
 import {
-  Button,
-  ButtonGroup,
-  Divider,
-  Flex,
-  FlexProps,
-  Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-  useDisclosure
-} from '@chakra-ui/react';
-import {
   endOfDay,
   format,
   isAfter,
@@ -27,14 +14,27 @@ import {
 import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
 import { ChangeEventHandler, useMemo, useState } from 'react';
-import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
+import { DateRange, DayPicker } from 'react-day-picker';
 import useDateTimeStore from '@/store/date';
-import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
-import { MySelect } from '@sealos/ui';
-import MyIcon from '../Icon';
+import { parseTimeRange } from '@/utils/timeRange';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Calendar, RefreshCw } from 'lucide-react';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
+import { Separator } from '@sealos/shadcn-ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@sealos/shadcn-ui/select';
+import { cn } from '@sealos/shadcn-ui';
+import 'react-day-picker/style.css';
 
-interface DatePickerProps extends FlexProps {
+interface DatePickerProps {
   isDisabled?: boolean;
+  className?: string;
 }
 
 interface RecentDate {
@@ -43,10 +43,10 @@ interface RecentDate {
   compareValue: string;
 }
 
-const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
+const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
-  const { isOpen, onClose, onOpen } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
 
   const { startDateTime, endDateTime, setStartDateTime, setEndDateTime, timeZone, setTimeZone } =
     useDateTimeStore();
@@ -173,7 +173,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     }
     selectedRange?.from && setStartDateTime(selectedRange.from);
     selectedRange?.to && setEndDateTime(selectedRange.to);
-    onClose();
+    setIsOpen(false);
   };
 
   const handleFromChange = (value: string, type: 'date' | 'time') => {
@@ -194,8 +194,6 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
       }
       newDateTimeString = `${fromDateString} ${value}`;
     }
-
-    console.log(newDateTimeString);
 
     const date = parse(newDateTimeString, 'y-MM-dd HH:mm:ss', new Date());
 
@@ -278,7 +276,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     }
   };
 
-  const handleRangeSelect: SelectRangeEventHandler = (range: DateRange | undefined) => {
+  const handleRangeSelect = (range: DateRange | undefined) => {
     if (range) {
       let { from, to } = range;
 
@@ -353,166 +351,169 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     }
   };
 
-  return (
-    <Flex
-      h={'32px'}
-      bg="grayModern.50"
-      gap={'10px'}
-      align={'center'}
-      px={'10px'}
-      justify={'space-between'}
-      border={'1px solid'}
-      borderColor={'grayModern.200'}
-      borderRadius="6px"
-      color={'grayModern.900'}
-      fontSize={'12px'}
-      {...props}
-    >
-      <Popover isOpen={isOpen} onClose={onClose}>
-        <PopoverTrigger>
-          <Flex cursor={'pointer'} alignItems={'center'} gap={'4px'} onClick={onOpen}>
-            <Text>{format(startDateTime, 'y-MM-dd HH:mm:ss')}</Text>
-            <MyIcon name="to" />
-            <Text>{format(endDateTime, 'y-MM-dd HH:mm:ss')}</Text>
-            <Button variant={'unstyled'} isDisabled={isDisabled} minW={'fit-content'}>
-              <MyIcon name="calendar" />
-            </Button>
-          </Flex>
-        </PopoverTrigger>
-        <PopoverContent zIndex={99} w={'fit-content'} borderRadius={'12px'}>
-          <Flex w={'402px'} height={'420px'}>
-            <Flex w={'242px'} flexDir={'column'}>
-              <DayPicker
-                mode="range"
-                selected={selectedRange}
-                onSelect={handleRangeSelect}
-                locale={currentLang === 'zh' ? zhCN : enUS}
-                weekStartsOn={0}
-                disabled={(date) => {
-                  return isAfter(date, now) || isBefore(date, sevenDaysAgo);
-                }}
-              />
-              <Divider />
-              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'}>
-                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
-                  {t('start')}
-                </Text>
-                <Flex w={'100%'} justify={'center'} gap={'4px'}>
-                  <DatePickerInput
-                    value={fromDateString}
-                    onChange={(e) => handleFromChange(e.target.value, 'date')}
-                    error={!!fromDateError}
-                    showError={fromDateShake}
-                  />
-                  <DatePickerInput
-                    value={fromTimeString}
-                    onChange={(e) => handleFromChange(e.target.value, 'time')}
-                    error={!!fromTimeError}
-                    showError={fromTimeShake}
-                  />
-                </Flex>
-              </Flex>
+  // format date time display
+  const formatDateTimeDisplay = () => {
+    const startDate = format(startDateTime, 'MMM dd');
+    const endDate = format(endDateTime, 'MMM dd');
+    const startTime = format(startDateTime, 'HH:mm');
+    const endTime = format(endDateTime, 'HH:mm');
 
-              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'} pb={'12px'}>
-                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
-                  {t('end')}
-                </Text>
-                <Flex w={'100%'} justify={'center'} gap={'4px'}>
-                  <DatePickerInput
-                    value={toDateString}
-                    onChange={(e) => handleToChange(e.target.value, 'date')}
-                    error={!!toDateError}
-                    showError={toDateShake}
-                  />
-                  <DatePickerInput
-                    value={toTimeString}
-                    onChange={(e) => handleToChange(e.target.value, 'time')}
-                    error={!!toTimeError}
-                    showError={toTimeShake}
-                  />
-                </Flex>
-              </Flex>
-            </Flex>
-            <Divider orientation="vertical" flexShrink={0} />
-            <Flex flex={1}>
-              <Flex flexDir={'column'} gap={'4px'} p={'12px 8px'} w={'100%'}>
-                {recentDateList.map((item) => (
-                  <Button
-                    height={'32px'}
-                    key={JSON.stringify(item.value)}
-                    variant={'ghost'}
-                    color={'grayModern.900'}
-                    fontSize={'12px'}
-                    fontWeight={'400'}
-                    justifyContent={'flex-start'}
-                    {...(recentDate &&
-                      recentDate.compareValue === item.compareValue && {
-                        bg: 'brightBlue.50',
-                        color: 'brightBlue.600'
-                      })}
-                    _hover={{
-                      bg: 'rgba(17, 24, 36, 0.05)'
-                    }}
-                    onClick={() => handleRecentDateClick(item)}
-                  >
-                    {item.label}
-                  </Button>
-                ))}
-              </Flex>
-            </Flex>
-          </Flex>
-          <Divider />
-          <Flex justify={'space-between'} pl={'12px'} alignItems={'center'} py={'8px'}>
-            <MySelect
-              height="32px"
-              width={'fit-content'}
-              border={'none'}
-              boxShadow={'none'}
-              backgroundColor={'transparent'}
-              color={'grayModern.600'}
-              value={timeZone}
-              list={[
-                { value: 'local', label: 'Local (Asia/Shanghai)' },
-                { value: 'utc', label: 'UTC' }
-              ]}
-              onchange={(val: any) => setTimeZone(val)}
+    if (startDate === endDate) {
+      // the same day: 10:15 - 10:45, Jan 20
+      return `${startTime} - ${endTime}, ${startDate}`;
+    } else {
+      // different days: 10:15, Jan 20 - 10:45, Jan 21
+      return `${startTime}, ${startDate} - ${endTime}, ${endDate}`;
+    }
+  };
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            'h-10 flex gap-2 items-center px-4 rounded-lg shadow-none hover:bg-zinc-50',
+            className
+          )}
+          disabled={isDisabled}
+        >
+          <Calendar className="w-4 h-4 text-neutral-500" />
+          <span className="whitespace-nowrap text-gray-900 text-sm font-normal ">
+            {formatDateTimeDisplay()}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-fit p-0 rounded-xl z-50 border-[0.5px] border-zinc-200"
+        align="start"
+      >
+        <div className="w-[402px] h-[382px] flex">
+          <div className="w-[242px] flex flex-col">
+            <DayPicker
+              mode="range"
+              navLayout="around"
+              selected={selectedRange}
+              onSelect={handleRangeSelect}
+              locale={currentLang === 'zh' ? zhCN : enUS}
+              weekStartsOn={0}
+              disabled={(date) => {
+                return isAfter(date, now) || isBefore(date, sevenDaysAgo);
+              }}
+              formatters={{
+                formatWeekdayName: (date) =>
+                  format(date, 'EEE', { locale: currentLang === 'zh' ? zhCN : enUS })
+              }}
+              className="px-4 pb-2 pt-4"
             />
-            <ButtonGroup variant="outline" spacing="2" px={'10px'}>
-              <Button
-                border={'1px solid'}
-                borderColor={'grayModern.250'}
-                borderRadius={'6px'}
-                onClick={() => {
-                  if (defaultRecentDate) {
-                    setRecentDate(defaultRecentDate);
-                    handleRecentDateClick(defaultRecentDate);
-                  } else {
-                    const defaultOption =
-                      recentDateList.find((item) => item.compareValue === '30m') ||
-                      recentDateList[0];
-                    setRecentDate(defaultOption);
-                    handleRecentDateClick(defaultOption);
-                  }
-                }}
-              >
-                <MyIcon name="refresh" color={'grayModern.500'} />
-              </Button>
-              <Button
-                border={'1px solid'}
-                borderColor={'grayModern.250'}
-                borderRadius={'6px'}
-                onClick={() => onClose()}
-              >
-                {t('Cancel')}
-              </Button>
-              <Button onClick={() => onSubmit()} variant={'solid'}>
-                {t('Confirm')}
-              </Button>
-            </ButtonGroup>
-          </Flex>
-        </PopoverContent>
-      </Popover>
-    </Flex>
+            <Separator />
+            <div className="flex flex-col gap-2 px-4 pt-2">
+              <span className="text-xs text-zinc-600 ml-1">{t('start')}</span>
+              <div className="w-full flex justify-center gap-1">
+                <DatePickerInput
+                  value={fromDateString}
+                  onChange={(e) => handleFromChange(e.target.value, 'date')}
+                  error={!!fromDateError}
+                  showError={fromDateShake}
+                />
+                <DatePickerInput
+                  value={fromTimeString}
+                  onChange={(e) => handleFromChange(e.target.value, 'time')}
+                  error={!!fromTimeError}
+                  showError={fromTimeShake}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5 px-4 pt-2 pb-3">
+              <span className="text-xs text-zinc-600 ml-1">{t('end')}</span>
+              <div className="w-full flex justify-center gap-1">
+                <DatePickerInput
+                  value={toDateString}
+                  onChange={(e) => handleToChange(e.target.value, 'date')}
+                  error={!!toDateError}
+                  showError={toDateShake}
+                />
+                <DatePickerInput
+                  value={toTimeString}
+                  onChange={(e) => handleToChange(e.target.value, 'time')}
+                  error={!!toTimeError}
+                  showError={toTimeShake}
+                />
+              </div>
+            </div>
+          </div>
+          <Separator orientation="vertical" className="shrink-0" />
+          <div className="flex-1">
+            <div className="flex flex-col gap-0.5 py-3 px-2 w-full">
+              {recentDateList.map((item) => (
+                <Button
+                  key={JSON.stringify(item.value)}
+                  variant="ghost"
+                  className={cn(
+                    'h-8 px-2 text-gray-900 text-xs font-normal justify-start hover:bg-gray-50',
+                    recentDate &&
+                      recentDate.compareValue === item.compareValue &&
+                      'bg-blue-50 text-blue-600 hover:bg-blue-50'
+                  )}
+                  onClick={() => handleRecentDateClick(item)}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <Separator />
+        <div className="flex justify-between pl-3 items-center py-2">
+          <Select value={timeZone} onValueChange={(val) => setTimeZone(val as 'local' | 'utc')}>
+            <SelectTrigger className="h-8 w-fit border-none rounded-lg bg-transparent shadow-none text-zinc-600 text-xs font-normal px-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent
+              position="popper"
+              className="border-[0.5px] border-zinc-200 rounded-xl p-0.5"
+            >
+              <SelectItem value="local" className="text-sm rounded-lg py-[10px]">
+                Local (Asia/Shanghai)
+              </SelectItem>
+              <SelectItem value="utc" className="text-sm rounded-lg py-[10px]">
+                UTC
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex gap-2 px-2.5">
+            <Button
+              variant="outline"
+              className="border rounded-lg shadow-none h-9 w-9"
+              onClick={() => {
+                if (defaultRecentDate) {
+                  setRecentDate(defaultRecentDate);
+                  handleRecentDateClick(defaultRecentDate);
+                } else {
+                  const defaultOption =
+                    recentDateList.find((item) => item.compareValue === '30m') || recentDateList[0];
+                  setRecentDate(defaultOption);
+                  handleRecentDateClick(defaultOption);
+                }
+              }}
+            >
+              <RefreshCw className="w-4 h-4 text-neutral-500" />
+            </Button>
+            <Button
+              variant="outline"
+              className="border rounded-lg shadow-none"
+              onClick={() => setIsOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button className="rounded-lg" onClick={() => onSubmit()}>
+              {t('Confirm')}
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 
@@ -526,24 +527,11 @@ interface DatePickerInputProps {
 const DatePickerInput = ({ value, onChange, error, showError }: DatePickerInputProps) => {
   return (
     <Input
-      backgroundColor={'white'}
-      w={'50%'}
-      {...(error && {
-        borderColor: 'red.500',
-        _hover: { borderColor: 'red.500' }
-      })}
-      {...(showError && {
-        borderColor: 'red.500',
-        _hover: { borderColor: 'red.500' },
-        animation: 'shake 0.3s'
-      })}
-      sx={{
-        '@keyframes shake': {
-          '0%, 100%': { transform: 'translateX(0)' },
-          '25%': { transform: 'translateX(-4px)' },
-          '75%': { transform: 'translateX(4px)' }
-        }
-      }}
+      className={cn(
+        'bg-white w-full h-8 !text-xs text-zinc-900 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-none hover:bg-zinc-900',
+        error && 'border-red-500 hover:border-red-500 focus:border-red-500 focus:ring-red-500',
+        showError && 'border-red-500 hover:border-red-500 animate-shake'
+      )}
       value={value}
       onChange={onChange}
     />

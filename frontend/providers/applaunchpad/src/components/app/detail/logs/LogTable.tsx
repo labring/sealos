@@ -1,15 +1,5 @@
 import { BaseTable } from '@/components/BaseTable/index';
 import {
-  Box,
-  Button,
-  Checkbox,
-  CheckboxGroup,
-  Collapse,
-  Divider,
-  Flex,
-  Text
-} from '@chakra-ui/react';
-import {
   ColumnDef,
   getCoreRowModel,
   getFilteredRowModel,
@@ -18,12 +8,16 @@ import {
 import { get } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Download, ScrollText, Filter as FilterIcon } from 'lucide-react';
 
-import MyIcon from '@/components/Icon';
 import { formatTime } from '@/utils/tools';
 import { LogsFormData } from '@/pages/app/detail/logs';
 import { UseFormReturn } from 'react-hook-form';
 import { useLogStore } from '@/store/logStore';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Checkbox } from '@sealos/shadcn-ui/checkbox';
+import { cn } from '@sealos/shadcn-ui';
+import { Separator } from '@sealos/shadcn-ui/separator';
 
 interface FieldItem {
   value: string;
@@ -65,13 +59,10 @@ export const LogTable = ({
       });
     });
 
-    const prevFieldStates = prevFieldList.reduce(
-      (acc, field) => {
-        acc[field.value] = field.checked;
-        return acc;
-      },
-      {} as Record<string, boolean>
-    );
+    const prevFieldStates = prevFieldList.reduce((acc, field) => {
+      acc[field.value] = field.checked;
+      return acc;
+    }, {} as Record<string, boolean>);
 
     return Array.from(uniqueKeys).map((key) => ({
       value: key,
@@ -106,7 +97,7 @@ export const LogTable = ({
       .map((field) => ({
         accessorKey: field.accessorKey,
         header: () => {
-          return t('common.log_table.' + field.label) || field.label;
+          return t('log_table.' + field.label) || field.label;
         },
         cell: ({ row }) => {
           let value = get(row.original, field.accessorKey, '');
@@ -116,26 +107,22 @@ export const LogTable = ({
           }
 
           return (
-            <Text
-              color={row.original.stream === 'stderr' ? '#B42318' : 'grayModern.600'}
-              fontSize={'12px'}
-              fontWeight={400}
-              lineHeight={'16px'}
-              {...(field.accessorKey === '_msg' && {
-                maxW: '600px',
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word'
-              })}
+            <span
+              className={cn(
+                'text-xs font-normal leading-4',
+                row.original.stream === 'stderr' ? 'text-red-600' : 'text-gray-600',
+                field.accessorKey === '_msg' && 'max-w-[600px] whitespace-pre-wrap break-words'
+              )}
             >
               {value?.toString() || ''}
-            </Text>
+            </span>
           );
         },
         meta: {
           isError: (row: any) => row.stream === 'stderr'
         }
       }));
-  }, [fieldList]);
+  }, [fieldList, t]);
 
   const table = useReactTable({
     data: data,
@@ -145,161 +132,98 @@ export const LogTable = ({
   });
 
   return (
-    <Flex flexDir={'column'} w={'100%'} h={'100%'}>
-      <Flex alignItems={'center'} gap={4} justifyContent={'space-between'}>
-        <Flex alignItems={'center'} gap={4}>
-          <Text
-            bg={'transparent'}
-            border={'none'}
-            boxShadow={'none'}
-            color={'grayModern.900'}
-            fontWeight={500}
-            fontSize={'14px'}
-            lineHeight={'20px'}
-          >
-            {t('Log')}
-          </Text>
+    <div className="flex flex-col w-full h-fit min-h-full">
+      <div
+        className={cn(
+          'px-6 py-4 min-h-16 h-fit flex items-center flex-wrap justify-between border-b border-zinc-200',
+          onOpenField ? 'pb-6' : ''
+        )}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-zinc-900 font-medium text-lg">{t('Log')}</span>
           {isJsonMode && (
-            <Flex
-              alignItems={'center'}
-              bg={'grayModern.50'}
-              borderRadius={'8px'}
-              {...(onOpenField && {
-                borderRadius: '8px 8px 0 0'
-              })}
-              px={4}
-            >
+            <div className="h-10 overflow-visible">
               <Button
-                p={0}
+                variant="outline"
+                className={cn(
+                  'flex items-center gap-2 h-fit py-[9px] px-4 rounded-lg shadow-none border-dashed border-neutral-300',
+                  onOpenField
+                    ? 'bg-zinc-50 pb-[18px] border-b-0 rounded-b-none'
+                    : 'bg-white hover:bg-zinc-50'
+                )}
                 onClick={() => setOnOpenField(!onOpenField)}
-                bg={'transparent'}
-                border={'none'}
-                boxShadow={'none'}
-                color={'grayModern.900'}
-                fontWeight={400}
-                fontSize={'12px'}
-                lineHeight={'16px'}
-                mr={4}
-                leftIcon={
-                  <MyIcon
-                    name="arrowRight"
-                    color={'grayModern.500'}
-                    w={'16px'}
-                    transform={onOpenField ? 'rotate(90deg)' : 'rotate(0)'}
-                    transition="transform 0.2s ease"
-                  />
-                }
-                _hover={{
-                  color: 'brightBlue.600',
-                  '& svg': {
-                    color: 'brightBlue.600'
-                  }
-                }}
               >
-                {t('field_settings')}
+                <FilterIcon className="w-4 h-4 text-neutral-500" />
+                <span className="text-sm font-medium text-zinc-900 mr-2">
+                  {t('field_settings')}
+                </span>
+                <div className="flex font-normal items-center gap-0.5">
+                  <span className="text-sm text-zinc-500">{t('visible')}:</span>
+                  <span className="text-sm text-zinc-500">{visibleFieldCount}</span>
+                </div>
+                <Separator orientation="vertical" className="!h-3 bg-zinc-300" />
+                <div className="flex font-normal items-center gap-0.5">
+                  <span className="text-sm text-zinc-500">{t('hidden')}:</span>
+                  <span className="text-sm text-zinc-500">{hiddenFieldCount}</span>
+                </div>
               </Button>
-              <Flex alignItems={'center'} gap={2} mr={2}>
-                <Text fontSize={'12px'} lineHeight={'16px'} color={'grayModern.500'}>
-                  {t('visible')}:
-                </Text>
-                <Text fontSize={'12px'} lineHeight={'16px'} color={'grayModern.500'}>
-                  {visibleFieldCount} {lang === 'zh' ? t('piece') : ''}
-                </Text>
-              </Flex>
-              <Box h={'12px'} mr={2}>
-                <Divider orientation="vertical" color={'grayModern.300'} borderWidth={'1px'} />
-              </Box>
-              <Flex alignItems={'center'} gap={2}>
-                <Text fontSize={'12px'} lineHeight={'16px'} color={'grayModern.500'}>
-                  {t('hidden')}:
-                </Text>
-                <Text fontSize={'12px'} lineHeight={'16px'} color={'grayModern.500'}>
-                  {hiddenFieldCount} {lang === 'zh' ? t('piece') : ''}
-                </Text>
-              </Flex>
-            </Flex>
+            </div>
           )}
-        </Flex>
+        </div>
+
         <Button
-          minW={'75px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          h={'28px'}
-          leftIcon={<MyIcon name="export" />}
+          variant="outline"
+          className="min-w-[100px] h-10 text-sm font-medium rounded-lg gap-2 !px-4 hover:bg-zinc-50 stroke-[1.33px]"
           onClick={() => exportLogs()}
         >
+          <Download className="w-4 h-4 text-neutral-500" />
           {t('export_log')}
         </Button>
-      </Flex>
 
-      {isJsonMode && (
-        <Collapse in={onOpenField} animateOpacity style={{ flexShrink: 0 }}>
-          <Flex
-            p={4}
-            position={'relative'}
-            h={'100%'}
-            w={'100%'}
-            bg={'grayModern.50'}
-            borderRadius={'8px'}
-            gap={'12px'}
-            flexWrap={'wrap'}
+        {isJsonMode && (
+          <div
+            className={cn(
+              'mt-2 p-4 w-full bg-zinc-50 border border-zinc-200 border-dashed rounded-lg gap-6 flex-wrap transition-all duration-200 ease-in-out overflow-hidden shrink-0',
+              onOpenField ? 'flex max-h-96' : 'hidden max-h-0'
+            )}
           >
-            <CheckboxGroup colorScheme="brightBlue">
-              {fieldList.map((item) => (
+            {fieldList.map((item) => (
+              <div key={item.value} className="flex items-center space-x-2 h-fit">
                 <Checkbox
-                  isChecked={item.checked}
-                  key={item.value}
-                  onChange={() =>
+                  id={item.value}
+                  checked={item.checked}
+                  onCheckedChange={() =>
                     setFieldList(
                       fieldList.map((field) =>
                         field.value === item.value ? { ...field, checked: !field.checked } : field
                       )
                     )
                   }
-                  sx={{
-                    'span.chakra-checkbox__control[data-checked]': {
-                      background: '#f0f4ff ',
-                      border: '1px solid #219bf4 ',
-                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                      color: '#219bf4',
-                      borderRadius: '4px'
-                    }
-                  }}
+                />
+                <label
+                  htmlFor={item.value}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
                   {item.label}
-                </Checkbox>
-              ))}
-            </CheckboxGroup>
-          </Flex>
-        </Collapse>
-      )}
+                </label>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {data.length > 0 ? (
-        <BaseTable
-          height={'100%'}
-          mt={'12px'}
-          table={table}
-          isLoading={isLoading}
-          overflowY={'auto'}
-          isHeaderFixed={true}
-          tdStyle={{
-            p: '10px 24px',
-            borderBottom: 'none'
-          }}
-        />
+        <div className="w-full h-fit overflow-auto py-6 px-6">
+          <BaseTable className="" table={table} isLoading={isLoading} isHeaderFixed={true} />
+        </div>
       ) : (
-        <Flex
-          justifyContent={'center'}
-          alignItems={'center'}
-          flexDirection={'column'}
-          height={'240px'}
-        >
-          <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
-          <Box fontSize={'14px'} fontWeight={500} color={'grayModern.500'} pt={'8px'}>
-            {t('no_data_available')}
-          </Box>
-        </Flex>
+        <div className="flex items-center justify-center flex-col h-full flex-1 gap-3">
+          <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+            <ScrollText className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+          </div>
+          <div className="text-zinc-900 text-sm font-semibold">{t('no_data_available')}</div>
+        </div>
       )}
-    </Flex>
+    </div>
   );
 };

@@ -122,6 +122,11 @@ div:hover::-webkit-scrollbar-thumb:hover {
   overflow: hidden;
 }
 
+/* PingFang SC 字体类 */
+.font-pingfang {
+  font-family: 'PingFang SC', var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
 /* ========== Driver Popover ========== */
 #driver-popover-content {
   border: none;
@@ -158,34 +163,74 @@ div:hover::-webkit-scrollbar-thumb:hover {
   border-bottom-color: #2563eb !important;
 }
 
-/* ========== Date Picker (react-day-picker) ========== */
-div.rdp {
-  --rdp-cell-size: 30px;
-  --rdp-accent-color: black;
-  --rdp-background-color: #f4f6f8;
-  --rdp-outline: 2px solid var(--rdp-accent-color);
-  --rdp-outline-selected: 2px solid rgba(0, 0, 0, 0.75);
-  margin: 12px 16px 8px 16px;
+/* ========== Date Picker (react-day-picker v9) ========== */
+/* CSS Variables for DayPicker */
+.rdp-root {
+  /* Accent colors */
+  --rdp-accent-color: #111827;
+  --rdp-accent-background-color: #111827;
+
+  /* Day cells */
+  --rdp-day-height: 30px;
+  --rdp-day-width: 30px;
+  --rdp-day_button-height: 30px;
+  --rdp-day_button-width: 30px;
+  --rdp-day_button-border-radius: 6px;
+
+  /* Today's date */
+  --rdp-today-color: #2563eb;
+
+  /* Range selection */
+  --rdp-range_start-color: white;
+  --rdp-range_start-background: #18181b;
+  --rdp-range_end-color: white;
+  --rdp-range_end-background: #18181b;
+  --rdp-range_middle-color: #111827;
+  --rdp-range_middle-background-color: #f4f4f5;
+
+  /* Disabled and outside days */
+  --rdp-disabled-opacity: 0.3;
+  --rdp-outside-opacity: 0.5;
+
+  /* Navigation */
+  --rdp-nav_button-height: 28px;
+  --rdp-nav_button-width: 28px;
+  --rdp-nav-height: 36px;
+
+  /* Spacing */
+  --rdp-months-gap: 16px;
 }
 
-button.rdp-button_reset.rdp-button.rdp-day {
+.rdp-chevron {
+  width: 16px;
+  height: 16px;
+}
+
+.rdp-caption_label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.rdp-weekday {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.rdp-day_button {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.rdp-range_start {
+  border-radius: 6px 0 0 6px;
+}
+.rdp-range_end {
+  border-radius: 0 6px 6px 0;
+}
+
+.rdp-today {
+  background-color: #eff6ff;
   border-radius: 6px;
-}
-
-button.rdp-day_today {
-  background-color: #dbf3ff;
-  color: #0884dd;
-}
-
-button.rdp-button.rdp-day.rdp-day_range_middle {
-  border-radius: 0px;
-  background-color: #f4f4f7;
-  color: #111824;
-}
-
-button.rdp-button.rdp-day.rdp-day_range_end {
-  background-color: #111824;
-  color: white;
 }
 
 /* ========== Animations ========== */

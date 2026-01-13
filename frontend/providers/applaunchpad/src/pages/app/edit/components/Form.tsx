@@ -318,33 +318,34 @@ const Form = ({
         }}
       >
         {/* Left Sidebar */}
-        <div className="flex flex-col gap-4">
-          <Tabs defaultValue="form" className="w-full">
-            <TabsList className="w-full h-auto bg-zinc-100 rounded-xl">
-              <TabsTrigger
-                value="form"
-                className="flex-1 h-9 text-sm rounded-lg font-medium shadow-sm"
-              >
-                {t('Config Form')}
-              </TabsTrigger>
-              <TabsTrigger
-                value="yaml"
-                className="flex-1 h-9 text-sm font-normal"
-                onClick={() =>
-                  router.replace(
-                    `/app/edit?${obj2Query({
-                      name,
-                      type: 'yaml'
-                    })}`
-                  )
-                }
-              >
-                {t('YAML File')}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <div className="h-full relative">
+          <div className="flex flex-col w-[266px] gap-4">
+            <Tabs defaultValue="form" className="w-full">
+              <TabsList className="w-full h-auto bg-zinc-100 rounded-xl">
+                <TabsTrigger
+                  value="form"
+                  className="flex-1 h-9 text-sm rounded-lg font-medium shadow-sm"
+                >
+                  {t('Config Form')}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="yaml"
+                  className="flex-1 h-9 text-sm font-normal"
+                  onClick={() =>
+                    router.replace(
+                      `/app/edit?${obj2Query({
+                        name,
+                        type: 'yaml'
+                      })}`
+                    )
+                  }
+                >
+                  {t('YAML File')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
 
-          {/* <div className="mt-3 overflow-hidden rounded-lg border border-zinc-200 bg-white p-1">
+            {/* <div className="mt-3 overflow-hidden rounded-lg border border-zinc-200 bg-white p-1">
             {navList.map((item) => {
               const IconComponent = item.icon === 'formInfo' ? FileText : item.icon === 'network' ? Globe : Settings;
               return (
@@ -374,37 +375,38 @@ const Form = ({
             })}
           </div> */}
 
-          {/* Price Box */}
-          {userSourcePrice && (
-            <div className="overflow-hidden">
-              <PriceBox
-                pods={
-                  getValues('hpa.use')
-                    ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
-                    : [getValues('replicas') || 1, getValues('replicas') || 1]
-                }
-                cpu={getValues('cpu')}
-                memory={getValues('memory')}
-                storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
-                gpu={
-                  !!getValues('gpu.type')
-                    ? {
-                        type: getValues('gpu.type'),
-                        amount: getValues('gpu.amount')
-                      }
-                    : undefined
-                }
-                nodeports={getValues('networks').filter((item) => item.openNodePort)?.length || 0}
-              />
-            </div>
-          )}
+            {/* Price Box */}
+            {userSourcePrice && (
+              <div className="overflow-hidden">
+                <PriceBox
+                  pods={
+                    getValues('hpa.use')
+                      ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
+                      : [getValues('replicas') || 1, getValues('replicas') || 1]
+                  }
+                  cpu={getValues('cpu')}
+                  memory={getValues('memory')}
+                  storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
+                  gpu={
+                    !!getValues('gpu.type')
+                      ? {
+                          type: getValues('gpu.type'),
+                          amount: getValues('gpu.amount')
+                        }
+                      : undefined
+                  }
+                  nodeports={getValues('networks').filter((item) => item.openNodePort)?.length || 0}
+                />
+              </div>
+            )}
 
-          {/* Quota Box */}
-          {userSourcePrice && (
-            <div className="overflow-hidden">
-              <QuotaBox />
-            </div>
-          )}
+            {/* Quota Box */}
+            {userSourcePrice && (
+              <div className="overflow-hidden">
+                <QuotaBox />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Content */}

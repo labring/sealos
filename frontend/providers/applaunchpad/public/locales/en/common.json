@@ -9,6 +9,7 @@
   "Accessible": "Accessible",
   "Active": "Active",
   "Add": "Add",
+  "add_conditions": "Add Conditions",
   "Add Port": "Add Port",
   "Add volume": "Add Volumes",
   "Advanced Configuration": "Advanced Configuration",
@@ -101,6 +102,7 @@
   "File Value Placeholder": "File content",
   "File is too large tip": "{{name}} is too large to upload.",
   "Filename can not empty": "File Name is required",
+  "Filter": "Filter",
   "Fixed instance": "Fixed",
   "Folder Name": "Folder Name",
   "GPU": "GPU",
@@ -157,6 +159,7 @@
   "Please enter": "Please enter",
   "Pod": "Pod",
   "Pod Name": "Pod Name",
+  "Pods": "Pods",
   "Pods List": "Pod List",
   "Port": "Port",
   "Private": "Private",
@@ -449,5 +452,10 @@
   "within_5_minute": "Within 5 minute",
   "No Applications": "No Applications",
   "create_your_first_application": "Deploy your first app",
-  "click_here_to_create_application": "Click here to deploy an application from docker image in just a few steps"
+  "click_here_to_create_application": "Click here to deploy an application from docker image in just a few steps",
+  "pod_filtering": "Pod Filtering",
+  "container_filtering": "Container Filtering",
+  "Refresh": "Refresh",
+  "auto_refresh": "Auto Refresh",
+  "set_automatic_refresh": "Set automatic refresh"
 }

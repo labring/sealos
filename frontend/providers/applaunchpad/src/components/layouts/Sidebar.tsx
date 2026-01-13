@@ -18,7 +18,7 @@ export default function Sidebar() {
       label: t('overview'),
       icon: (
         <LayoutDashboard
-          className={`w-6 h-6 ${
+          className={`w-6 h-6 stroke-[1.5] ${
             router.pathname === ROUTES.OVERVIEW ? 'text-zinc-900' : 'text-zinc-500'
           }`}
         />
@@ -29,7 +29,7 @@ export default function Sidebar() {
       label: t('monitor'),
       icon: (
         <LineChart
-          className={`w-6 h-6 ${
+          className={`w-6 h-6 stroke-[1.5] ${
             router.pathname === ROUTES.MONITOR ? 'text-zinc-900' : 'text-zinc-500'
           }`}
         />
@@ -42,7 +42,7 @@ export default function Sidebar() {
             label: t('Log'),
             icon: (
               <FileClock
-                className={`w-6 h-6 ${
+                className={`w-6 h-6 stroke-[1.5] ${
                   router.pathname === ROUTES.LOGS ? 'text-zinc-900' : 'text-zinc-500'
                 }`}
               />

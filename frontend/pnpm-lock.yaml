@@ -956,8 +956,8 @@ importers:
         specifier: 18.3.1
         version: 18.3.1
       react-day-picker:
-        specifier: ^8.8.2
-        version: 8.9.1(date-fns@2.30.0)(react@18.3.1)
+        specifier: ^9.11.1
+        version: 9.11.1(react@18.3.1)
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
