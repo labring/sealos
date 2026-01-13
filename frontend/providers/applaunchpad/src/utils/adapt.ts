@@ -23,7 +23,8 @@ import type {
   TAppSourceType,
   TransportProtocolType,
   DeployKindsType,
-  AppEditType
+  AppEditType,
+  StorageType
 } from '@/types/app';
 import {
   appStatusMap,
@@ -494,7 +495,9 @@ export const adaptAppDetail = async (
       ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => ({
           name: item.metadata?.name || '',
           path: item.metadata?.annotations?.path || '',
-          value: Number(item.metadata?.annotations?.value || 0)
+          value: Number(item.metadata?.annotations?.value || 0),
+          storageType: (item.metadata?.annotations?.storageType || 'local') as StorageType,
+          storageClassName: item.spec?.storageClassName
         }))
       : [],
     volumeMounts: getFilteredVolumeMounts(),
