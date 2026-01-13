@@ -17,6 +17,8 @@ import { MonitorDataResult } from './monitor';
 
 export type HpaTarget = 'cpu' | 'memory' | 'gpu';
 
+export type StorageType = 'local' | 'remote';
+
 export type DeployKindsType =
   | V1Deployment
   | V1StatefulSet
@@ -119,6 +121,7 @@ export interface AppEditType {
     name: string;
     path: string;
     value: number;
+    storageType?: StorageType; // 'local' = managed by launchpad (PVC with LVM), 'remote' = external storage (e.g. NFS), display only. Default: 'local'
   }[];
   labels: { [key: string]: string };
   volumes: V1Volume[];
@@ -138,6 +141,9 @@ export type AppEditSyncedFields = Pick<
   | 'appName'
   | 'labels'
   | 'gpu'
+  | 'configMapList'
+  | 'storeList'
+  | 'envs'
 >;
 
 export type TAppSourceType = 'app_store' | 'sealaf';

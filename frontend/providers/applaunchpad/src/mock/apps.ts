@@ -331,5 +331,8 @@ export const MockAppEditSyncedFields: AppEditSyncedFields = {
   ],
   cmdParam: 'sleep 10',
   runCMD: '/bin/bash -c',
-  labels: {}
+  labels: {},
+  configMapList: [],
+  storeList: [],
+  envs: []
 };
