@@ -51,6 +51,9 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
     }
   );
 
+  const remoteStoreAmount =
+    appDetail?.storeList?.filter((store) => store.storageType === 'remote').length || 0;
+
   return (
     <Flex
       flexDirection={'column'}
@@ -65,6 +68,7 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
         appStatus={appDetail?.status}
         isPause={appDetail?.isPause}
         refetch={refetch}
+        remoteStoreAmount={remoteStoreAmount}
       />
       <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'6px'}>
         <Sidebar />

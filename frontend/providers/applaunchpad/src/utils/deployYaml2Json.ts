@@ -169,7 +169,8 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     metadata: {
       annotations: {
         path: store.path,
-        value: `${store.value}`
+        value: `${store.value}`,
+        ...(store.storageType ? { storageType: store.storageType } : {})
       },
       name: store.name
     },
@@ -179,7 +180,8 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         requests: {
           storage: `${store.value}Gi`
         }
-      }
+      },
+      ...(store.storageClassName ? { storageClassName: store.storageClassName } : {})
     }
   }));
 

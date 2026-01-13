@@ -106,7 +106,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { screenWidth, formSliderListConfig } = useGlobalStore();
-  const { userSourcePrice, loadUserSourcePrice, checkQuotaAllow } = useUserStore();
+  const { userSourcePrice, loadUserSourcePrice } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -354,6 +354,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       const parsedData: Partial<AppEditSyncedFields> = JSON.parse(
         decodeURIComponent(query.formData)
       );
+      console.log('parsedData', parsedData);
 
       const basicFields: (keyof AppEditSyncedFields)[] = router.query?.name
         ? ['imageName', 'cpu', 'memory']
@@ -388,6 +389,40 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           amount: parsedData.gpu.amount || 0,
           manufacturers: parsedData.gpu.manufacturers || 'nvidia'
         });
+      }
+
+      // Handle ConfigMap list
+      if (Array.isArray(parsedData.configMapList)) {
+        const completeConfigMapList = parsedData.configMapList.map((configMap) => ({
+          mountPath: configMap.mountPath || '',
+          value: configMap.value || '',
+          key: configMap.key || '',
+          volumeName: configMap.volumeName || `config-${nanoid()}`,
+          subPath: configMap.subPath
+        }));
+        formHook.setValue('configMapList', completeConfigMapList);
+      }
+
+      // Handle Store list
+      if (Array.isArray(parsedData.storeList)) {
+        const completeStoreList = parsedData.storeList.map((store) => ({
+          name: store.name || `store-${nanoid()}`,
+          path: store.path || '',
+          value: store.value || 1,
+          storageType: store.storageType,
+          storageClassName: store.storageClassName
+        }));
+        formHook.setValue('storeList', completeStoreList);
+      }
+
+      // Handle Environment variables
+      if (Array.isArray(parsedData.envs)) {
+        const completeEnvs = parsedData.envs.map((env) => ({
+          key: env.key || '',
+          value: env.value || '',
+          valueFrom: env.valueFrom
+        }));
+        formHook.setValue('envs', completeEnvs);
       }
     } catch (error) {}
   }, [router.query, already]);

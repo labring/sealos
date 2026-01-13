@@ -31,7 +31,9 @@ export const MOCK_APPS: AppListItemType[] = [
       hasSource: false,
       sourceName: '',
       sourceType: 'app_store'
-    }
+    },
+    localStoreAmount: 0,
+    remoteStoreAmount: 0
   },
   {
     id: 'string2',
@@ -60,7 +62,9 @@ export const MOCK_APPS: AppListItemType[] = [
       hasSource: false,
       sourceName: '',
       sourceType: 'app_store'
-    }
+    },
+    localStoreAmount: 0,
+    remoteStoreAmount: 0
   },
   {
     id: 'string3',
@@ -89,7 +93,9 @@ export const MOCK_APPS: AppListItemType[] = [
       hasSource: false,
       sourceName: '',
       sourceType: 'app_store'
-    }
+    },
+    localStoreAmount: 0,
+    remoteStoreAmount: 0
   }
 ];
 export const MOCK_NAMESPACE = 'ns-34dccadb-8e62-4205-8c1b-fc2dc146cd68';
@@ -331,5 +337,30 @@ export const MockAppEditSyncedFields: AppEditSyncedFields = {
   ],
   cmdParam: 'sleep 10',
   runCMD: '/bin/bash -c',
-  labels: {}
+  labels: {},
+  configMapList: [
+    {
+      mountPath: '/config.yaml',
+      value: 'config.yaml',
+      key: 'config.yaml',
+      volumeName: 'config-volume'
+    }
+  ],
+  envs: [],
+  storeList: [
+    {
+      name: 'store-1',
+      path: '/store-1',
+      value: 1,
+      storageType: 'remote',
+      storageClassName: 'nfs-csi'
+    },
+    {
+      name: 'store-2',
+      path: '/store-2',
+      value: 1,
+      storageType: 'remote',
+      storageClassName: 'nfs-csi'
+    }
+  ]
 };

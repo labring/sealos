@@ -19,13 +19,15 @@ const Header = ({
   appStatus = appStatusMap[AppStatusEnum.waiting],
   isPause = false,
   refetch,
-  source
+  source,
+  remoteStoreAmount
 }: {
   appName?: string;
   appStatus?: AppStatusMapType;
   isPause?: boolean;
   refetch: () => void;
   source?: TAppSource;
+  remoteStoreAmount?: number;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
@@ -202,6 +204,7 @@ const Header = ({
         <DelModal
           appName={appName}
           source={source}
+          remoteStoreAmount={remoteStoreAmount}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/apps')}
         />

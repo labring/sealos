@@ -165,6 +165,13 @@ const Form = ({
     return storageQuota.limit - storageQuota.used - newlyUsedStorage;
   }, [userQuota, existingStores, storeList]);
 
+  // Separate local and remote stores
+  const { localStores, remoteStores } = useMemo(() => {
+    const local = storeList.filter((item) => item.storageType !== 'remote');
+    const remote = storeList.filter((item) => item.storageType === 'remote');
+    return { localStores: local, remoteStores: remote };
+  }, [storeList]);
+
   // listen scroll and set activeNav
   useEffect(() => {
     const scrollFn = throttle((e: Event) => {
@@ -1004,6 +1011,7 @@ const Form = ({
 
                   <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
+                  {/* Local Storage Section */}
                   <Box className="driver-deploy-storage">
                     <Flex alignItems={'center'} mb={'10px'}>
                       <Label className={styles.formSecondTitle} m={0}>
@@ -1027,59 +1035,62 @@ const Form = ({
                       />
                     </Flex>
                     <Box mt={4} pl={`${labelWidth}px`}>
-                      {storeList.map((item, index) => (
-                        <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
-                          <Flex
-                            alignItems={'center'}
-                            px={4}
-                            py={1}
-                            border={theme.borders.base}
-                            flex={'0 0 320px'}
-                            w={0}
-                            borderRadius={'md'}
-                            cursor={'pointer'}
-                            bg={'grayModern.25'}
-                            onClick={() => setStoreEdit(item)}
-                          >
-                            <MyIcon name={'store'} w={'20px'} />
-                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
-                              <Box color={'myGray.900'} fontWeight={'bold'}>
-                                {item.path}
+                      {localStores.map((item) => {
+                        const originalIndex = storeList.findIndex((s) => s.id === item.id);
+                        return (
+                          <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
+                            <Flex
+                              alignItems={'center'}
+                              px={4}
+                              py={1}
+                              border={theme.borders.base}
+                              flex={'0 0 320px'}
+                              w={0}
+                              borderRadius={'md'}
+                              cursor={'pointer'}
+                              bg={'grayModern.25'}
+                              onClick={() => setStoreEdit(item)}
+                            >
+                              <MyIcon name={'store'} w={'20px'} />
+                              <Box ml={4} flex={'1 0 0'} w={'0px'}>
+                                <Box color={'myGray.900'} fontWeight={'bold'}>
+                                  {item.path}
+                                </Box>
+                                <Box
+                                  className={styles.textEllipsis}
+                                  color={'grayModern.900'}
+                                  fontSize={'sm'}
+                                >
+                                  {item.value} Gi
+                                </Box>
                               </Box>
-                              <Box
-                                className={styles.textEllipsis}
-                                color={'grayModern.900'}
-                                fontSize={'sm'}
-                              >
-                                {item.value} Gi
-                              </Box>
-                            </Box>
+                            </Flex>
+                            <IconButton
+                              height={'32px'}
+                              width={'32px'}
+                              aria-label={'button'}
+                              variant={'outline'}
+                              bg={'#FFF'}
+                              ml={3}
+                              icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
+                              _hover={{
+                                color: 'red.600',
+                                bg: 'rgba(17, 24, 36, 0.05)'
+                              }}
+                              onClick={() => {
+                                if (localStores.length === 1) {
+                                  toast({
+                                    title: t('Store At Least One'),
+                                    status: 'error'
+                                  });
+                                } else {
+                                  removeStoreList(originalIndex);
+                                }
+                              }}
+                            />
                           </Flex>
-                          <IconButton
-                            height={'32px'}
-                            width={'32px'}
-                            aria-label={'button'}
-                            variant={'outline'}
-                            bg={'#FFF'}
-                            ml={3}
-                            icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
-                            _hover={{
-                              color: 'red.600',
-                              bg: 'rgba(17, 24, 36, 0.05)'
-                            }}
-                            onClick={() => {
-                              if (storeList.length === 1) {
-                                toast({
-                                  title: t('Store At Least One'),
-                                  status: 'error'
-                                });
-                              } else {
-                                removeStoreList(index);
-                              }
-                            }}
-                          />
-                        </Flex>
-                      ))}
+                        );
+                      })}
                       {persistentVolumes.map((item) => (
                         <Flex key={item.path} _notLast={{ mb: 5 }} alignItems={'center'}>
                           <Flex
@@ -1107,6 +1118,51 @@ const Form = ({
                       ))}
                     </Box>
                   </Box>
+
+                  {/* Remote Storage Section */}
+                  {remoteStores.length > 0 && (
+                    <>
+                      <Divider my={'30px'} borderColor={'#EFF0F1'} />
+                      <Flex>
+                        <Flex alignItems={'start'}>
+                          <Label className={styles.formSecondTitle} m={0}>
+                            {t('remote_storage')}
+                          </Label>
+                        </Flex>
+                        <Box>
+                          {remoteStores.map((item) => (
+                            <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
+                              <Flex
+                                alignItems={'center'}
+                                px={4}
+                                py={1}
+                                border={theme.borders.base}
+                                flex={'0 0 320px'}
+                                w={0}
+                                borderRadius={'md'}
+                                cursor={'not-allowed'}
+                                bg={'grayModern.25'}
+                              >
+                                <MyIcon name={'store'} w={'20px'} />
+                                <Box ml={4} flex={'1 0 0'} w={'0px'}>
+                                  <Box color={'myGray.900'} fontWeight={'bold'}>
+                                    {item.path}
+                                  </Box>
+                                  <Box
+                                    className={styles.textEllipsis}
+                                    color={'grayModern.900'}
+                                    fontSize={'sm'}
+                                  >
+                                    {item.value} Gi
+                                  </Box>
+                                </Box>
+                              </Flex>
+                            </Flex>
+                          ))}
+                        </Box>
+                      </Flex>
+                    </>
+                  )}
                 </AccordionPanel>
               </AccordionItem>
             </Accordion>
@@ -1170,7 +1226,9 @@ const Form = ({
                 storeList.map((item) => ({
                   name: item.id === e.id ? e.name : item.name,
                   path: item.id === e.id ? e.path : item.path,
-                  value: item.id === e.id ? e.value : item.value
+                  value: item.id === e.id ? e.value : item.value,
+                  storageType: item.id === e.id ? e.storageType : item.storageType,
+                  storageClassName: item.id === e.id ? e.storageClassName : item.storageClassName
                 }))
               );
             }
