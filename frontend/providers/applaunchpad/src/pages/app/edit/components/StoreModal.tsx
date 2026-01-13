@@ -30,6 +30,7 @@ export type StoreType = {
   path: string;
   value: number;
   storageType?: StorageType;
+  storageClassName?: string;
 };
 
 const StoreModal = ({
@@ -192,7 +193,8 @@ const StoreModal = ({
                   name: e.name,
                   path: e.path,
                   value: clampValue(e.value),
-                  storageType: e.storageType || 'local'
+                  storageType: e.storageType || 'local',
+                  storageClassName: e.storageClassName
                 });
               })}
             >

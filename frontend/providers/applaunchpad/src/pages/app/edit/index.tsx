@@ -409,7 +409,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           name: store.name || `store-${nanoid()}`,
           path: store.path || '',
           value: store.value || 1,
-          storageType: store.storageType // 'local' = managed PVC (LVM), 'remote' = external storage (NFS), default: 'local'
+          storageType: store.storageType,
+          storageClassName: store.storageClassName
         }));
         formHook.setValue('storeList', completeStoreList);
       }

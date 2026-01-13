@@ -1227,7 +1227,8 @@ const Form = ({
                   name: item.id === e.id ? e.name : item.name,
                   path: item.id === e.id ? e.path : item.path,
                   value: item.id === e.id ? e.value : item.value,
-                  storageType: item.id === e.id ? e.storageType : item.storageType
+                  storageType: item.id === e.id ? e.storageType : item.storageType,
+                  storageClassName: item.id === e.id ? e.storageClassName : item.storageClassName
                 }))
               );
             }

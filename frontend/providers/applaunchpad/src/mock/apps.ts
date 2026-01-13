@@ -342,7 +342,19 @@ export const MockAppEditSyncedFields: AppEditSyncedFields = {
   ],
   envs: [],
   storeList: [
-    { name: 'store-1', path: '/store-1', value: 1, storageType: 'remote' },
-    { name: 'store-2', path: '/store-2', value: 1, storageType: 'remote' }
+    {
+      name: 'store-1',
+      path: '/store-1',
+      value: 1,
+      storageType: 'remote',
+      storageClassName: 'nfs-csi'
+    },
+    {
+      name: 'store-2',
+      path: '/store-2',
+      value: 1,
+      storageType: 'remote',
+      storageClassName: 'nfs-csi'
+    }
   ]
 };

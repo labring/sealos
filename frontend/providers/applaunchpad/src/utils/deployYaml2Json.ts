@@ -179,7 +179,8 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         requests: {
           storage: `${store.value}Gi`
         }
-      }
+      },
+      ...(store.storageClassName ? { storageClassName: store.storageClassName } : {})
     }
   }));
 

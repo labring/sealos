@@ -122,6 +122,7 @@ export interface AppEditType {
     path: string;
     value: number;
     storageType?: StorageType; // 'local' = managed by launchpad (PVC with LVM), 'remote' = external storage (e.g. NFS), display only. Default: 'local'
+    storageClassName?: string; // Kubernetes StorageClass name (e.g. 'nfs-csi', 'local'). Used to determine storage type if provided.
   }[];
   labels: { [key: string]: string };
   volumes: V1Volume[];

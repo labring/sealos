@@ -4,3 +4,4 @@ node_modules/
 next-env.d.ts
 !.vscode/
 .claude
+.vscode/tasks.json
