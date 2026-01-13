@@ -46,7 +46,7 @@ type IcpValidator struct {
 	cache *cache.Cache
 }
 
-func NewIcpValidator(icpEnabled bool, icpEndpoint string, icpKey string) *IcpValidator {
+func NewIcpValidator(icpEnabled bool, icpEndpoint, icpKey string) *IcpValidator {
 	return &IcpValidator{
 		enabled:  icpEnabled,
 		endpoint: icpEndpoint,

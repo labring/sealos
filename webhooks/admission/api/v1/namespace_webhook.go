@@ -60,7 +60,10 @@ type NamespaceValidator struct {
 
 //+kubebuilder:webhook:path=/validate--v1-namespace,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=namespaces,verbs=create;update;delete,versions=v1,name=vnamespace.sealos.io,admissionReviewVersions=v1
 
-func (v *NamespaceValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *NamespaceValidator) ValidateCreate(
+	ctx context.Context,
+	obj runtime.Object,
+) (admission.Warnings, error) {
 	i, ok := obj.(*corev1.Namespace)
 	if !ok {
 		return nil, errors.New("obj convert to Namespace error")
@@ -70,7 +73,10 @@ func (v *NamespaceValidator) ValidateCreate(ctx context.Context, obj runtime.Obj
 	return nil, err
 }
 
-func (v *NamespaceValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *NamespaceValidator) ValidateUpdate(
+	ctx context.Context,
+	oldObj, newObj runtime.Object,
+) (admission.Warnings, error) {
 	ni, ok := newObj.(*corev1.Namespace)
 	if !ok {
 		return nil, errors.New("obj convert to Namespace error")
@@ -84,7 +90,10 @@ func (v *NamespaceValidator) ValidateUpdate(ctx context.Context, oldObj, newObj 
 	return nil, err
 }
 
-func (v *NamespaceValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *NamespaceValidator) ValidateDelete(
+	ctx context.Context,
+	obj runtime.Object,
+) (admission.Warnings, error) {
 	i, ok := obj.(*corev1.Namespace)
 	if !ok {
 		return nil, errors.New("obj convert to Namespace error")
@@ -96,7 +105,15 @@ func (v *NamespaceValidator) ValidateDelete(ctx context.Context, obj runtime.Obj
 
 func (v *NamespaceValidator) validate(ctx context.Context, i *corev1.Namespace) error {
 	request, _ := admission.RequestFromContext(ctx)
-	nlog.Info("validating", "name", i.Name, "user", request.UserInfo.Username, "userGroups", request.UserInfo.Groups)
+	nlog.Info(
+		"validating",
+		"name",
+		i.Name,
+		"user",
+		request.UserInfo.Username,
+		"userGroups",
+		request.UserInfo.Groups,
+	)
 	if isUserServiceAccount(request.UserInfo.Username) {
 		return errors.New("user can not create/update/delete namespace")
 	}
