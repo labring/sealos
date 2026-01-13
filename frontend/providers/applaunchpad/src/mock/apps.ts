@@ -31,7 +31,9 @@ export const MOCK_APPS: AppListItemType[] = [
       hasSource: false,
       sourceName: '',
       sourceType: 'app_store'
-    }
+    },
+    localStoreAmount: 0,
+    remoteStoreAmount: 0
   },
   {
     id: 'string2',
@@ -60,7 +62,9 @@ export const MOCK_APPS: AppListItemType[] = [
       hasSource: false,
       sourceName: '',
       sourceType: 'app_store'
-    }
+    },
+    localStoreAmount: 0,
+    remoteStoreAmount: 0
   },
   {
     id: 'string3',
@@ -89,7 +93,9 @@ export const MOCK_APPS: AppListItemType[] = [
       hasSource: false,
       sourceName: '',
       sourceType: 'app_store'
-    }
+    },
+    localStoreAmount: 0,
+    remoteStoreAmount: 0
   }
 ];
 export const MOCK_NAMESPACE = 'ns-34dccadb-8e62-4205-8c1b-fc2dc146cd68';
