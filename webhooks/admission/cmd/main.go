@@ -21,19 +21,21 @@ import (
 	"os"
 	"strings"
 
+	kbappsv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	v1 "github.com/labring/sealos/webhook/admission/api/v1"
-
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
-
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	//+kubebuilder:scaffold:imports
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 var (
@@ -43,8 +45,9 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(kbappsv1alpha1.AddToScheme(scheme))
 
-	//utilruntime.Must(netv1.AddToScheme(scheme))
+	// utilruntime.Must(netv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -54,13 +57,56 @@ func main() {
 	var probeAddr string
 	var ingressAnnotationString string
 	var domains v1.DomainList
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	var defaultOversellRatio int
+	var databaseOversellRatio int
+	var skipCPUThreshold string
+	var skipMemoryThreshold string
+	flag.StringVar(
+		&metricsAddr,
+		"metrics-bind-address",
+		":8080",
+		"The address the metric endpoint binds to.",
+	)
+	flag.StringVar(
+		&probeAddr,
+		"health-probe-bind-address",
+		":8081",
+		"The address the probe endpoint binds to.",
+	)
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&ingressAnnotationString, "ingress-mutating-annotations", "", "Ingress annotations: 'key1=value1,key2=value2'")
+	flag.StringVar(
+		&ingressAnnotationString,
+		"ingress-mutating-annotations",
+		"",
+		"Ingress annotations: 'key1=value1,key2=value2'",
+	)
 	flag.Var(&domains, "domains", "Domains to be used for check ingress cname")
+	flag.IntVar(
+		&defaultOversellRatio,
+		"default-oversell-ratio",
+		10,
+		"Default oversell ratio for normal pods",
+	)
+	flag.IntVar(
+		&databaseOversellRatio,
+		"database-oversell-ratio",
+		5,
+		"Oversell ratio for database pods",
+	)
+	flag.StringVar(
+		&skipCPUThreshold,
+		"skip-cpu-threshold",
+		"100m",
+		"Skip CPU request validation and mutation when limit is below this threshold",
+	)
+	flag.StringVar(
+		&skipMemoryThreshold,
+		"skip-memory-threshold",
+		"128Mi",
+		"Skip memory request validation and mutation when limit is below this threshold",
+	)
 	opts := zap.Options{
 		Development: true,
 	}
@@ -93,9 +139,13 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: 9443,
+		}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "849b6b0b.sealos.io",
@@ -138,6 +188,102 @@ func main() {
 		Complete()
 	if err != nil {
 		setupLog.Error(err, "unable to create namespace webhook")
+		os.Exit(1)
+	}
+
+	// Create workload mutator and validator
+	workloadMutatorValidator := v1.NewWorkloadMutatorWithThresholds(
+		defaultOversellRatio,
+		databaseOversellRatio,
+		skipCPUThreshold,
+		skipMemoryThreshold,
+	)
+
+	// Register Deployment webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&appsv1.Deployment{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create deployment webhook")
+		os.Exit(1)
+	}
+
+	// Register StatefulSet webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&appsv1.StatefulSet{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create statefulset webhook")
+		os.Exit(1)
+	}
+
+	// Register ReplicaSet webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&appsv1.ReplicaSet{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create replicaset webhook")
+		os.Exit(1)
+	}
+
+	// Register DaemonSet webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&appsv1.DaemonSet{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create daemonset webhook")
+		os.Exit(1)
+	}
+
+	// Register Job webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&batchv1.Job{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create job webhook")
+		os.Exit(1)
+	}
+
+	// Register CronJob webhook
+	err = builder.WebhookManagedBy(mgr).
+		For(&batchv1.CronJob{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create cronjob webhook")
+		os.Exit(1)
+	}
+
+	// Register Pod webhook (only for pods created directly by users)
+	err = builder.WebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create pod webhook")
+		os.Exit(1)
+	}
+
+	// Register KubeBlocks Cluster webhook (using the same workload mutator)
+	err = builder.WebhookManagedBy(mgr).
+		For(&kbappsv1alpha1.Cluster{}).
+		WithDefaulter(workloadMutatorValidator).
+		WithValidator(workloadMutatorValidator).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create kubeblocks cluster webhook")
 		os.Exit(1)
 	}
 
