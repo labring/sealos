@@ -88,8 +88,9 @@ type DevboxReconciler struct {
 // +kubebuilder:rbac:groups="",resources=events,verbs=*
 
 func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
+	logger := log.FromContext(ctx).WithValues("devbox", req.NamespacedName)
 
+	// 1) Fetch the object. If it's gone, nothing to do.
 	devbox := &devboxv1alpha2.Devbox{}
 	if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -101,200 +102,324 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		PartOf:    devboxv1alpha2.LabelDevBoxPartOf,
 	})
 
-	logger.Info("start reconciling devbox", "devbox", devbox.Name)
+	logger.Info("start reconciling devbox")
 	if r.StartupConfigMapName != "" {
 		logger.Info(
 			"startup config map set",
-			"startupConfigMapName",
-			r.StartupConfigMapName,
-			"startupConfigMapNamespace",
-			r.StartupConfigMapNamespace,
+			"startupConfigMapName", r.StartupConfigMapName,
+			"startupConfigMapNamespace", r.StartupConfigMapNamespace,
 		)
 	}
-	if devbox.DeletionTimestamp.IsZero() {
-		// retry add finalizer
-		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			latestDevbox := &devboxv1alpha2.Devbox{}
-			if err := r.Get(ctx, req.NamespacedName, latestDevbox); err != nil {
-				return client.IgnoreNotFound(err)
-			}
-			if controllerutil.AddFinalizer(latestDevbox, devboxv1alpha2.FinalizerName) {
-				return r.Update(ctx, latestDevbox)
-			}
-			return nil
-		})
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-	} else {
-		logger.Info("devbox deleted, remove all resources")
-		if err := r.handleSubResourceDelete(ctx, devbox, recLabels); err != nil {
-			return ctrl.Result{}, err
-		}
 
-		// delete storage:
-		if err := r.handleStorageDelete(ctx, devbox); err != nil {
-			return ctrl.Result{}, err
-		}
-
-		logger.Info("devbox deleted, remove finalizer")
-		if controllerutil.RemoveFinalizer(devbox, devboxv1alpha2.FinalizerName) {
-			if err := r.Update(ctx, devbox); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
+	// 2) Deletion flow: make best-effort to delete sub-resources, then remove finalizer.
+	if !devbox.DeletionTimestamp.IsZero() {
+		return r.reconcileDevboxDeletion(ctx, devbox, recLabels)
 	}
 
-	// init devbox status network type
-	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
-	// init devbox status content id
-	if devbox.Status.ContentID == "" {
-		devbox.Status.ContentID = uuid.New().String()
-	}
-	// init devbox status commit record
-	if devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
-		devbox.Status.CommitRecords = make(map[string]*devboxv1alpha2.CommitRecord)
-		devbox.Status.State = devbox.Spec.State
-		devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha2.CommitRecord{
-			Node:         "",
-			BaseImage:    devbox.Spec.Image,
-			CommitImage:  r.generateImageName(devbox),
-			CommitStatus: devboxv1alpha2.CommitStatusPending,
-			GenerateTime: metav1.Now(),
-		}
-	}
-	if devbox.Status.Network.UniqueID == "" {
-		devbox.Status.Network.UniqueID = rwords.GenerateRandomWords()
-	}
-	// update devbox status, and do not return error to avoid infinite loop because multiple controller will reconcile this devbox
-	if err := r.Status().Update(ctx, devbox); err != nil {
-		logger.Info(
-			"failed to initialize devbox status, skip and return empty result",
-			"error",
-			err,
-		)
-		return ctrl.Result{Requeue: false}, nil
-	}
-
-	// re-get devbox to get the latest status
-	if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
+	// 3) Ensure finalizer exists (idempotent).
+	if err := r.ensureDevboxFinalizer(ctx, req.NamespacedName); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// check content id and commit record is exist
-	if devbox.Status.CommitRecords == nil ||
-		devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
+	// 4) Per-node controller ownership: if another node already owns this devbox, we should not reconcile it.
+	if devbox.Status.Node != "" && devbox.Status.Node != r.NodeName {
+		logger.Info("devbox already scheduled to another node, skip reconcile", "node", devbox.Status.Node)
+		return ctrl.Result{}, nil
+	}
+
+	// 5) Initialize status (idempotent). If we updated status, requeue to continue with the persisted status.
+	updated, err := r.initDevboxStatus(ctx, devbox)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if updated {
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	// todo: implement the schedule logic to replace the current logic
-	// if devbox state is running, schedule devbox to node, update devbox status and create a new commit record
-	// and filter out the devbox that are not in the current node
+	// 6) Validate required status fields for the rest of the flow.
+	commitRecord, requeue, err := r.getCurrentCommitRecord(devbox)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if requeue {
+		logger.Info("commit record is not found, requeue to wait for commit record to be created")
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// 7) Scheduling/claiming ownership (only when running).
 	if devbox.Spec.State == devboxv1alpha2.DevboxStateRunning {
-		if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" {
-			if score := r.getAcceptanceScore(ctx, devbox); score >= r.AcceptanceThreshold {
-				// if devbox is not scheduled to node, schedule it to current node
-				logger.Info("devbox not scheduled to node, try scheduling to us now",
-					"nodeName", r.NodeName,
-					"devbox", devbox.Name,
-					"score", score,
-					"acceptanceThreshold", r.AcceptanceThreshold)
-				// set up devbox node and content id, new a record for the devbox
-				devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
-				devbox.Status.Node = r.NodeName
-				if err := r.Status().Update(ctx, devbox); err != nil {
-					logger.Info(
-						"try to schedule devbox to node failed. This devbox may have already been scheduled to another node",
-						"error",
-						err,
-					)
-					return ctrl.Result{}, nil
-				}
-				logger.Info("devbox scheduled to node", "node", r.NodeName)
-				r.Recorder.Eventf(
-					devbox,
-					corev1.EventTypeNormal,
-					"Devbox scheduled to node",
-					"Devbox scheduled to node",
-				)
-			} else {
-				logger.Info("devbox not scheduled to node, try scheduling to us later",
-					"nodeName", r.NodeName,
-					"devbox", devbox.Name,
-					"score", score,
-					"acceptanceThreshold", r.AcceptanceThreshold)
-				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
-			}
-		} else if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
-			logger.Info(
-				"devbox already scheduled to node",
-				"node",
-				devbox.Status.CommitRecords[devbox.Status.ContentID].Node,
-			)
-			return ctrl.Result{}, nil
+		res, err := r.ensureDevboxScheduledToThisNodeIfPossible(ctx, req.NamespacedName, devbox, commitRecord)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if res.Requeue || res.RequeueAfter > 0 {
+			return res, nil
 		}
 	}
 
+	// 8) Reconcile desired resources (pods/services/secrets/etc).
 	if err := r.runSyncPipeline(ctx, devbox, recLabels); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// Sync devbox state.
-	// Only the node that owns the current content should sync state.
-	// Exception: for stop/shutdown transitions, allow syncing when not yet scheduled.
-	contentID := devbox.Status.ContentID
-	commitRecord := devbox.Status.CommitRecords[contentID]
-	ownedByThisNode := commitRecord.Node == r.NodeName
-	stopOrShutdown := devbox.Spec.State == devboxv1alpha2.DevboxStateStopped || devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown
-	unscheduled := commitRecord.Node == ""
-	allowedToSyncState := ownedByThisNode || (stopOrShutdown && unscheduled)
-	needsStateTransition := devbox.Spec.State != devbox.Status.State
-
-	// if the devbox is allowed to sync state and needs state transition, mark the state transition as pending
-	if allowedToSyncState && needsStateTransition {
-		// Mark the state-transition as pending for this Generation. Only the controller
-		// that successfully advances the condition's ObservedGeneration should emit
-		// the state-change event, preventing duplicates in multi-controller setups.
-		shouldEmit, err := r.markStateTransitionPendingAndReturnShouldEmit(ctx, devbox)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		if !shouldEmit {
-			logger.Info("state transition already marked for this generation, skip emitting event",
-				"devbox", devbox.Name,
-				"generation", devbox.Generation)
-			return ctrl.Result{}, nil
-		}
-
-		logger.Info("recording state change event", "devbox", devbox.Name, "nodeName", r.NodeName)
-		// send state change event to state change handler
-		r.StateChangeRecorder.Eventf(
-			devbox,
-			corev1.EventTypeNormal,
-			events.ReasonDevboxStateChanged,
-			"Devbox state changed from %s to %s",
-			devbox.Status.State,
-			devbox.Spec.State,
-		)
-		// send state change event to devbox controller
-		r.Recorder.Eventf(
-			devbox,
-			corev1.EventTypeNormal,
-			events.ReasonDevboxStateChanged,
-			"Devbox state changed from %s to %s",
-			devbox.Status.State,
-			devbox.Spec.State,
-		)
+	// 9) State transition observability (emit event once per generation).
+	if err := r.maybeEmitStateChangeEvent(ctx, devbox); err != nil {
+		return ctrl.Result{}, err
 	}
 
-	// Best-effort: keep conditions in sync for observability.
+	// 10) Keep conditions/ObservedGeneration in sync.
 	if err := r.syncDevboxConditions(ctx, devbox); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	logger.Info("devbox reconcile success")
 	return ctrl.Result{}, nil
+}
+
+func (r *DevboxReconciler) initDevboxStatus(ctx context.Context, devbox *devboxv1alpha2.Devbox) (updated bool, err error) {
+	// only fill missing fields; avoid overriding existing status
+	changed := false
+
+	// init devbox status network type
+	if devbox.Status.Network.Type == "" {
+		devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
+		changed = true
+	}
+
+	// init devbox status content id
+	if devbox.Status.ContentID == "" {
+		devbox.Status.ContentID = uuid.New().String()
+		changed = true
+	}
+	currentContentID := devbox.Status.ContentID
+
+	// init devbox status commit record map
+	if devbox.Status.CommitRecords == nil {
+		devbox.Status.CommitRecords = make(map[string]*devboxv1alpha2.CommitRecord)
+		changed = true
+	}
+
+	// init devbox status commit record for current content id
+	if devbox.Status.CommitRecords[currentContentID] == nil {
+		devbox.Status.CommitRecords[currentContentID] = &devboxv1alpha2.CommitRecord{
+			Node:         "",
+			BaseImage:    devbox.Spec.Image,
+			CommitImage:  r.generateImageName(devbox),
+			CommitStatus: devboxv1alpha2.CommitStatusPending,
+			GenerateTime: metav1.Now(),
+		}
+		changed = true
+	}
+
+	// init devbox status state
+	if devbox.Status.State == "" {
+		devbox.Status.State = devbox.Spec.State
+		changed = true
+	}
+
+	// init devbox status network unique id
+	if devbox.Status.Network.UniqueID == "" {
+		devbox.Status.Network.UniqueID = rwords.GenerateRandomWords()
+		changed = true
+	}
+
+	// update devbox status, and do not return error to avoid infinite loop because multiple controller will reconcile this devbox
+	if changed {
+		if err := r.Status().Update(ctx, devbox); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// reconcileDevboxDeletion deletes owned resources then removes the devbox finalizer.
+func (r *DevboxReconciler) reconcileDevboxDeletion(
+	ctx context.Context,
+	devbox *devboxv1alpha2.Devbox,
+	recLabels map[string]string,
+) (ctrl.Result, error) {
+	logger := log.FromContext(ctx).WithValues("devbox", client.ObjectKeyFromObject(devbox))
+
+	logger.Info("devbox deleted, remove all resources")
+	if err := r.handleSubResourceDelete(ctx, devbox, recLabels); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// delete storage:
+	if err := r.handleStorageDelete(ctx, devbox); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	logger.Info("devbox deleted, remove finalizer")
+	if controllerutil.RemoveFinalizer(devbox, devboxv1alpha2.FinalizerName) {
+		if err := r.Update(ctx, devbox); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	return ctrl.Result{}, nil
+}
+
+// ensureDevboxFinalizer ensures the devbox has the controller finalizer (idempotent).
+func (r *DevboxReconciler) ensureDevboxFinalizer(ctx context.Context, key client.ObjectKey) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, key, latest); err != nil {
+			return client.IgnoreNotFound(err)
+		}
+		if controllerutil.AddFinalizer(latest, devboxv1alpha2.FinalizerName) {
+			return r.Update(ctx, latest)
+		}
+		return nil
+	})
+}
+
+// getCurrentCommitRecord returns the current commit record.
+// If it is missing, caller should requeue (not an error).
+func (r *DevboxReconciler) getCurrentCommitRecord(
+	devbox *devboxv1alpha2.Devbox,
+) (record *devboxv1alpha2.CommitRecord, requeue bool, err error) {
+	if devbox.Status.ContentID == "" {
+		return nil, true, nil
+	}
+	if devbox.Status.CommitRecords == nil {
+		return nil, true, nil
+	}
+	rec := devbox.Status.CommitRecords[devbox.Status.ContentID]
+	if rec == nil {
+		return nil, true, nil
+	}
+	return rec, false, nil
+}
+
+// ensureDevboxScheduledToThisNodeIfPossible tries to claim ownership for a running devbox.
+// It returns a ctrl.Result to requeue/slow-requeue when needed.
+func (r *DevboxReconciler) ensureDevboxScheduledToThisNodeIfPossible(
+	ctx context.Context,
+	key client.ObjectKey,
+	devbox *devboxv1alpha2.Devbox,
+	commitRecord *devboxv1alpha2.CommitRecord,
+) (ctrl.Result, error) {
+	logger := log.FromContext(ctx).WithValues("devbox", key)
+
+	// If the current content is owned by another node, skip.
+	if commitRecord.Node != "" && commitRecord.Node != r.NodeName {
+		logger.Info("devbox already scheduled to node", "node", commitRecord.Node)
+		return ctrl.Result{}, nil
+	}
+
+	// Already ours: continue.
+	if commitRecord.Node == r.NodeName {
+		return ctrl.Result{}, nil
+	}
+
+	// Try to claim ownership when unscheduled.
+	score := r.getAcceptanceScore(ctx, devbox)
+	if score < r.AcceptanceThreshold {
+		logger.Info("devbox not scheduled to node, try scheduling to us later",
+			"nodeName", r.NodeName,
+			"score", score,
+			"acceptanceThreshold", r.AcceptanceThreshold)
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
+	logger.Info("devbox not scheduled to node, try scheduling to us now",
+		"nodeName", r.NodeName,
+		"score", score,
+		"acceptanceThreshold", r.AcceptanceThreshold)
+
+	claimedByUs := false
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		latest := &devboxv1alpha2.Devbox{}
+		if err := r.Get(ctx, key, latest); err != nil {
+			return err
+		}
+		if latest.Status.CommitRecords == nil || latest.Status.CommitRecords[latest.Status.ContentID] == nil {
+			return fmt.Errorf("commit record missing for contentID %s", latest.Status.ContentID)
+		}
+
+		latestRecord := latest.Status.CommitRecords[latest.Status.ContentID]
+		// Someone else (or us) already claimed it.
+		if latestRecord.Node != "" {
+			return nil
+		}
+
+		latestRecord.Node = r.NodeName
+		latest.Status.Node = r.NodeName
+		if err := r.Status().Update(ctx, latest); err != nil {
+			return err
+		}
+		claimedByUs = true
+		return nil
+	})
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	// If we claimed it, requeue to continue with persisted status and emit event once.
+	if claimedByUs {
+		r.Recorder.Eventf(
+			devbox,
+			corev1.EventTypeNormal,
+			"Devbox scheduled to node",
+			"Devbox scheduled to node",
+		)
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Someone else claimed it; stop reconciling on this node.
+	return ctrl.Result{}, nil
+}
+
+// maybeEmitStateChangeEvent records state change event once per generation when this node is allowed to sync.
+func (r *DevboxReconciler) maybeEmitStateChangeEvent(ctx context.Context, devbox *devboxv1alpha2.Devbox) error {
+	logger := log.FromContext(ctx).WithValues("devbox", client.ObjectKeyFromObject(devbox))
+
+	if devbox.Status.CommitRecords == nil || devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
+		return nil
+	}
+
+	// Only the node that owns the current content should sync state.
+	// Exception: for stop/shutdown transitions, allow syncing when not yet scheduled.
+	contentID := devbox.Status.ContentID
+	currentRecord := devbox.Status.CommitRecords[contentID]
+	ownedByThisNode := currentRecord.Node == r.NodeName
+	stopOrShutdown := devbox.Spec.State == devboxv1alpha2.DevboxStateStopped || devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown
+	unscheduled := currentRecord.Node == ""
+	allowedToSyncState := ownedByThisNode || (stopOrShutdown && unscheduled)
+	needsStateTransition := devbox.Spec.State != devbox.Status.State
+
+	if !allowedToSyncState || !needsStateTransition {
+		return nil
+	}
+
+	shouldEmit, err := r.markStateTransitionPendingAndReturnShouldEmit(ctx, devbox)
+	if err != nil {
+		return err
+	}
+	if !shouldEmit {
+		return nil
+	}
+
+	logger.Info("recording state change event", "nodeName", r.NodeName)
+	r.StateChangeRecorder.Eventf(
+		devbox,
+		corev1.EventTypeNormal,
+		events.ReasonDevboxStateChanged,
+		"Devbox state changed from %s to %s",
+		devbox.Status.State,
+		devbox.Spec.State,
+	)
+	r.Recorder.Eventf(
+		devbox,
+		corev1.EventTypeNormal,
+		events.ReasonDevboxStateChanged,
+		"Devbox state changed from %s to %s",
+		devbox.Status.State,
+		devbox.Spec.State,
+	)
+	return nil
 }
 
 func (r *DevboxReconciler) markStateTransitionPendingAndReturnShouldEmit(
