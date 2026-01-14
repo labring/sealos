@@ -75,7 +75,11 @@ func main() {
 		"",
 		"Ingress annotations: 'key1=value1,key2=value2'",
 	)
-	flag.Var(&cnameDomains, "cnameDomains", "Domains to be used for checking ingress host CNAME (comma-separated)")
+	flag.Var(
+		&cnameDomains,
+		"cnameDomains",
+		"Domains to be used for checking ingress host CNAME (comma-separated)",
+	)
 	flag.Var(
 		&denyDomains,
 		"denyDomains",
