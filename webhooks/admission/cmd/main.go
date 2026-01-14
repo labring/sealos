@@ -52,7 +52,8 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 	var ingressAnnotationString string
-	var domains v1.DomainList
+	var cnameDomains v1.DomainList
+	var denyDomains v1.DomainList
 	flag.StringVar(
 		&metricsAddr,
 		"metrics-bind-address",
@@ -74,7 +75,12 @@ func main() {
 		"",
 		"Ingress annotations: 'key1=value1,key2=value2'",
 	)
-	flag.Var(&domains, "domains", "Domains to be used for check ingress cname")
+	flag.Var(&cnameDomains, "cnameDomains", "Domains to be used for checking ingress host CNAME (comma-separated)")
+	flag.Var(
+		&denyDomains,
+		"denyDomains",
+		"Forbidden domain suffixes for user namespaces ingress hosts (comma-separated). Example: 'cloud.example.com,app.example.com'",
+	)
 	opts := zap.Options{
 		Development: true,
 	}
@@ -83,12 +89,14 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	if len(domains) == 0 {
+	if len(cnameDomains) == 0 {
 		setupLog.Error(nil, "domains is empty")
 		os.Exit(1)
 	}
-
-	setupLog.Info("domains:", "domains", strings.Join(domains, ","))
+	setupLog.Info("cname domains:", "domains", strings.Join(cnameDomains, ","))
+	if len(denyDomains) > 0 {
+		setupLog.Info("deny domains:", "domains", strings.Join(denyDomains, ","))
+	}
 	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
 	ingressAnnotations := make(map[string]string)
 	if ingressAnnotationString != "" {
@@ -135,7 +143,8 @@ func main() {
 	}
 
 	if (&v1.IngressValidator{
-		Domains: domains,
+		CnameDomains: cnameDomains,
+		DenyDomains:  denyDomains,
 	}).SetupWithManager(mgr) != nil {
 		setupLog.Error(err, "unable to create ingress validator webhook")
 		os.Exit(1)
@@ -143,7 +152,7 @@ func main() {
 
 	if (&v1.IngressMutator{
 		IngressAnnotations: ingressAnnotations,
-		Domains:            domains,
+		CnameDomains:       cnameDomains,
 	}).SetupWithManager(mgr) != nil {
 		setupLog.Error(err, "unable to create ingress mutator webhook")
 		os.Exit(1)
