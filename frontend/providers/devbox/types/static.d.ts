@@ -17,6 +17,7 @@ export interface Env {
   privacyUrlZH: string;
   privacyUrlEN: string;
   sealosDomain: string;
+  sshDomain: string;
   ingressSecret: string;
   registryAddr: string;
   devboxAffinityEnable: string;

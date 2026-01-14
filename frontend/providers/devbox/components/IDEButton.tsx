@@ -154,9 +154,9 @@ const IDEButton = memo(
             userName,
             token,
             workingDir,
-            host: env.sealosDomain,
+            host: env.sshDomain,
             port: sshPort.toString(),
-            configHost: `${env.sealosDomain}_${env.namespace}_${devboxName}`
+            configHost: `${env.sshDomain}_${env.namespace}_${devboxName}`
           });
 
           if (currentIDE === 'gateway') {
@@ -172,11 +172,11 @@ const IDEButton = memo(
 
           const idePrefix = ideObj[currentIDE].prefix;
           const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
-            `${userName}@${env.sealosDomain}`
+            `${userName}@${env.sshDomain}`
           )}&sshPort=${encodeURIComponent(sshPort)}&base64PrivateKey=${encodeURIComponent(
             base64PrivateKey
           )}&sshHostLabel=${encodeURIComponent(
-            `${env.sealosDomain}_${env.namespace}_${devboxName}`
+            `${env.sshDomain}_${env.namespace}_${devboxName}`
           )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(token)}`;
           window.location.href = fullUri;
         } catch (error: any) {
@@ -186,16 +186,7 @@ const IDEButton = memo(
           setLoading(false);
         }
       },
-      [
-        t,
-        devboxName,
-        runtimeType,
-        env.sealosDomain,
-        env.namespace,
-        sshPort,
-        setGuideIDE,
-        openConfirm
-      ]
+      [t, devboxName, runtimeType, env.sshDomain, env.namespace, sshPort, setGuideIDE, openConfirm]
     );
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -533,10 +524,7 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
     }
   ];
 };
-const getRightColumnItems = (
-  currencySymbol: string,
-  enableWebideFeature: string
-): MenuItem[] => {
+const getRightColumnItems = (currencySymbol: string, enableWebideFeature: string): MenuItem[] => {
   if (currencySymbol === 'usd') {
     return [
       { value: 'cursor', menuLabel: 'Cursor' },

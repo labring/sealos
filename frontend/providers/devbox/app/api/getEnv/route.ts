@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
         privacyUrlZH: process.env.PRIVACY_URL_ZH || defaultEnv.privacyUrlZH,
         privacyUrlEN: process.env.PRIVACY_URL_EN || defaultEnv.privacyUrlEN,
         sealosDomain: process.env.SEALOS_DOMAIN || defaultEnv.sealosDomain,
+        sshDomain: process.env.SSH_DOMAIN || process.env.SEALOS_DOMAIN || defaultEnv.sshDomain,
         ingressSecret: process.env.INGRESS_SECRET || defaultEnv.ingressSecret,
         registryAddr: process.env.REGISTRY_ADDR || defaultEnv.registryAddr,
         devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || defaultEnv.devboxAffinityEnable,

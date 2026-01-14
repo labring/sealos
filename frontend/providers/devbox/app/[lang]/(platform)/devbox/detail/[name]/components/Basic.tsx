@@ -41,9 +41,9 @@ const Basic = () => {
       userName: devboxDetail?.sshConfig?.sshUser as string,
       token: devboxDetail?.sshConfig?.token as string,
       workingDir: config.workingDir,
-      host: env.sealosDomain,
+      host: env.sshDomain,
       port: devboxDetail?.sshPort.toString(),
-      configHost: `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
+      configHost: `${env.sshDomain}_${env.namespace}_${devboxDetail?.name}`
     });
 
     setOnOpenSsHConnect(true);
@@ -52,7 +52,7 @@ const Basic = () => {
     devboxDetail?.templateUid,
     devboxDetail?.sshPort,
     devboxDetail?.templateRepositoryName,
-    env.sealosDomain,
+    env.sshDomain,
     env.namespace,
     devboxDetail?.sshConfig?.sshUser,
     devboxDetail?.sshConfig?.sshPrivateKey,
@@ -61,12 +61,12 @@ const Basic = () => {
 
   const sshConnectCommand = useMemo(
     () =>
-      `ssh -i ${env.sealosDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`,
+      `ssh -i ${env.sshDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sshDomain} -p ${devboxDetail?.sshPort}`,
     [
       devboxDetail?.name,
       devboxDetail?.sshConfig?.sshUser,
       devboxDetail?.sshPort,
-      env.sealosDomain,
+      env.sshDomain,
       env.namespace
     ]
   );
@@ -180,7 +180,7 @@ const Basic = () => {
                   downLoadBlob(
                     devboxDetail?.sshConfig?.sshPrivateKey as string,
                     'application/octet-stream',
-                    `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
+                    `${env.sshDomain}_${env.namespace}_${devboxDetail?.name}`
                   )
                 }
               >

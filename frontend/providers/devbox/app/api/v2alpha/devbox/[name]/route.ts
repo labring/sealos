@@ -10,7 +10,12 @@ import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 import { devboxDB } from '@/services/db/init';
-import { calculateUptime, parseTemplateConfig, cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
+import {
+  calculateUptime,
+  parseTemplateConfig,
+  cpuFormatToM,
+  memoryFormatToMi
+} from '@/utils/tools';
 import { UpdateDevboxRequestSchema, DeleteDevboxRequestSchema, nanoid } from './schema';
 
 //need really realtime use force-dynamic
@@ -642,7 +647,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
 
     const label = `${devboxKey}=${devboxName}`;
     const podLabel = `app.kubernetes.io/name=${devboxName}`;
-    const { SEALOS_DOMAIN } = process.env;
+    const sshDomain = process.env.SSH_DOMAIN || process.env.SEALOS_DOMAIN;
 
     // Get ingresses, service, secret, and pods
     const [ingressesResponse, serviceResponse, secretResponse, podsResponse] = await Promise.all([
@@ -669,7 +674,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const base64PrivateKey = secret?.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string | undefined;
 
     const ssh = {
-      host: SEALOS_DOMAIN || '',
+      host: sshDomain || '',
       port: sshPort,
       user: config.user,
       workingDir: config.workingDir,
