@@ -124,15 +124,17 @@ const Release = () => {
       const releaseArgs = config.releaseArgs.join(' ');
       const releaseCommand = config.releaseCommand.join(' ');
       const { cpu, memory, networks, name, gpu, configMaps, volumes, envs } = devbox;
-      const newNetworks = networks.map((network) => {
-        return {
-          port: network.port,
-          appProtocol: network.protocol,
-          protocol: 'TCP',
-          openPublicDomain: network.openPublicDomain,
-          domain: env.ingressDomain
-        };
-      });
+      const newNetworks = networks
+        .filter((network) => network.port !== 9999)
+        .map((network) => {
+          return {
+            port: network.port,
+            appProtocol: network.protocol,
+            protocol: 'TCP',
+            openPublicDomain: network.openPublicDomain,
+            domain: env.ingressDomain
+          };
+        });
       const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`;
 
       const transformData = {
