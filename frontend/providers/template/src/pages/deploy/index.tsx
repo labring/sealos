@@ -313,12 +313,7 @@ export default function EditApp({
   // Check if all resources are loaded
   const isResourcesReady = useMemo(() => {
     return (
-      !isTemplateLoading &&
-      !isPlatformEnvsLoading &&
-      !!templateSource &&
-      !!data &&
-      !!platformEnvs &&
-      yamlList.length > 0
+      !isTemplateLoading && !isPlatformEnvsLoading && !!templateSource && !!data && !!platformEnvs
     );
   }, [isTemplateLoading, isPlatformEnvsLoading, templateSource, data, platformEnvs, yamlList]);
 
