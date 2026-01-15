@@ -57,13 +57,18 @@ export const yamlString2Objects = (yamlString: string): object[] => {
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
+  // Separate local and remote stores
+  const localStores = data.storeList.filter((store) => store.storageType !== 'remote');
+  const remoteStores = data.storeList.filter((store) => store.storageType === 'remote');
+
   const metadata = {
     name: data.appName,
     annotations: {
       originImageName: data.imageName,
       [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
       [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
-      [deployPVCResizeKey]: `${totalStorage}Gi`
+      [deployPVCResizeKey]: `${totalStorage}Gi`,
+      ...(remoteStores.length > 0 ? { remoteStores: JSON.stringify(remoteStores) } : {})
     },
     labels: {
       ...(data.labels || {}),
@@ -158,14 +163,30 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
 
   const configMapVolumes = generateConfigMapVolumes();
 
-  const finalVolumes = configMapVolumes
-    ? [...(data.volumes || []), ...configMapVolumes]
-    : data.volumes || [];
+  // Remote stores: add to volumes (shared storage)
+  const remoteStoreVolumes = remoteStores.map((store) => ({
+    name: store.name,
+    persistentVolumeClaim: {
+      claimName: store.name
+    }
+  }));
 
-  const finalVolumeMounts = [...(data.volumeMounts || []), ...configMapVolumeMounts];
+  // Remote stores: add to volumeMounts
+  const remoteStoreVolumeMounts = remoteStores.map((store) => ({
+    name: store.name,
+    mountPath: store.path
+  }));
 
-  // pvc settings
-  const storageTemplates = data.storeList.map((store) => ({
+  const finalVolumes = [...(data.volumes || []), ...configMapVolumes, ...remoteStoreVolumes];
+
+  const finalVolumeMounts = [
+    ...(data.volumeMounts || []),
+    ...configMapVolumeMounts,
+    ...remoteStoreVolumeMounts
+  ];
+
+  // Local stores: add to volumeClaimTemplates (per-instance storage)
+  const storageTemplates = localStores.map((store) => ({
     metadata: {
       annotations: {
         path: store.path,
@@ -252,7 +273,8 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
                 ...commonContainer,
                 volumeMounts: [
                   ...finalVolumeMounts,
-                  ...data.storeList.map((item) => ({
+                  // Only add local stores here (remote stores are already in finalVolumeMounts)
+                  ...localStores.map((item) => ({
                     name: item.name,
                     mountPath: item.path
                   }))
