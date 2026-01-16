@@ -386,25 +386,9 @@ const AppList = ({
       {
         title: t('Storage'),
         key: 'store',
-        render: (item: AppListItemType) => {
-          if (item.storeAmount === 0) return <>-</>;
-
-          const hasLocal = item.localStoreAmount > 0;
-          const hasRemote = item.remoteStoreAmount > 0;
-
-          return (
-            <>
-              {hasLocal && `${t('local')}: ${item.localStoreAmount}Gi`}
-              {hasLocal && hasRemote && (
-                <Box as="span" color="#8A95A7" mx={1}>
-                  /
-                </Box>
-              )}
-              {hasRemote && `${t('remote')}: ${item.remoteStoreAmount}Gi`}
-              {!hasLocal && !hasRemote && '-'}
-            </>
-          );
-        }
+        render: (item: AppListItemType) => (
+          <>{item.localStoreAmount > 0 ? `${item.localStoreAmount}Gi` : '-'}</>
+        )
       },
       {
         title: t('Operation'),

@@ -75,25 +75,20 @@ export const getAppSource = (
 };
 
 export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItemType => {
-  // compute store amount
+  // compute store amount (only local stores from volumeClaimTemplates)
   const volumeClaimTemplates = app.spec?.volumeClaimTemplates || [];
 
-  const { storeAmount, localStoreAmount, remoteStoreAmount } = volumeClaimTemplates.reduce(
-    (acc, item) => {
-      const value = Number(item?.metadata?.annotations?.value || 0);
-      const isRemote = item?.metadata?.annotations?.storageType === 'remote';
-
-      acc.storeAmount += value;
-      if (isRemote) {
-        acc.remoteStoreAmount += value;
-      } else {
-        acc.localStoreAmount += value;
-      }
-
-      return acc;
-    },
-    { storeAmount: 0, localStoreAmount: 0, remoteStoreAmount: 0 }
+  const localStoreAmount = volumeClaimTemplates.reduce(
+    (sum, item) => sum + Number(item?.metadata?.annotations?.value || 0),
+    0
   );
+
+  // Get remote stores count from annotations
+  const remoteStoresJson = app.metadata?.annotations?.remoteStores;
+  const remoteStores = remoteStoresJson ? JSON.parse(remoteStoresJson) : [];
+  const remoteStoreAmount = remoteStores.length;
+
+  const storeAmount = localStoreAmount;
 
   const gpuNodeSelector = app?.spec?.template?.spec?.nodeSelector;
 
@@ -361,6 +356,12 @@ export const adaptAppDetail = async (
   );
   const gpuNodeSelector = useGpu ? appDeploy?.spec?.template?.spec?.nodeSelector : null;
 
+  // Get remote store names from annotations to filter them out
+  const remoteStoresJson = appDeploy?.metadata?.annotations?.remoteStores;
+  const remoteStoreNames: string[] = remoteStoresJson
+    ? JSON.parse(remoteStoresJson).map((s: { name: string }) => s.name)
+    : [];
+
   const getFilteredVolumeMounts = () => {
     const volumeMounts = appDeploy?.spec?.template?.spec?.containers?.[0]?.volumeMounts || [];
     const storeNames =
@@ -369,13 +370,19 @@ export const adaptAppDetail = async (
       ) || [];
 
     return volumeMounts.filter(
-      (mount) => !configMapVolumeNames.includes(mount.name) && !storeNames.includes(mount.name)
+      (mount) =>
+        !configMapVolumeNames.includes(mount.name) &&
+        !storeNames.includes(mount.name) &&
+        !remoteStoreNames.includes(mount.name)
     );
   };
 
   const getFilteredVolumes = () => {
     return (
       appDeploy?.spec?.template?.spec?.volumes?.filter((volume) => {
+        // Filter out remote stores
+        if (remoteStoreNames.includes(volume.name)) return false;
+        // Filter out configMap volumes
         if (!deployKindsMap.ConfigMap) return true;
         const configMapName = deployKindsMap.ConfigMap.metadata?.name;
         return !(volume.configMap?.name === configMapName);
@@ -505,15 +512,24 @@ export const adaptAppDetail = async (
       : defaultEditVal.hpa,
     configMapList: getConfigMapList(),
     secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']),
-    storeList: deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates
-      ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => ({
-          name: item.metadata?.name || '',
-          path: item.metadata?.annotations?.path || '',
-          value: Number(item.metadata?.annotations?.value || 0),
-          storageType: (item.metadata?.annotations?.storageType || 'local') as StorageType,
-          storageClassName: item.spec?.storageClassName
-        }))
-      : [],
+    storeList: (() => {
+      // Local stores from volumeClaimTemplates
+      const localStores = deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates
+        ? deployKindsMap.StatefulSet.spec.volumeClaimTemplates.map((item) => ({
+            name: item.metadata?.name || '',
+            path: item.metadata?.annotations?.path || '',
+            value: Number(item.metadata?.annotations?.value || 0),
+            storageType: 'local' as StorageType,
+            storageClassName: item.spec?.storageClassName
+          }))
+        : [];
+
+      // Remote stores from annotations
+      const remoteStoresJson = appDeploy?.metadata?.annotations?.remoteStores;
+      const remoteStores = remoteStoresJson ? JSON.parse(remoteStoresJson) : [];
+
+      return [...localStores, ...remoteStores];
+    })(),
     volumeMounts: getFilteredVolumeMounts(),
     volumes: getFilteredVolumes(),
     kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
