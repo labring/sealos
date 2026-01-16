@@ -56,6 +56,7 @@ env:
   GO_VERSION: "1.24"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
+  LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
 
 jobs:
   golangci-lint:
