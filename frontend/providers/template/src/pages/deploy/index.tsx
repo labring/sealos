@@ -74,7 +74,7 @@ export default function EditApp({
     return usage;
   }, [yamlList]);
 
-  const { data: platformEnvs } = useQuery(
+  const { data: platformEnvs, isLoading: isPlatformEnvsLoading } = useQuery(
     ['getPlatformEnvs'],
     () => getPlatformEnv({ insideCloud }),
     {
@@ -247,7 +247,7 @@ export default function EditApp({
     }
   };
 
-  const { data } = useQuery(
+  const { data, isLoading: isTemplateLoading } = useQuery(
     ['getTemplateSource', templateName],
     () => getTemplateSource(templateName),
     {
@@ -286,6 +286,13 @@ export default function EditApp({
       });
     }
   }, [setInsideCloud, t, templateName, toast]);
+
+  // Check if all resources are loaded
+  const isResourcesReady = useMemo(() => {
+    return (
+      !isTemplateLoading && !isPlatformEnvsLoading && !!templateSource && !!data && !!platformEnvs
+    );
+  }, [isTemplateLoading, isPlatformEnvsLoading, templateSource, data, platformEnvs, yamlList]);
 
   return (
     <Box
@@ -377,6 +384,7 @@ export default function EditApp({
             yamlList={yamlList}
             applyBtnText={insideCloud ? applyBtnText : 'Deploy on sealos'}
             applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
+            isResourcesReady={isResourcesReady}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
             {/* <QuotaBox /> */}

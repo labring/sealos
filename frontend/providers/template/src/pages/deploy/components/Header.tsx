@@ -43,7 +43,8 @@ const Header = ({
   applyCb,
   applyBtnText,
   templateDetail,
-  cloudDomain
+  cloudDomain,
+  isResourcesReady
 }: {
   appName: string;
   title: string;
@@ -52,6 +53,7 @@ const Header = ({
   applyBtnText: string;
   templateDetail: TemplateType;
   cloudDomain: string;
+  isResourcesReady: boolean;
 }) => {
   const { t, i18n } = useTranslation();
   const { copyData } = useCopyData();
@@ -324,6 +326,9 @@ const Header = ({
         bg={'grayModern.150'}
         color={'grayModern.900'}
         onClick={handleExportYaml}
+        isDisabled={!isResourcesReady}
+        opacity={!isResourcesReady ? 0.5 : 1}
+        cursor={!isResourcesReady ? 'not-allowed' : 'pointer'}
       >
         {t('Export')} Yaml
       </Button>
@@ -334,6 +339,9 @@ const Header = ({
           minW={'140px'}
           h={'40px'}
           onClick={applyCb}
+          isDisabled={!isResourcesReady}
+          opacity={!isResourcesReady ? 0.5 : 1}
+          cursor={!isResourcesReady ? 'not-allowed' : 'pointer'}
           _focusVisible={{ boxShadow: '' }}
           outline={isClientSide && !createCompleted ? '1px solid #1C4EF5' : 'none'}
           outlineOffset={isClientSide && !createCompleted ? '2px' : '0'}
