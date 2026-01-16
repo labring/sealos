@@ -10,6 +10,9 @@ import { useDesktopConfigStore } from './desktopConfig';
 import { track } from '@sealos/gtm';
 import useSessionStore from './session';
 
+export const BRAIN_APP_KEY = 'system-brain';
+export const SESSION_RESTORE_APP_KEY = 'sealos_desktop_restore_app_key';
+
 export class AppInfo {
   pid: number;
   isShow: boolean;
@@ -302,11 +305,22 @@ const useAppStore = create<TOSState>()(
       })),
       {
         name: 'app',
+        version: 1,
+        migrate(persistedState: any) {
+          if (persistedState?.currentAppKey && persistedState.currentAppKey !== BRAIN_APP_KEY) {
+            return {
+              ...persistedState,
+              currentAppKey: ''
+            };
+          }
+          return persistedState;
+        },
         partialize(state) {
           return {
             launchQuery: state.launchQuery,
             autolaunch: state.autolaunch,
-            currentAppKey: state.currentAppKey
+            // Only Brain can persist across tab close; other apps should rely on sessionStorage.
+            currentAppKey: state.currentAppKey === BRAIN_APP_KEY ? state.currentAppKey : ''
           };
         }
       }
