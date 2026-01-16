@@ -114,7 +114,8 @@ export default function Network({
           {networks.length === 0 && <AppendNetworksButton onClick={() => appendNetworks()} />}
           {/* Port List */}
           {networks.map((network, i) => {
-            const isReservedPort = env.enableWebideFeature === 'true' && network.port === 9999;
+            const isReservedPort =
+              env.enableWebideFeature === 'true' && network.port === env.webIdePort;
             return (
               <div key={network.id} className="flex w-full flex-col gap-3">
                 <div className="guide-network-configuration flex w-full items-center gap-4">
@@ -153,8 +154,8 @@ export default function Network({
                               return !isDuplicate || t('The port number cannot be repeated');
                             },
                             reservedPort: (value) => {
-                              if (value === 9999) {
-                                return t('port_9999_reserved');
+                              if (value === env.webIdePort) {
+                                return t('port_reserved', { port: env.webIdePort });
                               }
                               return true;
                             }

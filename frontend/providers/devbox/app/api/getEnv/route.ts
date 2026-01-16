@@ -39,7 +39,8 @@ export async function GET(req: NextRequest) {
         enableAdvancedConfig: process.env.ENABLE_ADVANCED_CONFIG || defaultEnv.enableAdvancedConfig,
         cpuSlideMarkList: process.env.CPU_SLIDE_MARK_LIST || defaultEnv.cpuSlideMarkList,
         memorySlideMarkList: process.env.MEMORY_SLIDE_MARK_LIST || defaultEnv.memorySlideMarkList,
-        nfsStorageClassName: process.env.NFS_STORAGE_CLASS_NAME || defaultEnv.nfsStorageClassName
+        nfsStorageClassName: process.env.NFS_STORAGE_CLASS_NAME || defaultEnv.nfsStorageClassName,
+        webIdePort: Number(process.env.WEBIDE_PORT) || defaultEnv.webIdePort
       }
     });
   } catch (err: any) {
