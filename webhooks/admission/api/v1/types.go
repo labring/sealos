@@ -26,6 +26,15 @@ func (s *DomainList) String() string {
 }
 
 func (s *DomainList) Set(value string) error {
-	*s = strings.Split(value, ",")
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		out = append(out, p)
+	}
+	*s = out
 	return nil
 }

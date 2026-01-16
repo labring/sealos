@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/labring/sealos/webhook/admission/pkg/code"
+	"github.com/miekg/dns"
 	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,7 +47,7 @@ var ilog = logf.Log.WithName("ingress-validating-webhook")
 
 type IngressMutator struct {
 	client.Client
-	Domains            DomainList
+	CnameDomains       DomainList
 	IngressAnnotations map[string]string
 }
 
@@ -64,7 +65,7 @@ func (m *IngressMutator) Default(_ context.Context, obj runtime.Object) error {
 		return errors.New("obj convert Ingress is error")
 	}
 
-	for _, domain := range m.Domains {
+	for _, domain := range m.CnameDomains {
 		if isUserNamespace(i.Namespace) && hasSubDomain(i, domain) {
 			ilog.Info(
 				"mutating ingress in user ns",
@@ -90,9 +91,9 @@ func (m *IngressMutator) mutateUserIngressAnnotations(i *netv1.Ingress) {
 
 type IngressValidator struct {
 	client.Client
-	Domains DomainList
-	cache   cache.Cache
-
+	CnameDomains DomainList
+	DenyDomains  DomainList
+	cache        cache.Cache
 	IcpValidator *IcpValidator
 }
 
@@ -218,6 +219,7 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 	}
 
 	checks := []func(*netv1.Ingress, *netv1.IngressRule) error{
+		v.checkDeny,
 		v.checkCname,
 		v.checkOwner,
 		v.checkIcp,
@@ -234,6 +236,43 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 	return nil
 }
 
+func normalizeFQDN(s string) string {
+	s = strings.TrimSpace(strings.ToLower(s))
+	return strings.TrimSuffix(s, ".")
+}
+
+func (v *IngressValidator) checkDeny(i *netv1.Ingress, rule *netv1.IngressRule) error {
+	if len(v.DenyDomains) == 0 {
+		return nil
+	}
+	host := normalizeFQDN(rule.Host)
+	for _, domain := range v.DenyDomains {
+		d := normalizeFQDN(domain)
+		if d == "" {
+			continue
+		}
+		if dns.IsSubDomain(d, host) {
+			ilog.Info(
+				"deny ingress host by forbidden domain suffix",
+				"ingress namespace",
+				i.Namespace,
+				"ingress name",
+				i.Name,
+				"rule host",
+				rule.Host,
+				"forbidden domain",
+				domain,
+			)
+			return fmt.Errorf(
+				code.MessageFormat,
+				code.IngressFailedDomainSuffixCheck,
+				"ingress host "+rule.Host+" is under forbidden domain suffix "+domain,
+			)
+		}
+	}
+	return nil
+}
+
 func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule) error {
 	ilog.Info(
 		"checking cname",
@@ -244,7 +283,7 @@ func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule)
 		"rule host",
 		rule.Host,
 	)
-	ilog.Info("domains:", "domains", strings.Join(v.Domains, ","))
+	ilog.Info("domains:", "domains", strings.Join(v.CnameDomains, ","))
 	// get cname and check if it is cname to domain
 	cname, err := net.LookupCNAME(rule.Host)
 	if err != nil {
@@ -253,7 +292,7 @@ func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule)
 	}
 	// remove last dot
 	cname = strings.TrimSuffix(cname, ".")
-	for _, domain := range v.Domains {
+	for _, domain := range v.CnameDomains {
 		// check if ingress host is end with domain
 		if strings.HasSuffix(rule.Host, domain) {
 			ilog.Info(
@@ -283,7 +322,7 @@ func (v *IngressValidator) checkCname(i *netv1.Ingress, rule *netv1.IngressRule)
 		code.MessageFormat,
 		code.IngressFailedCnameCheck,
 		"can not verify ingress host "+rule.Host+", cname is not end with any domains in "+strings.Join(
-			v.Domains,
+			v.CnameDomains,
 			",",
 		),
 	)
