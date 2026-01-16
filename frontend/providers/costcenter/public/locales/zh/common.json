@@ -158,18 +158,21 @@
         "placeholder": "填写传真"
       },
       "invoice_title": {
-        "placeholder": "填写发票抬头"
+        "placeholder": "填写发票抬头",
+        "placeholder_personal": "个人类型发票通常填写姓名"
       },
       "phone": {
         "placeholder": "填写电话"
       },
       "tax_registration_number": {
-        "placeholder": "填写税务登记证号"
+        "placeholder": "填写税务登记证号",
+        "placeholder_personal": "个人类型发票通常填写身份证号"
       },
       "type": {
         "list": {
           "normal": "增值税普通发票",
-          "special": "增值税专用发票"
+          "special": "增值税专用发票",
+          "personal": "个人"
         }
       }
     },

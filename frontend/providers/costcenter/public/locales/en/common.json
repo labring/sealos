@@ -157,18 +157,21 @@
         "placeholder": "Enter fax number"
       },
       "invoice_title": {
-        "placeholder": "Enter invoice title"
+        "placeholder": "Enter invoice title",
+        "placeholder_personal": "Personal invoices usually require name"
       },
       "phone": {
         "placeholder": "Enter phone number"
       },
       "tax_registration_number": {
-        "placeholder": "Enter tax registration number"
+        "placeholder": "Enter tax registration number",
+        "placeholder_personal": "Personal invoices usually require ID number"
       },
       "type": {
         "list": {
           "normal": "VAT invoice (Normal)",
-          "special": "VAT invoice (Special)"
+          "special": "VAT invoice (Special)",
+          "personal": "Personal"
         }
       }
     },

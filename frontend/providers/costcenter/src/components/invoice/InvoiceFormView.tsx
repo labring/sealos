@@ -36,6 +36,242 @@ interface InvoiceFormViewProps {
   onBack?: () => void;
 }
 
+/**
+ * Personal invoice form sub-component
+ * Only displays invoiceType, invoiceTitle, and taxId fields
+ */
+const PersonalInvoiceForm = ({
+  formData,
+  errors,
+  onFieldChange,
+  onFieldBlur,
+  typeList
+}: {
+  formData: InvoiceFormData;
+  errors: { [key: string]: string };
+  onFieldChange: (field: keyof InvoiceFormData, value: string) => void;
+  onFieldBlur: (field: keyof InvoiceFormData, value: string) => void;
+  typeList: Array<{ label: string; value: string }>;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <label>
+        <span>{t('common:orders.invoice_items')}</span>
+        <span className="font-normal text-zinc-600 leading-[2.5rem]">
+          {t('common:orders.electronic_computer_service_fee')}
+        </span>
+      </label>
+      <label>
+        <span>{t('common:orders.invoice_type')}</span>
+        <div>
+          <Select
+            value={formData.invoiceType}
+            onValueChange={(value) => {
+              onFieldChange('invoiceType', value);
+              onFieldBlur('invoiceType', value);
+            }}
+          >
+            <SelectTrigger className="h-10 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {typeList.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p aria-hidden={!errors.invoiceType}>{errors.invoiceType || 'No error'}</p>
+        </div>
+      </label>
+      <label>
+        <span>{t('common:orders.invoice_title')}</span>
+        <div>
+          <Input
+            type="text"
+            value={formData.invoiceTitle}
+            onChange={(e) => onFieldChange('invoiceTitle', e.target.value)}
+            onBlur={(e) => onFieldBlur('invoiceTitle', e.target.value)}
+            placeholder={t('common:orders.details.invoice_title.placeholder_personal')}
+            aria-invalid={!!errors.invoiceTitle}
+          />
+          <p aria-hidden={!errors.invoiceTitle}>{errors.invoiceTitle || 'No error'}</p>
+        </div>
+      </label>
+      <label>
+        <span>{t('common:orders.tax_id')}</span>
+        <div>
+          <Input
+            type="text"
+            value={formData.taxId}
+            onChange={(e) => onFieldChange('taxId', e.target.value)}
+            onBlur={(e) => onFieldBlur('taxId', e.target.value)}
+            placeholder={t('common:orders.details.tax_registration_number.placeholder_personal')}
+            aria-invalid={!!errors.taxId}
+          />
+          <p aria-hidden={!errors.taxId}>{errors.taxId || 'No error'}</p>
+        </div>
+      </label>
+    </>
+  );
+};
+
+/**
+ * Business invoice form sub-component (for normal and special types)
+ * Displays all invoice detail fields
+ */
+const BusinessInvoiceForm = ({
+  formData,
+  errors,
+  onFieldChange,
+  onFieldBlur,
+  typeList
+}: {
+  formData: InvoiceFormData;
+  errors: { [key: string]: string };
+  onFieldChange: (field: keyof InvoiceFormData, value: string) => void;
+  onFieldBlur: (field: keyof InvoiceFormData, value: string) => void;
+  typeList: Array<{ label: string; value: string }>;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <label>
+        <span>{t('common:orders.invoice_items')}</span>
+        <span className="font-normal text-zinc-600 leading-[2.5rem]">
+          {t('common:orders.electronic_computer_service_fee')}
+        </span>
+      </label>
+      <label>
+        <span>{t('common:orders.invoice_type')}</span>
+        <div>
+          <Select
+            value={formData.invoiceType}
+            onValueChange={(value) => {
+              onFieldChange('invoiceType', value);
+              onFieldBlur('invoiceType', value);
+            }}
+          >
+            <SelectTrigger className="h-10 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {typeList.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p aria-hidden={!errors.invoiceType}>{errors.invoiceType || 'No error'}</p>
+        </div>
+      </label>
+      <label>
+        <span>{t('common:orders.invoice_title')}</span>
+        <div>
+          <Input
+            type="text"
+            value={formData.invoiceTitle}
+            onChange={(e) => onFieldChange('invoiceTitle', e.target.value)}
+            onBlur={(e) => onFieldBlur('invoiceTitle', e.target.value)}
+            placeholder={t('common:orders.details.invoice_title.placeholder')}
+            aria-invalid={!!errors.invoiceTitle}
+          />
+          <p aria-hidden={!errors.invoiceTitle}>{errors.invoiceTitle || 'No error'}</p>
+        </div>
+      </label>
+      <label>
+        <span>{t('common:orders.tax_id')}</span>
+        <div>
+          <Input
+            type="text"
+            value={formData.taxId}
+            onChange={(e) => onFieldChange('taxId', e.target.value)}
+            onBlur={(e) => onFieldBlur('taxId', e.target.value)}
+            placeholder={t('common:orders.details.tax_registration_number.placeholder')}
+            aria-invalid={!!errors.taxId}
+          />
+          <p aria-hidden={!errors.taxId}>{errors.taxId || 'No error'}</p>
+        </div>
+      </label>
+      <label>
+        <span>{t('common:orders.bank_name')}</span>
+        <div>
+          <Input
+            type="text"
+            value={formData.bankName}
+            onChange={(e) => onFieldChange('bankName', e.target.value)}
+            onBlur={(e) => onFieldBlur('bankName', e.target.value)}
+            placeholder={t('common:orders.details.bank_name.placeholder')}
+            aria-invalid={!!errors.bankName}
+          />
+          <p aria-hidden={!errors.bankName}>{errors.bankName || 'No error'}</p>
+        </div>
+      </label>
+      <label>
+        <span>{t('common:orders.bank_account')}</span>
+        <div>
+          <Input
+            type="text"
+            value={formData.bankAccount}
+            onChange={(e) => onFieldChange('bankAccount', e.target.value)}
+            onBlur={(e) => onFieldBlur('bankAccount', e.target.value)}
+            placeholder={t('common:orders.details.bank_account.placeholder')}
+            aria-invalid={!!errors.bankAccount}
+          />
+          <p aria-hidden={!errors.bankAccount}>{errors.bankAccount || 'No error'}</p>
+        </div>
+      </label>
+      <label>
+        <span>{t('common:orders.address')}</span>
+        <div>
+          <Input
+            type="text"
+            value={formData.address}
+            onChange={(e) => onFieldChange('address', e.target.value)}
+            onBlur={(e) => onFieldBlur('address', e.target.value)}
+            placeholder={t('common:orders.details.address.placeholder')}
+            aria-invalid={!!errors.address}
+          />
+          <p aria-hidden={!errors.address}>{errors.address || 'No error'}</p>
+        </div>
+      </label>
+      <label>
+        <span>{t('common:orders.tel')}</span>
+        <div>
+          <Input
+            type="text"
+            value={formData.phone}
+            onChange={(e) => onFieldChange('phone', e.target.value)}
+            onBlur={(e) => onFieldBlur('phone', e.target.value)}
+            placeholder={t('common:orders.details.phone.placeholder')}
+            aria-invalid={!!errors.phone}
+          />
+          <p aria-hidden={!errors.phone}>{errors.phone || 'No error'}</p>
+        </div>
+      </label>
+      <label>
+        <span>{t('common:orders.fax')}</span>
+        <div>
+          <Input
+            type="text"
+            value={formData.fax}
+            onChange={(e) => onFieldChange('fax', e.target.value)}
+            onBlur={(e) => onFieldBlur('fax', e.target.value)}
+            placeholder={t('common:orders.details.fax.placeholder')}
+            aria-invalid={!!errors.fax}
+          />
+          <p aria-hidden={!errors.fax}>{errors.fax || 'No error'}</p>
+        </div>
+      </label>
+    </>
+  );
+};
+
 const InvoiceFormView = ({
   invoiceAmount,
   invoiceCount,
@@ -59,8 +295,14 @@ const InvoiceFormView = ({
     {
       label: t('common:orders.details.type.list.special'),
       value: 'special'
+    },
+    {
+      label: t('common:orders.details.type.list.personal'),
+      value: 'personal'
     }
   ];
+
+  const isPersonal = formData.invoiceType === 'personal';
 
   return (
     <div className="space-y-4">
@@ -110,134 +352,23 @@ const InvoiceFormView = ({
             '[&>label:not(:has(input[aria-invalid=true]))_p]:pointer-events-none [&>label:not(:has(input[aria-invalid=true]))_p]:opacity-0'
           )}
         >
-          <label>
-            <span>{t('common:orders.invoice_items')}</span>
-            <span className="font-normal text-zinc-600 leading-[2.5rem]">
-              {t('common:orders.electronic_computer_service_fee')}
-            </span>
-          </label>
-          <label>
-            <span>{t('common:orders.invoice_type')}</span>
-            <div>
-              <Select
-                value={formData.invoiceType}
-                onValueChange={(value) => {
-                  onFieldChange('invoiceType', value);
-                  onFieldBlur('invoiceType', value);
-                }}
-              >
-                <SelectTrigger className="h-10 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {typeList.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p aria-hidden={!errors.invoiceType}>{errors.invoiceType || 'No error'}</p>
-            </div>
-          </label>
-          <label>
-            <span>{t('common:orders.invoice_title')}</span>
-            <div>
-              <Input
-                type="text"
-                value={formData.invoiceTitle}
-                onChange={(e) => onFieldChange('invoiceTitle', e.target.value)}
-                onBlur={(e) => onFieldBlur('invoiceTitle', e.target.value)}
-                placeholder={t('common:orders.details.invoice_title.placeholder')}
-                aria-invalid={!!errors.invoiceTitle}
-              />
-              <p aria-hidden={!errors.invoiceTitle}>{errors.invoiceTitle || 'No error'}</p>
-            </div>
-          </label>
-          <label>
-            <span>{t('common:orders.tax_id')}</span>
-            <div>
-              <Input
-                type="text"
-                value={formData.taxId}
-                onChange={(e) => onFieldChange('taxId', e.target.value)}
-                onBlur={(e) => onFieldBlur('taxId', e.target.value)}
-                placeholder={t('common:orders.details.tax_registration_number.placeholder')}
-                aria-invalid={!!errors.taxId}
-              />
-              <p aria-hidden={!errors.taxId}>{errors.taxId || 'No error'}</p>
-            </div>
-          </label>
-          <label>
-            <span>{t('common:orders.bank_name')}</span>
-            <div>
-              <Input
-                type="text"
-                value={formData.bankName}
-                onChange={(e) => onFieldChange('bankName', e.target.value)}
-                onBlur={(e) => onFieldBlur('bankName', e.target.value)}
-                placeholder={t('common:orders.details.bank_name.placeholder')}
-                aria-invalid={!!errors.bankName}
-              />
-              <p aria-hidden={!errors.bankName}>{errors.bankName || 'No error'}</p>
-            </div>
-          </label>
-          <label>
-            <span>{t('common:orders.bank_account')}</span>
-            <div>
-              <Input
-                type="text"
-                value={formData.bankAccount}
-                onChange={(e) => onFieldChange('bankAccount', e.target.value)}
-                onBlur={(e) => onFieldBlur('bankAccount', e.target.value)}
-                placeholder={t('common:orders.details.bank_account.placeholder')}
-                aria-invalid={!!errors.bankAccount}
-              />
-              <p aria-hidden={!errors.bankAccount}>{errors.bankAccount || 'No error'}</p>
-            </div>
-          </label>
-          <label>
-            <span>{t('common:orders.address')}</span>
-            <div>
-              <Input
-                type="text"
-                value={formData.address}
-                onChange={(e) => onFieldChange('address', e.target.value)}
-                onBlur={(e) => onFieldBlur('address', e.target.value)}
-                placeholder={t('common:orders.details.address.placeholder')}
-                aria-invalid={!!errors.address}
-              />
-              <p aria-hidden={!errors.address}>{errors.address || 'No error'}</p>
-            </div>
-          </label>
-          <label>
-            <span>{t('common:orders.tel')}</span>
-            <div>
-              <Input
-                type="text"
-                value={formData.phone}
-                onChange={(e) => onFieldChange('phone', e.target.value)}
-                onBlur={(e) => onFieldBlur('phone', e.target.value)}
-                placeholder={t('common:orders.details.phone.placeholder')}
-                aria-invalid={!!errors.phone}
-              />
-              <p aria-hidden={!errors.phone}>{errors.phone || 'No error'}</p>
-            </div>
-          </label>
-          <label>
-            <span>{t('common:orders.fax')}</span>
-            <div>
-              <Input
-                type="text"
-                value={formData.fax}
-                onChange={(e) => onFieldChange('fax', e.target.value)}
-                onBlur={(e) => onFieldBlur('fax', e.target.value)}
-                placeholder={t('common:orders.details.fax.placeholder')}
-                aria-invalid={!!errors.fax}
-              />
-              <p aria-hidden={!errors.fax}>{errors.fax || 'No error'}</p>
-            </div>
-          </label>
+          {isPersonal ? (
+            <PersonalInvoiceForm
+              formData={formData}
+              errors={errors}
+              onFieldChange={onFieldChange}
+              onFieldBlur={onFieldBlur}
+              typeList={typeList}
+            />
+          ) : (
+            <BusinessInvoiceForm
+              formData={formData}
+              errors={errors}
+              onFieldChange={onFieldChange}
+              onFieldBlur={onFieldBlur}
+              typeList={typeList}
+            />
+          )}
         </div>
       </section>
 
