@@ -201,7 +201,7 @@ const Network = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
-                  className="guide-network-address cursor-pointer text-sm/5 break-all hover:underline"
+                  className="guide-network-address cursor-pointer break-all text-sm/5 hover:underline"
                   onClick={() => window.open(`${protocolMap[item.protocol]}${address}`, '_blank')}
                 >
                   {protocolMap[item.protocol]}
@@ -223,7 +223,7 @@ const Network = () => {
   };
 
   return (
-    <div className="flex h-full max-h-[400px] flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="shadow-xs flex h-full max-h-[400px] flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-5">
       {/* title */}
       <div className="flex w-full items-center justify-between">
         <span className="text-lg/7 font-medium text-accent-foreground">{t('network')}</span>
@@ -241,7 +241,7 @@ const Network = () => {
                   <TableHead
                     key={column.key}
                     style={{ width: column.width }}
-                    className="px-4 break-words whitespace-normal"
+                    className="whitespace-normal break-words px-4"
                   >
                     {column.title}
                   </TableHead>
@@ -250,13 +250,16 @@ const Network = () => {
             </TableHeader>
             <TableBody>
               {devboxDetail.networks
-                .filter((network) => !(env.enableWebideFeature === 'true' && network.port === 9999))
+                .filter(
+                  (network) =>
+                    !(env.enableWebideFeature === 'true' && network.port === env.webIdePort)
+                )
                 .map((network, index) => (
                   <TableRow key={`${network.port}-${index}`}>
                     {networkColumn.map((column) => (
                       <TableCell
                         key={`${network.port}-${column.key}`}
-                        className="px-4 break-words whitespace-normal"
+                        className="whitespace-normal break-words px-4"
                       >
                         {column.render
                           ? column.render(network as NetworkType)

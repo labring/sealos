@@ -25,7 +25,8 @@ export const defaultEnv: Env = {
   enableAdvancedConfig: 'false',
   cpuSlideMarkList: '1,2,4,8,16',
   memorySlideMarkList: '2,4,8,16,32',
-  nfsStorageClassName: 'nfs-csi'
+  nfsStorageClassName: 'nfs-csi',
+  webIdePort: 9999
 };
 
 type State = {

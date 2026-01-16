@@ -114,7 +114,8 @@ export default function Network({
           {networks.length === 0 && <AppendNetworksButton onClick={() => appendNetworks()} />}
           {/* Port List */}
           {networks.map((network, i) => {
-            const isReservedPort = env.enableWebideFeature === 'true' && network.port === 9999;
+            const isReservedPort =
+              env.enableWebideFeature === 'true' && network.port === env.webIdePort;
             return (
               <div key={network.id} className="flex w-full flex-col gap-3">
                 <div className="guide-network-configuration flex w-full items-center gap-4">
@@ -126,7 +127,7 @@ export default function Network({
                         {t('Container Port')}
                       </span>
                       <Input
-                        className="h-10 w-25"
+                        className="w-25 h-10"
                         type="number"
                         min={1}
                         max={65535}
@@ -153,8 +154,8 @@ export default function Network({
                               return !isDuplicate || t('The port number cannot be repeated');
                             },
                             reservedPort: (value) => {
-                              if (value === 9999) {
-                                return t('port_9999_reserved');
+                              if (value === env.webIdePort) {
+                                return t('port_reserved', { port: env.webIdePort });
                               }
                               return true;
                             }
@@ -214,15 +215,15 @@ export default function Network({
                                 ))}
                               </SelectContent>
                             </Select>
-                            <div className="flex h-10 flex-shrink-0 flex-grow-1 items-center rounded-r-md border border-l-0 px-3 py-2">
-                              <div className="mr-2 min-w-64 flex-1 truncate text-sm/5 text-muted-foreground select-all">
+                            <div className="flex-grow-1 flex h-10 flex-shrink-0 items-center rounded-r-md border border-l-0 px-3 py-2">
+                              <div className="mr-2 min-w-64 flex-1 select-all truncate text-sm/5 text-muted-foreground">
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.publicDomain!}
                               </div>
                               <Button
                                 variant="ghost"
-                                className="cursor-pointer text-sm/5 whitespace-nowrap text-blue-600 hover:bg-white hover:text-blue-700"
+                                className="cursor-pointer whitespace-nowrap text-sm/5 text-blue-600 hover:bg-white hover:text-blue-700"
                                 disabled={isReservedPort}
                                 onClick={() =>
                                   setCustomAccessModalData({
