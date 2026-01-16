@@ -32,6 +32,7 @@ export interface Env {
   cpuSlideMarkList: string;
   memorySlideMarkList: string;
   nfsStorageClassName: string;
+  webIdePort: number;
 }
 
 export interface RuntimeTypeMap {
