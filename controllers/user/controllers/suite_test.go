@@ -22,12 +22,14 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	csrv1 "k8s.io/api/certificates/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -93,6 +95,35 @@ var _ = AfterSuite(func() {
 })
 
 var _ = Describe("user kubeconfig ", func() {
+	Context("kubeconfig rotate trigger", func() {
+		It("should rotate when spec is set and status is empty", func() {
+			r := &UserReconciler{}
+			now := metav1.Now()
+			user := &v1.User{}
+			user.Spec.KubeConfigRotateAt = &now
+			Expect(r.shouldRotateKubeConfig(user)).To(BeTrue())
+		})
+
+		It("should not rotate when spec equals status", func() {
+			r := &UserReconciler{}
+			now := metav1.Now()
+			user := &v1.User{}
+			user.Spec.KubeConfigRotateAt = &now
+			user.Status.ObservedKubeConfigRotateAt = &now
+			Expect(r.shouldRotateKubeConfig(user)).To(BeFalse())
+		})
+
+		It("should rotate when spec differs from status", func() {
+			r := &UserReconciler{}
+			now := metav1.Now()
+			later := metav1.NewTime(now.Add(10 * time.Second))
+			user := &v1.User{}
+			user.Spec.KubeConfigRotateAt = &later
+			user.Status.ObservedKubeConfigRotateAt = &now
+			Expect(r.shouldRotateKubeConfig(user)).To(BeTrue())
+		})
+	})
+
 	Context("syncReNewConfig test", func() {
 		AfterEach(func() {
 		})
