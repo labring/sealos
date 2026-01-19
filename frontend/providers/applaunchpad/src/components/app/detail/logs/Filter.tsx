@@ -36,7 +36,7 @@ export const Filter = ({
   });
 
   return (
-    <div className="py-3 px-6 w-full flex flex-col">
+    <div className="py-3 px-5 w-full flex flex-col">
       {/* operator button */}
       <div className="flex gap-5">
         <div className="h-10 overflow-visible">
@@ -59,10 +59,10 @@ export const Filter = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-zinc-900">{t('only_stderr')}</span>
+          <span className="text-sm font-medium text-zinc-900">{t('highlight_stderr')}</span>
           <Switch
             checked={isOnlyStderr}
-            onCheckedChange={() => formHook.setValue('isOnlyStderr', !isOnlyStderr)}
+            onCheckedChange={(checked) => formHook.setValue('isOnlyStderr', checked)}
           />
         </div>
 
@@ -84,7 +84,7 @@ export const Filter = ({
             className="h-10 !px-4 rounded-lg shadow-none text-sm font-normal"
           >
             <Search className="w-4 h-4" />
-            <span className="ml-2">{t('search')}</span>
+            <span className="ml-0.5">{t('search')}</span>
           </Button>
         </div>
       </div>

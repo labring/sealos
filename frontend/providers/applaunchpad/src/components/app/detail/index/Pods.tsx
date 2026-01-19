@@ -162,28 +162,28 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
         <div className="text-sm text-zinc-700 font-normal">{item.age}</div>
       )
     },
-    {
-      title: 'Cpu',
-      key: 'cpu',
-      render: (item: PodDetailType) => (
-        <div className="h-[45px] w-[120px] relative">
-          <div className="h-[45px] w-[120px] absolute">
-            <PodLineChart type="blue" data={item.usedCpu} />
-          </div>
-        </div>
-      )
-    },
-    {
-      title: 'Memory',
-      key: 'memory',
-      render: (item: PodDetailType) => (
-        <div className="h-[45px] w-[120px] relative">
-          <div className="h-[45px] w-[120px] absolute">
-            <PodLineChart type="purple" data={item.usedMemory} />
-          </div>
-        </div>
-      )
-    },
+    // {
+    //   title: 'Cpu',
+    //   key: 'cpu',
+    //   render: (item: PodDetailType) => (
+    //     <div className="h-[45px] w-[120px] relative">
+    //       <div className="h-[45px] w-[120px] absolute">
+    //         <PodLineChart type="blue" data={item.usedCpu} />
+    //       </div>
+    //     </div>
+    //   )
+    // },
+    // {
+    //   title: 'Memory',
+    //   key: 'memory',
+    //   render: (item: PodDetailType) => (
+    //     <div className="h-[45px] w-[120px] relative">
+    //       <div className="h-[45px] w-[120px] absolute">
+    //         <PodLineChart type="purple" data={item.usedMemory} />
+    //       </div>
+    //     </div>
+    //   )
+    // },
     {
       title: '',
       key: 'control',
@@ -289,8 +289,8 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
   ];
 
   return (
-    <div className="h-full p-6 relative bg-white rounded-lg shadow-xs border-[0.5px] border-zinc-200">
-      <div className="text-zinc-900 text-lg font-medium flex items-center gap-2">
+    <div className="h-full p-5 relative bg-white rounded-lg shadow-xs border-[0.5px] border-zinc-200">
+      <div className="text-zinc-900 text-base font-medium flex items-center gap-2">
         {t('Pods List')}
         <span className="text-base font-medium leading-none text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5 border-[0.5px] border-zinc-200">
           {pods.length}

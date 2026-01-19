@@ -48,8 +48,16 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   const currentLang = i18n.language;
   const [isOpen, setIsOpen] = useState(false);
 
-  const { startDateTime, endDateTime, setStartDateTime, setEndDateTime, timeZone, setTimeZone } =
-    useDateTimeStore();
+  const {
+    startDateTime,
+    endDateTime,
+    setStartDateTime,
+    setEndDateTime,
+    timeZone,
+    setTimeZone,
+    setManualRange,
+    setAutoRange
+  } = useDateTimeStore();
 
   const now = new Date();
   const sevenDaysAgo = subDays(now, 7);
@@ -177,6 +185,7 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   };
 
   const handleFromChange = (value: string, type: 'date' | 'time') => {
+    setManualRange();
     let newDateTimeString;
 
     if (type === 'date') {
@@ -227,6 +236,7 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   };
 
   const handleToChange = (value: string, type: 'date' | 'time') => {
+    setManualRange();
     let newDateTimeString;
 
     if (type === 'date') {
@@ -277,6 +287,7 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   };
 
   const handleRangeSelect = (range: DateRange | undefined) => {
+    setManualRange();
     if (range) {
       let { from, to } = range;
 
@@ -334,20 +345,22 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   };
 
   const handleRecentDateClick = (item: RecentDate) => {
+    setAutoRange(item.compareValue);
     setFromDateError(null);
     setFromTimeError(null);
     setToDateError(null);
     setToTimeError(null);
 
-    setRecentDate(item);
-    setSelectedRange(item.value);
-    if (item.value.from) {
-      setFromDateString(format(item.value.from, 'y-MM-dd'));
-      setFromTimeString(format(item.value.from, 'HH:mm:ss'));
+    const nextRange = getDateRange(item.compareValue);
+    setRecentDate({ ...item, value: nextRange });
+    setSelectedRange(nextRange);
+    if (nextRange.from) {
+      setFromDateString(format(nextRange.from, 'y-MM-dd'));
+      setFromTimeString(format(nextRange.from, 'HH:mm:ss'));
     }
-    if (item.value.to) {
-      setToDateString(format(item.value.to, 'y-MM-dd'));
-      setToTimeString(format(item.value.to, 'HH:mm:ss'));
+    if (nextRange.to) {
+      setToDateString(format(nextRange.to, 'y-MM-dd'));
+      setToTimeString(format(nextRange.to, 'HH:mm:ss'));
     }
   };
 
@@ -358,13 +371,8 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
     const startTime = format(startDateTime, 'HH:mm');
     const endTime = format(endDateTime, 'HH:mm');
 
-    if (startDate === endDate) {
-      // the same day: 10:15 - 10:45, Jan 20
-      return `${startTime} - ${endTime}, ${startDate}`;
-    } else {
-      // different days: 10:15, Jan 20 - 10:45, Jan 21
-      return `${startTime}, ${startDate} - ${endTime}, ${endDate}`;
-    }
+    // format: 10:15, Jan 20 - 10:45, Jan 21
+    return `${startTime}, ${startDate} - ${endTime}, ${endDate}`;
   };
 
   return (

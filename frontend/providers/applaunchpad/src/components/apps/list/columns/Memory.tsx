@@ -9,11 +9,13 @@ export const Memory = memo<CellContext<AppListItemType, unknown>>(
   ({ row }) => {
     const item = row.original;
     return (
-      <PodLineChart
-        type="green"
-        data={item.usedMemory || EMPTY_MONITOR_DATA}
-        className="h-9 w-44"
-      />
+      <div className="w-full pr-10">
+        <PodLineChart
+          type="green"
+          data={item.usedMemory || EMPTY_MONITOR_DATA}
+          className="h-9 max-w-[300px]"
+        />
+      </div>
     );
   },
   (prev, next) => {

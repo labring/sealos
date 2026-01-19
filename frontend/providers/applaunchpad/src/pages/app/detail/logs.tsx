@@ -12,7 +12,7 @@ import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
 import { getAppLogs, getLogPodList } from '@/api/app';
 import { useForm } from 'react-hook-form';
-import { formatTimeRange } from '@/utils/timeRange';
+import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
 import { downLoadBold, formatTime } from '@/utils/tools';
 import { useLogStore } from '@/store/logStore';
 import { useRouter } from 'next/router';
@@ -40,15 +40,22 @@ export interface LogsFormData {
   }[];
 }
 
-const borderBase = '1px solid #E8EBF0';
-
 export default function LogsPage({ appName }: { appName: string }) {
   const router = useRouter();
   const { message } = useMessage();
   const { t } = useTranslation();
   const { appDetail, appDetailPods } = useAppStore();
 
-  const { refreshInterval, setRefreshInterval, startDateTime, endDateTime } = useDateTimeStore();
+  const {
+    refreshInterval,
+    setRefreshInterval,
+    startDateTime,
+    endDateTime,
+    setStartDateTime,
+    setEndDateTime,
+    isManualRange,
+    autoRange
+  } = useDateTimeStore();
   const { setLogs, exportLogs, parsedLogs, logCounts, setLogCounts } = useLogStore();
 
   useEffect(() => {
@@ -57,6 +64,34 @@ export default function LogsPage({ appName }: { appName: string }) {
       view_name: 'logs'
     });
   }, []);
+
+  useEffect(() => {
+    if (!refreshInterval) return;
+
+    const timer = window.setInterval(() => {
+      if (isManualRange) return;
+      const now = new Date();
+      if (autoRange) {
+        const { startTime } = parseTimeRange(autoRange, now);
+        setStartDateTime(startTime);
+        setEndDateTime(now);
+      } else {
+        const durationMs = Math.max(0, endDateTime.getTime() - startDateTime.getTime());
+        setStartDateTime(new Date(now.getTime() - durationMs));
+        setEndDateTime(now);
+      }
+    }, refreshInterval);
+
+    return () => window.clearInterval(timer);
+  }, [
+    refreshInterval,
+    isManualRange,
+    autoRange,
+    startDateTime,
+    endDateTime,
+    setStartDateTime,
+    setEndDateTime
+  ]);
 
   const formHook = useForm<LogsFormData>({
     defaultValues: {
@@ -85,7 +120,6 @@ export default function LogsPage({ appName }: { appName: string }) {
       appName,
       startDateTime,
       endDateTime,
-      formHook.watch('isOnlyStderr'),
       formHook.watch('limit'),
       formHook.watch('isJsonMode'),
       formHook.watch('keyword'),
@@ -98,7 +132,6 @@ export default function LogsPage({ appName }: { appName: string }) {
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         app: appName,
-        stderrMode: formHook.watch('isOnlyStderr').toString(),
         limit: formHook.watch('limit').toString(),
         jsonMode: formHook.watch('isJsonMode').toString(),
         keyword: formHook.watch('keyword'),
@@ -134,7 +167,6 @@ export default function LogsPage({ appName }: { appName: string }) {
       appName,
       startDateTime,
       endDateTime,
-      formHook.watch('isOnlyStderr'),
       selectedPods,
       selectedContainers,
       formHook.watch('isJsonMode'),
@@ -148,7 +180,6 @@ export default function LogsPage({ appName }: { appName: string }) {
         jsonMode: formHook.watch('isJsonMode').toString(),
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
-        stderrMode: formHook.watch('isOnlyStderr').toString(),
         pod:
           selectedPods.length === formHook.watch('pods').length
             ? []
@@ -222,6 +253,18 @@ export default function LogsPage({ appName }: { appName: string }) {
     message({
       title: t('refetching_success')
     });
+    if (!isManualRange) {
+      const now = new Date();
+      if (autoRange) {
+        const { startTime } = parseTimeRange(autoRange, now);
+        setStartDateTime(startTime);
+        setEndDateTime(now);
+      } else {
+        const durationMs = Math.max(0, endDateTime.getTime() - startDateTime.getTime());
+        setStartDateTime(new Date(now.getTime() - durationMs));
+        setEndDateTime(now);
+      }
+    }
     refetchLogsData();
     refetchLogCountsData();
     refetchPodListData();
@@ -238,7 +281,7 @@ export default function LogsPage({ appName }: { appName: string }) {
         <div className="bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs shrink-0">
           <LogCounts logCountsData={logCounts || []} isLogCountsLoading={isLogCountsLoading} />
         </div>
-        <div className="bg-white border-[0.5px] border-zinc-200 rounded-xl flex-1">
+        <div className="bg-white border-[0.5px] border-zinc-200 rounded-xl flex-1 max-h-[calc(100vh-108px)]">
           <LogTable data={parsedLogs || []} isLoading={isLoading} formHook={formHook} />
         </div>
       </div>

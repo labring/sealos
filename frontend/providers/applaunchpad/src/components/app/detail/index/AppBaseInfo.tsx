@@ -118,10 +118,10 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   }, [app.volumes, app.volumeMounts]);
 
   return (
-    <div className="p-6 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs h-full">
+    <div className="p-5 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs h-full">
       {appInfoTable.map((info, index) => (
         <div key={info.name} className="space-y-4">
-          <div className="text-zinc-900 text-lg font-medium">{t(info.name)}</div>
+          <div className="text-zinc-900 text-base font-medium">{t(info.name)}</div>
           <div className="flex flex-col gap-4 text-sm font-normal">
             {app?.source?.hasSource && index === 0 && (
               <div

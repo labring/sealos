@@ -199,16 +199,27 @@ const Form = ({
 
   // Handle scrollTo query parameter
   useEffect(() => {
-    if (router.query.scrollTo === 'network') {
-      const el = document.getElementById('network');
-      if (el) {
-        setTimeout(() => {
-          const yOffset = -120;
-          const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        }, 100);
+    const rawScrollTo = router.query.scrollTo;
+    const scrollTo = Array.isArray(rawScrollTo) ? rawScrollTo[0] : rawScrollTo;
+    if (!scrollTo) return;
+
+    let attempts = 0;
+    const maxAttempts = 8;
+    const scrollToTarget = () => {
+      const el = document.getElementById(scrollTo);
+      if (!el) {
+        if (attempts < maxAttempts) {
+          attempts += 1;
+          setTimeout(scrollToTarget, 120);
+        }
+        return;
       }
-    }
+      const yOffset = -120;
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    };
+
+    scrollToTarget();
   }, [router.query.scrollTo]);
 
   // GPU select list for shadcn Select
@@ -424,7 +435,7 @@ const Form = ({
         </div>
 
         {/* Right Content */}
-        <div id="form-container" className="relative w-full space-y-4">
+        <div id="form-container" className="relative w-full min-w-0 space-y-4">
           {/* Name Card */}
           <Card className="">
             <CardHeader className="pt-8 px-8 pb-5 bg-transparent gap-0">
@@ -1026,7 +1037,7 @@ const Form = ({
 
           {/* settings */}
           {already && (
-            <Card id="settings" className="">
+            <Card id="settings" className="w-full min-w-0">
               <CardHeader className="pt-8 px-8 pb-6 bg-transparent gap-0">
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-xl font-medium text-zinc-900">
@@ -1037,9 +1048,9 @@ const Form = ({
                   </span>
                 </div>
               </CardHeader>
-              <CardContent className="px-8 pb-8">
+              <CardContent className="px-8 pb-8 min-w-0">
                 {/* Command Section */}
-                <div>
+                <div id="settings-command" className="min-w-0">
                   <div className="flex flex-col gap-1 mb-3">
                     <h3 className="text-base font-medium leading-none text-zinc-900">
                       {t('Command')}
@@ -1075,7 +1086,7 @@ const Form = ({
                 <Separator className="bg-transparent border-t border-dashed border-zinc-200 my-4" />
 
                 {/* Environment Variables Section */}
-                <div className="flex flex-col gap-3">
+                <div id="settings-envs" className="flex flex-col gap-3 min-w-0">
                   <div className="flex items-center justify-between">
                     <h3 className="text-base font-medium leading-none text-zinc-900">
                       {t('Environment Variables')}
@@ -1141,7 +1152,7 @@ const Form = ({
                 <Separator className="bg-transparent border-t border-dashed border-zinc-200 my-4" />
 
                 {/* Configmaps Section */}
-                <div className="flex flex-col gap-3">
+                <div id="settings-configmaps" className="flex flex-col gap-3 w-full min-w-0">
                   <div className="flex items-center justify-between">
                     <h3 className="text-base font-medium text-zinc-900">{t('Configmaps')}</h3>
                     <Button
@@ -1157,11 +1168,11 @@ const Form = ({
                     </Button>
                   </div>
                   {configMaps.length > 0 && (
-                    <div className="space-y-1">
+                    <div className="space-y-1 w-full min-w-0">
                       {configMaps.map((item, index) => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg cursor-pointer hover:bg-zinc-100 transition-colors"
+                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg cursor-pointer hover:bg-zinc-100 transition-colors w-full min-w-0 overflow-hidden"
                           onClick={() => setConfigEdit(item)}
                         >
                           <MyIcon
@@ -1171,9 +1182,13 @@ const Form = ({
                             color="#a1a1aa"
                             className="shrink-0"
                           />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-zinc-900">{item.mountPath}</p>
-                            <p className="text-xs text-neutral-500 truncate">{item.value}</p>
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="text-sm font-medium text-zinc-900 truncate block w-full">
+                              {item.mountPath}
+                            </p>
+                            <p className="text-xs text-neutral-500 truncate block w-full">
+                              {item.value}
+                            </p>
                           </div>
                           <Button
                             type="button"
@@ -1196,7 +1211,7 @@ const Form = ({
                 <Separator className="bg-transparent border-t border-dashed border-zinc-200 my-4" />
 
                 {/* Local Storage Section */}
-                <div className="driver-deploy-storage">
+                <div id="settings-storage" className="driver-deploy-storage min-w-0">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex flex-col gap-1">
                       <h3 className="text-base font-medium leading-none text-zinc-900">
@@ -1217,11 +1232,11 @@ const Form = ({
                     </Button>
                   </div>
                   {(storeList.length > 0 || persistentVolumes.length > 0) && (
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       {storeList.map((item, index) => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg cursor-pointer hover:bg-zinc-100 transition-colors"
+                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg cursor-pointer hover:bg-zinc-100 transition-colors w-full min-w-0 overflow-hidden"
                           onClick={() => setStoreEdit(item)}
                         >
                           <MyIcon
@@ -1231,9 +1246,13 @@ const Form = ({
                             color="#a1a1aa"
                             className="shrink-0"
                           />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-zinc-900">{item.path}</p>
-                            <p className="text-xs text-neutral-500">{item.value} Gi</p>
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="text-sm font-medium text-zinc-900 truncate block w-full">
+                              {item.path}
+                            </p>
+                            <p className="text-xs text-neutral-500 truncate block w-full">
+                              {item.value} Gi
+                            </p>
                           </div>
                           <Button
                             type="button"
@@ -1256,7 +1275,7 @@ const Form = ({
                       {persistentVolumes.map((item) => (
                         <div
                           key={item.path}
-                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg cursor-not-allowed opacity-70"
+                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg cursor-not-allowed opacity-70 w-full min-w-0 overflow-hidden"
                         >
                           <MyIcon
                             name="storeColor"
@@ -1265,8 +1284,10 @@ const Form = ({
                             color="#a1a1aa"
                             className="shrink-0"
                           />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-zinc-900">{item.path}</p>
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="text-sm font-medium text-zinc-900 truncate block w-full">
+                              {item.path}
+                            </p>
                           </div>
                           <span className="text-xs text-neutral-500">{t('shared')}</span>
                         </div>

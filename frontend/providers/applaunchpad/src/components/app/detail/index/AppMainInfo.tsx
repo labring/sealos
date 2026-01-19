@@ -135,30 +135,22 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
 
   return (
     <div className="flex flex-col gap-1.5">
-      {/* Real-time Monitoring Card */}
-      <div className="p-6 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="text-zinc-900 text-lg font-medium">{t('Real-time Monitoring')}</div>
-          <div className="text-neutral-400 text-sm font-normal">
-            {t('Update Time')}&ensp;{dayjs().format('HH:mm')}
+      {/* Real-time Monitoring Cards */}
+      <div className="w-full grid grid-cols-2 gap-2 text-sm text-zinc-700 relative driver-detail-monitor">
+        <div className="p-5 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-3">
+          <div className="text-zinc-900 text-base font-medium">
+            CPU: {app.usedCpu.yData[app.usedCpu.yData.length - 1]}%
+          </div>
+          <div className="h-15">
+            <PodLineChart type={'blue'} data={app.usedCpu} />
           </div>
         </div>
-        <div className="w-full grid grid-cols-2 gap-4 text-sm text-zinc-700 relative driver-detail-monitor">
-          <div>
-            <div className="mb-1">
-              CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)
-            </div>
-            <div className="h-15">
-              <PodLineChart type={'blue'} data={app.usedCpu} />
-            </div>
+        <div className="p-5 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-3">
+          <div className="text-zinc-900 text-base font-medium">
+            {t('Memory')}: {app.usedMemory.yData[app.usedMemory.yData.length - 1]}%
           </div>
-          <div>
-            <div className="mb-1">
-              {t('Memory')}&ensp;({app.usedMemory.yData[app.usedMemory.yData.length - 1]}%)
-            </div>
-            <div className="h-15">
-              <PodLineChart type={'purple'} data={app.usedMemory} />
-            </div>
+          <div className="h-15">
+            <PodLineChart type={'green'} data={app.usedMemory} />
           </div>
         </div>
       </div>
@@ -166,10 +158,10 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
       {/* Network Configuration Card */}
       <div
         id="driver-detail-network"
-        className="min-h-[200px] max-h-[238px] pt-6 px-6 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-4"
+        className="min-h-[200px] max-h-[238px] pt-5 px-5 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-4"
       >
         <div className="flex items-center justify-between">
-          <div className="text-zinc-900 text-lg font-medium flex items-center gap-2">
+          <div className="text-zinc-900 text-base font-medium flex items-center gap-2">
             {t('Network Configuration')}
             <span className="text-base font-medium leading-none text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5 border-[0.5px] border-zinc-200">
               {networks.length}

@@ -1,9 +1,6 @@
 import DetailLayout from '@/components/layouts/DetailLayout';
-import { useToast } from '@/hooks/useToast';
 import { useAppStore } from '@/store/app';
 import { serviceSideProps } from '@/utils/i18n';
-import { Box, Center, Skeleton, SkeletonText, Stack, Text, ChakraProvider } from '@chakra-ui/react';
-import { theme } from '@/constants/theme';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import Header from '@/components/Monitor/Header';
@@ -12,17 +9,26 @@ import { useEffect, useMemo, useState } from 'react';
 import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
 import { getAppMonitorData } from '@/api/app';
-import EmptyChart from '@/components/Icon/icons/emptyChart.svg';
+import { LineChart } from 'lucide-react';
 import { track } from '@sealos/gtm';
 import { generatePvcNameRegex } from '@/utils/tools';
+import { parseTimeRange } from '@/utils/timeRange';
+import { Skeleton } from '@sealos/shadcn-ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 
 export default function MonitorPage({ appName }: { appName: string }) {
-  const { toast } = useToast();
   const { appDetail, appDetailPods } = useAppStore();
   const { t } = useTranslation();
-  const { startDateTime, endDateTime } = useDateTimeStore();
+  const {
+    startDateTime,
+    endDateTime,
+    setStartDateTime,
+    setEndDateTime,
+    isManualRange,
+    autoRange,
+    refreshInterval
+  } = useDateTimeStore();
   const [podList, setPodList] = useState<ListItem[]>([]);
-  const { refreshInterval } = useDateTimeStore();
 
   useEffect(() => {
     track('module_view', {
@@ -30,6 +36,34 @@ export default function MonitorPage({ appName }: { appName: string }) {
       view_name: 'monitors'
     });
   }, []);
+
+  useEffect(() => {
+    if (!refreshInterval) return;
+
+    const timer = window.setInterval(() => {
+      if (isManualRange) return;
+      const now = new Date();
+      if (autoRange) {
+        const { startTime } = parseTimeRange(autoRange, now);
+        setStartDateTime(startTime);
+        setEndDateTime(now);
+      } else {
+        const durationMs = Math.max(0, endDateTime.getTime() - startDateTime.getTime());
+        setStartDateTime(new Date(now.getTime() - durationMs));
+        setEndDateTime(now);
+      }
+    }, refreshInterval);
+
+    return () => window.clearInterval(timer);
+  }, [
+    refreshInterval,
+    isManualRange,
+    autoRange,
+    startDateTime,
+    endDateTime,
+    setStartDateTime,
+    setEndDateTime
+  ]);
 
   useEffect(() => {
     if (appDetailPods?.length > 0 && podList.length === 0) {
@@ -196,101 +230,238 @@ export default function MonitorPage({ appName }: { appName: string }) {
   }, [storageData, podList]);
 
   const refetchData = () => {
+    if (!isManualRange) {
+      const now = new Date();
+      if (autoRange) {
+        const { startTime } = parseTimeRange(autoRange, now);
+        setStartDateTime(startTime);
+        setEndDateTime(now);
+      } else {
+        const durationMs = Math.max(0, endDateTime.getTime() - startDateTime.getTime());
+        setStartDateTime(new Date(now.getTime() - durationMs));
+        setEndDateTime(now);
+      }
+    }
     refetchCpuData();
     refetchMemoryData();
     refetchStorageData();
   };
 
   return (
-    <ChakraProvider theme={theme}>
-      <DetailLayout appName={appName} key={'monitor'}>
-        <Box
-          minH={'100%'}
-          flex={'1 0 0'}
-          bg="white"
-          borderRadius="8px"
-          py={'16px'}
-          px={'24px'}
-          overflow={'auto'}
-        >
+    <DetailLayout appName={appName} key={'monitor'}>
+      <div className="flex flex-col flex-1 rounded-lg overflow-y-auto scrollbar-hide gap-2">
+        <div className="bg-white flex flex-col border-[0.5px] border-zinc-200 rounded-xl shadow-xs">
           <Header podList={podList} setPodList={setPodList} refetchData={refetchData} />
-          {!isLoading ? (
-            <>
-              <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
-                CPU: {cpuLatestAvg}%
-              </Box>
-              <Box mt={'24px'} height={'242px'} position={'relative'}>
-                {cpuChartData?.yData?.length > 0 ? (
-                  <MonitorChart data={cpuChartData} title={'chartTitle'} unit="%" />
-                ) : (
-                  <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
-                    <EmptyChart />
-                    <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
-                      {t('no_data_available')}
-                    </Text>
-                  </Center>
-                )}
-              </Box>
-              <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
-                Memory: {memoryLatestAvg}%
-              </Box>
-              <Box mt={'24px'} height={'200px'} position={'relative'}>
-                {memoryChartData?.yData?.length > 0 ? (
-                  <MonitorChart data={memoryChartData} title={'chartTitle'} unit="%" />
-                ) : (
-                  <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
-                    <EmptyChart />
-                    <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
-                      {t('no_data_available')}
-                    </Text>
-                  </Center>
-                )}
-              </Box>
-              <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
-                Storage: {storageLatestValue}%
-              </Box>
-              <Box mt={'24px'} height={'200px'} position={'relative'}>
-                {storageChartData?.yData?.length > 0 ? (
-                  <MonitorChart data={storageChartData} title={'chartTitle'} unit="%" />
-                ) : (
-                  <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
-                    <EmptyChart />
-                    <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
-                      {t('no_data_available')}
-                    </Text>
-                  </Center>
-                )}
-              </Box>
-            </>
-          ) : (
-            <Stack flex={1} bg={'white'} borderRadius={'8px'} py={'16px'}>
-              <Skeleton
-                startColor="white"
-                endColor="grayModern.200"
-                fadeDuration={0.6}
-                width={'200px'}
-                height={'40px'}
-              />
-              <Skeleton
-                startColor="white"
-                endColor="grayModern.200"
-                fadeDuration={0.6}
-                p={'20px'}
-              />
-              <SkeletonText
-                startColor="white"
-                endColor="grayModern.200"
-                fadeDuration={0.6}
-                mt="4"
-                noOfLines={4}
-                spacing="4"
-                skeletonHeight="20px"
-              />
-            </Stack>
-          )}
-        </Box>
-      </DetailLayout>
-    </ChakraProvider>
+        </div>
+        <div className="bg-white flex flex-col flex-1 min-h-fit border-[0.5px] border-zinc-200 rounded-xl shadow-xs">
+          <Tabs defaultValue="performance" className="w-full flex-1 min-h-0 gap-0">
+            <TabsList className="w-full h-12 rounded-none bg-transparent flex justify-start p-0">
+              <TabsTrigger
+                value="performance"
+                className="w-[145px] h-full flex-none shrink-0 leading-none rounded-none px-2 py-4 text-base font-medium text-zinc-400 border-r-1 border-l-0 border-b-1 border-t-0 rounded-tl-xl shadow-none border-zinc-200 data-[state=active]:text-zinc-900 data-[state=active]:border-b-[1.5px] data-[state=active]:border-b-zinc-900 data-[state=active]:shadow-none hover:bg-zinc-100"
+              >
+                {t('monitor_tab_performance')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="network"
+                className="w-[145px] h-full flex-none shrink-0 leading-none rounded-none px-2 py-4 text-base font-medium text-zinc-400 border-r-1 border-l-0 border-b-1 border-t-0 shadow-none border-zinc-200 data-[state=active]:text-zinc-900 data-[state=active]:border-b-[1.5px] data-[state=active]:border-b-zinc-900 data-[state=active]:shadow-none hover:bg-zinc-100"
+              >
+                {t('monitor_tab_network')}
+              </TabsTrigger>
+              <TabsTrigger
+                value="storage"
+                className="w-[145px] h-full flex-none shrink-0 leading-none rounded-none px-2 py-4 text-base font-medium text-zinc-400 border-r-1 border-l-0 border-b-1 border-t-0 shadow-none border-zinc-200 data-[state=active]:text-zinc-900 data-[state=active]:border-b-[1.5px] data-[state=active]:border-b-zinc-900 data-[state=active]:shadow-none hover:bg-zinc-100"
+              >
+                {t('monitor_tab_storage')}
+              </TabsTrigger>
+              <div className="h-full flex-1 border-b rounded-tr-xl shadow-none border-zinc-200"></div>
+            </TabsList>
+            <TabsContent value="performance" className="p-0 flex-1 min-h-0">
+              {!isLoading ? (
+                <div className="flex flex-col flex-1 min-h-0">
+                  <div className="border-b border-zinc-200 px-10 py-8 flex flex-col gap-5 flex-1 h-full min-h-0">
+                    <div className="flex items-center justify-between">
+                      <div className="text-base font-medium text-zinc-900">
+                        CPU: (<span className="font-normal text-zinc-500">{cpuLatestAvg}%</span>)
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-[200px] relative">
+                      {cpuChartData?.yData?.length > 0 ? (
+                        <MonitorChart
+                          data={cpuChartData}
+                          title={'chartTitle'}
+                          unit="%"
+                          yAxisLabelFormatter={(value) => `${value}%`}
+                          appName={appName}
+                          type="cpu"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center flex-col gap-3">
+                          <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                            <LineChart className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                          </div>
+                          <div className="text-zinc-900 text-sm font-semibold">
+                            {t('no_data_available')}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="px-10 py-8 flex flex-col gap-5 flex-1 h-full min-h-0">
+                    <div className="flex items-center justify-between">
+                      <div className="text-base font-medium text-zinc-900">
+                        Memory: (
+                        <span className="font-normal text-zinc-500">{memoryLatestAvg}%</span>)
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-[200px] relative">
+                      {memoryChartData?.yData?.length > 0 ? (
+                        <MonitorChart
+                          data={memoryChartData}
+                          title={'chartTitle'}
+                          unit="%"
+                          yAxisLabelFormatter={(value) => `${value}%`}
+                          appName={appName}
+                          type="memory"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center flex-col gap-3">
+                          <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                            <LineChart className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                          </div>
+                          <div className="text-zinc-900 text-sm font-semibold">
+                            {t('no_data_available')}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {[{ height: 'h-[242px]' }, { height: 'h-[200px]' }].map((item, index) => (
+                    <div key={`monitor-skeleton-performance-${index}`} className="px-6 py-6">
+                      <Skeleton className="h-5 w-[140px] rounded-lg" />
+                      <Skeleton className={`mt-6 w-full rounded-lg ${item.height}`} />
+                    </div>
+                  ))}
+                </>
+              )}
+            </TabsContent>
+            <TabsContent value="network" className="p-0 flex-1 min-h-0">
+              {!isLoading ? (
+                <div className="flex flex-col flex-1 min-h-0">
+                  <div className="border-b border-zinc-200 px-10 py-8 flex flex-col gap-5 flex-1 h-full min-h-0">
+                    <div className="flex items-center justify-between">
+                      <div className="text-base font-medium text-zinc-900">
+                        CPU: (<span className="font-normal text-zinc-500">{cpuLatestAvg}%</span>)
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-[200px] relative">
+                      {cpuChartData?.yData?.length > 0 ? (
+                        <MonitorChart
+                          data={cpuChartData}
+                          title={'chartTitle'}
+                          unit="%"
+                          yAxisLabelFormatter={(value) => `${value}%`}
+                          appName={appName}
+                          type="cpu"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center flex-col gap-3">
+                          <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                            <LineChart className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                          </div>
+                          <div className="text-zinc-900 text-sm font-semibold">
+                            {t('no_data_available')}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="px-10 py-8 flex flex-col gap-5 flex-1 h-full min-h-0">
+                    <div className="flex items-center justify-between">
+                      <div className="text-base font-medium text-zinc-900">
+                        Memory: (
+                        <span className="font-normal text-zinc-500">{memoryLatestAvg}%</span>)
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-[200px] relative">
+                      {memoryChartData?.yData?.length > 0 ? (
+                        <MonitorChart
+                          data={memoryChartData}
+                          title={'chartTitle'}
+                          unit="%"
+                          yAxisLabelFormatter={(value) => `${value}%`}
+                          appName={appName}
+                          type="memory"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center flex-col gap-3">
+                          <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                            <LineChart className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                          </div>
+                          <div className="text-zinc-900 text-sm font-semibold">
+                            {t('no_data_available')}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {[{ height: 'h-[242px]' }, { height: 'h-[200px]' }].map((item, index) => (
+                    <div key={`monitor-skeleton-network-${index}`} className="px-6 py-6">
+                      <Skeleton className="h-5 w-[140px] rounded-lg" />
+                      <Skeleton className={`mt-6 w-full rounded-lg ${item.height}`} />
+                    </div>
+                  ))}
+                </>
+              )}
+            </TabsContent>
+            <TabsContent value="storage" className="p-0 flex-1 min-h-0">
+              {!isLoading ? (
+                <div className="px-10 py-8 flex flex-col gap-5 flex-1 h-full min-h-0">
+                  <div className="flex items-center justify-between">
+                    <div className="text-base font-medium text-zinc-900">
+                      Storage: (
+                      <span className="font-normal text-zinc-500">{storageLatestValue}%</span>)
+                    </div>
+                  </div>
+                  <div className="flex-1 min-h-[200px] relative">
+                    {storageChartData?.yData?.length > 0 ? (
+                      <MonitorChart
+                        data={storageChartData}
+                        title={'chartTitle'}
+                        unit="%"
+                        yAxisLabelFormatter={(value) => `${value}%`}
+                        appName={appName}
+                        type="storage"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center flex-col gap-3">
+                        <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                          <LineChart className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                        </div>
+                        <div className="text-zinc-900 text-sm font-semibold">
+                          {t('no_data_available')}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="px-6 py-6">
+                  <Skeleton className="h-5 w-[140px] rounded-lg" />
+                  <Skeleton className="mt-6 h-[200px] w-full rounded-lg" />
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </DetailLayout>
   );
 }
 

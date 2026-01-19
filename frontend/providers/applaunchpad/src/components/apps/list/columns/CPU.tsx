@@ -9,7 +9,13 @@ export const CPU = memo<CellContext<AppListItemType, unknown>>(
   ({ row }) => {
     const item = row.original;
     return (
-      <PodLineChart type="blue" data={item.usedCpu || EMPTY_MONITOR_DATA} className="h-9 w-44" />
+      <div className="w-full pr-10">
+        <PodLineChart
+          type="blue"
+          data={item.usedCpu || EMPTY_MONITOR_DATA}
+          className="h-9 max-w-[300px]"
+        />
+      </div>
     );
   },
   (prev, next) => {

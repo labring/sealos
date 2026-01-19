@@ -34,7 +34,7 @@ export const Header = ({
   return (
     <div className="flex flex-wrap lg:flex-nowrap gap-4 py-3 px-6 items-center w-full justify-between">
       <div className="flex gap-4 items-center">
-        <h3 className="text-lg font-medium text-zinc-900">{t('Filter')}</h3>
+        <h3 className="text-base font-medium text-zinc-900">{t('Filter')}</h3>
         <div className="flex items-center gap-4">
           <div className="">
             <DatePicker />
@@ -105,7 +105,9 @@ export const Header = ({
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">
                     {refreshInterval > 0 ? (
-                      <SelectValue placeholder={t('please_select')} />
+                      <span className="text-zinc-900">
+                        <SelectValue placeholder={t('please_select')} />
+                      </span>
                     ) : (
                       t('auto_refresh')
                     )}

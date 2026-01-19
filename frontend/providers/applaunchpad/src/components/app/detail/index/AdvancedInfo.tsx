@@ -1,8 +1,16 @@
 import MyIcon from '@/components/Icon';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import type { AppDetailType } from '@/types/app';
-import { useCopyData } from '@/utils/tools';
 import { Separator } from '@sealos/shadcn-ui/separator';
+import { Button } from '@sealos/shadcn-ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@sealos/shadcn-ui/table';
 import {
   Tooltip,
   TooltipContent,
@@ -12,195 +20,286 @@ import {
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
-import styles from '@/components/app/detail/index/index.module.scss';
+import { useRouter } from 'next/router';
+import { FileCog, HardDrive, Variable } from 'lucide-react';
 
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 
-const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
+interface AdvancedInfoProps {
+  app?: AppDetailType;
+  containerClassName?: string;
+  contentClassName?: string;
+}
+
+const AdvancedInfo = ({
+  app = MOCK_APP_DETAIL,
+  containerClassName,
+  contentClassName
+}: AdvancedInfoProps) => {
   const { t } = useTranslation();
-  const { copyData } = useCopyData();
+  const router = useRouter();
   const [detailConfigMap, setDetailConfigMap] = useState<{
     mountPath: string;
     value: string;
   }>();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const handleManage = (scrollTo: string) => {
+    router.push(`/app/edit?name=${app.appName}&scrollTo=${scrollTo}`);
+  };
+  const rootClassName = containerClassName?.length ? containerClassName : '';
 
   return (
-    <div className="px-8">
-      <div>
-        <button
-          type="button"
-          className="flex items-center w-full h-[52px] text-left py-4 px-0 hover:bg-transparent transition-colors"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <div className="text-zinc-900 text-sm font-bold">{t('Advanced Configuration')}</div>
-
-          <div className="ml-5 flex items-center text-xs font-normal text-zinc-600">
-            <span>
-              {t('Command')}: {app.runCMD || 'Not Configured'}
-            </span>
-            <Separator orientation="vertical" className="h-3 mx-4 bg-zinc-300" />
-            <span>
-              {t('Environment Variables')}: {app.envs?.length}
-            </span>
-            <Separator orientation="vertical" className="h-3 mx-4 bg-zinc-300" />
-            <span>ConfigMaps: {app.configMapList?.length}</span>
-            <Separator orientation="vertical" className="h-3 mx-4 bg-zinc-300" />
-            <span>
-              {t('Storage')}: {app.storeList?.length}
-            </span>
+    <div className={`grid grid-cols-2 w-full gap-2 overflow-y-auto ${rootClassName}`}>
+      <div className="col-span-2 h-fit bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-0.5">
+            <div className="text-base font-medium text-zinc-900">{t('Command')}</div>
+            <div className="text-sm font-normal text-zinc-500">
+              {t('If no, the default command is used')}
+            </div>
           </div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-command')}
+          >
+            {t('Manage')}
+          </Button>
+        </div>
 
-          <div className="ml-auto">
-            <ChevronDown
-              className={`w-5 h-5 text-zinc-600 transition-transform ${
-                isExpanded ? 'rotate-180' : ''
-              }`}
-            />
-          </div>
-        </button>
-        {isExpanded && (
-          <div>
-            <div className="mt-2 flex gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-normal text-zinc-600">
-                  <div>{t('Command')}</div>
-                  <div className="rounded border border-zinc-200 bg-zinc-50 p-3 mt-2">
-                    {[
-                      { label: 'Command', value: app.runCMD || 'Not Configured' },
-                      { label: 'Parameters', value: app.cmdParam || 'Not Configured' }
-                    ].map((item, index) => (
-                      <div key={item.label} className={index > 0 ? 'mt-3' : ''}>
-                        <div className="flex">
-                          <div className="flex-[0_0_80px] min-w-0">{t(item.label)}</div>
-                          <div className="text-zinc-900">{item.value}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-4 text-xs font-normal text-zinc-600">
-                  <div>{t('Environment Variables')}</div>
-                  <div className="rounded border border-zinc-200 bg-zinc-50 p-3 mt-2">
-                    {app.envs?.length > 0 ? (
-                      <div className="flex flex-col border border-zinc-200 bg-white rounded-md">
-                        {app.envs.map((env, index) => {
-                          const valText = env.value
-                            ? env.value
-                            : env.valueFrom
-                            ? 'value from | ***'
-                            : '';
-                          return (
-                            <div
-                              key={env.key}
-                              className={`flex gap-6 px-2.5 py-2 ${
-                                index !== app.envs.length - 1 ? 'border-b border-zinc-200' : ''
-                              }`}
-                            >
-                              <div className="flex-1 max-w-[40%] break-words">{env.key}</div>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div
-                                      className={`flex-1 ${styles.textEllipsis}`}
-                                      style={{
-                                        userSelect: 'auto',
-                                        cursor: 'pointer'
-                                      }}
-                                      onClick={() => copyData(valText)}
-                                    >
-                                      {valText}
-                                    </div>
-                                  </TooltipTrigger>
-                                  {valText && (
-                                    <TooltipContent>
-                                      <p>{valText}</p>
-                                    </TooltipContent>
-                                  )}
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center w-full h-8 text-zinc-600 text-xs rounded">
-                        {t('no_data_available')}
-                      </div>
-                    )}
-                  </div>
-                </div>
+        <div className="grid gap-4 md:grid-cols-2 md:gap-3">
+          {[
+            { label: 'Command', value: app.runCMD || 'Not Configured' },
+            { label: 'Arguments', value: app.cmdParam || 'Not Configured' }
+          ].map((item) => (
+            <div key={item.label} className="flex flex-col gap-3">
+              <div className="text-sm font-medium leading-none text-neutral-500">
+                {t(item.label)}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-normal text-zinc-600">
-                  <div>{t('Configuration File')}</div>
-                  <div className="rounded border border-zinc-200 bg-zinc-50 p-3 mt-2">
-                    {app.configMapList?.length > 0 ? (
-                      <div className="rounded-md overflow-hidden bg-white border border-zinc-200">
-                        {app.configMapList.map((item, index) => (
-                          <div
-                            key={item.mountPath}
-                            className={`flex items-center px-3.5 py-2 cursor-pointer hover:bg-zinc-50 ${
-                              index !== app.configMapList.length - 1
-                                ? 'border-b border-zinc-200'
-                                : ''
-                            }`}
-                            onClick={() =>
-                              setDetailConfigMap({ mountPath: item.mountPath, value: item.value })
-                            }
-                          >
-                            <MyIcon name={'configMap'} width={'24px'} height={'24px'} />
-                            <div className="ml-4 flex-1 min-w-0">
-                              <div className="font-bold text-zinc-900">{item.mountPath}</div>
-                              <div className={`${styles.textEllipsis} text-zinc-600 text-sm`}>
-                                {item.value}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center w-full h-8 text-zinc-600 text-xs rounded">
-                        {t('no_data_available')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-4 text-xs font-normal text-zinc-600">
-                  <div>{t('Storage')}</div>
-                  <div className="rounded border border-zinc-200 bg-zinc-50 p-3 mt-2">
-                    {app.storeList?.length > 0 ? (
-                      <div className="rounded-md overflow-hidden bg-white border border-zinc-200">
-                        {app.storeList.map((item, index) => (
-                          <div
-                            key={item.path}
-                            className={`flex items-center px-3.5 py-2 ${
-                              index !== app.storeList.length - 1 ? 'border-b border-zinc-200' : ''
-                            }`}
-                          >
-                            <MyIcon name={'store'} width={'24px'} height={'24px'} />
-                            <div className="ml-4 flex-1 min-w-0">
-                              <div className="text-zinc-900 font-bold">{item.path}</div>
-                              <div className={`${styles.textEllipsis} text-zinc-600 text-sm`}>
-                                {item.value} Gi
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center w-full h-8 text-zinc-600 text-xs rounded">
-                        {t('no_data_available')}
-                      </div>
-                    )}
-                  </div>
-                </div>
+              <div
+                className={`h-10 flex items-center rounded-lg bg-zinc-50 border border-zinc-200 px-3 py-2 text-sm ${
+                  item.value === 'Not Configured' ? 'text-zinc-500' : 'text-zinc-900'
+                }`}
+              >
+                {item.value}
               </div>
             </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="col-span-2 bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="text-base font-medium text-zinc-900">{t('Environment Variables')}</div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-envs')}
+          >
+            {t('Manage')}
+          </Button>
+        </div>
+        {app.envs?.length > 0 ? (
+          <div className="border border-zinc-200 rounded-xl overflow-hidden">
+            <Table className="[&_th]:border-b [&_th]:border-r [&_th:last-child]:border-r-0 [&_td]:border-b [&_td]:border-r [&_td:last-child]:border-r-0 [&_tr:last-child_td]:border-b-0 [&_tbody_tr:nth-child(even)]:bg-zinc-50">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[240px] h-auto py-2 font-medium text-zinc-500 bg-zinc-50 !rounded-bl-none">
+                    {t('Key')}
+                  </TableHead>
+                  <TableHead className="h-auto py-2 font-medium text-zinc-500 bg-zinc-50 !rounded-br-none">
+                    {t('Value')}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {app.envs.map((env) => {
+                  const valText = env.value ? env.value : env.valueFrom ? 'value from | ***' : '';
+                  return (
+                    <TableRow key={env.key}>
+                      <TableCell className="text-sm font-normal text-zinc-900">{env.key}</TableCell>
+                      <TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm text-zinc-900 font-normal truncate block cursor-default">
+                                {valText}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="rounded-xl">
+                              <p className="max-w-xs break-all">{valText}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center w-full flex-1 p-4">
+            <button type="button" className="w-full" onClick={() => handleManage('settings-envs')}>
+              <div className="flex items-center justify-center w-full h-24">
+                <div className="flex items-center justify-center flex-col gap-3">
+                  <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                    <Variable className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                  </div>
+                  <div className="text-zinc-900 text-sm font-semibold flex flex-col gap-1">
+                    {t('no_data_available')}
+                    <div className="text-xs font-normal text-zinc-500">
+                      {t('Click Manage to add environment variable')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </button>
           </div>
         )}
       </div>
+
+      <div className="bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-base font-medium text-zinc-900">{t('Configmaps')}</div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-configmaps')}
+          >
+            {t('Manage')}
+          </Button>
+        </div>
+        {app.configMapList?.length > 0 ? (
+          <div className="space-y-1">
+            {app.configMapList.map((item) => (
+              <div
+                key={item.mountPath}
+                className="flex items-center gap-3 px-3 py-[10px] bg-zinc-50 rounded-lg cursor-pointer hover:bg-zinc-100 transition-colors"
+                onClick={() => setDetailConfigMap({ mountPath: item.mountPath, value: item.value })}
+              >
+                <MyIcon
+                  name="configMapColor"
+                  w="24px"
+                  h="24px"
+                  color="#a1a1aa"
+                  className="shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-zinc-900 truncate">{item.mountPath}</p>
+                  <p className="text-xs text-neutral-500 truncate">{item.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center w-full flex-1 p-4">
+            <button
+              type="button"
+              className="w-full"
+              onClick={() => handleManage('settings-configmaps')}
+            >
+              <div className="flex items-center justify-center w-full h-24">
+                <div className="flex items-center justify-center flex-col gap-3">
+                  <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                    <FileCog className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                  </div>
+                  <div className="text-zinc-900 text-sm font-semibold flex flex-col gap-1">
+                    {t('no_data_available')}
+                    <div className="text-xs font-normal text-zinc-500">
+                      {t('Click Manage to add configmap')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-base font-medium text-zinc-900">{t('Local Storage')}</div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-storage')}
+          >
+            {t('Manage')}
+          </Button>
+        </div>
+        {app.storeList?.length > 0 ? (
+          <div className="space-y-1">
+            {app.storeList.map((item) => (
+              <div
+                key={item.path}
+                className="flex items-center gap-3 px-3 py-[10px] bg-zinc-50 rounded-lg"
+              >
+                <MyIcon name="storeColor" w="24px" h="24px" color="#a1a1aa" className="shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-zinc-900 truncate">{item.path}</p>
+                  <p className="text-xs text-neutral-500">{item.value} Gi</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center w-full flex-1 p-4">
+            <button
+              type="button"
+              className="w-full"
+              onClick={() => handleManage('settings-storage')}
+            >
+              <div className="flex items-center justify-center w-full h-24">
+                <div className="flex items-center justify-center flex-col gap-3">
+                  <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                    <HardDrive className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                  </div>
+                  <div className="text-zinc-900 text-sm font-semibold flex flex-col gap-1">
+                    {t('no_data_available')}
+                    <div className="text-xs font-normal text-zinc-500">
+                      {t('Click Manage to add storage')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* TODO: Add probe management */}
+      <div className="col-span-2 bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-base font-medium text-zinc-900">{t('Probe')}</div>
+          {/* <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-probe')}
+          >
+            {t('Manage')}
+          </Button> */}
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            { title: 'Startup', empty: 'No startup added yet' },
+            { title: 'Liveness', empty: 'No liveness added yet' },
+            { title: 'Readiness', empty: 'No readiness added yet' }
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="border border-zinc-200 rounded-xl p-4 bg-white flex flex-col gap-2"
+            >
+              <div className="text-sm font-medium text-zinc-500 border-b border-dashed border-zinc-200 pb-2 ">
+                {t(item.title)}
+              </div>
+              <div className="text-sm font-medium text-zinc-900 text-center py-6">
+                {t(item.empty)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {detailConfigMap && (
         <ConfigMapDetailModal {...detailConfigMap} onClose={() => setDetailConfigMap(undefined)} />
       )}

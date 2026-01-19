@@ -1,4 +1,4 @@
-import { Column, Table as ReactTable, flexRender } from '@tanstack/react-table';
+import { Column, Row, Table as ReactTable, flexRender } from '@tanstack/react-table';
 import { CSSProperties } from 'react';
 import { Loading } from '@sealos/shadcn-ui/loading';
 import { cn } from '@sealos/shadcn-ui';
@@ -27,15 +27,20 @@ export function BaseTable<T extends unknown>({
   isLoading,
   isHeaderFixed = false,
   className,
+  rowClassName,
   ...props
 }: {
   table: ReactTable<T>;
   isLoading: boolean;
   isHeaderFixed?: boolean;
   className?: string;
+  rowClassName?: (row: Row<T>, rowIndex: number) => string;
 } & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('relative w-full overflow-auto', className)} {...props}>
+    <div
+      className={cn('relative w-full h-full overflow-auto scrollbar-default', className)}
+      {...props}
+    >
       <Table>
         <TableHeader className={cn('z-10', isHeaderFixed && 'sticky top-0')}>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -72,7 +77,10 @@ export function BaseTable<T extends unknown>({
             </TableRow>
           ) : (
             table.getRowModel().rows.map((row, rowIndex) => (
-              <TableRow key={row.id} className="text-sm !border-b border-zinc-100">
+              <TableRow
+                key={row.id}
+                className={cn('text-sm !border-b border-zinc-100', rowClassName?.(row, rowIndex))}
+              >
                 {row.getVisibleCells().map((cell) => {
                   const isPinned = cell.column.getIsPinned();
                   return (
@@ -81,7 +89,7 @@ export function BaseTable<T extends unknown>({
                       className="px-4 py-2 text-zinc-900"
                       style={{
                         ...getCommonPinningStyles(cell.column),
-                        backgroundColor: isPinned ? 'white' : undefined
+                        backgroundColor: isPinned ? 'inherit' : undefined
                       }}
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

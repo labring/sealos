@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
-import { Box } from '@chakra-ui/react';
-
 export default function DynamicTime() {
   const [time, setTime] = useState('--:--:--');
 
@@ -14,5 +12,5 @@ export default function DynamicTime() {
     return () => clearInterval(timer);
   }, []);
 
-  return <Box>{time}</Box>;
+  return <span>{time}</span>;
 }

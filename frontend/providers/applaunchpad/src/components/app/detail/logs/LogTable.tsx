@@ -47,6 +47,7 @@ export const LogTable = ({
   const [hiddenFieldCount, setHiddenFieldCount] = useState(0);
   const [visibleFieldCount, setVisibleFieldCount] = useState(0);
   const isJsonMode = formHook.watch('isJsonMode');
+  const isOnlyStderr = formHook.watch('isOnlyStderr');
   const { exportLogs } = useLogStore();
 
   const generateFieldList = useCallback((data: any[], prevFieldList: FieldItem[] = []) => {
@@ -110,7 +111,11 @@ export const LogTable = ({
             <span
               className={cn(
                 'text-xs font-normal leading-4',
-                row.original.stream === 'stderr' ? 'text-red-600' : 'text-gray-600',
+                isOnlyStderr
+                  ? row.original.stream === 'stderr'
+                    ? 'text-red-600'
+                    : 'text-gray-600'
+                  : 'text-gray-600',
                 field.accessorKey === '_msg' && 'max-w-[600px] whitespace-pre-wrap break-words'
               )}
             >
@@ -122,7 +127,7 @@ export const LogTable = ({
           isError: (row: any) => row.stream === 'stderr'
         }
       }));
-  }, [fieldList, t]);
+  }, [fieldList, isOnlyStderr, t]);
 
   const table = useReactTable({
     data: data,
@@ -132,15 +137,15 @@ export const LogTable = ({
   });
 
   return (
-    <div className="flex flex-col w-full h-fit min-h-full">
+    <div className="flex flex-col w-full h-full">
       <div
         className={cn(
-          'px-6 py-4 min-h-16 h-fit flex items-center flex-wrap justify-between border-b border-zinc-200',
-          onOpenField ? 'pb-6' : ''
+          'px-5 pt-4 pb-3 min-h-16 flex items-center flex-wrap justify-between border-b border-zinc-200',
+          onOpenField ? 'pb-4' : ''
         )}
       >
         <div className="flex items-center justify-between gap-4">
-          <span className="text-zinc-900 font-medium text-lg">{t('Log')}</span>
+          <span className="text-zinc-900 font-medium text-base">{t('Log')}</span>
           {isJsonMode && (
             <div className="h-10 overflow-visible">
               <Button
@@ -213,8 +218,16 @@ export const LogTable = ({
       </div>
 
       {data.length > 0 ? (
-        <div className="w-full h-fit overflow-auto py-6 px-6">
-          <BaseTable className="" table={table} isLoading={isLoading} isHeaderFixed={true} />
+        <div className="w-full h-full flex-1 min-h-0 py-6 px-6">
+          <BaseTable
+            className=""
+            table={table}
+            isLoading={isLoading}
+            isHeaderFixed={true}
+            rowClassName={(row) =>
+              row.original?.stream === 'stderr' ? 'bg-red-50 hover:bg-red-50' : ''
+            }
+          />
         </div>
       ) : (
         <div className="flex items-center justify-center flex-col h-full flex-1 gap-3">

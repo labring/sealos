@@ -9,7 +9,6 @@ import React, { useEffect } from 'react';
 import AppBaseInfo from '@/components/app/detail/index/AppBaseInfo';
 import Pods from '@/components/app/detail/index/Pods';
 import DetailLayout from '@/components/layouts/DetailLayout';
-import AdvancedInfo from '@/components/app/detail/index/AdvancedInfo';
 import { track } from '@sealos/gtm';
 
 const AppMainInfo = dynamic(() => import('@/components/app/detail/index/AppMainInfo'), {
@@ -49,9 +48,6 @@ const AppDetail = ({ appName }: { appName: string }) => {
             {appDetail ? <AppMainInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
           </div>
         </div>
-        {/* <div className="bg-white rounded-lg mb-1.5">
-          <AdvancedInfo app={appDetail} />
-        </div> */}
         <div className="flex-1">
           <Pods pods={appDetailPods} appName={appName} />
         </div>

@@ -7,20 +7,20 @@ import { cn } from '@sealos/shadcn-ui';
 
 const map = {
   blue: {
-    backgroundColor: 'rgba(229, 243, 255, 0.3)',
+    backgroundColor: 'rgba(73, 174, 255, 0.3)',
     lineColor: '#49AEFF'
   },
   green: {
-    backgroundColor: 'rgba(214, 245, 241, 0.3)',
+    backgroundColor: 'rgba(0, 209, 181, 0.3)',
     lineColor: '#00D1B5'
   },
   deepBlue: {
-    backgroundColor: 'rgba(47, 112, 237, 0.3)',
-    lineColor: '#3293EC'
+    backgroundColor: 'rgba(81, 125, 255, 0.3)',
+    lineColor: '#517DFF'
   },
   purple: {
-    backgroundColor: 'rgba(211, 190, 255, 0.3)',
-    lineColor: '#8172D8'
+    backgroundColor: 'rgba(139, 139, 255, 0.3)',
+    lineColor: '#8B8BFF'
   }
 };
 
@@ -39,7 +39,7 @@ const PodLineChart = ({
 }) => {
   const { screenWidth } = useGlobalStore();
   const xData =
-    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('MM-DD HH:mm') : '')) ||
+    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('YYYY-MM-DD HH:mm') : '')) ||
     new Array(30).fill(0);
   const yData = data?.yData || new Array(30).fill('');
 
@@ -110,20 +110,25 @@ const PodLineChart = ({
         type: 'line'
       },
       appendToBody: true,
-      borderRadius: 6,
+      extraCssText: `
+        box-shadow: none;
+        padding: 0;
+        background-color: transparent;
+        border: none;
+      `,
       formatter: (params: any[]) => {
         const xValue = params[0]?.axisValue;
-        const yValue = params[0]?.value;
+        const yValue = params[0]?.value ?? 0;
         return `
-          <div>
-            <div style="font-size: 12px; margin-bottom: 6px; font-weight: 500; color: #09090B;">
+          <div class="bg-white min-w-[127px] rounded-lg py-3 px-[10px] border-[0.5px] border-zinc-200 shadow-xs">
+            <div class="text-xs font-medium text-zinc-900 mb-1">
               ${xValue || ''}
             </div>
-            <div style="display: flex; align-items: center; font-size: 12px; font-weight: 500;">
-              <span style="display: inline-block; width: 8px; height: 8px; background-color: ${
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-xs" style="background: ${
                 map[type].lineColor
-              }; margin-right: 8px; border-radius: 2px;"></span>
-              <span style="color: #09090B;">${yValue || 0}%</span>
+              }"></span>
+              <span class="text-xs font-medium text-zinc-900">${yValue}%</span>
             </div>
           </div>
         `;

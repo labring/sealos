@@ -1,14 +1,13 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Check } from 'lucide-react';
 import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
 import dayjs from 'dayjs';
 import { LineStyleMap } from '@/constants/monitor';
-import { Flex, FlexProps, Text } from '@chakra-ui/react';
-import MyIcon from '../Icon';
-import { useTranslation } from 'next-i18next';
-import styles from './index.module.css';
+import { Button } from '@sealos/shadcn-ui/button';
+import { cn } from '@sealos/shadcn-ui';
 
-type MonitorChart = FlexProps & {
+type MonitorChartProps = React.HTMLAttributes<HTMLDivElement> & {
   data: {
     xData: string[];
     yData: {
@@ -18,12 +17,35 @@ type MonitorChart = FlexProps & {
       lineStyleType?: string;
     }[];
   };
-  type?: 'blue' | 'deepBlue' | 'green' | 'purple';
+  type?: 'blue' | 'deepBlue' | 'green' | 'purple' | 'cpu' | 'memory' | 'storage' | 'network';
   title: string;
   yAxisLabelFormatter?: (value: number) => string;
   yDataFormatter?: (values: number[]) => number[];
+  xAxisLabelFormatter?: (value: string) => string;
+  xAxisTooltipFormatter?: (value: string) => string;
+  yAxisConfig?: {
+    min?: number;
+    max?: number;
+    interval?: number;
+    splitNumber?: number;
+  };
+  displayNameFormatter?: (params: {
+    seriesName: string;
+    seriesIndex: number;
+    appName?: string;
+    type?: string;
+  }) => string;
+  seriesNameFormatter?: (params: {
+    seriesName: string;
+    displayName: string;
+    seriesIndex: number;
+    appName?: string;
+    type?: string;
+  }) => string;
   unit?: string;
   isShowLegend?: boolean;
+  lineWidth?: number;
+  appName?: string;
 };
 
 const MonitorChart = ({
@@ -32,14 +54,45 @@ const MonitorChart = ({
   title,
   yAxisLabelFormatter,
   yDataFormatter,
+  xAxisLabelFormatter,
+  xAxisTooltipFormatter,
+  yAxisConfig,
+  displayNameFormatter,
+  seriesNameFormatter,
   unit,
   isShowLegend = true,
+  lineWidth = 1.2,
+  appName,
+  className,
   ...props
-}: MonitorChart) => {
+}: MonitorChartProps) => {
   const { screenWidth } = useGlobalStore();
   const chartDom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
-  const { t } = useTranslation();
+  const seriesNames = useMemo(() => data?.yData?.map((item) => item.name) || [], [data?.yData]);
+  const seriesIndexMap = useMemo(
+    () => new Map(seriesNames.map((name, index) => [name, index])),
+    [seriesNames]
+  );
+  const [selectedSeries, setSelectedSeries] = useState<Set<string>>(new Set(seriesNames));
+
+  useEffect(() => {
+    setSelectedSeries(new Set(seriesNames));
+  }, [seriesNames]);
+
+  const getDisplayName = useCallback(
+    (seriesName: string, seriesIndex: number) => {
+      if (displayNameFormatter) {
+        return displayNameFormatter({ seriesName, seriesIndex, appName, type });
+      }
+      if (type === 'cpu' || type === 'memory') {
+        const displayIndex = String(seriesIndex + 1).padStart(2, '0');
+        return `Replica-${displayIndex}`;
+      }
+      return seriesName;
+    },
+    [appName, displayNameFormatter, type]
+  );
 
   const option = useMemo(
     () => ({
@@ -53,33 +106,51 @@ const MonitorChart = ({
           border: none;
         `,
         formatter: (params: any) => {
-          let axisValue = params[0]?.axisValue;
+          const axisIndex = params?.[0]?.dataIndex ?? 0;
+          const rawTime = data?.xData?.[axisIndex];
+          const axisValue = rawTime
+            ? xAxisTooltipFormatter
+              ? xAxisTooltipFormatter(rawTime)
+              : dayjs(parseFloat(rawTime) * 1000).format('YYYY-MM-DD HH:mm')
+            : params[0]?.axisValue;
           return `
-            <div class="${styles.tooltip}">
-              <div class="${styles.tooltipHeader}">${axisValue}</div>
+            <div class="bg-white w-[260px] rounded-lg p-4 border-[0.5px] border-zinc-200 shadow-xs">
+              <div class="text-sm font-medium text-zinc-900 mb-1.5 pb-1.5 border-b border-zinc-100 flex">
+                ${axisValue}
+              </div>
               ${params
-                .map(
-                  (item: any) => `
-                    <div class="${styles.tooltipItem}">
-                      <span class="${styles.tooltipDot}" style="background: ${item.color}"></span>
-                      <span class="${styles.tooltipName}">${item.seriesName}</span>
-                      <span class="${styles.tooltipValue}">${item.value}${unit || ''}</span>
-                      <button class="${styles.tooltipButton}" onclick="(() => {
-                        const currentUrl = window.location.href;
-                        const urlParams = currentUrl.split('?')[1] || '';
-                        const baseUrl = window.location.pathname.replace('/monitor', '/logs');
-                        const separator = urlParams ? '?' : '';
-                        window.location.href = baseUrl + separator + urlParams + (urlParams ? '&' : '?') + 'pod=${
-                          item.seriesName
-                        }';
-                      })()">${t('logs')}
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <path fill-rule="evenodd" clip-rule="evenodd" d="M6.64645 2.64645C6.45118 2.84171 6.45118 3.15829 6.64645 3.35355L8.79289 5.5H2C1.72386 5.5 1.5 5.72386 1.5 6C1.5 6.27614 1.72386 6.5 2 6.5H8.79289L6.64645 8.64645C6.45118 8.84171 6.45118 9.15829 6.64645 9.35355C6.84171 9.54882 7.15829 9.54882 7.35355 9.35355L10.3536 6.35355C10.5488 6.15829 10.5488 5.84171 10.3536 5.64645L7.35355 2.64645C7.15829 2.45118 6.84171 2.45118 6.64645 2.64645Z" fill="#667085"/>
-                        </svg>
-                      </button>
+                .map((item: any) => {
+                  const seriesName = item.seriesName || '';
+                  const seriesIndex = seriesIndexMap.get(seriesName) ?? 0;
+                  const displayName = getDisplayName(seriesName, seriesIndex);
+                  const displaySeriesName = seriesNameFormatter
+                    ? seriesNameFormatter({
+                        seriesName,
+                        displayName,
+                        seriesIndex,
+                        appName,
+                        type
+                      })
+                    : appName
+                    ? `${displayName}-${appName}`
+                    : seriesName;
+                  return `
+                    <div class="flex flex-col gap-[2px] mb-1.5">
+                      <div class="flex gap-2 items-center">
+                        <span class="inline-block w-2 h-2 rounded-full" style="background: ${
+                          item.color
+                        }"></span>
+                        <div class="text-sm font-medium text-zinc-900">${displayName}</div>
+                      </div>
+                      <div class="flex items-center justify-between gap-4">
+                       <div class="text-sm font-normal text-zinc-500 truncate">${displaySeriesName}</div>
+                        <span class="min-w-14 w-fit text-right text-sm font-medium text-zinc-900">${
+                          item.value
+                        }${unit || ''}</span>
+                      </div>
                     </div>
-                  `
-                )
+                  `;
+                })
                 .join('')}
             </div>
           `;
@@ -123,8 +194,14 @@ const MonitorChart = ({
             if (index === 0 || index === total - 1) return false;
             return index % Math.floor(total / 6) === 0;
           },
+          formatter: (value: string) =>
+            xAxisLabelFormatter
+              ? xAxisLabelFormatter(value)
+              : dayjs(parseFloat(value) * 1000).format('MM-DD HH:mm'),
           textStyle: {
-            color: '#667085'
+            fontSize: 14,
+            fontWeight: 400,
+            color: '#71717A'
           },
           hideOverlap: true
         },
@@ -138,16 +215,22 @@ const MonitorChart = ({
             type: 'solid'
           }
         },
-        data: data?.xData?.map((time) => dayjs(parseFloat(time) * 1000).format('MM-DD HH:mm'))
+        data: data?.xData || []
       },
       yAxis: {
         type: 'value',
-        splitNumber: 2,
-        max: 100,
-        min: 0,
+        splitNumber: yAxisConfig?.splitNumber ?? 4,
+        interval: yAxisConfig?.interval ?? 25,
+        max: yAxisConfig?.max ?? 100,
+        min: yAxisConfig?.min ?? 0,
         boundaryGap: false,
         axisLabel: {
-          formatter: yAxisLabelFormatter
+          formatter: yAxisLabelFormatter,
+          textStyle: {
+            fontSize: 14,
+            fontWeight: 400,
+            color: '#71717A'
+          }
         },
         axisLine: {
           show: false
@@ -159,35 +242,55 @@ const MonitorChart = ({
           }
         }
       },
-      series: data?.yData?.map((item, index) => {
-        return {
-          name: item.name,
-          data: item.data,
-          type: 'line',
-          smooth: true,
-          showSymbol: false,
-          animationDuration: 300,
-          animationEasingUpdate: 'linear',
-          areaStyle: {
-            color: LineStyleMap[index % LineStyleMap.length].backgroundColor
-          },
-          lineStyle: {
-            width: '1',
-            color: LineStyleMap[index % LineStyleMap.length].lineColor,
-            type: item?.lineStyleType || 'solid'
-          },
-          itemStyle: {
-            width: 1.5,
-            color: LineStyleMap[index % LineStyleMap.length].lineColor
-          },
-          emphasis: {
-            // highlight
-            disabled: true
-          }
-        };
-      })
+      series: data?.yData
+        ?.map((item, index) => {
+          if (!selectedSeries.has(item.name)) return null;
+          const formattedData = yDataFormatter ? yDataFormatter(item.data) : item.data;
+          return {
+            name: item.name,
+            data: formattedData,
+            type: 'line',
+            smooth: false,
+            showSymbol: false,
+            animationDuration: 300,
+            animationEasingUpdate: 'linear',
+            lineStyle: {
+              width: lineWidth,
+              color: LineStyleMap[index % LineStyleMap.length].lineColor,
+              type: item?.lineStyleType || 'solid'
+            },
+            itemStyle: {
+              width: 1.5,
+              color: LineStyleMap[index % LineStyleMap.length].lineColor
+            },
+            emphasis: {
+              // highlight
+              disabled: true
+            }
+          };
+        })
+        .filter(Boolean)
     }),
-    [data?.xData, data?.yData]
+    [
+      appName,
+      data?.xData,
+      data?.yData,
+      getDisplayName,
+      lineWidth,
+      selectedSeries,
+      seriesIndexMap,
+      seriesNameFormatter,
+      type,
+      unit,
+      xAxisLabelFormatter,
+      xAxisTooltipFormatter,
+      yAxisConfig?.interval,
+      yAxisConfig?.max,
+      yAxisConfig?.min,
+      yAxisConfig?.splitNumber,
+      yAxisLabelFormatter,
+      yDataFormatter
+    ]
   );
 
   useEffect(() => {
@@ -218,32 +321,74 @@ const MonitorChart = ({
   }, [screenWidth]);
 
   return (
-    <Flex position={'relative'} height={'100%'} gap={'25px'}>
-      <Flex ref={chartDom} flex={'1 1 80%'} />
+    <div className={cn('relative w-full h-full min-h-[200px] flex gap-6', className)} {...props}>
+      <div ref={chartDom} className="flex-1 min-w-0 h-full min-h-[200px]" />
       {isShowLegend && (
-        <Flex
-          justifyContent={'center'}
-          alignContent={'center'}
-          flexDirection={'column'}
-          flex={'1 0 20%'}
-          gap={'12px'}
-        >
-          {data?.yData?.map((item, index) => (
-            <Flex key={item?.name + index} alignItems={'center'} w={'fit-content'}>
-              <MyIcon
-                width={'16px'}
-                name="chart"
-                color={LineStyleMap[index % LineStyleMap.length].lineColor}
-                mr="6px"
-              />
-              <Text fontSize={'11px'} color={'grayModern.900'} fontWeight={500}>
-                {item?.name}
-              </Text>
-            </Flex>
-          ))}
-        </Flex>
+        <div className="flex flex-col gap-2 w-[217px] flex-[0_0_217px]">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-sm font-normal text-zinc-500">Replica filters</span>
+            <button
+              type="button"
+              className="text-sm font-normal text-blue-600 hover:underline"
+              onClick={() => setSelectedSeries(new Set(seriesNames))}
+            >
+              show all
+            </button>
+          </div>
+          <div className="max-h-[200px] overflow-y-auto scrollbar-hide">
+            {data?.yData?.map((item, index) => {
+              const isSelected = selectedSeries.has(item.name);
+              const displayName = getDisplayName(item.name, index);
+              return (
+                <Button
+                  key={item?.name + index}
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    setSelectedSeries((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(item.name)) {
+                        next.delete(item.name);
+                      } else {
+                        next.add(item.name);
+                      }
+                      return next;
+                    })
+                  }
+                  className={cn(
+                    'relative mb-2 flex h-9 w-[217px] items-center justify-between gap-2 px-3 border-[0.5px] rounded-lg shadow-none hover:bg-zinc-100',
+                    isSelected ? 'bg-zinc-100' : ''
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="relative h-3 w-4">
+                      <span
+                        className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full"
+                        style={{
+                          backgroundColor: LineStyleMap[index % LineStyleMap.length].lineColor
+                        }}
+                      />
+                      <span
+                        className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+                        style={{
+                          boxShadow: `0 0 0 2px ${
+                            LineStyleMap[index % LineStyleMap.length].lineColor
+                          }`
+                        }}
+                      />
+                    </span>
+                    <span className="text-sm font-normal text-zinc-900">{displayName}</span>
+                  </span>
+                  {isSelected && (
+                    <Check className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-blue-600" />
+                  )}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
       )}
-    </Flex>
+    </div>
   );
 };
 

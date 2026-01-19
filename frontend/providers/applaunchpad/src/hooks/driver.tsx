@@ -1,17 +1,11 @@
 import { useGuideStore } from '@/store/guide';
-import { Flex, Text, Box, Center, Image, Portal, ChakraProvider } from '@chakra-ui/react';
-import { theme } from '@/constants/theme';
 import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
 import { track } from '@sealos/gtm';
 import { CircleCheckBig, X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-
-// Wrapper component to provide Chakra context for driver popovers
-const ChakraWrapper = ({ children }: { children: React.ReactNode }) => (
-  <ChakraProvider theme={theme}>{children}</ChakraProvider>
-);
+import Image from 'next/image';
 
 let currentDriver: any = null;
 
@@ -58,58 +52,43 @@ export const applistDriverObj = (t: TFunction, nextStep: () => void): Config => 
         borderRadius: '12px 12px 12px 12px',
 
         PopoverBody: (
-          <ChakraWrapper>
-            <Box width={'250px'} bg={'#2563EB'} p={'12px'} borderRadius={'12px'} color={'#fff'}>
-              <Flex alignItems={'center'} justifyContent={'space-between'}>
-                <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                  {t('driver.create_launchpad')}
-                </Text>
-                <Box
-                  cursor={'pointer'}
-                  ml={'auto'}
-                  onClick={() => {
-                    track('guide_exit', {
-                      module: 'guide',
-                      guide_name: 'applaunchpad',
-                      duration_seconds:
-                        (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
-                      progress_step: 2
-                    });
+          <div className="w-[250px] bg-[#2563EB] p-3 rounded-xl text-white">
+            <div className="flex items-center justify-between">
+              <div className="text-white text-sm font-semibold">{t('driver.create_launchpad')}</div>
+              <div
+                className="cursor-pointer ml-auto"
+                onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'applaunchpad',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 2
+                  });
 
-                    startDriver(quitGuideDriverObj(t));
-                  }}
-                >
-                  <X width={'16px'} height={'16px'} />
-                </Box>
-              </Flex>
-              <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-                {t('driver.define_settings')}
-              </Text>
-              <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
-                <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                  2/4
-                </Text>
-                <Center
-                  color={'#fff'}
-                  fontSize={'14px'}
-                  fontWeight={500}
-                  cursor={'pointer'}
-                  borderRadius={'8px'}
-                  background={'rgba(255, 255, 255, 0.20)'}
-                  w={'fit-content'}
-                  h={'32px'}
-                  p={'8px'}
-                  onClick={() => {
-                    currentDriver.destroy();
-                    currentDriver = null;
-                    nextStep();
-                  }}
-                >
-                  {t('driver.next')}
-                </Center>
-              </Flex>
-            </Box>
-          </ChakraWrapper>
+                  startDriver(quitGuideDriverObj(t));
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </div>
+            </div>
+            <div className="mt-2 text-white/80 text-sm font-normal">
+              {t('driver.define_settings')}
+            </div>
+            <div className="flex justify-between items-center mt-4">
+              <div className="text-gray-900 text-[13px] font-medium">2/4</div>
+              <div
+                className="text-white text-sm font-medium cursor-pointer rounded-lg bg-white/20 w-fit h-8 px-2 flex items-center justify-center"
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                  nextStep();
+                }}
+              >
+                {t('driver.next')}
+              </div>
+            </div>
+          </div>
         )
       }
     }
@@ -172,65 +151,48 @@ export const detailDriverObj = (t: TFunction): Config => ({
         align: 'center',
         borderRadius: '12px 12px 12px 12px',
         PopoverBody: (
-          <ChakraWrapper>
-            <Box width={'250px'} bg={'#2563EB'} p={'12px'} borderRadius={'12px'} color={'#fff'}>
-              <Flex alignItems={'center'} justifyContent={'space-between'}>
-                <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                  {t('driver.access_application')}
-                </Text>
-                <Box
-                  cursor={'pointer'}
-                  ml={'auto'}
-                  onClick={() => {
-                    track('guide_exit', {
-                      module: 'guide',
-                      guide_name: 'applaunchpad',
-                      duration_seconds:
-                        (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
-                      progress_step: 4
-                    });
-                    startDriver(quitGuideDriverObj(t));
-                  }}
-                >
-                  <X width={'16px'} height={'16px'} />
-                </Box>
-              </Flex>
-              <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-                {t('driver.copy_address')}
-              </Text>
-              <Text color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-                {t('driver.click_anywhere')}
-              </Text>
-              <Flex alignItems={'center'} justifyContent={'space-between'} mt={'16px'}>
-                <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                  4/4
-                </Text>
-                <Center
-                  color={'#fff'}
-                  fontSize={'14px'}
-                  fontWeight={500}
-                  cursor={'pointer'}
-                  borderRadius={'8px'}
-                  background={'rgba(255, 255, 255, 0.20)'}
-                  w={'fit-content'}
-                  h={'32px'}
-                  p={'8px'}
-                  onClick={() => {
-                    track('guide_complete', {
-                      module: 'guide',
-                      guide_name: 'applaunchpad',
-                      duration_seconds:
-                        (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000
-                    });
+          <div className="w-[250px] bg-[#2563EB] p-3 rounded-xl text-white">
+            <div className="flex items-center justify-between">
+              <div className="text-white text-sm font-semibold">
+                {t('driver.access_application')}
+              </div>
+              <div
+                className="cursor-pointer ml-auto"
+                onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'applaunchpad',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 4
+                  });
+                  startDriver(quitGuideDriverObj(t));
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </div>
+            </div>
+            <div className="mt-2 text-white/80 text-sm font-normal">{t('driver.copy_address')}</div>
+            <div className="text-white/80 text-sm font-normal">{t('driver.click_anywhere')}</div>
+            <div className="flex items-center justify-between mt-4">
+              <div className="text-gray-900 text-[13px] font-medium">4/4</div>
+              <div
+                className="text-white text-sm font-medium cursor-pointer rounded-lg bg-white/20 w-fit h-8 px-2 flex items-center justify-center"
+                onClick={() => {
+                  track('guide_complete', {
+                    module: 'guide',
+                    guide_name: 'applaunchpad',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000
+                  });
 
-                    startDriver(quitGuideDriverObj(t));
-                  }}
-                >
-                  {t('driver.next')}
-                </Center>
-              </Flex>
-            </Box>
-          </ChakraWrapper>
+                  startDriver(quitGuideDriverObj(t));
+                }}
+              >
+                {t('driver.next')}
+              </div>
+            </div>
+          </div>
         )
       }
     }
@@ -285,67 +247,56 @@ export const quitGuideDriverObj = (t: TFunction, nextStep?: () => void): Config 
         side: 'bottom',
         align: 'end',
         PopoverBody: (
-          <ChakraWrapper>
-            <Box color={'black'} borderRadius={'16px'} w={'460px'}>
-              <Box w={'100%'} borderRadius={'16px'} px={'24px'}>
-                <Box>
-                  <Box mt={'32px'}>
-                    <CircleCheckBig size={32} color="#2563EB" />
-                  </Box>
-                  <Text my={'8px'} color={'#000'} fontSize={'20px'} fontWeight={600}>
-                    {t('driver.still_here')}
-                  </Text>
-                  <Text mt={'8px'} color={'#404040'} fontSize={'14px'} fontWeight={400}>
-                    {t('driver.find_guide_tip')}
-                  </Text>
-                  <Image mt={'20px'} src={'/guide-image.png'} alt="guide" />
-                </Box>
-                <Center
-                  mt={'20px'}
-                  h={'40px'}
-                  borderRadius={'8px'}
-                  border={'1px solid #E4E4E7'}
-                  background={'#FFF'}
-                  cursor={'pointer'}
-                  py={'20px'}
-                  px={'24px'}
-                  onClick={() => {
-                    if (currentDriver) {
-                      currentDriver.destroy();
-                      currentDriver = null;
-                    }
-                    window.location.href = '/';
-                  }}
-                >
-                  {t('driver.create_launchpad')}
-                </Center>
-                <Center
-                  mt={'12px'}
-                  mb={'20px'}
-                  h={'40px'}
-                  borderRadius={'8px'}
-                  border={'1px solid #E4E4E7'}
-                  background={'#FFF'}
-                  cursor={'pointer'}
-                  py={'20px'}
-                  px={'24px'}
-                  onClick={() => {
-                    if (currentDriver) {
-                      currentDriver.destroy();
-                      currentDriver = null;
-                    }
-                    sealosApp.runEvents('quitGuide', {
-                      appKey: 'system-applaunchpad',
-                      pathname: '/',
-                      messageData: { type: 'InternalAppCall', action: 'quitGuide' }
-                    });
-                  }}
-                >
-                  {t('driver.quit_guide')}
-                </Center>
-              </Box>
-            </Box>
-          </ChakraWrapper>
+          <div className="text-black rounded-2xl w-[460px]">
+            <div className="w-full rounded-2xl px-6">
+              <div>
+                <div className="mt-8">
+                  <CircleCheckBig size={32} color="#2563EB" />
+                </div>
+                <div className="my-2 text-black text-xl font-semibold">
+                  {t('driver.still_here')}
+                </div>
+                <div className="mt-2 text-[#404040] text-sm font-normal">
+                  {t('driver.find_guide_tip')}
+                </div>
+                <Image
+                  className="mt-5"
+                  src="/guide-image.png"
+                  alt="guide"
+                  width={412}
+                  height={300}
+                />
+              </div>
+              <div
+                className="mt-5 h-10 rounded-lg border border-[#E4E4E7] bg-white cursor-pointer py-5 px-6 flex items-center justify-center"
+                onClick={() => {
+                  if (currentDriver) {
+                    currentDriver.destroy();
+                    currentDriver = null;
+                  }
+                  window.location.href = '/';
+                }}
+              >
+                {t('driver.create_launchpad')}
+              </div>
+              <div
+                className="mt-3 mb-5 h-10 rounded-lg border border-[#E4E4E7] bg-white cursor-pointer py-5 px-6 flex items-center justify-center"
+                onClick={() => {
+                  if (currentDriver) {
+                    currentDriver.destroy();
+                    currentDriver = null;
+                  }
+                  sealosApp.runEvents('quitGuide', {
+                    appKey: 'system-applaunchpad',
+                    pathname: '/',
+                    messageData: { type: 'InternalAppCall', action: 'quitGuide' }
+                  });
+                }}
+              >
+                {t('driver.quit_guide')}
+              </div>
+            </div>
+          </div>
         )
       }
     }

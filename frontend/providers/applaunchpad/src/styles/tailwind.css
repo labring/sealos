@@ -32,7 +32,7 @@ body {
   overflow: hidden;
 }
 
-/* ========== 滚动条样式 ========== */
+/* ========== scrollbar styles ========== */
 .scrollbar-hide {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
@@ -40,6 +40,20 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
+}
+
+.scrollbar-default {
+  -ms-overflow-style: auto;
+  scrollbar-width: auto;
+}
+
+.scrollbar-default::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.scrollbar-default::-webkit-scrollbar-thumb {
+  background: rgba(189, 193, 197, 1) !important;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar {
@@ -76,7 +90,7 @@ div:hover::-webkit-scrollbar-thumb:hover {
   background: rgba(189, 193, 197, 1) !important;
 }
 
-/* ========== 组件样式 ========== */
+/* ========== component styles ========== */
 .table-cross {
   overflow: hidden;
   table-layout: fixed;
@@ -122,7 +136,7 @@ div:hover::-webkit-scrollbar-thumb:hover {
   overflow: hidden;
 }
 
-/* PingFang SC 字体类 */
+/* PingFang SC font class */
 .font-pingfang {
   font-family: 'PingFang SC', var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }

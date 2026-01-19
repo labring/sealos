@@ -1,11 +1,12 @@
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { LOG_ENABLED } from '@/store/static';
-import { LayoutDashboard, LineChart, FileClock } from 'lucide-react';
+import { LayoutDashboard, LineChart, FileClock, Cog } from 'lucide-react';
 
 export const ROUTES = {
   OVERVIEW: '/app/detail',
   MONITOR: '/app/detail/monitor',
+  ADVANCED: '/app/detail/advanced',
   LOGS: '/app/detail/logs'
 } as const;
 
@@ -50,7 +51,18 @@ export default function Sidebar() {
             path: ROUTES.LOGS
           }
         ]
-      : [])
+      : []),
+    {
+      label: t('Advanced Configuration'),
+      icon: (
+        <Cog
+          className={`w-6 h-6 stroke-[1.5] ${
+            router.pathname === ROUTES.ADVANCED ? 'text-zinc-900' : 'text-zinc-500'
+          }`}
+        />
+      ),
+      path: ROUTES.ADVANCED
+    }
   ];
 
   return (
