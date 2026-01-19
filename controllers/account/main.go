@@ -376,21 +376,6 @@ func main() {
 		setupLog.Error(err, "unable to connect to traffic mongo")
 		os.Exit(1)
 	}
-	var userTrafficMonitor *controllers.UserTrafficMonitor
-	if os.Getenv(controllers.EnvSubscriptionEnabled) == "true" {
-		userTrafficCtrl := controllers.NewUserTrafficController(accountReconciler, trafficDBClient)
-		go userTrafficCtrl.ProcessTrafficWithTimeRange()
-		if env.GetEnvWithDefault("SUPPORT_MONITOR_USER_TRAFFIC", "false") == _true {
-			userTrafficMonitor, err = controllers.NewUserTrafficMonitor(userTrafficCtrl)
-			if err != nil {
-				setupLog.Error(err, "unable to create user traffic monitor")
-				os.Exit(1)
-			}
-			userTrafficMonitor.Start()
-		}
-	} else {
-		setupLog.Info("skip user traffic controller")
-	}
 	workspaceTrafficProcessor := controllers.NewWorkspaceTrafficController(
 		accountReconciler,
 		trafficDBClient,
@@ -406,12 +391,6 @@ func main() {
 	go workspaceTrafficProcessor.ProcessTrafficWithTimeRange()
 	// workspaceSubscriptionProcessor.Start(ctx)
 	workspaceSubDebtProcessor.Start(ctx)
-
-	defer func() {
-		if userTrafficMonitor != nil {
-			userTrafficMonitor.Stop()
-		}
-	}()
 
 	//+kubebuilder:scaffold:builder
 
