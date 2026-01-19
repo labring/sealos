@@ -54,14 +54,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
+	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
+	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 )
 
 const (
 	userAnnotationCreatorKey = userv1.UserAnnotationCreatorKey
 	userAnnotationOwnerKey   = userv1.UserAnnotationOwnerKey
 	userLabelOwnerKey        = userv1.UserLabelOwnerKey
+	licenseLimitedCondition  = userv1.ConditionType("LicenseLimited")
 )
 
 // UserReconciler reconciles a User object
@@ -158,6 +161,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
+		Watches(&licensev1.License{}, handler.EnqueueRequestsFromMapFunc(r.licenseToUserRequests)).
 		Watches(&rbacv1.Role{}, ownerEventHandler).
 		Watches(&rbacv1.RoleBinding{}, ownerEventHandler).
 		Watches(&v1.Secret{}, ownerEventHandler).
@@ -177,6 +181,14 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	user, ok := obj.(*userv1.User)
 	if !ok {
 		return ctrl.Result{}, errors.New("obj convert user is error")
+	}
+
+	blocked, err := r.handleLicenseLimit(ctx, user)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	if blocked {
+		return ctrl.Result{RequeueAfter: r.minRequeueDuration}, nil
 	}
 
 	defer func() {
@@ -200,7 +212,7 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	if user.Status.Phase != userv1.UserUnknown {
 		user.Status.Phase = userv1.UserActive
 	}
-	err := r.updateStatus(ctx, client.ObjectKeyFromObject(obj), user.Status.DeepCopy())
+	err = r.updateStatus(ctx, client.ObjectKeyFromObject(obj), user.Status.DeepCopy())
 	if err != nil {
 		r.Recorder.Eventf(user, v1.EventTypeWarning, "SyncStatus", "Sync status %s is error: %v", user.Name, err)
 		return ctrl.Result{}, err
@@ -625,6 +637,70 @@ func (r *UserReconciler) updateStatus(ctx context.Context, nn types.NamespacedNa
 		original.Status = *status
 		return r.Client.Status().Update(ctx, original)
 	})
+}
+
+func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.User) (bool, error) {
+	if licensegate.HasActiveLicense() {
+		user.Status.Conditions = helper.DeleteCondition(user.Status.Conditions, licenseLimitedCondition)
+		return false, nil
+	}
+	userCount, err := r.countExistingUsers(ctx, user.Name)
+	if err != nil {
+		return false, err
+	}
+	if licensegate.AllowNewUser(userCount) {
+		return false, nil
+	}
+	if !r.isNewUser(user) {
+		return false, nil
+	}
+	limitCondition := &userv1.Condition{
+		Type:               licenseLimitedCondition,
+		Status:             v1.ConditionFalse,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             "LicenseLimitExceeded",
+		Message:            "license inactive: user limit reached",
+	}
+	user.Status.Phase = userv1.UserPending
+	user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, *limitCondition)
+	if err := r.updateStatus(ctx, client.ObjectKeyFromObject(user), user.Status.DeepCopy()); err != nil {
+		return false, err
+	}
+	r.Recorder.Eventf(user, v1.EventTypeWarning, "LicenseLimitExceeded", "license inactive, user limit reached: %d", licensegate.DefaultUserLimit)
+	return true, nil
+}
+
+func (r *UserReconciler) isNewUser(user *userv1.User) bool {
+	return user.Status.ObservedGeneration == 0 && len(user.Status.Conditions) == 0
+}
+
+func (r *UserReconciler) countExistingUsers(ctx context.Context, excludeName string) (int, error) {
+	userList := &userv1.UserList{}
+	if err := r.List(ctx, userList); err != nil {
+		return 0, err
+	}
+	count := 0
+	for i := range userList.Items {
+		if userList.Items[i].Name == excludeName {
+			continue
+		}
+		count++
+	}
+	return count, nil
+}
+
+func (r *UserReconciler) licenseToUserRequests(ctx context.Context, obj client.Object) []ctrl.Request {
+	userList := &userv1.UserList{}
+	if err := r.List(ctx, userList); err != nil {
+		r.Logger.Error(err, "list users for license change failed")
+		return nil
+	}
+	requests := make([]ctrl.Request, 0, len(userList.Items))
+	for i := range userList.Items {
+		requests = append(requests, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(&userList.Items[i])})
+	}
+	return requests
 }
 
 // RandTimeDurationBetween get a random time duration between min and max
