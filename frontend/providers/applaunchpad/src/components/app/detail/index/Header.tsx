@@ -66,7 +66,7 @@ const Header = ({
   }, [appName, executeOperation, refetch, t]);
 
   return (
-    <div className="flex h-20 w-full items-center px-6 justify-between">
+    <div className="fixed top-0 left-0 right-0 z-10 flex h-20 w-full items-center px-6 justify-between bg-zinc-50">
       <div className="flex items-center gap-3">
         <div
           className="flex cursor-pointer items-center gap-2 pl-2"

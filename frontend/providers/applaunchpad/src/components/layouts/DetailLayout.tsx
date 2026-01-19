@@ -51,7 +51,7 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-50">
+    <div className="h-screen bg-zinc-50 relative flex flex-col overflow-hidden">
       <Header
         source={appDetail.source}
         appName={appName}
@@ -59,7 +59,7 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
         isPause={appDetail?.isPause}
         refetch={refetch}
       />
-      <div className="relative flex-1 min-h-0 flex gap-1.5 px-6 pb-6">
+      <div className="flex-1 overflow-y-auto scrollbar-default relative flex gap-1.5 px-6 pb-6 pt-20">
         <Sidebar />
 
         <Loading

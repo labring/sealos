@@ -424,7 +424,7 @@ const PodDetailModal = ({
                 <div className="flex items-center gap-2">
                   <Select
                     value={sinceKey}
-                    onValueChange={(value) => {
+                    onValueChange={(value: string) => {
                       const item = sinceItems.find((i) => i.key === value);
                       if (item) switchSince(item);
                     }}
@@ -452,7 +452,7 @@ const PodDetailModal = ({
                 ) : (
                   <div
                     ref={LogBox}
-                    className="h-full whitespace-pre pb-2 overflow-auto font-mono text-sm rounded-lg"
+                    className="h-full whitespace-pre pb-2 overflow-auto scrollbar-default font-mono text-sm rounded-lg"
                     dangerouslySetInnerHTML={{ __html: logs }}
                   />
                 )}
@@ -464,7 +464,10 @@ const PodDetailModal = ({
       </Drawer>
 
       {/* Analyses Dialog */}
-      <Dialog open={isOpenAnalyses} onOpenChange={(open) => !open && onCloseAnalysesModel()}>
+      <Dialog
+        open={isOpenAnalyses}
+        onOpenChange={(open: boolean) => !open && onCloseAnalysesModel()}
+      >
         <DialogContent className="max-w-[50vw] h-[70vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Pod {t('Intelligent Analysis')}</DialogTitle>

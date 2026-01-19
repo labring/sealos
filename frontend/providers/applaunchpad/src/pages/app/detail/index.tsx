@@ -39,7 +39,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
 
   return (
     <DetailLayout appName={appName} key={'detail'}>
-      <div className="flex flex-col min-h-full flex-1 w-0 overflow-y-auto overflow-x-hidden">
+      <div className="flex flex-col flex-1 h-full min-h-0 overflow-y-auto scrollbar-hide">
         <div className="flex mb-1.5 rounded-lg shrink-0 min-h-[257px] gap-1.5">
           <div className="shrink-0 w-[450px]">
             <AppBaseInfo app={appDetail} />
@@ -48,7 +48,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
             {appDetail ? <AppMainInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
           </div>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 h-fit">
           <Pods pods={appDetailPods} appName={appName} />
         </div>
       </div>

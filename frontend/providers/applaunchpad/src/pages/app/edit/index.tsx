@@ -518,7 +518,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   return (
     <>
-      <div className="min-h-screen min-w-[1024px] bg-zinc-50 relative">
+      <div className="h-screen min-w-[1024px] bg-zinc-50 relative flex flex-col overflow-hidden">
         <Header
           appName={formHook.getValues('appName')}
           title={title}
@@ -528,7 +528,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyCb={handleSubmit}
         />
 
-        <div className="flex justify-center pb-20 pt-32">
+        <div className="flex-1 overflow-y-auto scrollbar-default flex justify-center pb-20 pt-32">
           {tabType === 'form' ? (
             <Form
               formHook={formHook}

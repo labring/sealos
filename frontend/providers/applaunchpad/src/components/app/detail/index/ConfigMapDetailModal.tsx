@@ -20,7 +20,7 @@ const ConfigMapDetailModal = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
+    <Drawer open onOpenChange={(open: boolean) => !open && onClose()}>
       <DrawerContent direction="right" className="min-w-[560px] sm:max-w-[560px]">
         <DrawerHeader>
           <DrawerTitle>
