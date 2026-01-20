@@ -184,14 +184,6 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 							subscription.ID,
 						)
 					}
-				} else {
-					// Invoice is not payable (paid, uncollectible, or void)
-					dao.Logger.Infof(
-						"Latest invoice %s has status %s (not payable) for subscription %s",
-						latestInvoice.ID,
-						latestInvoice.Status,
-						subscription.ID,
-					)
 				}
 			}
 			// If there's an error getting the invoice, log it but don't block the response
@@ -752,11 +744,13 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		return
 	}
 
-	if currentSubscription.PlanName == req.PlanName {
+	// Allow recreating the same plan for debt status subscriptions
+	if currentSubscription.PlanName == req.PlanName &&
+		currentSubscription.Status != types.SubscriptionStatusDebt {
 		c.JSON(
 			http.StatusBadRequest,
 			helper.ErrorMessage{
-				Error: "plan name is same as current plan or no current subscription",
+				Error: "plan name is same as current plan",
 			},
 		)
 		return
@@ -1189,8 +1183,10 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 	}
 
 	// Validate plan changes
+	// Allow recreating the same plan for debt status subscriptions
 	if currentSubscription != nil && currentSubscription.PlanName == req.PlanName &&
-		req.Operator != types.SubscriptionTransactionTypeRenewed {
+		req.Operator != types.SubscriptionTransactionTypeRenewed &&
+		currentSubscription.Status != types.SubscriptionStatusDebt {
 		SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "plan name is same as current plan"})
 		return
 	}
@@ -1783,13 +1779,13 @@ func cancelOldSubscriptionInTransaction(
 	}
 
 	// Update subscription status to deleted
-	subscription.Status = types.SubscriptionStatusDeleted
-	subscription.PayStatus = types.SubscriptionPayStatusCanceled
-	subscription.CancelAt = time.Now().UTC()
+	//subscription.Status = types.SubscriptionStatusDeleted
+	//subscription.PayStatus = types.SubscriptionPayStatusCanceled
+	//subscription.CancelAt = time.Now().UTC()
 
-	if err := tx.Save(&subscription).Error; err != nil {
-		return fmt.Errorf("failed to update subscription status: %w", err)
-	}
+	//if err := tx.Save(&subscription).Error; err != nil {
+	//	return fmt.Errorf("failed to update subscription status: %w", err)
+	//}
 
 	// Cancel Stripe subscription
 	if subscription.PayMethod == types.PaymentMethodStripe &&
@@ -2615,9 +2611,6 @@ func finalizeWorkspaceSubscriptionSuccess(
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusPaid
 		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
 		workspaceSubscription.PayMethod = payment.Method
-		if payment.Stripe != nil {
-			workspaceSubscription.Stripe = payment.Stripe
-		}
 	} else {
 		// Create new for initial if not exists
 		workspaceSubscription = &types.WorkspaceSubscription{
@@ -2641,9 +2634,6 @@ func finalizeWorkspaceSubscriptionSuccess(
 				workspaceSubscription.CurrentPeriodEndAt = workspaceSubscription.CurrentPeriodStartAt.Add(period)
 				workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
 			}
-		}
-		if payment.Stripe != nil {
-			workspaceSubscription.Stripe = payment.Stripe
 		}
 	}
 	if wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed || wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded {
@@ -3365,6 +3355,32 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 			}
 			return fmt.Errorf("failed to get workspace subscription: %w", err)
 		}
+
+		// Check whether the deleted Stripe subscription is a subscription recorded in the current database
+		// If not (for example: the old ID is cleared after the new subscription replaces the old one), skip the processing
+		// This prevents the webhook deletion event of the old subscription from affecting the service status of the new subscription
+		if workspaceSubscription.Stripe != nil && workspaceSubscription.Stripe.SubscriptionID != "" {
+			if workspaceSubscription.Stripe.SubscriptionID != subscription.ID {
+				logrus.Infof(
+					"Stripe subscription %s being deleted does not match current subscription %s for workspace %s/%s, skipping webhook processing",
+					subscription.ID,
+					workspaceSubscription.Stripe.SubscriptionID,
+					workspace,
+					regionDomain,
+				)
+				return nil
+			}
+		} else {
+			// There is no subscription ID record in the database (it may have been replaced by a new subscription), so ignore this webhook
+			logrus.Infof(
+				"No Stripe subscription ID in database for workspace %s/%s, ignoring deletion webhook for subscription %s",
+				workspace,
+				regionDomain,
+				subscription.ID,
+			)
+			return nil
+		}
+
 		if workspaceSubscription.Status == types.SubscriptionStatusDeleted {
 			_, err := services.StripeServiceInstance.CancelSubscription(subscription.ID)
 			if err != nil {

@@ -332,6 +332,27 @@ func getNotificationRecipient(userUID uuid.UUID) (*types.NotificationRecipient, 
 	return nr, nil
 }
 
+// applyStripePaymentToWorkspaceSubscription Synchronize the Stripe field only in payment success events
+func applyStripePaymentToWorkspaceSubscription(
+	tx *gorm.DB,
+	workspaceSubscription *types.WorkspaceSubscription,
+	payment *types.Payment,
+) error {
+	if payment == nil || payment.Stripe == nil {
+		return nil
+	}
+	if workspaceSubscription != nil {
+		workspaceSubscription.Stripe = payment.Stripe
+		return tx.Save(workspaceSubscription).Error
+	}
+	if payment.WorkspaceSubscriptionID == nil {
+		return nil
+	}
+	return tx.Model(&types.WorkspaceSubscription{}).
+		Where("id = ?", *payment.WorkspaceSubscriptionID).
+		Update("stripe", payment.Stripe).Error
+}
+
 // handleSubscriptionUpdate
 func handleSubscriptionUpdate(
 	invoice *stripe.Invoice,
@@ -373,7 +394,10 @@ func handleSubscriptionUpdate(
 			}
 		}
 
-		return finalizeWorkspaceSubscriptionSuccess(tx, sub, wsTransaction, &payment)
+		if err := finalizeWorkspaceSubscriptionSuccess(tx, sub, wsTransaction, &payment); err != nil {
+			return err
+		}
+		return applyStripePaymentToWorkspaceSubscription(tx, sub, &payment)
 	}); err != nil {
 		return fmt.Errorf("failed to finalize upgrade payment: %w", err)
 	}
@@ -496,6 +520,20 @@ func handleSubscriptionCreateOrRenew(
 		if err != nil {
 			return err
 		}
+
+		// Detect and record the old subscriptions that need to be closed (for the scenario of recreating subscriptions in debt status)
+		// In memory records, such as finalizeWorkspaceSubscriptionSuccess again after the completion of processing
+		var oldSubscriptionID string
+		if ws != nil && isInitial && ws.Stripe != nil && ws.Stripe.SubscriptionID != "" && ws.Stripe.SubscriptionID != subscription.ID {
+			oldSubscriptionID = ws.Stripe.SubscriptionID
+			logrus.Infof(
+				"Detected old subscription %s for workspace %s/%s, will cancel after new subscription is finalized",
+				oldSubscriptionID,
+				meta.Workspace,
+				meta.RegionDomain,
+			)
+		}
+
 		if ws != nil {
 			payment.WorkspaceSubscriptionID = &ws.ID
 			if isInitial && ws.Status == types.SubscriptionStatusDeleted {
@@ -513,6 +551,7 @@ func handleSubscriptionCreateOrRenew(
 				)
 				return nil
 			}
+
 			ws.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).UTC()
 			// Add 1 hour to account for invoice confirmation processing time
 			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC().Add(1 * time.Hour)
@@ -522,6 +561,9 @@ func handleSubscriptionCreateOrRenew(
 		if err := finalizeWorkspaceSubscriptionSuccess(tx, ws, wsTransaction, &payment); err != nil {
 			return err
 		}
+		if err := applyStripePaymentToWorkspaceSubscription(tx, ws, &payment); err != nil {
+			return err
+		}
 
 		if err := sendNotification(nr, userUID, wsTransaction, ws, meta.Operator, invoice); err != nil {
 			dao.Logger.Errorf(
@@ -529,6 +571,28 @@ func handleSubscriptionCreateOrRenew(
 				userUID,
 				err,
 			)
+		}
+		// After the transaction is successful, the old subscription is closed asynchronously (at this point, the database has been updated to the new subscription ID).
+		if oldSubscriptionID != "" {
+			go func(subID string) {
+				// 添加短暂延迟，确保数据库事务已完全提交
+				time.Sleep(200 * time.Millisecond)
+
+				if _, err := services.StripeServiceInstance.CancelSubscription(subID); err != nil {
+					dao.Logger.Errorf(
+						"Failed to cancel old Stripe subscription %s in background: %v",
+						subID,
+						err,
+					)
+				} else {
+					dao.Logger.Infof(
+						"Successfully canceled old Stripe subscription %s for workspace %s/%s",
+						subID,
+						meta.Workspace,
+						meta.RegionDomain,
+					)
+				}
+			}(oldSubscriptionID)
 		}
 
 		logrus.Infof(
