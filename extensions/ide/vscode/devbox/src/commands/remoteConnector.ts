@@ -269,12 +269,15 @@ export class RemoteSSHConnector extends Disposable {
 
   private async ensureRemoteSSHExtInstalled(): Promise<boolean> {
     // this ide has remote-ssh inside already
+    // qoder and lingma all switch from "Qoder" "Lingma" to "qoder" "lingma",but we should be compatible to old version.
     const hasRemoteSSHInside =
       vscode.env.uriScheme === 'windsurf' ||
       vscode.env.uriScheme === 'trae' ||
       vscode.env.uriScheme === 'trae-cn' ||
       vscode.env.uriScheme === 'Qoder' ||
+      vscode.env.uriScheme === 'qoder' ||
       vscode.env.uriScheme === 'Lingma' ||
+      vscode.env.uriScheme === 'lingma' ||
       vscode.env.uriScheme === 'codebuddy' ||
       vscode.env.uriScheme === 'codebuddycn' ||
       vscode.env.uriScheme === 'antigravity'
@@ -282,7 +285,6 @@ export class RemoteSSHConnector extends Disposable {
     if (hasRemoteSSHInside) {
       return true
     }
-    console.log('test test est est est est est se ')
 
     const msRemoteSSHId = 'ms-vscode-remote.remote-ssh'
     const openRemoteSSHId = 'jeanp413.open-remote-ssh' // kiro use this
