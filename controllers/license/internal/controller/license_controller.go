@@ -220,18 +220,12 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, limitOps controll
 	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
-		if err := r.ensureAndUpdateDefaultLicense(ctx, nil); err != nil {
-			r.Logger.Error(err, "periodic default license ensure failed")
-		}
 		for {
 			select {
 			case <-ctx.Done():
 				return nil
 			case <-ticker.C:
 				r.Logger.Info("periodic default license ensure triggered")
-				if err := r.ensureAndUpdateDefaultLicense(ctx, nil); err != nil {
-					r.Logger.Error(err, "periodic default license ensure failed")
-				}
 			}
 		}
 	})); err != nil {
@@ -246,89 +240,6 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, limitOps controll
 
 func isDefaultLicense(license *licensev1.License) bool {
 	return license.Name == defaultLicenseName && license.Namespace == defaultLicenseNamespace
-}
-
-func (r *LicenseReconciler) ensureAndUpdateDefaultLicense(
-	ctx context.Context,
-	cached *licensev1.License,
-) error {
-	ns := defaultLicenseNamespace
-	namespacedName := types.NamespacedName{
-		Name:      defaultLicenseName,
-		Namespace: ns,
-	}
-
-	license := cached
-	var err error
-	if license == nil {
-		license = &licensev1.License{}
-		err = r.Get(ctx, namespacedName, license)
-	}
-
-	switch {
-	case err == nil:
-		// ensure finalizers
-		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			latest := &licensev1.License{}
-			if err := r.Get(ctx, namespacedName, latest); err != nil {
-				return err
-			}
-			changed := controllerutil.AddFinalizer(latest, licenseFinalizer)
-			if controllerutil.AddFinalizer(latest, licenseProtectionFinalizer) {
-				changed = true
-			}
-			if !changed {
-				return nil
-			}
-			return r.Update(ctx, latest)
-		}); err != nil {
-			return err
-		}
-	case apierrors.IsNotFound(err):
-		license = &licensev1.License{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      defaultLicenseName,
-				Namespace: ns,
-				Finalizers: []string{
-					licenseFinalizer,
-					licenseProtectionFinalizer,
-				},
-			},
-			Spec: licensev1.LicenseSpec{
-				Type: licensev1.ClusterLicenseType,
-			},
-		}
-		if err := r.Create(ctx, license); err != nil {
-			return fmt.Errorf("failed to create default license: %w", err)
-		}
-		r.Logger.Info(
-			"default license created",
-			"license",
-			fmt.Sprintf("%s/%s", ns, defaultLicenseName),
-		)
-	default:
-		return err
-	}
-	expiration := r.CreateTimestamp.Add(defaultLicenseDuration)
-	devboxInstalled, err := r.isDevBoxInstalled(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to check devbox installation: %w", err)
-	}
-	if !devboxInstalled {
-		// extend default license for devbox users
-		expiration = r.CreateTimestamp.Add(50 * 365 * 24 * time.Hour)
-	}
-	updateStatus := &license.Status
-	updateStatus.ActivationTime = r.CreateTimestamp
-	updateStatus.ExpirationTime = metav1.NewTime(expiration)
-	if time.Now().After(expiration) {
-		updateStatus.Phase = licensev1.LicenseStatusPhaseExpired
-		updateStatus.Reason = "default license expired"
-	} else {
-		updateStatus.Phase = licensev1.LicenseStatusPhaseActive
-		updateStatus.Reason = "default license active"
-	}
-	return r.updateStatus(ctx, client.ObjectKeyFromObject(license), updateStatus)
 }
 
 func (r *LicenseReconciler) updateStatus(
