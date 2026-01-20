@@ -11,3 +11,41 @@ export const getCookie = (key: string) => {
 export const removeCookie = (key: string) => {
   Cookies.remove(key);
 };
+
+// Shared Cookie configuration
+const SHARED_AUTH_COOKIE_NAME = 'sealos_auth_token';
+const COOKIE_EXPIRY_DAYS = 7;
+
+// Get shared cookie domain (e.g., usw.sealos.io -> .sealos.io)
+export const getSharedCookieDomain = (): string | undefined => {
+  if (typeof window === 'undefined') return undefined;
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return undefined;
+  const parts = hostname.split('.');
+  if (parts.length >= 2) return '.' + parts.slice(-2).join('.');
+  return undefined;
+};
+
+// Set shared authentication cookie
+export const setSharedAuthCookie = (appToken: string): void => {
+  const domain = getSharedCookieDomain();
+  const options: CookieAttributes = {
+    expires: COOKIE_EXPIRY_DAYS,
+    path: '/',
+    sameSite: 'lax',
+    secure: window.location.protocol === 'https:'
+  };
+  if (domain) options.domain = domain;
+  Cookies.set(SHARED_AUTH_COOKIE_NAME, appToken, options);
+};
+
+// Clear shared authentication cookie
+export const clearSharedAuthCookie = (): void => {
+  const domain = getSharedCookieDomain();
+  const options: CookieAttributes = { path: '/' };
+  if (domain) options.domain = domain;
+  Cookies.remove(SHARED_AUTH_COOKIE_NAME, options);
+  Cookies.remove(SHARED_AUTH_COOKIE_NAME, { path: '/' }); // Compatible with local development
+};
+
+export { SHARED_AUTH_COOKIE_NAME };

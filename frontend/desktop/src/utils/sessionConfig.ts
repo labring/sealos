@@ -4,6 +4,7 @@ import { AccessTokenPayload } from '@/types/token';
 import useSessionStore from '@/stores/session';
 import { SemData } from '@/types/sem';
 import { AdClickData } from '@/types/adClick';
+import { setSharedAuthCookie } from './cookieUtils';
 
 export const sessionConfig = async ({
   token,
@@ -41,6 +42,9 @@ export const sessionConfig = async ({
 
   const sessionStore = useSessionStore.getState();
   sessionStore.setHasEverLoggedIn(true);
+
+  // Set shared authentication cookie for cross-domain login state sync
+  setSharedAuthCookie(appToken);
 };
 
 export const getUserSemData = (): SemData | null => {
