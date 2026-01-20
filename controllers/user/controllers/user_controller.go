@@ -24,19 +24,16 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"golang.org/x/exp/rand"
-
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/labring/sealos/controllers/user/controllers/helper/finalizer"
 	"github.com/labring/sealos/controllers/user/controllers/helper/hash"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 	"github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
-
+	"golang.org/x/exp/rand"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -133,12 +130,13 @@ func NewControllerRestartPredicate(duration time.Duration) *ControllerRestartPre
 
 // skip create event p.duration ago
 func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
-	return e.Object.GetCreationTimestamp().Time.After(p.checkTime)
+	return e.Object.GetCreationTimestamp().After(p.checkTime)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.RateLimiterOptions,
-	minRequeueDuration time.Duration, maxRequeueDuration time.Duration, restartPredicateDuration time.Duration) error {
+	minRequeueDuration, maxRequeueDuration, restartPredicateDuration time.Duration,
+) error {
 	const controllerName = "user_controller"
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
@@ -157,7 +155,12 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 	r.minRequeueDuration = minRequeueDuration
 	r.maxRequeueDuration = maxRequeueDuration
 
-	ownerEventHandler := handler.EnqueueRequestForOwner(r.Scheme, r.Client.RESTMapper(), &userv1.User{}, handler.OnlyControllerOwner())
+	ownerEventHandler := handler.EnqueueRequestForOwner(
+		r.Scheme,
+		r.RESTMapper(),
+		&userv1.User{},
+		handler.OnlyControllerOwner(),
+	)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{}))).
@@ -175,7 +178,8 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 }
 
 func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	r.Logger.V(1).Info("update reconcile controller user", "request", client.ObjectKeyFromObject(obj))
+	r.Logger.V(1).
+		Info("update reconcile controller user", "request", client.ObjectKeyFromObject(obj))
 	startTime := time.Now()
 
 	user, ok := obj.(*userv1.User)
@@ -192,7 +196,8 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	}
 
 	defer func() {
-		r.Logger.V(1).Info("finished reconcile", "user info", user.Name, "create time", user.CreationTimestamp, "reconcile cost time", time.Since(startTime))
+		r.Logger.V(1).
+			Info("finished reconcile", "user info", user.Name, "create time", user.CreationTimestamp, "reconcile cost time", time.Since(startTime))
 	}()
 
 	pipelines := []func(ctx context.Context, user *userv1.User) context.Context{
@@ -214,14 +219,23 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	}
 	err = r.updateStatus(ctx, client.ObjectKeyFromObject(obj), user.Status.DeepCopy())
 	if err != nil {
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "SyncStatus", "Sync status %s is error: %v", user.Name, err)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"SyncStatus",
+			"Sync status %s is error: %v",
+			user.Name,
+			err,
+		)
 		return ctrl.Result{}, err
 	}
-	return ctrl.Result{RequeueAfter: RandTimeDurationBetween(r.minRequeueDuration, r.maxRequeueDuration)}, nil
+	return ctrl.Result{
+		RequeueAfter: RandTimeDurationBetween(r.minRequeueDuration, r.maxRequeueDuration),
+	}, nil
 }
 
 func (r *UserReconciler) initStatus(ctx context.Context, user *userv1.User) context.Context {
-	var initializedCondition = userv1.Condition{
+	initializedCondition := userv1.Condition{
 		Type:               userv1.Initialized,
 		Status:             v1.ConditionTrue,
 		Reason:             string(userv1.Initialized),
@@ -232,7 +246,10 @@ func (r *UserReconciler) initStatus(ctx context.Context, user *userv1.User) cont
 	user.Status.Phase = userv1.UserPending
 	user.Status.ObservedGeneration = user.Generation
 	if !helper.IsConditionTrue(user.Status.Conditions, initializedCondition) {
-		user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, initializedCondition)
+		user.Status.Conditions = helper.UpdateCondition(
+			user.Status.Conditions,
+			initializedCondition,
+		)
 	}
 	return ctx
 }
@@ -275,7 +292,9 @@ func (r *UserReconciler) syncNamespace(ctx context.Context, user *userv1.User) c
 			}
 			ns.Annotations[userAnnotationCreatorKey] = user.Name
 			ns.Annotations[userAnnotationOwnerKey] = user.Annotations[userAnnotationOwnerKey]
-			ns.Labels = config.SetPodSecurity(ns.Labels)
+			if ns.Name != "admin" {
+				ns.Labels = config.SetPodSecurity(ns.Labels)
+			}
 			// add label for namespace to filter
 			ns.Labels[userLabelOwnerKey] = user.Annotations[userAnnotationOwnerKey]
 			ns.SetOwnerReferences([]metav1.OwnerReference{})
@@ -288,7 +307,14 @@ func (r *UserReconciler) syncNamespace(ctx context.Context, user *userv1.User) c
 		return nil
 	}); err != nil {
 		helper.SetConditionError(nsCondition, "SyncUserError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUser", "Sync User namespace %s is error: %v", user.Name, err)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncUser",
+			"Sync User namespace %s is error: %v",
+			user.Name,
+			err,
+		)
 	}
 	return ctx
 }
@@ -309,7 +335,7 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 			r.saveCondition(user, roleCondition.DeepCopy())
 		}
 	}()
-	//create three roles
+	// create three roles
 	r.createRole(ctx, roleCondition, user, userv1.OwnerRoleType)
 	r.createRole(ctx, roleCondition, user, userv1.ManagerRoleType)
 	r.createRole(ctx, roleCondition, user, userv1.DeveloperRoleType)
@@ -317,7 +343,12 @@ func (r *UserReconciler) syncRole(ctx context.Context, user *userv1.User) contex
 	return ctx
 }
 
-func (r *UserReconciler) createRole(ctx context.Context, condition *userv1.Condition, user *userv1.User, roleType userv1.RoleType) {
+func (r *UserReconciler) createRole(
+	ctx context.Context,
+	condition *userv1.Condition,
+	user *userv1.User,
+	roleType userv1.RoleType,
+) {
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
@@ -340,7 +371,14 @@ func (r *UserReconciler) createRole(ctx context.Context, condition *userv1.Condi
 		return nil
 	}); err != nil {
 		helper.SetConditionError(condition, "SyncUserError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserRole", "Sync User namespace role %s is error: %v", user.Name, err)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncUserRole",
+			"Sync User namespace role %s is error: %v",
+			user.Name,
+			err,
+		)
 	}
 }
 
@@ -387,15 +425,26 @@ func (r *UserReconciler) syncRoleBinding(ctx context.Context, user *userv1.User)
 		return nil
 	}); err != nil {
 		helper.SetConditionError(rbCondition, "SyncUserError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserRoleBinding", "Sync User namespace role binding %s is error: %v", user.Name, err)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncUserRoleBinding",
+			"Sync User namespace role binding %s is error: %v",
+			user.Name,
+			err,
+		)
 	}
 	return ctx
 }
+
 func (r *UserReconciler) saveCondition(user *userv1.User, condition *userv1.Condition) {
 	user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, *condition)
 }
 
-func (r *UserReconciler) syncServiceAccount(ctx context.Context, user *userv1.User) context.Context {
+func (r *UserReconciler) syncServiceAccount(
+	ctx context.Context,
+	user *userv1.User,
+) context.Context {
 	saConditionType := userv1.ConditionType("ServiceAccountSyncReady")
 	saCondition := &userv1.Condition{
 		Type:               saConditionType,
@@ -454,12 +503,22 @@ func (r *UserReconciler) syncServiceAccount(ctx context.Context, user *userv1.Us
 		return nil
 	}); err != nil {
 		helper.SetConditionError(saCondition, "SyncUserError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserServiceAccount", "Sync User namespace sa %s is error: %v", user.Name, err)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncUserServiceAccount",
+			"Sync User namespace sa %s is error: %v",
+			user.Name,
+			err,
+		)
 	}
 	return ctx
 }
 
-func (r *UserReconciler) syncServiceAccountSecrets(ctx context.Context, user *userv1.User) context.Context {
+func (r *UserReconciler) syncServiceAccountSecrets(
+	ctx context.Context,
+	user *userv1.User,
+) context.Context {
 	secretsConditionType := userv1.ConditionType("ServiceAccountSecretsSyncReady")
 	secretsCondition := &userv1.Condition{
 		Type:               secretsConditionType,
@@ -477,8 +536,19 @@ func (r *UserReconciler) syncServiceAccountSecrets(ctx context.Context, user *us
 	}()
 	sa, ok := ctx.Value(ctxKey("serviceAccount")).(*v1.ServiceAccount)
 	if !ok {
-		helper.SetConditionError(secretsCondition, "SyncUserError", fmt.Errorf("syncServiceAccountSecrets serviceAccount not found"))
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync User namespace  syncServiceAccountSecrets %s is error: %v", user.Name, "serviceAccount not found")
+		helper.SetConditionError(
+			secretsCondition,
+			"SyncUserError",
+			errors.New("syncServiceAccountSecrets serviceAccount not found"),
+		)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncKubeConfig",
+			"Sync User namespace  syncServiceAccountSecrets %s is error: %v",
+			user.Name,
+			"serviceAccount not found",
+		)
 		return ctx
 	}
 
@@ -511,7 +581,14 @@ func (r *UserReconciler) syncServiceAccountSecrets(ctx context.Context, user *us
 		return nil
 	}); err != nil {
 		helper.SetConditionError(secretsCondition, "SyncUserError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserServiceAccount", "Sync User namespace sa %s is error: %v", user.Name, err)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncUserServiceAccount",
+			"Sync User namespace sa %s is error: %v",
+			user.Name,
+			err,
+		)
 	}
 	return ctx
 }
@@ -534,31 +611,70 @@ func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) 
 	}()
 	sa, ok := ctx.Value(ctxKey("serviceAccount")).(*v1.ServiceAccount)
 	if !ok {
-		helper.SetConditionError(userCondition, "SyncUserError", fmt.Errorf("serviceAccount not found"))
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync User namespace  kubeconfig %s is error: %v", user.Name, "serviceAccount not found")
+		helper.SetConditionError(
+			userCondition,
+			"SyncUserError",
+			errors.New("serviceAccount not found"),
+		)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncKubeConfig",
+			"Sync User namespace  kubeconfig %s is error: %v",
+			user.Name,
+			"serviceAccount not found",
+		)
 		return ctx
 	}
 	user.Status.ObservedCSRExpirationSeconds = user.Spec.CSRExpirationSeconds
-	cfg := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).WithServiceAccountConfig(config.GetUserSystemNamespace(), sa)
+	cfg := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).
+		WithServiceAccountConfig(config.GetUserSystemNamespace(), sa)
 	apiConfig, err := cfg.Apply(r.config, r.Client)
 	if err != nil {
 		helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig apply %s is error: %v", user.Name, err)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncKubeConfig",
+			"Sync KubeConfig apply %s is error: %v",
+			user.Name,
+			err,
+		)
 		return ctx
 	}
 	if apiConfig == nil {
-		helper.SetConditionError(userCondition, "SyncKubeConfigError", errors.New("api.config is nil"))
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig apply %s is error: %v", user.Name, errors.New("api.config is nil"))
+		helper.SetConditionError(
+			userCondition,
+			"SyncKubeConfigError",
+			errors.New("api.config is nil"),
+		)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncKubeConfig",
+			"Sync KubeConfig apply %s is error: %v",
+			user.Name,
+			errors.New("api.config is nil"),
+		)
 		return ctx
 	}
 	kubeData, err := clientcmd.Write(*apiConfig)
 	if err != nil {
 		helper.SetConditionError(userCondition, "OutputKubeConfigError", err)
-		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Output KubeConfig apply %s is error: %v", user.Name, err)
+		r.Recorder.Eventf(
+			user,
+			v1.EventTypeWarning,
+			"syncKubeConfig",
+			"Output KubeConfig apply %s is error: %v",
+			user.Name,
+			err,
+		)
 		return ctx
 	}
 	user.Status.KubeConfig = string(kubeData)
-	userCondition.Message = fmt.Sprintf("renew sync kube config successfully hash %s", hash.HashToString(user.Status.KubeConfig))
+	userCondition.Message = "renew sync kube config successfully hash " + hash.HashToString(
+		user.Status.KubeConfig,
+	)
 	return ctx
 }
 
@@ -566,7 +682,8 @@ func syncReNewConfig(user *userv1.User) (*api.Config, *string, error) {
 	var apiConfig *api.Config
 	var err error
 	var event *string
-	if user.Status.KubeConfig != "" && user.Spec.CSRExpirationSeconds == user.Status.ObservedCSRExpirationSeconds {
+	if user.Status.KubeConfig != "" &&
+		user.Spec.CSRExpirationSeconds == user.Status.ObservedCSRExpirationSeconds {
 		apiConfig, err = clientcmd.Load([]byte(user.Status.KubeConfig))
 		if err != nil {
 			return nil, nil, err
@@ -628,7 +745,11 @@ func (r *UserReconciler) syncFinalStatus(ctx context.Context, user *userv1.User)
 	return ctx
 }
 
-func (r *UserReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserStatus) error {
+func (r *UserReconciler) updateStatus(
+	ctx context.Context,
+	nn types.NamespacedName,
+	status *userv1.UserStatus,
+) error {
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		original := &userv1.User{}
 		if err := r.Get(ctx, nn, original); err != nil {
@@ -703,13 +824,13 @@ func (r *UserReconciler) licenseToUserRequests(ctx context.Context, obj client.O
 	return requests
 }
 
-// RandTimeDurationBetween get a random time duration between min and max
-func RandTimeDurationBetween(min, max time.Duration) time.Duration {
-	if min >= max {
-		return min
+// RandTimeDurationBetween get a random time duration between minDuration and maxDuration
+func RandTimeDurationBetween(minDuration, maxDuration time.Duration) time.Duration {
+	if minDuration >= maxDuration {
+		return minDuration
 	}
-	minInNano := min.Nanoseconds()
-	maxInNano := max.Nanoseconds()
+	minInNano := minDuration.Nanoseconds()
+	maxInNano := maxDuration.Nanoseconds()
 	randDurationInNano := rand.Int63n(maxInNano-minInNano) + minInNano
 	return time.Duration(randDurationInNano) * time.Nanosecond
 }
