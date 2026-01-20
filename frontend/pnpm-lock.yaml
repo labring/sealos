@@ -533,6 +533,12 @@ importers:
       '@chakra-ui/react':
         specifier: ^2.8.1
         version: 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.3.27)(framer-motion@10.16.5)(react-dom@18.3.1)(react@18.3.1)
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
+      '@types/node':
+        specifier: ^20.7.1
+        version: 20.17.32
       '@types/react':
         specifier: 18.3.27
         version: 18.3.27
@@ -554,9 +560,15 @@ importers:
       immer:
         specifier: ^10.2.0
         version: 10.2.0
+      js-yaml:
+        specifier: ^4.1.0
+        version: 4.1.1
       lucide-react:
         specifier: ^0.476.0
         version: 0.476.0(react@18.3.1)
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -570,8 +582,8 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
       zod:
-        specifier: ^3.22.4
-        version: 3.24.1
+        specifier: ^4.3.5
+        version: 4.3.5
       zustand:
         specifier: ^4.5.6
         version: 4.5.7(@types/react@18.3.27)(immer@10.2.0)(react@18.3.1)
@@ -2834,6 +2846,9 @@ importers:
       octokit:
         specifier: ^3.1.1
         version: 3.1.2
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
       pluralize:
         specifier: ^8.0.0
         version: 8.0.0
@@ -2880,11 +2895,11 @@ importers:
         specifier: ^11.0.7
         version: 11.0.7
       zod:
-        specifier: ^4.0.14
-        version: 4.0.14
+        specifier: ^4.3.5
+        version: 4.3.5
       zod-openapi:
         specifier: ^5.2.0
-        version: 5.3.0(zod@4.0.14)
+        version: 5.3.0(zod@4.3.5)
       zustand:
         specifier: ^4.4.1
         version: 4.4.7(@types/react@18.3.27)(immer@9.0.21)(react@18.3.1)
@@ -6293,7 +6308,7 @@ packages:
       '@chakra-ui/react': 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.3.27)(framer-motion@10.16.5)(react-dom@18.3.1)(react@18.3.1)
       '@emotion/cache': 11.14.0
       '@emotion/react': 11.11.1(@types/react@18.3.27)(react@18.3.1)
-      next: 14.2.35(@babel/core@7.23.5)(react-dom@18.3.1)(react@18.3.1)(sass@1.69.5)
+      next: 14.2.35(@babel/core@7.28.5)(react-dom@18.3.1)(react@18.3.1)(sass@1.69.5)
       react: 18.3.1
     dev: false
 
@@ -8518,7 +8533,7 @@ packages:
       byline: 5.0.0
       execa: 5.0.0
       isomorphic-ws: 4.0.1(ws@7.5.9)
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       jsonpath-plus: 0.19.0
       request: 2.88.2
       rfc4648: 1.5.3
@@ -8545,7 +8560,7 @@ packages:
       '@types/ws': 8.5.10
       byline: 5.0.0
       isomorphic-ws: 5.0.0(ws@8.14.2)
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       jsonpath-plus: 7.2.0
       request: 2.88.2
       rfc4648: 1.5.3
@@ -8570,7 +8585,7 @@ packages:
       '@types/ws': 8.5.10
       byline: 5.0.0
       isomorphic-ws: 5.0.0(ws@8.14.2)
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       jsonpath-plus: 7.2.0
       request: 2.88.2
       rfc4648: 1.5.3
@@ -8594,7 +8609,7 @@ packages:
       '@types/ws': 8.5.10
       byline: 5.0.0
       isomorphic-ws: 5.0.0(ws@8.14.2)
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       jsonpath-plus: 8.1.0
       request: 2.88.2
       rfc4648: 1.5.3
@@ -8621,7 +8636,7 @@ packages:
       form-data: 4.0.0
       hpagent: 1.2.0
       isomorphic-ws: 5.0.0(ws@8.18.1)
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       jsonpath-plus: 10.3.0
       node-fetch: 2.7.0
       openid-client: 6.4.2
@@ -19664,7 +19679,7 @@ packages:
       doctrine: 2.1.0
       eslint: 8.33.0
       eslint-import-resolver-node: 0.3.9
-      eslint-module-utils: 2.12.0(@typescript-eslint/parser@6.21.0)(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.33.0)
+      eslint-module-utils: 2.12.0(@typescript-eslint/parser@5.62.0)(eslint-import-resolver-node@0.3.9)(eslint-import-resolver-typescript@3.6.1)(eslint@8.33.0)
       hasown: 2.0.2
       is-core-module: 2.15.1
       is-glob: 4.0.3
@@ -20057,7 +20072,7 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
     dependencies:
-      array-includes: 3.1.8
+      array-includes: 3.1.7
       array.prototype.flatmap: 1.3.2
       array.prototype.tosorted: 1.1.2
       doctrine: 2.1.0
@@ -20067,9 +20082,9 @@ packages:
       jsx-ast-utils: 3.3.5
       minimatch: 3.1.2
       object.entries: 1.1.7
-      object.fromentries: 2.0.8
+      object.fromentries: 2.0.7
       object.hasown: 1.1.3
-      object.values: 1.2.0
+      object.values: 1.1.7
       prop-types: 15.8.1
       resolve: 2.0.0-next.5
       semver: 6.3.1
@@ -20107,7 +20122,7 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
     dependencies:
-      array-includes: 3.1.8
+      array-includes: 3.1.7
       array.prototype.flatmap: 1.3.2
       array.prototype.tosorted: 1.1.2
       doctrine: 2.1.0
@@ -20117,9 +20132,9 @@ packages:
       jsx-ast-utils: 3.3.5
       minimatch: 3.1.2
       object.entries: 1.1.7
-      object.fromentries: 2.0.8
+      object.fromentries: 2.0.7
       object.hasown: 1.1.3
-      object.values: 1.2.0
+      object.values: 1.1.7
       prop-types: 15.8.1
       resolve: 2.0.0-next.5
       semver: 6.3.1
@@ -20132,7 +20147,7 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
     dependencies:
-      array-includes: 3.1.8
+      array-includes: 3.1.7
       array.prototype.flatmap: 1.3.2
       array.prototype.tosorted: 1.1.2
       doctrine: 2.1.0
@@ -20142,9 +20157,9 @@ packages:
       jsx-ast-utils: 3.3.5
       minimatch: 3.1.2
       object.entries: 1.1.7
-      object.fromentries: 2.0.8
+      object.fromentries: 2.0.7
       object.hasown: 1.1.3
-      object.values: 1.2.0
+      object.values: 1.1.7
       prop-types: 15.8.1
       resolve: 2.0.0-next.5
       semver: 6.3.1
@@ -20313,7 +20328,7 @@ packages:
       is-glob: 4.0.3
       is-path-inside: 3.0.3
       js-sdsl: 4.4.2
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       json-stable-stringify-without-jsonify: 1.0.1
       levn: 0.4.1
       lodash.merge: 4.6.2
@@ -20363,7 +20378,7 @@ packages:
       is-glob: 4.0.3
       is-path-inside: 3.0.3
       js-sdsl: 4.4.2
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       json-stable-stringify-without-jsonify: 1.0.1
       levn: 0.4.1
       lodash.merge: 4.6.2
@@ -20411,7 +20426,7 @@ packages:
       is-glob: 4.0.3
       is-path-inside: 3.0.3
       js-sdsl: 4.4.2
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       json-stable-stringify-without-jsonify: 1.0.1
       levn: 0.4.1
       lodash.merge: 4.6.2
@@ -20459,7 +20474,7 @@ packages:
       imurmurhash: 0.1.4
       is-glob: 4.0.3
       is-path-inside: 3.0.3
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       json-stable-stringify-without-jsonify: 1.0.1
       levn: 0.4.1
       lodash.merge: 4.6.2
@@ -20508,7 +20523,7 @@ packages:
       imurmurhash: 0.1.4
       is-glob: 4.0.3
       is-path-inside: 3.0.3
-      js-yaml: 4.1.0
+      js-yaml: 4.1.1
       json-stable-stringify-without-jsonify: 1.0.1
       levn: 0.4.1
       lodash.merge: 4.6.2
@@ -23407,6 +23422,7 @@ packages:
     hasBin: true
     dependencies:
       argparse: 2.0.1
+    dev: false
 
   /js-yaml@4.1.1:
     resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
@@ -25628,7 +25644,7 @@ packages:
       hoist-non-react-statics: 3.3.2
       i18next: 23.12.1
       i18next-fs-backend: 2.3.1
-      next: 14.2.35(@babel/core@7.23.5)(react-dom@18.3.1)(react@18.3.1)(sass@1.69.5)
+      next: 14.2.35(@babel/core@7.28.5)(react-dom@18.3.1)(react@18.3.1)(sass@1.69.5)
       react: 18.3.1
       react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.3.1)(react@18.3.1)
     dev: false
@@ -25741,7 +25757,7 @@ packages:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       sass: 1.69.5
-      styled-jsx: 5.1.1(@babel/core@7.28.5)(react@18.3.1)
+      styled-jsx: 5.1.1(@babel/core@7.23.5)(react@18.3.1)
       watchpack: 2.4.0
     optionalDependencies:
       '@next/swc-darwin-arm64': 13.5.9
@@ -25870,7 +25886,7 @@ packages:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       sass: 1.69.5
-      styled-jsx: 5.1.1(@babel/core@7.28.5)(react@18.3.1)
+      styled-jsx: 5.1.1(@babel/core@7.23.5)(react@18.3.1)
     optionalDependencies:
       '@next/swc-darwin-arm64': 14.2.33
       '@next/swc-darwin-x64': 14.2.33
@@ -26462,9 +26478,6 @@ packages:
 
   /performance-now@2.1.0:
     resolution: {integrity: sha512-7EAHlyLHI56VEIdK57uwHdHKIaAGbnXPiw0yWbarQZOKaKpvUIgW0jWRVLiatnM+XXlSwsanIBH/hzGMJulMow==}
-
-  /picocolors@1.0.0:
-    resolution: {integrity: sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==}
 
   /picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -29255,7 +29268,7 @@ packages:
       micromatch: 4.0.7
       normalize-path: 3.0.0
       object-hash: 3.0.0
-      picocolors: 1.0.0
+      picocolors: 1.1.1
       postcss: 8.5.6
       postcss-import: 15.1.0(postcss@8.5.6)
       postcss-js: 4.0.1(postcss@8.5.6)
@@ -30748,7 +30761,7 @@ packages:
       html-escaper: 2.0.2
       is-plain-object: 5.0.0
       opener: 1.5.2
-      picocolors: 1.0.0
+      picocolors: 1.1.1
       sirv: 2.0.3
       ws: 7.5.9
     transitivePeerDependencies:
@@ -31226,6 +31239,15 @@ packages:
       zod: 4.0.14
     dev: false
 
+  /zod-openapi@5.3.0(zod@4.3.5):
+    resolution: {integrity: sha512-hv3DU37kV39v0MEiQ0vcL06NLS9bTHTb7FNtuFk2zhuATsi+UNcNN6y03z7qbI9NdC6LJS+Knk5shOSCUMwsDQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      zod: ^3.25.74 || ^4.0.0
+    dependencies:
+      zod: 4.3.5
+    dev: false
+
   /zod-to-json-schema@3.24.5(zod@3.24.1):
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
@@ -31240,6 +31262,7 @@ packages:
 
   /zod@3.24.1:
     resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+    dev: false
 
   /zod@4.0.14:
     resolution: {integrity: sha512-nGFJTnJN6cM2v9kXL+SOBq3AtjQby3Mv5ySGFof5UGRHrRioSJ5iG680cYNjE/yWk671nROcpPj4hAS8nyLhSw==}
@@ -31252,6 +31275,9 @@ packages:
   /zod@4.1.12:
     resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
     dev: false
+
+  /zod@4.3.5:
+    resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
 
   /zrender@5.4.4:
     resolution: {integrity: sha512-0VxCNJ7AGOMCWeHVyTrGzUgrK4asT4ml9PEkeGirAkKNYXYzoPJCLvmyfdoOXcjTHPs10OZVMfD1Rwg16AZyYw==}

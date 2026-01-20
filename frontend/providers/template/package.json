@@ -53,6 +53,7 @@
     "next-i18next": "^15.3.0",
     "nprogress": "^0.2.0",
     "octokit": "^3.1.1",
+    "picocolors": "^1.1.1",
     "pluralize": "^8.0.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -68,7 +69,7 @@
     "sealos-desktop-sdk": "workspace:^",
     "sharp": "^0.32.6",
     "swiper": "^11.0.7",
-    "zod": "^4.0.14",
+    "zod": "^4.3.5",
     "zod-openapi": "^5.2.0",
     "zustand": "^4.4.1"
   },
