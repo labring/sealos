@@ -67,14 +67,35 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 		)
 		return
 	}
+	// InvoiceInfo encapsulates detailed information about an unpaid invoice
+	// Amount conversion:
+	// - System currency ratio: 1 real currency unit = 1,000,000 system units
+	// - Stripe currency ratio: 1 real currency unit = 100 cents
+	// - Conversion factor: Stripe to System = 10,000 (i.e., stripeAmount * 10,000)
+	type InvoiceInfo struct {
+		ID                string `json:"ID,omitempty"`                // Invoice ID from Stripe
+		PaymentURL        string `json:"PaymentUrl,omitempty"`        // Hosted invoice payment URL
+		AmountDue         int64  `json:"AmountDue,omitempty"`         // Amount due in system currency (1 unit = 1/1,000,000 real currency)
+		Currency          string `json:"Currency,omitempty"`          // Currency code (e.g., "usd")
+		Status            string `json:"Status,omitempty"`            // Invoice status: "draft", "open", "paid", "void", etc.
+		CreatedAt         int64  `json:"CreatedAt,omitempty"`         // Invoice creation timestamp (Unix timestamp)
+		DueDate           int64  `json:"DueDate,omitempty"`           // Invoice due date (Unix timestamp)
+		HasDiscount       bool   `json:"HasDiscount,omitempty"`       // Whether invoice has discount applied
+		DiscountAmount    int64  `json:"DiscountAmount,omitempty"`    // Discount amount in system currency
+		Subtotal          int64  `json:"Subtotal,omitempty"`          // Subtotal before discount in system currency
+		Total             int64  `json:"Total,omitempty"`             // Total amount after discount in system currency
+		Description       string `json:"Description,omitempty"`       // Invoice description or reason for payment
+		PaymentMethodType string `json:"PaymentMethodType,omitempty"` // Payment method type: "stripe", "balance", etc.
+	}
+
 	const (
 		WorkspaceTypeSubscription = "SUBSCRIPTION"
 		WorkspaceTypePAYG         = "PAYG"
 	)
 	workspaceSubInfo := struct {
 		*types.WorkspaceSubscription
-		Type              string `json:"type"`
-		InvoicePaymentURL string `json:"invoicePaymentUrl,omitempty"`
+		Type        string       `json:"type"`
+		InvoiceInfo *InvoiceInfo `json:"InvoiceInfo,omitempty"`
 	}{
 		WorkspaceSubscription: subscription,
 		Type:                  WorkspaceTypeSubscription,
@@ -87,7 +108,6 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 		// If all conditions are met, try to get the invoice payment link from Stripe
 		now := time.Now().UTC()
 		if subscription.CurrentPeriodEndAt.Before(now) &&
-			(subscription.PayStatus == types.SubscriptionPayStatusUnpaid || subscription.PayStatus == types.SubscriptionPayStatusFailed) &&
 			subscription.PayMethod == types.PaymentMethodStripe &&
 			subscription.Stripe != nil &&
 			subscription.Stripe.SubscriptionID != "" {
@@ -101,19 +121,69 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 				// Stripe invoice statuses: draft, open, paid, uncollectible, void
 				// We only provide payment link for invoices that are still payable (open or draft)
 				if latestInvoice.Status == "open" || latestInvoice.Status == "draft" {
-					// Get invoice URL
-					invoiceURL := latestInvoice.HostedInvoiceURL
-					if invoiceURL == "" {
-						return
-					}
-					workspaceSubInfo.InvoicePaymentURL = invoiceURL
+					// Check if invoice is created within 7 days
+					// Invoices older than 7 days are considered expired and user should recreate subscription
+					invoiceAge := time.Since(time.Unix(latestInvoice.Created, 0))
+					const maxInvoiceAge = 7 * 24 * time.Hour // 7 days
 
-					dao.Logger.Infof(
-						"Found payable invoice %s (status: %s) for subscription %s",
-						latestInvoice.ID,
-						latestInvoice.Status,
-						subscription.ID,
-					)
+					if invoiceAge < maxInvoiceAge {
+						// Create InvoiceInfo with detailed information
+						// Conversion ratio: Stripe (cents:100) -> Sealos System (1000000:1)
+						// Formula: stripeAmount * (1000000 / 100) = stripeAmount * 10000
+						const stripeToSystemRatio = 10000
+
+						invoiceInfo := &InvoiceInfo{
+							ID:                latestInvoice.ID,
+							PaymentURL:        latestInvoice.HostedInvoiceURL,
+							AmountDue:         latestInvoice.AmountDue * stripeToSystemRatio,
+							Currency:          string(latestInvoice.Currency),
+							Status:            string(latestInvoice.Status),
+							CreatedAt:         latestInvoice.Created,
+							PaymentMethodType: string(types.PaymentMethodStripe),
+						}
+
+						// Set due date if available
+						if latestInvoice.DueDate != 0 {
+							invoiceInfo.DueDate = latestInvoice.DueDate
+						}
+
+						// Calculate discount information with proper conversion
+						if latestInvoice.Subtotal != latestInvoice.Total {
+							invoiceInfo.HasDiscount = true
+							invoiceInfo.DiscountAmount = (latestInvoice.Subtotal - latestInvoice.Total) * stripeToSystemRatio
+							invoiceInfo.Subtotal = latestInvoice.Subtotal * stripeToSystemRatio
+							invoiceInfo.Total = latestInvoice.Total * stripeToSystemRatio
+						} else {
+							invoiceInfo.Subtotal = latestInvoice.Subtotal * stripeToSystemRatio
+							invoiceInfo.Total = latestInvoice.Total * stripeToSystemRatio
+						}
+
+						// Add description based on invoice metadata or billing reason
+						if latestInvoice.Description != "" {
+							invoiceInfo.Description = latestInvoice.Description
+						} else if latestInvoice.BillingReason != "" {
+							invoiceInfo.Description = fmt.Sprintf("Invoice for %s", latestInvoice.BillingReason)
+						}
+
+						workspaceSubInfo.InvoiceInfo = invoiceInfo
+
+						dao.Logger.Infof(
+							"Found payable invoice %s (status: %s, amount: %d, age: %.2f days) for subscription %s",
+							latestInvoice.ID,
+							latestInvoice.Status,
+							latestInvoice.AmountDue,
+							invoiceAge.Hours()/24,
+							subscription.ID,
+						)
+					} else {
+						// Invoice is too old (>= 7 days), user should recreate subscription
+						dao.Logger.Infof(
+							"Unpaid invoice %s is too old (age: %.2f days >= 7 days) for subscription %s, skipping payment link",
+							latestInvoice.ID,
+							invoiceAge.Hours()/24,
+							subscription.ID,
+						)
+					}
 				} else {
 					// Invoice is not payable (paid, uncollectible, or void)
 					dao.Logger.Infof(
@@ -1403,10 +1473,20 @@ func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(
 		// Handle existing pending/processing transactions
 		if lastTransaction != nil &&
 			(lastTransaction.Status == types.SubscriptionTransactionStatusProcessing || lastTransaction.Status == types.SubscriptionTransactionStatusPending) {
-			// 判断是否为相同请求
+			// 判断是否为相同请求（包括优惠码）
+			// 提取上次交易的优惠码
+			lastPromotionCode := ""
+			if strings.Contains(lastTransaction.StatusDesc, "Promotion code: ") {
+				parts := strings.Split(lastTransaction.StatusDesc, "Promotion code: ")
+				if len(parts) > 1 {
+					lastPromotionCode = strings.TrimSpace(parts[1])
+				}
+			}
+
 			isSameRequest := lastTransaction.NewPlanName == req.PlanName &&
 				lastTransaction.Operator == req.Operator &&
-				lastTransaction.Period == req.Period
+				lastTransaction.Period == req.Period &&
+				lastPromotionCode == req.PromotionCode
 
 			switch {
 			case isSameRequest:
