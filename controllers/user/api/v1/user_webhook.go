@@ -22,15 +22,22 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 )
 
 // log is for logging in this package.
 var userlog = logf.Log.WithName("user-webhook")
+var userWebhookReader client.Reader
+
+const licenseLimitErrorMessage = "{\"code\":40301,\"message\":\"license inactive: user limit reached\"}"
 
 func (r *User) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	userWebhookReader = mgr.GetAPIReader()
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		WithDefaulter(r).
@@ -78,6 +85,19 @@ func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admissio
 	userlog.Info("validate create", "name", user.Name)
 	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
+	}
+	if userWebhookReader == nil {
+		return admission.Warnings{}, errors.New("user webhook reader is not initialized")
+	}
+	if !licensegate.HasActiveLicense() {
+		userList := &UserList{}
+		if err := userWebhookReader.List(ctx, userList); err != nil {
+			return admission.Warnings{}, err
+		}
+		if !licensegate.AllowNewUser(len(userList.Items)) {
+			warnings := admission.Warnings{licenseLimitErrorMessage}
+			return warnings, errors.New(licenseLimitErrorMessage)
+		}
 	}
 	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
 }

@@ -37,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers"
 	configpkg "github.com/labring/sealos/controllers/user/controllers/helper/config"
@@ -52,6 +53,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
+	utilruntime.Must(licensev1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -135,6 +137,11 @@ func main() {
 	// Set the configuration
 	if err := setConfigToEnv(*config); err != nil {
 		setupLog.Error(err, "unable to set configuration to environment variables")
+		os.Exit(1)
+	}
+
+	if err := controllers.SetupLicenseGate(mgr); err != nil {
+		setupLog.Error(err, "unable to set up license gate")
 		os.Exit(1)
 	}
 
