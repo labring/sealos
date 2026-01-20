@@ -9,13 +9,13 @@ image:
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: ""
+fullnameOverride: "user"
 
 serviceAccount:
   create: true
   automount: true
   annotations: {}
-  name: ""
+  name: "user-controller-manager"
 
 podAnnotations: {}
 podLabels: {}

@@ -1,7 +1,7 @@
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: user-selfsigned-issuer
+  name: {{ include "user.fullname" . }}-selfsigned-issuer
   labels:
     control-plane: controller-manager
     {{- include "user.labels" . | nindent 4 }}
@@ -11,15 +11,15 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: user-serving-cert
+  name: {{ include "user.fullname" . }}-serving-cert
   labels:
     control-plane: controller-manager
     {{- include "user.labels" . | nindent 4 }}
 spec:
   dnsNames:
-    - user-webhook-service.{{ .Release.Namespace }}.svc
-    - user-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ include "user.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc
+    - {{ include "user.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
     kind: Issuer
-    name: user-selfsigned-issuer
-  secretName: user-server-cert
+    name: {{ include "user.fullname" . }}-selfsigned-issuer
+  secretName: webhook-server-cert

@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: user-controller-manager
+  name: {{ include "user.fullname" . }}-controller-manager
   labels:
     control-plane: controller-manager
     {{- include "user.labels" . | nindent 4 }}
@@ -10,6 +10,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+      {{- include "user.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -116,4 +117,4 @@ spec:
             secretName: webhook-server-cert
         - name: user-manager-volume
           configMap:
-            name: user-manager-config
+            name: {{ include "user.fullname" . }}-manager-config

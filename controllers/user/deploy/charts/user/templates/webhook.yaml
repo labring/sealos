@@ -1,16 +1,16 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: user-mutating-webhook-configuration
+  name: {{ include "user.fullname" . }}-mutating-webhook-configuration
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/user-serving-cert
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "user.fullname" . }}-serving-cert
 webhooks:
   - name: moperationrequest.kb.io
     admissionReviewVersions:
       - v1
     clientConfig:
       service:
-        name: user-webhook-service
+        name: {{ include "user.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /mutate-user-sealos-io-v1-operationrequest
     failurePolicy: Fail
@@ -30,7 +30,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: user-webhook-service
+        name: {{ include "user.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /mutate-user-sealos-io-v1-user
     failurePolicy: Fail
@@ -49,16 +49,16 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: user-validating-webhook-configuration
+  name: {{ include "user.fullname" . }}-validating-webhook-configuration
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/user-serving-cert
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "user.fullname" . }}-serving-cert
 webhooks:
   - name: voperationrequest.kb.io
     admissionReviewVersions:
       - v1
     clientConfig:
       service:
-        name: user-webhook-service
+        name: {{ include "user.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /validate-user-sealos-io-v1-operationrequest
     failurePolicy: Fail
@@ -78,7 +78,7 @@ webhooks:
       - v1
     clientConfig:
       service:
-        name: user-webhook-service
+        name: {{ include "user.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /validate-user-sealos-io-v1-user
     failurePolicy: Fail
