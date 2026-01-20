@@ -68,7 +68,7 @@
     "sealos-desktop-sdk": "workspace:^",
     "sharp": "^0.32.6",
     "swiper": "^11.0.7",
-    "zod": "^4.0.5",
+    "zod": "^4.0.14",
     "zod-openapi": "^5.2.0",
     "zustand": "^4.4.1"
   },
