@@ -77,6 +77,7 @@ func main() {
 	var registryAddr string
 	var registryUser string
 	var registryPassword string
+	var registryInsecure bool
 	// resource flag
 	var requestCPURate float64
 	var requestMemoryRate float64
@@ -109,6 +110,7 @@ func main() {
 	flag.StringVar(&registryAddr, "registry-addr", "sealos.hub:5000", "The address of the registry")
 	flag.StringVar(&registryUser, "registry-user", "admin", "The user of the registry")
 	flag.StringVar(&registryPassword, "registry-password", "passw0rd", "The password of the registry")
+	flag.BoolVar(&registryInsecure, "registry-insecure", true, "If set, registry operations will use insecure mode (HTTP / skip TLS verify)")
 	// resource flag
 	flag.Float64Var(&requestCPURate, "request-cpu-rate", 10, "The request rate of cpu limit in devbox.")
 	flag.Float64Var(&requestMemoryRate, "request-memory-rate", 10, "The request rate of memory limit in devbox.")
@@ -243,10 +245,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.DevboxReconciler{
+	devboxReconciler := &controller.DevboxReconciler{
 		Client:              mgr.GetClient(),
 		Scheme:              mgr.GetScheme(),
 		CommitImageRegistry: registryAddr,
+		RegistryUser:        registryUser,
+		RegistryPassword:    registryPassword,
+		RegistryInsecure:    registryInsecure,
 		Recorder:            mgr.GetEventRecorderFor("devbox-controller"),
 		RequestRate: utilresource.RequestRate{
 			CPU:    requestCPURate,
@@ -262,7 +267,11 @@ func main() {
 		StartupConfigMapName:      startupCMName,
 		StartupConfigMapNamespace: startupCMNamespace,
 		RestartPredicateDuration:  restartPredicateDuration,
-	}).SetupWithManager(mgr); err != nil {
+	}
+	// Initialize once at startup and cache on the reconciler.
+	devboxReconciler.InitRepoDeleter()
+
+	if err = devboxReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
 	}
