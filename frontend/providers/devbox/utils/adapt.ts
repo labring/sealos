@@ -114,6 +114,7 @@ export const adaptDevboxDetailV2 = ([
 
   const configMaps: Array<{ id: string; path: string; content: string }> = [];
   const volumes: Array<{ id: string; path: string; size: number }> = [];
+  let sharedMemory: { enabled: boolean; size: number } | undefined;
 
   if (config?.volumes && config?.volumeMounts) {
     const volumesArray = config.volumes as any[];
@@ -150,6 +151,17 @@ export const adaptDevboxDetailV2 = ([
           path: volumeMount.mountPath,
           size
         });
+      } else if (volume.emptyDir && volume.name === 'shared-memory') {
+        const sizeLimit = volume.emptyDir.sizeLimit || '64Mi';
+        const sizeMatch = sizeLimit.match(/^(\d+)(Mi|Gi)$/i);
+        let size = 64;
+        if (sizeMatch) {
+          size = parseInt(sizeMatch[1]);
+          if (sizeMatch[2].toLowerCase() === 'mi') {
+            size = Math.ceil(size / 1024);
+          }
+        }
+        sharedMemory = { enabled: true, size };
       }
     });
   }
@@ -191,6 +203,7 @@ export const adaptDevboxDetailV2 = ([
     envs,
     configMaps,
     volumes,
+    sharedMemory,
     lastTerminatedReason: devbox.status
       ? devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
         ? devbox.status.state.waiting
