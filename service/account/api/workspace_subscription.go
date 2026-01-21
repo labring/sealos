@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -65,13 +67,35 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 		)
 		return
 	}
+	// InvoiceInfo encapsulates detailed information about an unpaid invoice
+	// Amount conversion:
+	// - System currency ratio: 1 real currency unit = 1,000,000 system units
+	// - Stripe currency ratio: 1 real currency unit = 100 cents
+	// - Conversion factor: Stripe to System = 10,000 (i.e., stripeAmount * 10,000)
+	type InvoiceInfo struct {
+		ID                string `json:"ID,omitempty"`                // Invoice ID from Stripe
+		PaymentURL        string `json:"PaymentUrl,omitempty"`        // Hosted invoice payment URL
+		AmountDue         int64  `json:"AmountDue,omitempty"`         // Amount due in system currency (1 unit = 1/1,000,000 real currency)
+		Currency          string `json:"Currency,omitempty"`          // Currency code (e.g., "usd")
+		Status            string `json:"Status,omitempty"`            // Invoice status: "draft", "open", "paid", "void", etc.
+		CreatedAt         int64  `json:"CreatedAt,omitempty"`         // Invoice creation timestamp (Unix timestamp)
+		DueDate           int64  `json:"DueDate,omitempty"`           // Invoice due date (Unix timestamp)
+		HasDiscount       bool   `json:"HasDiscount,omitempty"`       // Whether invoice has discount applied
+		DiscountAmount    int64  `json:"DiscountAmount,omitempty"`    // Discount amount in system currency
+		Subtotal          int64  `json:"Subtotal,omitempty"`          // Subtotal before discount in system currency
+		Total             int64  `json:"Total,omitempty"`             // Total amount after discount in system currency
+		Description       string `json:"Description,omitempty"`       // Invoice description or reason for payment
+		PaymentMethodType string `json:"PaymentMethodType,omitempty"` // Payment method type: "stripe", "balance", etc.
+	}
+
 	const (
 		WorkspaceTypeSubscription = "SUBSCRIPTION"
 		WorkspaceTypePAYG         = "PAYG"
 	)
 	workspaceSubInfo := struct {
 		*types.WorkspaceSubscription
-		Type string `json:"type"`
+		Type        string       `json:"type"`
+		InvoiceInfo *InvoiceInfo `json:"InvoiceInfo,omitempty"`
 	}{
 		WorkspaceSubscription: subscription,
 		Type:                  WorkspaceTypeSubscription,
@@ -79,6 +103,98 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 
 	if subscription == nil {
 		workspaceSubInfo.Type = WorkspaceTypePAYG
+	} else {
+		// Check if subscription is expired, unpaid, and uses Stripe payment method
+		// If all conditions are met, try to get the invoice payment link from Stripe
+		now := time.Now().UTC()
+		if subscription.CurrentPeriodEndAt.Before(now) &&
+			subscription.PayMethod == types.PaymentMethodStripe &&
+			subscription.Stripe != nil &&
+			subscription.Stripe.SubscriptionID != "" {
+
+			// Query the most recent invoice from Stripe to check payment status
+			latestInvoice, invoiceErr := services.StripeServiceInstance.GetLatestInvoice(
+				subscription.Stripe.SubscriptionID,
+			)
+			if invoiceErr == nil && latestInvoice != nil {
+				// Check invoice payment status
+				// Stripe invoice statuses: draft, open, paid, uncollectible, void
+				// We only provide payment link for invoices that are still payable (open or draft)
+				if latestInvoice.Status == "open" || latestInvoice.Status == "draft" {
+					// Check if invoice is created within 7 days
+					// Invoices older than 7 days are considered expired and user should recreate subscription
+					invoiceAge := time.Since(time.Unix(latestInvoice.Created, 0))
+					const maxInvoiceAge = 7 * 24 * time.Hour // 7 days
+
+					if invoiceAge < maxInvoiceAge {
+						// Create InvoiceInfo with detailed information
+						// Conversion ratio: Stripe (cents:100) -> Sealos System (1000000:1)
+						// Formula: stripeAmount * (1000000 / 100) = stripeAmount * 10000
+						const stripeToSystemRatio = 10000
+
+						invoiceInfo := &InvoiceInfo{
+							ID:                latestInvoice.ID,
+							PaymentURL:        latestInvoice.HostedInvoiceURL,
+							AmountDue:         latestInvoice.AmountDue * stripeToSystemRatio,
+							Currency:          string(latestInvoice.Currency),
+							Status:            string(latestInvoice.Status),
+							CreatedAt:         latestInvoice.Created,
+							PaymentMethodType: string(types.PaymentMethodStripe),
+						}
+
+						// Set due date if available
+						if latestInvoice.DueDate != 0 {
+							invoiceInfo.DueDate = latestInvoice.DueDate
+						}
+
+						// Calculate discount information with proper conversion
+						if latestInvoice.Subtotal != latestInvoice.Total {
+							invoiceInfo.HasDiscount = true
+							invoiceInfo.DiscountAmount = (latestInvoice.Subtotal - latestInvoice.Total) * stripeToSystemRatio
+							invoiceInfo.Subtotal = latestInvoice.Subtotal * stripeToSystemRatio
+							invoiceInfo.Total = latestInvoice.Total * stripeToSystemRatio
+						} else {
+							invoiceInfo.Subtotal = latestInvoice.Subtotal * stripeToSystemRatio
+							invoiceInfo.Total = latestInvoice.Total * stripeToSystemRatio
+						}
+
+						// Add description based on invoice metadata or billing reason
+						if latestInvoice.Description != "" {
+							invoiceInfo.Description = latestInvoice.Description
+						} else if latestInvoice.BillingReason != "" {
+							invoiceInfo.Description = fmt.Sprintf("Invoice for %s", latestInvoice.BillingReason)
+						}
+
+						workspaceSubInfo.InvoiceInfo = invoiceInfo
+
+						dao.Logger.Infof(
+							"Found payable invoice %s (status: %s, amount: %d, age: %.2f days) for subscription %s",
+							latestInvoice.ID,
+							latestInvoice.Status,
+							latestInvoice.AmountDue,
+							invoiceAge.Hours()/24,
+							subscription.ID,
+						)
+					} else {
+						// Invoice is too old (>= 7 days), user should recreate subscription
+						dao.Logger.Infof(
+							"Unpaid invoice %s is too old (age: %.2f days >= 7 days) for subscription %s, skipping payment link",
+							latestInvoice.ID,
+							invoiceAge.Hours()/24,
+							subscription.ID,
+						)
+					}
+				}
+			}
+			// If there's an error getting the invoice, log it but don't block the response
+			if invoiceErr != nil {
+				dao.Logger.Errorf(
+					"Failed to get latest invoice for subscription %s: %v",
+					subscription.ID,
+					invoiceErr,
+				)
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -628,11 +744,13 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		return
 	}
 
-	if currentSubscription.PlanName == req.PlanName {
+	// Allow recreating the same plan for debt status subscriptions
+	if currentSubscription.PlanName == req.PlanName &&
+		currentSubscription.Status != types.SubscriptionStatusDebt {
 		c.JSON(
 			http.StatusBadRequest,
 			helper.ErrorMessage{
-				Error: "plan name is same as current plan or no current subscription",
+				Error: "plan name is same as current plan",
 			},
 		)
 		return
@@ -1065,8 +1183,10 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 	}
 
 	// Validate plan changes
+	// Allow recreating the same plan for debt status subscriptions
 	if currentSubscription != nil && currentSubscription.PlanName == req.PlanName &&
-		req.Operator != types.SubscriptionTransactionTypeRenewed {
+		req.Operator != types.SubscriptionTransactionTypeRenewed &&
+		currentSubscription.Status != types.SubscriptionStatusDebt {
 		SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "plan name is same as current plan"})
 		return
 	}
@@ -1151,12 +1271,24 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 		// No additional validation needed for creation
 		if currentSubscription != nil &&
 			currentSubscription.PlanName != types.FreeSubscriptionPlanName {
-			SetErrorResp(
-				c,
-				http.StatusBadRequest,
-				gin.H{"error": "cannot create new subscription with existing subscription"},
-			)
-			return
+
+			// Allow re-creation for overdue subscriptions
+			if currentSubscription.Status == types.SubscriptionStatusDebt {
+				// Overdue status allowed, will cancel old subscription in payment flow
+				logrus.Infof(
+					"Allowing subscription creation for overdue workspace %s/%s, will cancel old subscription",
+					req.Workspace,
+					req.RegionDomain,
+				)
+			} else {
+				// Normal active subscription, reject creation
+				SetErrorResp(
+					c,
+					http.StatusBadRequest,
+					gin.H{"error": "cannot create new subscription with existing active subscription"},
+				)
+				return
+			}
 		}
 		transaction.Amount = planPrice.Price // Full price for new subscription
 	case types.SubscriptionTransactionTypeUpgraded:
@@ -1337,10 +1469,20 @@ func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(
 		// Handle existing pending/processing transactions
 		if lastTransaction != nil &&
 			(lastTransaction.Status == types.SubscriptionTransactionStatusProcessing || lastTransaction.Status == types.SubscriptionTransactionStatusPending) {
-			// 判断是否为相同请求
+			// 判断是否为相同请求（包括优惠码）
+			// 提取上次交易的优惠码
+			lastPromotionCode := ""
+			if strings.Contains(lastTransaction.StatusDesc, "Promotion code: ") {
+				parts := strings.Split(lastTransaction.StatusDesc, "Promotion code: ")
+				if len(parts) > 1 {
+					lastPromotionCode = strings.TrimSpace(parts[1])
+				}
+			}
+
 			isSameRequest := lastTransaction.NewPlanName == req.PlanName &&
 				lastTransaction.Operator == req.Operator &&
-				lastTransaction.Period == req.Period
+				lastTransaction.Period == req.Period &&
+				lastPromotionCode == req.PromotionCode
 
 			switch {
 			case isSameRequest:
@@ -1616,6 +1758,90 @@ func initializeTransactionData(
 	return nil
 }
 
+// cancelOldSubscriptionInTransaction cancels the existing subscription within a transaction
+func cancelOldSubscriptionInTransaction(
+	tx *gorm.DB,
+	workspace string,
+	regionDomain string,
+) error {
+	// Get current subscription
+	subscription, err := dao.DBClient.GetWorkspaceSubscription(workspace, regionDomain)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// Subscription doesn't exist, no need to cancel
+			return nil
+		}
+		return fmt.Errorf("failed to get workspace subscription: %w", err)
+	}
+
+	if subscription == nil || subscription.Status == types.SubscriptionStatusDeleted {
+		return nil
+	}
+
+	// Update subscription status to deleted
+	//subscription.Status = types.SubscriptionStatusDeleted
+	//subscription.PayStatus = types.SubscriptionPayStatusCanceled
+	//subscription.CancelAt = time.Now().UTC()
+
+	//if err := tx.Save(&subscription).Error; err != nil {
+	//	return fmt.Errorf("failed to update subscription status: %w", err)
+	//}
+
+	// Cancel Stripe subscription
+	if subscription.PayMethod == types.PaymentMethodStripe &&
+		subscription.Stripe != nil &&
+		subscription.Stripe.SubscriptionID != "" {
+
+		_, err := services.StripeServiceInstance.CancelSubscription(
+			subscription.Stripe.SubscriptionID,
+		)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to cancel Stripe subscription %s: %w",
+				subscription.Stripe.SubscriptionID,
+				err,
+			)
+		}
+
+		logrus.Infof(
+			"Canceled Stripe subscription %s for workspace %s/%s",
+			subscription.Stripe.SubscriptionID,
+			workspace,
+			regionDomain,
+		)
+	}
+
+	// Create cancellation transaction record
+	cancelTransaction := types.WorkspaceSubscriptionTransaction{
+		ID:            uuid.New(),
+		From:          types.TransactionFromSystem,
+		Workspace:     workspace,
+		RegionDomain:  regionDomain,
+		UserUID:       subscription.UserUID,
+		OldPlanName:   subscription.PlanName,
+		OldPlanStatus: subscription.Status,
+		NewPlanName:   subscription.PlanName,
+		Operator:      types.SubscriptionTransactionTypeCanceled,
+		StartAt:       time.Now().UTC(),
+		CreatedAt:     time.Now().UTC(),
+		Status:        types.SubscriptionTransactionStatusCompleted,
+		PayStatus:     types.SubscriptionPayStatusNoNeed,
+		StatusDesc:    "Auto-canceled before creating new subscription (overdue)",
+	}
+
+	if err := dao.DBClient.CreateWorkspaceSubscriptionTransaction(tx, &cancelTransaction); err != nil {
+		return fmt.Errorf("failed to create cancel transaction: %w", err)
+	}
+
+	logrus.Infof(
+		"Successfully canceled old subscription for workspace %s/%s before creating new one",
+		workspace,
+		regionDomain,
+	)
+
+	return nil
+}
+
 // processNewSubscription handles new subscription creation and renewal
 func processNewSubscription(
 	tx *gorm.DB,
@@ -1624,6 +1850,26 @@ func processNewSubscription(
 	price *types.ProductPrice,
 	transaction types.WorkspaceSubscriptionTransaction,
 ) error {
+	// Handle overdue subscription re-creation: cancel old subscription first
+	if transaction.OldPlanStatus == types.SubscriptionStatusDebt ||
+		(transaction.OldPlanName != "" && transaction.OldPlanName != types.FreeSubscriptionPlanName) {
+
+		if err := cancelOldSubscriptionInTransaction(tx, req.Workspace, req.RegionDomain); err != nil {
+			SetErrorResp(
+				c,
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to cancel old subscription: %v", err)},
+			)
+			return err
+		}
+
+		logrus.Infof(
+			"Canceled old subscription for workspace %s/%s before creating new one",
+			req.Workspace,
+			req.RegionDomain,
+		)
+	}
+
 	// Create transaction record
 	if transaction.Status == "" {
 		transaction.Status = types.SubscriptionTransactionStatusProcessing
@@ -2222,6 +2468,9 @@ func processWorkspaceSubscriptionWebhookEvent(event *stripe.Event) error {
 		return handleWorkspaceSubscriptionSessionExpired(event)
 	case "setup_intent.succeeded":
 		return handleSetupIntentSucceeded(event)
+	case "invoice.created":
+		// Auto-confirm subscription renewal invoices to avoid payment delays
+		return handleWorkspaceSubscriptionInvoiceCreated(event)
 	default:
 		logrus.Infof("Unhandled workspace subscription webhook event type: %s", event.Type)
 		return nil
@@ -2325,6 +2574,9 @@ func finalizeWorkspaceSubscriptionSuccess(
 	wsTransaction.Status = types.SubscriptionTransactionStatusCompleted
 	wsTransaction.Amount = payment.Amount
 	wsTransaction.PayStatus = types.SubscriptionPayStatusPaid
+	if wsTransaction.Period == "" {
+		wsTransaction.Period = types.SubscriptionPeriodMonthly
+	}
 	// Create or update transaction
 	if wsTransaction.Operator == types.SubscriptionTransactionTypeCreated ||
 		wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded ||
@@ -2359,9 +2611,6 @@ func finalizeWorkspaceSubscriptionSuccess(
 		workspaceSubscription.PayStatus = types.SubscriptionPayStatusPaid
 		workspaceSubscription.TrafficStatus = types.WorkspaceTrafficStatusActive
 		workspaceSubscription.PayMethod = payment.Method
-		if payment.Stripe != nil {
-			workspaceSubscription.Stripe = payment.Stripe
-		}
 	} else {
 		// Create new for initial if not exists
 		workspaceSubscription = &types.WorkspaceSubscription{
@@ -2379,29 +2628,27 @@ func finalizeWorkspaceSubscriptionSuccess(
 			CreateAt:             time.Now().UTC(),
 			ExpireAt:             stripe.Time(time.Now().UTC().AddDate(0, 1, 0)),
 		}
-		if payment.Stripe != nil {
-			workspaceSubscription.Stripe = payment.Stripe
+		if wsTransaction.Period != "" {
+			period, err := types.ParsePeriod(wsTransaction.Period)
+			if err == nil {
+				workspaceSubscription.CurrentPeriodEndAt = workspaceSubscription.CurrentPeriodStartAt.Add(period)
+				workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+			}
 		}
 	}
-
-	// Set period for renewal and upgrade
-	switch wsTransaction.Operator {
-	case types.SubscriptionTransactionTypeRenewed:
-		// Renewal: extend from current period
-		workspaceSubscription.CurrentPeriodStartAt = time.Now().UTC()
-		workspaceSubscription.CurrentPeriodEndAt = time.Now().UTC().AddDate(0, 1, 0)
-		workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
-	case types.SubscriptionTransactionTypeUpgraded:
-		// Upgrade: reset period from today with new billing cycle
-		now := time.Now().UTC()
+	if wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed || wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded {
 		periodDuration, err := types.ParsePeriod(wsTransaction.Period)
 		if err != nil {
 			// Fallback to monthly if parsing fails
 			periodDuration = 30 * 24 * time.Hour
 		}
-		workspaceSubscription.CurrentPeriodStartAt = now
-		workspaceSubscription.CurrentPeriodEndAt = now.Add(periodDuration)
-		workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+		if time.Since(workspaceSubscription.CurrentPeriodStartAt) > 24*time.Hour {
+			workspaceSubscription.CurrentPeriodStartAt = time.Now().UTC()
+			workspaceSubscription.CurrentPeriodEndAt = time.Now().UTC().Add(periodDuration)
+		}
+		if workspaceSubscription.ExpireAt.Before(workspaceSubscription.CurrentPeriodEndAt) {
+			workspaceSubscription.ExpireAt = stripe.Time(workspaceSubscription.CurrentPeriodEndAt)
+		}
 	}
 
 	if err := tx.Save(workspaceSubscription).Error; err != nil {
@@ -2419,10 +2666,6 @@ func finalizeWorkspaceSubscriptionSuccess(
 	plan, err := dao.DBClient.GetWorkspaceSubscriptionPlan(wsTransaction.NewPlanName)
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
-	}
-
-	if wsTransaction.Period == "" {
-		wsTransaction.Period = types.SubscriptionPeriodMonthly
 	}
 
 	var oldPlan *types.WorkspaceSubscriptionPlan
@@ -2523,14 +2766,17 @@ func updateWorkspaceSubscriptionNamespaceStatus(workspace string) error {
 		}
 
 		// Check if the annotation already matches the desired status
-		if ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] == types.NormalDebtNamespaceAnnoStatus ||
-			ns.Status.Phase == corev1.NamespaceTerminating {
+		if ns.Status.Phase == corev1.NamespaceTerminating {
 			return nil
 		}
-
+		original := ns.DeepCopy()
 		// Update the annotation
 		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.NormalDebtNamespaceAnnoStatus
-
+		ns.Annotations[DebtNamespaceAnnoStatusKey] = ResumeDebtNamespaceAnnoStatus
+		ns.Annotations[NetworkStatusAnnoKey] = ResumeDebtNamespaceAnnoStatus
+		if err := dao.K8sManager.GetClient().Patch(ctx, ns, client.MergeFrom(original)); err != nil {
+			return fmt.Errorf("patch namespace annotation failed: %w", err)
+		}
 		// Attempt to update the namespace
 		if err := dao.K8sManager.GetClient().Update(ctx, ns); err != nil {
 			return fmt.Errorf("failed to update namespace annotation: %w", err)
@@ -3109,6 +3355,32 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 			}
 			return fmt.Errorf("failed to get workspace subscription: %w", err)
 		}
+
+		// Check whether the deleted Stripe subscription is a subscription recorded in the current database
+		// If not (for example: the old ID is cleared after the new subscription replaces the old one), skip the processing
+		// This prevents the webhook deletion event of the old subscription from affecting the service status of the new subscription
+		if workspaceSubscription.Stripe != nil && workspaceSubscription.Stripe.SubscriptionID != "" {
+			if workspaceSubscription.Stripe.SubscriptionID != subscription.ID {
+				logrus.Infof(
+					"Stripe subscription %s being deleted does not match current subscription %s for workspace %s/%s, skipping webhook processing",
+					subscription.ID,
+					workspaceSubscription.Stripe.SubscriptionID,
+					workspace,
+					regionDomain,
+				)
+				return nil
+			}
+		} else {
+			// There is no subscription ID record in the database (it may have been replaced by a new subscription), so ignore this webhook
+			logrus.Infof(
+				"No Stripe subscription ID in database for workspace %s/%s, ignoring deletion webhook for subscription %s",
+				workspace,
+				regionDomain,
+				subscription.ID,
+			)
+			return nil
+		}
+
 		if workspaceSubscription.Status == types.SubscriptionStatusDeleted {
 			_, err := services.StripeServiceInstance.CancelSubscription(subscription.ID)
 			if err != nil {

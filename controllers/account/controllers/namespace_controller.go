@@ -11,11 +11,12 @@ import (
 	"sync"
 	"time"
 
+	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
+
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/minio/madmin-go/v3"
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
@@ -290,34 +291,87 @@ func (r *NamespaceReconciler) Reconcile(
 				return "suspend/resume"
 			}(),
 		},
-		// Case 4: debt completion status handling network
+		// Case 4: debt completion status handling network OR network completion status handling debt
 		{
 			condition: func() bool {
-				return debtExists && networkExists && debtCompletedStates[debtStatus] &&
-					!networkCompletedStates[networkStatus]
-			},
-			newDebt: debtStatus,
-			newNetwork: func() string {
-				switch networkStatus {
-				case types.NetworkSuspend:
-					return types.NetworkSuspendCompleted
-				case types.NetworkResume:
-					return types.NetworkResumeCompleted
-				default:
-					return networkStatus
+				// Subcase 4a: debt completed but network not completed
+				if debtExists && networkExists && debtCompletedStates[debtStatus] &&
+					!networkCompletedStates[networkStatus] {
+					return true
 				}
+				// Subcase 4b: network completed but debt not completed
+				if debtExists && networkExists && networkCompletedStates[networkStatus] &&
+					!debtCompletedStates[debtStatus] {
+					return true
+				}
+				return false
+			},
+			newDebt: func() string {
+				// If debt is not completed, transition it to completed state
+				if !debtCompletedStates[debtStatus] {
+					switch debtStatus {
+					case types.SuspendDebtNamespaceAnnoStatus:
+						return types.SuspendCompletedDebtNamespaceAnnoStatus
+					case types.TerminateSuspendDebtNamespaceAnnoStatus:
+						return types.TerminateSuspendCompletedDebtNamespaceAnnoStatus
+					case types.ResumeDebtNamespaceAnnoStatus:
+						return types.ResumeCompletedDebtNamespaceAnnoStatus
+					case types.FinalDeletionDebtNamespaceAnnoStatus:
+						return types.FinalDeletionCompletedDebtNamespaceAnnoStatus
+					default:
+						return debtStatus
+					}
+				}
+				return debtStatus
+			}(),
+			newNetwork: func() string {
+				// If network is not completed, transition it to completed state
+				if !networkCompletedStates[networkStatus] {
+					switch networkStatus {
+					case types.NetworkSuspend:
+						return types.NetworkSuspendCompleted
+					case types.NetworkResume:
+						return types.NetworkResumeCompleted
+					default:
+						return networkStatus
+					}
+				}
+				return networkStatus
 			}(),
 			action: func(ctx context.Context, name string) error {
-				switch networkStatus {
-				case types.NetworkSuspend:
-					return r.SuspendUserResource(ctx, name)
-				case types.NetworkResume:
-					return r.ResumeUserResource(ctx, name)
-				default:
-					return nil
+				// Prioritize debt action (suspend/delete) over network action when both need action
+				// If debt needs action and is suspend/delete type, execute it
+				if !debtCompletedStates[debtStatus] {
+					switch debtStatus {
+					case types.SuspendDebtNamespaceAnnoStatus,
+						types.TerminateSuspendDebtNamespaceAnnoStatus:
+						return r.SuspendUserResource(ctx, name)
+					case types.FinalDeletionDebtNamespaceAnnoStatus:
+						return r.DeleteUserResource(ctx, name)
+					case types.ResumeDebtNamespaceAnnoStatus:
+						return r.ResumeUserResource(ctx, name)
+					}
 				}
+				// Otherwise execute network action if needed
+				if !networkCompletedStates[networkStatus] {
+					switch networkStatus {
+					case types.NetworkSuspend:
+						return r.SuspendUserResource(ctx, name)
+					case types.NetworkResume:
+						return r.ResumeUserResource(ctx, name)
+					}
+				}
+				return nil
 			},
-			actionName: "suspend/resume",
+			actionName: func() string {
+				if !debtCompletedStates[debtStatus] {
+					if debtStatus == types.FinalDeletionDebtNamespaceAnnoStatus {
+						return deleteConst
+					}
+					return "suspend/resume"
+				}
+				return "suspend/resume"
+			}(),
 		},
 	}
 

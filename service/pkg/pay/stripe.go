@@ -729,7 +729,7 @@ func (s *StripeService) ParseWebhookEventData(event *stripe.Event) (interface{},
 		}
 		return &sub, nil
 
-	case "invoice.payment_succeeded", "invoice.payment_failed", "invoice.paid":
+	case "invoice.payment_succeeded", "invoice.payment_failed", "invoice.paid", "invoice.created":
 		var in stripe.Invoice
 		err := json.Unmarshal(event.Data.Raw, &in)
 		if err != nil {
@@ -997,6 +997,35 @@ func (s *StripeService) GetUnpaidUpgradeInvoice(subscriptionID string) (*stripe.
 	return nil, nil
 }
 
+// GetLatestInvoice retrieves the most recent invoice for a subscription
+// Returns the latest invoice regardless of its payment status
+// This is useful for checking the payment status of renewal invoices
+func (s *StripeService) GetLatestInvoice(subscriptionID string) (*stripe.Invoice, error) {
+	// List invoices for the subscription, ordered by creation date descending
+	params := &stripe.InvoiceListParams{
+		Subscription: stripe.String(subscriptionID),
+	}
+	params.Limit = stripe.Int64(1) // Only get the most recent invoice
+	params.Expand = []*string{
+		stripe.String("data.payment_intent"),
+	}
+
+	iter := invoice.List(params)
+
+	// Get the first (most recent) invoice
+	if iter.Next() {
+		inv := iter.Invoice()
+		return inv, nil
+	}
+
+	if err := iter.Err(); err != nil {
+		return nil, fmt.Errorf("failed to list invoices: %w", err)
+	}
+
+	// No invoices found for this subscription
+	return nil, nil
+}
+
 // IsSameUpgradeRequest checks if the new upgrade request is the same as an existing unpaid upgrade
 func (s *StripeService) IsSameUpgradeRequest(existingInvoice *stripe.Invoice, newPlanName, promotionCode string) bool {
 	if existingInvoice == nil {
@@ -1185,6 +1214,61 @@ func (s *StripeService) GetPaymentMethod(paymentMethodID string) (*stripe.Paymen
 		return nil, fmt.Errorf("paymentmethod.Get: %v", err)
 	}
 	return pm, nil
+}
+
+// ConfirmInvoice confirms a draft invoice and attempts payment
+// This is used for auto-confirming subscription renewal invoices to avoid payment delays
+// It changes invoice status from "draft" to "open" and then attempts payment automatically
+//
+// For invoices that are already finalized (status=open) but haven't attempted payment yet,
+// it will also try to pay. Payment is considered attempted if an invoice.payment_failed
+// webhook would have been triggered (which happens when payment is attempted).
+func (s *StripeService) ConfirmInvoice(invoiceID string) error {
+	// Get the invoice first to check its status
+	inv, err := invoice.Get(invoiceID, nil)
+	if err != nil {
+		return fmt.Errorf("failed to get invoice %s: %w", invoiceID, err)
+	}
+
+	// Check if payment has already been attempted
+	// Invoice status "paid" means payment succeeded
+	// Invoice status "void" means invoice was canceled
+	// Invoice status "uncollectible" means payment failed and was marked as uncollectible
+	if inv.Status == "paid" || inv.Status == "void" || inv.Status == "uncollectible" {
+		logrus.Infof("Invoice %s already processed (status: %s), skipping", invoiceID, inv.Status)
+		return nil
+	}
+
+	// Step 1: Finalize the invoice if it's still in draft status
+	if inv.Status == "draft" {
+		_, err = invoice.FinalizeInvoice(invoiceID, nil)
+		if err != nil {
+			return fmt.Errorf("failed to finalize invoice %s: %w", invoiceID, err)
+		}
+		logrus.Infof("Successfully finalized invoice %s, status changed from draft to open", invoiceID)
+		inv.Status = "open" // Update status for next step
+	}
+
+	// Step 2: Attempt payment automatically for invoices that haven't been paid yet
+	// Status "open" means the invoice is finalized and awaiting payment
+	// We try to pay if the invoice is in "open" status, which will trigger payment attempt
+	// If payment was already attempted (succeeded or failed), Stripe will return an error
+	// and we handle it gracefully below
+	if inv.Status == "open" {
+		logrus.Infof("Attempting payment for invoice %s (status: open)", invoiceID)
+		// Note: We don't pass PaymentMethod parameter to use the customer's default payment method
+		_, err = invoice.Pay(invoiceID, &stripe.InvoicePayParams{})
+		if err != nil {
+			// Payment failed or was already attempted
+			// This is expected if payment was already attempted (succeeded or failed)
+			// The invoice.payment_failed webhook will handle actual payment failures
+			logrus.Infof("Payment attempt for invoice %s: %v (may have been attempted already, webhook will handle if needed)", invoiceID, err)
+			return nil // Don't return error
+		}
+		logrus.Infof("Successfully paid invoice %s", invoiceID)
+	}
+
+	return nil
 }
 
 // InitStripeService initializes the global Stripe service
