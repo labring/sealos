@@ -194,3 +194,16 @@ export const AppConfigSchema = z
   .strict();
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;
+
+/**
+ * Schema for the client sided app config.
+ */
+export const ClientAppConfigSchema = z
+  .object({
+    ui: z.object({
+      brandName: z.string()
+    })
+  })
+  .strict();
+
+export type ClientAppConfig = z.infer<typeof ClientAppConfigSchema>;

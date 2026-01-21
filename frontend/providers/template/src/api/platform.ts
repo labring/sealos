@@ -3,6 +3,7 @@ import { GET } from '@/services/request';
 import { SystemConfigType, TemplateType } from '@/types/app';
 import type { UserTask, userPriceType } from '@/types/user';
 import useSessionStore from '@/store/session';
+import { ClientAppConfig } from '@/types/config';
 
 export const updateRepo = () => GET('/api/updateRepo');
 
@@ -41,3 +42,8 @@ export const getPriceBonus = () =>
       Authorization: useSessionStore.getState().getSession()?.token
     }
   });
+
+/**
+ * Get client app configuration
+ */
+export const getClientAppConfig = () => GET<ClientAppConfig>('/api/platform/getClientAppConfig');

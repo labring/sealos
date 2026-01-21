@@ -3,7 +3,7 @@ import { theme } from '@/constants/theme';
 import { useGlobalStore } from '@/store/global';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { dehydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppContext, AppInitialProps, AppProps } from 'next/app';
 import Head from 'next/head';
@@ -15,6 +15,8 @@ import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import { useSystemConfigStore } from '@/store/config';
 import useSessionStore from '@/store/session';
 import { useUserStore } from '@/store/user';
+import { ClientConfigProvider } from '@sealos/shared';
+import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 
 import '@sealos/driver/src/driver.css';
 import '@/styles/reset.scss';
@@ -30,7 +32,6 @@ Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());
 Router.events.on('routeChangeError', () => NProgress.done());
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -43,9 +44,15 @@ const queryClient = new QueryClient({
 
 type AppOwnProps = {
   customScripts: { [key: string]: string }[];
+  dehydratedState?: unknown;
 };
 
-const MyApp = ({ Component, pageProps, customScripts }: AppProps & AppOwnProps) => {
+const MyApp = ({
+  Component,
+  pageProps,
+  customScripts,
+  dehydratedState
+}: AppProps & AppOwnProps) => {
   const router = useRouter();
   const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
@@ -168,14 +175,16 @@ const MyApp = ({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <QueryClientProvider client={queryClient}>
-        <ChakraProvider theme={theme}>
-          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
-            <Layout>
-              <Component {...pageProps} />
-            </Layout>
-            <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
-          </QuotaGuardProvider>
-        </ChakraProvider>
+        <ClientConfigProvider dehydratedState={dehydratedState}>
+          <ChakraProvider theme={theme}>
+            <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
+              <Layout>
+                <Component {...pageProps} />
+              </Layout>
+              <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
+            </QuotaGuardProvider>
+          </ChakraProvider>
+        </ClientConfigProvider>
       </QueryClientProvider>
       {customScripts.map((script, i) => (
         <Script strategy="afterInteractive" key={i} {...script} />
@@ -197,7 +206,27 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
     console.error('Failed to inject custom scripts:', error);
   }
 
-  return { ...ctx, customScripts };
+  // Pre-fetch client app config on server side
+  let dehydratedState: unknown;
+  try {
+    if (typeof window === 'undefined') {
+      const qc = new QueryClient({
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+            retry: false,
+            cacheTime: 0
+          }
+        }
+      });
+      qc.setQueryData(['client-app-config'], getClientAppConfigServer());
+      dehydratedState = dehydrate(qc);
+    }
+  } catch (error) {
+    console.error('Failed to prefetch client app config:', error);
+  }
+
+  return { ...ctx, customScripts, dehydratedState };
 };
 
 export default appWithTranslation(MyApp);
