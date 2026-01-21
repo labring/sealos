@@ -225,7 +225,7 @@ export const LogTable = ({
             isLoading={isLoading}
             isHeaderFixed={true}
             rowClassName={(row) =>
-              row.original?.stream === 'stderr' ? 'bg-red-50 hover:bg-red-50' : ''
+              isOnlyStderr && row.original?.stream === 'stderr' ? 'bg-red-50 hover:bg-red-50' : ''
             }
           />
         </div>
