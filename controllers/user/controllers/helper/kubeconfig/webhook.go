@@ -19,11 +19,9 @@ package kubeconfig
 import (
 	"fmt"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"k8s.io/client-go/rest"
-
 	"k8s.io/client-go/tools/clientcmd/api"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (c *WebhookConfig) Apply(_ *rest.Config, _ client.Client) (*api.Config, error) {

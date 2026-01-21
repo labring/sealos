@@ -21,14 +21,13 @@ import (
 	"errors"
 
 	"github.com/go-logr/logr"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/labring/sealos/controllers/user/controllers/helper/finalizer"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-	"github.com/labring/sealos/controllers/user/controllers/helper/finalizer"
 )
 
 // UserExpirationReconciler reconciles a Secret object
@@ -50,7 +49,10 @@ type UserExpirationReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
-func (r *UserExpirationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *UserExpirationReconciler) Reconcile(
+	ctx context.Context,
+	req ctrl.Request,
+) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for users expiration")
 	user := &userv1.User{}
 	if err := r.Get(ctx, req.NamespacedName, user); err != nil {
@@ -91,7 +93,10 @@ func (r *UserExpirationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *UserExpirationReconciler) reconcile(_ context.Context, _ client.Object) (ctrl.Result, error) {
-	//TODO add  Expiration logic
+func (r *UserExpirationReconciler) reconcile(
+	_ context.Context,
+	_ client.Object,
+) (ctrl.Result, error) {
+	// TODO add  Expiration logic
 	return ctrl.Result{}, nil
 }

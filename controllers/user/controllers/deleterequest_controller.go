@@ -22,10 +22,8 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -52,7 +50,10 @@ const DeleteRequestRequeueDuration time.Duration = 30 * time.Second
 //+kubebuilder:rbac:groups=user.sealos.io,resources=deleterequests/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=user.sealos.io,resources=deleterequests/finalizers,verbs=update
 
-func (r *DeleteRequestReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *DeleteRequestReconciler) Reconcile(
+	ctx context.Context,
+	req ctrl.Request,
+) (ctrl.Result, error) {
 	deleteRequest := &userv1.DeleteRequest{}
 	if err := r.Get(ctx, req.NamespacedName, deleteRequest); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -60,8 +61,12 @@ func (r *DeleteRequestReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	return r.reconcile(ctx, deleteRequest)
 }
 
-func (r *DeleteRequestReconciler) reconcile(ctx context.Context, request *userv1.DeleteRequest) (ctrl.Result, error) {
-	r.Logger.V(1).Info("start reconcile deleterequest", "name", request.Name, "user", request.Spec.User)
+func (r *DeleteRequestReconciler) reconcile(
+	ctx context.Context,
+	request *userv1.DeleteRequest,
+) (ctrl.Result, error) {
+	r.Logger.V(1).
+		Info("start reconcile deleterequest", "name", request.Name, "user", request.Spec.User)
 	// count the time cost of handling the request
 	startTime := time.Now()
 	defer func() {
@@ -94,45 +99,86 @@ func (r *DeleteRequestReconciler) reconcile(ctx context.Context, request *userv1
 
 	// get user
 	user := userv1.User{}
-	if err := r.Client.Get(ctx, client.ObjectKey{Name: request.Spec.User}, &user); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: request.Spec.User}, &user); err != nil {
 		r.Logger.Error(err, "get user error", "name", request.Spec.User)
-		r.Recorder.Eventf(request, corev1.EventTypeWarning, "GetUserError", "get user %s error: %s", request.Spec.User, err.Error())
+		r.Recorder.Eventf(
+			request,
+			corev1.EventTypeWarning,
+			"GetUserError",
+			"get user %s error: %s",
+			request.Spec.User,
+			err.Error(),
+		)
 		return ctrl.Result{}, err
 	}
 
 	// delete user if it is not labeled deleted
 	if !isUserDeleted(user) && !isGroupUser(user) {
 		r.Logger.Info("user is not deleted or not a group user", "name", user.Name)
-		r.Recorder.Eventf(request, corev1.EventTypeWarning, "UserNotDeleted", "user %s is not deleted or not a group user", user.Name)
+		r.Recorder.Eventf(
+			request,
+			corev1.EventTypeWarning,
+			"UserNotDeleted",
+			"user %s is not deleted or not a group user",
+			user.Name,
+		)
 		return ctrl.Result{RequeueAfter: DeleteRequestRequeueDuration}, nil
 	}
 
 	// delete user
 	if err := r.Delete(ctx, &user); err != nil {
 		r.Logger.Error(err, "delete user error", "name", user.Name)
-		r.Recorder.Eventf(request, corev1.EventTypeWarning, "DeleteUserError", "delete user %s error: %s", user.Name, err.Error())
+		r.Recorder.Eventf(
+			request,
+			corev1.EventTypeWarning,
+			"DeleteUserError",
+			"delete user %s error: %s",
+			user.Name,
+			err.Error(),
+		)
 		return ctrl.Result{}, err
 	}
 
 	// get namespace
 	ns := corev1.Namespace{}
-	if err := r.Client.Get(ctx, client.ObjectKey{Name: config.GetUsersNamespace(user.Name)}, &ns); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Name: config.GetUsersNamespace(user.Name)}, &ns); err != nil {
 		r.Logger.Error(err, "get ns error", "name", ns.Name)
-		r.Recorder.Eventf(request, corev1.EventTypeWarning, "GetNamespaceError", "get namespace %s error: %s", ns.Name, err.Error())
+		r.Recorder.Eventf(
+			request,
+			corev1.EventTypeWarning,
+			"GetNamespaceError",
+			"get namespace %s error: %s",
+			ns.Name,
+			err.Error(),
+		)
 		return ctrl.Result{}, err
 	}
 
 	// delete namespace
 	if err := r.Delete(ctx, &ns); err != nil {
 		r.Logger.Error(err, "delete ns error", "name", ns.Name)
-		r.Recorder.Eventf(request, corev1.EventTypeWarning, "DeleteNamespaceError", "delete namespace %s error: %s", ns.Name, err.Error())
+		r.Recorder.Eventf(
+			request,
+			corev1.EventTypeWarning,
+			"DeleteNamespaceError",
+			"delete namespace %s error: %s",
+			ns.Name,
+			err.Error(),
+		)
 		return ctrl.Result{}, err
 	}
 
 	// update Request status to completed
 	if err := r.updateRequestStatus(ctx, request, userv1.RequestCompleted); err != nil {
 		r.Logger.Error(err, "update request status error", "name", request.Name)
-		r.Recorder.Eventf(request, corev1.EventTypeWarning, "UpdateRequestStatusError", "update request %s status error: %s", request.Name, err.Error())
+		r.Recorder.Eventf(
+			request,
+			corev1.EventTypeWarning,
+			"UpdateRequestStatusError",
+			"update request %s status error: %s",
+			request.Name,
+			err.Error(),
+		)
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
@@ -140,7 +186,8 @@ func (r *DeleteRequestReconciler) reconcile(ctx context.Context, request *userv1
 
 // isRetained returns true if the request is isCompleted and exist for retention time
 func (r *DeleteRequestReconciler) isRetained(request *userv1.DeleteRequest) bool {
-	if request.Status.Phase == userv1.RequestCompleted && request.CreationTimestamp.Add(r.retentionTime).Before(time.Now()) {
+	if request.Status.Phase == userv1.RequestCompleted &&
+		request.CreationTimestamp.Add(r.retentionTime).Before(time.Now()) {
 		return true
 	}
 	return false
@@ -153,7 +200,8 @@ func (r *DeleteRequestReconciler) isCompleted(request *userv1.DeleteRequest) boo
 
 // isExpired returns true if the request is expired
 func (r *DeleteRequestReconciler) isExpired(request *userv1.DeleteRequest) bool {
-	if request.Status.Phase != userv1.RequestCompleted && request.CreationTimestamp.Add(r.expirationTime).Before(time.Now()) {
+	if request.Status.Phase != userv1.RequestCompleted &&
+		request.CreationTimestamp.Add(r.expirationTime).Before(time.Now()) {
 		return true
 	}
 	return false
@@ -178,10 +226,20 @@ func (r *DeleteRequestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *DeleteRequestReconciler) deleteRequest(ctx context.Context, request *userv1.DeleteRequest) error {
+func (r *DeleteRequestReconciler) deleteRequest(
+	ctx context.Context,
+	request *userv1.DeleteRequest,
+) error {
 	r.Logger.V(1).Info("deleting OperationRequest", "request", request)
 	if err := r.Delete(ctx, request); client.IgnoreNotFound(err) != nil {
-		r.Recorder.Eventf(request, corev1.EventTypeWarning, "Failed to delete OperationRequest", "Failed to delete OperationRequest %s/%s", request.Namespace, request.Name)
+		r.Recorder.Eventf(
+			request,
+			corev1.EventTypeWarning,
+			"Failed to delete OperationRequest",
+			"Failed to delete OperationRequest %s/%s",
+			request.Namespace,
+			request.Name,
+		)
 		r.Logger.Error(err, "Failed to delete OperationRequest", "request", request)
 		return fmt.Errorf("failed to delete OperationRequest %s: %w", request.Name, err)
 	}
@@ -189,10 +247,21 @@ func (r *DeleteRequestReconciler) deleteRequest(ctx context.Context, request *us
 	return nil
 }
 
-func (r *DeleteRequestReconciler) updateRequestStatus(ctx context.Context, request *userv1.DeleteRequest, phase userv1.RequestPhase) error {
+func (r *DeleteRequestReconciler) updateRequestStatus(
+	ctx context.Context,
+	request *userv1.DeleteRequest,
+	phase userv1.RequestPhase,
+) error {
 	request.Status.Phase = phase
 	if err := r.Status().Update(ctx, request); err != nil {
-		r.Recorder.Eventf(request, corev1.EventTypeWarning, "Failed to update OperationRequest status", "Failed to update OperationRequest status %s/%s", request.Namespace, request.Name)
+		r.Recorder.Eventf(
+			request,
+			corev1.EventTypeWarning,
+			"Failed to update OperationRequest status",
+			"Failed to update OperationRequest status %s/%s",
+			request.Namespace,
+			request.Name,
+		)
 		r.Logger.V(1).Info("update OperationRequest status failed", "request", request)
 		return err
 	}
