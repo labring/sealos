@@ -15,7 +15,6 @@ import { openInNewWindow } from '@/utils/windowUtils';
 interface PlanConfirmationModalProps {
   plan?: SubscriptionPlan;
   workspaceName?: string;
-  isCreateMode?: boolean;
   isOpen?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
@@ -27,7 +26,6 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const {
     plan: planProp,
     workspaceName: workspaceNameProp,
-    isCreateMode: isCreateModeProp,
     isOpen,
     onConfirm,
     onCancel,
@@ -73,7 +71,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   // Get plan and context from store (props take precedence for backward compatibility)
   const plan = planProp || pendingPlan || undefined;
   const workspaceName = workspaceNameProp || modalContext.workspaceName;
-  const isCreateMode = isCreateModeProp ?? modalContext.isCreateMode ?? false;
+  const operatorFromContext = modalContext.operator;
 
   const region = getRegion();
   const workspace = session?.user?.nsid || '';
@@ -82,10 +80,16 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const payMethod: PaymentMethod = 'stripe';
 
   const isPaygUser = isPaygType();
-  const operator = isCreateMode || isPaygUser ? 'created' : 'upgraded';
+  // Always use operator from context, fallback to 'created' for PAYG users only
+  const operator = operatorFromContext || (isPaygUser ? 'created' : 'upgraded');
+  // Determine if it's create mode based on operator
+  const isCreateMode = operator === 'created';
+  // getUpgradeAmount API only supports 'created' | 'upgraded', not 'downgraded'
+  const canQueryUpgradeAmount = operator === 'created' || operator === 'upgraded';
 
-  // Don't query upgrade-amount when payment is waiting
-  const queryEnabled = isOpen && !!(plan && workspace && regionDomain) && !isPaymentWaiting;
+  // Don't query upgrade-amount when payment is waiting or operator is downgraded
+  const queryEnabled =
+    isOpen && !!(plan && workspace && regionDomain) && !isPaymentWaiting && canQueryUpgradeAmount;
 
   const {
     data: upgradeAmountData,
@@ -105,13 +109,17 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     ],
     queryFn: () => {
       if (!plan || !workspace || !regionDomain) return null;
+      // Type assertion: getUpgradeAmount only accepts 'created' | 'upgraded'
+      // We've already checked canQueryUpgradeAmount in queryEnabled
+      const validOperator =
+        operator === 'created' || operator === 'upgraded' ? operator : 'upgraded';
       return getUpgradeAmount({
         workspace,
         regionDomain,
         planName: plan.Name,
         period,
         payMethod,
-        operator,
+        operator: validOperator,
         promotionCode: redeemCode || undefined
       });
     },

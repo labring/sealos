@@ -116,7 +116,10 @@ export function UpgradePlanDialogActions({
               // Create workspace with selected plan
               const selectedPlan = plans?.find((p) => p.ID === selectedPlanId);
               if (selectedPlan) {
-                showConfirmationModal(selectedPlan, { workspaceName, isCreateMode });
+                showConfirmationModal(selectedPlan, {
+                  workspaceName,
+                  operator: 'created'
+                });
               }
             }
           }}
@@ -154,6 +157,7 @@ export function UpgradeButton({
   onUpgradeClick?: (plan: SubscriptionPlan) => void;
 }) {
   const { t } = useTranslation();
+  const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const showConfirmationModal = usePlanStore((state) => state.showConfirmationModal);
   const showDowngradeModal = usePlanStore((state) => state.showDowngradeModal);
 
@@ -162,22 +166,33 @@ export function UpgradeButton({
   const plan = additionalPlans.find((p) => p.ID === selectedPlan);
   if (!plan) return null;
 
+  const subscription = subscriptionData?.subscription;
+  const inDebt = subscription?.Status?.toLowerCase() === 'debt';
+
   const handleUpgradeClick = () => {
     if (onUpgradeClick) {
       onUpgradeClick(plan);
     } else {
       // Fallback to default behavior
       const getOperator = () => {
-        if (!currentPlanObj || isCreateMode) return 'created';
+        // If in debt state, always use 'created' operation
+        if (inDebt) return 'created';
+        if (!currentPlanObj) return 'created';
         if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
         if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
         return 'upgraded';
       };
       const operator = getOperator();
       if (operator === 'downgraded') {
-        showDowngradeModal(plan, { workspaceName, isCreateMode });
+        showDowngradeModal(plan, {
+          workspaceName,
+          operator
+        });
       } else {
-        showConfirmationModal(plan, { workspaceName, isCreateMode });
+        showConfirmationModal(plan, {
+          workspaceName,
+          operator
+        });
       }
     }
   };

@@ -240,9 +240,11 @@ export default function Plan() {
 
       if (targetPlan) {
         const workspaceName = isCreateMode ? defaultWorkspaceName : '';
+        // Determine operator based on mode: create mode uses 'created', otherwise 'upgraded'
+        const operator = isCreateMode ? 'created' : 'upgraded';
         showConfirmationModal(targetPlan, {
           workspaceName,
-          isCreateMode
+          operator
         });
       }
     }
@@ -550,7 +552,10 @@ export default function Plan() {
     const currentPlanObj = plansData?.plans?.find(
       (p) => p.Name === subscriptionData?.subscription?.PlanName
     );
+    const inDebt = subscriptionData?.subscription?.Status?.toLowerCase() === 'debt';
     const getOperator = () => {
+      // If in debt state, always use 'created' operation
+      if (inDebt) return 'created';
       if (!currentPlanObj) return 'created';
       if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
       if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
@@ -643,7 +648,10 @@ export default function Plan() {
           <div className="flex-2/3">
             {invoicePaymentUrl && (
               <div className="mb-4">
-                <InvoicePaymentBanner paymentUrl={invoicePaymentUrl} />
+                <InvoicePaymentBanner
+                  paymentUrl={invoicePaymentUrl}
+                  inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
+                />
               </div>
             )}
             <PlanHeader>
@@ -690,7 +698,12 @@ export default function Plan() {
             </div>
           )}
 
-          {invoicePaymentUrl && <InvoicePaymentBanner paymentUrl={invoicePaymentUrl} />}
+          {invoicePaymentUrl && (
+            <InvoicePaymentBanner
+              paymentUrl={invoicePaymentUrl}
+              inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
+            />
+          )}
 
           <PlanHeader>
             {({ trigger }) => (
@@ -786,7 +799,6 @@ export default function Plan() {
       <PlanConfirmationModal
         plan={pendingPlan || undefined}
         workspaceName={modalContext.workspaceName}
-        isCreateMode={modalContext.isCreateMode || false}
         isOpen={modalType === 'confirmation'}
         isSubmitting={subscriptionMutation.isLoading}
         onConfirm={() => {

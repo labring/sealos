@@ -21,7 +21,7 @@ export interface PlanStoreState {
   modalType: 'confirmation' | 'downgrade' | null;
   modalContext: {
     workspaceName?: string;
-    isCreateMode?: boolean;
+    operator?: 'created' | 'upgraded' | 'downgraded';
   };
 
   // Default values for modal opening (from URL params)
@@ -69,11 +69,17 @@ export interface PlanStoreState {
   // Modal actions
   showConfirmationModal: (
     plan: SubscriptionPlan,
-    context?: { workspaceName?: string; isCreateMode?: boolean }
+    context?: {
+      workspaceName?: string;
+      operator?: 'created' | 'upgraded' | 'downgraded';
+    }
   ) => void;
   showDowngradeModal: (
     plan: SubscriptionPlan,
-    context?: { workspaceName?: string; isCreateMode?: boolean }
+    context?: {
+      workspaceName?: string;
+      operator?: 'created' | 'upgraded' | 'downgraded';
+    }
   ) => void;
   hideModal: () => void;
 

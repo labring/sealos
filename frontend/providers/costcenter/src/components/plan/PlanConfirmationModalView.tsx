@@ -695,8 +695,8 @@ function ActionButton({
       {amountLoading || isSubmitting
         ? t('common:calculating')
         : isCreateMode
-          ? t('common:create_workspace')
-          : t('common:subscribe_and_pay')}
+        ? t('common:create_workspace')
+        : t('common:subscribe_and_pay')}
     </Button>
   );
 }
@@ -764,7 +764,7 @@ export function PlanConfirmationModalView({
     subscriptionData
   } = usePlanStore();
 
-  const isCreateMode = modalContext.isCreateMode ?? false;
+  const isCreateMode = modalContext.operator === 'created';
   const paymentMethod = cardInfoData?.payment_method;
   const redeemCodeValidating = amountLoading;
 
