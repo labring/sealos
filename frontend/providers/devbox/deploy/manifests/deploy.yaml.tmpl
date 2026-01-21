@@ -49,6 +49,8 @@ spec:
               value: https://sealos.io/docs/msa/privacy-policy
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
+            - name: SSH_DOMAIN
+              value: {{ default "" .sshDomain }}
             - name: INGRESS_SECRET
               value: wildcard-cert
             - name: REGISTRY_ADDR
@@ -69,8 +71,6 @@ spec:
               value: 'false'
             - name: STORAGE_LIMIT
               value: 10Gi # default is 10Gi
-            - name: PRIVACY_URL
-              value: https://sealos.run/docs/msa/privacy-policy
             - name: RETAG_SVC_URL
               value: http://devbox-service.devbox-system.svc.cluster.local:8092
             - name: JWT_SECRET
@@ -83,6 +83,18 @@ spec:
               value: 'false'
             - name: ENABLE_WEBIDE_FEATURE
               value: 'false'
+            - name: ENABLE_ADVANCED_CONFIG
+              value: 'false'
+            - name: CPU_SLIDE_MARK_LIST
+              value: '1,2,4,8,16'
+            - name: MEMORY_SLIDE_MARK_LIST
+              value: '2,4,8,16,32'
+            - name: DEVBOX_DOMAIN_CHALLENGE_SECRET
+              value: {{ .devboxDomainChallengeSecret }}
+            - name: NFS_STORAGE_CLASS_NAME
+              value: {{ default "nfs-csi" .nfsStorageClassName }}
+            - name: CUSTOM_SCRIPTS
+              value: '{{ default "[]" .customScripts }}'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
