@@ -64,6 +64,11 @@ export interface DevboxVolumeType {
   size: number;
 }
 
+export interface SharedMemoryType {
+  enabled: boolean;
+  size: number;
+}
+
 export interface DevboxEditTypeV2 {
   name: string;
   templateUid: string;
@@ -80,6 +85,7 @@ export interface DevboxEditTypeV2 {
   envs?: Array<{ key: string; value: string }>;
   configMaps?: DevboxConfigMapType[];
   volumes?: DevboxVolumeType[];
+  sharedMemory?: SharedMemoryType;
 }
 export interface DevboxStatusMapType {
   label: string;

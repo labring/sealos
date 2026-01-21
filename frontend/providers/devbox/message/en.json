@@ -570,5 +570,6 @@
   "mount_path_placeholder": "For Example: /data",
   "mount_path_cannot_be_empty": "Mount path cannot be empty",
   "mount_path_invalid_format": "Invalid path format. Must start and end with alphanumeric, underscore or slash, and can contain dots and hyphens",
-  "mount_path_conflict": "Path conflict, this path already exists"
+  "mount_path_conflict": "Path conflict, this path already exists",
+  "shared_memory": "Shared Memory"
 }

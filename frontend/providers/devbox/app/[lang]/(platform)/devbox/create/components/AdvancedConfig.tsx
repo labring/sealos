@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
-import { PencilLine, Plus, Trash2, FileText, HardDrive } from 'lucide-react';
+import { PencilLine, Plus, Trash2, FileText, HardDrive, Minus } from 'lucide-react';
 
 import { Button } from '@sealos/shadcn-ui/button';
+import { Switch } from '@sealos/shadcn-ui/switch';
 import { Separator } from '@sealos/shadcn-ui/separator';
 import EnvVariablesDrawer from '@/components/drawers/EnvVariablesDrawer';
 import ConfigMapDrawer from '@/components/drawers/ConfigMapDrawer';
@@ -19,6 +20,9 @@ export default function AdvancedConfig() {
   const envs = watch('envs') || [];
   const configMaps = watch('configMaps') || [];
   const volumes = watch('volumes') || [];
+  const sharedMemory = watch('sharedMemory') || { enabled: false, size: 64 };
+  const memory = watch('memory') || 2048;
+  const maxSharedMemory = Math.floor(memory / 1024);
 
   const [isEnvDrawerOpen, setIsEnvDrawerOpen] = useState(false);
   const [isConfigMapDrawerOpen, setIsConfigMapDrawerOpen] = useState(false);
@@ -35,6 +39,67 @@ export default function AdvancedConfig() {
           <span className="text-xs/4 font-medium text-zinc-600">{t('optional')}</span>
         </div>
       </div>
+
+      {/* Shared Memory */}
+      <div id="shared-memory" className="flex flex-col gap-3">
+        <span className="text-base font-medium">{t('shared_memory')}</span>
+        <div className="flex items-end gap-3">
+          <div className="flex flex-col gap-3">
+            <div className="flex h-9 items-center gap-5">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="shared-memory-switch"
+                  checked={sharedMemory.enabled}
+                  onCheckedChange={(checked) => {
+                    setValue('sharedMemory', {
+                      ...sharedMemory,
+                      enabled: checked,
+                      size: checked ? Math.min(sharedMemory.size || 64, maxSharedMemory) : sharedMemory.size
+                    });
+                  }}
+                />
+                <span className="text-sm text-zinc-500">
+                  {sharedMemory.enabled ? t('enabled') : t('disabled')}
+                </span>
+              </div>
+            </div>
+          </div>
+          {sharedMemory.enabled && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-l-md border border-zinc-200 bg-white hover:bg-zinc-50"
+                  onClick={() => {
+                    const newSize = Math.max(1, (sharedMemory.size || 64) - 1);
+                    setValue('sharedMemory', { ...sharedMemory, size: newSize });
+                  }}
+                >
+                  <Minus className="h-4 w-4 text-zinc-500" />
+                </button>
+                <div className="flex h-10 w-20 items-center justify-center border-y border-zinc-200 bg-white">
+                  <span className="text-sm font-medium">{sharedMemory.size || 64}</span>
+                </div>
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-r-md border border-zinc-200 bg-white hover:bg-zinc-50"
+                  onClick={() => {
+                    const newSize = Math.min(maxSharedMemory, (sharedMemory.size || 64) + 1);
+                    setValue('sharedMemory', { ...sharedMemory, size: newSize });
+                  }}
+                >
+                  <Plus className="h-4 w-4 text-zinc-500" />
+                </button>
+              </div>
+              <span className="text-sm text-zinc-500">
+                Gi (max: {maxSharedMemory} Gi)
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Separator className="my-1" />
 
       {/* Environment Variables */}
       <div id="env" className="flex flex-col gap-3">

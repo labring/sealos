@@ -572,5 +572,6 @@
   "mount_path_placeholder": "例如：/data",
   "mount_path_cannot_be_empty": "挂载路径不能为空",
   "mount_path_invalid_format": "路径格式无效。必须以字母、数字、下划线或斜杠开头和结尾，可以包含点和连字符",
-  "mount_path_conflict": "路径冲突，该路径已存在"
+  "mount_path_conflict": "路径冲突，该路径已存在",
+  "shared_memory": "共享内存"
 }

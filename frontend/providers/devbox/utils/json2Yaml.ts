@@ -184,6 +184,22 @@ export const json2DevboxV2 = (
           });
         }
 
+        // Handle shared memory (emptyDir with Memory medium)
+        if (data.sharedMemory?.enabled && data.sharedMemory.size > 0) {
+          newVolumes.push({
+            name: 'shared-memory',
+            emptyDir: {
+              medium: 'Memory',
+              sizeLimit: `${data.sharedMemory.size}Gi`
+            }
+          });
+
+          newVolumeMounts.push({
+            name: 'shared-memory',
+            mountPath: '/dev/shm'
+          });
+        }
+
         // Set the rebuilt fields
         draft.env = newEnv.length > 0 ? newEnv : undefined;
         draft.volumes = newVolumes.length > 0 ? newVolumes : undefined;

@@ -126,6 +126,15 @@ export const RequestSchema = z
       .default([])
       .openapi({
         description: 'Volume configurations (NFS PVC)'
+      }),
+    sharedMemory: z
+      .object({
+        enabled: z.boolean().default(false),
+        size: z.number().min(1).default(64)
+      })
+      .optional()
+      .openapi({
+        description: 'Shared memory configuration (emptyDir with Memory medium)'
       })
   })
   .refine(
