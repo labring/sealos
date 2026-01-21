@@ -63,7 +63,7 @@ readinessProbe:
 
 metrics:
   # Enable metrics endpoint
-  enabled: true
+  enabled: false
   # Path to the metrics certificate
   certPath: /tmp/k8s-metrics-server/metrics-certs
   secretName: metrics-server-cert
