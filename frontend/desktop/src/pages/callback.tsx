@@ -14,7 +14,10 @@ import { BIND_STATUS } from '@/types/response/bind';
 import { MERGE_USER_READY } from '@/types/response/utils';
 import { AxiosError, HttpStatusCode } from 'axios';
 import { gtmLoginSuccess } from '@/utils/gtm';
-import { LICENSE_INACTIVE_CODE } from '@/services/backend/middleware/error';
+import {
+  LICENSE_INACTIVE_CODE,
+  LICENSE_USER_LIMIT_EXCEEDED_CODE
+} from '@/services/backend/middleware/error';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -171,6 +174,14 @@ export default function Callback() {
         if (error?.code === LICENSE_INACTIVE_CODE) {
           toast({
             description: t('error:LICENSE_INACTIVE'),
+            status: 'error',
+            duration: null,
+            isClosable: true
+          });
+        }
+        if (error?.code === LICENSE_USER_LIMIT_EXCEEDED_CODE) {
+          toast({
+            description: t('error:LICENSE_USER_LIMIT_EXCEEDED'),
             status: 'error',
             duration: null,
             isClosable: true
