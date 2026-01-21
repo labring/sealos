@@ -23,7 +23,6 @@ export type CommonConfigType = {
   applaunchpadUrl: string;
   dbproviderUrl: string;
   trackingEnabled: boolean;
-  licenseCheckEnabled?: boolean;
 };
 export type CommonClientConfigType = DeepRequired<
   Omit<
@@ -288,8 +287,7 @@ export const DefaultCommonClientConfig: CommonClientConfigType = {
   realNameReward: 0,
   guideEnabled: false,
   rechargeEnabled: false,
-  cfSiteKey: '',
-  licenseCheckEnabled: false
+  cfSiteKey: ''
 };
 
 export const DefaultCloudConfig: CloudConfigType = {

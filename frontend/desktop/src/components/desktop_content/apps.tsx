@@ -1,6 +1,5 @@
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
-import { useLicenseCheck } from '@/hooks/useLicenseCheck';
 import useSessionStore from '@/stores/session';
 import { TApp, displayType } from '@/types';
 import {
@@ -513,11 +512,7 @@ export default function Apps() {
   const { message } = useMessage();
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { appDisplayConfigs, updateAppDisplayType } = useAppDisplayConfigStore();
-  const { layoutConfig, commonConfig } = useConfigStore();
-  const { isUserLogin } = useSessionStore();
-  const { hasLicense } = useLicenseCheck({
-    enabled: isUserLogin() && !!commonConfig?.licenseCheckEnabled
-  });
+  const { layoutConfig } = useConfigStore();
   const [draggedFromFolder, setDraggedFromFolder] = useState(false);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
 
@@ -608,20 +603,6 @@ export default function Apps() {
   const { isDriverActive } = useGuideModalStore();
 
   const handleAppClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
-    if (commonConfig?.licenseCheckEnabled && hasLicense === false && item.key !== 'user-license') {
-      message({
-        title: t('license_required'),
-        status: 'warning',
-        isClosable: true
-      });
-      const licenseApp = installedApps.find((app) => app.key === 'user-license');
-      if (licenseApp) {
-        closeFolder();
-        openApp(licenseApp);
-      }
-      return;
-    }
-
     console.log(item, 'item', isDriverActive);
     if (isDriverActive) {
       const guidedElements = [
