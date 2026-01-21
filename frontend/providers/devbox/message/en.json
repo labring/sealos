@@ -305,6 +305,7 @@
   "mcp": "MCP",
   "memory": "Memory",
   "memory_exceeds_quota": "Memory requested exceeds quota. Contact admin.",
+  "storage": "Storage",
   "minute": "minutes",
   "monitor": "Monitor",
   "monitor_tab": "Monitor",

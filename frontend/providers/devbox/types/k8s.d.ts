@@ -142,6 +142,7 @@ export interface KBDevboxSpecV2 {
     memory: string;
     [gpuResourceKey]?: string;
   };
+  storageLimit?: string;
   nodeSelector?: {
     [gpuNodeSelectorKey]: string;
   };

@@ -27,8 +27,8 @@ export default function Memory() {
     }
 
     try {
-      const memoryList = env.memorySlideMarkList.split(',').map(v => Number(v.trim()));
-      return memoryList.map(memory => ({ label: String(memory), value: memory * 1024 }));
+      const memoryList = env.memorySlideMarkList.split(',').map((v) => Number(v.trim()));
+      return memoryList.map((memory) => ({ label: String(memory), value: memory * 1024 }));
     } catch (error) {
       console.error('Failed to parse memory list from env:', error);
       return [
@@ -47,7 +47,7 @@ export default function Memory() {
   return (
     <div className="flex items-start gap-10">
       <Label className="w-15 font-medium text-gray-900">{t('memory')}</Label>
-      <div className="flex-1">
+      <div className="flex flex-1">
         <Slider
           value={[currentIndex !== -1 ? currentIndex : 0]}
           onValueChange={(values) => {
@@ -59,6 +59,7 @@ export default function Memory() {
           step={1}
           marks={MemorySlideMarkList}
         />
+        <span className="mt-[18px] ml-2 h-auto text-sm text-neutral-500">Gi</span>
       </div>
     </div>
   );

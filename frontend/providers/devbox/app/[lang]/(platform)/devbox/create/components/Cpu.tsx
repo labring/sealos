@@ -47,7 +47,7 @@ export default function Cpu() {
   return (
     <div className="flex items-start gap-10">
       <Label className="w-15 font-medium text-gray-900">{t('cpu')}</Label>
-      <div className="flex-1">
+      <div className="flex flex-1">
         <Slider
           value={[currentIndex !== -1 ? currentIndex : 0]}
           onValueChange={(values) => {
@@ -59,6 +59,7 @@ export default function Cpu() {
           step={1}
           marks={CpuSlideMarkList}
         />
+        <span className="mt-[18px] ml-2 h-auto text-sm text-neutral-500">C</span>
       </div>
     </div>
   );

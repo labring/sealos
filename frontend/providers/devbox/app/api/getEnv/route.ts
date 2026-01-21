@@ -39,6 +39,11 @@ export async function GET(req: NextRequest) {
         enableAdvancedConfig: process.env.ENABLE_ADVANCED_CONFIG || defaultEnv.enableAdvancedConfig,
         cpuSlideMarkList: process.env.CPU_SLIDE_MARK_LIST || defaultEnv.cpuSlideMarkList,
         memorySlideMarkList: process.env.MEMORY_SLIDE_MARK_LIST || defaultEnv.memorySlideMarkList,
+        enableAdvancedStorage:
+          process.env.ENABLE_ADVANCED_STORAGE || defaultEnv.enableAdvancedStorage,
+        storageDefault: Number(process.env.STORAGE_DEFAULT) || defaultEnv.storageDefault,
+        storageSlideMarkList:
+          process.env.STORAGE_SLIDE_MARK_LIST || defaultEnv.storageSlideMarkList,
         nfsStorageClassName: process.env.NFS_STORAGE_CLASS_NAME || defaultEnv.nfsStorageClassName,
         webIdePort: Number(process.env.WEBIDE_PORT) || defaultEnv.webIdePort
       }

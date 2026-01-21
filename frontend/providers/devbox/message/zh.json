@@ -307,6 +307,7 @@
   "mcp": "MCP",
   "memory": "内存",
   "memory_exceeds_quota": "申请的 '内存' 超出限制，请联系管理员",
+  "storage": "存储",
   "minute": "分钟",
   "monitor": "实时监控",
   "monitor_tab": "监控",

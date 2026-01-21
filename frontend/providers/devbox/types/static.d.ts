@@ -31,6 +31,9 @@ export interface Env {
   enableAdvancedConfig: string;
   cpuSlideMarkList: string;
   memorySlideMarkList: string;
+  enableAdvancedStorage: string;
+  storageDefault: number;
+  storageSlideMarkList: string;
   nfsStorageClassName: string;
   webIdePort: number;
 }

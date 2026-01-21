@@ -72,6 +72,7 @@ export interface DevboxEditTypeV2 {
   image: string;
   cpu: number;
   memory: number;
+  storage: number;
   gpu?: GpuType;
   networks: PortInfos;
   networkType?: 'NodePort' | 'Tailnet' | 'SSHGate';

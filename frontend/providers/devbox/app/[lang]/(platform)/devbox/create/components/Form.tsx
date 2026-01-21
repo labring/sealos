@@ -12,6 +12,7 @@ import type { DevboxEditTypeV2 } from '@/types/devbox';
 import Gpu from './Gpu';
 import Cpu from './Cpu';
 import Memory from './Memory';
+import Storage from './Storage';
 import Network from './Network';
 import Runtime from './Runtime';
 import PriceBox from './PriceBox';
@@ -36,6 +37,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
 
   const formValues = watch();
   const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+  const showStorage = env.enableAdvancedStorage === 'true';
 
   useEffect(() => {
     const scrollTo = searchParams.get('scrollTo');
@@ -92,6 +94,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
           <Gpu countGpuInventory={countGpuInventory} />
           <Cpu />
           <Memory />
+          {showStorage && <Storage />}
         </div>
         {/* Network */}
         <div id="network">

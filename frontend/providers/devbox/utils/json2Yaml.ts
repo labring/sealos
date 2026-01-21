@@ -110,6 +110,7 @@ export const json2DevboxV2 = (
         memory: `${str2Num(data.memory)}Mi`,
         ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
+      storageLimit: `${str2Num(data.storage)}Gi`,
       ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
       templateID: data.templateUid,
       image: data.image,

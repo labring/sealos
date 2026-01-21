@@ -20,7 +20,13 @@ import { IngressListItemType } from '@/types/ingress';
 import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
 
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
-import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools';
+import {
+  calculateUptime,
+  cpuFormatToM,
+  formatPodTime,
+  memoryFormatToMi,
+  storageFormatToNum
+} from '@/utils/tools';
 import { devboxRemarkKey, gpuNodeSelectorKey, gpuResourceKey } from '../constants/devbox';
 
 export const adaptDevboxListItemV2 = ([devbox, template]: [
@@ -165,6 +171,7 @@ export const adaptDevboxDetailV2 = ([
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
+    storage: storageFormatToNum(devbox.spec.storageLimit || '10Gi'),
     gpu: {
       type: devbox.spec.nodeSelector?.[gpuNodeSelectorKey] || '',
       amount: Number(devbox.spec.resource[gpuResourceKey] || 0),

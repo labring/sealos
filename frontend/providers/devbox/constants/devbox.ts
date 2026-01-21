@@ -79,6 +79,7 @@ export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
   templateUid: '',
   cpu: 2000,
   memory: 4096,
+  storage: 10,
   networks: [],
   envs: [],
   configMaps: [],
