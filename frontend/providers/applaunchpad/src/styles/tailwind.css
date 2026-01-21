@@ -52,7 +52,7 @@ body {
 }
 
 .scrollbar-default::-webkit-scrollbar-thumb {
-  background: rgba(189, 193, 197, 1) !important;
+  background: #f4f4f5 !important;
   border-radius: 10px;
 }
 

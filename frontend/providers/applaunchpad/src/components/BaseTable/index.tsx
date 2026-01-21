@@ -68,11 +68,9 @@ export function BaseTable<T extends unknown>({
             <TableRow className="hover:bg-transparent">
               <TableCell
                 colSpan={table.getAllColumns().length}
-                className="h-[300px] text-center py-4"
+                className="relative h-[300px] text-center py-4"
               >
-                <div className="flex items-center justify-center">
-                  <Loading />
-                </div>
+                <Loading fixed={false} />
               </TableCell>
             </TableRow>
           ) : (

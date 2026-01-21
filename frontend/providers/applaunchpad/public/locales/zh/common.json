@@ -234,6 +234,7 @@
   "add_credit": "充值",
   "advanced_filter": "高级筛选",
   "all": "全部",
+  "terminated": "Terminated",
   "app": {
     "Resource Quota": "资源配额",
     "The applied CPU exceeds the quota": "申请的 CPU 超出配额限制，请联系管理员",
@@ -465,7 +466,7 @@
   "container_filtering": "容器筛选",
   "Refresh": "刷新",
   "auto_refresh": "自动刷新",
-  "no_auto_refresh": "不自动刷新",
+  "no_auto_refresh": "自动刷新: 关闭",
   "set_automatic_refresh": "设置自动刷新",
   "Probe": "探针",
   "Startup": "启动探针",

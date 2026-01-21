@@ -234,6 +234,8 @@
   "add_credit": "Add Credit",
   "advanced_filter": "Advance",
   "all": "All",
+  "stopped": "Stopped",
+  "terminated": "Terminated",
   "app": {
     "Resource Quota": "Resource Quota",
     "The applied CPU exceeds the quota": "Requested CPU exceeds your quota. Please contact admin.",

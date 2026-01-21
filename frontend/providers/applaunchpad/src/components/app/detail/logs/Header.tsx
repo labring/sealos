@@ -13,7 +13,7 @@ import {
 } from '@sealos/shadcn-ui/select';
 import { Separator } from '@sealos/shadcn-ui/separator';
 
-import AdvancedSelect from '@/components/AdvancedSelect';
+import AdvancedSelect, { ListItem } from '@/components/AdvancedSelect';
 import { REFRESH_INTERVAL_OPTIONS } from '@/constants/monitor';
 import { LogsFormData } from '@/pages/app/detail/logs';
 import useDateTimeStore from '@/store/date';
@@ -23,10 +23,12 @@ const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false
 
 export const Header = ({
   formHook,
-  refetchData
+  refetchData,
+  onContainerChange
 }: {
   formHook: UseFormReturn<LogsFormData>;
   refetchData: () => void;
+  onContainerChange: (containers: ListItem[]) => void;
 }) => {
   const { t } = useTranslation();
   const { refreshInterval, setRefreshInterval } = useDateTimeStore();
@@ -68,9 +70,7 @@ export const Header = ({
               width={'fit-content'}
               value={'hello-sql-postgresql-0'}
               list={formHook.watch('containers')}
-              onCheckboxChange={(val) => {
-                formHook.setValue('containers', val);
-              }}
+              onCheckboxChange={onContainerChange}
             />
           </div>
         </div>

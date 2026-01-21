@@ -13,6 +13,7 @@ export interface ListItem {
   label: string | React.ReactNode;
   value: string;
   checked: boolean;
+  isActive?: boolean; // Whether the item is active (e.g., active pod vs historical pod)
 }
 
 interface Props {
@@ -75,6 +76,15 @@ const AdvancedSelect = (
     return list.filter((item) => item.checked).length === 0;
   }, [checkBoxMode, list, value]);
 
+  // Sort list: active items first, inactive items last
+  const sortedList = useMemo(() => {
+    return [...list].sort((a, b) => {
+      const aActive = a.isActive !== false ? 1 : 0;
+      const bActive = b.isActive !== false ? 1 : 0;
+      return bActive - aActive;
+    });
+  }, [list]);
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -123,7 +133,7 @@ const AdvancedSelect = (
           </div>
         )}
 
-        <div className="max-h-[300px] overflow-y-auto">
+        <div className="max-h-[300px] overflow-y-auto scrollbar-default">
           {checkBoxMode && (
             <label className="h-10 flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">
               <Checkbox
@@ -142,10 +152,10 @@ const AdvancedSelect = (
             </label>
           )}
 
-          {list.map((item, index) => (
+          {sortedList.map((item, index) => (
             <div key={item.value + index}>
               {checkBoxMode ? (
-                <label className="h-10 flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">
+                <label className="min-h-10 flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">
                   <Checkbox
                     checked={item.checked}
                     onCheckedChange={() => {
@@ -159,7 +169,17 @@ const AdvancedSelect = (
                       }
                     }}
                   />
-                  <span className="text-sm text-zinc-900 flex-1 truncate">{item.label}</span>
+                  <span
+                    className={cn(
+                      'text-sm flex-1',
+                      item.isActive === false ? 'text-zinc-500' : 'text-zinc-900'
+                    )}
+                  >
+                    {item.label}
+                    {item.isActive === false && (
+                      <span className="ml-1 text-sm text-zinc-500">({t('terminated')})</span>
+                    )}
+                  </span>
                 </label>
               ) : (
                 <div

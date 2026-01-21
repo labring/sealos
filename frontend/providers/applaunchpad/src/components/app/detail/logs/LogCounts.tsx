@@ -58,8 +58,10 @@ export const LogCounts = ({
         )}
       >
         {isLogCountsLoading ? (
-          <div className="h-[140px] w-full flex items-center justify-center">
-            <Loading />
+          <div
+            className={cn('relative w-full', logCountsData.length > 0 ? 'h-[140px]' : 'h-[72px]')}
+          >
+            <Loading fixed={false} />
           </div>
         ) : logCountsData.length > 0 ? (
           <LogBarChart type="blue" data={processChartData(logCountsData)} visible={onOpenChart} />
