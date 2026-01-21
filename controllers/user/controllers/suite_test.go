@@ -18,33 +18,32 @@ package controllers
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
-
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	csrv1 "k8s.io/api/certificates/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"k8s.io/client-go/tools/clientcmd"
-
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	//+kubebuilder:scaffold:imports
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
+var (
+	cfg       *rest.Config
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+)
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -56,9 +55,14 @@ var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
-	truePtr := true
+	useExisting := true
+	if val := os.Getenv("USE_EXISTING_CLUSTER"); val != "" {
+		if parsed, err := strconv.ParseBool(val); err == nil {
+			useExisting = parsed
+		}
+	}
 	testEnv = &envtest.Environment{
-		UseExistingCluster:    &truePtr,
+		UseExistingCluster:    &useExisting,
 		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 	}
@@ -80,7 +84,6 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
-
 }, 60)
 
 var _ = AfterSuite(func() {
@@ -92,14 +95,13 @@ var _ = AfterSuite(func() {
 var _ = Describe("user kubeconfig ", func() {
 	Context("syncReNewConfig test", func() {
 		AfterEach(func() {
-
 		})
 		It("empty kubeconfig", func() {
 			usr := &v1.User{}
 			usr.Name = "cuisongliu"
 			cfg, event, err := syncReNewConfig(usr)
-			//Expect(err).NotTo(HaveOccurred())
-			Expect(err).To(BeNil())
+			// Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(event).To(BeNil())
 			Expect(cfg).To(BeNil())
 		})
@@ -130,7 +132,7 @@ users:
 			usr.Status.KubeConfig = kubeConfig
 			cfg, event, err := syncReNewConfig(usr)
 			eventStr := fmt.Sprintf("ClientCertificateData %s is expired", usr.Name)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(event).To(Equal(&eventStr))
 			Expect(cfg).To(BeNil())
 		})
@@ -141,16 +143,16 @@ users:
 			defaultExpirationDuration := int32(100000000)
 			user.Spec.CSRExpirationSeconds = defaultExpirationDuration
 			defaultConfig := kubeconfig.NewConfig("cuisongliu", "", 100000000)
-			config, err := defaultConfig.WithServiceAccountConfig("default", nil).Apply(cfg, k8sClient)
-			Expect(err).To(BeNil())
+			config, err := defaultConfig.WithServiceAccountConfig("default", nil).
+				Apply(cfg, k8sClient)
+			Expect(err).ToNot(HaveOccurred())
 			kubeData, err := clientcmd.Write(*config)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			user.Status.KubeConfig = string(kubeData)
 			newCfg, event, err := syncReNewConfig(user)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(event).To(BeNil())
 			Expect(newCfg).NotTo(BeNil())
 		})
-
 	})
 })

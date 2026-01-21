@@ -20,19 +20,20 @@ import (
 	"context"
 	"errors"
 
+	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 )
 
 // log is for logging in this package.
-var userlog = logf.Log.WithName("user-webhook")
-var userWebhookReader client.Reader
+var (
+	userlog           = logf.Log.WithName("user-webhook")
+	userWebhookReader client.Reader
+)
 
 const licenseLimitErrorMessage = "{\"code\":40301,\"message\":\"license inactive: user limit reached\"}"
 
@@ -99,12 +100,18 @@ func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admissio
 			return warnings, errors.New(licenseLimitErrorMessage)
 		}
 	}
-	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(
+		user.ObjectMeta,
+		UserAnnotationDisplayKey,
+	)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateUpdate(ctx context.Context, old runtime.Object, new runtime.Object) (admission.Warnings, error) {
-	user, ok := new.(*User)
+func (r *User) ValidateUpdate(
+	ctx context.Context,
+	oldObj, newObj runtime.Object,
+) (admission.Warnings, error) {
+	user, ok := newObj.(*User)
 	if !ok {
 		return admission.Warnings{}, errors.New("obj convert User is error")
 	}
@@ -112,7 +119,10 @@ func (r *User) ValidateUpdate(ctx context.Context, old runtime.Object, new runti
 	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
 	}
-	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(
+		user.ObjectMeta,
+		UserAnnotationDisplayKey,
+	)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
@@ -122,5 +132,8 @@ func (r *User) ValidateDelete(ctx context.Context, obj runtime.Object) (admissio
 		return admission.Warnings{}, errors.New("obj convert User is error")
 	}
 	userlog.Info("validate delete", "name", user.Name)
-	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(
+		user.ObjectMeta,
+		UserAnnotationDisplayKey,
+	)
 }

@@ -32,22 +32,24 @@ func SetupLicenseGate(mgr ctrl.Manager) error {
 	if err != nil {
 		return err
 	}
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
+	if _, err := informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj any) {
 			if err := licensegate.Refresh(context.Background(), mgr.GetClient()); err != nil {
 				logger.Error(err, "license gate refresh failed on add")
 			}
 		},
-		UpdateFunc: func(oldObj, newObj interface{}) {
+		UpdateFunc: func(oldObj, newObj any) {
 			if err := licensegate.Refresh(context.Background(), mgr.GetClient()); err != nil {
 				logger.Error(err, "license gate refresh failed on update")
 			}
 		},
-		DeleteFunc: func(obj interface{}) {
+		DeleteFunc: func(obj any) {
 			if err := licensegate.Refresh(context.Background(), mgr.GetClient()); err != nil {
 				logger.Error(err, "license gate refresh failed on delete")
 			}
 		},
-	})
+	}); err != nil {
+		return err
+	}
 	return nil
 }

@@ -25,10 +25,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var UGBindingFinalizer = "sealos.io/user.group.binding.finalizers"
-var UGFinalizer = "sealos.io/user.group.finalizers"
+var (
+	UGBindingFinalizer = "sealos.io/user.group.binding.finalizers"
+	UGFinalizer        = "sealos.io/user.group.finalizers"
+)
 
-func RemoveFinalizer(ctx context.Context, cli client.Client, obj client.Object, oldFinalizer string) {
+func RemoveFinalizer(
+	ctx context.Context,
+	cli client.Client,
+	obj client.Object,
+	oldFinalizer string,
+) {
 	oldFinalizerName := oldFinalizer
 	if controllerutil.ContainsFinalizer(obj, oldFinalizerName) {
 		controllerutil.RemoveFinalizer(obj, oldFinalizerName)
@@ -38,7 +45,7 @@ func RemoveFinalizer(ctx context.Context, cli client.Client, obj client.Object, 
 	})
 }
 
-func SetOwner(ctx context.Context, cli client.Client, obj client.Object, owner client.Object) {
+func SetOwner(ctx context.Context, cli client.Client, obj, owner client.Object) {
 	_ = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		if owner == nil {
 			obj.SetOwnerReferences([]v1.OwnerReference{})

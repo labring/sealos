@@ -17,10 +17,9 @@ limitations under the License.
 package helper
 
 import (
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
 )
 
 func IsConditionTrue(conditions []v1.Condition, condition v1.Condition) bool {
@@ -31,6 +30,7 @@ func IsConditionTrue(conditions []v1.Condition, condition v1.Condition) bool {
 	}
 	return false
 }
+
 func IsConditionsTrue(conditions []v1.Condition) bool {
 	if len(conditions) == 0 {
 		return false
@@ -55,8 +55,9 @@ func GetCondition(conditions []v1.Condition, condition *v1.Condition) *v1.Condit
 	return condition
 }
 
-func DiffCondition(condition1 *v1.Condition, condition2 *v1.Condition) bool {
-	if condition1.Reason != condition2.Reason || condition1.Status != condition2.Status || condition1.Message != condition2.Message {
+func DiffCondition(condition1, condition2 *v1.Condition) bool {
+	if condition1.Reason != condition2.Reason || condition1.Status != condition2.Status ||
+		condition1.Message != condition2.Message {
 		return true
 	}
 	return false
@@ -82,6 +83,7 @@ func UpdateCondition(conditions []v1.Condition, condition v1.Condition) []v1.Con
 	}
 	return conditions
 }
+
 func DeleteCondition(conditions []v1.Condition, conditionType v1.ConditionType) []v1.Condition {
 	if conditions == nil {
 		conditions = make([]v1.Condition, 0)
