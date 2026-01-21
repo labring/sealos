@@ -33,6 +33,7 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 	"github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 	"github.com/labring/sealos/controllers/user/pkg/licensegate"
+	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	"golang.org/x/exp/rand"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -54,8 +55,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	"github.com/labring/sealos/controllers/user/pkg/usercount"
 )
 
 const (
@@ -841,7 +840,10 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 		}
 	}
 	if licensegate.AllowNewUser(userCount) {
-		user.Status.Conditions = helper.DeleteCondition(user.Status.Conditions, licenseLimitedCondition)
+		user.Status.Conditions = helper.DeleteCondition(
+			user.Status.Conditions,
+			licenseLimitedCondition,
+		)
 		return false, nil
 	}
 	if !r.isNewUser(user) {

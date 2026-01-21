@@ -51,7 +51,9 @@ func Init(ctx context.Context, reader client.Reader) error {
 		return nil
 	}
 	list := &metav1.PartialObjectMetadataList{}
-	list.SetGroupVersionKind(schema.GroupVersion{Group: "user.sealos.io", Version: "v1"}.WithKind("UserList"))
+	list.SetGroupVersionKind(
+		schema.GroupVersion{Group: "user.sealos.io", Version: "v1"}.WithKind("UserList"),
+	)
 	if err := reader.List(ctx, list); err != nil {
 		return err
 	}

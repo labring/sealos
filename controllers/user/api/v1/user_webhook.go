@@ -21,15 +21,14 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/labring/sealos/controllers/user/pkg/licensegate"
+	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	"github.com/labring/sealos/controllers/user/pkg/licensegate"
-	"github.com/labring/sealos/controllers/user/pkg/usercount"
 )
 
 // log is for logging in this package.
@@ -44,11 +43,17 @@ const (
 )
 
 func buildLicenseLimitErrorMessage() string {
-	return fmt.Sprintf("{\"code\":%d,\"message\":\"license inactive: user limit reached\"}", licenseLimitErrorCode)
+	return fmt.Sprintf(
+		"{\"code\":%d,\"message\":\"license inactive: user limit reached\"}",
+		licenseLimitErrorCode,
+	)
 }
 
 func buildUserCountLimitErrorMessage() string {
-	return fmt.Sprintf("{\"code\":%d,\"message\":\"license active: user limit reached\"}", userCountLimitErrorCode)
+	return fmt.Sprintf(
+		"{\"code\":%d,\"message\":\"license active: user limit reached\"}",
+		userCountLimitErrorCode,
+	)
 }
 
 func (r *User) SetupWebhookWithManager(mgr ctrl.Manager) error {

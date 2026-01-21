@@ -16,6 +16,8 @@ package claims
 
 import "github.com/labring/sealos/controllers/pkg/license"
 
-type Claims = license.Claims
-type ClaimData = license.ClaimData
-type ClusterClaimData = license.ClusterClaimData
+type (
+	Claims           = license.Claims
+	ClaimData        = license.ClaimData
+	ClusterClaimData = license.ClusterClaimData
+)

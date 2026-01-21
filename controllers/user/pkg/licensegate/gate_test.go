@@ -28,7 +28,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func newTestLicense(t *testing.T, userCount int, phase licensev1.LicenseStatusPhase, activationTime time.Time) *licensev1.License {
+func newTestLicense(
+	t *testing.T,
+	userCount int,
+	phase licensev1.LicenseStatusPhase,
+	activationTime time.Time,
+) *licensev1.License {
 	t.Helper()
 	decodeKey, err := base64.StdEncoding.DecodeString(licensepkg.GetEncryptionKey())
 	if err != nil {
