@@ -54,6 +54,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/labring/sealos/controllers/user/controllers/helper"
+	"github.com/labring/sealos/controllers/user/pkg/licensegate"
+	"github.com/labring/sealos/controllers/user/pkg/usercount"
 )
 
 const (
@@ -187,6 +193,7 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	if !ok {
 		return ctrl.Result{}, errors.New("obj convert user is error")
 	}
+	isNewUser := r.isNewUser(user)
 
 	blocked, err := r.handleLicenseLimit(ctx, user)
 	if err != nil {
@@ -231,6 +238,9 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 			err,
 		)
 		return ctrl.Result{}, err
+	}
+	if isNewUser {
+		usercount.Inc()
 	}
 	return ctrl.Result{
 		RequeueAfter: RandTimeDurationBetween(r.minRequeueDuration, r.maxRequeueDuration),
@@ -826,18 +836,16 @@ func (r *UserReconciler) updateStatus(
 }
 
 func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.User) (bool, error) {
-	if licensegate.HasActiveLicense() {
-		user.Status.Conditions = helper.DeleteCondition(
-			user.Status.Conditions,
-			licenseLimitedCondition,
-		)
-		return false, nil
-	}
-	userCount, err := r.countExistingUsers(ctx, user.Name)
-	if err != nil {
-		return false, err
+	userCount := usercount.Get()
+	if !usercount.Initialized() {
+		var err error
+		userCount, err = r.countExistingUsers(ctx, user.Name)
+		if err != nil {
+			return false, err
+		}
 	}
 	if licensegate.AllowNewUser(userCount) {
+		user.Status.Conditions = helper.DeleteCondition(user.Status.Conditions, licenseLimitedCondition)
 		return false, nil
 	}
 	if !r.isNewUser(user) {
@@ -849,7 +857,7 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 		LastTransitionTime: metav1.Now(),
 		LastHeartbeatTime:  metav1.Now(),
 		Reason:             "LicenseLimitExceeded",
-		Message:            "license inactive: user limit reached",
+		Message:            licensegate.LimitMessage(),
 	}
 	user.Status.Phase = userv1.UserPending
 	user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, *limitCondition)
@@ -860,8 +868,9 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 		user,
 		v1.EventTypeWarning,
 		"LicenseLimitExceeded",
-		"license inactive, user limit reached: %d",
-		licensegate.DefaultUserLimit,
+		"%s: %d",
+		licensegate.LimitMessage(),
+		licensegate.UserLimit(),
 	)
 	return true, nil
 }

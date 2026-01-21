@@ -1,4 +1,4 @@
-// Copyright © 2023 sealos.
+// Copyright © 2026 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package claims
+package controllers
 
-import "github.com/labring/sealos/controllers/pkg/license"
+import (
+	"context"
 
-type Claims = license.Claims
-type ClaimData = license.ClaimData
-type ClusterClaimData = license.ClusterClaimData
+	"github.com/labring/sealos/controllers/user/pkg/usercount"
+	ctrl "sigs.k8s.io/controller-runtime"
+)
+
+func SetupUserCount(mgr ctrl.Manager) error {
+	logger := ctrl.Log.WithName("user-count")
+	if err := usercount.Init(context.Background(), mgr.GetAPIReader()); err != nil {
+		logger.Error(err, "initial user count init failed")
+	}
+	return nil
+}

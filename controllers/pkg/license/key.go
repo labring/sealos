@@ -1,4 +1,4 @@
-// Copyright © 2023 sealos.
+// Copyright © 2026 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package claims
+package license
 
-import "github.com/labring/sealos/controllers/pkg/license"
+// encryptionKey is the key used to decode license token, base64 encoded
+var encryptionKey = "ZHd6b2Nyc3NrcXdwZm5lb2twZmV5dGNxa2JnZ3Znem8="
 
-type Claims = license.Claims
-type ClaimData = license.ClaimData
-type ClusterClaimData = license.ClusterClaimData
+func GetEncryptionKey() string {
+	return encryptionKey
+}
