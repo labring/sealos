@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { CurrencySymbol } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
-import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
+import { CircuitBoard, Cpu, HardDrive, HdmiPort, MemoryStick } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
 export const colorMap = {
   cpu: '#33BABB',
   memory: '#36ADEF',
+  storage: '#6BCB77',
   nodeports: '#8172D8'
 };
 
@@ -19,6 +20,7 @@ interface PriceBoxProps {
   components: {
     cpu: number;
     memory: number;
+    storage?: number;
     gpu?: {
       type: string;
       amount: number;
@@ -39,13 +41,15 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
   }[] = useMemo(() => {
     let cp = 0;
     let mp = 0;
+    let sp = 0;
     let pp = 0;
     let tp = 0;
     let gp = 0;
 
-    components.forEach(({ cpu, memory, gpu }) => {
+    components.forEach(({ cpu, memory, storage, gpu }) => {
       cp = (sourcePrice.cpu * cpu * 24) / 1000;
       mp = (sourcePrice.memory * memory * 24) / 1024;
+      sp = sourcePrice.storage * (storage || 0) * 24;
       pp = sourcePrice.nodeports * 1 * 24;
 
       gp = (() => {
@@ -55,7 +59,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
         return +(item.price * gpu.amount * 24);
       })();
 
-      tp = cp + mp + pp + gp;
+      tp = cp + mp + sp + pp + gp;
     });
     const iconClassName = 'h-5 w-5 text-neutral-400';
 
@@ -70,6 +74,11 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
         label: 'memory',
         color: '#36ADEF',
         value: mp.toFixed(2)
+      },
+      {
+        icon: <HardDrive className={iconClassName} />,
+        label: 'storage',
+        value: sp.toFixed(2)
       },
       {
         icon: <HdmiPort className={iconClassName} />,
@@ -87,7 +96,14 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
         : []),
       { label: 'total_price', value: tp.toFixed(2) }
     ];
-  }, [components, sourcePrice.cpu, sourcePrice.memory, sourcePrice.nodeports, sourcePrice.gpu]);
+  }, [
+    components,
+    sourcePrice.cpu,
+    sourcePrice.memory,
+    sourcePrice.storage,
+    sourcePrice.nodeports,
+    sourcePrice.gpu
+  ]);
 
   return (
     <Card className={cn('guide-cost', className)}>

@@ -7,6 +7,7 @@ import { immer } from 'zustand/middleware/immer';
 const defaultSourcePrice: SourcePrice = {
   cpu: 0.067,
   memory: 0.033792,
+  storage: 0,
   nodeports: 0.0001,
   gpu: []
 };

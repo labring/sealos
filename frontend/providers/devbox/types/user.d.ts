@@ -24,12 +24,20 @@ export const sessionKey = 'session';
 export type userPriceType = {
   cpu: number;
   memory: number;
+  storage: number;
   nodeports: number;
-  gpu?: { alias: string; type: string; price: number; available: number; count: number; vm: number }[];
+  gpu?: {
+    alias: string;
+    type: string;
+    price: number;
+    available: number;
+    count: number;
+    vm: number;
+  }[];
 };
 
 export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'nodeports' | 'gpu';
+  type: 'cpu' | 'memory' | 'storage' | 'nodeports' | 'gpu';
   used: number;
   limit: number;
 };

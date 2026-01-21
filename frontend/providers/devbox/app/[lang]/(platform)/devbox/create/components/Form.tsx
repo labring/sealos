@@ -79,6 +79,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
             {
               cpu: watch('cpu'),
               memory: watch('memory'),
+              storage: watch('storage'),
               gpu: formValues.gpu
             }
           ]}

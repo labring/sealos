@@ -230,6 +230,11 @@ export async function getUserQuota(
       used: Number(status?.used?.['services.nodeports']) || 0
     },
     {
+      type: 'storage',
+      limit: memoryFormatToMi(status?.hard?.['limits.ephemeral-storage'] || '') / 1024,
+      used: memoryFormatToMi(status?.used?.['limits.ephemeral-storage'] || '') / 1024
+    },
+    {
       type: 'gpu',
       limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
       used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
