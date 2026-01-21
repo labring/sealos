@@ -315,7 +315,7 @@ export default function Account() {
                           getPlanBackgroundClass(
                             subscriptionInfo?.subscription?.PlanName ?? '',
                             !!subscriptionInfo?.subscription,
-                            subscriptionInfo?.subscription.Status === 'Debt'
+                            subscriptionInfo?.subscription?.Status?.toLowerCase() === 'debt'
                           )
                         )}
                       >

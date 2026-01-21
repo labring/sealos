@@ -64,6 +64,8 @@
   "promotion_code_applied": "Promotion code \"{{code}}\" applied",
   "pending_upgrade_title": "Unpaid Order Exists",
   "pending_upgrade_message": "There is an unpaid upgrade order to {{planName}}. Please choose to continue paying the original order or cancel it and pay for the new order.",
+  "invoice_payment_message": "You have an unpaid bill. Please complete the payment to continue using the service.",
+  "go_to_payment": "Go to Payment",
   "continue_payment": "Continue Paying",
   "cancel_and_pay_new": "Cancel & Pay New",
   "canceling_invoice": "Canceling order...",

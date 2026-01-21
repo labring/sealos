@@ -191,7 +191,11 @@ export default function SecondaryLinks() {
               <>
                 <Center
                   mr={'8px'}
-                  bg={subscriptionInfo?.subscription?.Status === 'Debt' ? '#F87171' : '#34D399'}
+                  bg={
+                    subscriptionInfo?.subscription?.Status?.toLowerCase() === 'debt'
+                      ? '#F87171'
+                      : '#34D399'
+                  }
                   w={'8px'}
                   h={'8px'}
                   borderRadius={'full'}
@@ -200,7 +204,7 @@ export default function SecondaryLinks() {
                   {subscriptionInfo?.subscription?.PlanName || 'Free'}{' '}
                   {t('common:nav_links.plan_suffix')}
                 </Text>
-                {subscriptionInfo?.subscription?.Status === 'Debt' && (
+                {subscriptionInfo?.subscription?.Status?.toLowerCase() === 'debt' && (
                   <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
                     {t('common:nav_links.plan_expired')}
                   </div>

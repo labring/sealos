@@ -35,8 +35,8 @@ interface BalancePopoverProps {
 export function getPlanBackground(subscription?: WorkspaceSubscription) {
   if (!subscription) return 'var(--background-image-plan-payg)';
   const name = subscription?.PlanName ? subscription?.PlanName.toLowerCase() : 'Free';
-  const status = subscription?.Status;
-  if (status === 'Debt') return 'var(--background-image-plan-debt)';
+  const status = subscription?.Status?.toLowerCase();
+  if (status === 'debt') return 'var(--background-image-plan-debt)';
   if (name.includes('free')) return 'var(--background-image-plan-hobby)';
   if (name.includes('hobby')) return 'var(--background-image-plan-hobby)';
   if (name.includes('starter')) return 'var(--background-image-plan-starter)';
@@ -136,7 +136,7 @@ export function BalancePopover({
                         ? `${subscription?.PlanName} ${t('common:balance_popover.plan_suffix')}`
                         : t('common:balance_popover.payg_plan')}
                     </span>
-                    {subscriptionInfo?.subscription?.Status === 'Debt' && (
+                    {subscriptionInfo?.subscription?.Status?.toLowerCase() === 'debt' && (
                       <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
                         {t('common:balance_popover.subscription_status.expired')}
                       </div>
@@ -180,7 +180,7 @@ export function BalancePopover({
               )}
               {!!subscription?.PlanName &&
                 (subscription?.PlanName !== 'Free' &&
-                subscriptionInfo?.subscription?.Status === 'Debt' &&
+                subscriptionInfo?.subscription?.Status?.toLowerCase() === 'debt' &&
                 subscription?.ExpireAt ? (
                   <HStack>
                     <span className="text-sm text-zinc-600">

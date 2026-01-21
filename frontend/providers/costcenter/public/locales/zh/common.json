@@ -64,6 +64,8 @@
   "promotion_code_applied": "优惠码 \"{{code}}\" 已应用",
   "pending_upgrade_title": "未完成的订单",
   "pending_upgrade_message": "有一笔升级到 {{planName}} 的订单未完成。请选择继续支付原订单或取消后支付新订单。",
+  "invoice_payment_message": "您有一笔未支付的账单。请完成支付以继续使用服务。",
+  "go_to_payment": "去支付",
   "continue_payment": "支付原订单",
   "cancel_and_pay_new": "取消原订单并支付新订单",
   "canceling_invoice": "正在取消订单...",
