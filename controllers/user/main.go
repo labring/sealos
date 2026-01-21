@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"os"
 	"time"
@@ -25,6 +26,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -38,7 +41,6 @@ import (
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers"
-	configpkg "github.com/labring/sealos/controllers/user/controllers/helper/config"
 	ratelimiter "github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 	//+kubebuilder:scaffold:imports
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -70,6 +72,9 @@ func main() {
 		operationReqExpirationTime time.Duration
 		restartPredicateDuration   time.Duration
 		operationReqRetentionTime  time.Duration
+		secureMetrics              bool
+		enableHTTP2                bool
+		tlsOpts                    []func(*tls.Config)
 	)
 	flag.StringVar(
 		&metricsAddr,
@@ -128,6 +133,14 @@ func main() {
 		"/config.yaml",
 		"The path to the configuration file.",
 	)
+	flag.BoolVar(
+		&secureMetrics,
+		"metrics-secure",
+		true,
+		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.",
+	)
+	flag.BoolVar(&enableHTTP2, "enable-http2", false,
+		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
@@ -137,11 +150,45 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	// if the enable-http2 flag is false (the default), http/2 should be disabled
+	// due to its vulnerabilities. More specifically, disabling http/2 will
+	// prevent from being vulnerable to the HTTP/2 Stream Cancellation and
+	// Rapid Reset CVEs. For more information see:
+	// - https://github.com/advisories/GHSA-qppj-fm5r-hxr3
+	// - https://github.com/advisories/GHSA-4374-p667-p6c8
+	disableHTTP2 := func(c *tls.Config) {
+		setupLog.Info("disabling http/2")
+		c.NextProtos = []string{"http/1.1"}
+	}
+
+	if !enableHTTP2 {
+		tlsOpts = append(tlsOpts, disableHTTP2)
+	}
+	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
+	// More info:
+	// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.1/pkg/metrics/server
+	// - https://book.kubebuilder.io/reference/metrics.html
+	metricsServerOptions := metricsserver.Options{
+		BindAddress:   metricsAddr,
+		SecureServing: secureMetrics,
+		TLSOpts:       tlsOpts,
+	}
+
+	if secureMetrics {
+		// FilterProvider is used to protect the metrics endpoint with authn/authz.
+		// These configurations ensure that only authorized users and service accounts
+		// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
+		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.1/pkg/metrics/filters#WithAuthenticationAndAuthorization
+		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+
+		// TODO(user): If CertDir, CertName, and KeyName are not specified, controller-runtime will automatically
+		// generate self-signed certificates for the metrics server. While convenient for development and testing,
+		// this setup is not recommended for production.
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-		Metrics: metricsserver.Options{
-			BindAddress: metricsAddr,
-		},
+		Scheme:  scheme,
+		Metrics: metricsServerOptions,
 		// WebhookServer: webhook.NewServer(webhook.Options{
 		//	Port: 9443,
 		// }),
@@ -168,19 +215,6 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
-	}
-
-	// Load the configuration file
-	config := &configpkg.Config{}
-	if err := configpkg.LoadConfig(configFilePath, config); err != nil {
-		setupLog.Error(err, "unable to load configuration file")
-		os.Exit(1)
-	}
-
-	// Set the configuration
-	if err := setConfigToEnv(*config); err != nil {
-		setupLog.Error(err, "unable to set configuration to environment variables")
 		os.Exit(1)
 	}
 
@@ -242,11 +276,4 @@ func main() {
 		setupLog.Error(err, "failed to running manager")
 		os.Exit(1)
 	}
-}
-
-func setConfigToEnv(cfg configpkg.Config) error {
-	if err := os.Setenv("SEALOS_CLOUD_APISERVER_HOST", cfg.CloudAPIServerDomain); err != nil {
-		return err
-	}
-	return os.Setenv("SEALOS_CLOUD_APISERVER_PORT", cfg.CloudAPIServerPort)
 }

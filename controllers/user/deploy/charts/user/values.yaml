@@ -44,16 +44,6 @@ resources:
     cpu: 10m
     memory: 64Mi
 
-proxy:
-  image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 1024Mi
-    requests:
-      cpu: 5m
-      memory: 64Mi
-
 cloudAPIServerDomain: 127.0.0.1.nip.io
 cloudAPIServerPort: "6443"
 
@@ -73,7 +63,7 @@ readinessProbe:
 
 metrics:
   # Enable metrics endpoint
-  enabled: false
+  enabled: true
   # Path to the metrics certificate
   certPath: /tmp/k8s-metrics-server/metrics-certs
   secretName: metrics-server-cert

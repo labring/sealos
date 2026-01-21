@@ -39,15 +39,21 @@ spec:
             - /manager
           args:
             - --health-probe-bind-address=:8081
-            - --metrics-bind-address=127.0.0.1:8080
             - --leader-elect
-            - --config-file-path=/config.yaml
+            {{- if .Values.metrics.enabled }}
+            - --metrics-secure=true
+            - --metrics-bind-address=:8443
+            {{- end }}
           env:
             - name: NAMESPACE_NAME
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
+            - name: SEALOS_CLOUD_APISERVER_HOST
+              value: "{{.Values.cloudAPIServerDomain}}"
+            - name: SEALOS_CLOUD_APISERVER_PORT
+              value: "{{.Values.cloudAPIServerPort}}"
           ports:
             - containerPort: 9443
               name: webhook-server
@@ -63,28 +69,17 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           volumeMounts:
+            {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.metrics.enabled }}
+            - name: metrics-certs
+              mountPath: {{.Values.metrics.certPath}}
+              readOnly: true
+            {{- end }}
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
               readOnly: true
-            - name: user-manager-volume
-              mountPath: /config.yaml
-              subPath: config.yaml
-        - name: kube-rbac-proxy
-          args:
-            - --secure-listen-address=0.0.0.0:8443
-            - --upstream=http://127.0.0.1:8080/
-            - --logtostderr=true
-            - --v=0
-          image: "{{ .Values.proxy.image }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - containerPort: 8443
-              name: https
-              protocol: TCP
-          resources:
-            {{- toYaml .Values.proxy.resources | nindent 12 }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
       terminationGracePeriodSeconds: 10
       affinity:
         {{- if .Values.affinity }}
@@ -111,10 +106,23 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
+        {{- if .Values.metrics.enabled }}
+        - name: metrics-certs
+          secret:
+            secretName: {{.Values.metrics.secretName}}
+            optional: false
+            items:
+              - key: ca.crt
+                path: ca.crt
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+        {{- end }}
+        {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
         - name: cert
           secret:
             defaultMode: 420
             secretName: webhook-server-cert
-        - name: user-manager-volume
-          configMap:
-            name: {{ include "user.fullname" . }}-manager-config
