@@ -20,19 +20,20 @@ import (
 	"context"
 	"errors"
 
+	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 )
 
 // log is for logging in this package.
-var userlog = logf.Log.WithName("user-webhook")
-var userWebhookReader client.Reader
+var (
+	userlog           = logf.Log.WithName("user-webhook")
+	userWebhookReader client.Reader
+)
 
 const licenseLimitErrorMessage = "{\"code\":40301,\"message\":\"license inactive: user limit reached\"}"
 

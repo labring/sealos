@@ -24,11 +24,15 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/labring/sealos/controllers/user/controllers/helper"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
 	"github.com/labring/sealos/controllers/user/controllers/helper/finalizer"
 	"github.com/labring/sealos/controllers/user/controllers/helper/hash"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 	"github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
+	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 	"golang.org/x/exp/rand"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -50,11 +54,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-	"github.com/labring/sealos/controllers/user/controllers/helper"
-	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 )
 
 const (
@@ -828,7 +827,10 @@ func (r *UserReconciler) updateStatus(
 
 func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.User) (bool, error) {
 	if licensegate.HasActiveLicense() {
-		user.Status.Conditions = helper.DeleteCondition(user.Status.Conditions, licenseLimitedCondition)
+		user.Status.Conditions = helper.DeleteCondition(
+			user.Status.Conditions,
+			licenseLimitedCondition,
+		)
 		return false, nil
 	}
 	userCount, err := r.countExistingUsers(ctx, user.Name)
@@ -854,7 +856,13 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 	if err := r.updateStatus(ctx, client.ObjectKeyFromObject(user), user.Status.DeepCopy()); err != nil {
 		return false, err
 	}
-	r.Recorder.Eventf(user, v1.EventTypeWarning, "LicenseLimitExceeded", "license inactive, user limit reached: %d", licensegate.DefaultUserLimit)
+	r.Recorder.Eventf(
+		user,
+		v1.EventTypeWarning,
+		"LicenseLimitExceeded",
+		"license inactive, user limit reached: %d",
+		licensegate.DefaultUserLimit,
+	)
 	return true, nil
 }
 
@@ -877,7 +885,10 @@ func (r *UserReconciler) countExistingUsers(ctx context.Context, excludeName str
 	return count, nil
 }
 
-func (r *UserReconciler) licenseToUserRequests(ctx context.Context, obj client.Object) []ctrl.Request {
+func (r *UserReconciler) licenseToUserRequests(
+	ctx context.Context,
+	obj client.Object,
+) []ctrl.Request {
 	userList := &userv1.UserList{}
 	if err := r.List(ctx, userList); err != nil {
 		r.Logger.Error(err, "list users for license change failed")
@@ -885,7 +896,10 @@ func (r *UserReconciler) licenseToUserRequests(ctx context.Context, obj client.O
 	}
 	requests := make([]ctrl.Request, 0, len(userList.Items))
 	for i := range userList.Items {
-		requests = append(requests, ctrl.Request{NamespacedName: client.ObjectKeyFromObject(&userList.Items[i])})
+		requests = append(
+			requests,
+			ctrl.Request{NamespacedName: client.ObjectKeyFromObject(&userList.Items[i])},
+		)
 	}
 	return requests
 }
