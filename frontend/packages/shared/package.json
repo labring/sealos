@@ -34,6 +34,7 @@
   "peerDependencies": {
     "@chakra-ui/icons": "^2",
     "@chakra-ui/react": "^2",
+    "@tanstack/react-query": "^4",
     "immer": "^10",
     "js-yaml": "^4.1.0",
     "lucide-react": ">=0.460.0",
@@ -93,6 +94,7 @@
   "devDependencies": {
     "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/react": "^2.8.1",
+    "@tanstack/react-query": "^4.36.1",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.7.1",
     "@types/react": "18.3.27",
