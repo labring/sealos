@@ -15,7 +15,10 @@ const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
   const t = useTranslations();
   const { env } = useEnvStore();
 
-  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+  const showAdvancedConfig =
+    env.enableAdvancedEnvAndConfigmap === 'true' ||
+    env.enableAdvancedNfs === 'true' ||
+    env.enableAdvancedSharedMemory === 'true';
 
   const allTabs = [
     {

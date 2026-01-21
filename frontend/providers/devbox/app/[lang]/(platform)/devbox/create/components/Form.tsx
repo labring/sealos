@@ -36,7 +36,10 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const { env } = useEnvStore();
 
   const formValues = watch();
-  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+  const showEnvAndConfigmap = env.enableAdvancedEnvAndConfigmap === 'true';
+  const showNfs = env.enableAdvancedNfs === 'true';
+  const showSharedMemory = env.enableAdvancedSharedMemory === 'true';
+  const showAdvancedConfig = showEnvAndConfigmap || showNfs || showSharedMemory;
   const showStorage = env.enableAdvancedStorage === 'true';
 
   useEffect(() => {
@@ -102,7 +105,13 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         </div>
 
         {/* Advanced Configurations */}
-        {showAdvancedConfig && <AdvancedConfig />}
+        {showAdvancedConfig && (
+          <AdvancedConfig
+            showEnvAndConfigmap={showEnvAndConfigmap}
+            showNfs={showNfs}
+            showSharedMemory={showSharedMemory}
+          />
+        )}
       </div>
     </div>
   );
