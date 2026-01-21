@@ -340,16 +340,6 @@ export const parseTemplateConfig = (config: string) => {
     workingDir: string;
     releaseCommand: string[];
     releaseArgs: string[];
-    env?: Array<{
-      name: string;
-      value?: string;
-      valueFrom?: {
-        secretKeyRef: {
-          name: string;
-          key: string;
-        };
-      };
-    }>;
     appPorts: {
       name: string;
       port: number;

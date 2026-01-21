@@ -14,6 +14,7 @@ import type { YamlItemType } from '@/types/index';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 import { track } from '@sealos/gtm';
+import { useSearchParams } from 'next/navigation';
 
 interface HeaderProps {
   yamlList: YamlItemType[];
@@ -27,6 +28,7 @@ interface HeaderProps {
 const Header = ({ title, yamlList, applyCb, applyBtnText, name, from }: HeaderProps) => {
   const router = useRouter();
   const t = useTranslations();
+  const searchParams = useSearchParams();
 
   const { guideConfigDevbox } = useGuideStore();
 
@@ -63,7 +65,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText, name, from }: HeaderPr
           {t('driver.create_app_header')}
         </div>
       )}
-      <div className="border-b-1 flex h-24 w-full items-center justify-between self-stretch px-10 py-8">
+      <div className="flex h-24 w-full items-center justify-between self-stretch border-b-1 px-10 py-8">
         {/* left side */}
         <div className="flex cursor-pointer items-center">
           <div
@@ -81,7 +83,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText, name, from }: HeaderPr
           </Button>
           <Button
             className={cn(
-              'driver-deploy-button min-w-30 h-10',
+              'driver-deploy-button h-10 min-w-30',
               isClientSide && !guideConfigDevbox && 'outline-2 outline-offset-2 outline-blue-600'
             )}
             onClick={applyCb}
@@ -89,7 +91,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText, name, from }: HeaderPr
             {t(applyBtnText)}
           </Button>
           {isClientSide && !guideConfigDevbox && (
-            <div className="top-34 right-18 absolute z-[1000] w-[250px] rounded-xl bg-blue-600 p-4 text-white">
+            <div className="absolute top-34 right-18 z-[1000] w-[250px] rounded-xl bg-blue-600 p-4 text-white">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold">{t('driver.configure_devbox')}</p>
                 <div
@@ -108,7 +110,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText, name, from }: HeaderPr
                   <X className="h-4 w-4 text-[#7CA1F3]" strokeWidth={2} />
                 </div>
               </div>
-              <p className="whitespace-normal text-start text-sm font-normal text-white">
+              <p className="text-start text-sm font-normal whitespace-normal text-white">
                 {t('driver.adjust_resources_as_needed')}
               </p>
               <div className="mt-4 flex items-center justify-between">
@@ -123,7 +125,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText, name, from }: HeaderPr
                   {t('driver.next')}
                 </Button>
               </div>
-              <div className="absolute -top-[10px] right-4 h-0 w-0 rotate-180 border-l-8 border-r-8 border-t-[10px] border-l-transparent border-r-transparent border-t-[#2563EB]" />
+              <div className="absolute -top-[10px] right-4 h-0 w-0 rotate-180 border-t-[10px] border-r-8 border-l-8 border-t-[#2563EB] border-r-transparent border-l-transparent" />
             </div>
           )}
         </div>
