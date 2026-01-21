@@ -5,7 +5,8 @@ import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
 
-export function getPlanBackgroundClass(planName: string, isPayg: boolean): string {
+export function getPlanBackgroundClass(planName: string, isPayg: boolean, inDebt: boolean): string {
+  if (inDebt) return 'bg-plan-debt';
   if (isPayg) return 'bg-plan-payg';
 
   const normalizedPlanName = planName.toLowerCase();
@@ -74,7 +75,8 @@ export function PlanHeader({ children }: PlanHeaderProps) {
     : '-';
   const isPaygType = subscription?.type === 'PAYG';
   const planDisplayName = isPaygType ? 'PAYG' : planName;
-  const backgroundClass = getPlanBackgroundClass(planName, isPaygType);
+  const inDebt = subscription?.Status?.toLowerCase() === 'debt';
+  const backgroundClass = getPlanBackgroundClass(planName, isPaygType, inDebt);
 
   // Find current plan details from plans list
   const currentPlan = plans?.find((plan) => plan.Name === subscription?.PlanName);
@@ -100,13 +102,20 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         >
           <div>
             <span className="text-slate-500 text-sm">{t('common:current_workspace_plan')}</span>
-            <h1 className="font-semibold text-2xl">{planDisplayName}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-semibold text-2xl">{planDisplayName}</h1>
+              {inDebt && (
+                <span className="bg-red-500 text-white text-xs font-medium px-2 py-1 rounded">
+                  {t('common:expired')}
+                </span>
+              )}
+            </div>
           </div>
 
           {children?.({
             trigger: (
               <Button size="lg" variant="outline">
-                <span>{t('common:subscribe_plan')}</span>
+                <span>{inDebt ? t('common:renew') : t('common:subscribe_plan')}</span>
               </Button>
             )
           })}
@@ -121,14 +130,21 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         <div className="flex justify-between items-center">
           <div>
             <span className="text-slate-500 text-sm">{t('common:current_workspace_plan')}</span>
-            <h1 className="font-semibold text-2xl">{isPaygType ? 'PAYG' : planName}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-semibold text-2xl">{isPaygType ? 'PAYG' : planName}</h1>
+              {inDebt && (
+                <span className="bg-red-100 text-red-600 text-xs font-medium px-2 py-1 rounded-full">
+                  {t('common:expired')}
+                </span>
+              )}
+            </div>
           </div>
 
           {children?.({
             trigger: (
               <Button size="lg">
                 <Sparkles />
-                <span>{t('common:upgrade_plan')}</span>
+                <span>{inDebt ? t('common:renew') : t('common:upgrade_plan')}</span>
               </Button>
             )
           })}
@@ -191,7 +207,9 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         </div>
 
         <div className="flex gap-2 flex-col">
-          <span className="text-sm text-muted-foreground">{t('common:expiration_time')}</span>
+          <span className="text-sm text-muted-foreground">
+            {inDebt ? t('common:expired_on') : t('common:expiration_time')}
+          </span>
           <span className="text-card-foreground font-semibold text-base leading-none flex items-center gap-2">
             {expTime}
           </span>

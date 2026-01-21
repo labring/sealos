@@ -38,6 +38,7 @@ export function UpgradePlanCard({
   const subscription = subscriptionData?.subscription;
   const lastTransaction = lastTransactionData?.transaction;
   const currentPlan = getCurrentPlan() || undefined;
+  const inDebt = subscription?.Status?.toLowerCase() === 'debt';
   const isCurrentPlan = !isCreateMode && plan.Name === subscription?.PlanName;
   const isNextPlan =
     !isCreateMode &&
@@ -77,6 +78,8 @@ export function UpgradePlanCard({
 
   // Get operator for upgrade amount calculation
   const getOperator = () => {
+    // If in debt state, always use 'created' operation
+    if (inDebt) return 'created';
     if (!currentPlan) return 'created';
     if (currentPlan.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
     if (currentPlan.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
@@ -84,13 +87,45 @@ export function UpgradePlanCard({
   };
 
   const handleSubscribeClick = () => {
-    if (isCurrentPlan || isNextPlan || actionType === 'contact') {
+    // If in debt state, allow clicking on current plan (for renew)
+    if (!inDebt && (isCurrentPlan || isNextPlan || actionType === 'contact')) {
       return;
     }
-    if (getOperator() === 'downgraded') {
-      return showDowngradeModal(plan, { workspaceName, isCreateMode });
+    const operator = getOperator();
+    // Determine business operation for UI display
+    let businessOperation: 'create' | 'upgrade' | 'downgrade' | 'renew' | undefined;
+    if (inDebt) {
+      // In debt state: current plan is renew, check if other plans are upgrade or downgrade
+      if (isCurrentPlan) {
+        businessOperation = 'renew';
+      } else {
+        // Check if it's actually a downgrade based on plan relationship
+        if (currentPlan && currentPlan.DowngradePlanList?.includes(plan.Name)) {
+          businessOperation = 'downgrade';
+        } else {
+          businessOperation = 'upgrade';
+        }
+      }
+    } else if (operator === 'created') {
+      businessOperation = 'create';
+    } else if (operator === 'upgraded') {
+      businessOperation = 'upgrade';
+    } else if (operator === 'downgraded') {
+      businessOperation = 'downgrade';
     }
-    return showConfirmationModal(plan, { workspaceName, isCreateMode });
+
+    if (operator === 'downgraded' && !inDebt) {
+      return showDowngradeModal(plan, {
+        workspaceName,
+        operator,
+        businessOperation: 'downgrade'
+      });
+    }
+    return showConfirmationModal(plan, {
+      workspaceName,
+      operator,
+      businessOperation
+    });
   };
 
   // Get button text based on action type
@@ -100,7 +135,10 @@ export function UpgradePlanCard({
       return t('common:create_workspace');
     }
 
-    if (isCurrentPlan) return t('common:your_current_plan');
+    // If in debt state and is current plan, show Renew button
+    if (inDebt && isCurrentPlan) return t('common:renew');
+
+    if (!inDebt && isCurrentPlan) return t('common:your_current_plan');
     if (isNextPlan) return t('common:your_next_plan');
     if (isLoading) return t('common:processing');
 
@@ -156,13 +194,16 @@ export function UpgradePlanCard({
           <Button
             className={cn(
               'w-full mb-6 font-medium',
-              isCurrentPlan || isNextPlan
+              // If in debt state and is current plan, show enabled button
+              inDebt && isCurrentPlan
+                ? 'bg-gray-900 text-white hover:bg-gray-800'
+                : !inDebt && (isCurrentPlan || isNextPlan)
                 ? 'bg-gray-200 text-gray-600 cursor-not-allowed hover:bg-gray-200'
                 : actionType === 'contact'
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-900 text-white hover:bg-gray-800'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-900 text-white hover:bg-gray-800'
             )}
-            disabled={isCurrentPlan || isNextPlan || isLoading}
+            disabled={(!inDebt && (isCurrentPlan || isNextPlan)) || isLoading}
             onClick={handleSubscribeClick}
           >
             {getButtonText()}

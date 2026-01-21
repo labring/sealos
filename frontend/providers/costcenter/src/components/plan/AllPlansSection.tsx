@@ -191,7 +191,8 @@ export function AllPlansSection() {
                       <Badge
                         variant="subscription"
                         className={cn(
-                          getPlanBackgroundClass(workspace.plan, workspace.plan === 'PAYG')
+                          // Not showing debt state in this badge
+                          getPlanBackgroundClass(workspace.plan, workspace.plan === 'PAYG', false)
                         )}
                       >
                         {workspace.plan || t('common:unknown')}

@@ -87,7 +87,7 @@
     rgba(252, 149, 129, 0.12) 0%,
     rgba(206, 81, 245, 0.12) 100%
   );
-  --background-image-plan-debt: #fef2f2;
+  --background-image-plan-debt: linear-gradient(#fef2f2);
 }
 
 @layer base {

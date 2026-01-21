@@ -17,6 +17,7 @@ import { AllPlansSection } from '@/components/plan/AllPlansSection';
 import { PlanHeader } from '@/components/plan/PlanHeader';
 import { BalanceSection } from '@/components/plan/BalanceSection';
 import { CardInfoSection } from '@/components/plan/CardInfoSection';
+import { InvoicePaymentBanner } from '@/components/plan/InvoicePaymentBanner';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
@@ -70,7 +71,9 @@ export default function Plan() {
     setDefaultShowPaymentConfirmation,
     setDefaultWorkspaceName,
     clearModalDefaults,
-    clearRedeemCode
+    clearRedeemCode,
+    invoicePaymentUrl,
+    setInvoicePaymentUrl
   } = usePlanStore();
 
   // Check if we're in create mode - use state to persist across re-renders
@@ -237,9 +240,13 @@ export default function Plan() {
 
       if (targetPlan) {
         const workspaceName = isCreateMode ? defaultWorkspaceName : '';
+        // Determine operator based on mode: create mode uses 'created', otherwise 'upgraded'
+        const operator = isCreateMode ? 'created' : 'upgraded';
+        const businessOperation = isCreateMode ? 'create' : 'upgrade';
         showConfirmationModal(targetPlan, {
           workspaceName,
-          isCreateMode
+          operator,
+          businessOperation
         });
       }
     }
@@ -264,14 +271,19 @@ export default function Plan() {
         regionDomain: region?.domain || ''
       }),
     enabled: !!(session?.user?.nsid && region?.uid),
-    onSuccess: (data) => setSubscriptionData(data.data || null),
+    onSuccess: (data) => {
+      setSubscriptionData(data.data || null);
+      // Check if InvoiceInfo has PaymentUrl
+      const paymentUrl = data.data?.subscription?.InvoiceInfo?.PaymentUrl;
+      setInvoicePaymentUrl(paymentUrl || null);
+    },
     refetchOnMount: true,
     retry: 5
   });
 
   // Get specific workspace subscription info for congratulations modal
   const { data: workspaceSubscriptionData } = useQuery({
-    queryKey: ['workspace-subscription', workspaceId, region?.uid],
+    queryKey: ['subscription-info', workspaceId, region?.uid],
     queryFn: () =>
       getSubscriptionInfo({
         workspace: workspaceId || '',
@@ -404,8 +416,8 @@ export default function Plan() {
               variables.operator === 'created'
                 ? 'new'
                 : variables.operator === 'downgraded'
-                  ? 'downgrade'
-                  : 'upgrade';
+                ? 'downgrade'
+                : 'upgrade';
 
             gtmSubscribeSuccess({
               amount: monthlyPrice,
@@ -542,7 +554,10 @@ export default function Plan() {
     const currentPlanObj = plansData?.plans?.find(
       (p) => p.Name === subscriptionData?.subscription?.PlanName
     );
+    const inDebt = subscriptionData?.subscription?.Status?.toLowerCase() === 'debt';
     const getOperator = () => {
+      // If in debt state, always use 'created' operation
+      if (inDebt) return 'created';
       if (!currentPlanObj) return 'created';
       if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
       if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
@@ -633,6 +648,14 @@ export default function Plan() {
       {isPaygTypeValue ? (
         <div className="flex gap-4">
           <div className="flex-2/3">
+            {invoicePaymentUrl && (
+              <div className="mb-4">
+                <InvoicePaymentBanner
+                  paymentUrl={invoicePaymentUrl}
+                  inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
+                />
+              </div>
+            )}
             <PlanHeader>
               {({ trigger }) => (
                 <UpgradePlanDialog
@@ -675,6 +698,13 @@ export default function Plan() {
                 })}
               </div>
             </div>
+          )}
+
+          {invoicePaymentUrl && (
+            <InvoicePaymentBanner
+              paymentUrl={invoicePaymentUrl}
+              inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
+            />
           )}
 
           <PlanHeader>
@@ -771,9 +801,9 @@ export default function Plan() {
       <PlanConfirmationModal
         plan={pendingPlan || undefined}
         workspaceName={modalContext.workspaceName}
-        isCreateMode={modalContext.isCreateMode || false}
         isOpen={modalType === 'confirmation'}
         isSubmitting={subscriptionMutation.isLoading}
+        isRenew={modalContext.businessOperation === 'renew'}
         onConfirm={() => {
           if (pendingPlan) {
             handleSubscribe(pendingPlan, modalContext.workspaceName, false);

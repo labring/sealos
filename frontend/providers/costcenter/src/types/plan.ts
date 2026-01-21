@@ -49,6 +49,24 @@ export const SubscriptionPlanSchema = z.object({
 
 export type SubscriptionPlan = z.infer<typeof SubscriptionPlanSchema>;
 
+// 发票信息
+export const InvoiceInfoSchema = z.object({
+  ID: z.string(),
+  PaymentUrl: z.url(),
+  AmountDue: z.number(),
+  Currency: z.string(),
+  Status: z.string(),
+  CreatedAt: z.number(),
+  DueDate: z.number(),
+  HasDiscount: z.boolean(),
+  DiscountAmount: z.number(),
+  Subtotal: z.number(),
+  Total: z.number(),
+  Description: z.string(),
+  PaymentMethodType: z.string()
+});
+export type InvoiceInfo = z.infer<typeof InvoiceInfoSchema>;
+
 // 工作空间订阅
 export const WorkspaceSubscriptionSchema = z.object({
   ID: z.string(),
@@ -69,7 +87,8 @@ export const WorkspaceSubscriptionSchema = z.object({
   UpdateAt: z.string(),
   ExpireAt: z.string().nullable(),
   Traffic: z.array(z.any()).nullable(),
-  type: SubscriptionTypeSchema
+  type: SubscriptionTypeSchema,
+  InvoiceInfo: InvoiceInfoSchema.optional()
 });
 export type WorkspaceSubscription = z.infer<typeof WorkspaceSubscriptionSchema>;
 
