@@ -9,9 +9,6 @@ export interface ClientConfigProviderProps {
   fallback?: ReactNode;
 }
 
-/**
- * Hydrate pre-fetched config (pages/app).
- */
 export function ClientConfigProvider({
   children,
   dehydratedState,
