@@ -383,6 +383,7 @@
   "monitor_tab_network": "网络",
   "monitor_tab_performance": "性能",
   "monitor_tab_storage": "存储",
+  "storage_usage": "存储使用",
   "mount path": "挂载路径",
   "network_not_ready": "内部网关需要 2~5 分钟准备，请耐心等待",
   "network_not_ready_icp_reg": "若域名已备案但仍显示“准备中”，请进一步检查是否在当前可用区的供应商备案。",
@@ -464,6 +465,7 @@
   "container_filtering": "容器筛选",
   "Refresh": "刷新",
   "auto_refresh": "自动刷新",
+  "no_auto_refresh": "不自动刷新",
   "set_automatic_refresh": "设置自动刷新",
   "Probe": "探针",
   "Startup": "启动探针",
@@ -471,5 +473,9 @@
   "Readiness": "就绪探针",
   "No startup added yet": "暂未添加启动探针",
   "No liveness added yet": "暂未添加存活探针",
-  "No readiness added yet": "暂未添加就绪探针"
+  "No readiness added yet": "暂未添加就绪探针",
+  "replica_filtering": "副本筛选",
+  "volume_filtering": "卷筛选",
+  "status_filtering": "状态筛选",
+  "show_all": "全部显示"
 }

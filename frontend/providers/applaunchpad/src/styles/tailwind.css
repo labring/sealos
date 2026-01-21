@@ -207,12 +207,17 @@ div:hover::-webkit-scrollbar-thumb:hover {
   --rdp-outside-opacity: 0.5;
 
   /* Navigation */
-  --rdp-nav_button-height: 28px;
-  --rdp-nav_button-width: 28px;
-  --rdp-nav-height: 36px;
+  --rdp-nav_button-height: 26px;
+  --rdp-nav_button-width: 26px;
+  --rdp-nav-height: 26px;
 
   /* Spacing */
   --rdp-months-gap: 16px;
+}
+
+.rdp-month_grid {
+  border-collapse: separate;
+  border-spacing: 0 4px;
 }
 
 .rdp-chevron {
@@ -228,6 +233,8 @@ div:hover::-webkit-scrollbar-thumb:hover {
 .rdp-weekday {
   font-size: 12px;
   font-weight: 500;
+  height: 30px;
+  padding: 0;
 }
 
 .rdp-day_button {
@@ -236,15 +243,18 @@ div:hover::-webkit-scrollbar-thumb:hover {
 }
 
 .rdp-range_start {
-  border-radius: 6px 0 0 6px;
+  border-radius: 6px 0 0 6px !important;
 }
 .rdp-range_end {
   border-radius: 0 6px 6px 0;
 }
 
-.rdp-today {
+.rdp-today .rdp-day_button {
   background-color: #eff6ff;
-  border-radius: 6px;
+}
+
+.rdp-range_end .rdp-day_button {
+  background-color: #111827;
 }
 
 /* ========== Animations ========== */

@@ -41,7 +41,15 @@ const PodLineChart = ({
   const xData =
     data?.xData?.map((time) => (time ? dayjs(time * 1000).format('YYYY-MM-DD HH:mm') : '')) ||
     new Array(30).fill(0);
-  const yData = data?.yData || new Array(30).fill('');
+  const yData = data?.yData || new Array(30).fill(null);
+  const lastDisplayValue = useMemo(() => {
+    if (!data?.yData?.length) return '--';
+    for (let i = data.yData.length - 1; i >= 0; i -= 1) {
+      const value = data.yData[i];
+      if (value !== null && value !== undefined) return value;
+    }
+    return '--';
+  }, [data?.yData]);
 
   const Dom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
@@ -118,7 +126,9 @@ const PodLineChart = ({
       `,
       formatter: (params: any[]) => {
         const xValue = params[0]?.axisValue;
-        const yValue = params[0]?.value ?? 0;
+        const yValue = params[0]?.value;
+        const displayValue =
+          yValue === null || yValue === undefined || Number.isNaN(yValue) ? '-' : yValue;
         return `
           <div class="bg-white min-w-[127px] rounded-lg py-3 px-[10px] border-[0.5px] border-zinc-200 shadow-xs">
             <div class="text-xs font-medium text-zinc-900 mb-1">
@@ -128,7 +138,7 @@ const PodLineChart = ({
               <span class="inline-block w-2 h-2 rounded-xs" style="background: ${
                 map[type].lineColor
               }"></span>
-              <span class="text-xs font-medium text-zinc-900">${yValue}%</span>
+              <span class="text-xs font-medium text-zinc-900">${displayValue}%</span>
             </div>
           </div>
         `;
@@ -186,7 +196,7 @@ const PodLineChart = ({
       <div ref={Dom} style={{ width: '100%', height: '100%' }} />
       {isShowText && (
         <span className="pointer-events-none absolute right-0 bottom-0.5 text-xs font-medium text-zinc-600 [text-shadow:1px_1px_0_#FFF,-1px_-1px_0_#FFF,1px_-1px_0_#FFF,-1px_1px_0_#FFF]">
-          {data?.yData[data?.yData?.length - 1]}%
+          {lastDisplayValue}%
         </span>
       )}
     </div>

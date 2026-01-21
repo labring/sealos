@@ -9,7 +9,7 @@ const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => voi
   const { appDetail = MOCK_APP_DETAIL } = useAppStore();
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="max-w-5xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-zinc-900">

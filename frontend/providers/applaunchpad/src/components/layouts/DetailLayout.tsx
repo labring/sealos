@@ -22,28 +22,35 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
   const {
     refetch,
     isInitialLoading: appDetailInitialLoading,
-    isError: appDetailError
-  } = useQuery(['setAppDetail'], () => setAppDetail(appName, router?.query?.guide === 'true'), {
-    retryDelay: 3000,
-    retry: (count, _err) => {
-      if (count >= 5) return false;
-      return true;
-    },
-    onError(err) {
-      toast({
-        title: String(err),
-        status: 'error'
-      });
+    isError: appDetailError,
+    isSuccess: appDetailLoaded
+  } = useQuery(
+    ['setAppDetail', appName],
+    () => setAppDetail(appName, router?.query?.guide === 'true'),
+    {
+      retryDelay: 3000,
+      retry: (count, _err) => {
+        if (count >= 5) return false;
+        return true;
+      },
+      onError(err) {
+        toast({
+          title: String(err),
+          status: 'error'
+        });
+      }
     }
-  });
+  );
 
   useQuery(
-    ['app-detail-pod'],
+    ['app-detail-pod', appName],
     () => {
       if (appDetail?.isPause) return null;
       return intervalLoadPods(appName, true);
     },
     {
+      // Only start polling after setAppDetail has completed
+      enabled: appDetailLoaded,
       refetchOnMount: true,
       refetchInterval: router.pathname === ROUTES.OVERVIEW ? 3000 : 5000,
       staleTime: router.pathname === ROUTES.OVERVIEW ? 3000 : 5000

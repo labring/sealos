@@ -83,6 +83,10 @@ const AppList = ({
   const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
   const [pendingPauseAppName, setPendingPauseAppName] = useState('');
 
+  // Page size edit state
+  const [isEditingPageSize, setIsEditingPageSize] = useState(false);
+  const [editingPageSizeValue, setEditingPageSizeValue] = useState(PAGE_SIZE.toString());
+
   // Update modal state (replaces useDisclosure)
   const [isOpenUpdateModal, setIsOpenUpdateModal] = useState(false);
   const onOpenUpdateModal = useCallback(() => setIsOpenUpdateModal(true), []);
@@ -309,6 +313,25 @@ const AppList = ({
     meta: tableMeta
   });
 
+  const handlePageSizeStartEdit = () => {
+    setIsEditingPageSize(true);
+    setEditingPageSizeValue(table.getState().pagination.pageSize.toString());
+  };
+
+  const handlePageSizeSave = () => {
+    const newPageSize = parseInt(editingPageSizeValue, 10);
+    if (Number.isFinite(newPageSize) && newPageSize > 0 && newPageSize <= 100) {
+      table.setPageSize(newPageSize);
+      table.setPageIndex(0);
+    }
+    setIsEditingPageSize(false);
+  };
+
+  const handlePageSizeCancel = () => {
+    setIsEditingPageSize(false);
+    setEditingPageSizeValue(table.getState().pagination.pageSize.toString());
+  };
+
   const { listCompleted } = useGuideStore();
   const isClientSide = useClientSideValue(true);
 
@@ -407,7 +430,35 @@ const AppList = ({
                   onPageChange={(page) => table.setPageIndex(page - 1)}
                 />
                 <div className="flex items-center gap-1">
-                  <span className="text-zinc-900">{table.getState().pagination.pageSize}</span>/
+                  {isEditingPageSize ? (
+                    <Input
+                      value={editingPageSizeValue}
+                      onChange={(e) => setEditingPageSizeValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handlePageSizeSave();
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          handlePageSizeCancel();
+                        }
+                      }}
+                      onBlur={handlePageSizeSave}
+                      autoFocus
+                      className="h-7 w-12 text-center text-sm p-0"
+                      type="number"
+                      min="1"
+                      max="100"
+                    />
+                  ) : (
+                    <span
+                      className="text-zinc-900 cursor-pointer hover:text-zinc-700"
+                      onClick={handlePageSizeStartEdit}
+                    >
+                      {table.getState().pagination.pageSize}
+                    </span>
+                  )}
+                  <span>/</span>
                   <span>{t('Page')}</span>
                 </div>
               </div>

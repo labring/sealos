@@ -435,7 +435,7 @@ const Form = ({
         </div>
 
         {/* Right Content */}
-        <div id="form-container" className="relative w-full min-w-0 space-y-4">
+        <div id="form-container" className="relative w-full min-w-0 space-y-4 mb-10">
           {/* Name Card */}
           <Card className="">
             <CardHeader className="pt-8 px-8 pb-5 bg-transparent gap-0">
@@ -1212,7 +1212,11 @@ const Form = ({
 
                 {/* Local Storage Section */}
                 <div id="settings-storage" className="driver-deploy-storage min-w-0">
-                  <div className="flex items-center justify-between mb-4">
+                  <div
+                    className={`flex items-center justify-between ${
+                      storeList.length > 0 || persistentVolumes.length > 0 ? 'mb-4' : 'mb-2'
+                    }`}
+                  >
                     <div className="flex flex-col gap-1">
                       <h3 className="text-base font-medium leading-none text-zinc-900">
                         {t('Local Storage')}

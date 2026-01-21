@@ -20,11 +20,13 @@ const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false
 export default function Header({
   podList,
   setPodList,
-  refetchData
+  refetchData,
+  lastRefreshTime
 }: {
   podList: ListItem[];
   setPodList: (val: ListItem[]) => void;
   refetchData: () => void;
+  lastRefreshTime?: number;
 }) {
   const { t } = useTranslation();
   const { refreshInterval, setRefreshInterval } = useDateTimeStore();
@@ -76,7 +78,7 @@ export default function Header({
 
             <Select
               value={refreshInterval.toString()}
-              onValueChange={(value) => {
+              onValueChange={(value: string) => {
                 setRefreshInterval(Number(value));
               }}
             >
@@ -88,7 +90,7 @@ export default function Header({
                         <SelectValue placeholder={t('please_select')} />
                       </span>
                     ) : (
-                      t('auto_refresh')
+                      t('no_auto_refresh')
                     )}
                   </span>
                   <Separator orientation="vertical" className="!h-3 bg-zinc-300" />
@@ -114,7 +116,7 @@ export default function Header({
           </div>
           <div className="min-w-[124px] text-sm font-normal text-zinc-500 flex items-center">
             {t('Update Time')}&ensp;
-            <DynamicTime />
+            <DynamicTime lastRefreshTime={lastRefreshTime} />
           </div>
         </div>
       </div>

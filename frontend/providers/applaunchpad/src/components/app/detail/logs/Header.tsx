@@ -97,7 +97,7 @@ export const Header = ({
 
             <Select
               value={refreshInterval.toString()}
-              onValueChange={(value) => {
+              onValueChange={(value: string) => {
                 setRefreshInterval(Number(value));
               }}
             >
@@ -109,7 +109,7 @@ export const Header = ({
                         <SelectValue placeholder={t('please_select')} />
                       </span>
                     ) : (
-                      t('auto_refresh')
+                      t('no_auto_refresh')
                     )}
                   </span>
                   <Separator orientation="vertical" className="!h-3 bg-zinc-300" />

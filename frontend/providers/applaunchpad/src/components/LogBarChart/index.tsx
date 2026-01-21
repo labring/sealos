@@ -110,7 +110,7 @@ const LogBarChart = ({
       data?.xData?.map((time) => dayjs(time * 1000).format('MM-DD HH:mm')) || new Array(30).fill(0),
     [data?.xData]
   );
-  const yData = data?.yData || new Array(30).fill('');
+  const yData = data?.yData || new Array(30).fill(null);
 
   const Dom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
@@ -180,7 +180,10 @@ const LogBarChart = ({
       },
       formatter: (params: any[]) => {
         const axisValue = params[0]?.axisValue;
-        return `${axisValue} ${params[0]?.value || 0}`;
+        const value = params[0]?.value;
+        const displayValue =
+          value === null || value === undefined || Number.isNaN(value) ? '-' : value;
+        return `${axisValue} ${displayValue}`;
       }
     }
   });

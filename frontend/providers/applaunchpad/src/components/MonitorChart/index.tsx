@@ -6,6 +6,8 @@ import dayjs from 'dayjs';
 import { LineStyleMap } from '@/constants/monitor';
 import { Button } from '@sealos/shadcn-ui/button';
 import { cn } from '@sealos/shadcn-ui';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { useTranslation } from 'next-i18next';
 
 type MonitorChartProps = React.HTMLAttributes<HTMLDivElement> & {
   data: {
@@ -13,14 +15,14 @@ type MonitorChartProps = React.HTMLAttributes<HTMLDivElement> & {
     yData: {
       name: string;
       type: string;
-      data: number[];
+      data: Array<number | null>;
       lineStyleType?: string;
     }[];
   };
   type?: 'blue' | 'deepBlue' | 'green' | 'purple' | 'cpu' | 'memory' | 'storage' | 'network';
   title: string;
   yAxisLabelFormatter?: (value: number) => string;
-  yDataFormatter?: (values: number[]) => number[];
+  yDataFormatter?: (values: Array<number | null>) => Array<number | null>;
   xAxisLabelFormatter?: (value: string) => string;
   xAxisTooltipFormatter?: (value: string) => string;
   yAxisConfig?: {
@@ -35,17 +37,14 @@ type MonitorChartProps = React.HTMLAttributes<HTMLDivElement> & {
     appName?: string;
     type?: string;
   }) => string;
-  seriesNameFormatter?: (params: {
-    seriesName: string;
-    displayName: string;
-    seriesIndex: number;
-    appName?: string;
-    type?: string;
-  }) => string;
   unit?: string;
   isShowLegend?: boolean;
   lineWidth?: number;
   appName?: string;
+  /** All active pod names (used to distinguish active vs deprecated pods) */
+  activePodNames?: string[];
+  /** Checked pod names from header (only these active pods will be shown in legend and chart) */
+  checkedPodNames?: string[];
 };
 
 const MonitorChart = ({
@@ -58,14 +57,16 @@ const MonitorChart = ({
   xAxisTooltipFormatter,
   yAxisConfig,
   displayNameFormatter,
-  seriesNameFormatter,
   unit,
   isShowLegend = true,
   lineWidth = 1.2,
   appName,
+  activePodNames,
+  checkedPodNames,
   className,
   ...props
 }: MonitorChartProps) => {
+  const { t } = useTranslation();
   const { screenWidth } = useGlobalStore();
   const chartDom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
@@ -75,6 +76,27 @@ const MonitorChart = ({
     [seriesNames]
   );
   const [selectedSeries, setSelectedSeries] = useState<Set<string>>(new Set(seriesNames));
+
+  // For cpu/memory charts, only show checked pods in legend (but deprecated pods always in chart)
+  const isCpuOrMemoryType = type === 'cpu' || type === 'memory';
+  const legendData = useMemo(() => {
+    if (!data?.yData) return [];
+    if (isCpuOrMemoryType && checkedPodNames) {
+      // Filter to only show checked pods in legend
+      const checkedPodSet = new Set(checkedPodNames);
+      return data.yData.filter((item) => checkedPodSet.has(item.name));
+    }
+    return data.yData;
+  }, [data?.yData, checkedPodNames, isCpuOrMemoryType]);
+
+  // Active pod names for legend filtering and "show all" button
+  const legendSeriesNames = useMemo(() => legendData.map((item) => item.name), [legendData]);
+  const filterLabel =
+    type === 'cpu' || type === 'memory'
+      ? t('replica_filtering')
+      : type === 'storage'
+      ? t('volume_filtering')
+      : t('status_filtering');
 
   useEffect(() => {
     setSelectedSeries(new Set(seriesNames));
@@ -98,14 +120,21 @@ const MonitorChart = ({
     () => ({
       tooltip: {
         trigger: 'axis',
-        enterable: true,
+        // Prevent tooltip DOM from capturing pointer, so hover keeps tracking chart.
+        enterable: false,
         extraCssText: `
           box-shadow: none; 
           padding: 0; 
           background-color: transparent; 
           border: none;
+          pointer-events: none;
+          z-index: 9999;
         `,
         formatter: (params: any) => {
+          const formatValue = (value: number | null | undefined) => {
+            if (value === null || value === undefined || Number.isNaN(value)) return '-';
+            return value;
+          };
           const axisIndex = params?.[0]?.dataIndex ?? 0;
           const rawTime = data?.xData?.[axisIndex];
           const axisValue = rawTime
@@ -113,27 +142,32 @@ const MonitorChart = ({
               ? xAxisTooltipFormatter(rawTime)
               : dayjs(parseFloat(rawTime) * 1000).format('YYYY-MM-DD HH:mm')
             : params[0]?.axisValue;
+          const isCpuOrMemory = type === 'cpu' || type === 'memory';
           return `
-            <div class="bg-white w-[260px] rounded-lg p-4 border-[0.5px] border-zinc-200 shadow-xs">
+            <div class="bg-white min-w-[260px] rounded-lg p-4 border-[0.5px] border-zinc-200 shadow-xs">
               <div class="text-sm font-medium text-zinc-900 mb-1.5 pb-1.5 border-b border-zinc-100 flex">
                 ${axisValue}
               </div>
               ${params
                 .map((item: any) => {
                   const seriesName = item.seriesName || '';
+                  if (!isCpuOrMemory) {
+                    return `
+                      <div class="flex items-center justify-between gap-4 mb-1.5">
+                        <div class="flex gap-2 items-center min-w-0">
+                          <span class="inline-block w-2 h-2 rounded-full" style="background: ${
+                            item.color
+                          }"></span>
+                          <div class="text-sm font-medium text-zinc-900 truncate">${seriesName}</div>
+                        </div>
+                        <span class="min-w-14 w-fit text-right text-sm font-medium text-zinc-900">${formatValue(
+                          item.value
+                        )}${unit || ''}</span>
+                      </div>
+                    `;
+                  }
                   const seriesIndex = seriesIndexMap.get(seriesName) ?? 0;
                   const displayName = getDisplayName(seriesName, seriesIndex);
-                  const displaySeriesName = seriesNameFormatter
-                    ? seriesNameFormatter({
-                        seriesName,
-                        displayName,
-                        seriesIndex,
-                        appName,
-                        type
-                      })
-                    : appName
-                    ? `${displayName}-${appName}`
-                    : seriesName;
                   return `
                     <div class="flex flex-col gap-[2px] mb-1.5">
                       <div class="flex gap-2 items-center">
@@ -142,11 +176,12 @@ const MonitorChart = ({
                         }"></span>
                         <div class="text-sm font-medium text-zinc-900">${displayName}</div>
                       </div>
+                      
                       <div class="flex items-center justify-between gap-4">
-                       <div class="text-sm font-normal text-zinc-500 truncate">${displaySeriesName}</div>
-                        <span class="min-w-14 w-fit text-right text-sm font-medium text-zinc-900">${
+                        <div class="text-sm font-normal text-zinc-500 truncate">${seriesName}</div>
+                        <span class="min-w-14 w-fit text-right text-sm font-medium text-zinc-900">${formatValue(
                           item.value
-                        }${unit || ''}</span>
+                        )}${unit || ''}</span>
                       </div>
                     </div>
                   `;
@@ -158,19 +193,47 @@ const MonitorChart = ({
 
         // @ts-ignore
         position: (point, params, dom, rect, size) => {
-          let xPos = point[0];
-          let yPos = point[1] + 10;
-          let chartWidth = size.viewSize[0];
-          let chartHeight = size.viewSize[1];
-          let tooltipWidth = dom.offsetWidth;
-          let tooltipHeight = dom.offsetHeight;
+          const offset = 10;
+          const verticalOffset = -24;
+          const headerHeight = 90; // header height (h-20 = 80px)
+          const tooltipWidth = dom.offsetWidth;
+          const tooltipHeight = dom.offsetHeight;
 
-          if (xPos + tooltipWidth > chartWidth) {
-            xPos = xPos - tooltipWidth;
+          // get the position of the chart container
+          const chartContainer = dom.parentElement?.parentElement;
+          const chartRect = chartContainer?.getBoundingClientRect();
+
+          if (!chartRect) {
+            return [point[0] + offset, point[1] + offset];
           }
 
-          if (xPos < 0) {
-            xPos = 0;
+          // calculate the position of the tooltip in the viewport
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+
+          // the position of the mouse point in the viewport
+          const pointInViewportX = chartRect.left + point[0];
+          const pointInViewportY = chartRect.top + point[1];
+
+          let xPos = point[0] + offset;
+          let yPos = point[1] + offset;
+
+          // horizontal direction flip: if the right edge of the tooltip exceeds the right boundary of the viewport, flip to the left
+          if (pointInViewportX + offset + tooltipWidth > viewportWidth) {
+            xPos = point[0] - tooltipWidth - offset;
+          }
+          // if the left edge of the tooltip exceeds the left boundary of the viewport after flipping, stick to the left boundary of the viewport
+          if (pointInViewportX + xPos - point[0] < 0) {
+            xPos = -chartRect.left;
+          }
+
+          // vertical direction flip: if the bottom edge of the tooltip exceeds the bottom boundary of the viewport, flip to the top
+          if (pointInViewportY + offset + tooltipHeight > viewportHeight) {
+            yPos = point[1] - tooltipHeight - verticalOffset;
+          }
+          // if the top edge of the tooltip exceeds the header bottom after flipping, stick to below the header
+          if (pointInViewportY + yPos - point[1] < headerHeight) {
+            yPos = headerHeight - chartRect.top;
           }
 
           return [xPos, yPos];
@@ -244,7 +307,21 @@ const MonitorChart = ({
       },
       series: data?.yData
         ?.map((item, index) => {
-          if (!selectedSeries.has(item.name)) return null;
+          // For cpu/memory charts with activePodNames:
+          // - Active pods (in activePodNames): show only if checked in header AND selected in legend
+          // - Deprecated pods (not in activePodNames): always show
+          if (isCpuOrMemoryType && activePodNames) {
+            const isActivePod = activePodNames.includes(item.name);
+            if (isActivePod) {
+              // Active pod: must be checked in header AND selected in legend
+              const isChecked = checkedPodNames?.includes(item.name) ?? false;
+              if (!isChecked || !selectedSeries.has(item.name)) return null;
+            }
+            // Deprecated pod: always show (no filter)
+          } else {
+            // For other chart types, use normal selection logic
+            if (!selectedSeries.has(item.name)) return null;
+          }
           const formattedData = yDataFormatter ? yDataFormatter(item.data) : item.data;
           return {
             name: item.name,
@@ -272,14 +349,15 @@ const MonitorChart = ({
         .filter(Boolean)
     }),
     [
-      appName,
+      activePodNames,
+      checkedPodNames,
       data?.xData,
       data?.yData,
       getDisplayName,
+      isCpuOrMemoryType,
       lineWidth,
       selectedSeries,
       seriesIndexMap,
-      seriesNameFormatter,
       type,
       unit,
       xAxisLabelFormatter,
@@ -324,67 +402,119 @@ const MonitorChart = ({
     <div className={cn('relative w-full h-full min-h-[200px] flex gap-6', className)} {...props}>
       <div ref={chartDom} className="flex-1 min-w-0 h-full min-h-[200px]" />
       {isShowLegend && (
-        <div className="flex flex-col gap-2 w-[217px] flex-[0_0_217px]">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-sm font-normal text-zinc-500">Replica filters</span>
-            <button
-              type="button"
-              className="text-sm font-normal text-blue-600 hover:underline"
-              onClick={() => setSelectedSeries(new Set(seriesNames))}
-            >
-              show all
-            </button>
-          </div>
-          <div className="max-h-[200px] overflow-y-auto scrollbar-hide">
-            {data?.yData?.map((item, index) => {
-              const isSelected = selectedSeries.has(item.name);
-              const displayName = getDisplayName(item.name, index);
-              return (
-                <Button
-                  key={item?.name + index}
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    setSelectedSeries((prev) => {
+        <div className="relative w-[217px]">
+          <div className="absolute inset-0 flex flex-col gap-2">
+            <div className="flex shrink-0 items-center justify-between px-1">
+              <span className="text-sm font-normal text-zinc-500">{filterLabel}</span>
+              <button
+                type="button"
+                className="text-sm font-normal text-blue-600 hover:underline"
+                onClick={() =>
+                  setSelectedSeries((prev) => {
+                    if (legendSeriesNames.length === 0) return new Set();
+                    // Check if all legend items are selected
+                    const isAllLegendSelected = legendSeriesNames.every((name) => prev.has(name));
+                    if (isAllLegendSelected) {
+                      // Deselect all legend items, but keep non-legend items (deprecated pods) selected
                       const next = new Set(prev);
-                      if (next.has(item.name)) {
-                        next.delete(item.name);
-                      } else {
-                        next.add(item.name);
-                      }
+                      legendSeriesNames.forEach((name) => next.delete(name));
                       return next;
-                    })
-                  }
-                  className={cn(
-                    'relative mb-2 flex h-9 w-[217px] items-center justify-between gap-2 px-3 border-[0.5px] rounded-lg shadow-none hover:bg-zinc-100',
-                    isSelected ? 'bg-zinc-100' : ''
-                  )}
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="relative h-3 w-4">
-                      <span
-                        className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full"
-                        style={{
-                          backgroundColor: LineStyleMap[index % LineStyleMap.length].lineColor
-                        }}
-                      />
-                      <span
-                        className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
-                        style={{
-                          boxShadow: `0 0 0 2px ${
-                            LineStyleMap[index % LineStyleMap.length].lineColor
-                          }`
-                        }}
-                      />
+                    } else {
+                      // Select all legend items
+                      const next = new Set(prev);
+                      legendSeriesNames.forEach((name) => next.add(name));
+                      return next;
+                    }
+                  })
+                }
+              >
+                {t('show_all')}
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+              {legendData.map((item) => {
+                // Use original index from seriesIndexMap to keep color consistent
+                const originalIndex = seriesIndexMap.get(item.name) ?? 0;
+                const isSelected = selectedSeries.has(item.name);
+                const displayName = getDisplayName(item.name, originalIndex);
+                const isCpuOrMemory = type === 'cpu' || type === 'memory';
+                return (
+                  <Button
+                    key={item?.name + originalIndex}
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      setSelectedSeries((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(item.name)) {
+                          next.delete(item.name);
+                        } else {
+                          next.add(item.name);
+                        }
+                        return next;
+                      })
+                    }
+                    className={cn(
+                      'relative mb-2 flex h-9 w-[217px] items-center justify-between gap-2 px-3 border-[0.5px] rounded-lg shadow-none hover:bg-zinc-100',
+                      isSelected ? 'bg-zinc-100' : ''
+                    )}
+                  >
+                    <span className="flex items-center gap-2 min-w-0 pr-6">
+                      <span className="relative h-3 w-4">
+                        <span
+                          className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full"
+                          style={{
+                            backgroundColor:
+                              LineStyleMap[originalIndex % LineStyleMap.length].lineColor
+                          }}
+                        />
+                        <span
+                          className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+                          style={{
+                            boxShadow: `0 0 0 2px ${
+                              LineStyleMap[originalIndex % LineStyleMap.length].lineColor
+                            }`
+                          }}
+                        />
+                      </span>
+                      <Tooltip disableHoverableContent>
+                        <TooltipTrigger asChild>
+                          <span className="text-sm font-normal text-zinc-900 truncate">
+                            {displayName}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className="rounded-xl pointer-events-none">
+                          <div className="p-2">
+                            <span className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="inline-block w-2 h-2 rounded-full bg-[var(--dot-color)]"
+                                style={
+                                  {
+                                    '--dot-color':
+                                      LineStyleMap[originalIndex % LineStyleMap.length].lineColor
+                                  } as React.CSSProperties
+                                }
+                              />
+                              <span className="text-sm text-zinc-900 font-normal break-all">
+                                {isCpuOrMemory ? displayName : item.name}
+                              </span>
+                            </span>
+                            {isCpuOrMemory && (
+                              <span className="text-sm text-zinc-500 font-normal break-all">
+                                {item.name}
+                              </span>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
                     </span>
-                    <span className="text-sm font-normal text-zinc-900">{displayName}</span>
-                  </span>
-                  {isSelected && (
-                    <Check className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-blue-600" />
-                  )}
-                </Button>
-              );
-            })}
+                    {isSelected && (
+                      <Check className="absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-blue-600" />
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

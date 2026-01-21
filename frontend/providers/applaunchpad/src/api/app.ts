@@ -83,14 +83,74 @@ export const startAppByName = (appName: string) => {
 
 export const restartPodByName = (podName: string) => GET(`/api/restartPod?podName=${podName}`);
 
-export const getAppMonitorData = (payload: {
+// ========== 旧版监控数据 API (GET 请求) ==========
+// export const getAppMonitorData = (payload: {
+//   queryName: string;
+//   queryKey: keyof MonitorQueryKey;
+//   step: string;
+//   start?: number;
+//   end?: number;
+//   pvcName?: string;
+// }) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);
+
+// ========== 新版监控数据 API V2 ==========
+interface MonitorApiResponseV2 {
+  result: MonitorDataResult[];
+  debug?: {
+    requestParams?: any;
+    rawResponse?: any;
+    adaptedData?: any;
+    finalResult?: any;
+  };
+}
+
+export const getAppMonitorData = async (payload: {
   queryName: string;
   queryKey: keyof MonitorQueryKey;
   step: string;
   start?: number;
   end?: number;
   pvcName?: string;
-}) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);
+}): Promise<MonitorDataResult[]> => {
+  // 调试用
+  // console.log('==================== [DEBUG] Monitor API V2 ====================');
+  // console.log('[DEBUG] 1. Frontend Request Payload:', payload);
+
+  try {
+    const response = await GET<MonitorApiResponseV2>(`/api/monitor/getMonitorDataV2`, payload);
+
+    // 调试用
+    // console.log('[DEBUG] 2. Raw Response:', response);
+
+    // 打印后端返回的 debug 信息
+    if (response && typeof response === 'object' && 'result' in response) {
+      const { debug, result } = response as MonitorApiResponseV2;
+      if (debug) {
+        // console.log('[DEBUG] 3. Backend Request Params:', debug.requestParams);
+        // console.log('[DEBUG] 4. VictoriaMetrics Raw Response:', debug.rawResponse);
+        // console.log('[DEBUG] 5. Adapted Data:', debug.adaptedData);
+        // console.log('[DEBUG] 6. Final Result:', debug.finalResult);
+      }
+      // console.log('================================================================');
+      return result || [];
+    }
+
+    // 兼容旧格式 (直接返回数组)
+    if (Array.isArray(response)) {
+      // console.log('[DEBUG] Response is array (legacy format)');
+      // console.log('================================================================');
+      return response;
+    }
+
+    // console.log('[DEBUG] Unexpected response format:', typeof response);
+    // console.log('================================================================');
+    return [];
+  } catch (error) {
+    // console.error('[DEBUG] Error fetching monitor data:', error);
+    // console.log('================================================================');
+    return [];
+  }
+};
 
 export const getAppLogs = (payload: LogQueryPayload) => POST<string>('/api/log/queryLogs', payload);
 

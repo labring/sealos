@@ -396,8 +396,8 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
         className="w-fit p-0 rounded-xl z-50 border-[0.5px] border-zinc-200"
         align="start"
       >
-        <div className="w-[402px] h-[382px] flex">
-          <div className="w-[242px] flex flex-col">
+        <div className="w-[402px] flex">
+          <div className="w-[242px] h-fit flex flex-col">
             <DayPicker
               mode="range"
               navLayout="around"
@@ -414,8 +414,8 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
               }}
               className="px-4 pb-2 pt-4"
             />
-            <Separator />
-            <div className="flex flex-col gap-2 px-4 pt-2">
+
+            <div className="flex flex-col gap-1 px-4 pt-3 border-t border-zinc-100">
               <span className="text-xs text-zinc-600 ml-1">{t('start')}</span>
               <div className="w-full flex justify-center gap-1">
                 <DatePickerInput
@@ -433,7 +433,7 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5 px-4 pt-2 pb-3">
+            <div className="flex flex-col gap-1 px-4 pt-2 pb-4">
               <span className="text-xs text-zinc-600 ml-1">{t('end')}</span>
               <div className="w-full flex justify-center gap-1">
                 <DatePickerInput
@@ -451,8 +451,7 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
               </div>
             </div>
           </div>
-          <Separator orientation="vertical" className="shrink-0" />
-          <div className="flex-1">
+          <div className="flex-1 border-l border-zinc-100">
             <div className="flex flex-col gap-0.5 py-3 px-2 w-full">
               {recentDateList.map((item) => (
                 <Button
@@ -472,9 +471,9 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
             </div>
           </div>
         </div>
-        <Separator />
-        <div className="flex justify-between pl-3 items-center py-2">
-          <Select value={timeZone} onValueChange={(val) => setTimeZone(val as 'local' | 'utc')}>
+
+        <div className="flex justify-between pl-3 items-center py-2 border-t border-zinc-100">
+          <Select value={timeZone} onValueChange={(val: 'local' | 'utc') => setTimeZone(val)}>
             <SelectTrigger className="h-8 w-fit border-none rounded-lg bg-transparent shadow-none text-zinc-600 text-xs font-normal px-0">
               <SelectValue />
             </SelectTrigger>
@@ -510,12 +509,12 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
             </Button>
             <Button
               variant="outline"
-              className="border rounded-lg shadow-none"
+              className="min-w-14 rounded-lg shadow-none"
               onClick={() => setIsOpen(false)}
             >
               {t('Cancel')}
             </Button>
-            <Button className="rounded-lg" onClick={() => onSubmit()}>
+            <Button className="rounded-lg min-w-14 shadow-none" onClick={() => onSubmit()}>
               {t('Confirm')}
             </Button>
           </div>
