@@ -540,14 +540,29 @@ func (r *UserReconciler) syncServiceAccount(
 		sa.Name = user.Name
 		sa.Namespace = config.GetUserSystemNamespace()
 		sa.Labels = map[string]string{}
+
+		// Check if SA exists and needs rotation
 		if err = r.Get(context.Background(), client.ObjectKey{
 			Namespace: config.GetUserSystemNamespace(),
 			Name:      user.Name,
-		}, sa); err != nil {
-			if apierrors.IsNotFound(err) {
-				r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "sa %s not found, kubeConfig renew", user.Name)
+		}, sa); err == nil {
+			// SA exists, check if we need to rotate (delete and recreate)
+			if r.shouldRotateKubeConfig(user) {
+				if delErr := r.Delete(ctx, sa); delErr != nil && !apierrors.IsNotFound(delErr) {
+					return fmt.Errorf("failed to delete serviceaccount for rotation: %w", delErr)
+				}
+				// Reset SA to recreate it
+				sa = &v1.ServiceAccount{}
+				sa.Name = user.Name
+				sa.Namespace = config.GetUserSystemNamespace()
+				sa.Labels = map[string]string{}
+				r.Recorder.Eventf(user, v1.EventTypeNormal, "ServiceAccountRotated", "ServiceAccount %s deleted for kubeconfig rotation", user.Name)
 			}
+		} else if !apierrors.IsNotFound(err) {
+			// Error other than not found
+			return err
 		}
+
 		secretName := kubeconfig.SecretName(user.Name)
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, sa, func() error {
 			sa.Annotations = map[string]string{
@@ -630,19 +645,8 @@ func (r *UserReconciler) syncServiceAccountSecrets(
 		}
 		var err error
 		if err = r.Get(ctx, client.ObjectKeyFromObject(secrets), secrets); err == nil {
-			if r.shouldRotateKubeConfig(user) {
-				if delErr := r.Delete(ctx, secrets); delErr != nil && !apierrors.IsNotFound(delErr) {
-					return delErr
-				}
-				secrets = &v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      secretName,
-						Namespace: config.GetUserSystemNamespace(),
-					},
-				}
-			} else {
-				return nil
-			}
+			// Secret already exists, no need to recreate
+			return nil
 		}
 		var change controllerutil.OperationResult
 		if change, err = controllerutil.CreateOrUpdate(context.TODO(), r.Client, secrets, func() error {
