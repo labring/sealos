@@ -11,6 +11,7 @@ replace (
 	k8s.io/apimachinery => k8s.io/apimachinery v0.32.1
 	k8s.io/client-go => k8s.io/client-go v0.32.1
 	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.20.4
+	github.com/labring/sealos/controllers/license => ../../controllers/license
 )
 
 require (
@@ -20,6 +21,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/labring/sealos/controllers/pkg v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/service v0.0.0-00010101000000-000000000000
+	github.com/labring/sealos/controllers/license v0.0.0-00010101000000-000000000000
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
