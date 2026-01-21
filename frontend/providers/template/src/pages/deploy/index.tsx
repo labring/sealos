@@ -27,6 +27,7 @@ import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { useSystemConfigStore } from '@/store/config';
 import { useQuotaGuarded } from '@sealos/shared';
+import { Config } from '@/config';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -436,8 +437,9 @@ export default function EditApp({
 }
 
 export async function getServerSideProps(content: any) {
-  const forcedLanguage = process.env.FORCED_LANGUAGE;
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
+  const forcedLanguage = Config().template.ui.forcedLanguage;
+  const brandName = Config().template.ui.brandName;
+
   const locale =
     forcedLanguage ||
     content?.req?.cookies?.NEXT_LOCALE ||

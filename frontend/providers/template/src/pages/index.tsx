@@ -29,6 +29,7 @@ import Head from 'next/head';
 import { ShareIcon } from '@/components/icons';
 import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { Config } from '@/config';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
@@ -307,8 +308,8 @@ export default function AppList({
 }
 
 export async function getServerSideProps(content: any) {
-  const forcedLanguage = process.env.FORCED_LANGUAGE;
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
+  const forcedLanguage = Config().template.ui.forcedLanguage;
+  const brandName = Config().template.ui.brandName;
 
   const local: string =
     forcedLanguage ||
@@ -339,7 +340,7 @@ export async function getServerSideProps(content: any) {
       ...(await serviceSideProps(content)),
       brandName,
       seoData: seoData[local] || seoData.en,
-      canonicalUrl: process.env.NEXT_PUBLIC_CANONICAL_URL || `https://template.cloud.sealos.io`
+      canonicalUrl: Config().template.ui.meta.canonicalUrl
     }
   };
 }
