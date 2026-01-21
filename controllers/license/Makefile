@@ -66,11 +66,10 @@ test: manifests generate fmt vet envtest ## Run tests.
 ##@ Build
 
 .PHONY: build
-CONTROLLER_PKG=github.com/labring/sealos/controllers/pkg
-CONTROLLER_LICENSE=github.com/labring/sealos/controllers/license/internal
+CONTROLLER_PKG=github.com/labring/sealos/controllers/pkg/license
 build:
 	LD_FLAGS="-s -w"; \
-	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS+=" -X ${CONTROLLER_LICENSE}/util/key.encryptionKey=${LICENSE_KEY}"; \
+	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS+=" -X ${CONTROLLER_PKG}.encryptionKey=${LICENSE_KEY}"; \
 	CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager cmd/manager/main.go
 
 
