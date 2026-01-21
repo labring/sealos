@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
 	"github.com/labring/sealos/controllers/devbox/internal/commit"
-	controllererrors "github.com/labring/sealos/controllers/devbox/internal/controller/utils/errors"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/events"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -158,8 +157,7 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 			// Controller will handle storage cleanup when devbox is not found
 			return !errors.Is(err, context.Canceled) &&
 				!errors.Is(err, context.DeadlineExceeded) &&
-				!apierrors.IsNotFound(err) &&
-				!errors.Is(err, controllererrors.ErrDevboxNotFound)
+				!apierrors.IsNotFound(err)
 		}, func() error {
 			err := h.commitDevbox(ctx, devbox, targetState)
 			if err != nil {
@@ -247,7 +245,7 @@ func (h *EventHandler) commitDevbox(
 	); err != nil {
 		if apierrors.IsNotFound(err) {
 			h.Logger.Info("devbox not found at start of commit", "devbox", devbox.Name)
-			return controllererrors.ErrDevboxNotFound
+			return err
 		}
 		h.Logger.Error(err, "failed to get devbox", "devbox", devbox.Name)
 		return err
@@ -261,9 +259,9 @@ func (h *EventHandler) commitDevbox(
 			types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name},
 			latestDevbox,
 		); err != nil {
-			// If devbox is not found, return a special error to stop retrying
+			// If devbox is not found, return the error to stop retrying
 			if apierrors.IsNotFound(err) {
-				return controllererrors.ErrDevboxNotFound
+				return err
 			}
 			return err
 		}
@@ -271,9 +269,9 @@ func (h *EventHandler) commitDevbox(
 		latestDevbox.Status.CommitRecords[latestDevbox.Status.ContentID].UpdateTime = metav1.Now()
 		return h.Client.Status().Update(ctx, latestDevbox)
 	}); err != nil {
-		if apierrors.IsNotFound(err) || errors.Is(err, controllererrors.ErrDevboxNotFound) {
+		if apierrors.IsNotFound(err) {
 			h.Logger.Info("devbox not found when setting commit status", "devbox", devbox.Name)
-			return controllererrors.ErrDevboxNotFound
+			return err
 		}
 		h.Logger.Error(err, "failed to update commit status to committing", "devbox", devbox.Name)
 		return err
@@ -293,7 +291,7 @@ func (h *EventHandler) commitDevbox(
 	); err != nil {
 		if apierrors.IsNotFound(err) {
 			h.Logger.Info("devbox not found before commit", "devbox", devbox.Name)
-			return controllererrors.ErrDevboxNotFound
+			return err
 		}
 		h.Logger.Error(err, "failed to get devbox", "devbox", devbox.Name)
 		return err
@@ -347,10 +345,10 @@ func (h *EventHandler) commitDevbox(
 				types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name},
 				latestDevbox,
 			); err != nil {
-				// If devbox is not found, return a special error
+				// If devbox is not found, return the error
 				// RetryOnConflict will return this error immediately without retrying
 				if apierrors.IsNotFound(err) {
-					return controllererrors.ErrDevboxNotFound
+					return err
 				}
 				return err
 			}
@@ -359,14 +357,13 @@ func (h *EventHandler) commitDevbox(
 			return h.Client.Status().Update(ctx, latestDevbox)
 		})
 		if updateErr != nil {
-			if apierrors.IsNotFound(updateErr) ||
-				errors.Is(updateErr, controllererrors.ErrDevboxNotFound) {
+			if apierrors.IsNotFound(updateErr) {
 				h.Logger.Info(
 					"devbox not found when updating commit status to failed",
 					"devbox",
 					devbox.Name,
 				)
-				return controllererrors.ErrDevboxNotFound
+				return updateErr
 			}
 			h.Logger.Error(
 				updateErr,
@@ -384,7 +381,7 @@ func (h *EventHandler) commitDevbox(
 	); err != nil {
 		if apierrors.IsNotFound(err) {
 			h.Logger.Info("devbox not found before push", "devbox", devbox.Name)
-			return controllererrors.ErrDevboxNotFound
+			return err
 		}
 		h.Logger.Error(err, "failed to get devbox", "devbox", devbox.Name)
 		return err
@@ -399,9 +396,9 @@ func (h *EventHandler) commitDevbox(
 				types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name},
 				latestDevbox,
 			); err != nil {
-				// If devbox is not found, return a special error
+				// If devbox is not found, return the error
 				if apierrors.IsNotFound(err) {
-					return controllererrors.ErrDevboxNotFound
+					return err
 				}
 				return err
 			}
@@ -410,14 +407,13 @@ func (h *EventHandler) commitDevbox(
 			return h.Client.Status().Update(ctx, latestDevbox)
 		})
 		if updateErr != nil {
-			if apierrors.IsNotFound(updateErr) ||
-				errors.Is(updateErr, controllererrors.ErrDevboxNotFound) {
+			if apierrors.IsNotFound(updateErr) {
 				h.Logger.Info(
 					"devbox not found when updating commit status to failed after push error",
 					"devbox",
 					devbox.Name,
 				)
-				return controllererrors.ErrDevboxNotFound
+				return updateErr
 			}
 			h.Logger.Error(
 				updateErr,
@@ -443,9 +439,9 @@ func (h *EventHandler) commitDevbox(
 			types.NamespacedName{Namespace: devbox.Namespace, Name: devbox.Name},
 			latestDevbox,
 		); err != nil {
-			// If devbox is not found, return a special error to stop retrying
+			// If devbox is not found, return the error to stop retrying
 			if apierrors.IsNotFound(err) {
-				return controllererrors.ErrDevboxNotFound
+				return err
 			}
 			return err
 		}
@@ -463,9 +459,9 @@ func (h *EventHandler) commitDevbox(
 		latestDevbox.Status.Node = ""
 		return h.Client.Status().Update(ctx, latestDevbox)
 	}); err != nil {
-		if apierrors.IsNotFound(err) || errors.Is(err, controllererrors.ErrDevboxNotFound) {
+		if apierrors.IsNotFound(err) {
 			h.Logger.Info("devbox not found when updating status", "devbox", devbox.Name)
-			return controllererrors.ErrDevboxNotFound
+			return err
 		}
 		h.Logger.Error(err, "failed to update devbox status", "devbox", devbox.Name)
 		return err
