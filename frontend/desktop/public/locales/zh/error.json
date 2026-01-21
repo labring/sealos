@@ -6,7 +6,7 @@
   "RESULT_SUCCESS": "响应成功",
   "INTERNAL_SERVER_ERROR": "内部服务器错误",
   "INSUFFICENT_BALANCE": "余额不足",
-	"MERGET_USER_INSUFFICENT_BALANCE": "被合并的账户余额不足",
+  "MERGET_USER_INSUFFICENT_BALANCE": "被合并的账户余额不足",
   "ACCOUNT_NOT_FOUND": "未找到账户",
   "USER_CR_NOT_FOUND": "未找到用户CR",
   "OAUTHPROVIDER_NOT_FOUND": "未找到OAuth提供程序",
@@ -19,5 +19,6 @@
   "REMAIN_TEMPLATE": "当前可用区残留模板",
   "REMAIN_OBJECT_STORAGE": "当前可用区残留对象存储",
   "REMAIN_DATABASE": "当前可用区残留数据库",
-  "KUBECONFIG_NOT_FOUND": "未找到Kubeconfig"
+  "KUBECONFIG_NOT_FOUND": "未找到Kubeconfig",
+  "LICENSE_INACTIVE": "当前集群尚未激活或未绑定有效的 License，无法创建空间/用户。请使用 Admin 账号登录，进入【License 管理】页面上传/激活 License 后重试。"
 }
