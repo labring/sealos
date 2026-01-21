@@ -118,7 +118,8 @@ export function UpgradePlanDialogActions({
               if (selectedPlan) {
                 showConfirmationModal(selectedPlan, {
                   workspaceName,
-                  operator: 'created'
+                  operator: 'created',
+                  businessOperation: 'create'
                 });
               }
             }
@@ -183,15 +184,40 @@ export function UpgradeButton({
         return 'upgraded';
       };
       const operator = getOperator();
+      // Determine business operation for UI display
+      let businessOperation: 'create' | 'upgrade' | 'downgrade' | 'renew' | undefined;
+      if (inDebt) {
+        // In debt state: check if it's current plan (renew) or other plan (upgrade/downgrade)
+        const isCurrentPlanInDebt = selectedPlanName === currentPlan;
+        if (isCurrentPlanInDebt) {
+          businessOperation = 'renew';
+        } else {
+          // Check if it's actually a downgrade based on plan relationship
+          if (currentPlanObj && currentPlanObj.DowngradePlanList?.includes(selectedPlanName)) {
+            businessOperation = 'downgrade';
+          } else {
+            businessOperation = 'upgrade';
+          }
+        }
+      } else if (operator === 'created') {
+        businessOperation = 'create';
+      } else if (operator === 'upgraded') {
+        businessOperation = 'upgrade';
+      } else if (operator === 'downgraded') {
+        businessOperation = 'downgrade';
+      }
+
       if (operator === 'downgraded') {
         showDowngradeModal(plan, {
           workspaceName,
-          operator
+          operator,
+          businessOperation: 'downgrade'
         });
       } else {
         showConfirmationModal(plan, {
           workspaceName,
-          operator
+          operator,
+          businessOperation
         });
       }
     }

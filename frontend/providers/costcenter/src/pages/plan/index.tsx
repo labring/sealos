@@ -242,9 +242,11 @@ export default function Plan() {
         const workspaceName = isCreateMode ? defaultWorkspaceName : '';
         // Determine operator based on mode: create mode uses 'created', otherwise 'upgraded'
         const operator = isCreateMode ? 'created' : 'upgraded';
+        const businessOperation = isCreateMode ? 'create' : 'upgrade';
         showConfirmationModal(targetPlan, {
           workspaceName,
-          operator
+          operator,
+          businessOperation
         });
       }
     }
@@ -801,6 +803,7 @@ export default function Plan() {
         workspaceName={modalContext.workspaceName}
         isOpen={modalType === 'confirmation'}
         isSubmitting={subscriptionMutation.isLoading}
+        isRenew={modalContext.businessOperation === 'renew'}
         onConfirm={() => {
           if (pendingPlan) {
             handleSubscribe(pendingPlan, modalContext.workspaceName, false);

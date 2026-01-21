@@ -20,6 +20,7 @@ interface PlanConfirmationModalProps {
   onCancel?: () => void;
   onPaymentSuccess?: () => void;
   isSubmitting?: boolean;
+  isRenew?: boolean;
 }
 
 const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((props, _ref) => {
@@ -30,7 +31,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     onConfirm,
     onCancel,
     onPaymentSuccess,
-    isSubmitting: isSubmittingProp
+    isSubmitting: isSubmittingProp,
+    isRenew = false
   } = props;
 
   const { t } = useTranslation();
@@ -72,6 +74,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const plan = planProp || pendingPlan || undefined;
   const workspaceName = workspaceNameProp || modalContext.workspaceName;
   const operatorFromContext = modalContext.operator;
+  const businessOperation = modalContext.businessOperation;
 
   const region = getRegion();
   const workspace = session?.user?.nsid || '';
@@ -82,8 +85,21 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const isPaygUser = isPaygType();
   // Always use operator from context, fallback to 'created' for PAYG users only
   const operator = operatorFromContext || (isPaygUser ? 'created' : 'upgraded');
-  // Determine if it's create mode based on operator
-  const isCreateMode = operator === 'created';
+  // Determine business operation for UI display (prioritize businessOperation from context, fallback to isRenew prop, then infer from operator)
+  const finalBusinessOperation =
+    businessOperation ||
+    (isRenew ? 'renew' : undefined) ||
+    (operator === 'created'
+      ? 'create'
+      : operator === 'upgraded'
+      ? 'upgrade'
+      : operator === 'downgraded'
+      ? 'downgrade'
+      : undefined);
+  const isCreateMode = finalBusinessOperation === 'create';
+  const isRenewMode = finalBusinessOperation === 'renew';
+  const isUpgradeMode = finalBusinessOperation === 'upgrade';
+  const isDowngradeMode = finalBusinessOperation === 'downgrade';
   // getUpgradeAmount API only supports 'created' | 'upgraded', not 'downgraded'
   const canQueryUpgradeAmount = operator === 'created' || operator === 'upgraded';
 
@@ -613,7 +629,15 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
         >
           <div className="flex justify-center items-center px-6 py-5">
             <h2 className="text-2xl font-semibold text-gray-900 text-center leading-none">
-              {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
+              {isRenewMode
+                ? t('common:renew_subscription')
+                : isCreateMode
+                ? t('common:create_workspace')
+                : isDowngradeMode
+                ? t('common:downgrade_plan')
+                : isUpgradeMode
+                ? t('common:upgrade_plan')
+                : t('common:subscribe_plan')}
             </h2>
           </div>
 
@@ -627,6 +651,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
             onPaymentCancel={handlePaymentCancel}
             isSubmitting={isSubmittingProp}
             isCancelingInvoice={cancelPaymentWaitingMutation.isLoading}
+            isRenew={isRenew}
           />
         </DialogContent>
       </Dialog>

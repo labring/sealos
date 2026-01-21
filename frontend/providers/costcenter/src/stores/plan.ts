@@ -22,6 +22,7 @@ export interface PlanStoreState {
   modalContext: {
     workspaceName?: string;
     operator?: 'created' | 'upgraded' | 'downgraded';
+    businessOperation?: 'create' | 'upgrade' | 'downgrade' | 'renew';
   };
 
   // Default values for modal opening (from URL params)
@@ -72,6 +73,7 @@ export interface PlanStoreState {
     context?: {
       workspaceName?: string;
       operator?: 'created' | 'upgraded' | 'downgraded';
+      businessOperation?: 'create' | 'upgrade' | 'downgrade' | 'renew';
     }
   ) => void;
   showDowngradeModal: (
@@ -79,6 +81,7 @@ export interface PlanStoreState {
     context?: {
       workspaceName?: string;
       operator?: 'created' | 'upgraded' | 'downgraded';
+      businessOperation?: 'create' | 'upgrade' | 'downgrade' | 'renew';
     }
   ) => void;
   hideModal: () => void;

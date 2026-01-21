@@ -92,15 +92,39 @@ export function UpgradePlanCard({
       return;
     }
     const operator = getOperator();
+    // Determine business operation for UI display
+    let businessOperation: 'create' | 'upgrade' | 'downgrade' | 'renew' | undefined;
+    if (inDebt) {
+      // In debt state: current plan is renew, check if other plans are upgrade or downgrade
+      if (isCurrentPlan) {
+        businessOperation = 'renew';
+      } else {
+        // Check if it's actually a downgrade based on plan relationship
+        if (currentPlan && currentPlan.DowngradePlanList?.includes(plan.Name)) {
+          businessOperation = 'downgrade';
+        } else {
+          businessOperation = 'upgrade';
+        }
+      }
+    } else if (operator === 'created') {
+      businessOperation = 'create';
+    } else if (operator === 'upgraded') {
+      businessOperation = 'upgrade';
+    } else if (operator === 'downgraded') {
+      businessOperation = 'downgrade';
+    }
+
     if (operator === 'downgraded' && !inDebt) {
       return showDowngradeModal(plan, {
         workspaceName,
-        operator
+        operator,
+        businessOperation: 'downgrade'
       });
     }
     return showConfirmationModal(plan, {
       workspaceName,
-      operator
+      operator,
+      businessOperation
     });
   };
 
