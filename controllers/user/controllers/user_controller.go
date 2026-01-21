@@ -55,10 +55,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-	"github.com/labring/sealos/controllers/user/controllers/helper"
-	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
 )
 
