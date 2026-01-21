@@ -17,8 +17,10 @@ package licensegate
 import (
 	"context"
 	"sync/atomic"
+	"time"
 
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
+	licensepkg "github.com/labring/sealos/controllers/pkg/license"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,6 +29,7 @@ const DefaultUserLimit = 1
 var (
 	activeFlag      uint32
 	initializedFlag uint32
+	userLimit       int64
 )
 
 func Initialized() bool {
@@ -38,13 +41,25 @@ func HasActiveLicense() bool {
 }
 
 func AllowNewUser(currentCount int) bool {
-	if HasActiveLicense() {
-		return true
-	}
 	if !Initialized() {
 		return false
 	}
-	return currentCount < DefaultUserLimit
+	limit := UserLimit()
+	if limit < 0 {
+		return true
+	}
+	return currentCount < limit
+}
+
+func UserLimit() int {
+	return int(atomic.LoadInt64(&userLimit))
+}
+
+func LimitMessage() string {
+	if HasActiveLicense() {
+		return "license active: user limit reached"
+	}
+	return "license inactive: user limit reached"
 }
 
 func SetActive(active bool) {
@@ -56,18 +71,52 @@ func SetActive(active bool) {
 	atomic.StoreUint32(&initializedFlag, 1)
 }
 
+func SetUserLimit(limit int) {
+	atomic.StoreInt64(&userLimit, int64(limit))
+	atomic.StoreUint32(&initializedFlag, 1)
+}
+
+func SetState(active bool, limit int) {
+	SetActive(active)
+	SetUserLimit(limit)
+}
+
 func Refresh(ctx context.Context, reader client.Reader) error {
 	licenseList := &licensev1.LicenseList{}
 	if err := reader.List(ctx, licenseList); err != nil {
 		return err
 	}
-	hasActive := false
+	var selected *licensev1.License
 	for i := range licenseList.Items {
-		if licenseList.Items[i].Status.Phase == licensev1.LicenseStatusPhaseActive {
-			hasActive = true
-			break
+		license := &licenseList.Items[i]
+		if license.Status.Phase != licensev1.LicenseStatusPhaseActive {
+			continue
+		}
+		if selected == nil || licenseTimestamp(license).After(licenseTimestamp(selected)) {
+			selected = license
 		}
 	}
-	SetActive(hasActive)
+	if selected == nil {
+		SetState(false, DefaultUserLimit)
+		return nil
+	}
+	claims, err := licensepkg.GetClaimsFromLicense(selected)
+	if err != nil {
+		SetState(false, DefaultUserLimit)
+		return err
+	}
+	clusterData := &licensepkg.ClusterClaimData{}
+	if err := claims.Data.SwitchToClusterData(clusterData); err != nil {
+		SetState(false, DefaultUserLimit)
+		return err
+	}
+	SetState(true, clusterData.UserCount)
 	return nil
+}
+
+func licenseTimestamp(license *licensev1.License) time.Time {
+	if !license.Status.ActivationTime.IsZero() {
+		return license.Status.ActivationTime.Time
+	}
+	return license.CreationTimestamp.Time
 }

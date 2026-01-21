@@ -220,6 +220,10 @@ func main() {
 		setupLog.Error(err, "unable to set up license gate")
 		os.Exit(1)
 	}
+	if err := controllers.SetupUserCount(mgr); err != nil {
+		setupLog.Error(err, "unable to set up user count")
+		os.Exit(1)
+	}
 
 	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr, rateLimiterOptions, minRequeueDuration, maxRequeueDuration, restartPredicateDuration); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")

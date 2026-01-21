@@ -27,6 +27,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/matoous/go-nanoid/v2 v2.0.0
+	github.com/mitchellh/mapstructure v1.5.1-0.20220423185008-bf980b35cac4
 	github.com/minio/minio-go/v7 v7.0.64
 	github.com/prometheus/client_golang v1.19.0
 	github.com/prometheus/client_model v0.5.0

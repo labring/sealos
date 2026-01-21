@@ -25,11 +25,8 @@ import (
 	"github.com/go-logr/logr"
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,8 +64,6 @@ const (
 	defaultLicenseName         = "default"
 	defaultLicenseNamespace    = "ns-admin"
 )
-
-var defaultLicenseDuration = 30 * 24 * time.Hour
 
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=license.sealos.io,resources=licenses/status,verbs=get;update;patch
@@ -255,20 +250,4 @@ func (r *LicenseReconciler) updateStatus(
 		original.Status = *status
 		return r.Client.Status().Update(ctx, original)
 	})
-}
-
-func (r *LicenseReconciler) isDevBoxInstalled(ctx context.Context) (bool, error) {
-	crd := &unstructured.Unstructured{}
-	crd.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "apiextensions.k8s.io",
-		Version: "v1",
-		Kind:    "CustomResourceDefinition",
-	})
-	if err := r.Get(ctx, types.NamespacedName{Name: "devboxes.devbox.sealos.io"}, crd); err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
 }
