@@ -1049,7 +1049,7 @@ func (r *DevboxReconciler) handleStorageDelete(
 	if r.isStorageAlreadyCleanedUp(devbox) {
 		logger.Info("devbox storage already cleaned up, skipping cleanup",
 			"devbox", devbox.Name,
-			"state", devbox.Spec.State)
+			"state", devbox.Status.State)
 		return nil
 	}
 
@@ -1075,8 +1075,8 @@ func (r *DevboxReconciler) handleStorageDelete(
 // isStorageAlreadyCleanedUp checks if storage cleanup is already done
 // shutdown or stopped devbox is already cleaned up
 func (r *DevboxReconciler) isStorageAlreadyCleanedUp(devbox *devboxv1alpha2.Devbox) bool {
-	return devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown ||
-		devbox.Spec.State == devboxv1alpha2.DevboxStateStopped
+	return devbox.Status.State == devboxv1alpha2.DevboxStateShutdown ||
+		devbox.Status.State == devboxv1alpha2.DevboxStateStopped
 }
 
 // validateAndGetCommitRecord validates devbox status and returns the current commit record

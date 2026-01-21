@@ -17,3 +17,6 @@ package errors
 import "errors"
 
 var ErrPodNotLastCommitHistory = errors.New("pod is not the last commit history pod")
+
+// ErrDevboxNotFound is returned when devbox is not found during commit
+var ErrDevboxNotFound = errors.New("devbox not found")
