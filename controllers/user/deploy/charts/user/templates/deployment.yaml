@@ -15,7 +15,6 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
