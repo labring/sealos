@@ -62,36 +62,105 @@ export async function DELETE(req: NextRequest) {
 
     const ingressList = ingressResponse.body.items;
 
-    // delete service and ingress at the same time
+    const configMapResponse = (await k8sCore.listNamespacedConfigMap(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${devboxKey}=${devboxName}`
+    )) as {
+      body: {
+        items: any[];
+      };
+    };
+    const configMapList = configMapResponse.body.items;
+
+    const pvcResponse = (await k8sCore.listNamespacedPersistentVolumeClaim(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${devboxKey}=${devboxName}`
+    )) as {
+      body: {
+        items: any[];
+      };
+    };
+    const pvcList = pvcResponse.body.items;
+
+    const safeDelete = async (group: string, version: string, plural: string, name: string) => {
+      try {
+        await k8sCustomObjects.deleteNamespacedCustomObject(
+          group,
+          version,
+          namespace,
+          plural,
+          name
+        );
+      } catch (err) {
+        console.warn('Failed to delete an item, ignoring:', plural, name, err);
+      }
+    };
+
+    const safeDeleteCore = async (
+      deleteFunc: () => Promise<any>,
+      resourceType: string,
+      name: string
+    ) => {
+      try {
+        await deleteFunc();
+      } catch (err) {
+        console.warn('Failed to delete an item, ignoring:', resourceType, name, err);
+      }
+    };
+
+    const deletePromises = [];
+
     if (ingressList.length > 0) {
-      const deleteServicePromise = k8sCore.deleteNamespacedService(devboxName, namespace);
+      deletePromises.push(
+        safeDeleteCore(
+          () => k8sCore.deleteNamespacedService(devboxName, namespace),
+          'service',
+          devboxName
+        )
+      );
 
-      const deletePromises = ingressList.map(async (ingress: any) => {
+      ingressList.forEach((ingress: any) => {
         const networkName = ingress.metadata.name;
-
-        const safeDelete = async (group: string, version: string, plural: string, name: string) => {
-          try {
-            await k8sCustomObjects.deleteNamespacedCustomObject(
-              group,
-              version,
-              namespace,
-              plural,
-              name
-            );
-          } catch (err) {
-            console.warn('Failed to delete an item, ignoring:', plural, name, err);
-          }
-        };
-
-        return Promise.all([
+        deletePromises.push(
           safeDelete('networking.k8s.io', 'v1', 'ingresses', networkName),
-          // this two muse have customDomain
           safeDelete('cert-manager.io', 'v1', 'issuers', networkName),
           safeDelete('cert-manager.io', 'v1', 'certificates', networkName)
-        ]);
+        );
       });
+    }
 
-      await Promise.all([deleteServicePromise, ...deletePromises]);
+    configMapList.forEach((cm: any) => {
+      const cmName = cm.metadata.name;
+      deletePromises.push(
+        safeDeleteCore(
+          () => k8sCore.deleteNamespacedConfigMap(cmName, namespace),
+          'configmap',
+          cmName
+        )
+      );
+    });
+
+    pvcList.forEach((pvc: any) => {
+      const pvcName = pvc.metadata.name;
+      deletePromises.push(
+        safeDeleteCore(
+          () => k8sCore.deleteNamespacedPersistentVolumeClaim(pvcName, namespace),
+          'pvc',
+          pvcName
+        )
+      );
+    });
+
+    if (deletePromises.length > 0) {
+      await Promise.all(deletePromises);
     }
 
     return jsonRes({

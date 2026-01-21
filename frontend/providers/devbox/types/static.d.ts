@@ -28,8 +28,10 @@ export interface Env {
   storageLimit: string;
   enableImportFeature: string;
   enableWebideFeature: string;
+  enableAdvancedConfig: string;
   cpuSlideMarkList: string;
   memorySlideMarkList: string;
+  nfsStorageClassName: string;
 }
 
 export interface RuntimeTypeMap {

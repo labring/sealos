@@ -14,6 +14,7 @@ import type { YamlItemType } from '@/types/index';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 import { track } from '@sealos/gtm';
+import { useSearchParams } from 'next/navigation';
 
 interface HeaderProps {
   yamlList: YamlItemType[];
@@ -27,6 +28,7 @@ interface HeaderProps {
 const Header = ({ title, yamlList, applyCb, applyBtnText, name, from }: HeaderProps) => {
   const router = useRouter();
   const t = useTranslations();
+  const searchParams = useSearchParams();
 
   const { guideConfigDevbox } = useGuideStore();
 
@@ -42,16 +44,18 @@ const Header = ({ title, yamlList, applyCb, applyBtnText, name, from }: HeaderPr
   const isClientSide = useClientSideValue(true);
 
   const handleBack = useCallback(() => {
+    const fromTab = searchParams.get('fromTab');
     if (name) {
       if (from === 'detail') {
-        router.replace(`/devbox/detail/${name}`);
+        const url = fromTab ? `/devbox/detail/${name}?tab=${fromTab}` : `/devbox/detail/${name}`;
+        router.replace(url);
       } else if (from === 'list') {
         router.replace(`/`);
       }
     } else {
       router.push('/template');
     }
-  }, [name, router, from]);
+  }, [name, router, from, searchParams]);
 
   return (
     <>

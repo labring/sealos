@@ -123,7 +123,7 @@ const Release = () => {
       const config = parseTemplateConfig(result.template.config);
       const releaseArgs = config.releaseArgs.join(' ');
       const releaseCommand = config.releaseCommand.join(' ');
-      const { cpu, memory, networks, name, gpu } = devbox;
+      const { cpu, memory, networks, name, gpu, configMaps, volumes, envs } = devbox;
       const newNetworks = networks.map((network) => {
         return {
           port: network.port,
@@ -157,7 +157,27 @@ const Release = () => {
         cmdParam: releaseArgs,
         labels: {
           [devboxIdKey]: devbox.id
-        }
+        },
+        configMapList:
+          configMaps?.map((cm) => ({
+            mountPath: cm.path,
+            value: cm.content,
+            key: cm.path.split('/').pop() || 'config',
+            volumeName: `${name}-volume-cm-${cm.id}`
+          })) || [],
+        storeList:
+          volumes?.map((vol) => ({
+            name: `${name}-pvc-${vol.id}`,
+            path: vol.path,
+            value: vol.size,
+            storageType: 'remote',
+            storageClassName: env.nfsStorageClassName
+          })) || [],
+        envs:
+          envs?.map((env) => ({
+            key: env.key,
+            value: env.value
+          })) || []
       };
       setDeployData(transformData);
 
@@ -254,7 +274,7 @@ const Release = () => {
               <TooltipTrigger asChild>
                 <span className="max-w-50 cursor-pointer truncate">{item.description}</span>
               </TooltipTrigger>
-              <TooltipContent className="max-w-[300px] break-words whitespace-pre-wrap">
+              <TooltipContent className="max-w-[300px] whitespace-pre-wrap break-words">
                 <p>{item.description}</p>
               </TooltipContent>
             </Tooltip>
@@ -323,7 +343,7 @@ const Release = () => {
   }, [guideRelease, handleOpenRelease, isClientSide, t, guideIDE]);
 
   return (
-    <div className="flex h-[40%] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="shadow-xs flex h-[40%] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5">
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">
