@@ -1,0 +1,6 @@
+apiVersion: v2
+name: user
+description: Helm chart for the sealos user controller
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
