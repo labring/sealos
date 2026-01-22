@@ -36,13 +36,14 @@ export type CarouselConfig = z.infer<typeof CarouselSchema>;
  * Used with Next.js <Script> component.
  */
 const CustomScriptSchema = z.union([
-  z
-    .object({
-      src: z.string().describe('External script URL'),
-      strategy: z.string().optional().describe('Next.js Script loading strategy'),
-      id: z.string().describe('Script element ID')
-    })
-    .loose(),
+  z.object({
+    src: z.string().describe('External script URL'),
+    strategy: z
+      .enum(['afterInteractive', 'lazyOnload', 'beforeInteractive', 'worker'])
+      .optional()
+      .describe('Next.js Script loading strategy'),
+    id: z.string().describe('Script element ID')
+  }),
   z
     .object({
       content: z
@@ -50,10 +51,12 @@ const CustomScriptSchema = z.union([
         .describe(
           'Inline script HTML content. Will be transformed to dangerouslySetInnerHTML.__html for React'
         ),
-      strategy: z.string().optional().describe('Next.js Script loading strategy'),
+      strategy: z
+        .enum(['afterInteractive', 'lazyOnload', 'beforeInteractive', 'worker'])
+        .optional()
+        .describe('Next.js Script loading strategy'),
       id: z.string().describe('Script element ID')
     })
-    .loose()
     .transform((val) => ({
       dangerouslySetInnerHTML: { __html: val.content },
       strategy: val.strategy,
@@ -93,7 +96,7 @@ const UiSchema = z
       .string()
       .describe('Forced language code that overrides user language preference (e.g., "en", "zh")'),
     currencySymbolType: z
-      .enum(['shellCoin', 'cny', 'usd', ''])
+      .enum(['shellCoin', 'cny', 'usd'])
       .describe('Currency symbol type displayed in price components (shellCoin/cny/usd)'),
     meta: MetaSchema.describe('SEO meta tags and custom script injection'),
     carousel: CarouselSchema.describe('Homepage carousel banner configuration')
@@ -110,7 +113,7 @@ const RepoSchema = z
   .object({
     url: z.string().url().describe('Git repository URL containing template YAML files'),
     branch: z.string().describe('Git branch name to checkout'),
-    folder: z.string().describe('Folder path within repository where templates are located')
+    loaclDir: z.string().describe('Relative path where the template repo is cloned to')
   })
   .strict();
 
@@ -159,6 +162,7 @@ const TemplateSchema = z
     features: FeaturesSchema.describe('Feature flags and behavior switches'),
     cdnHost: z
       .string()
+      .optional()
       .describe(
         'CDN hostname used to replace GitHub raw URLs for template icons and README files (e.g., "cdn.jsdelivr.net")'
       ),
@@ -201,7 +205,8 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
 export const ClientAppConfigSchema = z
   .object({
     ui: z.object({
-      brandName: z.string()
+      brandName: z.string(),
+      carousel: CarouselSchema
     })
   })
   .strict();

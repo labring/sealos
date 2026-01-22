@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import type { userPriceType } from '@/types/user';
+import { Config } from '@/config';
 
 type ResourcePriceType = {
   data: {
@@ -49,11 +50,7 @@ function countSourcePrice(rawData: ResourcePriceType['data']['properties'], type
 }
 
 const getResourcePrice = async () => {
-  const baseUrl = process.env.ACCOUNT_URL
-    ? process.env.ACCOUNT_URL
-    : `https://account-api.${process.env.SEALOS_CLOUD_DOMAIN}`;
-
-  const res = await fetch(`${baseUrl}/account/v1alpha1/properties`, {
+  const res = await fetch(`${Config().template.billingUrl}/account/v1alpha1/properties`, {
     method: 'POST'
   });
   const data: ResourcePriceType = await res.json();

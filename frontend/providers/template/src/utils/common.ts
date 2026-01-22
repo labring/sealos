@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { cloneDeep, forEach, isNumber, isBoolean, isObject, has } from 'lodash';
 import { templateDeployKey } from '@/constants/keys';
 import { EnvResponse } from '@/types';
+import { Config } from '@/config';
 
 /**
  * format string to number or ''
@@ -184,18 +185,16 @@ export function compareFirstLanguages(acceptLanguageHeader: string) {
 
 export function getTemplateEnvs(namespace?: string): EnvResponse {
   const TemplateEnvs: EnvResponse = {
-    SEALOS_CLOUD_DOMAIN:
-      process.env.SEALOS_USER_DOMAIN || process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
-    SEALOS_CERT_SECRET_NAME: process.env.SEALOS_CERT_SECRET_NAME || 'wildcard-cert',
-    TEMPLATE_REPO_URL:
-      process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates',
-    TEMPLATE_REPO_BRANCH: process.env.TEMPLATE_REPO_BRANCH || 'main',
+    SEALOS_CLOUD_DOMAIN: Config().cloud.domain,
+    SEALOS_CERT_SECRET_NAME: Config().cloud.certSecretName,
+    TEMPLATE_REPO_URL: Config().template.repo.url,
+    TEMPLATE_REPO_BRANCH: Config().template.repo.branch,
     SEALOS_NAMESPACE: namespace || '',
     SEALOS_SERVICE_ACCOUNT: namespace?.replace('ns-', '') || '',
-    SHOW_AUTHOR: process.env.SHOW_AUTHOR || 'false',
-    DESKTOP_DOMAIN: process.env.DESKTOP_DOMAIN || 'cloud.sealos.io',
-    CURRENCY_SYMBOL: (process.env.CURRENCY_SYMBOL as 'shellCoin' | 'cny' | 'usd') || 'shellCoin',
-    FORCED_LANGUAGE: process.env.FORCED_LANGUAGE || 'en'
+    SHOW_AUTHOR: String(Config().template.features.showAuthor),
+    DESKTOP_DOMAIN: Config().template.desktopDomain,
+    CURRENCY_SYMBOL: Config().template.ui.currencySymbolType,
+    FORCED_LANGUAGE: Config().template.ui.forcedLanguage
   };
   return TemplateEnvs;
 }

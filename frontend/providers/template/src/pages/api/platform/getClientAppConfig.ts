@@ -7,7 +7,8 @@ export function getClientAppConfigServer() {
   const fullConfig = Config();
   return ClientAppConfigSchema.parse({
     ui: {
-      brandName: fullConfig.template.ui.brandName
+      brandName: fullConfig.template.ui.brandName,
+      carousel: fullConfig.template.ui.carousel
     }
   });
 }
