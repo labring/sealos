@@ -289,19 +289,31 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           // Skip normal app opening logic if this is a Stripe callback
           if (isStripeCallback || !state) return;
 
+          console.log('[Index] Checking for auto deploy template:', {
+            autoDeployTemplate: state.autoDeployTemplate,
+            autoDeployTemplateForm: state.autoDeployTemplateForm
+          });
+
           // Handle auto deploy template (priority over autolaunch)
           if (state.autoDeployTemplate && state.autoDeployTemplateForm) {
+            console.log('[Index] Auto deploying template from store:', {
+              templateName: state.autoDeployTemplate,
+              templateForm: state.autoDeployTemplateForm
+            });
             try {
-              await createTemplateInstance({
+              const result = await createTemplateInstance({
                 templateName: state.autoDeployTemplate,
                 templateForm: state.autoDeployTemplateForm
               });
-              console.log('Template instance created successfully');
+              console.log('[Index] Template instance created successfully:', result);
             } catch (error) {
-              console.error('Failed to create template instance:', error);
+              console.error('[Index] Failed to create template instance:', error);
             } finally {
+              console.log('[Index] Clearing auto deploy template from store');
               cancelAutoDeployTemplate();
             }
+          } else {
+            console.log('[Index] No auto deploy template found in store');
           }
 
           let appQuery = '';
