@@ -36,20 +36,22 @@ export type CarouselConfig = z.infer<typeof CarouselSchema>;
  * Used with Next.js <Script> component.
  */
 const CustomScriptSchema = z.union([
-  z.object({
-    src: z.string().describe('External script URL'),
-    strategy: z
-      .enum(['afterInteractive', 'lazyOnload', 'beforeInteractive', 'worker'])
-      .optional()
-      .describe('Next.js Script loading strategy'),
-    id: z.string().describe('Script element ID')
-  }),
+  z
+    .object({
+      src: z.string().describe('External script URL'),
+      strategy: z
+        .enum(['afterInteractive', 'lazyOnload', 'beforeInteractive', 'worker'])
+        .optional()
+        .describe('Next.js Script loading strategy'),
+      id: z.string().describe('Script element ID')
+    })
+    .strict(),
   z
     .object({
       content: z
         .string()
         .describe(
-          'Inline script HTML content. Will be transformed to dangerouslySetInnerHTML.__html for React'
+          'Inline script HTML content (converted to Script dangerouslySetInnerHTML at usage)'
         ),
       strategy: z
         .enum(['afterInteractive', 'lazyOnload', 'beforeInteractive', 'worker'])
@@ -57,11 +59,7 @@ const CustomScriptSchema = z.union([
         .describe('Next.js Script loading strategy'),
       id: z.string().describe('Script element ID')
     })
-    .transform((val) => ({
-      dangerouslySetInnerHTML: { __html: val.content },
-      strategy: val.strategy,
-      id: val.id
-    }))
+    .strict()
 ]);
 
 export type CustomScript = z.infer<typeof CustomScriptSchema>;
@@ -94,6 +92,7 @@ const UiSchema = z
       .describe('Brand name used in page title, meta description, and UI headers'),
     forcedLanguage: z
       .string()
+      .optional()
       .describe('Forced language code that overrides user language preference (e.g., "en", "zh")'),
     currencySymbolType: z
       .enum(['shellCoin', 'cny', 'usd'])

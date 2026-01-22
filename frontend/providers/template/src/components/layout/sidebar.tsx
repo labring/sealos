@@ -67,7 +67,9 @@ export default function SideBar() {
               cursor={'pointer'}
               id={item.id}
               onClick={() => {
-                router.replace('/');
+                if (router.pathname !== '/') {
+                  router.replace('/');
+                }
                 setAppType(item.type);
               }}
             >
