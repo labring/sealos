@@ -1,5 +1,5 @@
 import { UserQuotaItemType } from '@/types/user';
-import { Cpu, CircuitBoard, HdmiPort, MemoryStick } from 'lucide-react';
+import { Cpu, CircuitBoard, HdmiPort, MemoryStick, HardDrive } from 'lucide-react';
 
 export const resourcePropertyMap: Record<
   UserQuotaItemType['type'],
@@ -17,6 +17,11 @@ export const resourcePropertyMap: Record<
   memory: {
     unit: 'Gi',
     icon: ({ className }: { className?: string }) => <MemoryStick className={className} />,
+    scale: 1024
+  },
+  storage: {
+    unit: 'Gi',
+    icon: ({ className }: { className?: string }) => <HardDrive className={className} />,
     scale: 1024
   },
   nodeports: {

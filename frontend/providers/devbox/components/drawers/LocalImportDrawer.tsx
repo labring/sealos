@@ -241,6 +241,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
         image: templateData.template.image,
         cpu: 4000,
         memory: 8192,
+        storage: 1024 * 10, // 10Gi
         networks: [
           {
             port: formData.containerPort,
@@ -577,7 +578,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
                 />
                 <Label
                   htmlFor="auto-start"
-                  className="text-sm font-normal text-zinc-700 cursor-pointer"
+                  className="cursor-pointer text-sm font-normal text-zinc-700"
                 >
                   {t('auto_start_after_import')}
                 </Label>
