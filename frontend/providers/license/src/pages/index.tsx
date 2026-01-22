@@ -187,8 +187,13 @@ export default function LicenseApp() {
     }
   });
 
-  const { data } = useQuery(['getLicenseActive', page, pageSize], () =>
-    getLicenseRecord({ page: page, pageSize: pageSize })
+  const { data } = useQuery(
+    ['getLicenseActive', page, pageSize],
+    () => getLicenseRecord({ page: page, pageSize: pageSize }),
+    {
+      refetchInterval: 5000, // 每 5 秒自动刷新一次数据
+      refetchOnWindowFocus: true // 窗口获得焦点时立即刷新
+    }
   );
 
   const activeLicense = debounce(async () => {
@@ -236,6 +241,10 @@ export default function LicenseApp() {
     }
   }, [data]);
 
+  const isActive = useMemo(() => {
+    return data && data.length > 0 && maxExpTime > Math.floor(Date.now() / 1000);
+  }, [data, maxExpTime]);
+
   return (
     <Flex w="100%" h="100%" bg="#F8FAFC" overflow="hidden">
       {/* Left Panel: Cluster Info Card */}
@@ -273,15 +282,9 @@ export default function LicenseApp() {
             align="stretch"
           >
             <Box>
-              <Text fontSize="24px" fontWeight="700" mb="4px">
+              <Text fontSize="24px" fontWeight="700">
                 {t('cluster_info')}
               </Text>
-              <HStack spacing="8px">
-                <Box w="8px" h="8px" borderRadius="full" bg="green.400" />
-                <Text fontSize="14px" opacity="0.8">
-                  {t('expire_date')}: {isClient && formatTime(maxExpTime * 1000)}
-                </Text>
-              </HStack>
             </Box>
 
             <Divider borderColor="rgba(255, 255, 255, 0.2)" />
@@ -367,11 +370,11 @@ export default function LicenseApp() {
               {t('License Management')}
             </Text>
             <HStack spacing="6px">
-              <Box w="6px" h="6px" borderRadius="full" bg="green.500" />
+              <Box w="6px" h="6px" borderRadius="full" bg={isActive ? 'green.500' : 'gray.400'} />
               <Text fontSize="12px" color="gray.500" fontWeight="500">
                 {t('System Status')}:{' '}
-                <Text as="span" color="green.600">
-                  {t('Operational')}
+                <Text as="span" color={isActive ? 'green.600' : 'gray.600'}>
+                  {isActive ? t('Operational') : t('Not Activated')}
                 </Text>
               </Text>
             </HStack>
