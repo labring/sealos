@@ -183,7 +183,7 @@ export const adaptDevboxDetailV2 = ([
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
-    storage: storageFormatToNum(devbox.spec.storageLimit || '10Gi'),
+    storage: storageFormatToNum(devbox.spec.resource['ephemeral-storage'] || '10Gi'),
     gpu: {
       type: devbox.spec.nodeSelector?.[gpuNodeSelectorKey] || '',
       amount: Number(devbox.spec.resource[gpuResourceKey] || 0),

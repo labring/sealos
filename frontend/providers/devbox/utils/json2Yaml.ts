@@ -108,9 +108,9 @@ export const json2DevboxV2 = (
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
+        'ephemeral-storage': `${str2Num(data.storage)}Gi`,
         ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
-      storageLimit: `${str2Num(data.storage)}Gi`,
       ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
       templateID: data.templateUid,
       image: data.image,
