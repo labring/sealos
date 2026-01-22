@@ -12,7 +12,7 @@ import NProgress from 'nprogress'; //nprogress module
 import { useEffect, useState, useCallback, ComponentProps } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-import { useSystemConfigStore } from '@/store/config';
+import { useSidebarStore } from '@/store/sidebar';
 import useSessionStore from '@/store/session';
 import { useUserStore } from '@/store/user';
 import {
@@ -32,6 +32,7 @@ import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chak
 import { QuotaGuardProvider } from '@sealos/shared';
 import { Config } from '@/config';
 import type { CustomScript } from '@/types/config';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -69,9 +70,10 @@ function AppContent({
   const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
   const { setLastRoute } = useGlobalStore();
-  const { initSystemEnvs, initMenuKeys } = useSystemConfigStore();
+  const { initMenuKeys } = useSidebarStore();
   const [refresh, setRefresh] = useState(false);
   const { loadUserSourcePrice } = useUserStore();
+  const clientAppConfig = useClientAppConfig();
 
   const getSession = useCallback(() => {
     return useSessionStore.getState().session ?? null;
@@ -139,7 +141,6 @@ function AppContent({
   useEffect(() => {
     const setupInternalAppCallListener = async () => {
       try {
-        const envs = await initSystemEnvs();
         const event = async (
           e: MessageEvent<{
             name: string;
@@ -147,7 +148,7 @@ function AppContent({
             action?: string;
           }>
         ) => {
-          const whitelist = [`https://${envs.DESKTOP_DOMAIN}`];
+          const whitelist = [`https://${clientAppConfig.desktopDomain}`];
           if (!whitelist.includes(e.origin)) {
             return;
           }

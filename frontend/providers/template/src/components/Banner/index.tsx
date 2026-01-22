@@ -108,7 +108,7 @@ export default React.memo(function Banner() {
           disableOnInteraction: false
         }}
       >
-        {clientAppConfig.ui.carousel.slides.map((item, index, arr) => (
+        {clientAppConfig.carousel.slides.map((item, index, arr) => (
           <SwiperSlide key={index}>
             <Flex w="full" h="213px" gap={'16px'} overflow={'hidden'}>
               <Card item={item} onClick={() => goDeploy(item.templateName)} />

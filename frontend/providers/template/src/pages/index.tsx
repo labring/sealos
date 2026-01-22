@@ -2,7 +2,6 @@ import { getTemplates } from '@/api/platform';
 import Banner from '@/components/Banner';
 import MyIcon from '@/components/Icon';
 import { useCachedStore } from '@/store/cached';
-import { useSystemConfigStore } from '@/store/config';
 import { useSearchStore } from '@/store/search';
 import { TemplateType } from '@/types/app';
 import { serviceSideProps } from '@/utils/i18n';
@@ -47,7 +46,6 @@ export default function AppList({
   const router = useRouter();
   const { searchValue, appType } = useSearchStore();
   const { setInsideCloud } = useCachedStore();
-  const { envs } = useSystemConfigStore();
 
   const { data } = useQuery(['listTemplate', i18n.language], () => getTemplates(i18n.language), {
     refetchInterval: 5 * 60 * 1000,
@@ -151,7 +149,7 @@ export default function AppList({
 
       {!!data?.templates?.length ? (
         <>
-          {clientAppConfig.ui.carousel.enabled && <Banner />}
+          {clientAppConfig.carousel.enabled && <Banner />}
           {filterData?.length && filterData?.length > 0 ? (
             <Grid
               justifyContent={'center'}
@@ -212,7 +210,7 @@ export default function AppList({
                         >
                           {item.spec.i18n?.[i18n.language]?.title ?? item.spec.title}
                         </Text>
-                        {envs?.SHOW_AUTHOR === 'true' && (
+                        {clientAppConfig.showAuthor && (
                           <Text fontSize={'12px'} fontWeight={400} color={'#5A646E'}>
                             By {item.spec.author}
                           </Text>

@@ -1,22 +1,18 @@
-import { getPlatformEnv, getTemplates } from '@/api/platform';
-import { EnvResponse } from '@/types';
+import { getTemplates } from '@/api/platform';
 import { ApplicationType, SideBarMenuType } from '@/types/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type State = {
-  envs?: EnvResponse;
   menuKeys: string;
   sideBarMenu: SideBarMenuType[];
-  initSystemEnvs: () => Promise<EnvResponse>;
   initMenuKeys: (language?: string) => Promise<void>;
   setSideBarMenu: (data: SideBarMenuType[]) => void;
   setMenuKeys: (menuKeys: string) => void;
-  setEnvs: (data: EnvResponse) => void;
 };
 
-export const useSystemConfigStore = create<State>()(
+export const useSidebarStore = create<State>()(
   devtools(
     immer((set, get) => ({
       menuKeys: '',
@@ -27,13 +23,6 @@ export const useSystemConfigStore = create<State>()(
           value: 'SideBar.Applications'
         }
       ],
-      async initSystemEnvs() {
-        const envs = await getPlatformEnv();
-        set((state) => {
-          state.envs = envs;
-        });
-        return envs;
-      },
       async initMenuKeys(language?: string) {
         try {
           const { menuKeys: newMenuKeys } = await getTemplates(language);
@@ -68,11 +57,6 @@ export const useSystemConfigStore = create<State>()(
       setMenuKeys(menuKeys) {
         set((state) => {
           state.menuKeys = menuKeys;
-        });
-      },
-      setEnvs(data) {
-        set((state) => {
-          state.envs = data;
         });
       }
     }))

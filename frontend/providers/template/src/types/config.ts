@@ -204,10 +204,11 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
  */
 export const ClientAppConfigSchema = z
   .object({
-    ui: z.object({
-      brandName: z.string(),
-      carousel: CarouselSchema
-    })
+    brandName: z.string(),
+    carousel: CarouselSchema,
+    showAuthor: z.boolean(),
+    currencySymbolType: z.enum(['shellCoin', 'cny', 'usd']),
+    desktopDomain: z.string()
   })
   .strict();
 

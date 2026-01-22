@@ -6,10 +6,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export function getClientAppConfigServer() {
   const fullConfig = Config();
   return ClientAppConfigSchema.parse({
-    ui: {
-      brandName: fullConfig.template.ui.brandName,
-      carousel: fullConfig.template.ui.carousel
-    }
+    brandName: fullConfig.template.ui.brandName,
+    desktopDomain: fullConfig.template.desktopDomain,
+    currencySymbolType: fullConfig.template.ui.currencySymbolType,
+    showAuthor: fullConfig.template.features.showAuthor,
+    carousel: fullConfig.template.ui.carousel
   });
 }
 
