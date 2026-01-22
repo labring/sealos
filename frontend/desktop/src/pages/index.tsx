@@ -1,5 +1,6 @@
 import { getPlanInfo, UserInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
+import { createTemplateInstance } from '@/api/platform';
 import DesktopContent from '@/components/desktop_content';
 import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindingModal';
 import { trackEventName } from '@/constants/account';
@@ -61,7 +62,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const { colorMode, toggleColorMode } = useColorMode();
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
-  const { autolaunchWorkspaceUid } = useAppStore();
+  const { autolaunchWorkspaceUid, autoDeployTemplate, autoDeployTemplateForm } = useAppStore();
+  const cancelAutoDeployTemplate = useAppStore((state) => state.cancelAutoDeployTemplate);
   const { session, token } = useSessionStore();
   const { layoutConfig, commonConfig, trackingConfig, authConfig, cloudConfig } = useConfigStore();
   const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
@@ -283,9 +285,24 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
 
           return init();
         })
-        .then((state) => {
+        .then(async (state) => {
           // Skip normal app opening logic if this is a Stripe callback
           if (isStripeCallback || !state) return;
+
+          // Handle auto deploy template (priority over autolaunch)
+          if (state.autoDeployTemplate && state.autoDeployTemplateForm) {
+            try {
+              await createTemplateInstance({
+                templateName: state.autoDeployTemplate,
+                templateForm: state.autoDeployTemplateForm
+              });
+              console.log('Template instance created successfully');
+            } catch (error) {
+              console.error('Failed to create template instance:', error);
+            } finally {
+              cancelAutoDeployTemplate();
+            }
+          }
 
           let appQuery = '';
           let appkey = '';
