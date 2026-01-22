@@ -125,7 +125,7 @@ const Release = () => {
       const releaseCommand = config.releaseCommand.join(' ');
       const { cpu, memory, networks, name, gpu, configMaps, volumes, envs } = devbox;
       const newNetworks = networks
-        .filter((network) => network.port !== 9999)
+        .filter((network) => network.port !== env.webIdePort)
         .map((network) => {
           return {
             port: network.port,
@@ -204,7 +204,14 @@ const Release = () => {
       // If has apps, show the drawer
       setOnOpenSelectApp(true);
     },
-    [devbox, env.ingressDomain, env.namespace, env.registryAddr]
+    [
+      devbox,
+      env.ingressDomain,
+      env.namespace,
+      env.registryAddr,
+      env.webIdePort,
+      env.nfsStorageClassName
+    ]
   );
 
   const handleDelDevboxVersion = useCallback(

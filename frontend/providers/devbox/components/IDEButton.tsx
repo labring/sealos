@@ -88,6 +88,7 @@ const IDEButton = memo(
     const { openConfirm, ConfirmChild } = useConfirm({
       title: 'prompt',
       content: 'webide_fee_warning',
+      contentParams: { port: env.webIdePort },
       confirmText: 'confirm',
       cancelText: 'cancel'
     });
@@ -118,17 +119,21 @@ const IDEButton = memo(
           if (currentIDE === 'webide') {
             const portsResponse = await getDevboxPorts(devboxName);
             const existingPorts = portsResponse.ports || [];
-            const port9999 = existingPorts.find((p) => p.number === 9999);
+            const webIdePortConfig = existingPorts.find((p) => p.number === env.webIdePort);
 
-            if (port9999 && port9999.exposesPublicDomain && port9999.publicDomain) {
-              const webIDEUrl = `https://${port9999.publicDomain}/?folder=/home/devbox/project`;
+            if (
+              webIdePortConfig &&
+              webIdePortConfig.exposesPublicDomain &&
+              webIdePortConfig.publicDomain
+            ) {
+              const webIDEUrl = `https://${webIdePortConfig.publicDomain}/?folder=/home/devbox/project`;
               window.open(webIDEUrl, '_blank');
               return;
             }
 
             const executeWebIDE = async () => {
               toast.info('Creating Web IDE network...');
-              const response = await updateDevboxWebIDEPort(devboxName, 9999);
+              const response = await updateDevboxWebIDEPort(devboxName, env.webIdePort);
 
               if (response.publicDomain) {
                 const webIDEUrl = `https://${response.publicDomain}/?folder=/home/devbox/project`;
@@ -186,7 +191,18 @@ const IDEButton = memo(
           setLoading(false);
         }
       },
-      [t, devboxName, runtimeType, env.sshDomain, env.namespace, sshPort, setGuideIDE, openConfirm]
+      [
+        t,
+        devboxName,
+        runtimeType,
+        env.sealosDomain,
+        env.sshDomain,
+        env.namespace,
+        env.webIdePort,
+        sshPort,
+        setGuideIDE,
+        openConfirm
+      ]
     );
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -258,7 +274,7 @@ const IDEButton = memo(
                               className={cn(
                                 index === 0 ? 'w-[140px]' : 'w-[80px]',
                                 'text-zinc-600',
-                                index === 0 && 'pr-1 pl-2',
+                                index === 0 && 'pl-2 pr-1',
                                 index === 1 && 'pr-2 text-zinc-600',
                                 currentIDE === option.value && 'text-zinc-900'
                               )}
@@ -274,7 +290,7 @@ const IDEButton = memo(
                                   alt={option.value}
                                   src={`/images/ide/${option.value}.svg`}
                                 />
-                                <span className="text-sm whitespace-nowrap">
+                                <span className="whitespace-nowrap text-sm">
                                   {option.menuLabel}
                                 </span>
                                 {currentIDE === option.value && (
@@ -324,7 +340,7 @@ const IDEButton = memo(
                             <DropdownMenuItem
                               className={cn(
                                 'w-[110px] text-zinc-600',
-                                index === 0 && 'pr-1 pl-2',
+                                index === 0 && 'pl-2 pr-1',
                                 index === 1 && 'pr-2 text-zinc-600',
                                 currentIDE === option.value && 'text-zinc-900'
                               )}
