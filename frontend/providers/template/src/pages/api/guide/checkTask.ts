@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { authAppToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 
@@ -5,20 +6,22 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (process.env.GUIDE_ENABLED !== 'true') return jsonRes(res, { data: null });
+    if (!Config().template.features.guide) return jsonRes(res, { data: null });
     const token = await authAppToken(req.headers);
     if (!token) {
       return jsonRes(res, { code: 401, message: 'token is valid' });
     }
 
-    const domain = process.env.DESKTOP_DOMAIN;
-    const response = await fetch(`https://${domain}/api/account/checkTask`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: token
+    const response = await fetch(
+      `https://${Config().template.desktopDomain}/api/account/checkTask`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token
+        }
       }
-    });
+    );
 
     const result: {
       code: number;

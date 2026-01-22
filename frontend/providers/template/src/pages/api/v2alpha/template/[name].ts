@@ -14,6 +14,7 @@ import {
   getCachedTemplateDetail,
   setCachedTemplateDetail
 } from './templateCache';
+import { Config } from '@/config';
 
 // estimate min—max equality
 function simplifyResourceValue(
@@ -199,14 +200,13 @@ async function handleTemplateDetails(
   try {
     const originalPath = process.cwd();
     const jsonPath = path.resolve(originalPath, 'templates.json');
-    const cdnUrl = process.env.CDN_URL;
 
     if (!fs.existsSync(jsonPath)) {
       return res.status(404).json({
         message: 'Templates not found'
       });
     }
-    getCachedTemplates(jsonPath, cdnUrl, [], language);
+    getCachedTemplates(jsonPath, Config().template.cdnHost, [], language);
     const template = getTemplateFromCache(templateName);
 
     if (!template) {
