@@ -94,7 +94,7 @@ export async function updateRepo() {
   }
 
   let fileList: unknown[] = [];
-  const _targetPath = path.join(targetPath, Config().template.repo.loaclDir);
+  const _targetPath = path.join(targetPath, Config().template.repo.localDir);
   readFileList(_targetPath, fileList);
 
   const templateStaticMap: { [key: string]: number } = await GetTemplateStatic();

@@ -125,7 +125,7 @@ export async function GetTemplateByName({
   const TemplateEnvs = getTemplateEnvs(namespace);
 
   const originalPath = process.cwd();
-  const targetPath = path.resolve(originalPath, 'templates', Config().template.repo.loaclDir);
+  const targetPath = path.resolve(originalPath, 'templates', Config().template.repo.localDir);
 
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));

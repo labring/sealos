@@ -69,7 +69,7 @@ function AppContent({
   const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
   const { setLastRoute } = useGlobalStore();
-  const { initSystemConfig, initSystemEnvs } = useSystemConfigStore();
+  const { initSystemEnvs, initMenuKeys } = useSystemConfigStore();
   const [refresh, setRefresh] = useState(false);
   const { loadUserSourcePrice } = useUserStore();
 
@@ -78,9 +78,9 @@ function AppContent({
   }, []);
 
   useEffect(() => {
-    initSystemConfig(i18n.language);
+    initMenuKeys(i18n.language);
     loadUserSourcePrice();
-  }, []);
+  }, [i18n.language, initMenuKeys]);
 
   useEffect(() => {
     NProgress.start();
