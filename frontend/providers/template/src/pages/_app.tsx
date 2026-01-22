@@ -12,7 +12,6 @@ import NProgress from 'nprogress'; //nprogress module
 import { useEffect, useState, useCallback, ComponentProps } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-import { useSidebarStore } from '@/store/sidebar';
 import useSessionStore from '@/store/session';
 import { useUserStore } from '@/store/user';
 import {
@@ -70,7 +69,6 @@ function AppContent({
   const { setSession } = useSessionStore();
   const { i18n } = useTranslation();
   const { setLastRoute } = useGlobalStore();
-  const { initMenuKeys } = useSidebarStore();
   const [refresh, setRefresh] = useState(false);
   const { loadUserSourcePrice } = useUserStore();
   const clientAppConfig = useClientAppConfig();
@@ -80,9 +78,8 @@ function AppContent({
   }, []);
 
   useEffect(() => {
-    initMenuKeys(i18n.language);
     loadUserSourcePrice();
-  }, [i18n.language, initMenuKeys]);
+  }, [loadUserSourcePrice]);
 
   useEffect(() => {
     NProgress.start();
