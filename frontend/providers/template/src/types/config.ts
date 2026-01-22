@@ -113,7 +113,7 @@ const RepoSchema = z
   .object({
     url: z.string().url().describe('Git repository URL containing template YAML files'),
     branch: z.string().describe('Git branch name to checkout'),
-    loaclDir: z.string().describe('Relative path where the template repo is cloned to')
+    localDir: z.string().describe('Relative path where the template repo is cloned to')
   })
   .strict();
 

@@ -1,25 +1,24 @@
-import { getPlatformEnv, getSystemConfig, getTemplates } from '@/api/platform';
+import { getPlatformEnv, getTemplates } from '@/api/platform';
 import { EnvResponse } from '@/types';
-import { ApplicationType, SideBarMenuType, SystemConfigType } from '@/types/app';
+import { ApplicationType, SideBarMenuType } from '@/types/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type State = {
   envs?: EnvResponse;
-  systemConfig: SystemConfigType | undefined;
   menuKeys: string;
   sideBarMenu: SideBarMenuType[];
-  initSystemConfig: (language?: string) => Promise<SystemConfigType>;
   initSystemEnvs: () => Promise<EnvResponse>;
+  initMenuKeys: (language?: string) => Promise<void>;
   setSideBarMenu: (data: SideBarMenuType[]) => void;
+  setMenuKeys: (menuKeys: string) => void;
   setEnvs: (data: EnvResponse) => void;
 };
 
 export const useSystemConfigStore = create<State>()(
   devtools(
     immer((set, get) => ({
-      systemConfig: undefined,
       menuKeys: '',
       sideBarMenu: [
         {
@@ -28,26 +27,6 @@ export const useSystemConfigStore = create<State>()(
           value: 'SideBar.Applications'
         }
       ],
-      async initSystemConfig(language?: string) {
-        const data = await getSystemConfig();
-        const { menuKeys } = await getTemplates(language);
-
-        if (get().menuKeys !== menuKeys) {
-          const menus = menuKeys.split(',').map((i) => ({
-            id: i,
-            type: i as ApplicationType,
-            value: `SideBar.${i}`
-          }));
-          set((state) => {
-            state.menuKeys = menuKeys;
-            state.sideBarMenu = get().sideBarMenu.concat(menus);
-          });
-        }
-        set((state) => {
-          state.systemConfig = data;
-        });
-        return data;
-      },
       async initSystemEnvs() {
         const envs = await getPlatformEnv();
         set((state) => {
@@ -55,9 +34,40 @@ export const useSystemConfigStore = create<State>()(
         });
         return envs;
       },
+      async initMenuKeys(language?: string) {
+        try {
+          const { menuKeys: newMenuKeys } = await getTemplates(language);
+
+          if (get().menuKeys !== newMenuKeys) {
+            const menus = newMenuKeys.split(',').map((i) => ({
+              id: i,
+              type: i as ApplicationType,
+              value: `SideBar.${i}`
+            }));
+            set((state) => {
+              state.menuKeys = newMenuKeys;
+              state.sideBarMenu = [
+                {
+                  id: 'applications',
+                  type: ApplicationType.All,
+                  value: 'SideBar.Applications'
+                },
+                ...menus
+              ];
+            });
+          }
+        } catch (error) {
+          console.error('[System Config] Failed to init menu keys:', error);
+        }
+      },
       setSideBarMenu(data) {
         set((state) => {
           state.sideBarMenu = data;
+        });
+      },
+      setMenuKeys(menuKeys) {
+        set((state) => {
+          state.menuKeys = menuKeys;
         });
       },
       setEnvs(data) {
