@@ -52,7 +52,7 @@ setupClientAppConfigDefaults(queryClient, ['client-app-config']);
 
 type AppOwnProps = {
   brandName: string;
-  customScripts: CustomScript[];
+  customScripts: ComponentProps<typeof Script>[];
   dehydratedState?: unknown;
 };
 
@@ -216,22 +216,9 @@ const MyApp = ({
         </ClientConfigProvider>
       </QueryClientProvider>
 
-      {customScripts.map((script, i) => {
-        const scriptProps: ComponentProps<typeof Script> = {
-          strategy: script.strategy,
-          id: script.id
-        };
-
-        if ('src' in script && script.src) {
-          scriptProps.src = script.src;
-        }
-
-        if ('dangerouslySetInnerHTML' in script) {
-          scriptProps.dangerouslySetInnerHTML = script.dangerouslySetInnerHTML;
-        }
-
-        return <Script key={i} {...scriptProps} />;
-      })}
+      {customScripts.map((scriptProps, i) => (
+        <Script key={i} {...scriptProps} />
+      ))}
     </>
   );
 };
@@ -245,7 +232,24 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
   if (typeof window === 'undefined') {
     const config = Config();
     brandName = config.template.ui.brandName;
-    customScripts = config.template.ui.meta.customScripts;
+    customScripts = config.template.ui.meta.customScripts.map(
+      (script): ComponentProps<typeof Script> => {
+        const scriptProps: ComponentProps<typeof Script> = {
+          id: script.id,
+          strategy: script.strategy
+        };
+
+        if ('src' in script) {
+          scriptProps.src = script.src;
+        }
+
+        if ('content' in script) {
+          scriptProps.dangerouslySetInnerHTML = { __html: script.content };
+        }
+
+        return scriptProps;
+      }
+    );
   }
 
   let dehydratedState: unknown;

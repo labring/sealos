@@ -194,7 +194,7 @@ export function getTemplateEnvs(namespace?: string): EnvResponse {
     SHOW_AUTHOR: String(Config().template.features.showAuthor),
     DESKTOP_DOMAIN: Config().template.desktopDomain,
     CURRENCY_SYMBOL: Config().template.ui.currencySymbolType,
-    FORCED_LANGUAGE: Config().template.ui.forcedLanguage
+    FORCED_LANGUAGE: Config().template.ui.forcedLanguage || 'en'
   };
   return TemplateEnvs;
 }

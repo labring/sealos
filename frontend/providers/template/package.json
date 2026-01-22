@@ -3,9 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm run config:gen-json-schema && next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
