@@ -837,11 +837,12 @@ func ParseWorkspaceSubscriptionOperatorReq(
 		types.SubscriptionTransactionTypeUpgraded,
 		types.SubscriptionTransactionTypeDowngraded,
 		types.SubscriptionTransactionTypeCanceled,
-		types.SubscriptionTransactionTypeRenewed:
+		types.SubscriptionTransactionTypeRenewed,
+		types.SubscriptionTransactionTypeResumed:
 		// Valid operations
 	default:
 		return nil, fmt.Errorf(
-			"invalid operator: %s. Allowed: created, upgraded, downgraded, canceled, renewed",
+			"invalid operator: %s. Allowed: created, upgraded, downgraded, canceled, renewed, resumed",
 			req.Operator,
 		)
 	}
