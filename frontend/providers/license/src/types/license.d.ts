@@ -77,5 +77,6 @@ export type LicenseToken = {
     nodeCount: number;
     totalCPU: number;
     totalMemory: number;
+    userCount: number;
   };
 };
