@@ -1,4 +1,4 @@
-import { useSystemConfigStore } from '@/store/config';
+import { useSidebarStore } from '@/store/sidebar';
 import { useSearchStore } from '@/store/search';
 import { Flex, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
@@ -8,7 +8,7 @@ export default function SideBar() {
   const { t } = useTranslation();
   const { appType, setAppType } = useSearchStore();
   const router = useRouter();
-  const { sideBarMenu } = useSystemConfigStore();
+  const { sideBarMenu } = useSidebarStore();
 
   return (
     <Flex flexDirection="column" mt="8px" flex={1}>
