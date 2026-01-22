@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { verifyJWT } from '@/services/backend/auth';
-import { AccessTokenPayload } from '@/types/token';
+import { AuthenticationTokenPayload } from '@/types/token';
 
 const SHARED_AUTH_COOKIE_NAME = 'sealos_auth_token';
 
-// Get internal JWT secret (same as verifyAppToken uses)
-const internalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.internal || '123456789';
+// Get global JWT secret (for authentication/global token)
+const globalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -27,8 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Verify token using internal JWT secret (same as verifyAppToken)
-    const payload = await verifyJWT<AccessTokenPayload>(token, internalJwtSecret());
+    // Verify token using global JWT secret (for global/authentication token)
+    const payload = await verifyJWT<AuthenticationTokenPayload>(token, globalJwtSecret());
 
     if (!payload) {
       return jsonRes(res, {
@@ -37,14 +37,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Return user basic information
+    // Return user basic information from global token
     return jsonRes(res, {
       code: 200,
       message: 'Successfully',
       data: {
         userId: payload.userId,
-        userUid: payload.userUid,
-        workspaceId: payload.workspaceId
+        userUid: payload.userUid
       }
     });
   } catch (err) {

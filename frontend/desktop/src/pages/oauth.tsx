@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import useSessionStore from '@/stores/session';
 import { OauthProvider } from '@/types/user';
 import { useConfigStore } from '@/stores/config';
@@ -22,11 +22,12 @@ import { useMutation } from '@tanstack/react-query';
 export default function OAuth() {
   const router = useRouter();
   const { authConfig } = useConfigStore();
-  const { generateState, setProvider, isUserLogin, setToken, delSession, session } =
+  const { generateState, setProvider, isUserLogin, setGlobalToken, delSession, session } =
     useSessionStore();
-  const { setAutoLaunch, setAutoDeployTemplate } = useAppStore();
+  const { setAutoLaunch, setAutoDeployTemplate, cancelAutoDeployTemplate } = useAppStore();
   const { lastWorkSpaceId } = useSessionStore();
   const { setInitGuide } = useGuideModalStore();
+  const hasProcessedRef = useRef(false);
 
   const switchWorkspaceMutation = useMutation({
     mutationFn: switchRequest,
@@ -55,6 +56,11 @@ export default function OAuth() {
   useEffect(() => {
     if (!router.isReady || !authConfig) return;
 
+    // Prevent multiple executions
+    if (hasProcessedRef.current) {
+      return;
+    }
+
     const {
       token,
       login,
@@ -67,15 +73,27 @@ export default function OAuth() {
     } = router.query;
 
     const handleTokenLogin = async () => {
-      console.log('[OAuth] handleTokenLogin called with token mode');
+      hasProcessedRef.current = true;
+
       try {
         const globalToken = token as string;
         if (!isString(globalToken)) throw new Error('Invalid token');
 
-        console.log('[OAuth] Clearing old session and setting new token');
+        // Decode and verify token type
+        try {
+          const decoded = jwtDecode<any>(globalToken);
+
+          if (decoded.workspaceId) {
+            console.warn(
+              '[OAuth] ⚠️ Warning: Token appears to be a REGION token, not a GLOBAL token!'
+            );
+          }
+        } catch (e) {
+          console.error('[OAuth] Failed to decode token:', e);
+        }
+
         delSession();
-        setToken('');
-        setToken(globalToken);
+        setGlobalToken(globalToken); // Sets global token and cookie immediately
 
         // INIT mode: initialize new region
         if (switchRegionType === SwitchRegionType.INIT) {
@@ -94,6 +112,7 @@ export default function OAuth() {
         } else {
           // Normal mode: get region token
           const regionTokenRes = await getRegionToken();
+
           if (!regionTokenRes?.data) {
             throw new Error('Failed to get region token');
           }
@@ -118,30 +137,42 @@ export default function OAuth() {
           }
         }
 
-        await handleTemplateDeployment();
+        const instanceName = await handleTemplateDeployment();
 
         if (openapp && typeof openapp === 'string') {
-          const { appkey, appQuery, appPath } = parseOpenappQuery(openapp);
+          let finalOpenapp = openapp;
+
+          // If we have an instance name and openapp is system-template, add the instance path
+          if (instanceName && openapp === 'system-template') {
+            // Format: system-template?/instance?instanceName=xxx
+            finalOpenapp = `${openapp}?/instance?instanceName=${instanceName}`;
+          } else if (instanceName && openapp === 'system-brain') {
+            // Format: system-brain?/projects/instanceName
+            finalOpenapp = `${openapp}?/projects/${instanceName}`;
+          }
+
+          const { appkey, appQuery, appPath } = parseOpenappQuery(finalOpenapp);
           if (appkey) {
             setAutoLaunch(appkey, { raw: appQuery, pathname: appPath });
           }
-        }
 
-        await router.replace('/');
+          const redirectUrl = `/?openapp=${encodeURIComponent(finalOpenapp)}`;
+          await router.replace(redirectUrl);
+        } else {
+          await router.replace('/');
+        }
       } catch (error) {
-        console.error('Token login error:', error);
-        setToken('');
+        console.error('[OAuth] ❌ Token login error:', error);
+        console.error('[OAuth] Error details:', {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        setGlobalToken('');
         await router.replace('/signin');
       }
     };
 
-    const handleTemplateDeployment = async () => {
-      console.log('[OAuth] handleTemplateDeployment called:', {
-        templateName,
-        templateForm,
-        templateFormType: typeof templateForm
-      });
-
+    const handleTemplateDeployment = async (): Promise<string | null> => {
       if (templateName && typeof templateName === 'string') {
         let parsedTemplateForm: Record<string, any> = {};
 
@@ -149,40 +180,38 @@ export default function OAuth() {
           try {
             parsedTemplateForm =
               typeof templateForm === 'string' ? JSON.parse(templateForm) : templateForm;
-            console.log('[OAuth] Parsed templateForm for deployment:', parsedTemplateForm);
           } catch (error) {
             console.error('[OAuth] Failed to parse templateForm:', error);
-            return;
+            return null;
           }
-        } else {
-          console.log('[OAuth] No templateForm provided, using empty object {}');
         }
-
-        console.log('[OAuth] Deploying template:', {
-          templateName,
-          templateForm: parsedTemplateForm,
-          templateFormKeys: Object.keys(parsedTemplateForm)
-        });
 
         try {
           const result = await createTemplateInstance({
             templateName,
             templateForm: parsedTemplateForm
           });
-          console.log('[OAuth] Template instance created successfully:', result);
+
+          // Extract instance name from result
+          // The API returns an array of K8s resources, find the Instance resource
+          let instanceName: string | null = null;
+
+          if (result?.data?.data && Array.isArray(result.data.data)) {
+            const instanceResource = result.data.data.find((item: any) => item.kind === 'Instance');
+
+            instanceName = instanceResource?.metadata?.name || null;
+          }
+
+          return instanceName || null;
         } catch (error) {
           console.error('[OAuth] Failed to create template instance:', error);
+          return null;
         }
       }
+      return null;
     };
 
     const handleSaveParams = () => {
-      console.log('[OAuth] Saving params:', {
-        templateName,
-        templateForm,
-        openapp
-      });
-
       if (templateName && typeof templateName === 'string') {
         let parsedTemplateForm: Record<string, any> = {};
 
@@ -190,20 +219,12 @@ export default function OAuth() {
           try {
             parsedTemplateForm =
               typeof templateForm === 'string' ? JSON.parse(templateForm) : templateForm;
-            console.log('[OAuth] Parsed templateForm:', parsedTemplateForm);
           } catch (error) {
             console.error('[OAuth] Failed to parse templateForm:', error);
             parsedTemplateForm = {};
           }
-        } else {
-          console.log('[OAuth] No templateForm provided, using empty object {}');
         }
 
-        console.log('[OAuth] Saving template to store:', {
-          templateName,
-          parsedTemplateForm,
-          templateFormKeys: Object.keys(parsedTemplateForm)
-        });
         setAutoDeployTemplate(templateName, parsedTemplateForm);
       }
 
@@ -211,11 +232,6 @@ export default function OAuth() {
         try {
           const { appkey, appQuery, appPath } = parseOpenappQuery(openapp);
           if (appkey) {
-            console.log('[OAuth] Saving openapp to store:', {
-              appkey,
-              appQuery,
-              appPath
-            });
             setAutoLaunch(appkey, { raw: appQuery, pathname: appPath });
           }
         } catch (error) {
@@ -307,34 +323,42 @@ export default function OAuth() {
       }
     };
 
-    console.log('[OAuth] Main flow - checking conditions:', {
-      hasToken: !!token,
-      isUserLogin: isUserLogin(),
-      login,
-      templateName,
-      templateForm,
-      openapp
-    });
-
     if (token && typeof token === 'string') {
-      console.log('[OAuth] Token mode detected, calling handleTokenLogin');
       handleTokenLogin();
       return;
     }
 
     if (isUserLogin()) {
-      console.log('[OAuth] User already logged in, deploying template immediately');
+      hasProcessedRef.current = true;
+
       (async () => {
+        let instanceName: string | null = null;
         try {
-          await handleTemplateDeployment();
+          // Only deploy template if templateName is provided
+          if (templateName && typeof templateName === 'string') {
+            instanceName = await handleTemplateDeployment();
+          }
         } catch (error) {
           console.error('[OAuth] Template deployment error:', error);
         } finally {
+          // Clear store after deployment
+          cancelAutoDeployTemplate();
+
           if (openapp && typeof openapp === 'string') {
-            console.log('[OAuth] Redirecting to home with openapp:', openapp);
-            router.replace(`/?openapp=${openapp}`);
+            let finalOpenapp = openapp;
+
+            // If we have an instance name and openapp is system-template, add the instance path
+            if (instanceName && openapp === 'system-template') {
+              // Format: system-template?/instance?instanceName=xxx
+              finalOpenapp = `${openapp}?/instance?instanceName=${instanceName}`;
+            } else if (instanceName && openapp === 'system-brain') {
+              // Format: system-brain?/projects/instanceName
+              finalOpenapp = `${openapp}?/projects/${instanceName}`;
+            }
+
+            const redirectUrl = `/?openapp=${encodeURIComponent(finalOpenapp)}`;
+            router.replace(redirectUrl);
           } else {
-            console.log('[OAuth] Redirecting to home');
             router.replace('/');
           }
         }
@@ -342,23 +366,19 @@ export default function OAuth() {
       return;
     }
 
-    console.log('[OAuth] User not logged in, saving params and starting OAuth flow');
+    hasProcessedRef.current = true;
     handleSaveParams();
 
     if (!login || typeof login !== 'string') {
-      console.log('[OAuth] No login parameter, redirecting to signin');
       router.replace('/signin');
       return;
     }
 
     if (login === 'github' && authConfig.idp.github?.enabled) {
-      console.log('[OAuth] Starting GitHub OAuth login');
       handleOAuthLogin('GITHUB');
     } else if (login === 'google' && authConfig.idp.google?.enabled) {
-      console.log('[OAuth] Starting Google OAuth login');
       handleOAuthLogin('GOOGLE');
     } else {
-      console.log('[OAuth] Invalid login method, redirecting to signin');
       router.replace('/signin');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

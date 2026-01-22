@@ -1,6 +1,5 @@
 import { getPlanInfo, UserInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
-import { createTemplateInstance } from '@/api/platform';
 import DesktopContent from '@/components/desktop_content';
 import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindingModal';
 import { trackEventName } from '@/constants/account';
@@ -62,8 +61,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const { colorMode, toggleColorMode } = useColorMode();
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
-  const { autolaunchWorkspaceUid, autoDeployTemplate, autoDeployTemplateForm } = useAppStore();
-  const cancelAutoDeployTemplate = useAppStore((state) => state.cancelAutoDeployTemplate);
+  const { autolaunchWorkspaceUid } = useAppStore();
   const { session, token } = useSessionStore();
   const { layoutConfig, commonConfig, trackingConfig, authConfig, cloudConfig } = useConfigStore();
   const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
@@ -288,33 +286,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         .then(async (state) => {
           // Skip normal app opening logic if this is a Stripe callback
           if (isStripeCallback || !state) return;
-
-          console.log('[Index] Checking for auto deploy template:', {
-            autoDeployTemplate: state.autoDeployTemplate,
-            autoDeployTemplateForm: state.autoDeployTemplateForm
-          });
-
-          // Handle auto deploy template (priority over autolaunch)
-          if (state.autoDeployTemplate && state.autoDeployTemplateForm) {
-            console.log('[Index] Auto deploying template from store:', {
-              templateName: state.autoDeployTemplate,
-              templateForm: state.autoDeployTemplateForm
-            });
-            try {
-              const result = await createTemplateInstance({
-                templateName: state.autoDeployTemplate,
-                templateForm: state.autoDeployTemplateForm
-              });
-              console.log('[Index] Template instance created successfully:', result);
-            } catch (error) {
-              console.error('[Index] Failed to create template instance:', error);
-            } finally {
-              console.log('[Index] Clearing auto deploy template from store');
-              cancelAutoDeployTemplate();
-            }
-          } else {
-            console.log('[Index] No auto deploy template found in store');
-          }
 
           let appQuery = '';
           let appkey = '';

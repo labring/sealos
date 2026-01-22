@@ -27,7 +27,7 @@ export const getSharedCookieDomain = (): string | undefined => {
 };
 
 // Set shared authentication cookie
-export const setSharedAuthCookie = (appToken: string): void => {
+export const setSharedAuthCookie = (globalToken: string): void => {
   const domain = getSharedCookieDomain();
   const options: CookieAttributes = {
     expires: COOKIE_EXPIRY_DAYS,
@@ -36,7 +36,7 @@ export const setSharedAuthCookie = (appToken: string): void => {
     secure: window.location.protocol === 'https:'
   };
   if (domain) options.domain = domain;
-  Cookies.set(SHARED_AUTH_COOKIE_NAME, appToken, options);
+  Cookies.set(SHARED_AUTH_COOKIE_NAME, globalToken, options);
 };
 
 // Clear shared authentication cookie

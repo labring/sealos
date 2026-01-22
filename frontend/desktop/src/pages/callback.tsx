@@ -22,11 +22,12 @@ import { AxiosError, HttpStatusCode } from 'axios';
 import { gtmLoginSuccess } from '@/utils/gtm';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
+import useAppStore from '@/stores/app';
 
 export default function Callback() {
   const router = useRouter();
   const setProvider = useSessionStore((s) => s.setProvider);
-  const setToken = useSessionStore((s) => s.setToken);
+  const setGlobalToken = useSessionStore((s) => s.setGlobalToken);
   const provider = useSessionStore((s) => s.provider);
   const compareState = useSessionStore((s) => s.compareState);
   const { setSigninPageAction } = useSigninPageStore();
@@ -107,9 +108,27 @@ export default function Callback() {
             }
 
             if (data.data && data.code === 200 && !('error' in data.data)) {
-              const token = data.data?.token;
-              setToken(token);
+              const globalToken = data.data?.token; // This is the global token from OAuth
+              setGlobalToken(globalToken); // Sets global token and cookie
               const needInit = data.data.needInit;
+
+              // Helper function to handle redirect after login
+              const handleLoginRedirect = async () => {
+                const appState = useAppStore.getState();
+                if (appState.autoDeployTemplate && appState.autoDeployTemplateForm) {
+                  console.log('[Callback] Found saved template in store, redirecting to /oauth');
+                  const params = new URLSearchParams({
+                    templateName: appState.autoDeployTemplate,
+                    templateForm: JSON.stringify(appState.autoDeployTemplateForm)
+                  });
+                  if (appState.autolaunch) {
+                    params.append('openapp', appState.autolaunch);
+                  }
+                  await router.replace(`/oauth?${params.toString()}`);
+                } else {
+                  await router.replace('/');
+                }
+              };
 
               if (needInit) {
                 try {
@@ -124,7 +143,7 @@ export default function Callback() {
                     await sessionConfig(initResult.data);
                     const { setInitGuide } = useGuideModalStore.getState();
                     setInitGuide(true);
-                    await router.replace('/');
+                    await handleLoginRedirect();
                   }
                 } catch (error) {
                   console.error('Auto init failed, fallback to manual:', error);
@@ -145,7 +164,7 @@ export default function Callback() {
               const regionTokenRes = await getRegionToken();
               if (regionTokenRes?.data) {
                 await sessionConfig(regionTokenRes.data);
-                await router.replace('/');
+                await handleLoginRedirect();
               }
             } else {
               throw new Error();
