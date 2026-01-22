@@ -1243,10 +1243,22 @@ func (s *StripeService) ConfirmInvoice(invoiceID string) error {
 	if inv.Status == "draft" {
 		_, err = invoice.FinalizeInvoice(invoiceID, nil)
 		if err != nil {
-			return fmt.Errorf("failed to finalize invoice %s: %w", invoiceID, err)
+			// Check if the invoice was already finalized by another region
+			// Error message: "This invoice is already finalized, you can't re-finalize a non-draft invoice."
+			if strings.Contains(err.Error(), "already finalized") || strings.Contains(err.Error(), "non-draft") {
+				logrus.Infof("Invoice %s already finalized by another region, skipping", invoiceID)
+				// Re-fetch the invoice to get the updated status
+				inv, err = invoice.Get(invoiceID, nil)
+				if err != nil {
+					return fmt.Errorf("failed to re-fetch invoice %s after finalize error: %w", invoiceID, err)
+				}
+			} else {
+				return fmt.Errorf("failed to finalize invoice %s: %w", invoiceID, err)
+			}
+		} else {
+			logrus.Infof("Successfully finalized invoice %s, status changed from draft to open", invoiceID)
+			inv.Status = "open" // Update status for next step
 		}
-		logrus.Infof("Successfully finalized invoice %s, status changed from draft to open", invoiceID)
-		inv.Status = "open" // Update status for next step
 	}
 
 	// Step 2: Attempt payment automatically for invoices that haven't been paid yet

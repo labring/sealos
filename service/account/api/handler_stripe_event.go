@@ -840,18 +840,20 @@ func sendNotification(
 // 4. If payment succeeds: invoice.paid webhook processes the payment
 // 5. If payment fails: invoice.payment_failed webhook handles the failure
 func handleWorkspaceSubscriptionInvoiceCreated(event *stripe.Event) error {
-	// 1. parse event data
-	sessionData, err := services.StripeServiceInstance.ParseWebhookEventData(event)
+	// 1. parse event data early return
+	invoice, subscription, err := parseAndValidateEvent(event)
 	if err != nil {
-		return fmt.Errorf("failed to parse webhook data: %w", err)
+		return err
 	}
 
-	invoice, ok := sessionData.(*stripe.Invoice)
-	if !ok {
-		return errors.New("invalid session data type, expected invoice")
+	// 2. check local events early return
+	if ok, err := isLocalEvent(subscription); err != nil {
+		return err
+	} else if !ok {
+		return nil
 	}
 
-	// 2. check if this is a subscription renewal invoice
+	// 3. check if this is a subscription renewal invoice
 	if invoice.BillingReason != "subscription_cycle" {
 		// Only auto-confirm subscription renewal invoices
 		// subscription_create and subscription_update are handled in their own flows
@@ -859,19 +861,19 @@ func handleWorkspaceSubscriptionInvoiceCreated(event *stripe.Event) error {
 		return nil
 	}
 
-	// 3. check if invoice is already confirmed/paid
+	// 4. check if invoice is already confirmed/paid
 	if invoice.Status == "paid" || invoice.Status == "void" || invoice.Status == "uncollectible" {
 		logrus.Infof("Invoice %s already processed (status: %s), skipping", invoice.ID, invoice.Status)
 		return nil
 	}
 
-	// 4. check if invoice has auto_advance enabled (should be confirmed automatically)
+	// 5. check if invoice has auto_advance enabled (should be confirmed automatically)
 	if invoice.AutoAdvance != true {
 		logrus.Infof("Invoice %s does not have auto_advance enabled, skipping", invoice.ID)
 		return nil
 	}
 
-	// 5. confirm invoice and attempt payment (draft -> open -> paid/payment_failed)
+	// 6. confirm invoice and attempt payment (draft -> open -> paid/payment_failed)
 	logrus.Infof("Auto-confirming and paying renewal invoice: %s", invoice.ID)
 	if err := services.StripeServiceInstance.ConfirmInvoice(invoice.ID); err != nil {
 		return fmt.Errorf("failed to auto-confirm invoice %s: %w", invoice.ID, err)
