@@ -19,16 +19,17 @@ import {
   SelectValue
 } from '@sealos/shadcn-ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import { Sparkles, CircleAlert, CircleHelp, Download } from 'lucide-react';
+import { Sparkles, CircleAlert, CircleHelp, Download, LineChart, FileClock } from 'lucide-react';
 import { default as AnsiUp } from 'ansi_up';
 import Empty from './empty';
 
 import styles from '@/components/app/detail/index/index.module.scss';
 import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
 import { SHOW_EVENT_ANALYZE } from '@/store/static';
 
 interface SinceItem {
-  key: 'streaming_logs' | 'within_5_minutes' | 'within_1_hour' | 'within_1_day' | 'terminated_logs';
+  key: 'streaming_logs' | 'within_5_minute' | 'within_1_hour' | 'within_1_day' | 'terminated_logs';
   since: number;
   previous: boolean;
 }
@@ -36,7 +37,7 @@ interface SinceItem {
 const newSinceItems = (baseTimestamp: number): SinceItem[] => {
   return [
     { key: 'streaming_logs', since: 0, previous: false },
-    { key: 'within_5_minutes', since: baseTimestamp - 5 * 60 * 1000, previous: false },
+    { key: 'within_5_minute', since: baseTimestamp - 5 * 60 * 1000, previous: false },
     { key: 'within_1_hour', since: baseTimestamp - 60 * 60 * 1000, previous: false },
     { key: 'within_1_day', since: baseTimestamp - 24 * 60 * 60 * 1000, previous: false },
     { key: 'terminated_logs', since: 0, previous: true }
@@ -59,6 +60,7 @@ const PodDetailModal = ({
   closeFn: () => void;
 }) => {
   const { t } = useTranslation();
+  const router = useRouter();
   const controller = useRef(new AbortController());
   const logsController = useRef<AbortController | null>(null);
   const { Loading } = useLoading();
@@ -232,13 +234,13 @@ const PodDetailModal = ({
       });
     } catch (err: any) {
       toast({
-        title: typeof err === 'string' ? err : err?.message || '智能分析出错了~',
+        title: typeof err === 'string' ? err : err?.message || t('analysis_error'),
         status: 'warning'
       });
       onCloseAnalysesModel();
     }
     setIsAnalyzing(false);
-  }, [events, onCloseAnalysesModel, toast]);
+  }, [events, onCloseAnalysesModel, t, toast]);
 
   return (
     <>
@@ -251,9 +253,13 @@ const PodDetailModal = ({
                 <SelectTrigger className="min-w-[300px] !h-9 border-zinc-200 rounded-lg text-sm font-normal">
                   <SelectValue placeholder={podAlias} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-[0.5px] border-zinc-200 rounded-xl p-1">
                   {pods.map((item) => (
-                    <SelectItem key={item.podName} value={item.podName}>
+                    <SelectItem
+                      className="h-9 rounded-lg py-[10px] hover:bg-zinc-50 cursor-pointer"
+                      key={item.podName}
+                      value={item.podName}
+                    >
                       {item.alias}
                     </SelectItem>
                   ))}
@@ -282,9 +288,19 @@ const PodDetailModal = ({
             </div> */}
 
             {/* Details Section */}
-            <div className="flex flex-col gap-4 max-h-[430px] bg-white rounded-2xl p-6 col-span-3 border-[0.5px] border-zinc-200 shadow-sm">
-              <div className="text-base text-zinc-900 font-semibold h-9 flex items-center">
-                {t('Details')}
+            <div className="flex flex-col max-h-[430px] bg-white rounded-2xl p-6 col-span-3 border-[0.5px] border-zinc-200 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="text-base text-zinc-900 font-semibold h-9 flex items-center">
+                  {t('Details')}
+                </div>
+                <Button
+                  variant="outline"
+                  className="h-9 rounded-lg hover:bg-zinc-50 flex items-center"
+                  onClick={() => router.push(`/app/detail/monitor?name=${appName}`)}
+                >
+                  <LineChart className="w-4 h-4 text-zinc-500" />
+                  {t('monitor')}
+                </Button>
               </div>
               <div className="overflow-y-auto flex flex-col gap-3 text-sm">
                 <RenderItem label={t('Status')}>
@@ -338,19 +354,21 @@ const PodDetailModal = ({
                           className="rounded-xl max-w-[300px] whitespace-pre-wrap break-all"
                         >
                           <p className="text-sm text-zinc-900 font-normal p-2">
-                            Reason: {pod.status.reason}
-                            {pod.status.message ? `\nMessage: ${pod.status.message}` : ''}
+                            {t('Reason')}: {pod.status.reason}
+                            {pod.status.message ? `\n${t('Message')}: ${pod.status.message}` : ''}
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     )}
                   </div>
                 </RenderItem>
-                <RenderItem label="Restarts">{pod.restarts}</RenderItem>
-                <RenderItem label="Age">{pod.age}</RenderItem>
-                <RenderItem label="Pod Name">{pod.podName}</RenderItem>
-                <RenderItem label="Controlled By">{`${pod.metadata?.ownerReferences?.[0].kind}/${pod.metadata?.ownerReferences?.[0].name}`}</RenderItem>
-                <RenderItemWithTags label="Labels">
+                <RenderItem label={t('Restarts')}>{pod.restarts}</RenderItem>
+                <RenderItem label={t('Age')}>{pod.age}</RenderItem>
+                <RenderItem label={t('Pod Name')}>{pod.podName}</RenderItem>
+                <RenderItem label={t('Controlled By')}>
+                  {`${pod.metadata?.ownerReferences?.[0].kind}/${pod.metadata?.ownerReferences?.[0].name}`}
+                </RenderItem>
+                <RenderItemWithTags label={t('Labels')}>
                   <div className="flex gap-2 flex-wrap">
                     {Object.entries(pod.metadata?.labels || {}).map(
                       ([key, value]: [string, string]) => (
@@ -359,7 +377,7 @@ const PodDetailModal = ({
                     )}
                   </div>
                 </RenderItemWithTags>
-                <RenderItemWithTags label="Annotations">
+                <RenderItemWithTags label={t('Annotations')}>
                   <div className="flex gap-2 flex-wrap">
                     {Object.entries(pod.metadata?.annotations || {}).map(
                       ([key, value]: [string, string]) => (
@@ -374,10 +392,14 @@ const PodDetailModal = ({
             {/* Events Section */}
             <div className="relative flex flex-col max-h-[430px] bg-white rounded-2xl px-6 py-6 h-full col-span-5 border-[0.5px] border-zinc-200 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
-                <span className="font-semibold text-base h-9 flex items-center">Events</span>
+                <span className="font-semibold text-base h-9 flex items-center">{t('Events')}</span>
                 {events.length > 0 && SHOW_EVENT_ANALYZE && (
-                  <Button variant="outline" className="ml-3 h-9" onClick={onclickAnalyses}>
-                    <Sparkles className="w-4 h-4 mr-1" />
+                  <Button
+                    variant="outline"
+                    className="ml-3 h-9 hover:bg-zinc-50 flex items-center"
+                    onClick={onclickAnalyses}
+                  >
+                    <Sparkles className="w-4 h-4" />
                     {t('Intelligent Analysis')}
                   </Button>
                 )}
@@ -393,10 +415,14 @@ const PodDetailModal = ({
                     <div className="flex gap-1 flex-col">
                       <div className="flex items-center leading-none flex-wrap gap-4">
                         <span className="font-medium text-zinc-900">
-                          {event.reason},&ensp;Last Occur: {event.lastTime}
+                          {event.reason},&ensp;{t('Last Occur')}: {event.lastTime}
                         </span>
-                        <span className="text-zinc-500">First Seen: {event.firstTime}</span>
-                        <span className="text-zinc-500">count: {event.count}</span>
+                        <span className="text-zinc-500">
+                          {t('First Seen')}: {event.firstTime}
+                        </span>
+                        <span className="text-zinc-500">
+                          {t('Count')}: {event.count}
+                        </span>
                       </div>
                       <div className="text-zinc-500">{event.message}</div>
                     </div>
@@ -421,7 +447,7 @@ const PodDetailModal = ({
                 <div className="text-base text-zinc-900 font-semibold h-9 flex items-center">
                   {t('Log')}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Select
                     value={sinceKey}
                     onValueChange={(value: string) => {
@@ -432,16 +458,32 @@ const PodDetailModal = ({
                     <SelectTrigger className="min-w-[160px] !h-9 border-zinc-200 rounded-lg text-sm font-normal">
                       <SelectValue placeholder={t(sinceKey)} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="border-[0.5px] border-zinc-200 rounded-xl p-1">
                       {sinceItems.map((item) => (
-                        <SelectItem key={item.key} value={item.key}>
+                        <SelectItem
+                          className="h-9 rounded-lg py-[10px] hover:bg-zinc-50 cursor-pointer"
+                          key={item.key}
+                          value={item.key}
+                        >
                           {t(item.key)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" className="h-9" onClick={exportLogs}>
-                    <Download className="w-4 h-4 mr-1" />
+                  <Button
+                    variant="outline"
+                    className="h-9 hover:bg-zinc-50 flex items-center"
+                    onClick={() => router.push(`/app/detail/logs?name=${appName}`)}
+                  >
+                    <FileClock className="w-4 h-4 text-zinc-500" />
+                    {t('More Logs')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-9 hover:bg-zinc-50 flex items-center"
+                    onClick={exportLogs}
+                  >
+                    <Download className="w-4 h-4 text-zinc-500" />
                     {t('Export')}
                   </Button>
                 </div>

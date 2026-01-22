@@ -22,7 +22,7 @@ import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
 
 interface sinceItem {
-  key: 'streaming_logs' | 'within_5_minutes' | 'within_1_hour' | 'within_1_day' | 'terminated_logs';
+  key: 'streaming_logs' | 'within_5_minute' | 'within_1_hour' | 'within_1_day' | 'terminated_logs';
   since: number;
   previous: boolean;
 }
@@ -35,7 +35,7 @@ const newSinceItems = (baseTimestamp: number): sinceItem[] => {
       previous: false
     },
     {
-      key: 'within_5_minutes',
+      key: 'within_5_minute',
       since: baseTimestamp - 5 * 60 * 1000,
       previous: false
     },

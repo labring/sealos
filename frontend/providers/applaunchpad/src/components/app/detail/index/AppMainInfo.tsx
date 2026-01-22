@@ -5,7 +5,6 @@ import { DOMAIN_PORT } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
-import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
@@ -169,7 +168,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           </div>
           <Button
             variant="outline"
-            className="h-9 !px-3 rounded-lg hover:bg-zinc-50 flex items-center"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center"
             onClick={() => router.push(`/app/edit?name=${app.appName}&scrollTo=network`)}
           >
             {t('Manage')}
@@ -222,23 +221,21 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                                 {t('Accessible')}
                               </div>
                             ) : (
-                              <Popover>
-                                <PopoverTrigger asChild>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
                                   <div className="w-fit relative top-[1px] h-5 flex items-center gap-1 text-xs font-medium bg-zinc-50 text-zinc-500 border-[0.5px] border-zinc-200 rounded-full px-2 py-0.5 cursor-pointer">
                                     <CircleHelpIcon className="w-3 h-3 text-zinc-400" />
                                     {t('Ready')}
                                   </div>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-64 rounded-xl" side="top">
-                                  <div className="p-2.5">
-                                    <p className="text-zinc-900 text-xs font-normal leading-4">
-                                      {network.customDomain
-                                        ? t('network_not_ready_icp_reg')
-                                        : t('network_not_ready')}
-                                    </p>
+                                </TooltipTrigger>
+                                <TooltipContent className="rounded-xl">
+                                  <div className="text-sm text-zinc-900 font-normal p-2">
+                                    {network.customDomain
+                                      ? t('network_not_ready_icp_reg')
+                                      : t('network_not_ready')}
                                   </div>
-                                </PopoverContent>
-                              </Popover>
+                                </TooltipContent>
+                              </Tooltip>
                             )}
                           </div>
                         )}
