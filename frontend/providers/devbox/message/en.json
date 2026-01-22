@@ -423,6 +423,7 @@
   "repository_type": "Repository Type",
   "reset": "Reset",
   "resource_quota": "Resource Quota",
+  "resource_quota_tooltip": "Please contact your administrator to configure the quota.",
   "restart": "Restart",
   "restart_error": "Restart error",
   "restart_success": "Restart succeeded",
