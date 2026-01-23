@@ -123,7 +123,11 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// 4) Per-node controller ownership: if another node already owns this devbox, we should not reconcile it.
 	if devbox.Status.Node != "" && devbox.Status.Node != r.NodeName {
-		logger.Info("devbox already scheduled to another node, skip reconcile", "node", devbox.Status.Node)
+		logger.Info(
+			"devbox already scheduled to another node, skip reconcile",
+			"node",
+			devbox.Status.Node,
+		)
 		return ctrl.Result{}, nil
 	}
 
@@ -148,7 +152,12 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// 7) Scheduling/claiming ownership (only when running).
 	if devbox.Spec.State == devboxv1alpha2.DevboxStateRunning {
-		res, err := r.ensureDevboxScheduledToThisNodeIfPossible(ctx, req.NamespacedName, devbox, commitRecord)
+		res, err := r.ensureDevboxScheduledToThisNodeIfPossible(
+			ctx,
+			req.NamespacedName,
+			devbox,
+			commitRecord,
+		)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -176,7 +185,10 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, nil
 }
 
-func (r *DevboxReconciler) initDevboxStatus(ctx context.Context, devbox *devboxv1alpha2.Devbox) (updated bool, err error) {
+func (r *DevboxReconciler) initDevboxStatus(
+	ctx context.Context,
+	devbox *devboxv1alpha2.Devbox,
+) (updated bool, err error) {
 	// only fill missing fields; avoid overriding existing status
 	changed := false
 
@@ -268,7 +280,8 @@ func (r *DevboxReconciler) ensureDevboxFinalizer(ctx context.Context, key client
 		if err := r.Get(ctx, key, latest); err != nil {
 			return client.IgnoreNotFound(err)
 		}
-		if controllerutil.AddFinalizer(latest, devboxv1alpha2.FinalizerName) {
+		if !controllerutil.ContainsFinalizer(latest, devboxv1alpha2.FinalizerName) {
+			controllerutil.AddFinalizer(latest, devboxv1alpha2.FinalizerName)
 			return r.Update(ctx, latest)
 		}
 		return nil
@@ -335,7 +348,8 @@ func (r *DevboxReconciler) ensureDevboxScheduledToThisNodeIfPossible(
 		if err := r.Get(ctx, key, latest); err != nil {
 			return err
 		}
-		if latest.Status.CommitRecords == nil || latest.Status.CommitRecords[latest.Status.ContentID] == nil {
+		if latest.Status.CommitRecords == nil ||
+			latest.Status.CommitRecords[latest.Status.ContentID] == nil {
 			return fmt.Errorf("commit record missing for contentID %s", latest.Status.ContentID)
 		}
 
@@ -373,10 +387,14 @@ func (r *DevboxReconciler) ensureDevboxScheduledToThisNodeIfPossible(
 }
 
 // maybeEmitStateChangeEvent records state change event once per generation when this node is allowed to sync.
-func (r *DevboxReconciler) maybeEmitStateChangeEvent(ctx context.Context, devbox *devboxv1alpha2.Devbox) error {
+func (r *DevboxReconciler) maybeEmitStateChangeEvent(
+	ctx context.Context,
+	devbox *devboxv1alpha2.Devbox,
+) error {
 	logger := log.FromContext(ctx).WithValues("devbox", client.ObjectKeyFromObject(devbox))
 
-	if devbox.Status.CommitRecords == nil || devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
+	if devbox.Status.CommitRecords == nil ||
+		devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
 		return nil
 	}
 
@@ -385,7 +403,8 @@ func (r *DevboxReconciler) maybeEmitStateChangeEvent(ctx context.Context, devbox
 	contentID := devbox.Status.ContentID
 	currentRecord := devbox.Status.CommitRecords[contentID]
 	ownedByThisNode := currentRecord.Node == r.NodeName
-	stopOrShutdown := devbox.Spec.State == devboxv1alpha2.DevboxStateStopped || devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown
+	stopOrShutdown := devbox.Spec.State == devboxv1alpha2.DevboxStateStopped ||
+		devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown
 	unscheduled := currentRecord.Node == ""
 	allowedToSyncState := ownedByThisNode || (stopOrShutdown && unscheduled)
 	needsStateTransition := devbox.Spec.State != devbox.Status.State
@@ -402,7 +421,15 @@ func (r *DevboxReconciler) maybeEmitStateChangeEvent(ctx context.Context, devbox
 		return nil
 	}
 
-	logger.Info("recording state change event for devbox", "devbox", devbox.Name, "from", devbox.Status.State, "to", devbox.Spec.State)
+	logger.Info(
+		"recording state change event for devbox",
+		"devbox",
+		devbox.Name,
+		"from",
+		devbox.Status.State,
+		"to",
+		devbox.Spec.State,
+	)
 	r.StateChangeRecorder.Eventf(
 		devbox,
 		corev1.EventTypeNormal,
@@ -453,7 +480,10 @@ func (r *DevboxReconciler) markStateTransitionPendingAndReturnShouldEmit(
 	return shouldEmit, err
 }
 
-func (r *DevboxReconciler) syncDevboxConditions(ctx context.Context, devbox *devboxv1alpha2.Devbox) error {
+func (r *DevboxReconciler) syncDevboxConditions(
+	ctx context.Context,
+	devbox *devboxv1alpha2.Devbox,
+) error {
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		latest := &devboxv1alpha2.Devbox{}
 		if err := r.Get(ctx, client.ObjectKeyFromObject(devbox), latest); err != nil {
@@ -769,7 +799,13 @@ func (r *DevboxReconciler) setSyncCondition(
 		Reason:  reason,
 		Message: message,
 	}); err != nil {
-		logger.Info("failed to update condition (best-effort)", "conditionType", conditionType, "error", err)
+		logger.Info(
+			"failed to update condition (best-effort)",
+			"conditionType",
+			conditionType,
+			"error",
+			err,
+		)
 	}
 }
 

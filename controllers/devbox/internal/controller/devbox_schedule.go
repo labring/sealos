@@ -24,7 +24,10 @@ func (r *DevboxReconciler) getAcceptanceConsideration(
 	}
 	ann := node.Annotations
 	ac := helper.AcceptanceConsideration{}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationContainerFSAvailableThreshold], 64); err != nil {
+	if v, err := strconv.ParseFloat(
+		ann[devboxv1alpha2.AnnotationContainerFSAvailableThreshold],
+		64,
+	); err != nil {
 		logger.Info(
 			"failed to parse containerfs available threshold. use default value instead",
 			"value",
@@ -54,7 +57,10 @@ func (r *DevboxReconciler) getAcceptanceConsideration(
 	} else {
 		ac.CPULimitRatio = v
 	}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationMemoryRequestRatio], 64); err != nil {
+	if v, err := strconv.ParseFloat(
+		ann[devboxv1alpha2.AnnotationMemoryRequestRatio],
+		64,
+	); err != nil {
 		logger.Info(
 			"failed to parse memory request ratio. use default value instead",
 			"value",
@@ -64,7 +70,10 @@ func (r *DevboxReconciler) getAcceptanceConsideration(
 	} else {
 		ac.MemoryRequestRatio = v
 	}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationMemoryLimitRatio], 64); err != nil {
+	if v, err := strconv.ParseFloat(
+		ann[devboxv1alpha2.AnnotationMemoryLimitRatio],
+		64,
+	); err != nil {
 		logger.Info(
 			"failed to parse memory limit ratio. use default value instead",
 			"value",
@@ -120,7 +129,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get storage limit")
 		goto unsuitable // If we can't get the storage limit, we assume the node is not suitable
 	} else if storageLimitBytes > 0 && availableBytes < uint64(storageLimitBytes) {
-		logger.Info("available bytes less than storage limit", "availableBytes", availableBytes, "storageLimitBytes", storageLimitBytes)
+		logger.Info(
+			"available bytes less than storage limit",
+			"availableBytes",
+			availableBytes,
+			"storageLimitBytes",
+			storageLimitBytes,
+		)
 		goto unsuitable // If available bytes are less than the storage limit, we assume the node is not suitable
 	}
 	availablePercentage = float64(availableBytes) / float64(capacityBytes) * 100
@@ -135,7 +150,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get total CPU request")
 		goto unsuitable // If we can't get the CPU request, we assume the node is not suitable
 	} else if cpuRequestRatio < ac.CPURequestRatio {
-		logger.Info("cpu request ratio is less than cpu overcommitment request ratio", "RequestRatio", cpuRequestRatio, "ratio", ac.CPURequestRatio)
+		logger.Info(
+			"cpu request ratio is less than cpu overcommitment request ratio",
+			"RequestRatio",
+			cpuRequestRatio,
+			"ratio",
+			ac.CPURequestRatio,
+		)
 		score += getScoreUnit(0)
 	}
 	cpuLimitRatio, err = r.getTotalCPULimitRatio(ctx)
@@ -143,7 +164,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get total CPU limit")
 		goto unsuitable // If we can't get the CPU limit, we assume the node is not suitable
 	} else if cpuLimitRatio < ac.CPULimitRatio {
-		logger.Info("cpu limit ratio is less than cpu overcommitment limit ratio", "LimitRatio", cpuLimitRatio, "ratio", ac.CPULimitRatio)
+		logger.Info(
+			"cpu limit ratio is less than cpu overcommitment limit ratio",
+			"LimitRatio",
+			cpuLimitRatio,
+			"ratio",
+			ac.CPULimitRatio,
+		)
 		score += getScoreUnit(0)
 	}
 	memoryRequestRatio, err = r.getTotalMemoryRequestRatio(ctx)
@@ -151,7 +178,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get total memory request")
 		goto unsuitable // If we can't get the memory request, we assume the node is not suitable
 	} else if memoryRequestRatio < ac.MemoryRequestRatio {
-		logger.Info("memory request ratio is less than memory overcommitment request ratio", "RequestRatio", memoryRequestRatio, "ratio", ac.MemoryRequestRatio)
+		logger.Info(
+			"memory request ratio is less than memory overcommitment request ratio",
+			"RequestRatio",
+			memoryRequestRatio,
+			"ratio",
+			ac.MemoryRequestRatio,
+		)
 		score += getScoreUnit(0)
 	}
 	memoryLimitRatio, err = r.getTotalMemoryLimitRatio(ctx)
@@ -159,7 +192,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get total memory limit")
 		goto unsuitable // If we can't get the memory limit, we assume the node is not suitable
 	} else if memoryLimitRatio < ac.MemoryLimitRatio {
-		logger.Info("memory limit ratio is less than memory overcommitment limit ratio", "LimitRatio", memoryLimitRatio, "ratio", ac.MemoryLimitRatio)
+		logger.Info(
+			"memory limit ratio is less than memory overcommitment limit ratio",
+			"LimitRatio",
+			memoryLimitRatio,
+			"ratio",
+			ac.MemoryLimitRatio,
+		)
 		score += getScoreUnit(0)
 	}
 	return score

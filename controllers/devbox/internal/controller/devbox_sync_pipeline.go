@@ -25,7 +25,7 @@ type devboxSyncPipelineEvent struct {
 	eventType  string
 	reason     string
 	messageFmt string
-	args       func(err error) []interface{}
+	args       func(err error) []any
 }
 
 type devboxSyncPipelineStep struct {
@@ -72,14 +72,25 @@ func (r *DevboxReconciler) runSyncPipeline(
 				logger.Error(err, "sync step failed")
 			}
 			if step.conditionType != "" {
-				r.setSyncCondition(ctx, devbox, step.conditionType, false, fmt.Sprintf(step.errConditionFmt, err))
+				r.setSyncCondition(
+					ctx,
+					devbox,
+					step.conditionType,
+					false,
+					fmt.Sprintf(step.errConditionFmt, err),
+				)
 			}
 			if step.onErrorEvent != nil {
-				args := []interface{}(nil)
+				args := []any(nil)
 				if step.onErrorEvent.args != nil {
 					args = step.onErrorEvent.args(err)
 				}
-				r.Recorder.Eventf(devbox, step.onErrorEvent.eventType, step.onErrorEvent.reason, step.onErrorEvent.messageFmt, args...)
+				r.Recorder.Eventf(
+					devbox,
+					step.onErrorEvent.eventType,
+					step.onErrorEvent.reason,
+					step.onErrorEvent.messageFmt,
+					args...)
 			}
 			return err
 		}
@@ -90,11 +101,16 @@ func (r *DevboxReconciler) runSyncPipeline(
 			r.setSyncCondition(ctx, devbox, step.conditionType, true, step.okConditionMsg)
 		}
 		if step.onSuccessEvent != nil {
-			args := []interface{}(nil)
+			args := []any(nil)
 			if step.onSuccessEvent.args != nil {
 				args = step.onSuccessEvent.args(nil)
 			}
-			r.Recorder.Eventf(devbox, step.onSuccessEvent.eventType, step.onSuccessEvent.reason, step.onSuccessEvent.messageFmt, args...)
+			r.Recorder.Eventf(
+				devbox,
+				step.onSuccessEvent.eventType,
+				step.onSuccessEvent.reason,
+				step.onSuccessEvent.messageFmt,
+				args...)
 		}
 	}
 
@@ -133,15 +149,15 @@ func (r *DevboxReconciler) syncSecretStep(
 			eventType:  corev1.EventTypeWarning,
 			reason:     "Sync secret failed",
 			messageFmt: "%v",
-			args: func(err error) []interface{} {
-				return []interface{}{err}
+			args: func(err error) []any {
+				return []any{err}
 			},
 		},
 		onSuccessEvent: &devboxSyncPipelineEvent{
 			eventType:  corev1.EventTypeNormal,
 			reason:     "Sync secret success",
 			messageFmt: "Sync secret success",
-			args: func(err error) []interface{} {
+			args: func(err error) []any {
 				return nil
 			},
 		},
@@ -167,11 +183,19 @@ func (r *DevboxReconciler) syncSecret(
 		// Secret already exists, update with retry
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			latestSecret := &corev1.Secret{}
-			if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, latestSecret); err != nil {
+			if err := r.Get(
+				ctx,
+				client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name},
+				latestSecret,
+			); err != nil {
 				return err
 			}
 			// update controller reference
-			if err := controllerutil.SetControllerReference(devbox, latestSecret, r.Scheme); err != nil {
+			if err := controllerutil.SetControllerReference(
+				devbox,
+				latestSecret,
+				r.Scheme,
+			); err != nil {
 				return fmt.Errorf("failed to update owner reference: %w", err)
 			}
 			// TODO: delete this code after we have a way to sync secret to devbox
@@ -252,15 +276,15 @@ func (r *DevboxReconciler) syncStartupConfigMapStep(
 			eventType:  corev1.EventTypeWarning,
 			reason:     "Sync startup configmap failed",
 			messageFmt: "%v",
-			args: func(err error) []interface{} {
-				return []interface{}{err}
+			args: func(err error) []any {
+				return []any{err}
 			},
 		},
 		onSuccessEvent: &devboxSyncPipelineEvent{
 			eventType:  corev1.EventTypeNormal,
 			reason:     "Sync startup configmap success",
 			messageFmt: "Sync startup configmap success",
-			args: func(err error) []interface{} {
+			args: func(err error) []any {
 				return nil
 			},
 		},
@@ -355,15 +379,15 @@ func (r *DevboxReconciler) syncNetworkStep(
 			eventType:  corev1.EventTypeWarning,
 			reason:     "Sync network failed",
 			messageFmt: "%v",
-			args: func(err error) []interface{} {
-				return []interface{}{err}
+			args: func(err error) []any {
+				return []any{err}
 			},
 		},
 		onSuccessEvent: &devboxSyncPipelineEvent{
 			eventType:  corev1.EventTypeNormal,
 			reason:     "Sync network success",
 			messageFmt: "Sync network success",
-			args: func(err error) []interface{} {
+			args: func(err error) []any {
 				return nil
 			},
 		},
@@ -627,12 +651,21 @@ func (r *DevboxReconciler) syncDevboxPhase(
 
 	// Fetch pod list
 	podList := &corev1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+	if err := r.List(
+		ctx,
+		podList,
+		client.InNamespace(devbox.Namespace),
+		client.MatchingLabels(recLabels),
+	); err != nil {
 		return err
 	}
 
 	// Refresh devbox to get latest status
-	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name},
+		devbox,
+	); err != nil {
 		return fmt.Errorf("failed to get devbox: %w", err)
 	}
 
@@ -693,15 +726,15 @@ func (r *DevboxReconciler) syncPodStep(
 			eventType:  corev1.EventTypeWarning,
 			reason:     "Sync pod failed",
 			messageFmt: "%v",
-			args: func(err error) []interface{} {
-				return []interface{}{err}
+			args: func(err error) []any {
+				return []any{err}
 			},
 		},
 		onSuccessEvent: &devboxSyncPipelineEvent{
 			eventType:  corev1.EventTypeNormal,
 			reason:     "Sync pod success",
 			messageFmt: "Sync pod success",
-			args: func(err error) []interface{} {
+			args: func(err error) []any {
 				return nil
 			},
 		},
@@ -715,7 +748,12 @@ func (r *DevboxReconciler) syncPod(
 ) error {
 	logger := log.FromContext(ctx)
 	podList := &corev1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+	if err := r.List(
+		ctx,
+		podList,
+		client.InNamespace(devbox.Namespace),
+		client.MatchingLabels(recLabels),
+	); err != nil {
 		return err
 	}
 	switch devbox.Spec.State {
@@ -849,7 +887,12 @@ func (r *DevboxReconciler) deletePod(
 	}
 
 	// Delete pod
-	if err := r.Delete(ctx, pod, client.GracePeriodSeconds(0), client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
+	if err := r.Delete(
+		ctx,
+		pod,
+		client.GracePeriodSeconds(0),
+		client.PropagationPolicy(metav1.DeletePropagationBackground),
+	); err != nil {
 		if !apierrors.IsNotFound(err) {
 			logger.Error(err, "delete pod failed")
 			return err

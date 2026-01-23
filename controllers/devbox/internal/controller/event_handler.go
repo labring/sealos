@@ -23,8 +23,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var commitMap = sync.Map{}
-var deleteMap = sync.Map{}
+var (
+	commitMap = sync.Map{}
+	deleteMap = sync.Map{}
+)
 
 type EventHandler struct {
 	Committer           commit.Committer
@@ -231,7 +233,11 @@ func (h *EventHandler) handleDevboxStateChange(ctx context.Context, event *corev
 func (h *EventHandler) handleStorageCleanup(ctx context.Context, event *corev1.Event) error {
 	h.Logger.Info("Storage cleanup event detected", "event", event.Name, "message", event.Message)
 	if _, loaded := deleteMap.LoadOrStore(event.InvolvedObject.Name, true); loaded {
-		h.Logger.Info("delete devbox already in progress, skipping duplicate request", "devbox", event.InvolvedObject.Name)
+		h.Logger.Info(
+			"delete devbox already in progress, skipping duplicate request",
+			"devbox",
+			event.InvolvedObject.Name,
+		)
 		return nil
 	}
 	defer func() {
