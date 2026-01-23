@@ -132,6 +132,7 @@ export function AllPlansSection() {
               workspaceName,
               plan: subscription.PlanName,
               renewalTime: subscription.CurrentPeriodEndAt,
+              cancelAtPeriodEnd: !!subscription.CancelAtPeriodEnd,
               price: monthlyPrice
             };
           } else {
@@ -140,6 +141,7 @@ export function AllPlansSection() {
               workspaceName,
               plan: 'PAYG',
               renewalTime: null,
+              cancelAtPeriodEnd: false,
               price: null
             };
           }
@@ -184,7 +186,17 @@ export function AllPlansSection() {
                             {workspace.workspaceName?.[0]?.toUpperCase() || 'W'}
                           </AvatarFallback>
                         </Avatar>
-                        <div>{workspace.workspaceName || t('common:unknown_workspace')}</div>
+                        <div className="flex items-center gap-2">
+                          <span>{workspace.workspaceName || t('common:unknown_workspace')}</span>
+                          {workspace.cancelAtPeriodEnd && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-zinc-100 text-muted-foreground rounded-full"
+                            >
+                              {t('common:plan_cancelled')}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -199,7 +211,11 @@ export function AllPlansSection() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {workspace.renewalTime ? formatDate(workspace.renewalTime) : '---'}
+                      {workspace.cancelAtPeriodEnd
+                        ? '-'
+                        : workspace.renewalTime
+                        ? formatDate(workspace.renewalTime)
+                        : '---'}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-sm">

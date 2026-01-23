@@ -6,6 +6,7 @@ import { formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 
 interface CongratulationsModalProps {
+  mode?: 'upgrade' | 'renew';
   planName?: string;
   maxResources?: {
     cpu: string;
@@ -21,6 +22,7 @@ interface CongratulationsModalProps {
 export default function CongratulationsModal(props: CongratulationsModalProps) {
   const { onClose, isOpen } = props;
   const { t } = useTranslation();
+  const mode = props.mode || 'upgrade';
 
   // Format plan resources
   const formatCpu = (cpu: string) => {
@@ -72,14 +74,25 @@ export default function CongratulationsModal(props: CongratulationsModalProps) {
             mb="8px"
             textAlign="start"
           >
-            {t('common:congratulations')}
+            {mode === 'renew'
+              ? t('common:subscription_renewed_title')
+              : t('common:congratulations')}
           </Text>
 
-          <Text fontSize="16px" color="var(--color-zinc-600)" textAlign="start" lineHeight="1.5">
-            {t('common:you_have_upgraded_to_plan_benefits_unlocked', {
-              planName: props.planName || t('common:pro_plan')
-            })}
+          <Text
+            fontSize="16px"
+            color="var(--color-zinc-600)"
+            textAlign="start"
+            lineHeight="1.5"
+            whiteSpace="pre-line"
+          >
+            {mode === 'renew'
+              ? t('common:subscription_renewed_desc')
+              : t('common:you_have_upgraded_to_plan_benefits_unlocked', {
+                  planName: props.planName || t('common:pro_plan')
+                })}
           </Text>
+
           <Divider my="8px" borderColor={'#F4F4F5'} />
           <Flex direction="column" gap="12px" mb="32px" w="100%">
             <Flex align="center" gap="12px">

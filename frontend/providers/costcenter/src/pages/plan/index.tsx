@@ -18,6 +18,7 @@ import { PlanHeader } from '@/components/plan/PlanHeader';
 import { BalanceSection } from '@/components/plan/BalanceSection';
 import { CardInfoSection } from '@/components/plan/CardInfoSection';
 import { InvoicePaymentBanner } from '@/components/plan/InvoicePaymentBanner';
+import { BeingCancelledBanner } from '@/components/plan/BeingCancelledBanner';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
@@ -80,6 +81,7 @@ export default function Plan() {
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [congratulationsMode, setCongratulationsMode] = useState<'upgrade' | 'renew'>('upgrade');
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
   // Track if Stripe success has been tracked to prevent duplicates
@@ -194,6 +196,7 @@ export default function Plan() {
       hideModal();
       // Close UpgradePlanDialog to prevent focus fighting
       setSubscriptionModalOpen(false);
+      setCongratulationsMode('upgrade');
       setShowCongratulations(true);
       setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
       isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
@@ -656,7 +659,21 @@ export default function Plan() {
                 />
               </div>
             )}
-            <PlanHeader>
+            {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+              subscriptionData?.subscription?.CurrentPeriodEndAt && (
+                <div className="mb-4">
+                  <BeingCancelledBanner
+                    currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+                  />
+                </div>
+              )}
+            <PlanHeader
+              onRenewSuccess={() => {
+                setWorkspaceId(session?.user?.nsid || '');
+                setCongratulationsMode('renew');
+                setShowCongratulations(true);
+              }}
+            >
               {({ trigger }) => (
                 <UpgradePlanDialog
                   onSubscribe={handleSubscribe}
@@ -706,8 +723,20 @@ export default function Plan() {
               inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
             />
           )}
+          {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+            subscriptionData?.subscription?.CurrentPeriodEndAt && (
+              <BeingCancelledBanner
+                currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+              />
+            )}
 
-          <PlanHeader>
+          <PlanHeader
+            onRenewSuccess={() => {
+              setWorkspaceId(session?.user?.nsid || '');
+              setCongratulationsMode('renew');
+              setShowCongratulations(true);
+            }}
+          >
             {({ trigger }) => (
               <UpgradePlanDialog
                 onSubscribe={handleSubscribe}
@@ -766,6 +795,7 @@ export default function Plan() {
 
       <CongratulationsModal
         isOpen={showCongratulations}
+        mode={congratulationsMode}
         planName={workspaceSubscriptionData?.data?.subscription?.PlanName || 'Pro Plan'}
         maxResources={
           workspaceSubscriptionData?.data?.subscription?.PlanName
@@ -832,6 +862,7 @@ export default function Plan() {
             // Set workspace ID for congratulations modal
             const targetWorkspace = session?.user?.nsid || '';
             setWorkspaceId(targetWorkspace);
+            setCongratulationsMode('upgrade');
             setShowCongratulations(true);
           }
         }}
