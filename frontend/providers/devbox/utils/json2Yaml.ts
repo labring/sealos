@@ -185,12 +185,12 @@ export const json2DevboxV2 = (
         }
 
         // Handle shared memory (emptyDir with Memory medium)
-        if (data.sharedMemory?.enabled && data.sharedMemory.size > 0) {
+        if (data.sharedMemory?.enabled && data.sharedMemory.sizeLimit > 0) {
           newVolumes.push({
             name: 'shared-memory',
             emptyDir: {
               medium: 'Memory',
-              sizeLimit: `${data.sharedMemory.size}Gi`
+              sizeLimit: `${data.sharedMemory.sizeLimit}Gi`
             }
           });
 

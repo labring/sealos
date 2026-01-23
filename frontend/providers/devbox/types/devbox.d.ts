@@ -66,7 +66,7 @@ export interface DevboxVolumeType {
 
 export interface SharedMemoryType {
   enabled: boolean;
-  size: number;
+  sizeLimit: number;
 }
 
 export interface DevboxEditTypeV2 {

@@ -114,7 +114,7 @@ export const adaptDevboxDetailV2 = ([
 
   const configMaps: Array<{ id: string; path: string; content: string }> = [];
   const volumes: Array<{ id: string; path: string; size: number }> = [];
-  let sharedMemory: { enabled: boolean; size: number } | undefined;
+  let sharedMemory: { enabled: boolean; sizeLimit: number } | undefined;
 
   if (config?.volumes && config?.volumeMounts) {
     const volumesArray = config.volumes as any[];
@@ -161,7 +161,7 @@ export const adaptDevboxDetailV2 = ([
             size = Math.ceil(size / 1024);
           }
         }
-        sharedMemory = { enabled: true, size };
+        sharedMemory = { enabled: true, sizeLimit: size };
       }
     });
   }

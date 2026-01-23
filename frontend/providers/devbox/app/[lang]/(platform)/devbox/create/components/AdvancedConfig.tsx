@@ -30,7 +30,7 @@ export default function AdvancedConfig({
   const envs = watch('envs') || [];
   const configMaps = watch('configMaps') || [];
   const volumes = watch('volumes') || [];
-  const sharedMemory = watch('sharedMemory') || { enabled: false, size: 64 };
+  const sharedMemory = watch('sharedMemory') || { enabled: false, sizeLimit: 64 };
   const memory = watch('memory') || 2048;
   const maxSharedMemory = Math.floor(memory / 1024);
 
@@ -65,9 +65,9 @@ export default function AdvancedConfig({
                       setValue('sharedMemory', {
                         ...sharedMemory,
                         enabled: checked,
-                        size: checked
-                          ? Math.min(sharedMemory.size || 64, maxSharedMemory)
-                          : sharedMemory.size
+                        sizeLimit: checked
+                          ? Math.min(sharedMemory.sizeLimit || 64, maxSharedMemory)
+                          : sharedMemory.sizeLimit
                       });
                     }}
                   />
@@ -84,20 +84,20 @@ export default function AdvancedConfig({
                     type="button"
                     className="flex h-10 w-10 items-center justify-center rounded-l-md border border-zinc-200 bg-white hover:bg-zinc-50"
                     onClick={() => {
-                      const newSize = Math.max(1, (sharedMemory.size || 64) - 1);
-                      setValue('sharedMemory', { ...sharedMemory, size: newSize });
+                      const newSize = Math.max(1, (sharedMemory.sizeLimit || 64) - 1);
+                      setValue('sharedMemory', { ...sharedMemory, sizeLimit: newSize });
                     }}>
                     <Minus className="h-4 w-4 text-zinc-500" />
                   </button>
                   <div className="flex h-10 w-20 items-center justify-center border-y border-zinc-200 bg-white">
-                    <span className="text-sm font-medium">{sharedMemory.size || 64}</span>
+                    <span className="text-sm font-medium">{sharedMemory.sizeLimit || 64}</span>
                   </div>
                   <button
                     type="button"
                     className="flex h-10 w-10 items-center justify-center rounded-r-md border border-zinc-200 bg-white hover:bg-zinc-50"
                     onClick={() => {
-                      const newSize = Math.min(maxSharedMemory, (sharedMemory.size || 64) + 1);
-                      setValue('sharedMemory', { ...sharedMemory, size: newSize });
+                      const newSize = Math.min(maxSharedMemory, (sharedMemory.sizeLimit || 64) + 1);
+                      setValue('sharedMemory', { ...sharedMemory, sizeLimit: newSize });
                     }}>
                     <Plus className="h-4 w-4 text-zinc-500" />
                   </button>

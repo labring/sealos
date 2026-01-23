@@ -205,7 +205,14 @@ const Release = () => {
       // If has apps, show the drawer
       setOnOpenSelectApp(true);
     },
-    [devbox, env.ingressDomain, env.namespace, env.registryAddr, env.webIdePort, env.nfsStorageClassName]
+    [
+      devbox,
+      env.ingressDomain,
+      env.namespace,
+      env.registryAddr,
+      env.webIdePort,
+      env.nfsStorageClassName
+    ]
   );
 
   const handleDelDevboxVersion = useCallback(

@@ -112,7 +112,7 @@ const Basic = () => {
                 {
                   title: t('shared_memory'),
                   value: devboxDetail?.sharedMemory?.enabled
-                    ? `${devboxDetail.sharedMemory.size} Gi`
+                    ? `${devboxDetail.sharedMemory.sizeLimit} Gi`
                     : '-'
                 }
               ]
