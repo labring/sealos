@@ -47,7 +47,10 @@ export const useUserStore = create<State>()(
         });
         return null;
       },
-      checkQuotaAllow: ({ cpu, memory, gpu, storeList, replicas, hpa, networks }, usedData) => {
+      checkQuotaAllow: (
+        { cpu, memory, gpu, storeList, replicas, hpa, networks, ephemeralStorage },
+        usedData
+      ) => {
         const quote = get().userQuota;
 
         const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
@@ -58,7 +61,8 @@ export const useUserStore = create<State>()(
           memory: (memory / 1024) * requestReplicas,
           gpu: (gpu?.type ? gpu.amount : 0) * requestReplicas,
           storage: storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas,
-          nodeports: nodeportsAmount
+          nodeports: nodeportsAmount,
+          'ephemeral-storage': ephemeralStorage || 0
         };
 
         if (usedData) {
@@ -78,7 +82,8 @@ export const useUserStore = create<State>()(
           memory: 'app.The applied memory exceeds the quota',
           gpu: 'app.The applied GPU exceeds the quota',
           storage: 'app.The applied storage exceeds the quota',
-          nodeports: 'app.The applied nodeports exceeds the quota'
+          nodeports: 'app.The applied nodeports exceeds the quota',
+          'ephemeral-storage': 'app.The applied ephemeral storage exceeds the quota'
         };
 
         const exceedQuota = quote.find((item) => {

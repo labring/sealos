@@ -37,7 +37,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       memory: countSourcePrice(priceResponse, 'memory'),
       storage: countSourcePrice(priceResponse, 'storage'),
       gpu: gpuEnabled ? countGpuSource(priceResponse, gpuNodes) : undefined,
-      nodeports: countSourcePrice(priceResponse, 'services.nodeports')
+      nodeports: countSourcePrice(priceResponse, 'services.nodeports'),
+      ephemeralStorage: countSourcePrice(priceResponse, 'storage')
     };
 
     jsonRes<userPriceType>(res, {

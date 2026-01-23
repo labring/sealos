@@ -105,7 +105,7 @@
   "Max Storage Value": "Maximum size is",
   "Memory": "Memory",
   "Memory target value": "Target Memory Usage",
-  "ephemeral_storage": "Ephemeral Storage",
+  "ephemeral-storage": "Ephemeral Storage",
   "shared_memory": "Shared Memory",
   "shared_memory_tip": "The maximum shareable memory is the memory limit set above.",
   "Min Storage Value": "Minimum size is",

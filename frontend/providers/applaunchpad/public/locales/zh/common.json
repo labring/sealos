@@ -105,7 +105,7 @@
   "Max Storage Value": "容量最大为",
   "Memory": "内存",
   "Memory target value": "内存目标值",
-  "ephemeral_storage": "临时存储",
+  "ephemeral-storage": "临时存储",
   "shared_memory": "共享内存",
   "shared_memory_tip": "可共享的最大内存为上方设置的最大内存",
   "Min Storage Value": "容量最小为",

@@ -11,6 +11,7 @@ const PriceBox = ({
   cpu,
   memory,
   storage,
+  ephemeralStorage,
   nodeports,
   gpu,
   pods = [1, 1]
@@ -18,6 +19,7 @@ const PriceBox = ({
   cpu: number;
   memory: number;
   storage: number;
+  ephemeralStorage: number;
   nodeports: number;
   gpu?: {
     type: string;
@@ -43,7 +45,11 @@ const PriceBox = ({
       return +(item.price * gpu.amount * 24).toFixed(2);
     })();
 
-    const totalP = +(cpuP + memoryP + storageP + gpuP + nodeportsP).toFixed(2);
+    const ephemeralStorageP = +(userSourcePrice.ephemeralStorage * ephemeralStorage * 24).toFixed(
+      2
+    );
+
+    const totalP = +(cpuP + memoryP + storageP + gpuP + nodeportsP + ephemeralStorageP).toFixed(2);
 
     const podScale = (val: number) => {
       const min = (val * pods[0]).toFixed(2);
@@ -64,6 +70,7 @@ const PriceBox = ({
       },
       { label: 'Memory', color: '#36ADEF', value: podScale(memoryP) },
       { label: 'Storage', color: '#8172D8', value: podScale(storageP) },
+      { label: 'ephemeral-storage', color: '#FFA500', value: podScale(ephemeralStorageP) },
       { label: 'nodeports', color: '#FFA500', value: podScale(nodeportsP) },
       ...(userSourcePrice?.gpu ? [{ label: 'GPU', color: '#89CD11', value: podScale(gpuP) }] : []),
       { label: 'TotalPrice', color: '#485058', value: podScale(totalP) }

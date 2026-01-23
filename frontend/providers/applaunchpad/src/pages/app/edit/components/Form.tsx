@@ -458,6 +458,7 @@ const Form = ({
                     : undefined
                 }
                 nodeports={getValues('networks').filter((item) => item.openNodePort)?.length || 0}
+                ephemeralStorage={getValues('ephemeralStorage') || 0}
               />
             </Box>
           )}
@@ -833,7 +834,7 @@ const Form = ({
                 />
               </Flex>
               <Flex mb={8} pr={3} alignItems={'center'}>
-                <Label mr={'7px'}>{t('ephemeral_storage')}</Label>
+                <Label mr={'7px'}>{t('ephemeral-storage')}</Label>
                 <MySlider
                   markList={SliderList.ephemeralStorage}
                   activeVal={getValues('ephemeralStorage') || SliderList.ephemeralStorage[0]?.value}
