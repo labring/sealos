@@ -84,11 +84,6 @@ func (e EnvVarMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	container := pod.Spec.Containers[0]
 	expectContainer := expectPod.Spec.Containers[0]
 
-	if len(container.Env) != len(expectContainer.Env) {
-		slog.Info("Environment variable count mismatch")
-		return false
-	}
-
 	for _, env := range container.Env {
 		found := false
 		for _, expectEnv := range expectContainer.Env {
