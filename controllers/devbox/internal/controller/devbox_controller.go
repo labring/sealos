@@ -402,7 +402,7 @@ func (r *DevboxReconciler) maybeEmitStateChangeEvent(ctx context.Context, devbox
 		return nil
 	}
 
-	logger.Info("recording state change event", "nodeName", r.NodeName)
+	logger.Info("recording state change event for devbox", "devbox", devbox.Name, "from", devbox.Status.State, "to", devbox.Spec.State)
 	r.StateChangeRecorder.Eventf(
 		devbox,
 		corev1.EventTypeNormal,
@@ -435,15 +435,6 @@ func (r *DevboxReconciler) markStateTransitionPendingAndReturnShouldEmit(
 
 		// If the state is already synced, there's nothing to emit.
 		if latest.Spec.State == latest.Status.State {
-			shouldEmit = false
-			return nil
-		}
-
-		existing := latest.GetCondition(devboxv1alpha2.DevboxConditionStateTransitionPending)
-		if existing != nil &&
-			existing.Status == metav1.ConditionTrue &&
-			existing.ObservedGeneration == latest.Generation &&
-			existing.Reason == devboxv1alpha2.DevboxReasonSpecStateChanged {
 			shouldEmit = false
 			return nil
 		}
