@@ -50,6 +50,16 @@ const PodLineChart = ({
     }
     return '--';
   }, [data?.yData]);
+  const yAxisMax = useMemo(() => {
+    if (!data?.yData?.length) return 100;
+    const maxValue = data.yData.reduce((max, value) => {
+      if (value === null || value === undefined || Number.isNaN(value)) return max;
+      return Math.max(max, Number(value));
+    }, 0);
+    const rounded = Math.ceil(maxValue / 10) * 10;
+    const nextMax = rounded <= maxValue ? rounded + 10 : rounded;
+    return Math.max(100, nextMax);
+  }, [data?.yData]);
 
   const Dom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
@@ -90,7 +100,7 @@ const PodLineChart = ({
       type: 'value',
       boundaryGap: false,
       splitNumber: 2,
-      max: 100,
+      max: yAxisMax,
       min: 0,
       interval: 50,
       axisLabel: {
@@ -172,8 +182,9 @@ const PodLineChart = ({
     if (!myChart.current || !myChart?.current?.getOption()) return;
     option.current.xAxis.data = xData;
     option.current.series[0].data = yData;
+    option.current.yAxis.max = yAxisMax;
     myChart.current.setOption(option.current);
-  }, [xData, yData]);
+  }, [xData, yData, yAxisMax]);
 
   // type changed, update
   useEffect(() => {

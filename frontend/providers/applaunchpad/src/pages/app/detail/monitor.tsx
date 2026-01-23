@@ -24,6 +24,13 @@ const getPaddedAxisMax = (value: { max: number }) => {
   const step = rawMax < 1000 ? 10 : rawMax < 5000 ? 50 : 100;
   return Math.ceil(padded / step) * step;
 };
+const getPercentAxisMax = (value: { max: number }) => {
+  const rawMax = value?.max ?? 0;
+  if (rawMax <= 0) return 100;
+  const rounded = Math.ceil(rawMax / 10) * 10;
+  const nextMax = rounded <= rawMax ? rounded + 10 : rounded;
+  return Math.max(100, nextMax);
+};
 
 export default function MonitorPage({ appName }: { appName: string }) {
   const router = useRouter();
@@ -606,6 +613,10 @@ export default function MonitorPage({ appName }: { appName: string }) {
                           title={'chartTitle'}
                           unit="%"
                           yAxisLabelFormatter={percentFormatter}
+                          yAxisConfig={{
+                            min: 0,
+                            max: getPercentAxisMax
+                          }}
                           appName={appName}
                           type="cpu"
                           activePodNames={activePodNames}
@@ -637,6 +648,10 @@ export default function MonitorPage({ appName }: { appName: string }) {
                           title={'chartTitle'}
                           unit="%"
                           yAxisLabelFormatter={percentFormatter}
+                          yAxisConfig={{
+                            min: 0,
+                            max: getPercentAxisMax
+                          }}
                           appName={appName}
                           type="memory"
                           activePodNames={activePodNames}
