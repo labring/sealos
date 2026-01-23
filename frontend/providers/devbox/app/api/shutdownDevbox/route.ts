@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     if (!onlyIngress) {
       const patchData: any = { spec: { state: shutdownMode } };
 
-      if (shutdownMode === 'Shutdown') {
+      if (shutdownMode === 'Shutdown' || 'Paused') {
         patchData.spec.network = { type: 'SSHGate' };
       }
 
