@@ -83,6 +83,7 @@
   "failed_to_create_portal_session": "Failed to create portal session",
   "failed_to_redeem_gift_code": "Failed to redeem",
   "free_plan": "Free Plan",
+  "free_plan_expiry_banner": "You are currently on the Free Plan, which will expire on <1>{{date}}</1>. Please click the button on the right to upgrade and ensure uninterrupted service.",
   "get_code": "verification",
   "gift_card_redemption": "Redeem Code",
   "gift_code": "Code",

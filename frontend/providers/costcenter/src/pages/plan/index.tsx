@@ -19,6 +19,7 @@ import { BalanceSection } from '@/components/plan/BalanceSection';
 import { CardInfoSection } from '@/components/plan/CardInfoSection';
 import { InvoicePaymentBanner } from '@/components/plan/InvoicePaymentBanner';
 import { BeingCancelledBanner } from '@/components/plan/BeingCancelledBanner';
+import { FreePlanExpiryBanner } from '@/components/plan/FreePlanExpiryBanner';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
@@ -670,9 +671,18 @@ export default function Plan() {
               </div>
             )}
             {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+              subscriptionData?.subscription?.PlanName?.toLowerCase() !== 'free' &&
               subscriptionData?.subscription?.CurrentPeriodEndAt && (
                 <div className="mb-4">
                   <BeingCancelledBanner
+                    currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+                  />
+                </div>
+              )}
+            {subscriptionData?.subscription?.PlanName?.toLowerCase() === 'free' &&
+              subscriptionData?.subscription?.CurrentPeriodEndAt && (
+                <div className="mb-4">
+                  <FreePlanExpiryBanner
                     currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
                   />
                 </div>
@@ -734,8 +744,15 @@ export default function Plan() {
             />
           )}
           {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+            subscriptionData?.subscription?.PlanName?.toLowerCase() !== 'free' &&
             subscriptionData?.subscription?.CurrentPeriodEndAt && (
               <BeingCancelledBanner
+                currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+              />
+            )}
+          {subscriptionData?.subscription?.PlanName?.toLowerCase() === 'free' &&
+            subscriptionData?.subscription?.CurrentPeriodEndAt && (
+              <FreePlanExpiryBanner
                 currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
               />
             )}

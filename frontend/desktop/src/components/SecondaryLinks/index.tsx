@@ -92,7 +92,8 @@ export default function SecondaryLinks() {
 
   const { subscriptionInfo, fetchSubscriptionInfo } = useSubscriptionStore();
   const subscription = subscriptionInfo?.subscription;
-  const isCancelled = !!subscription?.CancelAtPeriodEnd;
+  const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
+  const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
   const isDebt = subscription?.Status?.toLowerCase() === 'debt';
 
   useEffect(() => {

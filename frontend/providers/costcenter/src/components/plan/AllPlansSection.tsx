@@ -244,12 +244,13 @@ export function AllPlansSection({
 
           if (subscription) {
             const monthlyPrice = planPricesMap.get(subscription.PlanName) ?? 0;
+            const isFreePlan = (subscription.PlanName || '').toLowerCase() === 'free';
             return {
               namespaceId,
               workspaceName,
               plan: subscription.PlanName,
               renewalTime: subscription.CurrentPeriodEndAt,
-              cancelAtPeriodEnd: !!subscription.CancelAtPeriodEnd,
+              cancelAtPeriodEnd: !!subscription.CancelAtPeriodEnd && !isFreePlan,
               status: subscription.Status,
               payMethod: subscription.PayMethod,
               price: monthlyPrice

@@ -83,6 +83,7 @@
   "failed_to_create_portal_session": "创建门户会话失败",
   "failed_to_redeem_gift_code": "兑换失败",
   "free_plan": "免费套餐",
+  "free_plan_expiry_banner": "您当前使用 Free Plan，将于<1>{{date}}</1>到期。请点击右侧按钮升级，以确保服务不中断。",
   "get_code": "获取验证码",
   "gift_card_redemption": "点卡兑换",
   "gift_code": "卡密",

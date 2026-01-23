@@ -72,7 +72,8 @@ export function BalancePopover({
   }, [workspace, fetchSubscriptionInfo]);
 
   const subscription = subscriptionInfo?.subscription;
-  const isCancelled = !!subscription?.CancelAtPeriodEnd;
+  const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
+  const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A';

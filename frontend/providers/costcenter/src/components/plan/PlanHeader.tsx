@@ -56,7 +56,8 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
   const subscription = subscriptionData?.subscription;
   const lastTransaction = lastTransactionData?.transaction;
   const planName = subscription?.PlanName || t('common:free_plan');
-  const isCancelled = !!subscription?.CancelAtPeriodEnd;
+  const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
+  const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
   const stateLower = subscription?.Status?.toLowerCase?.() || '';
   const isNormal = stateLower === 'normal';
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
@@ -221,7 +222,7 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            {isNormal && (
+            {isNormal && !isFreePlan && (
               <Button
                 size="lg"
                 variant="outline"
@@ -234,7 +235,7 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
                 <span>{isCancelled ? t('common:cancelled') : t('common:cancel_plan')}</span>
               </Button>
             )}
-            {isCancelled ? (
+            {isCancelled && (
               <Button
                 size="lg"
                 disabled={resumePlanMutation.isLoading}
@@ -274,16 +275,19 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
                 <Sparkles />
                 <span>{t('common:renew_plan')}</span>
               </Button>
-            ) : (
-              children?.({
-                trigger: (
-                  <Button size="lg">
-                    <Sparkles />
-                    <span>{inDebt ? t('common:renew') : t('common:upgrade_plan')}</span>
-                  </Button>
-                )
-              })
             )}
+
+            {/* Keep UpgradePlanDialog mounted even when cancelled, so message-driven open works */}
+            {children?.({
+              trigger: isCancelled ? (
+                <span className="hidden" />
+              ) : (
+                <Button size="lg">
+                  <Sparkles />
+                  <span>{inDebt ? t('common:renew') : t('common:upgrade_plan')}</span>
+                </Button>
+              )
+            })}
           </div>
         </div>
 
