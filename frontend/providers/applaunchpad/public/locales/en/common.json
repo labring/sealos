@@ -49,6 +49,7 @@
   "Click the Deploy Application button": "Click \\\"Deploy Application\\\"",
   "Cname auth error: customDomain's cname is not equal to publicDomain": "CNAME error. You must configure CNAME to the provided domain before binding.",
   "Command": "Command",
+  "Collapse": "Collapse",
   "Command parameters": "Arguments",
   "Config Form": "Form",
   "ConfigMap Conflict": "ConfigMap Conflict",

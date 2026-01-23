@@ -49,6 +49,7 @@
   "Click the Deploy Application button": "点击「部署应用」按钮",
   "Cname auth error: customDomain's cname is not equal to publicDomain": "CNAME 校验错误，你需要先 CNAME 到指定域名才能绑定",
   "Command": "启动命令",
+  "Collapse": "收起",
   "Command parameters": "命令参数",
   "Config Form": "配置表单",
   "ConfigMap Conflict": "配置映射冲突",

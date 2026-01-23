@@ -11,15 +11,10 @@ import {
   TableHeader,
   TableRow
 } from '@sealos/shadcn-ui/table';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@sealos/shadcn-ui/tooltip';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useState } from 'react';
+import TruncateTooltip from '@/components/TruncateTooltip';
 import { useRouter } from 'next/router';
 import { FileCog, HardDrive, Variable } from 'lucide-react';
 
@@ -67,23 +62,32 @@ const AdvancedInfo = ({
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 md:gap-3">
-          {[
-            { label: 'Command', value: app.runCMD || 'Not Configured' },
-            { label: 'Arguments', value: app.cmdParam || 'Not Configured' }
-          ].map((item) => (
-            <div key={item.label} className="flex flex-col gap-3">
-              <div className="text-sm font-medium leading-none text-neutral-500">
-                {t(item.label)}
-              </div>
-              <div
-                className={`h-10 flex items-center rounded-lg bg-zinc-50 border border-zinc-200 px-3 py-2 text-sm ${
-                  item.value === 'Not Configured' ? 'text-zinc-500' : 'text-zinc-900'
-                }`}
-              >
-                {item.value}
-              </div>
+          <div className="flex flex-col gap-3">
+            <div className="text-sm font-medium leading-none text-neutral-500">{t('Command')}</div>
+            <div
+              className={`h-10 flex items-center rounded-lg bg-zinc-50 border border-zinc-200 px-3 py-2 text-sm cursor-default ${
+                app.runCMD ? 'text-zinc-900' : 'text-zinc-500'
+              }`}
+            >
+              <TruncateTooltip content={app.runCMD || ''} className="truncate block w-full">
+                {app.runCMD || t('Not Configured')}
+              </TruncateTooltip>
             </div>
-          ))}
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className="text-sm font-medium leading-none text-neutral-500">
+              {t('Arguments')}
+            </div>
+            <div
+              className={`h-10 flex items-center rounded-lg bg-zinc-50 border border-zinc-200 px-3 py-2 text-sm cursor-default ${
+                app.cmdParam ? 'text-zinc-900' : 'text-zinc-500'
+              }`}
+            >
+              <TruncateTooltip content={app.cmdParam || ''} className="truncate block w-full">
+                {app.cmdParam || t('Not Configured')}
+              </TruncateTooltip>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -116,33 +120,22 @@ const AdvancedInfo = ({
                   const valText = env.value ? env.value : env.valueFrom ? 'value from | ***' : '';
                   return (
                     <TableRow key={env.key}>
-                      <TableCell className="w-1/2 text-sm font-normal text-zinc-900 truncate">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-sm text-zinc-900 font-normal truncate block cursor-default">
-                                {env.key}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="rounded-xl">
-                              <p className="max-w-xs break-all">{env.key}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                      <TableCell className="w-1/2 max-w-0 text-sm font-normal text-zinc-900">
+                        <TruncateTooltip
+                          content={env.key}
+                          className="w-full truncate cursor-default"
+                        >
+                          {env.key}
+                        </TruncateTooltip>
                       </TableCell>
-                      <TableCell>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-sm text-zinc-900 font-normal truncate block cursor-default">
-                                {valText}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="rounded-xl">
-                              <p className="max-w-xs break-all">{valText}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+
+                      <TableCell className="w-1/2 max-w-0 text-sm font-normal text-zinc-900">
+                        <TruncateTooltip
+                          content={valText}
+                          className="w-full truncate cursor-default"
+                        >
+                          {valText}
+                        </TruncateTooltip>
                       </TableCell>
                     </TableRow>
                   );
