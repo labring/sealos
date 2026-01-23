@@ -424,6 +424,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         }));
         formHook.setValue('envs', completeEnvs);
       }
+
+      // Handle Shared Memory
+      if (parsedData.sharedMemory) {
+        formHook.setValue('sharedMemory', {
+          enabled: parsedData.sharedMemory.enabled || false,
+          sizeLimit: parsedData.sharedMemory.sizeLimit || 64
+        });
+      }
     } catch (error) {}
   }, [router.query, already]);
 
