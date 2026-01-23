@@ -82,6 +82,16 @@ export default function Plan() {
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [congratulationsMode, setCongratulationsMode] = useState<'upgrade' | 'renew'>('upgrade');
+  const [congratulationsOverride, setCongratulationsOverride] = useState<{
+    planName?: string;
+    maxResources?: {
+      cpu: string;
+      memory: string;
+      storage: string;
+      nodeports: string;
+    };
+    traffic?: number;
+  } | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
   // Track if Stripe success has been tracked to prevent duplicates
@@ -764,7 +774,13 @@ export default function Plan() {
 
       <CardInfoSection workspace={session?.user?.nsid} regionDomain={region?.domain} />
 
-      <AllPlansSection />
+      <AllPlansSection
+        onRenewSuccess={(payload) => {
+          setCongratulationsOverride(payload);
+          setCongratulationsMode('renew');
+          setShowCongratulations(true);
+        }}
+      />
       {/* Modals */}
       {rechargeEnabled && (
         <RechargeModal
@@ -796,18 +812,24 @@ export default function Plan() {
       <CongratulationsModal
         isOpen={showCongratulations}
         mode={congratulationsMode}
-        planName={workspaceSubscriptionData?.data?.subscription?.PlanName || 'Pro Plan'}
+        planName={
+          congratulationsOverride?.planName ||
+          workspaceSubscriptionData?.data?.subscription?.PlanName ||
+          'Pro Plan'
+        }
         maxResources={
-          workspaceSubscriptionData?.data?.subscription?.PlanName
+          congratulationsOverride?.maxResources ||
+          (workspaceSubscriptionData?.data?.subscription?.PlanName
             ? JSON.parse(
                 plansData?.plans?.find(
                   (p: SubscriptionPlan) =>
                     p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
                 )?.MaxResources || '{}'
               )
-            : undefined
+            : undefined)
         }
         traffic={
+          congratulationsOverride?.traffic ||
           plansData?.plans?.find(
             (p: SubscriptionPlan) =>
               p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
@@ -816,6 +838,7 @@ export default function Plan() {
         onClose={() => {
           setShowCongratulations(false);
           setWorkspaceId('');
+          setCongratulationsOverride(null);
           // Clean up URL parameters after closing the modal
           const url = new URL(window.location.href);
           url.searchParams.delete('stripeState');

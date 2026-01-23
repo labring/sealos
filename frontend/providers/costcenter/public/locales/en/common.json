@@ -4,6 +4,7 @@
   "all_regions": "All Regions",
   "annual_income_and_expenditure": "Top-ups and Cost",
   "apply": "Apply",
+  "actions": "Actions",
   "balance": "Balance",
   "balance_subscription_tooltip": "Once you subscribe to a plan, this balance will not be consumed. However, if your plan's AI credits are exhausted, you can use this balance for AI Proxy services.",
   "before_the_next_billing_date": "before the next billing date",
@@ -14,6 +15,7 @@
     "cost_and_revenue_trends": "Cost & Top-up Trends",
     "recharge": "Recharge History"
   },
+  "in_debt": "In Debt",
   "bonus": "Bonus",
   "bonus_amount": "Bonus Amount",
   "being_cancelled_banner": "Your subscription is cancelled. Resources will be deleted after <1>{{date}}</1>. Please back up your data or renew to avoid loss.",
@@ -381,6 +383,7 @@
   },
   "unknown": "Unknown",
   "unknown_workspace": "Unknown Workspace",
+  "unsubscribe": "Unsubscribe",
   "until_then_your_current_plan_remains_active": "Until then, your current plan remains active",
   "upgrade": "Upgrade",
   "upgrade_plan": "Upgrade Plan",
