@@ -162,28 +162,6 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
         <div className="text-sm text-zinc-700 font-normal">{item.age}</div>
       )
     },
-    // {
-    //   title: 'Cpu',
-    //   key: 'cpu',
-    //   render: (item: PodDetailType) => (
-    //     <div className="h-[45px] w-[120px] relative">
-    //       <div className="h-[45px] w-[120px] absolute">
-    //         <PodLineChart type="blue" data={item.usedCpu} />
-    //       </div>
-    //     </div>
-    //   )
-    // },
-    // {
-    //   title: 'Memory',
-    //   key: 'memory',
-    //   render: (item: PodDetailType) => (
-    //     <div className="h-[45px] w-[120px] relative">
-    //       <div className="h-[45px] w-[120px] absolute">
-    //         <PodLineChart type="purple" data={item.usedMemory} />
-    //       </div>
-    //     </div>
-    //   )
-    // },
     {
       title: '',
       key: 'control',
@@ -204,23 +182,6 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
           >
             {t('Restart')}
           </Button>
-
-          {/* logs has been moved to detail modal */}
-          {/* <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 rounded-lg border-zinc-200 hover:bg-zinc-50"
-                onClick={() => setLogsPodIndex(i)}
-              >
-                <ScrollText className="w-4 h-4 text-zinc-500" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="rounded-xl">
-              <p className="text-sm text-zinc-900 font-normal p-2">{t('Log')}</p>
-            </TooltipContent>
-          </Tooltip> */}
 
           <Tooltip>
             <TooltipTrigger asChild>

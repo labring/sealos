@@ -71,7 +71,9 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     });
 
     if (count === 0) return 0;
-    return Math.round((sum / count) * 10) / 10;
+    const avg = sum / count;
+    if (avg > 0 && avg < 0.1) return 0.1;
+    return Math.round(avg * 10) / 10;
   }, [storageData]);
 
   // Get all available networks for error codes query (non-NodePort networks only)

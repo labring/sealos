@@ -269,24 +269,6 @@ const PodDetailModal = ({
           </DrawerHeader>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6 grid grid-cols-8 grid-rows-[430px_auto] gap-2 ">
-            {/* CPU & Memory Charts */}
-            {/* <div className="grid grid-cols-2 gap-2 py-2">
-              <div>
-                <div className="mb-3 text-sm font-medium">CPU ({pod.usedCpu.yData[pod.usedCpu.yData.length - 1]}%)</div>
-                <div className="h-20 w-full">
-                  <PodLineChart type={'blue'} data={pod.usedCpu} />
-                </div>
-              </div>
-              <div>
-                <div className="mb-3 text-sm font-medium">
-                  {t('Memory')} ({pod.usedMemory.yData[pod.usedMemory.yData.length - 1]}%)
-                </div>
-                <div className="h-20 w-full">
-                  <PodLineChart type={'purple'} data={pod.usedMemory} />
-                </div>
-              </div>
-            </div> */}
-
             {/* Details Section */}
             <div className="flex flex-col max-h-[430px] bg-white rounded-2xl p-6 col-span-3 border-[0.5px] border-zinc-200 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
