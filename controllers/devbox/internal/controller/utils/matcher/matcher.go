@@ -124,12 +124,17 @@ func (e EnvVarMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	container := pod.Spec.Containers[0]
 	expectContainer := expectPod.Spec.Containers[0]
 
-	for _, env := range container.Env {
+	// Match based on "expect": the actual container env can contain extra variables.
+	for _, expectEnv := range expectContainer.Env {
 		found := false
-		for _, expectEnv := range expectContainer.Env {
-			if env.Name == "SEALOS_COMMIT_IMAGE_NAME" {
-				found = true
-				break
+		for _, env := range container.Env {
+			// SEALOS_COMMIT_IMAGE_NAME value may vary; only require existence.
+			if expectEnv.Name == "SEALOS_COMMIT_IMAGE_NAME" {
+				if env.Name == expectEnv.Name {
+					found = true
+					break
+				}
+				continue
 			}
 			if env.Name == expectEnv.Name && env.Value == expectEnv.Value {
 				found = true
@@ -137,7 +142,7 @@ func (e EnvVarMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 			}
 		}
 		if !found {
-			slog.Info("Environment variables are not equal", "env not found", env.Name, "env value", env.Value)
+			slog.Info("Environment variables are not equal", "env not found", expectEnv.Name, "env value", expectEnv.Value)
 			return false
 		}
 	}

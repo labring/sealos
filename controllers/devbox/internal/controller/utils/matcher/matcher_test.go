@@ -78,6 +78,33 @@ func TestPodMatchExpectations(t *testing.T) {
 			expected: true,
 		},
 		{
+			name: "extra environment variable is allowed",
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									corev1.ResourceCPU:    resource.MustParse("500m"),
+									corev1.ResourceMemory: resource.MustParse("128Mi"),
+								},
+							},
+							Env: []corev1.EnvVar{
+								{Name: "ENV_VAR_1", Value: "value1"},
+								{Name: "ENV_VAR_2", Value: "value2"},
+								{Name: "ENV_VAR_3", Value: "value3"},
+							},
+							Ports: []corev1.ContainerPort{
+								{ContainerPort: 8080, Protocol: corev1.ProtocolTCP},
+								{ContainerPort: 9090, Protocol: corev1.ProtocolTCP},
+							},
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
 			name: "inconsistent CPU",
 			pod: &corev1.Pod{
 				Spec: corev1.PodSpec{
