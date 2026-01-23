@@ -3638,6 +3638,7 @@ spec:
         - --health-probe-bind-address=:8081
         - --request-cpu-rate=20
         - --request-memory-rate=10
+        - --enable-pod-ephemeral-storage-matcher={{ .enablePodEphemeralStorageMatcher }}
         - --registry-addr={{ .registryAddr }}
         - --registry-user={{ .registryUser }}
         - --registry-password={{ .registryPassword }}
