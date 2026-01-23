@@ -18,8 +18,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const queryType: { [key: string]: string } = {
       [DBTypeEnum.postgresql]: `avg by(namespace, app_kubernetes_io_instance, pod) (time() - pg_postmaster_start_time_seconds{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.postgresql}"})`,
-      [DBTypeEnum.mysql]: `sum(mysql_global_status_uptime{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mysql}"}) by (namespace,app_kubernetes_io_instance,pod)`,
-      [DBTypeEnum.notapemysql]: `sum(mysql_global_status_uptime{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.notapemysql}"}) by (namespace,app_kubernetes_io_instance,pod)`,
+      [DBTypeEnum.mysql]: `sum(mysql_global_status_uptime{$, workloads_kubeblocks_io_instance="${dbName}-mysql"}) by (namespace,app_kubernetes_io_instance,pod)`,
+      [DBTypeEnum.notapemysql]: `sum(mysql_global_status_uptime{$, workloads_kubeblocks_io_instance="${dbName}-mysql"}) by (namespace,app_kubernetes_io_instance,pod)`,
       [DBTypeEnum.mongodb]: `sum by(namespace, app_kubernetes_io_instance, pod) (mongodb_instance_uptime_seconds{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mongodb}"})`,
       [DBTypeEnum.redis]: `redis_uptime_in_seconds{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.redis}"}`
     };

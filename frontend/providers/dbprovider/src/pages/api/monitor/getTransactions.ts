@@ -20,8 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const queryType: { [key: string]: string } = {
       [DBTypeEnum.postgresql]: `rate(pg_stat_database_xact_commit_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.postgresql}"}[1m])`,
-      [DBTypeEnum.mysql]: `topk(5, rate(mysql_global_status_commands_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mysql}"}[1m])>0)`,
-      [DBTypeEnum.notapemysql]: `topk(5, rate(mysql_global_status_commands_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.notapemysql}"}[1m])>0)`
+      [DBTypeEnum.mysql]: `topk(5, rate(mysql_global_status_commands_total{$, workloads_kubeblocks_io_instance="${dbName}-mysql"}[1m])>0)`,
+      [DBTypeEnum.notapemysql]: `topk(5, rate(mysql_global_status_commands_total{$, workloads_kubeblocks_io_instance="${dbName}-mysql"}[1m])>0)`
     };
 
     console.log(dbName, dbType, queryType[dbType as string]);

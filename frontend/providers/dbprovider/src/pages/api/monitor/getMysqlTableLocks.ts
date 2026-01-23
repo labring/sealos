@@ -19,8 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
     const queryType: { [key: string]: string } = {
-      [DBTypeEnum.mysql]: `sum(rate(mysql_global_status_table_locks_immediate{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mysql}"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`,
-      [DBTypeEnum.notapemysql]: `sum(rate(mysql_global_status_table_locks_immediate{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.notapemysql}"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`
+      [DBTypeEnum.mysql]: `sum(rate(mysql_global_status_table_locks_immediate{$, workloads_kubeblocks_io_instance="${dbName}-mysql"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`,
+      [DBTypeEnum.notapemysql]: `sum(rate(mysql_global_status_table_locks_immediate{$, workloads_kubeblocks_io_instance="${dbName}-mysql"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`
     };
 
     console.log(dbName, dbType, queryType[dbType as string]);
