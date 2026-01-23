@@ -185,7 +185,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
 
       const isReady = await waitForDevboxReady(devboxName);
       if (!isReady) {
-        throw new Error('Devbox failed to become ready within timeout.Please try again later.');
+        throw new Error(t('devbox_ready_timeout'));
       }
 
       setImportStage('cloning');

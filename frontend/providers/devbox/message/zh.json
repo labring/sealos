@@ -115,6 +115,7 @@
   "delete_version_confirm_info": "你确定要删除该版本吗？",
   "delete_warning": "删除警告",
   "delete_warning_content": "您确定要删除该DevBox嘛？",
+  "devbox_ready_timeout": "DevBox 在超时时间内未能就绪,请稍后重试",
   "delete_warning_content_2": "远程环境和已发布的版本都将被删除，您将无法访问它。同时，基于该 DevBox 创建的应用也将无法更新使用。",
   "deploy": "上线",
   "deploy_a_new_app": "上线一个新应用",
