@@ -283,16 +283,16 @@ const AdvancedInfo = ({
       </div>
 
       {/* TODO: Add probe management */}
-      <div className="col-span-2 bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5">
+      {/* <div className="col-span-2 bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="text-base font-medium text-zinc-900">{t('Probe')}</div>
-          {/* <Button
+          <Button
             variant="outline"
             className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
             onClick={() => handleManage('settings-probe')}
           >
             {t('Manage')}
-          </Button> */}
+          </Button>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           {[
@@ -313,7 +313,7 @@ const AdvancedInfo = ({
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {detailConfigMap && (
         <ConfigMapDetailModal {...detailConfigMap} onClose={() => setDetailConfigMap(undefined)} />
