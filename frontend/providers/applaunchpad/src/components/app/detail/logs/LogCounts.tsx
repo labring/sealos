@@ -37,7 +37,7 @@ export const LogCounts = ({
         <Button
           variant="ghost"
           className={cn(
-            '!px-0 !py-0 gap-1 bg-transparent border-none text-zinc-900 font-medium text-base hover:text-blue-600'
+            '!px-0 !py-0 gap-1 bg-transparent border-none text-zinc-900 font-medium text-base hover:bg-transparent'
           )}
           onClick={() => setOnOpenChart(!onOpenChart)}
         >

@@ -465,7 +465,7 @@ const MonitorChart = ({
               <span className="text-sm font-normal text-zinc-500">{filterLabel}</span>
               <button
                 type="button"
-                className="text-sm font-normal text-blue-600 hover:underline"
+                className="text-sm font-normal text-blue-600 cursor-pointer"
                 onClick={() =>
                   setSelectedSeries((prev) => {
                     if (legendSeriesNames.length === 0) return new Set();
