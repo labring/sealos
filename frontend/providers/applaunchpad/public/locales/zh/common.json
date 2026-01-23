@@ -1,4 +1,8 @@
 {
+  "error_codes": "错误码",
+  "last_5_mins": "最近5分钟",
+  "counts": "次",
+  "no_errors_found": "暂无错误",
   "Abnormality Detected": "检测到异常",
   "App Name is required": "应用名称不能为空",
   "Invalid name": "无效的名称",

@@ -192,7 +192,7 @@ const PodLineChart = ({
   }, [screenWidth]);
 
   return (
-    <div className={cn('relative h-full w-full', className)}>
+    <div className={cn('relative h-full min-h-0 w-full', className)}>
       <div ref={Dom} style={{ width: '100%', height: '100%' }} />
       {isShowText && (
         <span className="pointer-events-none absolute right-0 bottom-0.5 text-xs font-medium text-zinc-600 [text-shadow:1px_1px_0_#FFF,-1px_-1px_0_#FFF,1px_-1px_0_#FFF,-1px_1px_0_#FFF]">

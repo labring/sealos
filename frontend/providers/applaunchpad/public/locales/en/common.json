@@ -1,4 +1,8 @@
 {
+  "error_codes": "Error Codes",
+  "last_5_mins": "last 5 mins",
+  "counts": "counts",
+  "no_errors_found": "No Errors Found",
   "Abnormality Detected": "Issue Detected",
   "App Name is required": "App Name is required",
   "Invalid name": "Invalid name",
