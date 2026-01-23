@@ -19,8 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
     const queryType: { [key: string]: string } = {
-      [DBTypeEnum.postgresql]: `pg_database_size_bytes{$, app_kubernetes_io_instance="${dbName}"}`,
-      [DBTypeEnum.mongodb]: `mongodb_dbstats_dataSize{$, app_kubernetes_io_instance="${dbName}"}`
+      [DBTypeEnum.postgresql]: `pg_database_size_bytes{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.postgresql}"}`,
+      [DBTypeEnum.mongodb]: `mongodb_dbstats_dataSize{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mongodb}"}`
     };
 
     if (!queryType[dbType as string]) {

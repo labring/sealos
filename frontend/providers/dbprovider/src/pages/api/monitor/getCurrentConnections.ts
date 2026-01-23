@@ -19,11 +19,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
     const queryType: { [key: string]: string } = {
-      [DBTypeEnum.mysql]: `sum(max_over_time(mysql_global_status_threads_connected{$, app_kubernetes_io_instance="${dbName}"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`,
-      [DBTypeEnum.notapemysql]: `sum(max_over_time(mysql_global_status_threads_connected{$, app_kubernetes_io_instance="${dbName}"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`,
-      [DBTypeEnum.postgresql]: `pg_stat_database_numbackends{$, app_kubernetes_io_instance="${dbName}"}`,
-      [DBTypeEnum.mongodb]: `mongodb_connections{$, app_kubernetes_io_instance="${dbName}",state="current"}`,
-      [DBTypeEnum.redis]: `sum(redis_connected_clients{$, app_kubernetes_io_instance="${dbName}"})`
+      [DBTypeEnum.mysql]: `sum(max_over_time(mysql_global_status_threads_connected{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mysql}"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`,
+      [DBTypeEnum.notapemysql]: `sum(max_over_time(mysql_global_status_threads_connected{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.notapemysql}"}[1m])) by (namespace,app_kubernetes_io_instance,pod)`,
+      [DBTypeEnum.postgresql]: `pg_stat_database_numbackends{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.postgresql}"}`,
+      [DBTypeEnum.mongodb]: `mongodb_connections{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.mongodb}",state="current"}`,
+      [DBTypeEnum.redis]: `sum(redis_connected_clients{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.redis}"})`
     };
 
     console.log(dbName, dbType, queryType[dbType as string]);

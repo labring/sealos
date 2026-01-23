@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
     const queryType: { [key: string]: string } = {
-      postgresql: `rate(pg_stat_database_blk_read_time_total{$, app_kubernetes_io_instance="${dbName}"}[1m])`
+      [DBTypeEnum.postgresql]: `rate(pg_stat_database_blk_read_time_total{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.postgresql}"}[1m])`
     };
 
     console.log(dbName, dbType, queryType[dbType as string]);

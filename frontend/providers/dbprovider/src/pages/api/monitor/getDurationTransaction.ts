@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
     const queryType: { [key: string]: string } = {
-      postgresql: `max without(state) (max_over_time(pg_stat_activity_max_tx_duration{$, app_kubernetes_io_instance="${dbName}"}[1m]))`
+      [DBTypeEnum.postgresql]: `max without(state) (max_over_time(pg_stat_activity_max_tx_duration{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.postgresql}"}[1m]))`
     };
 
     console.log(dbName, dbType, queryType[dbType as string]);

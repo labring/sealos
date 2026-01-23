@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const startTime = endTime - 60 * 60 * 1000; // 前向推进1个小时的时间戳
 
     const queryType: { [key: string]: string } = {
-      [DBTypeEnum.redis]: `sum (redis_db_keys{$, app_kubernetes_io_instance="${dbName}"}) by (db)`
+      [DBTypeEnum.redis]: `sum (redis_db_keys{$, workloads_kubeblocks_io_instance="${dbName}-${DBTypeEnum.redis}"}) by (db)`
     };
 
     console.log(dbName, dbType, queryType[dbType as string]);
