@@ -295,7 +295,7 @@ export function AllPlansSection({
                 <TableHead className="bg-transparent">{t('common:plan')}</TableHead>
                 <TableHead className="bg-transparent">{t('common:quota_resets_on')}</TableHead>
                 <TableHead className="bg-transparent">{t('common:price')}</TableHead>
-                <TableHead className="bg-transparent">{t('common:actions')}</TableHead>
+                <TableHead className="bg-transparent hidden">{t('common:actions')}</TableHead>
               </TableLayoutHeadRow>
 
               <TableLayoutBody>
@@ -361,7 +361,7 @@ export function AllPlansSection({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden">
                       {(() => {
                         const statusLower = (workspace.status || '').toLowerCase();
                         const isPayg = workspace.plan === 'PAYG';
@@ -398,7 +398,7 @@ export function AllPlansSection({
                             <Button
                               variant="outline"
                               size="sm"
-                              disabled={subscriptionActionMutation.isPending}
+                              disabled={subscriptionActionMutation.isLoading}
                               onClick={() => {
                                 if (!regionData.regionDomain) return;
                                 subscriptionActionMutation.mutate({
@@ -471,7 +471,7 @@ export function AllPlansSection({
           isOpen={!!cancelTarget}
           workspaceName={cancelTarget.workspaceId}
           currentPeriodEndAt={cancelTarget.currentPeriodEndAt}
-          isSubmitting={subscriptionActionMutation.isPending}
+          isSubmitting={subscriptionActionMutation.isLoading}
           onClose={() => setCancelTarget(null)}
           onConfirm={() => {
             subscriptionActionMutation.mutate({

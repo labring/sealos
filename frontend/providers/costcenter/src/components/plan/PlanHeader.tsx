@@ -237,7 +237,7 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
             {isCancelled ? (
               <Button
                 size="lg"
-                disabled={resumePlanMutation.isPending}
+                disabled={resumePlanMutation.isLoading}
                 onClick={() => {
                   if (!subscription) return;
 
@@ -367,7 +367,7 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
           isOpen={cancelModalOpen}
           workspaceName={subscription.Workspace}
           currentPeriodEndAt={subscription.CurrentPeriodEndAt}
-          isSubmitting={cancelPlanMutation.isPending}
+          isSubmitting={cancelPlanMutation.isLoading}
           onClose={() => setCancelModalOpen(false)}
           onConfirm={async () => {
             const payMethod =
