@@ -62,7 +62,6 @@ func main() {
 		metricsAddr                string
 		enableLeaderElection       bool
 		probeAddr                  string
-		configFilePath             string
 		rateLimiterOptions         ratelimiter.RateLimiterOptions
 		syncPeriod                 time.Duration
 		minRequeueDuration         time.Duration
@@ -124,12 +123,6 @@ func main() {
 		"restart-predicate-time",
 		time.Hour*2,
 		"Sets the restrat predicate time duration for user controller restart. By default, the duration is set to 2 hours.",
-	)
-	flag.StringVar(
-		&configFilePath,
-		"config-file-path",
-		"/config.yaml",
-		"The path to the configuration file.",
 	)
 	flag.BoolVar(
 		&secureMetrics,
@@ -243,9 +236,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Operationrequest")
 		os.Exit(1)
 	}
-	if err = (&userv1.Operationrequest{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Operationrequest")
-		os.Exit(1)
+	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
+		setupLog.Info("disable all webhooks")
+	} else {
+		if err = (&userv1.Operationrequest{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Operationrequest")
+			os.Exit(1)
+		}
 	}
 	if err = (&controllers.DeleteRequestReconciler{
 		Client: mgr.GetClient(),
