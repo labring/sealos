@@ -209,7 +209,7 @@ export const LogTable = ({
                   htmlFor={item.value}
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  {item.label}
+                  {t('log_table.' + item.label) || item.label}
                 </label>
               </div>
             ))}
