@@ -2,10 +2,7 @@
 
 replicaCount: 1
 
-image:
-  repository: ghcr.io/labring/sealos-user-controller
-  tag: latest
-  pullPolicy: Always
+image: ghcr.io/labring/sealos-user-controller:latest
 
 imagePullSecrets: []
 nameOverride: ""
