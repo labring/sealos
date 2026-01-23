@@ -1187,6 +1187,7 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 	if currentSubscription != nil && currentSubscription.PlanName == req.PlanName &&
 		req.Operator != types.SubscriptionTransactionTypeRenewed &&
 		req.Operator != types.SubscriptionTransactionTypeResumed &&
+		req.Operator != types.SubscriptionTransactionTypeCanceled &&
 		currentSubscription.Status != types.SubscriptionStatusDebt &&
 		currentSubscription.Status != types.SubscriptionStatusDeleted {
 		SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "plan name is same as current plan"})
