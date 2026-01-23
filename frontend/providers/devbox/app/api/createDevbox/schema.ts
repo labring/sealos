@@ -129,7 +129,7 @@ export const RequestSchema = z
     sharedMemory: z
       .object({
         enabled: z.boolean().default(false),
-        size: z.number().min(1).default(64)
+        sizeLimit: z.number().min(1).default(64)
       })
       .optional()
       .openapi({
