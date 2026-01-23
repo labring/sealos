@@ -58,7 +58,7 @@ export const memoryFormatToMi = (memory = '0') => {
   return Number(value.toFixed(2));
 };
 
-export const storageFormatToGi = (storage = '0') => {
+export const storageFormatToMi = (storage = '0') => {
   if (!storage || storage === '0') {
     return 0;
   }

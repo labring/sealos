@@ -2,7 +2,12 @@ import * as yaml from 'js-yaml';
 import * as k8s from '@kubernetes/client-node';
 
 import { UserQuotaItemType } from '@/types/user';
-import { cpuFormatToM, memoryFormatToMi, storageFormatToNum } from '@/utils/tools';
+import {
+  cpuFormatToM,
+  memoryFormatToMi,
+  storageFormatToMi,
+  storageFormatToNum
+} from '@/utils/tools';
 
 // Load default kc
 export function K8sApiDefault(): k8s.KubeConfig {
@@ -225,14 +230,14 @@ export async function getUserQuota(
       used: memoryFormatToMi(status?.used?.['limits.memory'] || '') / 1024
     },
     {
+      type: 'storage',
+      limit: storageFormatToMi(status?.hard?.['limits.ephemeral-storage'] || '') / 1024,
+      used: storageFormatToMi(status?.used?.['limits.ephemeral-storage'] || '') / 1024
+    },
+    {
       type: 'nodeports',
       limit: Number(status?.hard?.['services.nodeports']) || 0,
       used: Number(status?.used?.['services.nodeports']) || 0
-    },
-    {
-      type: 'storage',
-      limit: storageFormatToNum(status?.hard?.['limits.ephemeral-storage'] || '') / 1024,
-      used: storageFormatToNum(status?.used?.['limits.ephemeral-storage'] || '') / 1024
     },
     {
       type: 'gpu',
