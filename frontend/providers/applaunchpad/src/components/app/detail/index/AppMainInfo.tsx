@@ -143,7 +143,6 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     if (!detailCompleted) {
       const checkAndStartGuide = () => {
         const guideListElement = document.getElementById('driver-detail-network');
-        console.log(guideListElement, 'guideListElement');
 
         if (guideListElement) {
           startDriver(detailDriverObj(t));
