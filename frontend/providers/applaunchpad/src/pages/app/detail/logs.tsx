@@ -43,6 +43,10 @@ export default function LogsPage({ appName }: { appName: string }) {
   const router = useRouter();
   const { t } = useTranslation();
   const { appDetail, appDetailPods } = useAppStore();
+  const urlPodName = useMemo(() => {
+    const podParam = router.query.pod;
+    return typeof podParam === 'string' ? podParam : undefined;
+  }, [router.query.pod]);
 
   const {
     refreshInterval,
@@ -273,34 +277,38 @@ export default function LogsPage({ appName }: { appName: string }) {
       onSuccess: (data) => {
         console.log('isInitialized', appDetailPods);
 
-        if (appDetailPods?.length > 0) {
-          const podList = Array.isArray(data) ? data : [];
-          const urlPodName = router.query.pod as string | undefined;
+        const podList = Array.isArray(data) ? data : [];
+        // Get active pod names from appDetailPods
+        const activePodNames = new Set(
+          appDetailPods
+            ?.map((pod) => pod.metadata?.name)
+            .filter((name): name is string => !!name) ?? []
+        );
 
-          // Get active pod names from appDetailPods
-          const activePodNames = new Set(
-            appDetailPods.map((pod) => pod.metadata?.name).filter((name): name is string => !!name)
-          );
+        const podNamesSet = new Set([...podList, ...activePodNames]);
 
-          const podNamesSet = new Set([...podList, ...activePodNames]);
+        const prevPods = formHook.getValues('pods');
+        const hasPrevPods = prevPods.length > 0;
+        const checkedMap = new Map(prevPods.map((pod) => [pod.value, pod.checked]));
 
-          const prevPods = formHook.getValues('pods');
-          const hasPrevPods = prevPods.length > 0;
-          const checkedMap = new Map(prevPods.map((pod) => [pod.value, pod.checked]));
+        const newPods: ListItem[] = Array.from(podNamesSet).map((podName) => ({
+          value: podName,
+          label: podName,
+          checked: hasPrevPods
+            ? checkedMap.get(podName) ?? true
+            : urlPodName
+            ? podName === urlPodName
+            : true,
+          isActive: activePodNames.has(podName)
+        }));
 
-          const newPods: ListItem[] = Array.from(podNamesSet).map((podName) => ({
-            value: podName,
-            label: podName,
-            checked: hasPrevPods
-              ? checkedMap.get(podName) ?? true
-              : urlPodName
-              ? podName === urlPodName
-              : true,
-            isActive: activePodNames.has(podName)
-          }));
+        formHook.setValue('pods', newPods);
+        if (urlPodName && podNamesSet.has(urlPodName)) {
+          const { pod: _pod, ...rest } = router.query;
+          router.replace({ pathname: router.pathname, query: rest }, undefined, { shallow: true });
+        }
 
-          formHook.setValue('pods', newPods);
-
+        if (appDetailPods?.length) {
           const prevContainers = formHook.getValues('containers');
           const hasPrevContainers = prevContainers.length > 0;
           const containerCheckedMap = new Map(

@@ -46,19 +46,6 @@ export interface MonitorDataResult {
   yData: Array<string | null>;
 }
 
-export interface MonitorFetchDebugInfo {
-  requestUrl: string;
-  requestBody: string;
-  responseStatus?: number;
-  responseStatusText?: string;
-  error?: string;
-}
-
-export interface MonitorFetchResult {
-  data: MonitorServiceResponse;
-  debug: MonitorFetchDebugInfo;
-}
-
 /**
  * monitor data query method V2
  * use POST request and application/x-www-form-urlencoded format
@@ -121,41 +108,4 @@ export const monitorFetchV2 = async (
     }
     throw error;
   }
-};
-
-/**
- * adapt data format
- */
-export const adaptMonitorData = (
-  response: MonitorServiceResponse,
-  type: MonitorQueryType
-): MonitorDataResult[] => {
-  if (response.status !== 'success' || !response.data?.result) {
-    return [];
-  }
-
-  return response.data.result.map((item) => {
-    const name = type === 'storage' ? item.metric.persistentvolumeclaim : item.metric.pod;
-
-    // handle range query (matrix) and instant query (vector)
-    if (response.data.resultType === 'matrix' && item.values) {
-      return {
-        name: name,
-        xData: item.values.map((v) => v[0]),
-        yData: item.values.map((v) => parseFloat(v[1]).toFixed(2))
-      };
-    } else if (item.value) {
-      return {
-        name: name,
-        xData: [item.value[0]],
-        yData: [parseFloat(item.value[1]).toFixed(2)]
-      };
-    }
-
-    return {
-      name: name,
-      xData: [],
-      yData: []
-    };
-  });
 };

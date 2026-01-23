@@ -3,7 +3,7 @@ import { Check } from 'lucide-react';
 import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
 import dayjs from 'dayjs';
-import { LineStyleMap } from '@/constants/monitor';
+import { LineStyleMap, NetworkLineStyleMap } from '@/constants/monitor';
 import { Button } from '@sealos/shadcn-ui/button';
 import { cn } from '@sealos/shadcn-ui';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
@@ -26,11 +26,12 @@ type MonitorChartProps = React.HTMLAttributes<HTMLDivElement> & {
   xAxisLabelFormatter?: (value: string) => string;
   xAxisTooltipFormatter?: (value: string) => string;
   yAxisConfig?: {
-    min?: number;
-    max?: number;
+    min?: number | ((value: { min: number; max: number }) => number);
+    max?: number | ((value: { min: number; max: number }) => number);
     interval?: number;
     splitNumber?: number;
   };
+  yAxisUseNative?: boolean;
   displayNameFormatter?: (params: {
     seriesName: string;
     seriesIndex: number;
@@ -56,10 +57,11 @@ const MonitorChart = ({
   xAxisLabelFormatter,
   xAxisTooltipFormatter,
   yAxisConfig,
+  yAxisUseNative,
   displayNameFormatter,
   unit,
   isShowLegend = true,
-  lineWidth = 1.2,
+  lineWidth = 1.5,
   appName,
   activePodNames,
   checkedPodNames,
@@ -99,8 +101,30 @@ const MonitorChart = ({
       : t('status_filtering');
 
   useEffect(() => {
-    setSelectedSeries(new Set(seriesNames));
-  }, [seriesNames]);
+    const nextSelected = new Set(seriesNames);
+    if (type === 'network') {
+      nextSelected.delete('2xx');
+    }
+    setSelectedSeries(nextSelected);
+  }, [seriesNames, type]);
+
+  // Network status code display info (code prefix and label separately for styling)
+  const networkStatusCodeInfo: Record<string, { code: string; label: string }> = useMemo(
+    () => ({
+      '2xx': { code: '2xx', label: 'success' },
+      '3xx': { code: '3xx', label: 'redirect' },
+      '4xx': { code: '4xx', label: 'client err' },
+      '5xx': { code: '5xx', label: 'server err' }
+    }),
+    []
+  );
+
+  const getNetworkDisplayInfo = useCallback(
+    (seriesName: string): { code: string; label: string } | null => {
+      return networkStatusCodeInfo[seriesName] || null;
+    },
+    [networkStatusCodeInfo]
+  );
 
   const getDisplayName = useCallback(
     (seriesName: string, seriesIndex: number) => {
@@ -111,9 +135,26 @@ const MonitorChart = ({
         const displayIndex = String(seriesIndex + 1).padStart(2, '0');
         return `Replica-${displayIndex}`;
       }
+      if (type === 'network') {
+        const info = networkStatusCodeInfo[seriesName];
+        return info ? `${info.code} ${info.label}` : seriesName;
+      }
       return seriesName;
     },
-    [appName, displayNameFormatter, type]
+    [appName, displayNameFormatter, networkStatusCodeInfo, type]
+  );
+
+  const getSeriesLineColor = useCallback(
+    (seriesName: string, seriesIndex: number) => {
+      if (type === 'network') {
+        return (
+          NetworkLineStyleMap[seriesName]?.lineColor ||
+          LineStyleMap[seriesIndex % LineStyleMap.length].lineColor
+        );
+      }
+      return LineStyleMap[seriesIndex % LineStyleMap.length].lineColor;
+    },
+    [type]
   );
 
   const option = useMemo(
@@ -143,22 +184,34 @@ const MonitorChart = ({
               : dayjs(parseFloat(rawTime) * 1000).format('YYYY-MM-DD HH:mm')
             : params[0]?.axisValue;
           const isCpuOrMemory = type === 'cpu' || type === 'memory';
+          const isNetwork = type === 'network';
           return `
             <div class="bg-white min-w-[260px] rounded-lg p-4 border-[0.5px] border-zinc-200 shadow-xs">
               <div class="text-sm font-medium text-zinc-900 mb-1.5 pb-1.5 border-b border-zinc-100 flex">
                 ${axisValue}
               </div>
               ${params
-                .map((item: any) => {
+                .map((item: any, index: number) => {
+                  const isLastItem = index === params.length - 1;
                   const seriesName = item.seriesName || '';
                   if (!isCpuOrMemory) {
+                    const displayName = isNetwork
+                      ? (() => {
+                          const info = getNetworkDisplayInfo(seriesName);
+                          return info
+                            ? `<span class="font-medium text-zinc-900">${info.code}</span><span class="font-normal text-zinc-500"> ${info.label}</span>`
+                            : seriesName;
+                        })()
+                      : seriesName;
                     return `
-                      <div class="flex items-center justify-between gap-4 mb-1.5">
+                      <div class="flex items-center justify-between gap-4 ${
+                        isLastItem ? '' : 'mb-1.5'
+                      }">
                         <div class="flex gap-2 items-center min-w-0">
                           <span class="inline-block w-2 h-2 rounded-full" style="background: ${
                             item.color
                           }"></span>
-                          <div class="text-sm font-medium text-zinc-900 truncate">${seriesName}</div>
+                          <div class="text-sm truncate">${displayName}</div>
                         </div>
                         <span class="min-w-14 w-fit text-right text-sm font-medium text-zinc-900">${formatValue(
                           item.value
@@ -169,7 +222,7 @@ const MonitorChart = ({
                   const seriesIndex = seriesIndexMap.get(seriesName) ?? 0;
                   const displayName = getDisplayName(seriesName, seriesIndex);
                   return `
-                    <div class="flex flex-col gap-[2px] mb-1.5">
+                    <div class="flex flex-col gap-[2px] ${isLastItem ? '' : 'mb-1.5'}">
                       <div class="flex gap-2 items-center">
                         <span class="inline-block w-2 h-2 rounded-full" style="background: ${
                           item.color
@@ -283,9 +336,9 @@ const MonitorChart = ({
       yAxis: {
         type: 'value',
         splitNumber: yAxisConfig?.splitNumber ?? 4,
-        interval: yAxisConfig?.interval ?? 25,
-        max: yAxisConfig?.max ?? 100,
-        min: yAxisConfig?.min ?? 0,
+        interval: yAxisUseNative ? yAxisConfig?.interval : yAxisConfig?.interval ?? 25,
+        max: yAxisUseNative ? yAxisConfig?.max : yAxisConfig?.max ?? 100,
+        min: yAxisUseNative ? yAxisConfig?.min ?? 0 : yAxisConfig?.min ?? 0,
         boundaryGap: false,
         axisLabel: {
           formatter: yAxisLabelFormatter,
@@ -323,6 +376,7 @@ const MonitorChart = ({
             if (!selectedSeries.has(item.name)) return null;
           }
           const formattedData = yDataFormatter ? yDataFormatter(item.data) : item.data;
+          const seriesLineColor = getSeriesLineColor(item.name, index);
           return {
             name: item.name,
             data: formattedData,
@@ -333,12 +387,12 @@ const MonitorChart = ({
             animationEasingUpdate: 'linear',
             lineStyle: {
               width: lineWidth,
-              color: LineStyleMap[index % LineStyleMap.length].lineColor,
+              color: seriesLineColor,
               type: item?.lineStyleType || 'solid'
             },
             itemStyle: {
               width: 1.5,
-              color: LineStyleMap[index % LineStyleMap.length].lineColor
+              color: seriesLineColor
             },
             emphasis: {
               // highlight
@@ -354,6 +408,8 @@ const MonitorChart = ({
       data?.xData,
       data?.yData,
       getDisplayName,
+      getNetworkDisplayInfo,
+      getSeriesLineColor,
       isCpuOrMemoryType,
       lineWidth,
       selectedSeries,
@@ -367,6 +423,7 @@ const MonitorChart = ({
       yAxisConfig?.min,
       yAxisConfig?.splitNumber,
       yAxisLabelFormatter,
+      yAxisUseNative,
       yDataFormatter
     ]
   );
@@ -435,9 +492,12 @@ const MonitorChart = ({
               {legendData.map((item) => {
                 // Use original index from seriesIndexMap to keep color consistent
                 const originalIndex = seriesIndexMap.get(item.name) ?? 0;
+                const lineColor = getSeriesLineColor(item.name, originalIndex);
                 const isSelected = selectedSeries.has(item.name);
                 const displayName = getDisplayName(item.name, originalIndex);
                 const isCpuOrMemory = type === 'cpu' || type === 'memory';
+                const isNetwork = type === 'network';
+                const networkInfo = isNetwork ? getNetworkDisplayInfo(item.name) : null;
                 return (
                   <Button
                     key={item?.name + originalIndex}
@@ -464,24 +524,31 @@ const MonitorChart = ({
                         <span
                           className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full"
                           style={{
-                            backgroundColor:
-                              LineStyleMap[originalIndex % LineStyleMap.length].lineColor
+                            backgroundColor: lineColor
                           }}
                         />
                         <span
                           className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
                           style={{
-                            boxShadow: `0 0 0 2px ${
-                              LineStyleMap[originalIndex % LineStyleMap.length].lineColor
-                            }`
+                            boxShadow: `0 0 0 2px ${lineColor}`
                           }}
                         />
                       </span>
                       <Tooltip disableHoverableContent>
                         <TooltipTrigger asChild>
-                          <span className="text-sm font-normal text-zinc-900 truncate">
-                            {displayName}
-                          </span>
+                          {isNetwork && networkInfo ? (
+                            <span className="text-sm truncate">
+                              <span className="font-normal text-zinc-900">{networkInfo.code}</span>
+                              <span className="font-normal text-zinc-500 ml-1">
+                                {' '}
+                                {networkInfo.label}
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="text-sm font-normal text-zinc-900 truncate">
+                              {displayName}
+                            </span>
+                          )}
                         </TooltipTrigger>
                         <TooltipContent className="rounded-xl pointer-events-none">
                           <div className="p-2">
@@ -490,13 +557,16 @@ const MonitorChart = ({
                                 className="inline-block w-2 h-2 rounded-full bg-[var(--dot-color)]"
                                 style={
                                   {
-                                    '--dot-color':
-                                      LineStyleMap[originalIndex % LineStyleMap.length].lineColor
+                                    '--dot-color': lineColor
                                   } as React.CSSProperties
                                 }
                               />
                               <span className="text-sm text-zinc-900 font-normal break-all">
-                                {isCpuOrMemory ? displayName : item.name}
+                                {isCpuOrMemory
+                                  ? displayName
+                                  : isNetwork && networkInfo
+                                  ? `${networkInfo.code} ${networkInfo.label}`
+                                  : item.name}
                               </span>
                             </span>
                             {isCpuOrMemory && (

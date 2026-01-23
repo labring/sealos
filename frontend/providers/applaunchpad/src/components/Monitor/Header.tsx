@@ -17,16 +17,31 @@ import { Separator } from '@sealos/shadcn-ui/separator';
 import { RefreshCw } from 'lucide-react';
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
+export type MonitorTab = 'performance' | 'network' | 'storage';
+
+export interface NetworkOption {
+  serviceName?: string;
+  port: number;
+}
+
 export default function Header({
   podList,
   setPodList,
   refetchData,
-  lastRefreshTime
+  lastRefreshTime,
+  currentTab = 'performance',
+  availableNetworks = [],
+  selectedNetworkIndex = 0,
+  setSelectedNetworkIndex
 }: {
   podList: ListItem[];
   setPodList: (val: ListItem[]) => void;
   refetchData: () => void;
   lastRefreshTime?: number;
+  currentTab?: MonitorTab;
+  availableNetworks?: NetworkOption[];
+  selectedNetworkIndex?: number;
+  setSelectedNetworkIndex?: (index: number) => void;
 }) {
   const { t } = useTranslation();
   const { refreshInterval, setRefreshInterval } = useDateTimeStore();
@@ -40,20 +55,58 @@ export default function Header({
             <DatePicker />
           </div>
           <div className="flex items-center gap-3">
-            <AdvancedSelect
-              minW={'200px'}
-              height="40px"
-              checkBoxMode
-              leftIcon={<span className="text-sm font-normal text-zinc-500">{t('Pods')}</span>}
-              title={t('pod_filtering')}
-              width={'fit-content'}
-              value={'hello-sql-postgresql-0'}
-              list={podList}
-              onCheckboxChange={(val) => {
-                setPodList(val);
-              }}
-              placeholder={t('please_select')}
-            />
+            {currentTab === 'network' ? (
+              availableNetworks.length > 0 &&
+              setSelectedNetworkIndex && (
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={String(selectedNetworkIndex)}
+                    onValueChange={(val: string) => setSelectedNetworkIndex(Number(val))}
+                  >
+                    <SelectTrigger className="!h-10 rounded-lg text-sm font-normal text-zinc-900 shadow-none hover:bg-zinc-50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-500">{t('instance')}</span>
+                        <Separator orientation="vertical" className="!h-3 bg-zinc-300" />
+                        <span className="text-zinc-900">
+                          <SelectValue placeholder={t('select_port')} />
+                        </span>
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="border-[0.5px] border-zinc-200 rounded-xl p-1">
+                      <div className="px-1 pb-1">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {t('select_instance_service_port')}
+                        </span>
+                      </div>
+                      {availableNetworks.map((network, index) => (
+                        <SelectItem
+                          key={index}
+                          value={String(index)}
+                          className="text-zinc-900 h-10 rounded-lg py-[10px] hover:bg-zinc-50 cursor-pointer"
+                        >
+                          {network.serviceName}:{network.port}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            ) : (
+              <AdvancedSelect
+                minW={'200px'}
+                height="40px"
+                checkBoxMode
+                leftIcon={<span className="text-sm font-normal text-zinc-500">{t('Pods')}</span>}
+                title={t('pod_filtering')}
+                width={'fit-content'}
+                value={'hello-sql-postgresql-0'}
+                list={podList}
+                onCheckboxChange={(val) => {
+                  setPodList(val);
+                }}
+                placeholder={t('please_select')}
+              />
+            )}
           </div>
         </div>
       </div>

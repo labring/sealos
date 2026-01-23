@@ -296,7 +296,13 @@ const PodDetailModal = ({
                 <Button
                   variant="outline"
                   className="h-9 rounded-lg hover:bg-zinc-50 flex items-center"
-                  onClick={() => router.push(`/app/detail/monitor?name=${appName}`)}
+                  onClick={() =>
+                    router.push(
+                      `/app/detail/monitor?name=${encodeURIComponent(
+                        appName
+                      )}&pod=${encodeURIComponent(pod.podName)}`
+                    )
+                  }
                 >
                   <LineChart className="w-4 h-4 text-zinc-500" />
                   {t('monitor')}
@@ -444,10 +450,10 @@ const PodDetailModal = ({
             {/* Logs Section */}
             <div className="max-h-[calc(100vh-124px)] flex flex-col gap-4 bg-white rounded-2xl p-6 col-span-8 border-[0.5px] border-zinc-200 shadow-sm h-full self-stretch">
               <div className="flex items-center justify-between">
-                <div className="text-base text-zinc-900 font-semibold h-9 flex items-center">
-                  {t('Log')}
-                </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
+                  <div className="text-base text-zinc-900 font-semibold h-9 flex items-center">
+                    {t('Log')}
+                  </div>
                   <Select
                     value={sinceKey}
                     onValueChange={(value: string) => {
@@ -470,10 +476,19 @@ const PodDetailModal = ({
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="flex items-center gap-3">
                   <Button
                     variant="outline"
-                    className="h-9 hover:bg-zinc-50 flex items-center"
-                    onClick={() => router.push(`/app/detail/logs?name=${appName}`)}
+                    className="h-9 hover:bg-zinc-50 flex items-center rounded-lg"
+                    onClick={() =>
+                      router.push(
+                        `/app/detail/logs?name=${encodeURIComponent(
+                          appName
+                        )}&pod=${encodeURIComponent(pod.podName)}`
+                      )
+                    }
                   >
                     <FileClock className="w-4 h-4 text-zinc-500" />
                     {t('More Logs')}

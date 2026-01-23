@@ -51,6 +51,25 @@ export const LineStyleMap = [
   }
 ];
 
+export const NetworkLineStyleMap: Record<string, { backgroundColor: string; lineColor: string }> = {
+  '2xx': {
+    backgroundColor: 'rgba(0, 209, 181, 0.3)',
+    lineColor: '#00D1B5'
+  },
+  '3xx': {
+    backgroundColor: 'rgba(73, 174, 255, 0.3)',
+    lineColor: '#49AEFF'
+  },
+  '4xx': {
+    backgroundColor: 'rgba(250, 204, 21, 0.3)',
+    lineColor: '#FACC15'
+  },
+  '5xx': {
+    backgroundColor: 'rgba(248, 113, 113, 0.3)',
+    lineColor: '#F87171'
+  }
+};
+
 export const EMPTY_MONITOR_DATA: MonitorDataResult = {
   name: '',
   xData: new Array(30).fill(0),

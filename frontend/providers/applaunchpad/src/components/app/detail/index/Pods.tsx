@@ -189,35 +189,21 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       key: 'control',
       render: (item: PodDetailType, i: number) => (
         <div className="flex items-center gap-2 driver-detail-operate justify-end">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
-                onClick={() => setDetailPodIndex(i)}
-              >
-                {t('Details')}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="rounded-xl">
-              <p className="text-sm text-zinc-900 font-normal p-2">{t('Details')}</p>
-            </TooltipContent>
-          </Tooltip>
+          <Button
+            variant="outline"
+            className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
+            onClick={() => setDetailPodIndex(i)}
+          >
+            {t('Details')}
+          </Button>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
-                onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
-              >
-                {t('Restart')}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="rounded-xl">
-              <p className="text-sm text-zinc-900 font-normal p-2">{t('Restart')}</p>
-            </TooltipContent>
-          </Tooltip>
+          <Button
+            variant="outline"
+            className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
+            onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
+          >
+            {t('Restart')}
+          </Button>
 
           {/* logs has been moved to detail modal */}
           {/* <Tooltip>

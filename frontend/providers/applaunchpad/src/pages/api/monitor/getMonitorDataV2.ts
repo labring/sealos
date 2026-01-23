@@ -7,12 +7,49 @@ import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import {
   monitorFetchV2,
-  adaptMonitorData,
   MonitorQueryParams,
   MonitorQueryType,
-  MonitorDataResult
+  MonitorDataResult,
+  MonitorServiceResponse
 } from '@/services/monitorFetchV2';
 import type { NextApiRequest, NextApiResponse } from 'next';
+
+/**
+ * adapt data format
+ */
+const adaptMonitorData = (
+  response: MonitorServiceResponse,
+  type: MonitorQueryType
+): MonitorDataResult[] => {
+  if (response.status !== 'success' || !response.data?.result) {
+    return [];
+  }
+
+  return response.data.result.map((item) => {
+    const name = type === 'storage' ? item.metric.persistentvolumeclaim : item.metric.pod;
+
+    // handle range query (matrix) and instant query (vector)
+    if (response.data.resultType === 'matrix' && item.values) {
+      return {
+        name: name,
+        xData: item.values.map((v) => v[0]),
+        yData: item.values.map((v) => parseFloat(v[1]).toFixed(2))
+      };
+    } else if (item.value) {
+      return {
+        name: name,
+        xData: [item.value[0]],
+        yData: [parseFloat(item.value[1]).toFixed(2)]
+      };
+    }
+
+    return {
+      name: name,
+      xData: [],
+      yData: []
+    };
+  });
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   // collect debug info
