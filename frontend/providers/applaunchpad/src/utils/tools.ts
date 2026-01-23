@@ -220,6 +220,32 @@ export const printMemory = (val: number) => {
 };
 
 /**
+ * storage format to Gi
+ */
+export const storageFormatToGi = (storage: string) => {
+  if (!storage || storage === '0') {
+    return 0;
+  }
+
+  let value = parseFloat(storage);
+
+  if (/Ki/gi.test(storage)) {
+    value = value / 1024 / 1024;
+  } else if (/Mi/gi.test(storage)) {
+    value = value / 1024;
+  } else if (/Gi/gi.test(storage)) {
+    value = value;
+  } else if (/Ti/gi.test(storage)) {
+    value = value * 1024;
+  } else {
+    console.log('Invalid storage value');
+    value = 0;
+  }
+
+  return Number(value.toFixed(2));
+};
+
+/**
  * format pod createTime
  */
 export const formatPodTime = (createTimeStamp: Date = new Date()) => {

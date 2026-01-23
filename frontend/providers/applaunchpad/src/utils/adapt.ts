@@ -38,7 +38,13 @@ import {
   gpuResourceKey,
   AppSourceConfigs
 } from '@/constants/app';
-import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
+import {
+  cpuFormatToM,
+  memoryFormatToMi,
+  formatPodTime,
+  atobSecretYaml,
+  storageFormatToGi
+} from '@/utils/tools';
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
@@ -373,7 +379,9 @@ export const adaptAppDetail = async (
       (mount) =>
         !configMapVolumeNames.includes(mount.name) &&
         !storeNames.includes(mount.name) &&
-        !remoteStoreNames.includes(mount.name)
+        !remoteStoreNames.includes(mount.name) &&
+        // Filter out shared-memory volume mount
+        mount.name !== 'shared-memory'
     );
   };
 
@@ -382,12 +390,29 @@ export const adaptAppDetail = async (
       appDeploy?.spec?.template?.spec?.volumes?.filter((volume) => {
         // Filter out remote stores
         if (remoteStoreNames.includes(volume.name)) return false;
+        // Filter out shared-memory volume (emptyDir with Memory medium)
+        if (volume.name === 'shared-memory' && volume.emptyDir?.medium === 'Memory') return false;
         // Filter out configMap volumes
         if (!deployKindsMap.ConfigMap) return true;
         const configMapName = deployKindsMap.ConfigMap.metadata?.name;
         return !(volume.configMap?.name === configMapName);
       }) || []
     );
+  };
+
+  // Get shared memory configuration from volumes
+  const getSharedMemory = (): { enabled: boolean; sizeLimit: number } | undefined => {
+    const volumes = appDeploy?.spec?.template?.spec?.volumes || [];
+    const shmVolume = volumes.find(
+      (v) => v.name === 'shared-memory' && v.emptyDir?.medium === 'Memory'
+    );
+    if (shmVolume?.emptyDir?.sizeLimit) {
+      return {
+        enabled: true,
+        sizeLimit: memoryFormatToMi(shmVolume.emptyDir.sizeLimit)
+      };
+    }
+    return undefined;
   };
 
   return {
@@ -414,6 +439,12 @@ export const adaptAppDetail = async (
     memory: memoryFormatToMi(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
+    ephemeralStorage:
+      storageFormatToGi(
+        appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.['ephemeral-storage'] ||
+          '0'
+      ) || undefined,
+    sharedMemory: getSharedMemory(),
     gpu: {
       type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
       amount: Number(
@@ -565,7 +596,9 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'labels',
     'kind',
     'volumes',
-    'volumeMounts'
+    'volumeMounts',
+    'ephemeralStorage',
+    'sharedMemory'
   ];
 
   const res: Record<string, any> = {};
@@ -582,13 +615,20 @@ export const sliderNumber2MarkList = ({
   gpuAmount = 1
 }: {
   val: number[];
-  type: 'cpu' | 'memory';
+  type: 'cpu' | 'memory' | 'ephemeralStorage';
   gpuAmount?: number;
 }) => {
   const newVal = val.map((item) => item);
 
   return newVal.map((item) => ({
-    label: type === 'memory' ? (item >= 1024 ? `${item / 1024} G` : `${item} M`) : `${item / 1000}`,
+    label:
+      type === 'memory'
+        ? item >= 1024
+          ? `${item / 1024} G`
+          : `${item} M`
+        : type === 'ephemeralStorage'
+          ? `${item}`
+          : `${item / 1000}`,
     value: item
   }));
 };
