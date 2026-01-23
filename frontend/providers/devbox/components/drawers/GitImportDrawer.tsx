@@ -19,7 +19,12 @@ import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
 import { Textarea } from '@sealos/shadcn-ui/textarea';
 import { Checkbox } from '@sealos/shadcn-ui/checkbox';
 import type { GitImportFormData, ImportStage } from '@/types/import';
-import { createDevbox, getDevboxByName, execCommandInDevboxPod, autostartDevbox } from '@/api/devbox';
+import {
+  createDevbox,
+  getDevboxByName,
+  execCommandInDevboxPod,
+  autostartDevbox
+} from '@/api/devbox';
 import { getTemplate } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import { generateGitImportCommand } from '@/utils/importCommandGenerator';
@@ -185,7 +190,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
 
       const isReady = await waitForDevboxReady(devboxName);
       if (!isReady) {
-        throw new Error('Devbox failed to become ready within timeout.Please try again later.');
+        throw new Error(t('devbox_ready_timeout'));
       }
 
       setImportStage('cloning');
@@ -531,7 +536,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
                 />
                 <Label
                   htmlFor="auto-start"
-                  className="text-sm font-normal text-zinc-700 cursor-pointer"
+                  className="cursor-pointer text-sm font-normal text-zinc-700"
                 >
                   {t('auto_start_after_import')}
                 </Label>

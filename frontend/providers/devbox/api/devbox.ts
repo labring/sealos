@@ -157,6 +157,7 @@ export const autostartDevbox = (data: { devboxName: string; execCommand?: string
     autostartCreated: boolean;
     jobRecreated: boolean;
     resources: string[];
-  }>(`/api/v1/devbox/${data.devboxName}/autostart`, {
+  }>(`/api/autostart`, {
+    devboxName: data.devboxName,
     execCommand: data.execCommand
   });

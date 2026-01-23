@@ -107,8 +107,8 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
 
   const handleImportSuccess = useCallback(
     (devboxName: string) => {
-      setImportDrawerType(null);
       router.push(`/devbox/detail/${devboxName}`);
+      setImportDrawerType(null);
     },
     [router]
   );
