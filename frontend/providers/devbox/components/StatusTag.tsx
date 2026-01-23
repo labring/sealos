@@ -11,9 +11,15 @@ interface StatusTagProps {
   status: DevboxStatusMapType | DevboxReleaseStatusMapType;
   className?: string;
   isShutdown?: boolean;
+  isSSHGate?: boolean;
 }
 
-const StatusTag = ({ status, isShutdown = false, className }: StatusTagProps) => {
+const StatusTag = ({
+  status,
+  isShutdown = false,
+  className,
+  isSSHGate = false
+}: StatusTagProps) => {
   const label = status?.label;
   const t = useTranslations();
 
@@ -27,14 +33,14 @@ const StatusTag = ({ status, isShutdown = false, className }: StatusTagProps) =>
         <div className="flex flex-col">
           <span className={cn('text-sm/5 font-medium text-zinc-900', className)}>{t(label)}</span>
         </div>
-        {isShutdown && (
+        {isShutdown && !isSSHGate && (
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex cursor-pointer items-center">
                 <CircleHelp className="h-3 w-3 text-emerald-600" />
               </div>
             </TooltipTrigger>
-            <TooltipContent className="w-[380px] break-words p-4" side="bottom">
+            <TooltipContent className="w-[380px] p-4 break-words" side="bottom">
               <span className="text-xs/[16px] tracking-[0.048px] text-zinc-500">
                 {t('devbox_sshgate_stopped_notice')}
               </span>

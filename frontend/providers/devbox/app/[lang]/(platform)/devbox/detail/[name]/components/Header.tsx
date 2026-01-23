@@ -68,6 +68,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
         <div className="mr-3 text-xl font-semibold">{devboxDetail.name}</div>
         <DevboxStatusTag
           status={devboxDetail.status}
+          isSSHGate={devboxDetail.networkType === 'SSHGate'}
           isShutdown={devboxDetail.status.value === DevboxStatusEnum.Shutdown}
         />
       </div>
