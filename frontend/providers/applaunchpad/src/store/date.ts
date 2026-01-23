@@ -21,7 +21,7 @@ const useDateTimeStore = create<DateTimeState>()(
   immer((set, get) => ({
     startDateTime: subMinutes(new Date(), 30),
     endDateTime: new Date(),
-    timeZone: 'local',
+    timeZone: 'utc',
     refreshInterval: 0,
     isManualRange: false,
     autoRange: '30m',

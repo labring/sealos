@@ -481,9 +481,6 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
               position="popper"
               className="border-[0.5px] border-zinc-200 rounded-xl p-0.5"
             >
-              <SelectItem value="local" className="text-sm rounded-lg py-[10px]">
-                Local (Asia/Shanghai)
-              </SelectItem>
               <SelectItem value="utc" className="text-sm rounded-lg py-[10px]">
                 UTC
               </SelectItem>
