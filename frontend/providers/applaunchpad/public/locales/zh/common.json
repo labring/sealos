@@ -125,6 +125,7 @@
   "Image Name": "镜像名",
   "Image Name (Private)": "镜像名称（私有）",
   "Image name cannot be empty": "镜像名称不能为空。",
+  "Image name cannot exceed 255 characters": "镜像名称不能超过 255 个字符。",
   "Input your custom domain": "输入您的自定义域名",
   "Intelligent Analysis": "智能分析",
   "Inventory": "库存",

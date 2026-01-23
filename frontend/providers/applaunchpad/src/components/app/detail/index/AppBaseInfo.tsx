@@ -4,12 +4,7 @@ import { useUserStore } from '@/store/user';
 import type { AppDetailType } from '@/types/app';
 import { printMemory, useCopyData } from '@/utils/tools';
 import { Separator } from '@sealos/shadcn-ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@sealos/shadcn-ui/tooltip';
+import TruncateTooltip from '@/components/TruncateTooltip';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useMemo, useState } from 'react';
@@ -157,24 +152,15 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             {info.items.map((item, i) => (
               <div key={item.label || i} className={`flex flex-wrap`}>
                 <div className="min-w-[120px] w-0 text-zinc-500">{t(item.label)}</div>
-                <div className="text-zinc-700 flex-1 min-w-0 truncate">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span
-                          className={item.copy ? 'cursor-pointer' : 'cursor-default'}
-                          onClick={() => item.value && !!item.copy && copyData(item.copy)}
-                        >
-                          {item.render ? item.render : item.value}
-                        </span>
-                      </TooltipTrigger>
-                      {item.value && (
-                        <TooltipContent>
-                          <p>{item.value}</p>
-                        </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="text-zinc-700 flex-1 min-w-0">
+                  <TruncateTooltip
+                    content={item.value || ''}
+                    className={`${item.copy ? 'cursor-pointer' : 'cursor-default'} truncate block`}
+                    contentClassName="max-w-sm"
+                    onClick={item.value && item.copy ? () => copyData(item.copy!) : undefined}
+                  >
+                    {item.render ? item.render : item.value}
+                  </TruncateTooltip>
                 </div>
               </div>
             ))}

@@ -125,6 +125,7 @@
   "Image Name": "Image Name",
   "Image Name (Private)": "Image Name (Private)",
   "Image name cannot be empty": "Image name is required.",
+  "Image name cannot exceed 255 characters": "Image name must be 255 characters or less.",
   "Input your custom domain": "Enter your custom domain",
   "Intelligent Analysis": "Smart Insights",
   "Inventory": "Stock",

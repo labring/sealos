@@ -532,6 +532,10 @@ const Form = ({
                     placeholder={`${t('Image Name')}`}
                     {...register('imageName', {
                       required: t('Image name cannot be empty') || '',
+                      maxLength: {
+                        value: 255,
+                        message: t('Image name cannot exceed 255 characters') || ''
+                      },
                       setValueAs(e) {
                         return e.replace(/\s*/g, '');
                       }

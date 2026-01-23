@@ -69,7 +69,11 @@ const AdvancedInfo = ({
                 app.runCMD ? 'text-zinc-900' : 'text-zinc-500'
               }`}
             >
-              <TruncateTooltip content={app.runCMD || ''} className="truncate block w-full">
+              <TruncateTooltip
+                content={app.runCMD || ''}
+                className="truncate block w-full"
+                contentClassName="w-2xl"
+              >
                 {app.runCMD || t('Not Configured')}
               </TruncateTooltip>
             </div>
@@ -83,7 +87,11 @@ const AdvancedInfo = ({
                 app.cmdParam ? 'text-zinc-900' : 'text-zinc-500'
               }`}
             >
-              <TruncateTooltip content={app.cmdParam || ''} className="truncate block w-full">
+              <TruncateTooltip
+                content={app.cmdParam || ''}
+                className="truncate block w-full"
+                contentClassName="w-2xl"
+              >
                 {app.cmdParam || t('Not Configured')}
               </TruncateTooltip>
             </div>
@@ -124,15 +132,16 @@ const AdvancedInfo = ({
                         <TruncateTooltip
                           content={env.key}
                           className="w-full truncate cursor-default"
+                          contentClassName="w-2xl"
                         >
                           {env.key}
                         </TruncateTooltip>
                       </TableCell>
-
                       <TableCell className="w-1/2 max-w-0 text-sm font-normal text-zinc-900">
                         <TruncateTooltip
                           content={valText}
                           className="w-full truncate cursor-default"
+                          contentClassName="w-2xl"
                         >
                           {valText}
                         </TruncateTooltip>
