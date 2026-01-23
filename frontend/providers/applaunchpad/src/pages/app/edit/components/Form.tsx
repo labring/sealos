@@ -1103,10 +1103,10 @@ const Form = ({
                   </div>
                   {envs.length > 0 && (
                     <div className="border border-zinc-200 rounded-lg overflow-hidden">
-                      <Table className="[&_th]:border-b [&_th]:border-r [&_th:last-child]:border-r-0 [&_td]:border-b [&_td]:border-r [&_td:last-child]:border-r-0 [&_tr:last-child_td]:border-b-0 [&_tbody_tr:nth-child(even)]:bg-zinc-50">
+                      <Table className="table-fixed w-full [&_th]:border-b [&_th]:border-r [&_th:last-child]:border-r-0 [&_td]:border-b [&_td]:border-r [&_td:last-child]:border-r-0 [&_tr:last-child_td]:border-b-0 [&_tbody_tr:nth-child(even)]:bg-zinc-50">
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="w-[200px] h-auto py-2 font-semibold text-zinc-500 bg-zinc-50">
+                            <TableHead className="w-[200px] max-w-[200px] h-auto py-2 font-semibold text-zinc-500 bg-zinc-50">
                               {t('Key')}
                             </TableHead>
                             <TableHead className="h-auto py-2 font-semibold text-zinc-500 bg-zinc-50">
@@ -1123,14 +1123,25 @@ const Form = ({
                               : '';
                             return (
                               <TableRow key={env.id}>
-                                <TableCell className="text-sm font-normal text-zinc-900">
-                                  {env.key}
+                                <TableCell className="w-[200px] max-w-[200px] text-sm font-normal text-zinc-900">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-sm text-zinc-900 font-normal truncate block cursor-default">
+                                          {env.key}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="bottom" className="rounded-xl">
+                                        <p className="max-w-xs break-all">{env.key}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
                                 </TableCell>
                                 <TableCell>
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <span className="text-sm text-zinc-900 font-normal truncate block cursor-default">
+                                        <span className="text-sm text-zinc-900 font-normal truncate block cursor-default truncate">
                                           {valText}
                                         </span>
                                       </TooltipTrigger>

@@ -100,6 +100,7 @@
   "Enabled": "已启用",
   "Disabled": "已禁用",
   "Env Placeholder": "环境变量，每行一个，可用冒号或等号分隔，例如：\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test",
+  "Invalid Env Name": "环境变量名不合法：{{name}}，只能包含字母、数字、_、-、.，且不能以数字开头",
   "Environment Variables": "环境变量",
   "Export": "导出",
   "Events": "事件",

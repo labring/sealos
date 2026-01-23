@@ -100,6 +100,7 @@
   "Enabled": "Enabled",
   "Disabled": "Disabled",
   "Env Placeholder": "one per line, key and value separated by colon or equals sign, e.g.:\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test",
+  "Invalid Env Name": "Invalid env name: {{name}}. Use letters, digits, '_', '-', or '.', and do not start with a digit.",
   "Environment Variables": "Environment Variables",
   "Export": "Export",
   "Events": "Events",

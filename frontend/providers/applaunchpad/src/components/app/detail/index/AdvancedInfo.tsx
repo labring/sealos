@@ -100,13 +100,13 @@ const AdvancedInfo = ({
         </div>
         {app.envs?.length > 0 ? (
           <div className="border border-zinc-200 rounded-xl overflow-hidden">
-            <Table className="[&_th]:border-b [&_th]:border-r [&_th:last-child]:border-r-0 [&_td]:border-b [&_td]:border-r [&_td:last-child]:border-r-0 [&_tr:last-child_td]:border-b-0 [&_tbody_tr:nth-child(even)]:bg-zinc-50">
+            <Table className="table-fixed w-full [&_th]:border-b [&_th]:border-r [&_th:last-child]:border-r-0 [&_td]:border-b [&_td]:border-r [&_td:last-child]:border-r-0 [&_tr:last-child_td]:border-b-0 [&_tbody_tr:nth-child(even)]:bg-zinc-50">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[240px] h-auto py-2 font-medium text-zinc-500 bg-zinc-50 !rounded-bl-none">
+                  <TableHead className="w-1/2 h-auto py-2 font-medium text-zinc-500 bg-zinc-50 !rounded-bl-none">
                     {t('Key')}
                   </TableHead>
-                  <TableHead className="h-auto py-2 font-medium text-zinc-500 bg-zinc-50 !rounded-br-none">
+                  <TableHead className="w-1/2 h-auto py-2 font-medium text-zinc-500 bg-zinc-50 !rounded-br-none">
                     {t('Value')}
                   </TableHead>
                 </TableRow>
@@ -116,7 +116,20 @@ const AdvancedInfo = ({
                   const valText = env.value ? env.value : env.valueFrom ? 'value from | ***' : '';
                   return (
                     <TableRow key={env.key}>
-                      <TableCell className="text-sm font-normal text-zinc-900">{env.key}</TableCell>
+                      <TableCell className="w-1/2 text-sm font-normal text-zinc-900 truncate">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm text-zinc-900 font-normal truncate block cursor-default">
+                                {env.key}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="rounded-xl">
+                              <p className="max-w-xs break-all">{env.key}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
                       <TableCell>
                         <TooltipProvider>
                           <Tooltip>
