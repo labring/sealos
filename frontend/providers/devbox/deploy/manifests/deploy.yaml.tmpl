@@ -34,6 +34,18 @@ spec:
       labels:
         app: devbox-frontend
     spec:
+      initContainers:
+        - name: devbox-frontend-init
+          image: ghcr.io/labring/sealos-devbox-frontend:latest
+          imagePullPolicy: Always
+          env:
+          - name: DATABASE_URL
+            value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
+          command:
+          - sh
+          - -c
+          args:
+          - cd /app/providers/devbox && prisma migrate deploy
       containers:
         - name: devbox-frontend
           env:
