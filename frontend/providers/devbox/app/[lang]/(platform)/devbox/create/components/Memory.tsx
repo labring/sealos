@@ -43,6 +43,7 @@ export default function Memory() {
 
   const currentValue = watch('memory');
   const currentIndex = MemorySlideMarkList.findIndex((item) => item.value === currentValue);
+  const sharedMemory = watch('sharedMemory');
 
   return (
     <div className="flex items-start gap-10">
@@ -52,7 +53,18 @@ export default function Memory() {
           value={[currentIndex !== -1 ? currentIndex : 0]}
           onValueChange={(values) => {
             const index = values[0];
-            setValue('memory', MemorySlideMarkList[index].value);
+            const newMemory = MemorySlideMarkList[index].value;
+            const newMaxSharedMemory = Math.floor(newMemory / 1024);
+
+            setValue('memory', newMemory);
+
+            // Adjust shared memory if it exceeds new limit
+            if (sharedMemory?.enabled && sharedMemory.sizeLimit > newMaxSharedMemory) {
+              setValue('sharedMemory', {
+                ...sharedMemory,
+                sizeLimit: newMaxSharedMemory
+              });
+            }
           }}
           max={MemorySlideMarkList.length - 1}
           min={0}
