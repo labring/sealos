@@ -38,10 +38,13 @@
   "avatar": "Avatar",
   "balance_popover": {
     "balance": "Balance",
+    "cancelled_notice": "Your subscription is cancelled. Resources will be deleted after {{date}}. Please back up your data or renew to avoid loss.",
     "check_costcenter_tip": "Check more details in Cost Center",
     "expired_at": "Expired At:",
+    "expires_on": "Expires on:",
     "payg_plan": "PAYG",
     "plan_suffix": "Plan",
+    "renew_subscription_button": "Renew subscription",
     "subscription_status": {
       "expired": "Expired",
       "limited_trial": "Limited Trial"
@@ -222,8 +225,10 @@
   "name_of_team": "Name of Workspace",
   "nav_links": {
     "balance": "Balance",
+    "cancelled": "Cancelled",
     "plan_expired": "Expired",
     "plan_suffix": "Plan",
+    "renew": "Renew",
     "subscribe": "Subscribe",
     "upgrade_plan": "Upgrade"
   },

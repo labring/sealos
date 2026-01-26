@@ -37,10 +37,13 @@
   "avatar": "头像",
   "balance_popover": {
     "balance": "余额",
+    "cancelled_notice": "您的订阅已取消。资源将在 {{date}} 后删除。请及时备份数据或恢复订阅以避免损失。",
     "check_costcenter_tip": "到费用中心查看详细信息",
     "expired_at": "过期时间：",
+    "expires_on": "到期时间：",
     "payg_plan": "按量付费",
     "plan_suffix": "套餐",
+    "renew_subscription_button": "恢复订阅",
     "subscription_status": {
       "expired": "过期",
       "limited_trial": "限时试用"
@@ -217,8 +220,10 @@
   "name_of_team": "工作空间名称",
   "nav_links": {
     "balance": "余额",
+    "cancelled": "已取消",
     "plan_expired": "已过期",
     "plan_suffix": "套餐",
+    "renew": "续费",
     "subscribe": "订阅套餐",
     "upgrade_plan": "升级"
   },

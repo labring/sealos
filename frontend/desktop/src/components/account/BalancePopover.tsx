@@ -72,6 +72,8 @@ export function BalancePopover({
   }, [workspace, fetchSubscriptionInfo]);
 
   const subscription = subscriptionInfo?.subscription;
+  const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
+  const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A';
@@ -82,6 +84,12 @@ export function BalancePopover({
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatCancelledNoticeDate = (dateStr?: string) => {
+    const d = dateStr ? new Date(dateStr) : null;
+    if (!d || Number.isNaN(d.getTime())) return 'N/A';
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
   };
 
   const calculateRemainingDays = (endDateStr?: string) => {
@@ -126,7 +134,11 @@ export function BalancePopover({
       >
         <PopoverBody p={4}>
           <VStack spacing={3} align="stretch">
-            <Box p={'20px'} bg={getPlanBackground(subscription)} borderRadius="12px">
+            <Box
+              p={'20px'}
+              bg={isCancelled ? 'var(--color-zinc-100)' : getPlanBackground(subscription)}
+              borderRadius="12px"
+            >
               {/* Show plan name only if subscription enabled */}
               {subscriptionEnabled && (
                 <>
@@ -136,6 +148,11 @@ export function BalancePopover({
                         ? `${subscription?.PlanName} ${t('common:balance_popover.plan_suffix')}`
                         : t('common:balance_popover.payg_plan')}
                     </span>
+                    {isCancelled && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-zinc-200 px-2 py-1 text-xs font-medium text-muted-foreground leading-3.5">
+                        {t('common:nav_links.cancelled')}
+                      </span>
+                    )}
                     {subscriptionInfo?.subscription?.Status?.toLowerCase() === 'debt' && (
                       <div className="text-red-600 bg-red-100 font-medium text-sm px-2 py-1 rounded-full leading-3.5 ml-2">
                         {t('common:balance_popover.subscription_status.expired')}
@@ -193,6 +210,16 @@ export function BalancePopover({
                 ) : (
                   <></>
                 ))}
+              {subscriptionEnabled &&
+                isCancelled &&
+                subscription?.PlanName &&
+                subscription?.PlanName !== 'Free' &&
+                subscription?.CurrentPeriodEndAt && (
+                  <div className="text-zinc-600 text-sm font-normal mt-2">
+                    {t('common:balance_popover.expires_on')}{' '}
+                    {formatDate(subscription.CurrentPeriodEndAt)}
+                  </div>
+                )}
               {subscription?.PlanName === 'Free' && (
                 <div className="text-zinc-600 text-sm font-normal mt-2">
                   {t('common:balance_popover.trial_expiry_tip', { count: remainingDays })}
@@ -202,20 +229,38 @@ export function BalancePopover({
 
             {subscriptionEnabled && (
               <>
-                {subscription?.PlanName !== 'Free' ? (
-                  <div className="text-sm text-zinc-900 font-normal">
-                    {t('common:balance_popover.upgrade_tip')}
-                  </div>
+                {isCancelled ? (
+                  <>
+                    <div className="text-sm text-zinc-900 font-normal">
+                      {t('common:balance_popover.cancelled_notice', {
+                        date: formatCancelledNoticeDate(subscription?.CurrentPeriodEndAt)
+                      })}
+                    </div>
+                    <Button variant="outline" onClick={openCostCenterApp}>
+                      <Sparkles size={16} />
+                      {t('common:balance_popover.renew_subscription_button')}
+                    </Button>
+                  </>
                 ) : (
-                  <div className="text-sm text-zinc-900 font-normal">
-                    {t('common:balance_popover.trial_expiry_upgrade_tip', { count: remainingDays })}
-                  </div>
-                )}
+                  <>
+                    {subscription?.PlanName !== 'Free' ? (
+                      <div className="text-sm text-zinc-900 font-normal">
+                        {t('common:balance_popover.upgrade_tip')}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-zinc-900 font-normal">
+                        {t('common:balance_popover.trial_expiry_upgrade_tip', {
+                          count: remainingDays
+                        })}
+                      </div>
+                    )}
 
-                <Button variant="outline" onClick={openCostCenterApp}>
-                  <Sparkles size={16} />
-                  {t('common:balance_popover.upgrade_button')}
-                </Button>
+                    <Button variant="outline" onClick={openCostCenterApp}>
+                      <Sparkles size={16} />
+                      {t('common:balance_popover.upgrade_button')}
+                    </Button>
+                  </>
+                )}
               </>
             )}
             <HStack pt={2} borderTop="1px solid" borderColor="gray.100">

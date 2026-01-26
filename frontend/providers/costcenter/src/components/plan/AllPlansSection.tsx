@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, cn, TableCell, TableHead, TableRow } from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   TableLayout,
   TableLayoutCaption,
@@ -8,20 +8,62 @@ import {
   TableLayoutBody,
   TableLayoutContent
 } from '@sealos/shadcn-ui/table-layout';
-import { getWorkspaceSubscriptionList, getPaymentList } from '@/api/plan';
+import {
+  getWorkspaceSubscriptionList,
+  getPaymentList,
+  createSubscriptionPayment
+} from '@/api/plan';
 import useBillingStore from '@/stores/billing';
 import request from '@/service/request';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { formatMoney } from '@/utils/format';
 import { getPlanBackgroundClass } from './PlanHeader';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
+import { Button } from '@sealos/shadcn-ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@sealos/shadcn-ui/dropdown-menu';
+import { BadgeX, MoreHorizontal } from 'lucide-react';
+import CancelPlanModal from './CancelPlanModal';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import useSessionStore from '@/stores/session';
+import { UpgradePlanDialog } from './UpgradePlanDialog';
 
-export function AllPlansSection() {
+export function AllPlansSection({
+  onRenewSuccess
+}: {
+  onRenewSuccess?: (payload: {
+    planName: string;
+    maxResources?: {
+      cpu: string;
+      memory: string;
+      storage: string;
+      nodeports: string;
+    };
+    traffic?: number;
+  }) => void;
+}) {
   const { t } = useTranslation();
+  const { toast } = useCustomToast();
+  const queryClient = useQueryClient();
   const { regionList: regions } = useBillingStore();
+  const { getRegion } = useBillingStore();
+  const currentRegion = getRegion();
+  const { session } = useSessionStore();
+  const currentWorkspaceId = session?.user?.nsid || '';
   const { plansData } = usePlanStore();
+  const [cancelTarget, setCancelTarget] = useState<{
+    workspaceId: string;
+    regionDomain: string;
+    planName: string;
+    payMethod: 'stripe' | 'balance';
+    currentPeriodEndAt?: string;
+  } | null>(null);
   // Set default time range: 31 days ago to now
   const effectiveStartTime = useMemo(() => {
     return new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
@@ -104,6 +146,79 @@ export function AllPlansSection() {
     [subscriptionListData]
   );
 
+  const subscriptionActionMutation = useMutation({
+    mutationFn: createSubscriptionPayment,
+    onSuccess: async (data, variables) => {
+      if (data?.code === 200) {
+        if (variables.operator === 'canceled') {
+          toast({
+            title: t('common:cancel_plan_success_title'),
+            description: t('common:cancel_plan_success_desc'),
+            variant: 'success'
+          });
+        } else if (variables.operator === 'resumed') {
+          toast({
+            title: t('common:resume_plan_success_title'),
+            description: t('common:resume_plan_success_desc'),
+            variant: 'success'
+          });
+
+          // Show congratulations modal for renewed subscription (best-effort: local data)
+          try {
+            const planName = variables.planName;
+            const plan = plansData?.plans?.find((p) => p.Name === planName);
+            const maxResources = plan?.MaxResources ? JSON.parse(plan.MaxResources) : undefined;
+            onRenewSuccess?.({
+              planName,
+              maxResources,
+              traffic: plan?.Traffic
+            });
+          } catch {
+            // Ignore parsing errors, still consider renew successful
+            onRenewSuccess?.({ planName: variables.planName });
+          }
+        } else {
+          toast({ title: t('common:close'), variant: 'success' });
+        }
+        setCancelTarget(null);
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ['workspace-subscription-list'],
+            exact: false
+          }),
+          queryClient.invalidateQueries({ queryKey: ['subscription-info'], exact: false }),
+          queryClient.invalidateQueries({ queryKey: ['last-transaction'], exact: false })
+        ]);
+        return;
+      }
+
+      toast({
+        title:
+          variables.operator === 'canceled'
+            ? t('common:cancel_plan_failed_title')
+            : variables.operator === 'resumed'
+            ? t('common:resume_plan_failed_title')
+            : t('common:error'),
+        description:
+          data?.message ||
+          data?.error ||
+          (variables.operator === 'canceled'
+            ? t('common:cancel_plan_failed_desc')
+            : variables.operator === 'resumed'
+            ? t('common:resume_plan_failed_desc')
+            : undefined),
+        variant: 'destructive'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:error'),
+        description: error?.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
   const allSubscriptions = useMemo(() => {
     // Pre-process data into Maps for O(1) lookups
     const regionsMap = new Map(regions.map((r) => [r.uid, r]));
@@ -118,20 +233,26 @@ export function AllPlansSection() {
     return Object.entries(nsListData ?? {}).map(([regionUid, namespaces]) => {
       const region = regionsMap.get(regionUid);
       const regionName = region?.name?.en || region?.name?.zh || region?.domain || regionUid;
+      const regionDomain = region?.domain || '';
 
       return {
         regionUid,
         regionName,
+        regionDomain,
         workspaces: namespaces.map(([namespaceId, workspaceName]) => {
           const subscription = subscriptionsMap.get(namespaceId);
 
           if (subscription) {
             const monthlyPrice = planPricesMap.get(subscription.PlanName) ?? 0;
+            const isFreePlan = (subscription.PlanName || '').toLowerCase() === 'free';
             return {
               namespaceId,
               workspaceName,
               plan: subscription.PlanName,
               renewalTime: subscription.CurrentPeriodEndAt,
+              cancelAtPeriodEnd: !!subscription.CancelAtPeriodEnd && !isFreePlan,
+              status: subscription.Status,
+              payMethod: subscription.PayMethod,
               price: monthlyPrice
             };
           } else {
@@ -140,6 +261,9 @@ export function AllPlansSection() {
               workspaceName,
               plan: 'PAYG',
               renewalTime: null,
+              cancelAtPeriodEnd: false,
+              status: '',
+              payMethod: '',
               price: null
             };
           }
@@ -172,6 +296,7 @@ export function AllPlansSection() {
                 <TableHead className="bg-transparent">{t('common:plan')}</TableHead>
                 <TableHead className="bg-transparent">{t('common:quota_resets_on')}</TableHead>
                 <TableHead className="bg-transparent">{t('common:price')}</TableHead>
+                <TableHead className="bg-transparent hidden">{t('common:actions')}</TableHead>
               </TableLayoutHeadRow>
 
               <TableLayoutBody>
@@ -184,7 +309,25 @@ export function AllPlansSection() {
                             {workspace.workspaceName?.[0]?.toUpperCase() || 'W'}
                           </AvatarFallback>
                         </Avatar>
-                        <div>{workspace.workspaceName || t('common:unknown_workspace')}</div>
+                        <div className="flex items-center gap-2">
+                          <span>{workspace.workspaceName || t('common:unknown_workspace')}</span>
+                          {(workspace.status || '').toLowerCase() === 'debt' && (
+                            <Badge
+                              className="bg-red-50 text-red-600 border border-red-300 rounded-full"
+                              variant="destructive"
+                            >
+                              {t('common:in_debt')}
+                            </Badge>
+                          )}
+                          {workspace.cancelAtPeriodEnd && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-zinc-100 text-muted-foreground rounded-full"
+                            >
+                              {t('common:plan_cancelled')}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -199,7 +342,11 @@ export function AllPlansSection() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {workspace.renewalTime ? formatDate(workspace.renewalTime) : '---'}
+                      {workspace.cancelAtPeriodEnd
+                        ? '-'
+                        : workspace.renewalTime
+                        ? formatDate(workspace.renewalTime)
+                        : '---'}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-sm">
@@ -215,6 +362,103 @@ export function AllPlansSection() {
                         </span>
                       </div>
                     </TableCell>
+                    <TableCell className="hidden">
+                      {(() => {
+                        const statusLower = (workspace.status || '').toLowerCase();
+                        const isPayg = workspace.plan === 'PAYG';
+                        const isDebt = statusLower === 'debt';
+                        const isCancelled = workspace.cancelAtPeriodEnd;
+
+                        const payMethod: 'stripe' | 'balance' =
+                          workspace.payMethod === 'balance' || workspace.payMethod === 'stripe'
+                            ? (workspace.payMethod as 'stripe' | 'balance')
+                            : 'stripe';
+
+                        const canUseUpgradeDialog =
+                          workspace.namespaceId === currentWorkspaceId &&
+                          regionData.regionDomain === (currentRegion?.domain || '');
+
+                        if (isPayg) return <span>---</span>;
+
+                        if (isDebt) {
+                          return canUseUpgradeDialog ? (
+                            <UpgradePlanDialog isUpgradeMode>
+                              <Button variant="outline" size="sm">
+                                {t('common:renew')}
+                              </Button>
+                            </UpgradePlanDialog>
+                          ) : (
+                            <Button variant="outline" size="sm" disabled>
+                              {t('common:renew')}
+                            </Button>
+                          );
+                        }
+
+                        if (isCancelled) {
+                          return (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={subscriptionActionMutation.isLoading}
+                              onClick={() => {
+                                if (!regionData.regionDomain) return;
+                                subscriptionActionMutation.mutate({
+                                  workspace: workspace.namespaceId,
+                                  regionDomain: regionData.regionDomain,
+                                  planName: workspace.plan,
+                                  payMethod,
+                                  operator: 'resumed'
+                                });
+                              }}
+                            >
+                              {t('common:renew_plan')}
+                            </Button>
+                          );
+                        }
+
+                        return (
+                          <div className="flex items-center gap-2">
+                            {canUseUpgradeDialog ? (
+                              <UpgradePlanDialog isUpgradeMode>
+                                <Button variant="outline" size="sm">
+                                  {t('common:upgrade')}
+                                </Button>
+                              </UpgradePlanDialog>
+                            ) : (
+                              <Button variant="outline" size="sm" disabled>
+                                {t('common:upgrade')}
+                              </Button>
+                            )}
+
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  variant="destructive"
+                                  onClick={() => {
+                                    if (!regionData.regionDomain) return;
+                                    setCancelTarget({
+                                      workspaceId: workspace.namespaceId,
+                                      regionDomain: regionData.regionDomain,
+                                      planName: workspace.plan,
+                                      payMethod,
+                                      currentPeriodEndAt: workspace.renewalTime || undefined
+                                    });
+                                  }}
+                                >
+                                  <BadgeX className="h-4 w-4" />
+                                  <span>{t('common:unsubscribe')}</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableLayoutBody>
@@ -222,6 +466,25 @@ export function AllPlansSection() {
           </TableLayout>
         ))}
       </div>
+
+      {cancelTarget && (
+        <CancelPlanModal
+          isOpen={!!cancelTarget}
+          workspaceName={cancelTarget.workspaceId}
+          currentPeriodEndAt={cancelTarget.currentPeriodEndAt}
+          isSubmitting={subscriptionActionMutation.isLoading}
+          onClose={() => setCancelTarget(null)}
+          onConfirm={() => {
+            subscriptionActionMutation.mutate({
+              workspace: cancelTarget.workspaceId,
+              regionDomain: cancelTarget.regionDomain,
+              planName: cancelTarget.planName,
+              payMethod: cancelTarget.payMethod,
+              operator: 'canceled'
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

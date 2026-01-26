@@ -18,6 +18,8 @@ import { PlanHeader } from '@/components/plan/PlanHeader';
 import { BalanceSection } from '@/components/plan/BalanceSection';
 import { CardInfoSection } from '@/components/plan/CardInfoSection';
 import { InvoicePaymentBanner } from '@/components/plan/InvoicePaymentBanner';
+import { BeingCancelledBanner } from '@/components/plan/BeingCancelledBanner';
+import { FreePlanExpiryBanner } from '@/components/plan/FreePlanExpiryBanner';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
@@ -80,6 +82,17 @@ export default function Plan() {
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [congratulationsMode, setCongratulationsMode] = useState<'upgrade' | 'renew'>('upgrade');
+  const [congratulationsOverride, setCongratulationsOverride] = useState<{
+    planName?: string;
+    maxResources?: {
+      cpu: string;
+      memory: string;
+      storage: string;
+      nodeports: string;
+    };
+    traffic?: number;
+  } | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
   // Track if Stripe success has been tracked to prevent duplicates
@@ -194,6 +207,7 @@ export default function Plan() {
       hideModal();
       // Close UpgradePlanDialog to prevent focus fighting
       setSubscriptionModalOpen(false);
+      setCongratulationsMode('upgrade');
       setShowCongratulations(true);
       setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
       isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
@@ -656,7 +670,30 @@ export default function Plan() {
                 />
               </div>
             )}
-            <PlanHeader>
+            {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+              subscriptionData?.subscription?.PlanName?.toLowerCase() !== 'free' &&
+              subscriptionData?.subscription?.CurrentPeriodEndAt && (
+                <div className="mb-4">
+                  <BeingCancelledBanner
+                    currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+                  />
+                </div>
+              )}
+            {subscriptionData?.subscription?.PlanName?.toLowerCase() === 'free' &&
+              subscriptionData?.subscription?.CurrentPeriodEndAt && (
+                <div className="mb-4">
+                  <FreePlanExpiryBanner
+                    currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+                  />
+                </div>
+              )}
+            <PlanHeader
+              onRenewSuccess={() => {
+                setWorkspaceId(session?.user?.nsid || '');
+                setCongratulationsMode('renew');
+                setShowCongratulations(true);
+              }}
+            >
               {({ trigger }) => (
                 <UpgradePlanDialog
                   onSubscribe={handleSubscribe}
@@ -706,8 +743,27 @@ export default function Plan() {
               inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
             />
           )}
+          {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+            subscriptionData?.subscription?.PlanName?.toLowerCase() !== 'free' &&
+            subscriptionData?.subscription?.CurrentPeriodEndAt && (
+              <BeingCancelledBanner
+                currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+              />
+            )}
+          {subscriptionData?.subscription?.PlanName?.toLowerCase() === 'free' &&
+            subscriptionData?.subscription?.CurrentPeriodEndAt && (
+              <FreePlanExpiryBanner
+                currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+              />
+            )}
 
-          <PlanHeader>
+          <PlanHeader
+            onRenewSuccess={() => {
+              setWorkspaceId(session?.user?.nsid || '');
+              setCongratulationsMode('renew');
+              setShowCongratulations(true);
+            }}
+          >
             {({ trigger }) => (
               <UpgradePlanDialog
                 onSubscribe={handleSubscribe}
@@ -735,7 +791,13 @@ export default function Plan() {
 
       <CardInfoSection workspace={session?.user?.nsid} regionDomain={region?.domain} />
 
-      <AllPlansSection />
+      <AllPlansSection
+        onRenewSuccess={(payload) => {
+          setCongratulationsOverride(payload);
+          setCongratulationsMode('renew');
+          setShowCongratulations(true);
+        }}
+      />
       {/* Modals */}
       {rechargeEnabled && (
         <RechargeModal
@@ -766,18 +828,25 @@ export default function Plan() {
 
       <CongratulationsModal
         isOpen={showCongratulations}
-        planName={workspaceSubscriptionData?.data?.subscription?.PlanName || 'Pro Plan'}
+        mode={congratulationsMode}
+        planName={
+          congratulationsOverride?.planName ||
+          workspaceSubscriptionData?.data?.subscription?.PlanName ||
+          'Pro Plan'
+        }
         maxResources={
-          workspaceSubscriptionData?.data?.subscription?.PlanName
+          congratulationsOverride?.maxResources ||
+          (workspaceSubscriptionData?.data?.subscription?.PlanName
             ? JSON.parse(
                 plansData?.plans?.find(
                   (p: SubscriptionPlan) =>
                     p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
                 )?.MaxResources || '{}'
               )
-            : undefined
+            : undefined)
         }
         traffic={
+          congratulationsOverride?.traffic ||
           plansData?.plans?.find(
             (p: SubscriptionPlan) =>
               p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
@@ -786,6 +855,7 @@ export default function Plan() {
         onClose={() => {
           setShowCongratulations(false);
           setWorkspaceId('');
+          setCongratulationsOverride(null);
           // Clean up URL parameters after closing the modal
           const url = new URL(window.location.href);
           url.searchParams.delete('stripeState');
@@ -832,6 +902,7 @@ export default function Plan() {
             // Set workspace ID for congratulations modal
             const targetWorkspace = session?.user?.nsid || '';
             setWorkspaceId(targetWorkspace);
+            setCongratulationsMode('upgrade');
             setShowCongratulations(true);
           }
         }}
