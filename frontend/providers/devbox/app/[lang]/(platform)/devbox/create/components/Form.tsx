@@ -108,6 +108,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         {/* Advanced Configurations */}
         {showAdvancedConfig && (
           <AdvancedConfig
+            isEdit={isEdit}
             showEnvAndConfigmap={showEnvAndConfigmap}
             showNfs={showNfs}
             showSharedMemory={showSharedMemory}

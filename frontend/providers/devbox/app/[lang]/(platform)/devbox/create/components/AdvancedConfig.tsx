@@ -14,12 +14,14 @@ import NetworkStorageDrawer from '@/components/drawers/NetworkStorageDrawer';
 import type { DevboxEditTypeV2 } from '@/types/devbox';
 
 interface AdvancedConfigProps {
+  isEdit: boolean;
   showEnvAndConfigmap: boolean;
   showNfs: boolean;
   showSharedMemory: boolean;
 }
 
 export default function AdvancedConfig({
+  isEdit,
   showEnvAndConfigmap,
   showNfs,
   showSharedMemory
@@ -86,7 +88,8 @@ export default function AdvancedConfig({
                     onClick={() => {
                       const newSize = Math.max(1, (sharedMemory.sizeLimit || 64) - 1);
                       setValue('sharedMemory', { ...sharedMemory, sizeLimit: newSize });
-                    }}>
+                    }}
+                  >
                     <Minus className="h-4 w-4 text-zinc-500" />
                   </button>
                   <div className="flex h-10 w-20 items-center justify-center border-y border-zinc-200 bg-white">
@@ -98,7 +101,8 @@ export default function AdvancedConfig({
                     onClick={() => {
                       const newSize = Math.min(maxSharedMemory, (sharedMemory.sizeLimit || 64) + 1);
                       setValue('sharedMemory', { ...sharedMemory, sizeLimit: newSize });
-                    }}>
+                    }}
+                  >
                     <Plus className="h-4 w-4 text-zinc-500" />
                   </button>
                 </div>
@@ -119,7 +123,8 @@ export default function AdvancedConfig({
             <Button
               variant="outline"
               className="h-9 gap-2 bg-white px-4 py-2"
-              onClick={() => setIsEnvDrawerOpen(true)}>
+              onClick={() => setIsEnvDrawerOpen(true)}
+            >
               <PencilLine className="h-4 w-4 text-neutral-500" />
               <span className="text-sm/5 font-medium">{t('edit')}</span>
             </Button>
@@ -144,7 +149,8 @@ export default function AdvancedConfig({
                   key={idx}
                   className={`flex border-b border-zinc-200 last:border-b-0 ${
                     idx % 2 === 1 ? 'bg-zinc-50' : ''
-                  }`}>
+                  }`}
+                >
                   <div className="w-50 border-r border-zinc-200 px-3 py-2">
                     <span className="truncate text-sm">{env.key}</span>
                   </div>
@@ -171,7 +177,8 @@ export default function AdvancedConfig({
               onClick={() => {
                 setEditingConfigMapIndex(null);
                 setIsConfigMapDrawerOpen(true);
-              }}>
+              }}
+            >
               <Plus className="h-4 w-4 text-neutral-500" />
               <span className="text-sm/5 font-medium">{t('add')}</span>
             </Button>
@@ -182,13 +189,15 @@ export default function AdvancedConfig({
             {configMaps.map((config, idx) => (
               <div
                 key={idx}
-                className="flex h-14 items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3">
+                className="flex h-14 items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3"
+              >
                 <div
                   className="flex flex-1 cursor-pointer items-center gap-3"
                   onClick={() => {
                     setEditingConfigMapIndex(idx);
                     setIsConfigMapDrawerOpen(true);
-                  }}>
+                  }}
+                >
                   <FileText className="h-6 w-6 text-zinc-400" />
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-gray-900">{config.path}</span>
@@ -207,7 +216,8 @@ export default function AdvancedConfig({
                       'configMaps',
                       configMaps.filter((_, i) => i !== idx)
                     );
-                  }}>
+                  }}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -229,7 +239,8 @@ export default function AdvancedConfig({
               onClick={() => {
                 setEditingStorageIndex(null);
                 setIsNetworkStorageDrawerOpen(true);
-              }}>
+              }}
+            >
               <Plus className="h-4 w-4 text-neutral-500" />
               <span className="text-sm/5 font-medium">{t('add')}</span>
             </Button>
@@ -240,13 +251,15 @@ export default function AdvancedConfig({
             {volumes.map((storage, idx) => (
               <div
                 key={idx}
-                className="flex h-14 items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3">
+                className="flex h-14 items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3"
+              >
                 <div
                   className="flex flex-1 cursor-pointer items-center gap-3"
                   onClick={() => {
                     setEditingStorageIndex(idx);
                     setIsNetworkStorageDrawerOpen(true);
-                  }}>
+                  }}
+                >
                   <HardDrive className="h-6 w-6 text-zinc-400" />
                   <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-gray-900">{storage.path}</span>
@@ -262,7 +275,8 @@ export default function AdvancedConfig({
                       'volumes',
                       volumes.filter((_, i) => i !== idx)
                     );
-                  }}>
+                  }}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
@@ -307,6 +321,7 @@ export default function AdvancedConfig({
 
       {isNetworkStorageDrawerOpen && (
         <NetworkStorageDrawer
+          isEdit={isEdit}
           initialValue={editingStorageIndex !== null ? volumes[editingStorageIndex] : undefined}
           existingPaths={volumes
             .filter((_, idx) => idx !== editingStorageIndex)
