@@ -130,7 +130,7 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: ./service/${{ inputs.module }}
+          context: .
           file: ./service/${{ inputs.module }}/Dockerfile
           platforms: linux/${{ matrix.arch }}
           labels: ${{ steps.meta.outputs.labels }}
