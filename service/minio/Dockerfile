@@ -16,7 +16,7 @@ COPY . .
 RUN cd service/minio && go mod download
 
 RUN cd service/minio && \
-    go build -tags=jsoniter \
+    go build \
     -trimpath \
     -ldflags "-s -w" \
     -o /manager \

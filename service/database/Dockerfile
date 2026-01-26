@@ -16,7 +16,7 @@ COPY . .
 RUN cd service/database && go mod download
 
 RUN cd service/database && \
-    go build -tags=jsoniter \
+    go build \
     -trimpath \
     -ldflags "-s -w" \
     -o /manager \

@@ -16,7 +16,7 @@ COPY . .
 RUN cd service/vlogs && go mod download
 
 RUN cd service/vlogs && \
-    go build -tags=jsoniter \
+    go build \
     -trimpath \
     -ldflags "-s -w" \
     -o /manager \

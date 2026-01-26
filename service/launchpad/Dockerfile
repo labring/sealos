@@ -16,7 +16,7 @@ COPY . .
 RUN cd service/launchpad && go mod download
 
 RUN cd service/launchpad && \
-    go build -tags=jsoniter \
+    go build \
     -trimpath \
     -ldflags "-s -w" \
     -o /manager \

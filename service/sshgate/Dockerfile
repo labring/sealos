@@ -16,7 +16,7 @@ COPY . .
 RUN cd service/sshgate && go mod download
 
 RUN cd service/sshgate && \
-    go build -tags=jsoniter \
+    go build \
     -trimpath \
     -ldflags "-s -w" \
     -o /sshgate \

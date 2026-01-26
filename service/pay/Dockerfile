@@ -16,7 +16,7 @@ COPY . .
 RUN cd service/pay && go mod download
 
 RUN cd service/pay && \
-    go build -tags=jsoniter \
+    go build \
     -trimpath \
     -ldflags "-s -w" \
     -o /manager \
