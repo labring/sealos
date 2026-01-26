@@ -9,12 +9,12 @@ RUN apk add --no-cache \
 
 WORKDIR /workspace
 
-# Copy all source code
-COPY . .
-
 ENV CGO_ENABLED=0
 
-# Build the binary
+COPY . .
+
+RUN cd service/minio && go mod download
+
 RUN cd service/minio && \
     go build -tags=jsoniter \
     -trimpath \
