@@ -92,7 +92,9 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           <Terminal className="h-4 w-4" />
         </Button>
         <ButtonGroup>
-          {devboxDetail.status.value === 'Stopped' || devboxDetail.status.value === 'Shutdown' ? (
+          {devboxDetail.status.value === 'Stopped' ||
+          devboxDetail.status.value === 'Shutdown' ||
+          devboxDetail.status.value === 'Paused' ? (
             <Button
               variant="outline"
               size="lg"
