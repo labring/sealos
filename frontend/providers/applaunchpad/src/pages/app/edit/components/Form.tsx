@@ -26,6 +26,7 @@ import {
   Grid,
   IconButton,
   Input,
+  Switch,
   useDisclosure,
   useTheme
 } from '@chakra-ui/react';
@@ -298,9 +299,11 @@ const Form = ({
 
     const cpu = getValues('cpu');
     const memory = getValues('memory');
+    const ephemeralStorage = getValues('ephemeralStorage');
 
     const cpuList = formSliderListConfig[key].cpu;
     const memoryList = formSliderListConfig[key].memory;
+    const ephemeralStorageList = formSliderListConfig[key].ephemeralStorage || [10, 20, 30, 40, 50];
 
     const sortedCpuList = !!gpuType
       ? cpuList
@@ -314,6 +317,11 @@ const Form = ({
         ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
         : memoryList;
 
+    const sortedEphemeralStorageList =
+      ephemeralStorage !== undefined
+        ? [...new Set([...ephemeralStorageList, ephemeralStorage])].sort((a, b) => a - b)
+        : ephemeralStorageList;
+
     return {
       cpu: sliderNumber2MarkList({
         val: sortedCpuList,
@@ -324,6 +332,10 @@ const Form = ({
         val: sortedMemoryList,
         type: 'memory',
         gpuAmount: getValues('gpu.amount')
+      }),
+      ephemeralStorage: sliderNumber2MarkList({
+        val: sortedEphemeralStorageList,
+        type: 'ephemeralStorage'
       })
     };
   }, [formSliderListConfig, getValues]);
@@ -446,6 +458,7 @@ const Form = ({
                     : undefined
                 }
                 nodeports={getValues('networks').filter((item) => item.openNodePort)?.length || 0}
+                ephemeralStorage={getValues('ephemeralStorage') || 0}
               />
             </Box>
           )}
@@ -807,7 +820,7 @@ const Form = ({
                   (Core)
                 </Box>
               </Flex>
-              <Flex mb={8} pr={3} alignItems={'center'}>
+              <Flex mb={10} pr={3} alignItems={'center'}>
                 <Label mr={'7px'}>{t('Memory')}</Label>
                 <MySlider
                   markList={SliderList.memory}
@@ -819,6 +832,22 @@ const Form = ({
                   min={0}
                   step={1}
                 />
+              </Flex>
+              <Flex mb={8} pr={3} alignItems={'center'}>
+                <Label mr={'7px'}>{t('ephemeral-storage')}</Label>
+                <MySlider
+                  markList={SliderList.ephemeralStorage}
+                  activeVal={getValues('ephemeralStorage') || SliderList.ephemeralStorage[0]?.value}
+                  setVal={(e) => {
+                    setValue('ephemeralStorage', SliderList.ephemeralStorage[e].value);
+                  }}
+                  max={SliderList.ephemeralStorage.length - 1}
+                  min={0}
+                  step={1}
+                />
+                <Box ml={5} transform={'translateY(10px)'} color={'grayModern.500'}>
+                  Gi
+                </Box>
               </Flex>
             </Box>
           </Box>
@@ -863,6 +892,65 @@ const Form = ({
                 </AccordionButton>
 
                 <AccordionPanel px={'42px'} py={'24px'}>
+                  {/* Shared Memory */}
+                  <Flex alignItems={'center'} gap={'32px'} mb={'24px'}>
+                    <Flex alignItems={'center'} gap={'16px'}>
+                      <Label className={styles.formSecondTitle} m={0}>
+                        {t('shared_memory')}
+                      </Label>
+                      <Switch
+                        size={'lg'}
+                        isChecked={getValues('sharedMemory.enabled') || false}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setValue('sharedMemory', {
+                              enabled: true,
+                              sizeLimit: Math.min(getValues('memory'), 512)
+                            });
+                          } else {
+                            setValue('sharedMemory', undefined);
+                          }
+                        }}
+                      />
+                    </Flex>
+                    {getValues('sharedMemory.enabled') && (
+                      <Flex alignItems={'center'} gap={'12px'}>
+                        <Flex alignItems={'center'} gap={'8px'}>
+                          <Input
+                            w={'80px'}
+                            h={'32px'}
+                            type={'number'}
+                            bg={'grayModern.50'}
+                            value={getValues('sharedMemory.sizeLimit') || 64}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 64;
+                              setValue(
+                                'sharedMemory.sizeLimit',
+                                Math.min(val, getValues('memory'))
+                              );
+                            }}
+                          />
+                          <Box fontSize={'12px'} color={'grayModern.900'}>
+                            Mi
+                          </Box>
+                        </Flex>
+                        <Flex
+                          alignItems={'center'}
+                          gap={'4px'}
+                          px={'12px'}
+                          py={'6px'}
+                          bg={'brightBlue.50'}
+                          borderRadius={'6px'}
+                        >
+                          <InfoOutlineIcon w={'14px'} h={'14px'} color={'brightBlue.600'} />
+                          <Box fontSize={'11px'} color={'brightBlue.600'}>
+                            {t('shared_memory_tip')}
+                          </Box>
+                        </Flex>
+                      </Flex>
+                    )}
+                  </Flex>
+
                   <Flex mb={'16px'}>
                     <Label className={styles.formSecondTitle}>{t('Command')}</Label>
                     <Tip

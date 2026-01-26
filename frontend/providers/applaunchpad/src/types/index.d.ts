@@ -15,6 +15,7 @@ export type FormSliderListType = Record<
   {
     cpu: number[];
     memory: number[];
+    ephemeralStorage?: number[];
   }
 >;
 

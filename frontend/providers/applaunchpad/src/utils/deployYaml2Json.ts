@@ -118,7 +118,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       limits: {
         cpu: `${str2Num(data.cpu)}m`,
         memory: `${str2Num(data.memory)}Mi`,
-        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {}),
+        ...(data.ephemeralStorage
+          ? { 'ephemeral-storage': `${str2Num(data.ephemeralStorage)}Gi` }
+          : {})
       }
     },
     command: (() => {
@@ -177,12 +180,43 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     mountPath: store.path
   }));
 
-  const finalVolumes = [...(data.volumes || []), ...configMapVolumes, ...remoteStoreVolumes];
+  // Shared memory volume (emptyDir with Memory medium)
+  const sharedMemoryVolume =
+    data.sharedMemory?.enabled && data.sharedMemory.sizeLimit > 0
+      ? [
+          {
+            name: 'shared-memory',
+            emptyDir: {
+              medium: 'Memory',
+              sizeLimit: `${str2Num(data.sharedMemory.sizeLimit)}Mi`
+            }
+          }
+        ]
+      : [];
+
+  // Shared memory volumeMount
+  const sharedMemoryVolumeMount =
+    data.sharedMemory?.enabled && data.sharedMemory.sizeLimit > 0
+      ? [
+          {
+            name: 'shared-memory',
+            mountPath: '/dev/shm'
+          }
+        ]
+      : [];
+
+  const finalVolumes = [
+    ...(data.volumes || []),
+    ...configMapVolumes,
+    ...remoteStoreVolumes,
+    ...sharedMemoryVolume
+  ];
 
   const finalVolumeMounts = [
     ...(data.volumeMounts || []),
     ...configMapVolumeMounts,
-    ...remoteStoreVolumeMounts
+    ...remoteStoreVolumeMounts,
+    ...sharedMemoryVolumeMount
   ];
 
   // Local stores: add to volumeClaimTemplates (per-instance storage)

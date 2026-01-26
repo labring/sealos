@@ -29,10 +29,11 @@ export type userPriceType = {
   storage: number;
   gpu?: { alias: string; type: string; price: number; inventory: number; vm: number }[];
   nodeports: number;
+  ephemeralStorage: number;
 };
 
 export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'storage' | 'gpu' | 'nodeports';
+  type: 'cpu' | 'memory' | 'storage' | 'ephemeral-storage' | 'gpu' | 'nodeports';
   used: number;
   limit: number;
 };

@@ -19,6 +19,11 @@ export type HpaTarget = 'cpu' | 'memory' | 'gpu';
 
 export type StorageType = 'local' | 'remote';
 
+export interface SharedMemoryType {
+  enabled: boolean;
+  sizeLimit: number; // unit: Mi
+}
+
 export type DeployKindsType =
   | V1Deployment
   | V1StatefulSet
@@ -130,6 +135,10 @@ export interface AppEditType {
   volumes: V1Volume[];
   volumeMounts: V1VolumeMount[];
   kind: 'deployment' | 'statefulset';
+  // ephemeral-storage limit (unit: Gi)
+  ephemeralStorage?: number;
+  // shared memory (tmpfs mounted at /dev/shm)
+  sharedMemory?: SharedMemoryType;
 }
 
 export type AppEditSyncedFields = Pick<
@@ -147,6 +156,8 @@ export type AppEditSyncedFields = Pick<
   | 'configMapList'
   | 'storeList'
   | 'envs'
+  | 'ephemeralStorage'
+  | 'sharedMemory'
 >;
 
 export type TAppSourceType = 'app_store' | 'sealaf';

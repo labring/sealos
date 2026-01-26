@@ -39,7 +39,8 @@ export const useGlobalStore = create<State>()(
       formSliderListConfig: {
         [defaultSliderKey]: {
           cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
-          memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+          memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384],
+          ephemeralStorage: [10, 20, 30, 40, 50]
         }
       },
       initFormSliderList(res) {

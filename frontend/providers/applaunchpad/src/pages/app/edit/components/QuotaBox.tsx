@@ -26,6 +26,10 @@ const sourceMap = {
   nodeports: {
     color: '#FFA500',
     unit: ''
+  },
+  'ephemeral-storage': {
+    color: '#FFA500',
+    unit: 'Gi'
   }
 };
 
