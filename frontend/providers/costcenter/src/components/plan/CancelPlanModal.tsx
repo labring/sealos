@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, Dialog, DialogContent, DialogOverlay, Input } from '@sealos/shadcn-ui';
 import { LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
@@ -23,6 +23,12 @@ export default function CancelPlanModal({
 }: CancelPlanModalProps) {
   const { t } = useTranslation();
   const [confirmInput, setConfirmInput] = useState('');
+
+  useEffect(() => {
+    // Always reset local state when the dialog closes/opens or target changes,
+    // to prevent dirty data when reopening the modal.
+    setConfirmInput('');
+  }, [isOpen, workspaceName]);
 
   const periodEndDate = useMemo(() => {
     if (!currentPeriodEndAt) return '';
