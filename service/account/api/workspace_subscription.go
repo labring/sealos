@@ -1186,7 +1186,10 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 	// Allow recreating the same plan for debt status subscriptions
 	if currentSubscription != nil && currentSubscription.PlanName == req.PlanName &&
 		req.Operator != types.SubscriptionTransactionTypeRenewed &&
-		currentSubscription.Status != types.SubscriptionStatusDebt {
+		req.Operator != types.SubscriptionTransactionTypeResumed &&
+		req.Operator != types.SubscriptionTransactionTypeCanceled &&
+		currentSubscription.Status != types.SubscriptionStatusDebt &&
+		currentSubscription.Status != types.SubscriptionStatusDeleted {
 		SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "plan name is same as current plan"})
 		return
 	}
@@ -1407,17 +1410,25 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 			return
 		}
 		// Renewal uses full plan price
-
-	case types.SubscriptionTransactionTypeCanceled:
+	case types.SubscriptionTransactionTypeResumed, types.SubscriptionTransactionTypeCanceled:
 		if currentSubscription == nil {
 			SetErrorResp(
 				c,
 				http.StatusBadRequest,
-				gin.H{"error": "cannot cancel without existing subscription"},
+				gin.H{"error": "cannot resume/cancel without existing subscription"},
 			)
 			return
 		}
-		// Cancellation has no cost
+		now := time.Now().UTC()
+		if currentSubscription.Status == types.SubscriptionStatusDeleted ||
+			!currentSubscription.CurrentPeriodEndAt.After(now) {
+			SetErrorResp(
+				c,
+				http.StatusBadRequest,
+				gin.H{"error": "subscription expired, please resubscribe"},
+			)
+			return
+		}
 		transaction.Amount = 0
 		transaction.Status = types.SubscriptionTransactionStatusPending
 	}
@@ -2309,10 +2320,9 @@ func processNoPaymentOperationInTransaction(
 
 	// Set appropriate status based on operator
 	switch transaction.Operator {
-	// TODO 非Free用户关闭需要将 workspaceSubscription.CancelAtPeriodEnd改为 true，并且关闭stripe订阅，订阅状态修改为cancel状态（目前不提供主动cancel）
 	// 降级则创建开始时间为 workspaceSubscription.CurrentPeriodEndAt的pending状态的操作降级的workspaceSubscriptionTransaction
 	// 等待workspaceSubscription.CurrentPeriodEndAt结束后处理
-	case types.SubscriptionTransactionTypeDowngraded, types.SubscriptionTransactionTypeCanceled:
+	case types.SubscriptionTransactionTypeDowngraded:
 		// These operations take effect later, so keep as pending
 		transaction.Status = types.SubscriptionTransactionStatusPending
 		transaction.StartAt = subscription.CurrentPeriodEndAt.Add(
@@ -2340,6 +2350,113 @@ func processNoPaymentOperationInTransaction(
 				-1 * time.Hour,
 			) // Buffer time before period end
 			transaction.PayStatus = types.SubscriptionPayStatusUnpaid
+		}
+	case types.SubscriptionTransactionTypeCanceled:
+		now := time.Now().UTC()
+		transaction.Status = types.SubscriptionTransactionStatusCompleted
+		transaction.StartAt = now
+		transaction.PayStatus = types.SubscriptionPayStatusNoNeed
+
+		if subscription == nil {
+			SetErrorResp(
+				c,
+				http.StatusBadRequest,
+				gin.H{"error": "cannot cancel without existing subscription"},
+			)
+			return errors.New("cancel without subscription")
+		}
+
+		subscription.CancelAtPeriodEnd = true
+		subscription.UpdateAt = now
+		if err := tx.Save(subscription).Error; err != nil {
+			SetErrorResp(
+				c,
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to update subscription: %v", err)},
+			)
+			return err
+		}
+
+		if subscription.PayMethod == types.PaymentMethodStripe &&
+			subscription.Stripe != nil &&
+			subscription.Stripe.SubscriptionID != "" {
+			if _, err := services.StripeServiceInstance.UpdateSubscription(
+				subscription.Stripe.SubscriptionID,
+				&stripe.SubscriptionParams{
+					CancelAtPeriodEnd: stripe.Bool(true),
+				},
+			); err != nil {
+				SetErrorResp(
+					c,
+					http.StatusInternalServerError,
+					gin.H{
+						"error": fmt.Sprintf(
+							"failed to set Stripe subscription cancel_at_period_end: %v",
+							err,
+						),
+					},
+				)
+				return err
+			}
+		}
+	case types.SubscriptionTransactionTypeResumed:
+		now := time.Now().UTC()
+		transaction.Status = types.SubscriptionTransactionStatusCompleted
+		transaction.StartAt = now
+		transaction.PayStatus = types.SubscriptionPayStatusNoNeed
+
+		if subscription == nil {
+			SetErrorResp(
+				c,
+				http.StatusBadRequest,
+				gin.H{"error": "cannot resume without existing subscription"},
+			)
+			return errors.New("resume without subscription")
+		}
+		subscription.CancelAtPeriodEnd = false
+		subscription.CancelAt = time.Time{}
+		subscription.UpdateAt = now
+
+		if err := tx.Save(subscription).Error; err != nil {
+			SetErrorResp(
+				c,
+				http.StatusInternalServerError,
+				gin.H{"error": fmt.Sprintf("failed to update subscription: %v", err)},
+			)
+			return err
+		}
+
+		if subscription.Status == types.SubscriptionStatusDeleted ||
+			!subscription.CurrentPeriodEndAt.After(now) {
+			SetErrorResp(
+				c,
+				http.StatusBadRequest,
+				gin.H{"error": "subscription expired, please resubscribe"},
+			)
+			return errors.New("resume for expired subscription")
+		}
+
+		if subscription.PayMethod == types.PaymentMethodStripe &&
+			subscription.Stripe != nil &&
+			subscription.Stripe.SubscriptionID != "" {
+			if _, err := services.StripeServiceInstance.UpdateSubscription(
+				subscription.Stripe.SubscriptionID,
+				&stripe.SubscriptionParams{
+					CancelAtPeriodEnd: stripe.Bool(false),
+				},
+			); err != nil {
+				SetErrorResp(
+					c,
+					http.StatusInternalServerError,
+					gin.H{
+						"error": fmt.Sprintf(
+							"failed to resume Stripe subscription cancel_at_period_end: %v",
+							err,
+						),
+					},
+				)
+				return err
+			}
 		}
 	default:
 		// Immediate operations (like free plan creation)
@@ -3395,6 +3512,17 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 			return nil
 		}
 		if workspaceSubscription.Status != types.SubscriptionStatusNormal {
+			return nil
+		}
+		if workspaceSubscription.CancelAtPeriodEnd {
+			now := time.Now().UTC()
+			workspaceSubscription.PayStatus = types.SubscriptionPayStatusCanceled
+			workspaceSubscription.Status = types.SubscriptionStatusDeleted
+			workspaceSubscription.CancelAt = now
+			workspaceSubscription.UpdateAt = now
+			if err := tx.Save(workspaceSubscription).Error; err != nil {
+				return fmt.Errorf("failed to update canceled subscription: %w", err)
+			}
 			return nil
 		}
 		if workspaceSubscription.CurrentPeriodEndAt.After(time.Now().UTC()) && !deleteImmediately {

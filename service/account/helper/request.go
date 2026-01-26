@@ -721,7 +721,7 @@ type WorkspaceSubscriptionOperatorReq struct {
 	// @Summary Subscription period
 	// @Description Subscription period (1m for monthly, 1y for yearly)
 	// @JSONSchema required
-	Period types.SubscriptionPeriod `json:"period"        bson:"period"        binding:"required" example:"1m"`
+	Period types.SubscriptionPeriod `json:"period"        bson:"period"  example:"1m"`
 	// @Summary Promotion code
 	// @Description Promotion code for applying discount to the upgrade payment
 	// @JSONSchema optional
@@ -837,11 +837,12 @@ func ParseWorkspaceSubscriptionOperatorReq(
 		types.SubscriptionTransactionTypeUpgraded,
 		types.SubscriptionTransactionTypeDowngraded,
 		types.SubscriptionTransactionTypeCanceled,
-		types.SubscriptionTransactionTypeRenewed:
+		types.SubscriptionTransactionTypeRenewed,
+		types.SubscriptionTransactionTypeResumed:
 		// Valid operations
 	default:
 		return nil, fmt.Errorf(
-			"invalid operator: %s. Allowed: created, upgraded, downgraded, canceled, renewed",
+			"invalid operator: %s. Allowed: created, upgraded, downgraded, canceled, renewed, resumed",
 			req.Operator,
 		)
 	}

@@ -185,6 +185,9 @@ func (wsp *WorkspaceSubscriptionProcessor) shouldProcessTransaction(
 	tx *types.WorkspaceSubscriptionTransaction,
 ) bool {
 	now := time.Now()
+	if tx.Operator == types.SubscriptionTransactionTypeResumed {
+		return false
+	}
 	return (tx.PayStatus == types.SubscriptionPayStatusPaid || tx.PayStatus == types.SubscriptionPayStatusNoNeed || tx.PayStatus == types.SubscriptionPayStatusUnpaid) &&
 		!tx.StartAt.After(now) &&
 		tx.Status != types.SubscriptionTransactionStatusCompleted &&
@@ -626,7 +629,7 @@ func (wsp *WorkspaceSubscriptionProcessor) processExpiredBalanceSubscriptions(
 
 	err := dao.DBClient.GetGlobalDB().WithContext(ctx).
 		Model(&types.WorkspaceSubscription{}).
-		Where("current_period_end_at <= ? AND status = ? AND region_domain = ? AND pay_status != ? AND (pay_method = ? OR (expire_at > current_period_end_at))",
+		Where("current_period_end_at <= ? AND status = ? AND region_domain = ? AND pay_status != ? AND cancel_at_period_end = false AND (pay_method = ? OR (expire_at > current_period_end_at))",
 			renewalThreshold,
 			normalStatus,
 			localDomain,

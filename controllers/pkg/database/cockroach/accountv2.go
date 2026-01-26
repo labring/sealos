@@ -2026,6 +2026,7 @@ func (c *Cockroach) InitTables() error {
 	enumTypes = append(
 		enumTypes,
 		`ALTER TYPE subscription_transaction_status ADD VALUE IF NOT EXISTS 'canceled'`,
+		`ALTER TYPE subscription_operator ADD VALUE IF NOT EXISTS 'resumed'`,
 	)
 	for _, query := range enumTypes {
 		err := c.DB.Exec(query).Error
