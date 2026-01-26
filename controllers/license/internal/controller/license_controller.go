@@ -56,6 +56,7 @@ var (
 	longRequeueRes   = ctrl.Result{RequeueAfter: 30 * time.Minute}
 	shortRequeueRes  = ctrl.Result{RequeueAfter: time.Minute}
 	immediateRequeue = ctrl.Result{Requeue: true}
+	dailyNotify      = 24 * time.Hour
 )
 
 const (
@@ -166,6 +167,14 @@ func (r *LicenseReconciler) reconcile(
 				Error(updateErr, "failed to update license status after validation failure", "license", nsName)
 			return ctrl.Result{}, updateErr
 		}
+
+		// Send notification if license is expired
+		if phase == licensev1.LicenseStatusPhaseExpired {
+			if notifyErr := r.NotifyIfNeeded(ctx, license); notifyErr != nil {
+				r.Logger.V(1).Error(notifyErr, "failed to send license expiration notification", "license", nsName)
+			}
+		}
+
 		r.Logger.V(1).Error(err, "failed to validate license", "license", nsName)
 		return shortRequeueRes, nil
 	}
@@ -194,6 +203,12 @@ func (r *LicenseReconciler) reconcile(
 	}
 	r.Logger.V(1).
 		Info("license activated successfully", "license", nsName, "phase", license.Status.Phase)
+
+	// Send notifications for active licenses (e.g., expiring soon, user limit warnings)
+	if notifyErr := r.NotifyIfNeeded(ctx, license); notifyErr != nil {
+		r.Logger.V(1).Error(notifyErr, "failed to send license notification", "license", nsName)
+	}
+
 	return longRequeueRes, nil
 }
 
@@ -226,6 +241,25 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, limitOps controll
 	})); err != nil {
 		return err
 	}
+
+	// Add periodic license notification check (daily)
+	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		ticker := time.NewTicker(dailyNotify)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-ticker.C:
+				r.Logger.Info("periodic license notification check triggered")
+				if err := r.checkAndNotifyAllLicenses(ctx); err != nil {
+					r.Logger.Error(err, "failed to check and notify all licenses")
+				}
+			}
+		}
+	})); err != nil {
+		return err
+	}
 	// reconcile on generation change
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(limitOps).
@@ -250,4 +284,23 @@ func (r *LicenseReconciler) updateStatus(
 		original.Status = *status
 		return r.Client.Status().Update(ctx, original)
 	})
+}
+
+// checkAndNotifyAllLicenses checks all licenses and sends notifications as needed
+func (r *LicenseReconciler) checkAndNotifyAllLicenses(ctx context.Context) error {
+	licenseList := &licensev1.LicenseList{}
+	if err := r.List(ctx, licenseList); err != nil {
+		return fmt.Errorf("failed to list licenses: %w", err)
+	}
+
+	for i := range licenseList.Items {
+		license := &licenseList.Items[i]
+		if err := r.NotifyIfNeeded(ctx, license); err != nil {
+			r.Logger.V(1).Error(err, "failed to send notification for license",
+				"license", fmt.Sprintf("%s/%s", license.Namespace, license.Name))
+			// Continue processing other licenses even if one fails
+		}
+	}
+
+	return nil
 }
