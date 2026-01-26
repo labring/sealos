@@ -20,7 +20,7 @@ RUN cd service/launchpad && \
     -trimpath \
     -ldflags "-s -w" \
     -o /manager \
-    main.go
+    .
 
 # Runtime stage
 FROM gcr.io/distroless/static:nonroot

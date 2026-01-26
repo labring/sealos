@@ -20,7 +20,7 @@ RUN cd service/sshgate && \
     -trimpath \
     -ldflags "-s -w" \
     -o /sshgate \
-    main.go
+    .
 
 # Runtime stage
 FROM gcr.io/distroless/static:nonroot
