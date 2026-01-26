@@ -20,7 +20,7 @@ RUN cd service/hubble && \
     -trimpath \
     -ldflags "-s -w" \
     -o /manager \
-    .
+    ./cmd
 
 # Runtime stage
 FROM gcr.io/distroless/static:nonroot
