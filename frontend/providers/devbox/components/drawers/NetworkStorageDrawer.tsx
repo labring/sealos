@@ -21,6 +21,7 @@ interface NetworkStorageDrawerProps {
   onClose: () => void;
   onSuccess: (storage: { id?: string; path: string; size: number }) => void;
   initialValue?: { id?: string; path: string; size: number };
+  originalValue?: { id?: string; path: string; size: number };
   existingPaths?: string[];
 }
 
@@ -29,6 +30,7 @@ const NetworkStorageDrawer = ({
   onClose,
   onSuccess,
   initialValue,
+  originalValue,
   existingPaths = []
 }: NetworkStorageDrawerProps) => {
   const t = useTranslations();
@@ -37,7 +39,7 @@ const NetworkStorageDrawer = ({
   const [capacityInput, setCapacityInput] = useState((initialValue?.size || 1).toString());
   const [pathError, setPathError] = useState<string>('');
 
-  const minCapacity = isEdit && initialValue ? initialValue.size : 1;
+  const minCapacity = isEdit && originalValue ? originalValue.size : 1;
 
   const handleCapacityChange = (delta: number) => {
     const newValue = Math.min(20, Math.max(minCapacity, capacity + delta));

@@ -18,13 +18,15 @@ interface AdvancedConfigProps {
   showEnvAndConfigmap: boolean;
   showNfs: boolean;
   showSharedMemory: boolean;
+  originalVolumes?: DevboxEditTypeV2['volumes'];
 }
 
 export default function AdvancedConfig({
   isEdit,
   showEnvAndConfigmap,
   showNfs,
-  showSharedMemory
+  showSharedMemory,
+  originalVolumes
 }: AdvancedConfigProps) {
   const t = useTranslations();
   const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
@@ -323,6 +325,15 @@ export default function AdvancedConfig({
         <NetworkStorageDrawer
           isEdit={isEdit}
           initialValue={editingStorageIndex !== null ? volumes[editingStorageIndex] : undefined}
+          originalValue={
+            isEdit && editingStorageIndex !== null && originalVolumes
+              ? originalVolumes.find(
+                  (v) =>
+                    v.id === volumes[editingStorageIndex].id ||
+                    v.path === volumes[editingStorageIndex].path
+                )
+              : undefined
+          }
           existingPaths={volumes
             .filter((_, idx) => idx !== editingStorageIndex)
             .map((item) => item.path.toLowerCase())}

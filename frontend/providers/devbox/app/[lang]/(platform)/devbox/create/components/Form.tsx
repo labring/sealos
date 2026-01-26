@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 import { useSearchParams } from 'next/navigation';
@@ -41,6 +41,14 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const showSharedMemory = env.enableAdvancedSharedMemory === 'true';
   const showAdvancedConfig = showEnvAndConfigmap || showNfs || showSharedMemory;
   const showStorage = env.enableAdvancedStorage === 'true';
+
+  const originalVolumesRef = useRef<DevboxEditTypeV2['volumes']>();
+
+  useEffect(() => {
+    if (isEdit && !originalVolumesRef.current) {
+      originalVolumesRef.current = watch('volumes');
+    }
+  }, [isEdit, watch]);
 
   useEffect(() => {
     const scrollTo = searchParams.get('scrollTo');
@@ -112,6 +120,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
             showEnvAndConfigmap={showEnvAndConfigmap}
             showNfs={showNfs}
             showSharedMemory={showSharedMemory}
+            originalVolumes={originalVolumesRef.current}
           />
         )}
       </div>
