@@ -1,9 +1,36 @@
-# FROM scratch
+# Build stage
+FROM golang:1.25-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache \
+    git \
+    ca-certificates \
+    && update-ca-certificates
+
+WORKDIR /workspace
+
+# Copy all source code
+COPY . .
+
+ENV CGO_ENABLED=0
+
+# Build the binary
+RUN cd service/database && \
+    go build -tags=jsoniter \
+    -trimpath \
+    -ldflags "-s -w" \
+    -o /manager \
+    main.go
+
+# Runtime stage
 FROM gcr.io/distroless/static:nonroot
-# FROM gengweifeng/gcr-io-distroless-static-nonroot
-ARG TARGETARCH
-COPY bin/service-database-$TARGETARCH /manager
-EXPOSE 9090
+
+# Copy the binary from builder
+COPY --from=builder /manager /manager
+
+# Use non-root user
 USER 65532:65532
+
+EXPOSE 9090
 
 ENTRYPOINT ["/manager"]
