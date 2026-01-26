@@ -7,7 +7,7 @@
 	"INTERNAL_SERVER_ERROR": "Internal server error",
 	"INSUFFICENT_BALANCE": "Insufficient balance",
 	"ACCOUNT_NOT_FOUND": "Account not found",
-	"MERGET_USER_INSUFFICENT_BALANCE":"Insufficient balance in the merged account",
+	"MERGET_USER_INSUFFICENT_BALANCE": "Insufficient balance in the merged account",
 	"USER_CR_NOT_FOUND": "User CR not found",
 	"OAUTHPROVIDER_NOT_FOUND": "OAuth provider not found",
 	"PRIVATE_WORKSPACE_NOT_FOUND": "Private workspace not found",
@@ -19,5 +19,7 @@
 	"REMAIN_TEMPLATE": "Remaining templates in current region",
 	"REMAIN_OBJECT_STORAGE": "Remaining object storage in current region",
 	"REMAIN_DATABASE": "Remaining databases in current region",
-	"KUBECONFIG_NOT_FOUND": "Kubeconfig not found"
+	"KUBECONFIG_NOT_FOUND": "Kubeconfig not found",
+	"LICENSE_INACTIVE": "This cluster is not activated or has no valid license. Cannot create workspace/user. Please upload/activate a license in License Management and try again.",
+	"LICENSE_USER_LIMIT_EXCEEDED": "The user limit for the current license has been reached. Cannot create new users/workspaces. Please log in as Admin and upload a license with a higher user quota in License Management, then try again."
 }

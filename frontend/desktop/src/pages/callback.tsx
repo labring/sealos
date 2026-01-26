@@ -14,6 +14,14 @@ import { BIND_STATUS } from '@/types/response/bind';
 import { MERGE_USER_READY } from '@/types/response/utils';
 import { AxiosError, HttpStatusCode } from 'axios';
 import { gtmLoginSuccess } from '@/utils/gtm';
+import {
+  LICENSE_INACTIVE_CODE,
+  LICENSE_USER_LIMIT_EXCEEDED_CODE
+} from '@/services/backend/middleware/error';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import { useTranslation } from 'next-i18next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { compareFirstLanguages } from '@/utils/tools';
 
 export default function Callback() {
   const router = useRouter();
@@ -23,6 +31,9 @@ export default function Callback() {
   const compareState = useSessionStore((s) => s.compareState);
   const { setSigninPageAction } = useSigninPageStore();
   const { setMergeUserData, setMergeUserStatus } = useCallbackStore();
+  const { toast } = useCustomToast();
+  const { t } = useTranslation();
+
   useEffect(() => {
     if (!router.isReady) return;
     let isProxy: boolean = false;
@@ -158,8 +169,24 @@ export default function Callback() {
             await router.replace('/');
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(error);
+        if (error?.code === LICENSE_INACTIVE_CODE) {
+          toast({
+            description: t('error:LICENSE_INACTIVE'),
+            status: 'error',
+            duration: null,
+            isClosable: true
+          });
+        }
+        if (error?.code === LICENSE_USER_LIMIT_EXCEEDED_CODE) {
+          toast({
+            description: t('error:LICENSE_USER_LIMIT_EXCEEDED'),
+            status: 'error',
+            duration: null,
+            isClosable: true
+          });
+        }
         await router.replace('/signin');
       }
     })();
@@ -170,7 +197,15 @@ export default function Callback() {
     </Flex>
   );
 }
-// 所有含动态数据的页面（如/callback）
-export async function getServerSideProps() {
-  return { props: {} };
+
+export async function getServerSideProps({ req, res, locales }: any) {
+  const local =
+    req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
+  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
+
+  return {
+    props: {
+      ...(await serverSideTranslations(local, ['error'], null, locales || []))
+    }
+  };
 }

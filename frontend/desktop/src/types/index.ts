@@ -8,7 +8,6 @@ import { BingAdApiClient } from '@/services/backend/bingAdApiClient';
 export * from './api';
 export * from './app';
 export * from './crd';
-export * from './license';
 export * from './login';
 export * from './payment';
 export * from './region';

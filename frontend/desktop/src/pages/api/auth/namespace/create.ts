@@ -2,6 +2,12 @@ import { verifyAccessToken } from '@/services/backend/auth';
 import { globalPrisma, prisma } from '@/services/backend/db/init';
 import { getTeamKubeconfig } from '@/services/backend/kubernetes/admin';
 import { GetUserDefaultNameSpace } from '@/services/backend/kubernetes/user';
+import {
+  LICENSE_INACTIVE_CODE,
+  LICENSE_USER_LIMIT_EXCEEDED_CODE,
+  isLicenseInactiveError,
+  isLicenseUserLimitExceededError
+} from '@/services/backend/middleware/error';
 import { get_k8s_username } from '@/services/backend/regionAuth';
 import { jsonRes } from '@/services/backend/response';
 import { bindingRole, modifyWorkspaceRole } from '@/services/backend/team';
@@ -157,10 +163,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         }
       });
-      throw Error(String(e));
+      throw e;
     }
   } catch (e) {
-    console.log(e);
+    if (isLicenseInactiveError(e)) {
+      return jsonRes(res, { code: LICENSE_INACTIVE_CODE, message: 'LICENSE_INACTIVE' });
+    }
+    if (isLicenseUserLimitExceededError(e)) {
+      return jsonRes(res, {
+        code: LICENSE_USER_LIMIT_EXCEEDED_CODE,
+        message: 'LICENSE_USER_LIMIT_EXCEEDED'
+      });
+    }
     jsonRes(res, { code: 500, message: 'failed to create team' });
   }
 }

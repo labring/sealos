@@ -17,6 +17,10 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { track } from '@sealos/gtm';
+import {
+  LICENSE_INACTIVE_CODE,
+  LICENSE_USER_LIMIT_EXCEEDED_CODE
+} from '@/services/backend/middleware/error';
 
 export default function CreateTeam({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { t } = useTranslation();
@@ -36,7 +40,23 @@ export default function CreateTeam({ isOpen, onClose }: { isOpen: boolean; onClo
         onClose();
       }
     },
-    onError(error) {
+    onError(error: any) {
+      if (error?.code === LICENSE_INACTIVE_CODE) {
+        return toast({
+          description: t('error:LICENSE_INACTIVE'),
+          status: 'error',
+          duration: null,
+          isClosable: true
+        });
+      }
+      if (error?.code === LICENSE_USER_LIMIT_EXCEEDED_CODE) {
+        return toast({
+          description: t('error:LICENSE_USER_LIMIT_EXCEEDED'),
+          status: 'error',
+          duration: null,
+          isClosable: true
+        });
+      }
       toast({ title: (error as ApiResp).message });
     }
   });

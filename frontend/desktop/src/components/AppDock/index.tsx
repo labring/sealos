@@ -2,8 +2,6 @@ import { MoreAppsContext } from '@/pages/index';
 import useAppStore, { AppInfo } from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
-import { useLicenseCheck } from '@/hooks/useLicenseCheck';
-import useSessionStore from '@/stores/session';
 import { APPTYPE, TApp } from '@/types';
 import { I18nCommonKey } from '@/types/i18next';
 import { Box, Center, Flex, Image, useBreakpointValue } from '@chakra-ui/react';
@@ -193,14 +191,10 @@ export default function AppDock() {
     findAppInfoById,
     updateOpenedAppInfo
   } = useAppStore();
-  const { layoutConfig, commonConfig } = useConfigStore();
+  const { layoutConfig } = useConfigStore();
   const logo = layoutConfig?.logo;
-  const { isUserLogin } = useSessionStore();
   const moreAppsContent = useContext(MoreAppsContext);
   const { isNavbarVisible, toggleNavbarVisibility, getTransitionValue } = useDesktopConfigStore();
-  const { hasLicense } = useLicenseCheck({
-    enabled: isUserLogin() && !!commonConfig?.licenseCheckEnabled
-  });
   const [isMouseOverDock, setIsMouseOverDock] = useState(false);
   const timeoutRef = useRef<number | null>(null);
   const isSmallScreen = useBreakpointValue({ base: true, sm: false });
@@ -261,19 +255,6 @@ export default function AppDock() {
 
     if (item.key === 'system-sealos-apps') {
       moreAppsContent?.setShowMoreApps(true);
-      return;
-    }
-
-    if (commonConfig?.licenseCheckEnabled && hasLicense === false && item.key !== 'user-license') {
-      message({
-        title: t('license_required'),
-        status: 'warning',
-        isClosable: true
-      });
-      const licenseApp = apps.find((app) => app.key === 'user-license');
-      if (licenseApp) {
-        openApp(licenseApp);
-      }
       return;
     }
 

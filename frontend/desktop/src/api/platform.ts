@@ -9,7 +9,6 @@ import {
   TNotification
 } from '@/types';
 import { AdClickData } from '@/types/adClick';
-import { LicenseCheckResponse } from '@/types/license';
 import { UserTask } from '@/types/task';
 
 /**
@@ -120,6 +119,3 @@ export const getRunningApps = () => {
     }>
   >('/api/desktop/getRunningApps');
 };
-
-export const checkLicense = () =>
-  request.get<any, ApiResp<LicenseCheckResponse>>('/api/license/check');

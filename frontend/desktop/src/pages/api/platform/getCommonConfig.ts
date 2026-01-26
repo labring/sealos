@@ -24,8 +24,7 @@ function genResCommonClientConfig(common: CommonConfigType): CommonClientConfigT
     realNameReward: common.realNameReward || 0,
     guideEnabled: !!common.guideEnabled,
     rechargeEnabled: !!common.rechargeEnabled,
-    cfSiteKey: common.cfSiteKey || '',
-    licenseCheckEnabled: !!common.licenseCheckEnabled
+    cfSiteKey: common.cfSiteKey || ''
   };
 }
 export async function getCommonClientConfig(): Promise<CommonClientConfigType> {

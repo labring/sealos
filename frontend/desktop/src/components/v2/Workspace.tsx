@@ -31,6 +31,10 @@ import { SwitchRegionType } from '@/constants/account';
 import { I18nCloudProvidersKey } from '@/types/i18next';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { useGuideModalStore } from '@/stores/guideModal';
+import {
+  LICENSE_INACTIVE_CODE,
+  LICENSE_USER_LIMIT_EXCEEDED_CODE
+} from '@/services/backend/middleware/error';
 
 export default function Workspace() {
   const { t } = useTranslation();
@@ -92,8 +96,23 @@ export default function Workspace() {
       }
       await sessionConfig(initRegionTokenResult.data);
       await router.replace('/');
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      if (error?.code === LICENSE_INACTIVE_CODE) {
+        return toast({
+          description: t('error:LICENSE_INACTIVE'),
+          status: 'error',
+          duration: null,
+          isClosable: true
+        });
+      }
+      if (error?.code === LICENSE_USER_LIMIT_EXCEEDED_CODE) {
+        return toast({
+          description: t('error:LICENSE_USER_LIMIT_EXCEEDED'),
+          status: 'error',
+          duration: null,
+          isClosable: true
+        });
+      }
       toast({
         status: 'error',
         //@ts-ignore
