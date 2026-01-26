@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.deps.json",
+  "compilerOptions": {
+    "lib": ["es2017"],
+    "noImplicitAny": true,
+    "removeComments": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
