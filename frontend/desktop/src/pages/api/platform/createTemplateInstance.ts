@@ -4,6 +4,7 @@ import { jsonRes } from '@/services/backend/response';
 import { enableApi } from '@/services/enable';
 import { prisma } from '@/services/backend/db/init';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
+import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -52,7 +53,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    console.log('[API] Kubeconfig retrieved successfully, length:', kc.length);
+    // Update kubeconfig namespace to match the current workspace
+    const kcWithCorrectNamespace = switchKubeconfigNamespace(kc, payload.workspaceId);
+
+    console.log('[API] Kubeconfig retrieved successfully, namespace:', payload.workspaceId);
 
     const { templateName, templateForm } = req.body as {
       templateName: string;
@@ -93,7 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const apiUrl = `${templateUrl.replace(/\/$/, '')}/api/v1alpha/createInstance`;
-    const authorization = encodeURI(kc);
+    const authorization = encodeURI(kcWithCorrectNamespace);
 
     console.log('[API] Calling template service:', {
       apiUrl,
