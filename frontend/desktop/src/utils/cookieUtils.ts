@@ -29,12 +29,15 @@ export const getSharedCookieDomain = (): string | undefined => {
 // Set shared authentication cookie
 export const setSharedAuthCookie = (globalToken: string): void => {
   const domain = getSharedCookieDomain();
+  const isHttps = window.location.protocol === 'https:';
+
   const options: CookieAttributes = {
     expires: COOKIE_EXPIRY_DAYS,
     path: '/',
-    sameSite: 'lax',
-    secure: window.location.protocol === 'https:'
+    sameSite: isHttps ? 'none' : 'lax',
+    secure: isHttps
   };
+
   if (domain) options.domain = domain;
   Cookies.set(SHARED_AUTH_COOKIE_NAME, globalToken, options);
 };
