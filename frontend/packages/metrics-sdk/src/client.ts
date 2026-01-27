@@ -1,6 +1,7 @@
 import { LaunchpadService } from './services/launchpad';
 import { DatabaseService } from './services/database';
 import { MinioService } from './services/minio';
+import { RawMetricsService } from './services/raw';
 import { AuthService } from './auth/auth';
 
 export interface MetricsClientConfig {
@@ -13,6 +14,7 @@ export class MetricsClient {
   public launchpad: LaunchpadService;
   public database: DatabaseService;
   public minio: MinioService;
+  public raw: RawMetricsService;
   private authService: AuthService;
 
   constructor(config: MetricsClientConfig) {
@@ -25,5 +27,6 @@ export class MetricsClient {
     this.launchpad = new LaunchpadService(metricsURL, this.authService);
     this.database = new DatabaseService(metricsURL, this.authService);
     this.minio = new MinioService(metricsURL, this.authService, config.minioInstance);
+    this.raw = new RawMetricsService(metricsURL, this.authService);
   }
 }

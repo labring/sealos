@@ -1,6 +1,6 @@
 import { BaseMetricsService } from './base';
 import { DatabaseQueryParams } from '../types/database';
-import { QueryResponse } from '../types/common';
+import { QueryResponse, RawQueryParams } from '../types/common';
 import { DATABASE_QUERY_MAP } from '../constants/promql';
 
 export class DatabaseService extends BaseMetricsService {
@@ -24,6 +24,17 @@ export class DatabaseService extends BaseMetricsService {
     await this.authService.authenticate(params.namespace);
 
     const promqlQuery = this.buildQuery(params);
+    return this.queryPrometheus<QueryResponse>(promqlQuery, params.range);
+  }
+
+  async rawQuery(params: RawQueryParams): Promise<QueryResponse> {
+    await this.authService.authenticate(params.namespace);
+
+    const promqlQuery =
+      params.injectNamespace === false
+        ? params.query
+        : this.injectNamespaceLegacy(params.query, params.namespace);
+
     return this.queryPrometheus<QueryResponse>(promqlQuery, params.range);
   }
 }

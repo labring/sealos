@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import { URLSearchParams } from 'url';
 import { TimeRange } from '../types/common';
 import { AuthService } from '../auth/auth';
 
@@ -25,6 +26,15 @@ export abstract class BaseMetricsService {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
+        if (error?.response) {
+          const status = error.response.status;
+          const data = error.response.data;
+          if (typeof data === 'string' && data.trim()) {
+            throw new Error(data);
+          }
+          const detail = data ? JSON.stringify(data) : error.message;
+          throw new Error(`Metrics API request failed: ${status} ${detail}`);
+        }
         throw new Error(`Metrics API request failed: ${error.message}`);
       }
     );
@@ -34,12 +44,23 @@ export abstract class BaseMetricsService {
     if (!range) return {};
 
     const params: Record<string, any> = {};
-    if (range.start !== undefined) params.start = range.start;
-    if (range.end !== undefined) params.end = range.end;
-    if (range.step) params.step = range.step;
-    if (range.time) params.time = range.time;
+    const hasStart = range.start !== undefined && range.start !== null && range.start !== '';
+    if (hasStart) {
+      params.start = range.start;
+      if (range.end !== undefined) params.end = range.end;
+      if (range.step) params.step = range.step;
+    } else if (range.time) {
+      params.time = range.time;
+    }
 
     return params;
+  }
+
+  protected injectNamespaceLegacy(query: string, namespace: string): string {
+    const nsMatcher = `namespace=~"${namespace}"`;
+    let result = query.replace(/\$/g, nsMatcher);
+    result = result.replace(/{/g, `{${nsMatcher},`);
+    return result;
   }
 
   protected async queryPrometheus<T>(query: string, range?: TimeRange): Promise<T> {
@@ -48,14 +69,21 @@ export abstract class BaseMetricsService {
 
     Object.assign(formData, timeParams);
 
-    const endpoint = range?.start ? '/api/v1/query_range' : '/api/v1/query';
+    const hasStart = range?.start !== undefined && range?.start !== null && range?.start !== '';
+    const endpoint = hasStart ? '/api/v1/query_range' : '/api/v1/query';
 
     console.log('🔍 Debug Info:');
     console.log('  Query:', query);
     console.log('  Endpoint:', this.baseURL + endpoint);
     console.log('  Params:', formData);
 
-    const response = await this.client.post(endpoint, null, { params: formData });
+    const body = new URLSearchParams(
+      Object.entries(formData).reduce<Record<string, string>>((acc, [key, value]) => {
+        acc[key] = String(value);
+        return acc;
+      }, {})
+    ).toString();
+    const response = await this.client.post(endpoint, body);
 
     console.log('  Response status:', response.data.status);
     console.log('  Result count:', response.data.data?.result?.length || 0);

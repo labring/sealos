@@ -27,3 +27,8 @@ export interface BaseQueryParams {
   namespace: string;
   range?: TimeRange;
 }
+
+export interface RawQueryParams extends BaseQueryParams {
+  query: string;
+  injectNamespace?: boolean;
+}

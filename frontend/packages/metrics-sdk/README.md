@@ -109,6 +109,38 @@ const result = await client.database.query({
 });
 ```
 
+Raw PromQL (legacy `/query` style with namespace injection):
+
+```typescript
+const result = await client.database.rawQuery({
+  namespace: 'ns-user123',
+  query:
+    'sum(rate(mysql_global_status_slow_queries{$,app_kubernetes_io_instance="my-mysql-cluster"}[1m]))',
+  range: {
+    start: startTime,
+    end: endTime,
+    step: '1m'
+  }
+});
+```
+
+> By default it injects namespace in the legacy way (`$` and `{` replacements). Set
+> `injectNamespace: false` if you want to keep the query untouched.
+
+Generic raw PromQL (not tied to DB type):
+
+```typescript
+const result = await client.raw.query({
+  namespace: 'ns-user123',
+  query: 'sum(rate(container_cpu_usage_seconds_total{$}[1m]))',
+  range: {
+    start: startTime,
+    end: endTime,
+    step: '1m'
+  }
+});
+```
+
 **Supported Databases:**
 
 - `DatabaseType.MySQL` - Apecloud MySQL
@@ -128,6 +160,13 @@ const result = await client.database.query({
 - `uptime` - Service uptime in seconds
 - `connections` - Active connections
 - `commands` - Command execution rate
+
+**Extended Metrics (DB-specific):**
+
+- MySQL: `innodb`, `slow_queries`, `aborted_connections`, `table_locks`
+- PostgreSQL: `db_size`, `active_connections`, `rollbacks`, `commits`, `tx_duration`, `block_read_time`, `block_write_time`
+- MongoDB: `db_size`, `document_ops`, `pg_faults`
+- Redis: `db_items`, `hits_ratio`, `commands_duration`, `blocked_connections`, `key_evictions`
 
 ### MinIO Service
 
@@ -186,6 +225,13 @@ METRICS_URL=http://vmsingle-victoria-metrics-k8s-stack.vm.svc.cluster.local:8429
 
 # MinIO instance for metrics (optional)
 OBJECT_STORAGE_INSTANCE=minio-instance-name
+
+# K8s API server override (optional, aligns with legacy services)
+KUBERNETES_SERVICE_HOST=10.0.0.1
+KUBERNETES_SERVICE_PORT=6443
+
+# Whitelist K8s hosts (optional, comma-separated)
+WHITELIST_KUBERNETES_HOSTS=https://10.0.0.1:6443,https://kubernetes.default.svc
 ```
 
 ### Custom Configuration
