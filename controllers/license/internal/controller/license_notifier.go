@@ -25,17 +25,21 @@ import (
 	"github.com/labring/sealos/controllers/user/pkg/licensegate"
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
 	// License notification name prefixes
-	licenseExpiredPrefix  = "license-expired"
+	licenseExpiredPrefix   = "license-expired"
 	licenseUserLimitPrefix = "license-user-limit"
 	licenseExpiringPrefix  = "license-expiring-soon"
+	licenseMissingPrefix   = "license-missing"
 
 	// Notification labels
 	readStatusLabel = "isRead"
@@ -78,11 +82,6 @@ func (r *LicenseReconciler) NotifyIfNeeded(ctx context.Context, license *license
 
 // checkLicenseStatus evaluates the license and sends appropriate notifications
 func (n *LicenseNotifier) checkLicenseStatus(ctx context.Context, license *licensev1.License) error {
-	// Skip default license - don't send notifications for it
-	if isDefaultLicense(license) {
-		return nil
-	}
-
 	// Check if ns-admin namespace exists
 	if !n.namespaceExists(ctx, adminNamespace) {
 		n.Logger.V(1).Info("admin namespace does not exist, skipping license notification", "namespace", adminNamespace)
@@ -102,6 +101,35 @@ func (n *LicenseNotifier) checkLicenseStatus(ctx context.Context, license *licen
 	return nil
 }
 
+func (n *LicenseNotifier) ensureMissingLicenseNotification(ctx context.Context) error {
+	if !n.namespaceExists(ctx, adminNamespace) {
+		n.Logger.V(1).Info("admin namespace does not exist, skipping license missing notification", "namespace", adminNamespace)
+		return nil
+	}
+
+	notification := &v1.Notification{}
+	if err := n.Get(ctx, types.NamespacedName{Name: licenseMissingPrefix, Namespace: adminNamespace}, notification); err != nil {
+		if apierrors.IsNotFound(err) {
+			return n.sendMissingNotification(ctx)
+		}
+		return err
+	}
+
+	if isNotificationUnread(notification) {
+		return nil
+	}
+
+	return n.sendMissingNotification(ctx)
+}
+
+func (n *LicenseNotifier) markMissingLicenseReadIfExists(ctx context.Context) error {
+	if !n.namespaceExists(ctx, adminNamespace) {
+		n.Logger.V(1).Info("admin namespace does not exist, skipping license missing notification", "namespace", adminNamespace)
+		return nil
+	}
+	return n.markNotificationsReadIfExists(ctx, adminNamespace, licenseMissingPrefix)
+}
+
 // checkLicenseExpiration sends notifications for expired or expiring licenses
 func (n *LicenseNotifier) checkLicenseExpiration(ctx context.Context, license *licensev1.License) error {
 	if license.Status.ExpirationTime.IsZero() {
@@ -112,37 +140,44 @@ func (n *LicenseNotifier) checkLicenseExpiration(ctx context.Context, license *l
 	expirationTime := license.Status.ExpirationTime.Time
 	timeUntilExpiration := expirationTime.Sub(now)
 
-	var notificationType string
-	var titleEn, titleZh, messageEn, messageZh string
-
 	// Determine if license is expired or expiring soon
 	if timeUntilExpiration <= 0 {
 		// License has expired
 		if license.Status.Phase == licensev1.LicenseStatusPhaseExpired {
-			notificationType = licenseExpiredPrefix
-			titleEn = "License Expired"
-			titleZh = "许可证已过期"
-			messageEn = fmt.Sprintf("Your license expired on %s. Please renew to continue using the service.",
+			titleEn := "License Expired"
+			titleZh := "许可证已过期"
+			messageEn := fmt.Sprintf("Your license expired on %s. Please renew to continue using the service.",
 				expirationTime.Format("2006-01-02"))
-			messageZh = fmt.Sprintf("您的许可证已于 %s 过期,请续费以继续使用服务。",
+			messageZh := fmt.Sprintf("您的许可证已于 %s 过期,请续费以继续使用服务。",
 				expirationTime.Format("2006-01-02"))
+			if err := n.sendOrUpdateNotification(ctx, adminNamespace, licenseExpiredPrefix, titleEn, titleZh, messageEn, messageZh); err != nil {
+				return fmt.Errorf("failed to send expiration notification: %w", err)
+			}
 		}
-	} else if timeUntilExpiration <= expiringSoonThreshold {
-		// License is expiring soon
-		notificationType = licenseExpiringPrefix
-		days := int(timeUntilExpiration.Hours() / 24)
-		titleEn = "License Expiring Soon"
-		titleZh = "许可证即将过期"
-		messageEn = fmt.Sprintf("Your license will expire in %d days (on %s). Please renew in time.",
-			days, expirationTime.Format("2006-01-02"))
-		messageZh = fmt.Sprintf("您的许可证将在 %d 天后过期(过期日期: %s),请及时续费。",
-			days, expirationTime.Format("2006-01-02"))
+		return nil
 	}
 
-	if notificationType != "" {
+	if timeUntilExpiration <= expiringSoonThreshold {
+		// License is expiring soon
+		notificationType := licenseExpiringPrefix
+		days := int(timeUntilExpiration.Hours() / 24)
+		titleEn := "License Expiring Soon"
+		titleZh := "许可证即将过期"
+		messageEn := fmt.Sprintf("Your license will expire in %d days (on %s). Please renew in time.",
+			days, expirationTime.Format("2006-01-02"))
+		messageZh := fmt.Sprintf("您的许可证将在 %d 天后过期(过期日期: %s),请及时续费。",
+			days, expirationTime.Format("2006-01-02"))
+		if err := n.markNotificationsReadIfExists(ctx, adminNamespace, licenseExpiredPrefix); err != nil {
+			return fmt.Errorf("failed to mark expired notification as read: %w", err)
+		}
 		if err := n.sendOrUpdateNotification(ctx, adminNamespace, notificationType, titleEn, titleZh, messageEn, messageZh); err != nil {
 			return fmt.Errorf("failed to send expiration notification: %w", err)
 		}
+		return nil
+	}
+
+	if err := n.markNotificationsReadIfExists(ctx, adminNamespace, licenseExpiredPrefix, licenseExpiringPrefix); err != nil {
+		return fmt.Errorf("failed to mark expiration notifications as read: %w", err)
 	}
 
 	return nil
@@ -155,8 +190,8 @@ func (n *LicenseNotifier) checkUserLimit(ctx context.Context, license *licensev1
 		return nil
 	}
 
-	if !licensegate.Initialized() || !usercount.Initialized() {
-		return nil
+	if err := n.refreshUserLimitContext(ctx); err != nil {
+		return fmt.Errorf("failed to refresh user limit context: %w", err)
 	}
 
 	userLimit := licensegate.UserLimit()
@@ -164,6 +199,9 @@ func (n *LicenseNotifier) checkUserLimit(ctx context.Context, license *licensev1
 
 	// Only notify if there's a positive limit (unlimited is -1)
 	if userLimit < 0 {
+		if err := n.markNotificationsReadIfExists(ctx, adminNamespace, licenseUserLimitPrefix, licenseUserLimitPrefix+"-warning"); err != nil {
+			return fmt.Errorf("failed to mark user limit notifications as read: %w", err)
+		}
 		return nil
 	}
 
@@ -191,11 +229,43 @@ func (n *LicenseNotifier) checkUserLimit(ctx context.Context, license *licensev1
 	}
 
 	if notificationType != "" {
+		if notificationType == licenseUserLimitPrefix+"-warning" {
+			if err := n.markNotificationsReadIfExists(ctx, adminNamespace, licenseUserLimitPrefix); err != nil {
+				return fmt.Errorf("failed to mark user limit notification as read: %w", err)
+			}
+		}
 		if err := n.sendOrUpdateNotification(ctx, adminNamespace, notificationType, titleEn, titleZh, messageEn, messageZh); err != nil {
 			return fmt.Errorf("failed to send user limit notification: %w", err)
 		}
+		return nil
 	}
 
+	if err := n.markNotificationsReadIfExists(ctx, adminNamespace, licenseUserLimitPrefix, licenseUserLimitPrefix+"-warning"); err != nil {
+		return fmt.Errorf("failed to mark user limit notifications as read: %w", err)
+	}
+
+	return nil
+}
+
+func (n *LicenseNotifier) refreshUserLimitContext(ctx context.Context) error {
+	if err := licensegate.Refresh(ctx, n.Client); err != nil {
+		return err
+	}
+	if err := n.refreshUserCount(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (n *LicenseNotifier) refreshUserCount(ctx context.Context) error {
+	list := &metav1.PartialObjectMetadataList{}
+	list.SetGroupVersionKind(
+		schema.GroupVersion{Group: "user.sealos.io", Version: "v1"}.WithKind("UserList"),
+	)
+	if err := n.List(ctx, list); err != nil {
+		return err
+	}
+	usercount.Set(len(list.Items))
 	return nil
 }
 
@@ -251,6 +321,51 @@ func (n *LicenseNotifier) sendOrUpdateNotification(
 		"type", notificationType)
 
 	return nil
+}
+
+func (n *LicenseNotifier) sendMissingNotification(ctx context.Context) error {
+	titleEn := "License Missing"
+	titleZh := "许可证缺失"
+	messageEn := "No license resource found in the cluster. Please create a valid license to enable the service."
+	messageZh := "集群中未发现许可证资源，请创建有效许可证以启用服务。"
+	return n.sendOrUpdateNotification(ctx, adminNamespace, licenseMissingPrefix, titleEn, titleZh, messageEn, messageZh)
+}
+
+func (n *LicenseNotifier) markNotificationsReadIfExists(ctx context.Context, namespace string, notificationTypes ...string) error {
+	for _, notificationType := range notificationTypes {
+		if err := n.markNotificationReadIfExists(ctx, namespace, notificationType); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isNotificationUnread(notification *v1.Notification) bool {
+	if notification.Labels == nil {
+		return false
+	}
+	return notification.Labels[readStatusLabel] == falseStatus
+}
+
+func (n *LicenseNotifier) markNotificationReadIfExists(ctx context.Context, namespace, notificationName string) error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		notification := &v1.Notification{}
+		if err := n.Get(ctx, types.NamespacedName{Name: notificationName, Namespace: namespace}, notification); err != nil {
+			if apierrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+
+		if notification.Labels == nil {
+			notification.Labels = make(map[string]string)
+		}
+		if notification.Labels[readStatusLabel] == trueStatus {
+			return nil
+		}
+		notification.Labels[readStatusLabel] = trueStatus
+		return n.Update(ctx, notification)
+	})
 }
 
 // namespaceExists checks if a namespace exists

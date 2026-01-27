@@ -119,6 +119,9 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to remove finalizer: %w", err)
 		}
+		if err := r.checkAndNotifyAllLicenses(ctx); err != nil {
+			r.Logger.Error(err, "failed to check and notify all licenses")
+		}
 		return ctrl.Result{}, nil
 	}
 	return r.reconcile(ctx, license)
@@ -130,10 +133,7 @@ func (r *LicenseReconciler) reconcile(
 ) (ctrl.Result, error) {
 	nsName := fmt.Sprintf("%s/%s", license.Namespace, license.Name)
 	r.Logger.V(1).Info("reconcile for license", "license", nsName)
-	if isDefaultLicense(license) {
-		r.Logger.V(1).Info("ensuring default license status", "license", nsName)
-		return ctrl.Result{}, nil
-	}
+
 	if err := r.validator.Validate(ctx, license); err != nil {
 		// Extract validation code if it's a ValidationError
 		var reason string
@@ -208,6 +208,13 @@ func (r *LicenseReconciler) reconcile(
 	if notifyErr := r.NotifyIfNeeded(ctx, license); notifyErr != nil {
 		r.Logger.V(1).Error(notifyErr, "failed to send license notification", "license", nsName)
 	}
+	notifier := &LicenseNotifier{
+		Client: r.Client,
+		Logger: r.Logger,
+	}
+	if err := notifier.markMissingLicenseReadIfExists(ctx); err != nil {
+		r.Logger.V(1).Error(err, "failed to mark missing license notification as read", "license", nsName)
+	}
 
 	return longRequeueRes, nil
 }
@@ -244,6 +251,10 @@ func (r *LicenseReconciler) SetupWithManager(mgr ctrl.Manager, limitOps controll
 
 	// Add periodic license notification check (daily)
 	if err := mgr.Add(manager.RunnableFunc(func(ctx context.Context) error {
+		r.Logger.Info("initial license notification check triggered")
+		if err := r.checkAndNotifyAllLicenses(ctx); err != nil {
+			r.Logger.Error(err, "failed to check and notify all licenses")
+		}
 		ticker := time.NewTicker(dailyNotify)
 		defer ticker.Stop()
 		for {
@@ -293,8 +304,31 @@ func (r *LicenseReconciler) checkAndNotifyAllLicenses(ctx context.Context) error
 		return fmt.Errorf("failed to list licenses: %w", err)
 	}
 
+	notifier := &LicenseNotifier{
+		Client: r.Client,
+		Logger: r.Logger,
+	}
+
+	activeLicenses := make([]*licensev1.License, 0, len(licenseList.Items))
 	for i := range licenseList.Items {
 		license := &licenseList.Items[i]
+		if license.DeletionTimestamp.IsZero() {
+			activeLicenses = append(activeLicenses, license)
+		}
+	}
+
+	if len(activeLicenses) == 0 {
+		if err := notifier.ensureMissingLicenseNotification(ctx); err != nil {
+			return fmt.Errorf("failed to ensure missing license notification: %w", err)
+		}
+		return nil
+	}
+
+	if err := notifier.markMissingLicenseReadIfExists(ctx); err != nil {
+		return fmt.Errorf("failed to mark missing license notification as read: %w", err)
+	}
+
+	for _, license := range activeLicenses {
 		if err := r.NotifyIfNeeded(ctx, license); err != nil {
 			r.Logger.V(1).Error(err, "failed to send notification for license",
 				"license", fmt.Sprintf("%s/%s", license.Namespace, license.Name))
