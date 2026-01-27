@@ -445,30 +445,76 @@ Deploy a template as a named instance in your Kubernetes namespace.
 
 ## Request
 
-\`\`\`http
+### HTTP request
+
+\`\`\`
 POST /api/v2alpha/template/instance
-Content-Type: application/json
-Authorization: <URL-encoded kubeconfig>
 \`\`\`
 
 ### Headers
 
 | Header | Required | Description |
 |--------|----------|-------------|
-| \`Authorization\` | Yes | URL-encoded kubeconfig YAML |
-| \`Content-Type\` | Yes | \`application/json\` |
+| \`Content-Type\` | Yes | Must be \`application/json\` |
+| \`Authorization\` | Yes | URL-encoded kubeconfig YAML string. Use \`encodeURIComponent(kubeconfigYaml)\` to encode. |
 
-### Body
+### Request body
 
-| Field | Type | Required | Constraints |
-|-------|------|----------|-------------|
-| \`name\` | string | Yes | 1-63 chars, regex: \`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$\` |
-| \`template\` | string | Yes | Template name from catalog |
-| \`args\` | object | No | Template variable key-value pairs |
+Provide a JSON object in the request body:
+
+\`\`\`json
+{
+  "name": string,
+  "template": string,
+  "args": {
+    "KEY": "value"
+  }
+}
+\`\`\`
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| \`name\` | string | Yes | The instance name. Must be 1-63 characters, start and end with alphanumeric, contain only lowercase letters, numbers, and hyphens. Regex: \`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$\` |
+| \`template\` | string | Yes | The template name from the catalog. Use \`GET /api/v2alpha/template\` to list available templates. |
+| \`args\` | object | No | Template variable key-value pairs. To know which args are required, call \`GET /api/v2alpha/template/{name}\` - the response \`args\` field contains all parameters with their \`required\` flag and \`default\` values. |
 
 ### How to Get Template Arguments
 
-To know which \`args\` are required for a template, first call \`GET /api/v2alpha/template/{name}\` to get template details. The response \`args\` field contains all available parameters with their \`required\` flag and \`default\` values.
+To know which args are required, call \`GET /api/v2alpha/template/{name}\` - the response \`args\` field contains all parameters with their \`required\` flag and \`default\` values.
+
+## Response
+
+If successful, this method returns a response body with the following structure:
+
+\`\`\`json
+{
+  "name": string,
+  "namespace": string,
+  "template": string,
+  "createTime": string,
+  "icon": string,
+  "description": string,
+  "gitRepo": string,
+  "readme": string,
+  "author": string,
+  "categories": [string]
+}
+\`\`\`
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| \`name\` | string | The instance name specified in the request. |
+| \`namespace\` | string | The Kubernetes namespace where resources were created. |
+| \`template\` | string | The template name used to create the instance. |
+| \`createTime\` | string | ISO 8601 timestamp of when the instance was created. |
+| \`icon\` | string | URL to the template icon. |
+| \`description\` | string | Description of the template. |
+| \`gitRepo\` | string | URL to the template's Git repository. |
+| \`readme\` | string | URL to the template's README file. |
+| \`author\` | string | Author of the template. |
+| \`categories\` | array | Categories the template belongs to. |
 
 ## Examples
 
