@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -305,6 +306,12 @@ func (r *UserReconciler) syncNamespace(
 			ns.Annotations[userAnnotationOwnerKey] = user.Annotations[userAnnotationOwnerKey]
 			if ns.Name != "admin" {
 				ns.Labels = config.SetPodSecurity(ns.Labels)
+			} else {
+				for k := range ns.Labels {
+					if strings.HasPrefix(k, "pod-security.") {
+						delete(ns.Labels, k)
+					}
+				}
 			}
 			// add label for namespace to filter
 			ns.Labels[userLabelOwnerKey] = user.Annotations[userAnnotationOwnerKey]
