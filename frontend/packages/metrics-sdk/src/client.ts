@@ -16,7 +16,8 @@ export class MetricsClient {
   private authService: AuthService;
 
   constructor(config: MetricsClientConfig) {
-    const defaultURL = 'http://vmsingle-victoria-metrics-k8s-stack.vm.svc.cluster.local:8429';
+    const defaultURL =
+      'http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus';
     const metricsURL = config.metricsURL || process.env.METRICS_URL || defaultURL;
 
     this.authService = new AuthService(config.kubeconfig);

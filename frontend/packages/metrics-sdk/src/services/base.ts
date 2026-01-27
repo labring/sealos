@@ -49,7 +49,21 @@ export abstract class BaseMetricsService {
     Object.assign(formData, timeParams);
 
     const endpoint = range?.start ? '/api/v1/query_range' : '/api/v1/query';
+
+    console.log('🔍 Debug Info:');
+    console.log('  Query:', query);
+    console.log('  Endpoint:', this.baseURL + endpoint);
+    console.log('  Params:', formData);
+
     const response = await this.client.post(endpoint, null, { params: formData });
+
+    console.log('  Response status:', response.data.status);
+    console.log('  Result count:', response.data.data?.result?.length || 0);
+    if (response.data.data?.result?.length === 0) {
+      console.log('  ⚠️  Empty result!');
+    }
+    console.log('');
+
     return response.data;
   }
 }
