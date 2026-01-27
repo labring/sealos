@@ -147,8 +147,8 @@ export default function OAuth() {
             // Format: system-template?/instance?instanceName=xxx
             finalOpenapp = `${openapp}?/instance?instanceName=${instanceName}`;
           } else if (instanceName && openapp === 'system-brain') {
-            // Format: system-brain?/projects/instanceName
-            finalOpenapp = `${openapp}?/projects/${instanceName}`;
+            // Format: system-brain?/projects/instanceName?
+            finalOpenapp = `${openapp}?/projects/${instanceName}?`;
           }
 
           const { appkey, appQuery, appPath } = parseOpenappQuery(finalOpenapp);
@@ -352,8 +352,8 @@ export default function OAuth() {
               // Format: system-template?/instance?instanceName=xxx
               finalOpenapp = `${openapp}?/instance?instanceName=${instanceName}`;
             } else if (instanceName && openapp === 'system-brain') {
-              // Format: system-brain?/projects/instanceName
-              finalOpenapp = `${openapp}?/projects/${instanceName}`;
+              // Format: system-brain?/projects/instanceName?
+              finalOpenapp = `${openapp}?/projects/${instanceName}?`;
             }
 
             const redirectUrl = `/?openapp=${encodeURIComponent(finalOpenapp)}`;
