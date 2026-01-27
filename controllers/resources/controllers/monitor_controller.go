@@ -96,12 +96,14 @@ type quantity struct {
 }
 
 const (
-	PrometheusURL         = "PROM_URL"
-	ObjectStorageInstance = "OBJECT_STORAGE_INSTANCE"
-	ConcurrentLimit       = "CONCURRENT_LIMIT"
+	PrometheusURL                      = "PROM_URL"
+	ObjectStorageInstance              = "OBJECT_STORAGE_INSTANCE"
+	ConcurrentLimit                    = "CONCURRENT_LIMIT"
+	envEphemeralStorageChargeThreshold = "EPHEMERAL_STORAGE_CHARGE_THRESHOLD"
 )
 
 var concurrentLimit = int64(DefaultConcurrencyLimit)
+var ephemeralStorageChargeThreshold = resource.MustParse(env.GetEnvWithDefault(envEphemeralStorageChargeThreshold, "10Gi"))
 
 const (
 	DefaultConcurrencyLimit = 1000
@@ -445,6 +447,7 @@ func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed ma
 		if resUsed[podResNamed.String()] == nil {
 			resUsed[podResNamed.String()] = initResources()
 		}
+		podEphemeralStorage := resource.NewQuantity(0, resource.BinarySI)
 		// skip pods that do not start for more than 1 minute
 		skip := pod.Status.Phase != corev1.PodRunning && (pod.Status.StartTime == nil || time.Since(pod.Status.StartTime.Time) > 1*time.Minute)
 		for _, container := range pod.Spec.Containers {
@@ -467,6 +470,15 @@ func (r *MonitorReconciler) monitorPodResourceUsage(namespace string, resUsed ma
 			} else {
 				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
 			}
+			if ephemeralRequest, ok := container.Resources.Limits[corev1.ResourceEphemeralStorage]; ok {
+				podEphemeralStorage.Add(ephemeralRequest)
+			} else {
+				podEphemeralStorage.Add(container.Resources.Requests[corev1.ResourceEphemeralStorage])
+			}
+		}
+		if !skip && podEphemeralStorage.Cmp(ephemeralStorageChargeThreshold) == 1 {
+			podEphemeralStorage.Sub(ephemeralStorageChargeThreshold)
+			resUsed[podResNamed.String()][corev1.ResourceStorage].Add(*podEphemeralStorage)
 		}
 	}
 	return nil
