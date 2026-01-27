@@ -45,7 +45,19 @@ spec:
           - sh
           - -c
           args:
-          - cd /app/providers/devbox && prisma migrate deploy
+          - |-
+            cd /app/providers/devbox
+            MIGRATION="20260125094114_add_template_repository_kind"
+            HAS_MIGRATION=$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM _prisma_migrations WHERE migration_name='${MIGRATION}' AND rolled_back_at IS NULL LIMIT 1;")
+            if [ "$HAS_MIGRATION" = "1" ]; then
+              prisma migrate deploy
+              exit 0
+            fi
+            HAS_ENUM=$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname IN ('TemplateRepositoryKind','template_repository_kind') AND e.enumlabel = 'SERVICE' LIMIT 1;")
+            if [ "$HAS_ENUM" = "1" ]; then
+              prisma migrate resolve --applied "$MIGRATION"
+            fi
+            prisma migrate deploy
       containers:
         - name: devbox-frontend
           env:
