@@ -1,6 +1,6 @@
 // import SigninComponent from '@/components/signin';
 import { useConfigStore } from '@/stores/config';
-import { compareFirstLanguages } from '@/utils/tools';
+import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { Box } from '@chakra-ui/react';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -57,9 +57,7 @@ export default function SigninPage() {
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local =
-    req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
-  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
+  const local = ensureLocaleCookie({ req, res, defaultLocale: 'en' });
 
   const queryClient = new QueryClient();
   const props = {
