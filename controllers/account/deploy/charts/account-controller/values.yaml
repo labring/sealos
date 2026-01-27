@@ -1,0 +1,114 @@
+# Default values for account controller helm chart.
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/labring/sealos-account-controller
+  tag: latest
+  pullPolicy: Always
+
+kubeRbacProxy:
+  image:
+    repository: gcr.io/kubebuilder/kube-rbac-proxy
+    tag: v0.11.0
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 5m
+      memory: 64Mi
+  securityContext:
+    allowPrivilegeEscalation: false
+    runAsNonRoot: true
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "account"
+
+namespace:
+  create: true
+  name: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "account-controller-manager"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+
+service:
+  metrics:
+    port: 8443
+  webhook:
+    port: 443
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+env:
+  accountNamespace: sealos-system
+  userNamespace: user-system
+  whitelist: "licenses.License.license.sealos.io/v1,notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
+
+accountEnv:
+  approachingDeletionPeriod: "345600"
+  imminentDeletionPeriod: "259200"
+  finalDeletionPeriod: "604800"
+  debtDetectionCycleSeconds: "1800"
+  osAdminSecret: ""
+  osInternalEndpoint: ""
+  osNamespace: "objectstorage-system"
+  mongoURI: "mongodb://mongo:27017/resources"
+  localCockroachURI: ""
+  globalCockroachURI: ""
+  trafficMongoURI: ""
+  localRegion: ""
+  cloudDomain: "cloud.sealos.io"
+  cloudPort: ""
+  accountApiJwtSecret: "secret"
+  baseBalance: "5000000"
+
+paymentSecretName: payment-secret
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+metrics:
+  enabled: true
+
+volumes: []
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []
+
+# If no affinity is provided a default podAntiAffinity is used to spread controllers.
+affinity: {}
