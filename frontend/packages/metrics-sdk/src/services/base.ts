@@ -63,6 +63,10 @@ export abstract class BaseMetricsService {
     return result;
   }
 
+  protected resolveNamespace(namespace?: string): string {
+    return this.authService.resolveNamespace(namespace);
+  }
+
   protected async queryPrometheus<T>(query: string, range?: TimeRange): Promise<T> {
     const formData: Record<string, any> = { query };
     const timeParams = this.buildTimeParams(range);

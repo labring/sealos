@@ -4,7 +4,7 @@ import { QueryResponse, RawQueryParams } from '../types/common';
 import { DATABASE_QUERY_MAP } from '../constants/promql';
 
 export class DatabaseService extends BaseMetricsService {
-  private buildQuery(params: DatabaseQueryParams): string {
+  private buildQuery(params: DatabaseQueryParams, namespace: string): string {
     const queryMap = DATABASE_QUERY_MAP[params.type];
 
     if (!queryMap) {
@@ -17,23 +17,25 @@ export class DatabaseService extends BaseMetricsService {
       throw new Error(`Unsupported query: ${params.query} for ${params.type}`);
     }
 
-    return queryTemplate.replace(/#/g, params.namespace).replace(/@/g, params.app);
+    return queryTemplate.replace(/#/g, namespace).replace(/@/g, params.app);
   }
 
   async query(params: DatabaseQueryParams): Promise<QueryResponse> {
-    await this.authService.authenticate(params.namespace);
+    const namespace = this.resolveNamespace(params.namespace);
+    await this.authService.authenticate(namespace);
 
-    const promqlQuery = this.buildQuery(params);
+    const promqlQuery = this.buildQuery(params, namespace);
     return this.queryPrometheus<QueryResponse>(promqlQuery, params.range);
   }
 
   async rawQuery(params: RawQueryParams): Promise<QueryResponse> {
-    await this.authService.authenticate(params.namespace);
+    const namespace = this.resolveNamespace(params.namespace);
+    await this.authService.authenticate(namespace);
 
     const promqlQuery =
       params.injectNamespace === false
         ? params.query
-        : this.injectNamespaceLegacy(params.query, params.namespace);
+        : this.injectNamespaceLegacy(params.query, namespace);
 
     return this.queryPrometheus<QueryResponse>(promqlQuery, params.range);
   }

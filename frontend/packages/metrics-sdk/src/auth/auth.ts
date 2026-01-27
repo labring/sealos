@@ -18,6 +18,17 @@ export class AuthService {
       .filter(Boolean);
   }
 
+  resolveNamespace(namespace?: string): string {
+    if (namespace && namespace.trim().length > 0) {
+      return namespace;
+    }
+    const contextNamespace = this.getCurrentContextNamespace();
+    if (!contextNamespace) {
+      throw new Error('Namespace not found');
+    }
+    return contextNamespace;
+  }
+
   private getKubernetesHostFromEnv(): string {
     const host = process.env.KUBERNETES_SERVICE_HOST;
     const port = process.env.KUBERNETES_SERVICE_PORT;
@@ -60,6 +71,13 @@ export class AuthService {
 
     this.kubeConfig = kc;
     return kc;
+  }
+
+  private getCurrentContextNamespace(): string | undefined {
+    const kc = this.getKubeConfig();
+    const contextName = kc.getCurrentContext();
+    if (!contextName) return undefined;
+    return kc.getContextObject(contextName)?.namespace;
   }
 
   private async pingReadyz(): Promise<void> {

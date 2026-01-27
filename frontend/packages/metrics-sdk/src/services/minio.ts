@@ -22,7 +22,8 @@ export class MinioService extends BaseMetricsService {
   }
 
   async query(params: MinioQueryParams): Promise<QueryResponse> {
-    await this.authService.authenticate(params.namespace);
+    const namespace = this.resolveNamespace(params.namespace);
+    await this.authService.authenticate(namespace);
 
     const promqlQuery = this.buildQuery(params);
     return this.queryPrometheus<QueryResponse>(promqlQuery, params.range);

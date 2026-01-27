@@ -55,6 +55,9 @@ const cpuData = await client.launchpad.query({
 });
 ```
 
+> `namespace` is optional if your kubeconfig current context sets a namespace. If omitted and no
+> context namespace is available, the SDK will throw "Namespace not found".
+
 ### Launchpad Service
 
 Queries Victoria Metrics for application metrics:

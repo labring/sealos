@@ -24,7 +24,7 @@ export interface AuthConfig {
 }
 
 export interface BaseQueryParams {
-  namespace: string;
+  namespace?: string;
   range?: TimeRange;
 }
 
