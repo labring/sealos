@@ -234,6 +234,17 @@ KUBERNETES_SERVICE_PORT=6443
 WHITELIST_KUBERNETES_HOSTS=https://10.0.0.1:6443,https://kubernetes.default.svc
 ```
 
+### Development Guide (Outside Cluster)
+
+If your dev environment is not running inside the Kubernetes cluster, you can allow the SDK to
+use the `server` from your kubeconfig by whitelisting it. This avoids the in-cluster host override.
+
+```bash
+export WHITELIST_KUBERNETES_HOSTS="https://YOUR-APISERVER:6443"
+```
+
+Tip: Use this when your kubeconfig points to a reachable API server (VPN/localhost/port‑forward).
+
 ### Custom Configuration
 
 ```typescript
