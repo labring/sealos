@@ -12,5 +12,5 @@ kubectl delete clusterrole license-metrics-reader --ignore-not-found
 kubectl delete clusterrole license-proxy-role --ignore-not-found
 kubectl delete role license-leader-election-role -n account-system --ignore-not-found
 kubectl delete serviceaccount license-controller-manager -n account-system --ignore-not-found
-helm upgrade  -i license -n license-system --create-namespace ./charts/license  ${HELM_OPTS}
-helm show crds ./charts/license | kubectl apply -f - --server-side  --force-conflicts
+helm upgrade  -i license -n license-system --create-namespace ./charts/license-controller  ${HELM_OPTS}
+helm show crds ./charts/license-controller | kubectl apply -f - --server-side  --force-conflicts
