@@ -478,10 +478,6 @@ Provide a JSON object in the request body:
 | \`template\` | string | Yes | The template name from the catalog. Use \`GET /api/v2alpha/template\` to list available templates. |
 | \`args\` | object | No | Template variable key-value pairs. To know which args are required, call \`GET /api/v2alpha/template/{name}\` - the response \`args\` field contains all parameters with their \`required\` flag and \`default\` values. |
 
-### How to Get Template Arguments
-
-To know which args are required, call \`GET /api/v2alpha/template/{name}\` - the response \`args\` field contains all parameters with their \`required\` flag and \`default\` values.
-
 ## Response
 
 If successful, this method returns a response body with the following structure:
