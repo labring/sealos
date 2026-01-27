@@ -61,6 +61,10 @@ Operations that modify data, such as creating or deleting instances.
     {
       url: 'https://template./api/v2alpha',
       description: 'Production server'
+    },
+    {
+      url: 'https://template.192.168.12.53.nip.io/api/v2alpha',
+      description: 'Testing server'
     }
   ],
   components: {
@@ -520,6 +524,7 @@ If successful, this method returns a response body with the following structure:
 \`\`\`json
 POST /api/v2alpha/template/instance
 Host: template.cloud.sealos.io
+
 Content-Type: application/json
 Authorization: <URL-encoded kubeconfig>
 
