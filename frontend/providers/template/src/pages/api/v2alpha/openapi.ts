@@ -4,7 +4,10 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
-    return res.json(document);
+    // Set headers for JSON file download
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="openapi.json"');
+    return res.status(200).json(document);
   }
 
   return jsonRes(res, {
