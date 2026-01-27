@@ -6,6 +6,7 @@ import { useConfigStore } from '@/stores/config';
 import useAppStore from '@/stores/app';
 import { parseOpenappQuery } from '@/utils/format';
 import { gtmLoginStart } from '@/utils/gtm';
+import { ensureLocaleCookie } from '@/utils/ssrLocale';
 
 export default function OAuth() {
   const router = useRouter();
@@ -148,5 +149,6 @@ export default function OAuth() {
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
+  ensureLocaleCookie({ req, res, defaultLocale: 'en' });
   return { props: {} };
 }

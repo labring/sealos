@@ -17,7 +17,7 @@ import { AccessTokenPayload } from '@/types/token';
 import { parseOpenappQuery } from '@/utils/format';
 import { sessionConfig, setAdClickData, setUserSemData } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
-import { compareFirstLanguages } from '@/utils/tools';
+import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { Box, useColorMode, useDisclosure } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -453,9 +453,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
 }
 
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local =
-    req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
-  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
+  const local = ensureLocaleCookie({ req, res, defaultLocale: 'en' });
 
   const sealos_cloud_domain = global.AppConfig?.cloud.domain || 'cloud.sealos.io';
   return {

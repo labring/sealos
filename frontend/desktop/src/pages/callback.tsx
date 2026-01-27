@@ -21,6 +21,7 @@ import { MERGE_USER_READY } from '@/types/response/utils';
 import { AxiosError, HttpStatusCode } from 'axios';
 import { gtmLoginSuccess } from '@/utils/gtm';
 import { useGuideModalStore } from '@/stores/guideModal';
+import { ensureLocaleCookie } from '@/utils/ssrLocale';
 
 export default function Callback() {
   const router = useRouter();
@@ -201,6 +202,7 @@ export default function Callback() {
   );
 }
 
-export async function getServerSideProps() {
+export async function getServerSideProps({ req, res }: any) {
+  ensureLocaleCookie({ req, res, defaultLocale: 'en' });
   return { props: {} };
 }

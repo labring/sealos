@@ -1,6 +1,6 @@
 import { EmailCheckForm } from '@/components/v2/EmailCheckForm';
 import SignLayout from '@/components/v2/SignLayout';
-import { compareFirstLanguages } from '@/utils/tools';
+import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { dehydrate, QueryClient } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
@@ -12,9 +12,7 @@ export default function PersonalInfoPage() {
   );
 }
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local =
-    req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'en');
-  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
+  const local = ensureLocaleCookie({ req, res, defaultLocale: 'en' });
 
   const queryClient = new QueryClient();
   const props = {
