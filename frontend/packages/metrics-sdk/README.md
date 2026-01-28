@@ -46,7 +46,7 @@ const client = new MetricsClient({
 const cpuData = await client.launchpad.query({
   namespace: 'ns-user123',
   type: LaunchpadMetric.CPU,
-  launchPadName: 'my-app',
+  podName: 'my-app-7c9b8f6d9c-abcde',
   range: {
     start: Math.floor(Date.now() / 1000) - 3600,
     end: Math.floor(Date.now() / 1000),
@@ -66,7 +66,7 @@ Queries Victoria Metrics for application metrics:
 const result = await client.launchpad.query({
   namespace: 'ns-user123',
   type: LaunchpadMetric.Memory,
-  launchPadName: 'my-app-abc123',
+  podName: 'my-app-7c9b8f6d9c-abcde',
   range: {
     start: startTime,
     end: endTime,
@@ -74,6 +74,9 @@ const result = await client.launchpad.query({
   }
 });
 ```
+
+> `podName` should be a full pod name (e.g. `my-app-<rs>-<suffix>`). The SDK trims the last
+> segment to match all replicas in the same ReplicaSet.
 
 **Available Metrics:**
 
@@ -88,9 +91,9 @@ const result = await client.launchpad.query({
 ```promql
 # CPU example
 round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{
-  namespace=~"ns-user123",pod=~"my-app.*"
+  namespace=~"ns-user123",pod=~"my-app-7c9b8f6d9c.*"
 }) by (pod) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{
-  namespace=~"ns-user123",pod=~"my-app.*"
+  namespace=~"ns-user123",pod=~"my-app-7c9b8f6d9c.*"
 }) by (pod) * 100,0.01)
 ```
 
@@ -184,6 +187,10 @@ const result = await client.minio.query({
 });
 ```
 
+> The MinIO `instance` label can be set via `MetricsClientConfig.minioInstance` or the
+> `OBJECT_STORAGE_INSTANCE` environment variable. It replaces `instance="#"` in the queries.
+> If not set, it becomes `instance=""` and may return no data.
+
 **Available Metrics:**
 
 - `MinioMetric.BucketUsageObjectTotal` - Total objects in bucket
@@ -202,14 +209,14 @@ import { getKubeconfig } from '@/utils/auth';
 export async function POST(req: NextRequest) {
   try {
     const kubeconfig = await getKubeconfig(req.headers);
-    const { namespace, type, launchPadName, range } = await req.json();
+    const { namespace, type, podName, range } = await req.json();
 
     const client = new MetricsClient({ kubeconfig });
 
     const data = await client.launchpad.query({
       namespace,
       type: type as LaunchpadMetric,
-      launchPadName,
+      podName,
       range
     });
 
@@ -359,7 +366,7 @@ const response = await fetch('http://launchpad-monitor:8428/query', {
   headers: {
     Authorization: encodeURIComponent(kubeconfig)
   },
-  body: new URLSearchParams({ namespace, type, launchPadName })
+  body: new URLSearchParams({ namespace, type, launchPadName: podName })
 });
 ```
 
@@ -371,7 +378,7 @@ const client = new MetricsClient({ kubeconfig });
 const data = await client.launchpad.query({
   namespace,
   type: LaunchpadMetric.CPU,
-  launchPadName
+  podName
 });
 ```
 

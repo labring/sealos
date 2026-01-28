@@ -6,8 +6,8 @@ export class LaunchpadService extends BaseMetricsService {
   private buildQuery(params: LaunchpadQueryParams, namespace: string): string {
     let query: string = LAUNCHPAD_QUERIES[params.type];
 
-    const podName = this.getPodName(params.launchPadName);
-    query = query.replace(/\$namespace/g, namespace).replace(/\$pod/g, podName);
+    const podRsPrefix = this.getPodRsPrefix(params.podName);
+    query = query.replace(/\$namespace/g, namespace).replace(/\$pod/g, podRsPrefix);
 
     if (params.pvcName) {
       query = query.replace(/@persistentvolumeclaim/g, params.pvcName);
@@ -16,9 +16,11 @@ export class LaunchpadService extends BaseMetricsService {
     return query;
   }
 
-  private getPodName(launchPadName: string): string {
-    const index = launchPadName.lastIndexOf('-');
-    return launchPadName.substring(0, index);
+  // input(<deploy>-<rs-hash>-<pod-suffix>): my-app-7c9b8f6d9c-abcde
+  // output(<deploy>-<rs-hash>): my-app-7c9b8f6d9c
+  private getPodRsPrefix(podName: string): string {
+    const index = podName.lastIndexOf('-');
+    return podName.substring(0, index);
   }
 
   async query(params: LaunchpadQueryParams): Promise<LaunchpadQueryResult> {

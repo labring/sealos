@@ -10,7 +10,7 @@ export enum LaunchpadMetric {
 
 export interface LaunchpadQueryParams extends BaseQueryParams {
   type: LaunchpadMetric;
-  launchPadName: string;
+  podName: string;
   pvcName?: string;
 }
 

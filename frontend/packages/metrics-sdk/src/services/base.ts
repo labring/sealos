@@ -76,11 +76,6 @@ export abstract class BaseMetricsService {
     const hasStart = range?.start !== undefined && range?.start !== null && range?.start !== '';
     const endpoint = hasStart ? '/api/v1/query_range' : '/api/v1/query';
 
-    console.log('🔍 Debug Info:');
-    console.log('  Query:', query);
-    console.log('  Endpoint:', this.baseURL + endpoint);
-    console.log('  Params:', formData);
-
     const body = new URLSearchParams(
       Object.entries(formData).reduce<Record<string, string>>((acc, [key, value]) => {
         acc[key] = String(value);
@@ -88,13 +83,6 @@ export abstract class BaseMetricsService {
       }, {})
     ).toString();
     const response = await this.client.post(endpoint, body);
-
-    console.log('  Response status:', response.data.status);
-    console.log('  Result count:', response.data.data?.result?.length || 0);
-    if (response.data.data?.result?.length === 0) {
-      console.log('  ⚠️  Empty result!');
-    }
-    console.log('');
 
     return response.data;
   }

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Sealos metrics monitoring SDK",
   "type": "module",
+  "author": "mlhiter",
   "scripts": {
     "test": "tsx test/index.ts",
     "build": "rollup -c",
