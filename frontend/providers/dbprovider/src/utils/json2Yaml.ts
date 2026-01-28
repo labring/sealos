@@ -251,7 +251,6 @@ export const json2CreateCluster = (
           componentSpecs: [
             {
               componentDefRef: 'postgresql',
-              disableExporter: true,
               enabledLogs: ['running'],
               name: 'postgresql',
               replicas: pgRes.other?.replicas ?? data.replicas,
