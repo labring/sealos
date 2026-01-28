@@ -20,7 +20,13 @@ import { IngressListItemType } from '@/types/ingress';
 import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
 
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
-import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools';
+import {
+  calculateUptime,
+  cpuFormatToM,
+  formatPodTime,
+  memoryFormatToMi,
+  storageFormatToNum
+} from '@/utils/tools';
 import { devboxRemarkKey, gpuNodeSelectorKey, gpuResourceKey } from '../constants/devbox';
 
 export const adaptDevboxListItemV2 = ([devbox, template]: [
@@ -108,6 +114,7 @@ export const adaptDevboxDetailV2 = ([
 
   const configMaps: Array<{ id: string; path: string; content: string }> = [];
   const volumes: Array<{ id: string; path: string; size: number }> = [];
+  let sharedMemory: { enabled: boolean; sizeLimit: number } | undefined;
 
   if (config?.volumes && config?.volumeMounts) {
     const volumesArray = config.volumes as any[];
@@ -144,6 +151,17 @@ export const adaptDevboxDetailV2 = ([
           path: volumeMount.mountPath,
           size
         });
+      } else if (volume.emptyDir && volume.name === 'shared-memory') {
+        const sizeLimit = volume.emptyDir.sizeLimit || '64Mi';
+        const sizeMatch = sizeLimit.match(/^(\d+)(Mi|Gi)$/i);
+        let size = 64;
+        if (sizeMatch) {
+          size = parseInt(sizeMatch[1]);
+          if (sizeMatch[2].toLowerCase() === 'mi') {
+            size = Math.ceil(size / 1024);
+          }
+        }
+        sharedMemory = { enabled: true, sizeLimit: size };
       }
     });
   }
@@ -165,6 +183,7 @@ export const adaptDevboxDetailV2 = ([
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
+    storage: storageFormatToNum(devbox.spec.resource['ephemeral-storage'] || '10Gi'),
     gpu: {
       type: devbox.spec.nodeSelector?.[gpuNodeSelectorKey] || '',
       amount: Number(devbox.spec.resource[gpuResourceKey] || 0),
@@ -184,6 +203,7 @@ export const adaptDevboxDetailV2 = ([
     envs,
     configMaps,
     volumes,
+    sharedMemory,
     lastTerminatedReason: devbox.status
       ? devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
         ? devbox.status.state.waiting

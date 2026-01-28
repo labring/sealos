@@ -3,7 +3,15 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { CircuitBoard, Cpu, HdmiPort, MemoryStick, HardDrive, Network } from 'lucide-react';
+import {
+  CircuitBoard,
+  Cpu,
+  HdmiPort,
+  MemoryStick,
+  HardDrive,
+  Network,
+  CircleHelp
+} from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
 import { useUserStore } from '@/stores/user';
@@ -77,6 +85,16 @@ ${t('remaining')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
     <Card className={cn('guide-cost', className)}>
       <CardHeader className="flex h-13 items-center gap-2 border-b-1 border-zinc-100">
         <span className="font-medium">{t('resource_quota')}</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="cursor-pointer">
+              <CircleHelp className="h-4 w-4 text-zinc-400" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="start" className="w-40">
+            <span className="text-xs">{t('resource_quota_tooltip')}</span>
+          </TooltipContent>
+        </Tooltip>
       </CardHeader>
       <CardContent className="flex flex-col">
         {quotaList.map((item, index) => (

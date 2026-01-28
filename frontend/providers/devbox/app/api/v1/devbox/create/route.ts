@@ -162,7 +162,13 @@ export async function POST(req: NextRequest) {
     // return devbox detail
     const devboxBody = await waitForDevboxStatus(k8sCustomObjects, namespace, devboxForm.name);
 
-    const resp = [devboxBody, [], template, [], []] as [KBDevboxTypeV2, [], typeof template, [], []];
+    const resp = [devboxBody, [], template, [], []] as [
+      KBDevboxTypeV2,
+      [],
+      typeof template,
+      [],
+      []
+    ];
 
     const adaptedData = adaptDevboxDetailV2(resp);
 

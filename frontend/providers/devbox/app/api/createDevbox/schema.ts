@@ -72,6 +72,9 @@ export const RequestSchema = z
       description:
         'Memory in MB, it is recommended to use options like 2048, 4096, 8192, 16384, 32768, representing 2G, 4G, 8G, 16G, 32G'
     }),
+    storage: z.number().min(1).default(4096).openapi({
+      description: 'Storage in Gi, e.g. 10, 20, 30'
+    }),
     gpu: GpuSchema.optional().openapi({
       description: 'GPU configuration, usually empty'
     }),
@@ -97,11 +100,9 @@ export const RequestSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          path: z
-            .string()
-            .refine((path) => path.startsWith('/'), {
-              message: 'ConfigMap path must be an absolute path starting with "/"'
-            }),
+          path: z.string().refine((path) => path.startsWith('/'), {
+            message: 'ConfigMap path must be an absolute path starting with "/"'
+          }),
           content: z.string()
         })
       )
@@ -114,11 +115,9 @@ export const RequestSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          path: z
-            .string()
-            .refine((path) => path.startsWith('/'), {
-              message: 'Volume path must be an absolute path starting with "/"'
-            }),
+          path: z.string().refine((path) => path.startsWith('/'), {
+            message: 'Volume path must be an absolute path starting with "/"'
+          }),
           size: z.number().min(1).max(20)
         })
       )
@@ -126,6 +125,15 @@ export const RequestSchema = z
       .default([])
       .openapi({
         description: 'Volume configurations (NFS PVC)'
+      }),
+    sharedMemory: z
+      .object({
+        enabled: z.boolean().default(false),
+        sizeLimit: z.number().min(1).default(64)
+      })
+      .optional()
+      .openapi({
+        description: 'Shared memory configuration (emptyDir with Memory medium)'
       })
   })
   .refine(

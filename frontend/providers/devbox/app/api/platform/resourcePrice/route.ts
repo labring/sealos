@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
     const data: userPriceType = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
+      storage: countSourcePrice(priceResponse, 'storage'),
       nodeports: countSourcePrice(priceResponse, 'services.nodeports'),
       gpu: GPU_ENABLE === 'true' ? countGpuSource(priceResponse, gpuNodes) : undefined
     };

@@ -1,6 +1,7 @@
 export interface SourcePrice {
   cpu: number;
   memory: number;
+  storage: number;
   nodeports: number;
   gpu?: {
     alias: string;
@@ -28,9 +29,14 @@ export interface Env {
   currencySymbol: 'shellCoin' | 'cny' | 'usd';
   enableImportFeature: string;
   enableWebideFeature: string;
-  enableAdvancedConfig: string;
+  enableAdvancedEnvAndConfigmap: string;
+  enableAdvancedNfs: string;
+  enableAdvancedSharedMemory: string;
   cpuSlideMarkList: string;
   memorySlideMarkList: string;
+  enableAdvancedStorage: string;
+  storageDefault: number;
+  storageSlideMarkList: string;
   nfsStorageClassName: string;
   webIdePort: number;
 }

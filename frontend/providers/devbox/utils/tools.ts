@@ -58,6 +58,29 @@ export const memoryFormatToMi = (memory = '0') => {
   return Number(value.toFixed(2));
 };
 
+export const storageFormatToMi = (storage = '0') => {
+  if (!storage || storage === '0') {
+    return 0;
+  }
+
+  let value = parseFloat(storage);
+
+  if (/Ki/gi.test(storage)) {
+    value = value / 1024;
+  } else if (/Mi/gi.test(storage)) {
+    value = value;
+  } else if (/Gi/gi.test(storage)) {
+    value = value * 1024;
+  } else if (/Ti/gi.test(storage)) {
+    value = value * 1024 * 1024;
+  } else {
+    console.log('Invalid storage value');
+    value = 0;
+  }
+
+  return Number(value.toFixed(2));
+};
+
 export const storageFormatToNum = (storage = '0') => {
   return +`${storage.replace(/gi/i, '')}`;
 };

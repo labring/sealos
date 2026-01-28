@@ -308,6 +308,7 @@
   "mcp": "MCP",
   "memory": "内存",
   "memory_exceeds_quota": "申请的 '内存' 超出限制，请联系管理员",
+  "storage": "存储",
   "minute": "分钟",
   "monitor": "实时监控",
   "monitor_tab": "监控",
@@ -425,6 +426,7 @@
   "repository_type": "仓库类型",
   "reset": "重置",
   "resource_quota": "资源配额",
+  "resource_quota_tooltip": "请联系管理员配置配额",
   "restart": "重启",
   "restart_error": "重启失败",
   "restart_success": "重启成功",
@@ -572,5 +574,6 @@
   "mount_path_placeholder": "例如：/data",
   "mount_path_cannot_be_empty": "挂载路径不能为空",
   "mount_path_invalid_format": "路径格式无效。必须以字母、数字、下划线或斜杠开头和结尾，可以包含点和连字符",
-  "mount_path_conflict": "路径冲突，该路径已存在"
+  "mount_path_conflict": "路径冲突，该路径已存在",
+  "shared_memory": "共享内存"
 }

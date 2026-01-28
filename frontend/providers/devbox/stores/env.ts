@@ -21,9 +21,14 @@ export const defaultEnv: Env = {
   currencySymbol: 'shellCoin',
   enableImportFeature: 'false',
   enableWebideFeature: 'false',
-  enableAdvancedConfig: 'false',
+  enableAdvancedEnvAndConfigmap: 'false',
+  enableAdvancedNfs: 'false',
+  enableAdvancedSharedMemory: 'false',
   cpuSlideMarkList: '1,2,4,8,16',
   memorySlideMarkList: '2,4,8,16,32',
+  enableAdvancedStorage: 'false',
+  storageDefault: 10,
+  storageSlideMarkList: '10,20,30,40,50',
   nfsStorageClassName: 'nfs-csi',
   webIdePort: 9999
 };

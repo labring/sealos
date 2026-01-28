@@ -3,68 +3,81 @@ import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
+const CpuOptions = z
+  .union([
+    z.literal(0.1),
+    z.literal(0.2),
+    z.literal(0.5),
+    z.literal(1),
+    z.literal(2),
+    z.literal(4),
+    z.literal(8),
+    z.literal(16)
+  ])
+  .openapi({
+    description: 'CPU cores - will be converted to millicores for values < 1 (e.g., 0.1 -> 100m)',
+    example: 1
+  });
 
-const CpuOptions = z.union([
-  z.literal(0.1), z.literal(0.2), z.literal(0.5), 
-  z.literal(1), z.literal(2), z.literal(4), z.literal(8), z.literal(16)
-]).openapi({
-  description: 'CPU cores - will be converted to millicores for values < 1 (e.g., 0.1 -> 100m)',
-  example: 1
-});
+const MemoryOptions = z
+  .union([
+    z.literal(0.1),
+    z.literal(0.5),
+    z.literal(1),
+    z.literal(2),
+    z.literal(4),
+    z.literal(8),
+    z.literal(16),
+    z.literal(32)
+  ])
+  .openapi({
+    description: 'Memory in GB - will be converted to Gi format (e.g., 1 -> 1Gi)',
+    example: 2
+  });
 
-
-const MemoryOptions = z.union([
-  z.literal(0.1), z.literal(0.5), z.literal(1), z.literal(2), 
-  z.literal(4), z.literal(8), z.literal(16), z.literal(32)
-]).openapi({
-  description: 'Memory in GB - will be converted to Gi format (e.g., 1 -> 1Gi)',
-  example: 2
-});
-
-
-const RuntimeName = z.enum([
-'nuxt3',
-'angular',
-'quarkus',
-'ubuntu',
-'flask',
-'java',
-'chi',
-'net',
-'iris',
-'hexo',
-'python',
-'docusaurus',
-'vitepress',
-'cpp',
-'vue',
-'nginx',
-'rocket',
-'debian-ssh',
-'vert.x',
-'express.js',
-'django',
-'next.js',
-'sealaf',
-'go',
-'react',
-'php',
-'svelte',
-'c',
-'astro',
-'umi',
-'gin',
-'echo',
-'rust'
-]).openapi({
-  description: 'Runtime environment name (lowercase)'
-});
-
+const RuntimeName = z
+  .enum([
+    'nuxt3',
+    'angular',
+    'quarkus',
+    'ubuntu',
+    'flask',
+    'java',
+    'chi',
+    'net',
+    'iris',
+    'hexo',
+    'python',
+    'docusaurus',
+    'vitepress',
+    'cpp',
+    'vue',
+    'nginx',
+    'rocket',
+    'debian-ssh',
+    'vert.x',
+    'express.js',
+    'django',
+    'next.js',
+    'sealaf',
+    'go',
+    'react',
+    'php',
+    'svelte',
+    'c',
+    'astro',
+    'umi',
+    'gin',
+    'echo',
+    'rust'
+  ])
+  .openapi({
+    description: 'Runtime environment name (lowercase)'
+  });
 
 const ProtocolType = z.enum(['HTTP', 'GRPC', 'WS']).openapi({
   description: 'Protocol type'
 });
-
 
 const PortConfig = z.object({
   number: z.number().min(1).max(65535).openapi({
@@ -81,21 +94,27 @@ const PortConfig = z.object({
   })
 });
 
-
 const ResourceConfig = z.object({
   cpu: CpuOptions.openapi({
     description: 'CPU allocation in cores'
   }),
   memory: MemoryOptions.openapi({
     description: 'Memory allocation in GB'
+  }),
+  storage: z.number().min(1).default(4096).openapi({
+    description: 'Storage in Gi, e.g. 10, 20, 30'
   })
 });
 
-
 export const RequestSchema = z.object({
-  name: z.string().min(1).max(63).regex(/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/).openapi({
-    description: 'Devbox name (must be DNS compliant: lowercase, numbers, hyphens, 1-63 chars)'
-  }),
+  name: z
+    .string()
+    .min(1)
+    .max(63)
+    .regex(/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/)
+    .openapi({
+      description: 'Devbox name (must be DNS compliant: lowercase, numbers, hyphens, 1-63 chars)'
+    }),
   runtime: RuntimeName.openapi({
     description: 'Runtime environment name'
   }),
@@ -106,7 +125,6 @@ export const RequestSchema = z.object({
     description: 'Port configurations (optional, can be empty)'
   })
 });
-
 
 const PortResponseData = z.object({
   portName: z.string().openapi({
@@ -131,7 +149,6 @@ const PortResponseData = z.object({
     description: 'Custom domain (if provided)'
   })
 });
-
 
 export const SuccessResponseSchema = z.object({
   data: z.object({
@@ -158,7 +175,6 @@ export const SuccessResponseSchema = z.object({
     })
   })
 });
-
 
 export const ErrorResponseSchema = z.object({
   code: z.number().openapi({

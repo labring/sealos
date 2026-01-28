@@ -99,6 +99,26 @@ const Basic = () => {
           { title: 'Memory Limit', value: `${(devboxDetail?.memory || 0) / 1024} GiB` }
         ]
       },
+      ...(env.enableAdvancedSharedMemory === 'true' &&
+      (devboxDetail?.storage || devboxDetail?.sharedMemory?.enabled)
+        ? [
+            {
+              type: 'double' as const,
+              items: [
+                {
+                  title: t('storage'),
+                  value: devboxDetail?.storage ? `${devboxDetail.storage} Gi` : '-'
+                },
+                {
+                  title: t('shared_memory'),
+                  value: devboxDetail?.sharedMemory?.enabled
+                    ? `${devboxDetail.sharedMemory.sizeLimit} Gi`
+                    : '-'
+                }
+              ]
+            }
+          ]
+        : []),
       ...(sourcePrice?.gpu
         ? [
             {
@@ -113,10 +133,13 @@ const Basic = () => {
     devboxDetail?.upTime,
     devboxDetail?.cpu,
     devboxDetail?.memory,
+    devboxDetail?.storage,
+    devboxDetail?.sharedMemory,
     devboxDetail?.gpu,
     devboxDetail?.name,
     env.registryAddr,
     env.namespace,
+    env.enableAdvancedSharedMemory,
     sourcePrice?.gpu,
     t
   ]);

@@ -17,16 +17,20 @@ import { Label } from '@sealos/shadcn-ui/label';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
 interface NetworkStorageDrawerProps {
+  isEdit: boolean;
   onClose: () => void;
   onSuccess: (storage: { id?: string; path: string; size: number }) => void;
   initialValue?: { id?: string; path: string; size: number };
+  originalValue?: { id?: string; path: string; size: number };
   existingPaths?: string[];
 }
 
 const NetworkStorageDrawer = ({
+  isEdit,
   onClose,
   onSuccess,
   initialValue,
+  originalValue,
   existingPaths = []
 }: NetworkStorageDrawerProps) => {
   const t = useTranslations();
@@ -35,8 +39,10 @@ const NetworkStorageDrawer = ({
   const [capacityInput, setCapacityInput] = useState((initialValue?.size || 1).toString());
   const [pathError, setPathError] = useState<string>('');
 
+  const minCapacity = isEdit && originalValue ? originalValue.size : 1;
+
   const handleCapacityChange = (delta: number) => {
-    const newValue = Math.min(20, Math.max(1, capacity + delta));
+    const newValue = Math.min(20, Math.max(minCapacity, capacity + delta));
     setCapacity(newValue);
     setCapacityInput(newValue.toString());
   };
@@ -45,7 +51,7 @@ const NetworkStorageDrawer = ({
     setCapacityInput(value);
     const num = parseInt(value);
     if (!isNaN(num)) {
-      setCapacity(Math.min(20, Math.max(1, num)));
+      setCapacity(Math.min(20, Math.max(minCapacity, num)));
     }
   };
 
@@ -53,7 +59,7 @@ const NetworkStorageDrawer = ({
     if (capacityInput === '' || isNaN(parseInt(capacityInput))) {
       setCapacityInput(capacity.toString());
     } else {
-      const num = Math.min(20, Math.max(1, parseInt(capacityInput)));
+      const num = Math.min(20, Math.max(minCapacity, parseInt(capacityInput)));
       setCapacity(num);
       setCapacityInput(num.toString());
     }
@@ -120,7 +126,7 @@ const NetworkStorageDrawer = ({
                 </Button>
                 <Input
                   type="number"
-                  min={1}
+                  min={minCapacity}
                   max={20}
                   value={capacityInput}
                   onChange={(e) => handleCapacityInput(e.target.value)}

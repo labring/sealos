@@ -27,8 +27,8 @@ export default function Memory() {
     }
 
     try {
-      const memoryList = env.memorySlideMarkList.split(',').map(v => Number(v.trim()));
-      return memoryList.map(memory => ({ label: String(memory), value: memory * 1024 }));
+      const memoryList = env.memorySlideMarkList.split(',').map((v) => Number(v.trim()));
+      return memoryList.map((memory) => ({ label: String(memory), value: memory * 1024 }));
     } catch (error) {
       console.error('Failed to parse memory list from env:', error);
       return [
@@ -43,22 +43,35 @@ export default function Memory() {
 
   const currentValue = watch('memory');
   const currentIndex = MemorySlideMarkList.findIndex((item) => item.value === currentValue);
+  const sharedMemory = watch('sharedMemory');
 
   return (
     <div className="flex items-start gap-10">
       <Label className="w-15 font-medium text-gray-900">{t('memory')}</Label>
-      <div className="flex-1">
+      <div className="flex flex-1">
         <Slider
           value={[currentIndex !== -1 ? currentIndex : 0]}
           onValueChange={(values) => {
             const index = values[0];
-            setValue('memory', MemorySlideMarkList[index].value);
+            const newMemory = MemorySlideMarkList[index].value;
+            const newMaxSharedMemory = Math.floor(newMemory / 1024);
+
+            setValue('memory', newMemory);
+
+            // Adjust shared memory if it exceeds new limit
+            if (sharedMemory?.enabled && sharedMemory.sizeLimit > newMaxSharedMemory) {
+              setValue('sharedMemory', {
+                ...sharedMemory,
+                sizeLimit: newMaxSharedMemory
+              });
+            }
           }}
           max={MemorySlideMarkList.length - 1}
           min={0}
           step={1}
           marks={MemorySlideMarkList}
         />
+        <span className="mt-[18px] ml-2 h-auto text-sm text-neutral-500">Gi</span>
       </div>
     </div>
   );

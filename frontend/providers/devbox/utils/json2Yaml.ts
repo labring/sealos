@@ -108,6 +108,7 @@ export const json2DevboxV2 = (
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
+        'ephemeral-storage': `${str2Num(data.storage)}Gi`,
         ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
       ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
@@ -180,6 +181,22 @@ export const json2DevboxV2 = (
               name: volumeName,
               mountPath: vol.path
             });
+          });
+        }
+
+        // Handle shared memory (emptyDir with Memory medium)
+        if (data.sharedMemory?.enabled && data.sharedMemory.sizeLimit > 0) {
+          newVolumes.push({
+            name: 'shared-memory',
+            emptyDir: {
+              medium: 'Memory',
+              sizeLimit: `${data.sharedMemory.sizeLimit}Gi`
+            }
+          });
+
+          newVolumeMounts.push({
+            name: 'shared-memory',
+            mountPath: '/dev/shm'
           });
         }
 

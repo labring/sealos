@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 import { useSearchParams } from 'next/navigation';
@@ -12,6 +12,7 @@ import type { DevboxEditTypeV2 } from '@/types/devbox';
 import Gpu from './Gpu';
 import Cpu from './Cpu';
 import Memory from './Memory';
+import Storage from './Storage';
 import Network from './Network';
 import Runtime from './Runtime';
 import PriceBox from './PriceBox';
@@ -35,7 +36,19 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const { env } = useEnvStore();
 
   const formValues = watch();
-  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+  const showEnvAndConfigmap = env.enableAdvancedEnvAndConfigmap === 'true';
+  const showNfs = env.enableAdvancedNfs === 'true';
+  const showSharedMemory = env.enableAdvancedSharedMemory === 'true';
+  const showAdvancedConfig = showEnvAndConfigmap || showNfs || showSharedMemory;
+  const showStorage = env.enableAdvancedStorage === 'true';
+
+  const originalVolumesRef = useRef<DevboxEditTypeV2['volumes']>();
+
+  useEffect(() => {
+    if (isEdit && !originalVolumesRef.current) {
+      originalVolumesRef.current = watch('volumes');
+    }
+  }, [isEdit, watch]);
 
   useEffect(() => {
     const scrollTo = searchParams.get('scrollTo');
@@ -74,6 +87,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
             {
               cpu: watch('cpu'),
               memory: watch('memory'),
+              storage: watch('storage'),
               gpu: formValues.gpu
             }
           ]}
@@ -92,6 +106,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
           <Gpu countGpuInventory={countGpuInventory} />
           <Cpu />
           <Memory />
+          {showStorage && <Storage />}
         </div>
         {/* Network */}
         <div id="network">
@@ -99,7 +114,15 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         </div>
 
         {/* Advanced Configurations */}
-        {showAdvancedConfig && <AdvancedConfig />}
+        {showAdvancedConfig && (
+          <AdvancedConfig
+            isEdit={isEdit}
+            showEnvAndConfigmap={showEnvAndConfigmap}
+            showNfs={showNfs}
+            showSharedMemory={showSharedMemory}
+            originalVolumes={originalVolumesRef.current}
+          />
+        )}
       </div>
     </div>
   );

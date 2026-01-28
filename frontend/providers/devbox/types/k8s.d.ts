@@ -140,6 +140,7 @@ export interface KBDevboxSpecV2 {
   resource: {
     cpu: string;
     memory: string;
+    'ephemeral-storage'?: string;
     [gpuResourceKey]?: string;
   };
   nodeSelector?: {

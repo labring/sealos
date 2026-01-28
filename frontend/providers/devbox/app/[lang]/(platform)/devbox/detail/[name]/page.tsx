@@ -75,15 +75,31 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
 
   useEffect(() => {
     const tab = searchParams.get('tab') as TabValue;
-    const showAdvancedConfig = env.enableAdvancedConfig === 'true';
-    if (tab && (tab === 'overview' || tab === 'monitor' || tab === 'logs' || (tab === 'advancedConfig' && showAdvancedConfig))) {
+    const showAdvancedConfig =
+      env.enableAdvancedEnvAndConfigmap === 'true' ||
+      env.enableAdvancedNfs === 'true' ||
+      env.enableAdvancedSharedMemory === 'true';
+    if (
+      tab &&
+      (tab === 'overview' ||
+        tab === 'monitor' ||
+        tab === 'logs' ||
+        (tab === 'advancedConfig' && showAdvancedConfig))
+    ) {
       setCurrentTab(tab);
     }
-  }, [searchParams, env.enableAdvancedConfig]);
+  }, [
+    searchParams,
+    env.enableAdvancedEnvAndConfigmap,
+    env.enableAdvancedNfs,
+    env.enableAdvancedSharedMemory
+  ]);
 
   if (!initialized || !devboxDetail) return <Loading />;
 
-  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+  const showEnvAndConfigmap = env.enableAdvancedEnvAndConfigmap === 'true';
+  const showNfs = env.enableAdvancedNfs === 'true';
+  const showAdvancedConfig = showEnvAndConfigmap || showNfs;
 
   const renderContent = () => {
     switch (currentTab) {
@@ -103,7 +119,9 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       case 'monitor':
         return <Monitor />;
       case 'advancedConfig':
-        return showAdvancedConfig ? <AdvancedConfig /> : null;
+        return showAdvancedConfig ? (
+          <AdvancedConfig showEnvAndConfigmap={showEnvAndConfigmap} showNfs={showNfs} />
+        ) : null;
       // case 'logs':
       //   return <Logs />;
       default:

@@ -306,6 +306,7 @@
   "mcp": "MCP",
   "memory": "Memory",
   "memory_exceeds_quota": "Memory requested exceeds quota. Contact admin.",
+  "storage": "Storage",
   "minute": "minutes",
   "monitor": "Monitor",
   "monitor_tab": "Monitor",
@@ -423,6 +424,7 @@
   "repository_type": "Repository Type",
   "reset": "Reset",
   "resource_quota": "Resource Quota",
+  "resource_quota_tooltip": "Please contact your administrator to configure the quota.",
   "restart": "Restart",
   "restart_error": "Restart error",
   "restart_success": "Restart succeeded",
@@ -570,5 +572,6 @@
   "mount_path_placeholder": "For Example: /data",
   "mount_path_cannot_be_empty": "Mount path cannot be empty",
   "mount_path_invalid_format": "Invalid path format. Must start and end with alphanumeric, underscore or slash, and can contain dots and hyphens",
-  "mount_path_conflict": "Path conflict, this path already exists"
+  "mount_path_conflict": "Path conflict, this path already exists",
+  "shared_memory": "Shared Memory"
 }

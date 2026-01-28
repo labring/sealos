@@ -176,6 +176,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
         image: templateData.template.image,
         cpu: 4000,
         memory: 8192,
+        storage: 1024 * 10, // 10Gi
         networks: [
           {
             port: formData.containerPort,
