@@ -14,7 +14,6 @@ spec:
       targetPort: https
   selector:
     control-plane: controller-manager
-    {{- include "account.selectorLabels" . | nindent 4 }}
 {{- end }}
 ---
 apiVersion: v1
@@ -31,4 +30,3 @@ spec:
       targetPort: 9443
   selector:
     control-plane: controller-manager
-    {{- include "account.selectorLabels" . | nindent 4 }}

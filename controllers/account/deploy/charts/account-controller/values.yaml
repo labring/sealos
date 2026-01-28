@@ -83,6 +83,20 @@ accountEnv:
   cloudPort: ""
   accountApiJwtSecret: "secret"
   baseBalance: "5000000"
+  quotaLimitsCpu: "16"
+  quotaLimitsMemory: "64Gi"
+  quotaLimitsStorage: "200Gi"
+  quotaLimitsGpu: "8"
+  quotaLimitsPods: "20"
+  quotaLimitsNodePorts: "10"
+  quotaObjectStorageSize: "20Gi"
+  quotaObjectStorageBucket: "20"
+  limitRangeEphemeralStorage: "0"
+  rewardProcessing: "false"
+  whitelistKubernetesHosts: ""
+
+# ConfigMap 合并策略: preserve 保留旧值, overwrite 覆盖旧值
+accountEnvMergeStrategy: "overwrite"
 
 paymentSecretName: payment-secret
 

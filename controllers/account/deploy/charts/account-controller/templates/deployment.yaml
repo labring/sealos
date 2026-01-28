@@ -10,7 +10,6 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-      {{- include "account.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
