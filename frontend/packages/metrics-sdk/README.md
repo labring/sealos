@@ -1,10 +1,10 @@
 # sealos-metrics-sdk
 
-Unified TypeScript SDK for Sealos metrics monitoring. Directly queries Prometheus/Victoria Metrics with built-in Kubernetes authentication.
+Unified TypeScript SDK for Sealos metrics monitoring. Directly queries Victoria Metrics with built-in Kubernetes authentication.
 
 ## Features
 
-- **Direct Prometheus/VM Queries**: No intermediate Go services required
+- **Direct Metrics/VM Queries**: No intermediate Go services required
 - **Built-in K8s Authentication**: Validates user permissions using kubeconfig
 - **Type Safe**: Full TypeScript type definitions with enum constraints
 - **PromQL Builder**: Automatically constructs PromQL queries from parameters
@@ -23,7 +23,7 @@ Frontend (Next.js API Route)
     ↓
 MetricsClient (SDK)
     ├── AuthService → Validates K8s permissions
-    └── Query Services → Direct Prometheus/VM HTTP calls
+    └── Query Services → Direct Metrics/VM HTTP calls
 ```
 
 **Replaces:**
@@ -99,7 +99,7 @@ round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_ira
 
 ### Database Service
 
-Queries Prometheus for database metrics:
+Queries Metrics for database metrics:
 
 ```typescript
 const result = await client.database.query({
@@ -176,7 +176,7 @@ const result = await client.raw.query({
 
 ### MinIO Service
 
-Queries Prometheus for object storage metrics:
+Queries Metrics for object storage metrics:
 
 ```typescript
 const result = await client.minio.query({
@@ -291,7 +291,7 @@ Builds queries from templates with parameter substitution:
 ### 3. Direct API Call
 
 ```typescript
-POST http://prometheus:9090/api/v1/query_range
+POST http://metrics:8429/api/v1/query_range
 Content-Type: application/x-www-form-urlencoded
 
 query=<constructed_promql>&start=<timestamp>&end=<timestamp>&step=1m
@@ -337,7 +337,7 @@ query(params: QueryParams): Promise<QueryResult>
 
 - Missing/invalid kubeconfig
 - No permission for namespace
-- Prometheus/VM connection failures
+- Metrics/VM connection failures
 - Invalid query parameters
 
 ## Development

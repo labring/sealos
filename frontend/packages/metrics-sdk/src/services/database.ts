@@ -25,7 +25,7 @@ export class DatabaseService extends BaseMetricsService {
     await this.authService.authenticate(namespace);
 
     const promqlQuery = this.buildQuery(params, namespace);
-    return this.queryPrometheus<QueryResponse>(promqlQuery, params.range);
+    return this.queryMetrics<QueryResponse>(promqlQuery, params.range);
   }
 
   async rawQuery(params: RawQueryParams): Promise<QueryResponse> {
@@ -37,6 +37,6 @@ export class DatabaseService extends BaseMetricsService {
         ? params.query
         : this.injectNamespaceLegacy(params.query, namespace);
 
-    return this.queryPrometheus<QueryResponse>(promqlQuery, params.range);
+    return this.queryMetrics<QueryResponse>(promqlQuery, params.range);
   }
 }

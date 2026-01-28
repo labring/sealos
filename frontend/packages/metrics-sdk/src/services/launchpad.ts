@@ -28,6 +28,6 @@ export class LaunchpadService extends BaseMetricsService {
     await this.authService.authenticate(namespace);
 
     const promqlQuery = this.buildQuery(params, namespace);
-    return this.queryPrometheus<LaunchpadQueryResult>(promqlQuery, params.range);
+    return this.queryMetrics<LaunchpadQueryResult>(promqlQuery, params.range);
   }
 }

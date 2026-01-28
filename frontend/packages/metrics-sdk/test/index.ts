@@ -16,7 +16,7 @@ async function testMetricsSDK() {
   }
 
   const namespace = process.env.TEST_NAMESPACE || 'default';
-  const launchpadName = process.env.TEST_LAUNCHPAD_NAME || '';
+  const podName = process.env.TEST_POD_NAME || process.env.TEST_LAUNCHPAD_NAME || '';
   const dbCluster = process.env.TEST_DB_CLUSTER || '';
   const bucketName = process.env.TEST_BUCKET_NAME || '';
 
@@ -27,12 +27,12 @@ async function testMetricsSDK() {
     });
     console.log('✅ MetricsClient initialized\n');
 
-    if (launchpadName) {
+    if (podName) {
       console.log('📊 Testing Launchpad Service...');
       const cpuData = await client.launchpad.query({
         namespace,
         type: LaunchpadMetric.CPU,
-        launchPadName: launchpadName,
+        podName,
         range: {
           start: Math.floor(Date.now() / 1000) - 3600,
           end: Math.floor(Date.now() / 1000),

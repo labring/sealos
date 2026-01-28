@@ -11,6 +11,6 @@ export class RawMetricsService extends BaseMetricsService {
         ? params.query
         : this.injectNamespaceLegacy(params.query, namespace);
 
-    return this.queryPrometheus<QueryResponse>(promqlQuery, params.range);
+    return this.queryMetrics<QueryResponse>(promqlQuery, params.range);
   }
 }
