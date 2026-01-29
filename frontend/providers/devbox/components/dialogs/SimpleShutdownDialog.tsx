@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
@@ -44,7 +44,7 @@ const SimpleShutdownDialog = ({ onSuccess, onClose, devbox, open }: SimpleShutdo
   const handleShutdown = useCallback(async () => {
     try {
       setLoading(true);
-      await shutdownDevbox({ devboxName: devbox.name, shutdownMode: 'Stopped' });
+      await shutdownDevbox({ devboxName: devbox.name, shutdownMode: 'Paused' });
       toast.success(t('pause_success'));
       track({
         event: 'deployment_shutdown',
@@ -78,18 +78,28 @@ const SimpleShutdownDialog = ({ onSuccess, onClose, devbox, open }: SimpleShutdo
   return (
     <>
       <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="top-[10%] w-[350px] translate-y-0">
+        <DialogContent className="top-[10%] w-[400px] translate-y-0">
           <DialogHeader>
-            <DialogTitle>{t('confirm_shutdown_question')}</DialogTitle>
+            <DialogTitle className="flex items-center gap-1.5">
+              <TriangleAlert className="h-4 w-4 text-yellow-600" />
+              {t('pause_warning_title')}
+            </DialogTitle>
           </DialogHeader>
+
+          <div className="flex flex-col gap-4">
+            <p className="text-sm">{t('pause_warning_question')}</p>
+            <div className="w-full rounded-lg border-red-200 bg-red-50 p-4 text-sm text-red-600">
+              {t('pause_warning_note')}
+            </div>
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={onClose}>
               {t('cancel')}
             </Button>
-            <Button onClick={handleShutdown} disabled={loading}>
+            <Button onClick={handleShutdown} disabled={loading} variant="destructive">
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {t('confirm_shutdown')}
+              {t('confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

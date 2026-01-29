@@ -11,6 +11,7 @@ export const Status = memo<CellContext<DevboxListItemTypeV2, unknown>>(
     return (
       <DevboxStatusTag
         status={item.status}
+        isSSHGate={item.networkType === 'SSHGate'}
         isShutdown={item.status.value === DevboxStatusEnum.Shutdown}
       />
     );
