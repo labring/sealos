@@ -1,5 +1,3 @@
-import { useLoading } from '@/hooks/useLoading';
-import { useToast } from '@/hooks/useToast';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
 import { serviceSideProps } from '@/utils/i18n';
@@ -18,7 +16,6 @@ const AppMainInfo = dynamic(() => import('@/components/app/detail/index/AppMainI
 });
 
 const AppDetail = ({ appName }: { appName: string }) => {
-  const { Loading } = useLoading();
   const { appDetail = MOCK_APP_DETAIL, appDetailPods, loadDetailMonitorData } = useAppStore();
 
   useQuery(
@@ -54,7 +51,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
             <AppBaseInfo app={appDetail} />
           </Box>
           <Box flex="1" bg={'white'} borderRadius={'8px'}>
-            {appDetail ? <AppMainInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
+            <AppMainInfo app={appDetail} />
           </Box>
         </Flex>
         <Box bg={'white'} borderRadius={'8px'} mb={'6px'}>
