@@ -489,15 +489,26 @@ If successful, this method returns a response body with the following structure:
 \`\`\`json
 {
   "name": string,
-  "namespace": string,
-  "template": string,
-  "createTime": string,
-  "icon": string,
-  "description": string,
-  "gitRepo": string,
-  "readme": string,
-  "author": string,
-  "categories": [string]
+  "uid": string,
+  "resourceType": "instance",
+  "displayName": string,
+  "createdAt": string,
+  "args": {
+    "KEY": "value"
+  },
+  "resources": [
+    {
+      "name": string,
+      "uid": string,
+      "resourceType": string,
+      "quota": {
+        "cpu": number,
+        "memory": number,
+        "storage": number,
+        "replicas": number
+      }
+    }
+  ]
 }
 \`\`\`
 
@@ -505,16 +516,59 @@ If successful, this method returns a response body with the following structure:
 
 | Property | Type | Description |
 |----------|------|-------------|
-| \`name\` | string | The instance name specified in the request. |
-| \`namespace\` | string | The Kubernetes namespace where resources were created. |
-| \`template\` | string | The template name used to create the instance. |
-| \`createTime\` | string | ISO 8601 timestamp of when the instance was created. |
-| \`icon\` | string | URL to the template icon. |
-| \`description\` | string | Description of the template. |
-| \`gitRepo\` | string | URL to the template's Git repository. |
-| \`readme\` | string | URL to the template's README file. |
-| \`author\` | string | Author of the template. |
-| \`categories\` | array | Categories the template belongs to. |
+| \`name\` | string | The instance name (matches the \`name\` specified in the request). |
+| \`uid\` | string | Kubernetes UID of the Instance resource. |
+| \`resourceType\` | string | Always \`"instance"\`. |
+| \`displayName\` | string | Display name (currently empty). |
+| \`createdAt\` | string | ISO 8601 timestamp of when the instance was created in Kubernetes. |
+| \`args\` | object | The resolved template arguments (merged from user-provided args and defaults). |
+| \`resources\` | array | List of sub-resources created for this instance. |
+
+### Resource Object Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| \`name\` | string | Kubernetes resource name. |
+| \`uid\` | string | Kubernetes UID of the resource. |
+| \`resourceType\` | string | Lowercase Kubernetes kind (e.g., \`"deployment"\`, \`"statefulset"\`, \`"service"\`, \`"configmap"\`, \`"cluster"\`). |
+| \`quota\` | object | (Optional) Resource quota for Deployment, StatefulSet, or Cluster resources. |
+
+### Quota Object Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| \`cpu\` | number | CPU cores. |
+| \`memory\` | number | Memory in GiB. |
+| \`storage\` | number | Storage in GiB. |
+| \`replicas\` | number | Number of replicas. |
+
+## Errors
+
+The following table identifies error messages that the API could return in response to a call to this method.
+
+| Error type | Error detail | Description |
+|------------|--------------|-------------|
+| badRequest (400) | missingInstanceName | The \`name\` field is missing, empty, or not a string. |
+| badRequest (400) | invalidInstanceNameFormat | The \`name\` does not follow Kubernetes DNS subdomain naming rules (lowercase alphanumeric and hyphens only, must start and end with alphanumeric). |
+| badRequest (400) | instanceNameTooLong | The \`name\` exceeds 63 characters (Kubernetes resource name limit). |
+| badRequest (400) | missingTemplateName | The \`template\` field is missing, empty, or not a string. |
+| badRequest (400) | missingRequiredArgs | Required template arguments are not provided and have no default values. |
+| unauthorized (401) | invalidKubeconfig | The \`Authorization\` header is missing or the kubeconfig is invalid. |
+| unauthorized (401) | clusterAuthFailed | The kubeconfig is valid but cannot establish connection to the Kubernetes cluster. |
+| forbidden (403) | insufficientPrivileges | The authenticated user does not have permission to create resources in the namespace. |
+| notFound (404) | templateNotFound | The specified template does not exist in the catalog. |
+| notFound (404) | lackOfKindTemplate | The template file exists but is missing the required \`kind: Template\` resource definition. |
+| notFound (404) | missingDefaultAppName | The template file exists but is missing the required \`defaults.app_name\` configuration. |
+| methodNotAllowed (405) | methodNotAllowed | The HTTP method is not POST. |
+| conflict (409) | instanceAlreadyExists | An instance with this name already exists in the namespace. |
+| unprocessableEntity (422) | invalidResourceSpec | The generated YAML contains invalid resource specifications or was rejected by admission webhook. |
+| internalServerError (500) | yamlParseError | Failed to parse template YAML: no valid documents found. |
+| internalServerError (500) | instanceNotInTemplate | The template YAML does not contain an Instance resource definition. |
+| internalServerError (500) | yamlGenerationError | Failed to generate YAML from template: empty result or no resources generated. |
+| internalServerError (500) | instanceNotCreated | Instance resource was not created successfully in Kubernetes. |
+| internalServerError (500) | instanceMissingName | Instance resource created but missing required \`metadata.name\` field. |
+| internalServerError (500) | k8sApiError | An unexpected error occurred while communicating with the Kubernetes API. |
+| serviceUnavailable (503) | clusterUnavailable | The Kubernetes cluster cannot be reached due to network issues or cluster downtime. |
 
 ## Examples
 
@@ -538,19 +592,48 @@ Authorization: <URL-encoded kubeconfig>
 }
 \`\`\`
 
-**Response (201 Created):**
+**Response (200 OK):**
 \`\`\`json
 {
   "name": "my-perplexica-instance",
-  "namespace": "ns-mpn6wepb",
-  "template": "perplexica",
-  "createTime": "2026-01-27T02:53:51.592Z",
-  "icon": "https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico",
-  "description": "Perplexica is an open-source AI-powered searching tool or an AI-powered search engine that goes deep into the internet to find answers.",
-  "gitRepo": "https://github.com/ItzCrazyKns/Perplexica",
-  "readme": "https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md",
-  "author": "Sealos",
-  "categories": ["ai"]
+  "uid": "778bf3c6-b412-4a02-908b-cf1470867c93",
+  "resourceType": "instance",
+  "displayName": "",
+  "createdAt": "2026-01-28T03:31:01Z",
+  "args": {
+    "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+    "OPENAI_API_URL": "https://api.openai.com/v1",
+    "OPENAI_MODEL_NAME": "gpt-4o"
+  },
+  "resources": [
+    {
+      "name": "my-perplexica-instance-searxng",
+      "uid": "5bd2c77d-b8f4-4aa4-97ee-c205f2d10aa9",
+      "resourceType": "deployment",
+      "quota": {
+        "cpu": 0.1,
+        "memory": 0.25,
+        "storage": 0,
+        "replicas": 1
+      }
+    },
+    {
+      "name": "my-perplexica-instance",
+      "uid": "256e2577-fa3a-4471-a94c-8cbd5410187c",
+      "resourceType": "statefulset",
+      "quota": {
+        "cpu": 0.2,
+        "memory": 0.5,
+        "storage": 1,
+        "replicas": 1
+      }
+    },
+    {
+      "name": "my-perplexica-instance",
+      "uid": "451d165f-0c66-49bc-9bc0-e1dac1c05457",
+      "resourceType": "service"
+    }
+  ]
 }
 \`\`\`
 
@@ -675,23 +758,36 @@ Authorization: <URL-encoded kubeconfig>
           }
         },
         responses: {
-          '201': {
+          '200': {
             description: 'Instance created successfully',
             content: {
               'application/json': {
                 schema: createInstanceSchemas.response,
                 example: {
                   name: 'my-perplexica-instance',
-                  namespace: 'ns-user-xxxxx',
-                  template: 'perplexica',
-                  createTime: '2024-01-15T10:30:00.000Z',
-                  icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
-                  description: 'AI-powered search engine',
-                  gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
-                  readme:
-                    'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
-                  author: 'ItzCrazyKns',
-                  categories: ['ai']
+                  uid: '778bf3c6-b412-4a02-908b-cf1470867c93',
+                  resourceType: 'instance',
+                  displayName: '',
+                  createdAt: '2026-01-28T03:31:01Z',
+                  args: {
+                    OPENAI_API_KEY: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
+                    OPENAI_API_URL: 'https://api.openai.com/v1',
+                    OPENAI_MODEL_NAME: 'gpt-4o'
+                  },
+                  resources: [
+                    {
+                      name: 'my-perplexica-instance-searxng',
+                      uid: '5bd2c77d-b8f4-4aa4-97ee-c205f2d10aa9',
+                      resourceType: 'deployment',
+                      quota: { cpu: 0.1, memory: 0.25, storage: 0, replicas: 1 }
+                    },
+                    {
+                      name: 'my-perplexica-instance',
+                      uid: '256e2577-fa3a-4471-a94c-8cbd5410187c',
+                      resourceType: 'statefulset',
+                      quota: { cpu: 0.2, memory: 0.5, storage: 1, replicas: 1 }
+                    }
+                  ]
                 }
               }
             }
