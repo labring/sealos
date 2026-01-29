@@ -188,7 +188,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
             name: 'shared-memory',
             emptyDir: {
               medium: 'Memory',
-              sizeLimit: `${str2Num(data.sharedMemory.sizeLimit)}Mi`
+              sizeLimit: `${str2Num(data.sharedMemory.sizeLimit)}Gi`
             }
           }
         ]

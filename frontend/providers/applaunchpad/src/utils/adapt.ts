@@ -409,7 +409,7 @@ export const adaptAppDetail = async (
     if (shmVolume?.emptyDir?.sizeLimit) {
       return {
         enabled: true,
-        sizeLimit: memoryFormatToMi(shmVolume.emptyDir.sizeLimit)
+        sizeLimit: storageFormatToGi(shmVolume.emptyDir.sizeLimit)
       };
     }
     return undefined;
