@@ -3,7 +3,7 @@ import { jsonRes } from '@/services/backend/response';
 import { verifyAccessToken } from '@/services/backend/auth';
 import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import * as k8s from '@kubernetes/client-node';
-import { k8sFormatTime } from '@/utils/format';
+import { k8sRFC3339Time } from '@/utils/format';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 
 /**
@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const k8s_username = regionUser.userCrName;
 
     const client = kc.makeApiClient(k8s.CustomObjectsApi);
-    const rotateTime = k8sFormatTime(new Date());
+    const rotateTime = k8sRFC3339Time(new Date());
 
     // Patch user spec with kubeConfigRotateAt to trigger rotation
     const patches = [
