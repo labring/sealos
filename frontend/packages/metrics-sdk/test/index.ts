@@ -71,7 +71,6 @@ async function testMetricsSDK() {
       const minioData = await client.minio.query({
         namespace,
         query: MinioMetric.BucketUsageObjectTotal,
-        type: 'minio',
         app: bucketName
       });
       console.log('✅ MinIO query successful');

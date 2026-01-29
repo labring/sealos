@@ -205,7 +205,6 @@ import { MinioMetric } from 'sealos-metrics-sdk';
 
 const data = await client.minio.query({
   namespace: 'ns-user123',
-  type: 'minio',
   app: 'my-bucket',
   query: MinioMetric.BucketUsageTotalBytes
 });

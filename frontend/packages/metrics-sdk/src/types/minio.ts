@@ -9,6 +9,5 @@ export enum MinioMetric {
 
 export interface MinioQueryParams extends BaseQueryParams {
   query: MinioMetric;
-  type: 'minio';
   app: string;
 }

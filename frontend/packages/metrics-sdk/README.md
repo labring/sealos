@@ -184,7 +184,6 @@ Queries Metrics for object storage metrics:
 const result = await client.minio.query({
   namespace: 'ns-user123',
   query: MinioMetric.BucketUsageObjectTotal,
-  type: 'minio',
   app: 'my-bucket'
 });
 ```
