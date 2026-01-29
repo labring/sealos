@@ -429,7 +429,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       if (parsedData.sharedMemory) {
         formHook.setValue('sharedMemory', {
           enabled: parsedData.sharedMemory.enabled || false,
-          sizeLimit: parsedData.sharedMemory.sizeLimit || 64
+          sizeLimit: parsedData.sharedMemory.sizeLimit || 1
         });
       }
     } catch (error) {}
