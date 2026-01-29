@@ -25,6 +25,7 @@
   },
   "files": [
     "dist/",
+    "README.zh-CN.md",
     "README.md"
   ],
   "keywords": [
