@@ -1,5 +1,7 @@
 # sealos-metrics-sdk
 
+Chinese documentation: README.zh-CN.md
+
 Unified TypeScript SDK for Sealos metrics monitoring. Directly queries Victoria Metrics with built-in Kubernetes authentication.
 
 ## Features
