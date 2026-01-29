@@ -71,6 +71,8 @@ const useAppStore = create<TOSState>()(
         launchQuery: {},
         autolaunch: '',
         autolaunchWorkspaceUid: '',
+        autoDeployTemplate: '',
+        autoDeployTemplateForm: undefined as Record<string, any> | undefined,
         runner: new AppStateManager([]),
         async init() {
           const { isGuest } = useSessionStore.getState();
@@ -301,6 +303,18 @@ const useAppStore = create<TOSState>()(
             state.launchQuery = {};
             state.autolaunchWorkspaceUid = '';
           });
+        },
+        setAutoDeployTemplate(templateName: string, templateForm: Record<string, any>) {
+          set((state) => {
+            state.autoDeployTemplate = templateName;
+            state.autoDeployTemplateForm = templateForm;
+          });
+        },
+        cancelAutoDeployTemplate: () => {
+          set((state) => {
+            state.autoDeployTemplate = '';
+            state.autoDeployTemplateForm = undefined;
+          });
         }
       })),
       {
@@ -319,6 +333,8 @@ const useAppStore = create<TOSState>()(
           return {
             launchQuery: state.launchQuery,
             autolaunch: state.autolaunch,
+            autoDeployTemplate: state.autoDeployTemplate,
+            autoDeployTemplateForm: state.autoDeployTemplateForm,
             // Only Brain can persist across tab close; other apps should rely on sessionStorage.
             currentAppKey: state.currentAppKey === BRAIN_APP_KEY ? state.currentAppKey : ''
           };

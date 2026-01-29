@@ -72,6 +72,8 @@ export type TOSState = {
     raw?: string;
     pathname?: string;
   };
+  autoDeployTemplate: string;
+  autoDeployTemplateForm?: Record<string, any>;
   // store deploy template
   setAutoLaunch: (
     autolaunch: string,
@@ -82,6 +84,8 @@ export type TOSState = {
     autolaunchWorkspaceId?: string
   ) => void;
   cancelAutoLaunch: () => void;
+  setAutoDeployTemplate: (templateName: string, templateForm: Record<string, any>) => void;
+  cancelAutoDeployTemplate: () => void;
   // init desktop
   init(): Promise<TOSState>;
   // open app

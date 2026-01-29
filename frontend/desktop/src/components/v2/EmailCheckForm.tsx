@@ -33,7 +33,7 @@ interface EmailCheckFormProps {
 export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { setToken } = useSessionStore();
+  const { setGlobalToken } = useSessionStore();
 
   const [pinValue, setPinValue] = useState('');
   const { formValues, startTime } = useSigninFormStore();
@@ -67,7 +67,7 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
     async onSuccess(result) {
       const globalToken = result.data?.token;
       if (!globalToken) throw Error();
-      setToken(globalToken);
+      setGlobalToken(globalToken); // Sets global token and cookie
       if (result.data?.needInit) {
         try {
           // 自动初始化工作空间
