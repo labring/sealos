@@ -1,4 +1,4 @@
-import { MetricsClient, LaunchpadMetric, DatabaseType, MinioMetric } from '../src/index';
+import { MetricsClient } from '../src/index';
 import { config } from 'dotenv';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -37,7 +37,7 @@ async function testMetricsSDK() {
       console.log('📊 Testing Launchpad Service...');
       const cpuData = await client.launchpad.query({
         namespace,
-        type: LaunchpadMetric.CPU,
+        type: 'cpu',
         podName,
         range: {
           start: Math.floor(Date.now() / 1000) - 3600,
@@ -54,7 +54,7 @@ async function testMetricsSDK() {
       const dbData = await client.database.query({
         namespace,
         query: 'cpu',
-        type: DatabaseType.PostgreSQL,
+        type: 'postgresql',
         app: dbCluster,
         range: {
           start: Math.floor(Date.now() / 1000) - 3600,
@@ -70,7 +70,7 @@ async function testMetricsSDK() {
       console.log('📊 Testing MinIO Service...');
       const minioData = await client.minio.query({
         namespace,
-        query: MinioMetric.BucketUsageObjectTotal,
+        query: 'minio_bucket_usage_object_total',
         app: bucketName
       });
       console.log('✅ MinIO query successful');

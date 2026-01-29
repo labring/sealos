@@ -8,7 +8,7 @@ Unified TypeScript SDK for Sealos metrics monitoring. Directly queries Victoria 
 
 - **Direct Metrics/VM Queries**: No intermediate Go services required
 - **Built-in K8s Authentication**: Validates user permissions using kubeconfig
-- **Type Safe**: Full TypeScript type definitions with enum constraints
+- **Type Safe**: Full TypeScript type definitions with string literal unions
 - **PromQL Builder**: Automatically constructs PromQL queries from parameters
 - **Dual Format**: ESM and CJS output for maximum compatibility
 
@@ -39,7 +39,7 @@ MetricsClient (SDK)
 ### Basic Setup
 
 ```typescript
-import { MetricsClient, LaunchpadMetric } from 'sealos-metrics-sdk';
+import { MetricsClient } from 'sealos-metrics-sdk';
 
 const client = new MetricsClient({
   kubeconfig: kubeconfigString
@@ -47,7 +47,7 @@ const client = new MetricsClient({
 
 const cpuData = await client.launchpad.query({
   namespace: 'ns-user123',
-  type: LaunchpadMetric.CPU,
+  type: 'cpu',
   podName: 'my-app-7c9b8f6d9c-abcde',
   range: {
     start: Math.floor(Date.now() / 1000) - 3600,
@@ -67,7 +67,7 @@ Queries Victoria Metrics for application metrics:
 ```typescript
 const result = await client.launchpad.query({
   namespace: 'ns-user123',
-  type: LaunchpadMetric.Memory,
+  type: 'memory',
   podName: 'my-app-7c9b8f6d9c-abcde',
   range: {
     start: startTime,
@@ -82,11 +82,11 @@ const result = await client.launchpad.query({
 
 **Available Metrics:**
 
-- `LaunchpadMetric.CPU` - CPU usage percentage
-- `LaunchpadMetric.Memory` - Memory usage percentage
-- `LaunchpadMetric.AverageCPU` - Average CPU across pods
-- `LaunchpadMetric.AverageMemory` - Average memory across pods
-- `LaunchpadMetric.Storage` - PVC usage (requires `pvcName` parameter)
+- `'cpu'` - CPU usage percentage
+- `'memory'` - Memory usage percentage
+- `'average_cpu'` - Average CPU across pods
+- `'average_memory'` - Average memory across pods
+- `'storage'` - PVC usage (requires `pvcName` parameter)
 
 **PromQL Generated:**
 
@@ -107,7 +107,7 @@ Queries Metrics for database metrics:
 const result = await client.database.query({
   namespace: 'ns-user123',
   query: 'cpu',
-  type: DatabaseType.MySQL,
+  type: 'apecloud-mysql',
   app: 'my-mysql-cluster',
   range: {
     start: startTime,
@@ -151,12 +151,12 @@ const result = await client.raw.query({
 
 **Supported Databases:**
 
-- `DatabaseType.MySQL` - Apecloud MySQL
-- `DatabaseType.PostgreSQL` - PostgreSQL
-- `DatabaseType.MongoDB` - MongoDB
-- `DatabaseType.Redis` - Redis
-- `DatabaseType.Kafka` - Kafka
-- `DatabaseType.Milvus` - Milvus
+- `'apecloud-mysql'` - Apecloud MySQL
+- `'postgresql'` - PostgreSQL
+- `'mongodb'` - MongoDB
+- `'redis'` - Redis
+- `'kafka'` - Kafka
+- `'milvus'` - Milvus
 
 **Common Metrics:**
 
@@ -183,7 +183,7 @@ Queries Metrics for object storage metrics:
 ```typescript
 const result = await client.minio.query({
   namespace: 'ns-user123',
-  query: MinioMetric.BucketUsageObjectTotal,
+  query: 'minio_bucket_usage_object_total',
   app: 'my-bucket'
 });
 ```
@@ -194,17 +194,18 @@ const result = await client.minio.query({
 
 **Available Metrics:**
 
-- `MinioMetric.BucketUsageObjectTotal` - Total objects in bucket
-- `MinioMetric.BucketUsageTotalBytes` - Total bucket size in bytes
-- `MinioMetric.BucketTrafficReceivedBytes` - Incoming traffic
-- `MinioMetric.BucketTrafficSentBytes` - Outgoing traffic
+- `'minio_bucket_usage_object_total'` - Total objects in bucket
+- `'minio_bucket_usage_total_bytes'` - Total bucket size in bytes
+- `'minio_bucket_traffic_received_bytes'` - Incoming traffic
+- `'minio_bucket_traffic_sent_bytes'` - Outgoing traffic
 
 ### Next.js API Route Integration
 
 ```typescript
 // app/api/metrics/launchpad/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { MetricsClient, LaunchpadMetric } from 'sealos-metrics-sdk';
+import { MetricsClient } from 'sealos-metrics-sdk';
+import type { LaunchpadMetricType } from 'sealos-metrics-sdk';
 import { getKubeconfig } from '@/utils/auth';
 
 export async function POST(req: NextRequest) {
@@ -216,7 +217,7 @@ export async function POST(req: NextRequest) {
 
     const data = await client.launchpad.query({
       namespace,
-      type: type as LaunchpadMetric,
+      type: type as LaunchpadMetricType,
       podName,
       range
     });
@@ -378,7 +379,7 @@ const response = await fetch('http://launchpad-monitor:8428/query', {
 const client = new MetricsClient({ kubeconfig });
 const data = await client.launchpad.query({
   namespace,
-  type: LaunchpadMetric.CPU,
+  type: 'cpu',
   podName
 });
 ```

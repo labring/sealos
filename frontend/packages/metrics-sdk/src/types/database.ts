@@ -1,42 +1,40 @@
 import { BaseQueryParams } from './common';
 
-export enum DatabaseType {
-  MySQL = 'apecloud-mysql',
-  PostgreSQL = 'postgresql',
-  MongoDB = 'mongodb',
-  Redis = 'redis',
-  Kafka = 'kafka',
-  Milvus = 'milvus'
-}
+export type DatabaseType =
+  | 'apecloud-mysql'
+  | 'postgresql'
+  | 'mongodb'
+  | 'redis'
+  | 'kafka'
+  | 'milvus';
 
-export enum CommonMetric {
-  CPU = 'cpu',
-  Memory = 'memory',
-  Disk = 'disk',
-  DiskCapacity = 'disk_capacity',
-  DiskUsed = 'disk_used',
-  Uptime = 'uptime',
-  Connections = 'connections',
-  Commands = 'commands',
-  InnoDB = 'innodb',
-  SlowQueries = 'slow_queries',
-  AbortedConnections = 'aborted_connections',
-  TableLocks = 'table_locks',
-  DbSize = 'db_size',
-  ActiveConnections = 'active_connections',
-  Rollbacks = 'rollbacks',
-  Commits = 'commits',
-  TxDuration = 'tx_duration',
-  BlockReadTime = 'block_read_time',
-  BlockWriteTime = 'block_write_time',
-  DocumentOps = 'document_ops',
-  PgFaults = 'pg_faults',
-  DbItems = 'db_items',
-  HitsRatio = 'hits_ratio',
-  CommandsDuration = 'commands_duration',
-  BlockedConnections = 'blocked_connections',
-  KeyEvictions = 'key_evictions'
-}
+export type CommonMetric =
+  | 'cpu'
+  | 'memory'
+  | 'disk'
+  | 'disk_capacity'
+  | 'disk_used'
+  | 'uptime'
+  | 'connections'
+  | 'commands'
+  | 'innodb'
+  | 'slow_queries'
+  | 'aborted_connections'
+  | 'table_locks'
+  | 'db_size'
+  | 'active_connections'
+  | 'rollbacks'
+  | 'commits'
+  | 'tx_duration'
+  | 'block_read_time'
+  | 'block_write_time'
+  | 'document_ops'
+  | 'pg_faults'
+  | 'db_items'
+  | 'hits_ratio'
+  | 'commands_duration'
+  | 'blocked_connections'
+  | 'key_evictions';
 
 export interface DatabaseQueryParams extends BaseQueryParams {
   query: string;

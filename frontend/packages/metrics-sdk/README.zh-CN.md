@@ -25,7 +25,7 @@ Sealos 的统一 TypeScript 监控 SDK，用于**直接查询 Victoria Metrics**
 
 - **直连 Victoria Metrics / Prometheus API**：使用 `/api/v1/query` 和 `/api/v1/query_range`，不依赖额外 Go 服务。
 - **内置 K8s 权限校验**：使用 kubeconfig 调用 `SelfSubjectAccessReview`，确保用户具备 namespace 的访问权限。
-- **类型安全**：提供完整的 TypeScript 类型和枚举。
+- **类型安全**：提供完整的 TypeScript 类型（字符串字面量联合）。
 - **PromQL 模板化**：对常用指标提供模板，自动替换 namespace / app / pod 等参数。
 - **兼容 ESM 和 CJS**：输出双格式构建。
 
@@ -40,7 +40,7 @@ pnpm add sealos-metrics-sdk
 ## 快速开始
 
 ```ts
-import { MetricsClient, LaunchpadMetric } from 'sealos-metrics-sdk';
+import { MetricsClient } from 'sealos-metrics-sdk';
 
 const client = new MetricsClient({
   kubeconfig: kubeconfigString,
@@ -50,7 +50,7 @@ const client = new MetricsClient({
 
 const cpuData = await client.launchpad.query({
   namespace: 'ns-user123',
-  type: LaunchpadMetric.CPU,
+  type: 'cpu',
   podName: 'my-app-7c9b8f6d9c-abcde',
   range: {
     start: Math.floor(Date.now() / 1000) - 3600,
@@ -110,11 +110,9 @@ const startSec = toSeconds(Date.now());
 用于查询应用（Launchpad）相关指标。
 
 ```ts
-import { LaunchpadMetric } from 'sealos-metrics-sdk';
-
 const data = await client.launchpad.query({
   namespace: 'ns-user123',
-  type: LaunchpadMetric.Memory,
+  type: 'memory',
   podName: 'my-app-7c9b8f6d9c-abcde',
   range: { start, end, step: '1m' }
 });
@@ -122,10 +120,10 @@ const data = await client.launchpad.query({
 
 ### 参数说明
 
-- `type`: `LaunchpadMetric`
-  - `CPU` / `Memory`
-  - `AverageCPU` / `AverageMemory`
-  - `Storage`（需额外传 `pvcName`）
+- `type`: `LaunchpadMetricType`
+  - `'cpu'` / `'memory'`
+  - `'average_cpu'` / `'average_memory'`
+  - `'storage'`（需额外传 `pvcName`）
 - `podName`: **完整 Pod 名**（例如 `my-app-<rs>-<suffix>`）
   - SDK 会截断最后一段，将其作为 ReplicaSet 前缀匹配全部副本。
   - 若 `podName` 不含 `-`，可能导致前缀为空，从而匹配异常。
@@ -136,12 +134,10 @@ const data = await client.launchpad.query({
 用于数据库类服务的指标查询。
 
 ```ts
-import { DatabaseType } from 'sealos-metrics-sdk';
-
 const data = await client.database.query({
   namespace: 'ns-user123',
   query: 'cpu',
-  type: DatabaseType.PostgreSQL,
+  type: 'postgresql',
   app: 'my-postgresql',
   range: { start, end, step: '1m' }
 });
@@ -149,12 +145,12 @@ const data = await client.database.query({
 
 ### 支持的数据库类型
 
-- `DatabaseType.MySQL`（apecloud-mysql）
-- `DatabaseType.PostgreSQL`
-- `DatabaseType.MongoDB`
-- `DatabaseType.Redis`
-- `DatabaseType.Kafka`
-- `DatabaseType.Milvus`
+- `'apecloud-mysql'`（apecloud-mysql）
+- `'postgresql'`
+- `'mongodb'`
+- `'redis'`
+- `'kafka'`
+- `'milvus'`
 
 ### 常用指标（各数据库通用或部分通用）
 
@@ -201,12 +197,10 @@ const data = await client.database.rawQuery({
 用于对象存储监控指标查询。
 
 ```ts
-import { MinioMetric } from 'sealos-metrics-sdk';
-
 const data = await client.minio.query({
   namespace: 'ns-user123',
   app: 'my-bucket',
-  query: MinioMetric.BucketUsageTotalBytes
+  query: 'minio_bucket_usage_total_bytes'
 });
 ```
 
@@ -216,10 +210,10 @@ const data = await client.minio.query({
 
 可用指标：
 
-- `BucketUsageObjectTotal`
-- `BucketUsageTotalBytes`
-- `BucketTrafficReceivedBytes`
-- `BucketTrafficSentBytes`
+- `'minio_bucket_usage_object_total'`
+- `'minio_bucket_usage_total_bytes'`
+- `'minio_bucket_traffic_received_bytes'`
+- `'minio_bucket_traffic_sent_bytes'`
 
 ## Raw PromQL 查询
 
@@ -241,7 +235,8 @@ const data = await client.raw.query({
 ```ts
 // app/api/metrics/launchpad/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { MetricsClient, LaunchpadMetric } from 'sealos-metrics-sdk';
+import { MetricsClient } from 'sealos-metrics-sdk';
+import type { LaunchpadMetricType } from 'sealos-metrics-sdk';
 import { getKubeconfig } from '@/utils/auth';
 
 export async function POST(req: NextRequest) {
@@ -252,7 +247,7 @@ export async function POST(req: NextRequest) {
     const client = new MetricsClient({ kubeconfig });
     const data = await client.launchpad.query({
       namespace,
-      type: type as LaunchpadMetric,
+      type: type as LaunchpadMetricType,
       podName,
       range
     });
@@ -290,6 +285,7 @@ export WHITELIST_KUBERNETES_HOSTS="https://YOUR-APISERVER:6443"
 ```
 
 这样 SDK 将直接使用 kubeconfig 中的 `server`，避免被强制改写。
+这里可以传入多个，通过逗号隔开即可。
 
 ## 环境变量
 
@@ -359,7 +355,7 @@ SDK 方式：
 const client = new MetricsClient({ kubeconfig });
 const data = await client.launchpad.query({
   namespace,
-  type: LaunchpadMetric.CPU,
+  type: 'cpu',
   podName
 });
 ```
