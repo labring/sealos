@@ -7,22 +7,6 @@ image:
   tag: latest
   pullPolicy: Always
 
-kubeRbacProxy:
-  image:
-    repository: gcr.io/kubebuilder/kube-rbac-proxy
-    tag: v0.11.0
-    pullPolicy: IfNotPresent
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 5m
-      memory: 64Mi
-  securityContext:
-    allowPrivilegeEscalation: false
-    runAsNonRoot: true
-
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: "account"
@@ -115,7 +99,10 @@ readinessProbe:
   periodSeconds: 10
 
 metrics:
-  enabled: true
+  ## To enable this parameter, it needs to be enabled in the subsequent code; otherwise, it cannot be started
+  enabled: false
+  certPath: /tmp/k8s-metrics-server/metrics-certs
+  secretName: metrics-server-cert
 
 volumes: []
 volumeMounts: []
