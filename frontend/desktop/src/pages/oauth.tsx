@@ -18,6 +18,7 @@ import { AccessTokenPayload } from '@/types/token';
 import { jwtDecode } from 'jwt-decode';
 import { isString } from 'lodash';
 import { useMutation } from '@tanstack/react-query';
+import { useCustomToast } from '@/hooks/useCustomToast';
 
 export default function OAuth() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function OAuth() {
   const { lastWorkSpaceId } = useSessionStore();
   const { setInitGuide } = useGuideModalStore();
   const hasProcessedRef = useRef(false);
+  const { toast } = useCustomToast();
 
   const switchWorkspaceMutation = useMutation({
     mutationFn: switchRequest,
@@ -79,19 +81,6 @@ export default function OAuth() {
         const globalToken = token as string;
         if (!isString(globalToken)) throw new Error('Invalid token');
 
-        // Decode and verify token type
-        try {
-          const decoded = jwtDecode<any>(globalToken);
-
-          if (decoded.workspaceId) {
-            console.warn(
-              '[OAuth] ⚠️ Warning: Token appears to be a REGION token, not a GLOBAL token!'
-            );
-          }
-        } catch (e) {
-          console.error('[OAuth] Failed to decode token:', e);
-        }
-
         delSession();
         setGlobalToken(globalToken); // Sets global token and cookie immediately
 
@@ -137,7 +126,7 @@ export default function OAuth() {
           }
         }
 
-        const instanceName = await handleTemplateDeployment();
+        const { instanceName, error: deploymentError } = await handleTemplateDeployment();
 
         if (openapp && typeof openapp === 'string') {
           let finalOpenapp = openapp;
@@ -158,21 +147,41 @@ export default function OAuth() {
 
           const redirectUrl = `/?openapp=${encodeURIComponent(finalOpenapp)}`;
           await router.replace(redirectUrl);
+          if (deploymentError) {
+            setTimeout(() => {
+              toast({
+                title: deploymentError,
+                status: 'error',
+                position: 'top',
+                duration: 10000,
+                isClosable: true
+              });
+            }, 500);
+          }
         } else {
           await router.replace('/');
+          if (deploymentError) {
+            setTimeout(() => {
+              toast({
+                title: deploymentError,
+                status: 'error',
+                position: 'top',
+                duration: 10000,
+                isClosable: true
+              });
+            }, 500);
+          }
         }
       } catch (error) {
-        console.error('[OAuth] ❌ Token login error:', error);
-        console.error('[OAuth] Error details:', {
-          message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined
-        });
         setGlobalToken('');
         await router.replace('/signin');
       }
     };
 
-    const handleTemplateDeployment = async (): Promise<string | null> => {
+    const handleTemplateDeployment = async (): Promise<{
+      instanceName: string | null;
+      error: string | null;
+    }> => {
       if (templateName && typeof templateName === 'string') {
         let parsedTemplateForm: Record<string, any> = {};
 
@@ -181,8 +190,7 @@ export default function OAuth() {
             parsedTemplateForm =
               typeof templateForm === 'string' ? JSON.parse(templateForm) : templateForm;
           } catch (error) {
-            console.error('[OAuth] Failed to parse templateForm:', error);
-            return null;
+            return { instanceName: null, error: 'Failed to parse template form' };
           }
         }
 
@@ -191,6 +199,29 @@ export default function OAuth() {
             templateName,
             templateForm: parsedTemplateForm
           });
+
+          // Check if template service returned an error
+          const templateServiceError = result?.data as any;
+          if (
+            result.code !== 200 ||
+            (templateServiceError?.code && templateServiceError.code !== 200)
+          ) {
+            // Check if it's a subscription expired error
+            const k8sError = templateServiceError?.error;
+            const errorMessage = k8sError?.message || '';
+            const isSubscriptionExpired =
+              k8sError?.code === 403 &&
+              errorMessage.includes('subscription status') &&
+              errorMessage.includes('expired');
+
+            const errorMsg = isSubscriptionExpired
+              ? 'Workspace subscription has expired. Please contact the administrator.'
+              : result.message ||
+                templateServiceError?.message ||
+                'Failed to create template instance';
+
+            return { instanceName: null, error: errorMsg };
+          }
 
           // Extract instance name from result
           // The API returns an array of K8s resources, find the Instance resource
@@ -202,13 +233,15 @@ export default function OAuth() {
             instanceName = instanceResource?.metadata?.name || null;
           }
 
-          return instanceName || null;
+          return { instanceName, error: null };
         } catch (error) {
-          console.error('[OAuth] Failed to create template instance:', error);
-          return null;
+          return {
+            instanceName: null,
+            error: error instanceof Error ? error.message : 'Failed to create template instance'
+          };
         }
       }
-      return null;
+      return { instanceName: null, error: null };
     };
 
     const handleSaveParams = () => {
@@ -220,7 +253,6 @@ export default function OAuth() {
             parsedTemplateForm =
               typeof templateForm === 'string' ? JSON.parse(templateForm) : templateForm;
           } catch (error) {
-            console.error('[OAuth] Failed to parse templateForm:', error);
             parsedTemplateForm = {};
           }
         }
@@ -234,9 +266,7 @@ export default function OAuth() {
           if (appkey) {
             setAutoLaunch(appkey, { raw: appQuery, pathname: appPath });
           }
-        } catch (error) {
-          console.error('[OAuth] Failed to parse openapp:', error);
-        }
+        } catch (error) {}
       }
     };
 
@@ -318,7 +348,6 @@ export default function OAuth() {
           }
         }
       } catch (error) {
-        console.error('OAuth login error:', error);
         router.replace('/signin');
       }
     };
@@ -333,15 +362,17 @@ export default function OAuth() {
 
       (async () => {
         let instanceName: string | null = null;
+        let deploymentError: string | null = null;
         try {
           // Only deploy template if templateName is provided
           if (templateName && typeof templateName === 'string') {
-            instanceName = await handleTemplateDeployment();
+            const result = await handleTemplateDeployment();
+            instanceName = result.instanceName;
+            deploymentError = result.error;
           }
         } catch (error) {
           console.error('[OAuth] Template deployment error:', error);
         } finally {
-          // Clear store after deployment
           cancelAutoDeployTemplate();
 
           if (openapp && typeof openapp === 'string') {
@@ -358,8 +389,32 @@ export default function OAuth() {
 
             const redirectUrl = `/?openapp=${encodeURIComponent(finalOpenapp)}`;
             router.replace(redirectUrl);
+
+            if (deploymentError) {
+              setTimeout(() => {
+                toast({
+                  title: deploymentError,
+                  status: 'error',
+                  position: 'top',
+                  duration: 10000,
+                  isClosable: true
+                });
+              }, 500);
+            }
           } else {
             router.replace('/');
+
+            if (deploymentError) {
+              setTimeout(() => {
+                toast({
+                  title: deploymentError,
+                  status: 'error',
+                  position: 'top',
+                  duration: 10000,
+                  isClosable: true
+                });
+              }, 500);
+            }
           }
         }
       })();
