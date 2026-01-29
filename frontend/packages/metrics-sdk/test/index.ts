@@ -6,6 +6,12 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(__dirname, '../.env') });
 
+const logResult = (result: unknown) => {
+  console.log('   Results:');
+  console.dir(result, { depth: null, colors: false });
+  console.log('');
+};
+
 async function testMetricsSDK() {
   console.log('🚀 Starting Metrics SDK Test...\n');
 
@@ -40,7 +46,7 @@ async function testMetricsSDK() {
         }
       });
       console.log('✅ Launchpad CPU query successful');
-      console.log(`   Results: ${cpuData.data.result.length} series\n`);
+      logResult(cpuData.data.result);
     }
 
     if (dbCluster) {
@@ -57,7 +63,7 @@ async function testMetricsSDK() {
         }
       });
       console.log('✅ Database CPU query successful');
-      console.log(`   Results: ${dbData.data.result.length} series\n`);
+      logResult(dbData.data.result);
     }
 
     if (bucketName) {
@@ -69,7 +75,7 @@ async function testMetricsSDK() {
         app: bucketName
       });
       console.log('✅ MinIO query successful');
-      console.log(`   Results: ${minioData.data.result.length} series\n`);
+      logResult(minioData.data.result);
     }
 
     console.log('🎉 All tests passed!');
