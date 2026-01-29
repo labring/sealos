@@ -119,7 +119,15 @@ func buildKubeClient() (kubernetes.Interface, error) {
 	kubeconfigCandidates = append(kubeconfigCandidates,
 		"/etc/kubernetes/admin.conf",
 		"/etc/rancher/k3s/k3s.yaml",
-		filepath.Join(os.Getenv("HOME"), ".kube", "config"),
+	)
+	// Try to get home directory from environment
+	// Default to /root for systemd environments where HOME may not be set
+	homeDir := os.Getenv("HOME")
+	if homeDir == "" {
+		homeDir = "/root"
+	}
+	kubeconfigCandidates = append(kubeconfigCandidates,
+		filepath.Join(homeDir, ".kube", "config"),
 	)
 	for _, path := range kubeconfigCandidates {
 		if path == "" {
