@@ -445,5 +445,9 @@
       "update_success": "更新成功",
       "update_failed": "更新失败"
     }
-  }
+  },
+  "refresh_kubeconfig": "刷新 Kubeconfig",
+  "kubeconfig_rotating": "正在刷新 Kubeconfig...",
+  "kubeconfig_rotated_successfully": "Kubeconfig 刷新成功",
+  "kubeconfig_rotation_failed": "Kubeconfig 刷新失败"
 }
