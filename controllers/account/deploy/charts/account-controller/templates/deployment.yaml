@@ -38,8 +38,13 @@ spec:
             - /manager
           args:
             - --health-probe-bind-address=:8081
-            - --metrics-bind-address=127.0.0.1:8080
             - --leader-elect
+            {{- if .Values.metrics.enabled }}
+            - --metrics-secure=true
+            - --metrics-bind-address=:8443
+            {{- else }}
+            - --metrics-bind-address=127.0.0.1:8080
+            {{- end }}
           env:
             - name: ACCOUNT_NAMESPACE
               value: {{ .Values.env.accountNamespace | quote }}
@@ -62,6 +67,11 @@ spec:
             - containerPort: 9443
               name: webhook-server
               protocol: TCP
+            {{- if .Values.metrics.enabled }}
+            - containerPort: 8443
+              name: https
+              protocol: TCP
+            {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
@@ -76,27 +86,14 @@ spec:
             {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+            {{- if .Values.metrics.enabled }}
+            - name: metrics-certs
+              mountPath: {{ .Values.metrics.certPath }}
+              readOnly: true
+            {{- end }}
             - mountPath: /tmp/k8s-webhook-server/serving-certs
               name: cert
               readOnly: true
-        {{- if .Values.metrics.enabled }}
-        - name: kube-rbac-proxy
-          args:
-            - --secure-listen-address=0.0.0.0:8443
-            - --upstream=http://127.0.0.1:8080/
-            - --logtostderr=true
-            - --v=0
-          image: "{{ .Values.kubeRbacProxy.image.repository }}:{{ .Values.kubeRbacProxy.image.tag }}"
-          imagePullPolicy: {{ .Values.kubeRbacProxy.image.pullPolicy }}
-          ports:
-            - containerPort: 8443
-              name: https
-              protocol: TCP
-          resources:
-            {{- toYaml .Values.kubeRbacProxy.resources | nindent 12 }}
-          securityContext:
-            {{- toYaml .Values.kubeRbacProxy.securityContext | nindent 12 }}
-        {{- end }}
       terminationGracePeriodSeconds: 10
       affinity:
         {{- if .Values.affinity }}
@@ -123,6 +120,19 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
+        {{- if .Values.metrics.enabled }}
+        - name: metrics-certs
+          secret:
+            secretName: {{ .Values.metrics.secretName }}
+            optional: false
+            items:
+              - key: ca.crt
+                path: ca.crt
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+        {{- end }}
         {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
