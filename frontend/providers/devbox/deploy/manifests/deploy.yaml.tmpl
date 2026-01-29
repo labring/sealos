@@ -69,8 +69,8 @@ spec:
               value: {{ .registryAddr }}
             - name: DEVBOX_AFFINITY_ENABLE
               value: 'true'
-            - name: MONITOR_URL
-              value: http://launchpad-monitor.sealos.svc.cluster.local:8428
+            - name: METRICS_URL
+              value: {{ default "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus" .metricsUrl }}
             - name: ACCOUNT_URL
               value: http://account-service.account-system.svc.cluster.local:2333
             - name: ROOT_RUNTIME_NAMESPACE
