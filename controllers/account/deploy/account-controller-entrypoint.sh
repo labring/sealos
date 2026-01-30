@@ -97,9 +97,6 @@ backup_account_resources() {
 backup_account_resources
 
 HELM_SET_ARGS=()
-if [ -f "/root/.sealos/cloud/sealos.env" ]; then
-  source /root/.sealos/cloud/sealos.env
-fi
 
 if [ "${ACCOUNT_ENV_AUTO_CONFIG_ENABLED}" = "true" ]; then
   SEALOS_CLOUD_DOMAIN=${SEALOS_CLOUD_DOMAIN:-"$(get_cm_value sealos-system sealos-config cloudDomain)"}
