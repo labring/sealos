@@ -1,9 +1,0 @@
-{{- if .Values.namespace.create }}
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ default .Release.Namespace .Values.namespace.name }}
-  labels:
-    control-plane: controller-manager
-    {{- include "resources.labels" . | nindent 4 }}
-{{- end }}
