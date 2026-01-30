@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { BaseResponseSchema, TemplateInputSchema } from './common/schema';
 
 // Request body schema for creating an instance
 export const CreateInstanceRequestSchema = z.object({
@@ -13,10 +12,10 @@ export const CreateInstanceRequestSchema = z.object({
 
 // Quota schema for resources with compute/storage requirements
 export const InstanceResourceQuotaSchema = z.object({
-  cpu: z.number().describe('CPU cores'),
-  memory: z.number().describe('Memory in GiB'),
-  storage: z.number().describe('Storage in GiB'),
-  replicas: z.number().describe('Number of replicas')
+  cpu: z.number().optional().describe('CPU cores'),
+  memory: z.number().optional().describe('Memory in GiB'),
+  storage: z.number().optional().describe('Storage in GiB'),
+  replicas: z.number().optional().describe('Number of replicas')
 });
 
 // Resource schema for sub-resources
@@ -37,15 +36,17 @@ export const InstanceSchema = z.object({
   displayName: z.string().describe('Display name'),
   createdAt: z.string().describe('Creation timestamp'),
   args: z.record(z.string(), z.string()).describe('Template arguments'),
-  resources: z.array(ResourceSchema).describe('Created sub-resources')
+  resources: z.array(ResourceSchema).optional().describe('Created sub-resources')
 });
 
 export const requestBody = CreateInstanceRequestSchema;
 
 export const response = InstanceSchema;
 
-export const errorResponse = BaseResponseSchema.extend({
-  code: z.number().describe('HTTP error code (400/401/404/500)')
+// Error response schema
+export const errorResponse = z.object({
+  message: z.string().describe('Error message'),
+  error: z.any().optional().describe('Detailed error information')
 });
 
 export type CreateInstanceRequest = z.infer<typeof CreateInstanceRequestSchema>;
