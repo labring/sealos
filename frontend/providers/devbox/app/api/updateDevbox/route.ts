@@ -6,6 +6,11 @@ import { YamlKindEnum } from '@/constants/devbox';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
+import {
+  ensureDevboxOwnerReferences,
+  getDevboxOwnerReference,
+  markDevboxOwnerReferencesReady
+} from '@/services/backend/ownerReferences';
 import type { DevboxPatchPropsType } from '@/types/devbox';
 
 export const dynamic = 'force-dynamic';
@@ -207,6 +212,19 @@ export async function POST(req: NextRequest) {
         return cr.delete(item.name);
       })
     );
+
+    const ownerReference = await getDevboxOwnerReference(k8sCustomObjects, namespace, devboxName);
+    const ownerReferencesReady = await ensureDevboxOwnerReferences({
+      devboxName,
+      namespace,
+      ownerReference,
+      k8sCore,
+      k8sNetworkingApp,
+      k8sCustomObjects
+    });
+    if (ownerReferencesReady) {
+      await markDevboxOwnerReferencesReady(k8sCustomObjects, namespace, devboxName, ownerReference);
+    }
 
     return jsonRes({
       data: 'success update devbox'
