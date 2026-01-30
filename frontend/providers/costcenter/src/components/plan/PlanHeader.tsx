@@ -172,7 +172,8 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
   }
 
   // Check if there's a downgrade and show next plan info
-  const isDowngrade = lastTransaction?.Operator === 'downgraded';
+  const isDowngrade =
+    lastTransaction?.Operator === 'downgraded' && lastTransaction?.Status === 'pending';
   const nextPlanName = isDowngrade ? lastTransaction?.NewPlanName : null;
 
   if (isPaygType) {
