@@ -9,6 +9,11 @@ import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devb
 import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { UpdatePortsRequestSchema, nanoid } from './schema';
+import {
+  ensureDevboxOwnerReferences,
+  getDevboxOwnerReference,
+  markDevboxOwnerReferencesReady
+} from '@/services/backend/ownerReferences';
 
 export const dynamic = 'force-dynamic';
 
@@ -477,7 +482,7 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
     const headerList = req.headers;
     
     
-    const { applyYamlList, k8sCore, k8sNetworkingApp, namespace } = await getK8s({
+    const { applyYamlList, k8sCore, k8sNetworkingApp, k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
     
@@ -510,7 +515,7 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
             devboxName,
             namespace,
             k8sCore,
-            applyYamlList,
+            applyYamlList
           );
           resultPorts.push(createdPort);
         }
@@ -541,6 +546,19 @@ export async function PUT(req: NextRequest, { params }: { params: { name: string
     }
     
     
+    const ownerReference = await getDevboxOwnerReference(k8sCustomObjects, namespace, devboxName);
+    const ownerReferencesReady = await ensureDevboxOwnerReferences({
+      devboxName,
+      namespace,
+      ownerReference,
+      k8sCore,
+      k8sNetworkingApp,
+      k8sCustomObjects
+    });
+    if (ownerReferencesReady) {
+      await markDevboxOwnerReferencesReady(k8sCustomObjects, namespace, devboxName, ownerReference);
+    }
+
     return jsonRes({
       data: {
         ports: resultPorts

@@ -9,6 +9,11 @@ import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devb
 import { RequestSchema } from './schema';
 import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { nanoid } from '@/utils/tools';
+import {
+  ensureDevboxOwnerReferences,
+  getDevboxOwnerReference,
+  markDevboxOwnerReferencesReady
+} from '@/services/backend/ownerReferences';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +33,7 @@ export async function POST(req: NextRequest) {
     const { devboxName, port, protocol } = validationResult.data;
     const headerList = req.headers;
 
-    const { k8sCore, k8sNetworkingApp, namespace, applyYamlList } = await getK8s({
+    const { k8sCore, k8sNetworkingApp, k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
 
@@ -76,6 +81,24 @@ export async function POST(req: NextRequest) {
     // Check if port already exists
     const portExists = existingPorts.some((p) => p.port === port);
     if (portExists) {
+      const ownerReference = await getDevboxOwnerReference(k8sCustomObjects, namespace, devboxName);
+      const ownerReferencesReady = await ensureDevboxOwnerReferences({
+        devboxName,
+        namespace,
+        ownerReference,
+        k8sCore,
+        k8sNetworkingApp,
+        k8sCustomObjects
+      });
+      if (ownerReferencesReady) {
+        await markDevboxOwnerReferencesReady(
+          k8sCustomObjects,
+          namespace,
+          devboxName,
+          ownerReference
+        );
+      }
+
       return jsonRes({
         data: existingPorts
       });
@@ -138,6 +161,24 @@ export async function POST(req: NextRequest) {
 
     // Update ingress
     await applyYamlList([ingressYaml], 'create');
+
+    const ownerReference = await getDevboxOwnerReference(k8sCustomObjects, namespace, devboxName);
+    const ownerReferencesReady = await ensureDevboxOwnerReferences({
+      devboxName,
+      namespace,
+      ownerReference,
+      k8sCore,
+      k8sNetworkingApp,
+      k8sCustomObjects
+    });
+    if (ownerReferencesReady) {
+      await markDevboxOwnerReferencesReady(
+        k8sCustomObjects,
+        namespace,
+        devboxName,
+        ownerReference
+      );
+    }
 
     return jsonRes({
       data: [
