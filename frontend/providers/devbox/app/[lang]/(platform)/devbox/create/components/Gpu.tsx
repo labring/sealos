@@ -69,7 +69,7 @@ export default function Gpu({
                     <span className="text-sm font-medium text-zinc-900">{selectedGpu.alias}</span>
                   </div>
                   <span className="text-sm text-zinc-900">
-                    Video memory: {Math.round(selectedGpu.vm)}GB
+                    {t('video_memory')}: {Math.round(selectedGpu.vm)}GB
                   </span>
                   <div className="h-[15px] w-px bg-zinc-200" />
                   <span className="text-sm text-zinc-900">
@@ -96,7 +96,7 @@ export default function Gpu({
                       <span className="text-sm font-medium text-zinc-900">{item.alias}</span>
                     </div>
                     <span className="text-sm text-zinc-900">
-                      Video memory: {Math.round(item.vm)}GB
+                      {t('video_memory')}: {Math.round(item.vm)}GB
                     </span>
                     <div className="h-[15px] w-px bg-zinc-200" />
                     <span className="text-sm text-zinc-900">
