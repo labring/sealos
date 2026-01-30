@@ -16,6 +16,8 @@ export interface MonitorServiceResult {
         namespace: string;
         node: string;
         pod: string;
+        podname?: string; // GPU metrics use 'podname' instead of 'pod'
+        podnamespace?: string; // GPU metrics namespace
         server: string;
         service: string;
         __name__: string;
@@ -26,6 +28,11 @@ export interface MonitorServiceResult {
         type?: string;
         cmd?: string;
         persistentvolumeclaim?: string;
+        // GPU specific fields
+        ctrname?: string;
+        deviceuuid?: string;
+        vdeviceid?: string;
+        zone?: string;
       };
       value: [number, string];
       values: [[number, string]];
@@ -40,6 +47,8 @@ export type MonitorQueryKey = {
   average_memory: string;
   average_cpu: string;
   storage: string;
+  gpu: string;
+  gpu_memory: string;
 };
 
 export type MonitorDataResult = {
