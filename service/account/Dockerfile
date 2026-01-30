@@ -7,20 +7,30 @@ RUN apk add --no-cache \
     ca-certificates \
     && update-ca-certificates
 
+ARG TARGETARCH
+
 WORKDIR /workspace
 
 ENV CGO_ENABLED=0
 
 COPY . .
 
-RUN cd service/account && go mod download
-
-RUN cd service/account && \
-    go build -tags=jsoniter \
-    -trimpath \
-    -ldflags "-s -w" \
-    -o /manager \
-    .
+RUN \
+    BUILD_DIR="/workspace"; \
+    if [ -d "/workspace/service/account" ]; then \
+        BUILD_DIR="/workspace/service/account"; \
+    fi && \
+    cd ${BUILD_DIR} && \
+    if [ -f "bin/service-account-${TARGETARCH}" ]; then \
+        cp "bin/service-account-${TARGETARCH}" /manager; \
+    else \
+        go mod download && \
+        go build -tags=jsoniter \
+        -trimpath \
+        -ldflags "-s -w" \
+        -o /manager \
+        . ; \
+    fi
 
 # Runtime stage
 FROM gcr.io/distroless/static:nonroot
