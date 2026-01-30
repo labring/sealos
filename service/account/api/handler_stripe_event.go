@@ -110,6 +110,7 @@ func parseAndValidateEvent(event *stripe.Event) (*stripe.Invoice, *stripe.Subscr
 // waitForInvoiceMetadata polls the invoice until metadata is set or timeout occurs
 // This handles the race condition in 100% discount cases where invoice.paid webhook
 // arrives before CreateUpgradeInvoice updates the invoice metadata
+// For downgrade operations, metadata is set on the subscription, not the invoice
 func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 	const (
 		maxAttempts  = 10                     // Maximum number of polling attempts
@@ -136,28 +137,92 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 		}
 
 		// Check if critical metadata fields are present
-		hasMetadata := inv.Metadata["subscription_operator"] != "" &&
-			inv.Metadata["new_plan_name"] != "" &&
-			inv.Metadata["payment_id"] != ""
+		// For upgrade: metadata is on the invoice (subscription_operator, new_plan_name, payment_id)
+		// For downgrade: metadata is on the subscription (subscription_operator, new_plan_name, transaction_id)
+		operator := inv.Metadata["subscription_operator"]
+		hasOperator := operator != ""
+		hasPlan := inv.Metadata["new_plan_name"] != ""
+		hasPayment := inv.Metadata["payment_id"] != ""
+
+		var hasMetadata bool
+
+		// Check if this might be a downgrade (invoice metadata is empty or missing subscription_operator)
+		// For downgrade, DowngradePlan sets metadata on subscription, not invoice
+		mightBeDowngrade := !hasOperator || operator == string(types.SubscriptionTransactionTypeDowngraded)
+
+		if mightBeDowngrade && inv.Parent != nil && inv.Parent.SubscriptionDetails != nil &&
+			inv.Parent.SubscriptionDetails.Subscription != nil {
+			// Check subscription metadata for downgrade operations
+			subID := inv.Parent.SubscriptionDetails.Subscription.ID
+			sub, err := services.StripeServiceInstance.GetSubscription(subID)
+			if err != nil {
+				logrus.Warnf("Failed to get subscription %s for metadata check: %v", subID, err)
+			} else {
+				subOperator := sub.Metadata["subscription_operator"]
+				subHasOperator := subOperator != ""
+				subHasPlan := sub.Metadata["new_plan_name"] != ""
+				subHasTransactionID := sub.Metadata["transaction_id"] != ""
+
+				// Check if this is actually a downgrade operation
+				if subOperator == string(types.SubscriptionTransactionTypeDowngraded) {
+					// Downgrade requires: subscription_operator, new_plan_name, transaction_id
+					hasMetadata = subHasOperator && subHasPlan && subHasTransactionID
+
+					if hasMetadata {
+						logrus.Infof(
+							"Subscription metadata found for downgrade after %d attempts (invoice=%s, subscription=%s)",
+							attempt+1,
+							invoiceID,
+							subID,
+						)
+						return inv, nil
+					}
+
+					logrus.Debugf(
+						"Waiting for subscription metadata for downgrade, attempt %d/%d (invoice=%s, subscription=%s, sub_operator=%s, sub_has_operator=%v, sub_has_plan=%v, sub_has_transaction=%v)",
+						attempt+1,
+						maxAttempts,
+						invoiceID,
+						subID,
+						subOperator,
+						subHasOperator,
+						subHasPlan,
+						subHasTransactionID,
+					)
+					// Continue waiting for subscription metadata
+					time.Sleep(delay)
+					delay = time.Duration(float64(delay) * 1.5)
+					if delay > maxDelay {
+						delay = maxDelay
+					}
+					continue
+				}
+			}
+		}
+
+		// For upgrade and other operations, check invoice metadata
+		// Upgrade requires: subscription_operator, new_plan_name, payment_id
+		hasMetadata = hasOperator && hasPlan && hasPayment
 
 		if hasMetadata {
 			logrus.Infof(
-				"Invoice metadata found after %d attempts (invoice=%s)",
+				"Invoice metadata found after %d attempts (invoice=%s, operator=%s)",
 				attempt+1,
 				invoiceID,
+				operator,
 			)
 			return inv, nil
 		}
 
-		// Log waiting status
 		logrus.Debugf(
-			"Waiting for invoice metadata, attempt %d/%d (invoice=%s, has_operator=%v, has_plan=%v, has_payment=%v)",
+			"Waiting for invoice metadata, attempt %d/%d (invoice=%s, operator=%s, has_operator=%v, has_plan=%v, has_payment=%v)",
 			attempt+1,
 			maxAttempts,
 			invoiceID,
-			inv.Metadata["subscription_operator"] != "",
-			inv.Metadata["new_plan_name"] != "",
-			inv.Metadata["payment_id"] != "",
+			operator,
+			hasOperator,
+			hasPlan,
+			hasPayment,
 		)
 
 		// Wait before next poll with exponential backoff
