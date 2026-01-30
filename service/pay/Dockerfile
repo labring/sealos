@@ -1,5 +1,5 @@
-# Build stage
-FROM golang:1.25-alpine AS builder
+# Build stage - use native platform for faster builds
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -9,20 +9,33 @@ RUN apk add --no-cache \
 
 WORKDIR /workspace
 
-ENV CGO_ENABLED=0
+# Set target OS/ARCH for cross-compilation
+ARG TARGETOS
+ARG TARGETARCH
+ENV CGO_ENABLED=0 \
+    GOOS=$TARGETOS \
+    GOARCH=$TARGETARCH
 
-COPY . .
+# Copy service and controllers
+COPY service service
+COPY controllers controllers
 
-RUN cd service/pay && go mod download
+# Download dependencies with cache mount
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    cd service/pay && go mod download
 
-RUN cd service/pay && \
+# Build the service with cross-compilation
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    cd service/pay && \
     go build \
     -trimpath \
     -ldflags "-s -w" \
     -o /manager \
     .
 
-# Runtime stage
+# Runtime stage - use target platform
 FROM gcr.io/distroless/static:nonroot
 
 # Copy the binary from builder
