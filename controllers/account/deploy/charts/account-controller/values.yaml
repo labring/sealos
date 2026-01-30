@@ -9,10 +9,6 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: "account"
 
-namespace:
-  create: true
-  name: ""
-
 serviceAccount:
   create: true
   automount: true

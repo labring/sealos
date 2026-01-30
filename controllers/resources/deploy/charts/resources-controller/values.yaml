@@ -9,10 +9,6 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: "resources"
 
-namespace:
-  create: true
-  name: ""
-
 serviceAccount:
   create: true
   automount: true
@@ -40,17 +36,6 @@ resources:
   requests:
     cpu: 10m
     memory: 64Mi
-
-managerConfig:
-  health:
-    healthProbeBindAddress: ":8081"
-  metrics:
-    bindAddress: "127.0.0.1:8080"
-  webhook:
-    port: 9443
-  leaderElection:
-    leaderElect: true
-    resourceName: a63686c3.sealos.io
 
 secret:
   name: "mongo-secret"

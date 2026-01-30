@@ -15,7 +15,6 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
-        checksum/resources-manager-config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/resources-mongo-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
