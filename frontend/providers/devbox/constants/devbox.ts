@@ -3,6 +3,7 @@ import { DevboxDetailType, DevboxEditType, DevboxEditTypeV2 } from '@/types/devb
 export const defaultSliderKey = 'default';
 export const crLabelKey = 'sealos-devbox-cr';
 export const gpuResourceKey = 'nvidia.com/gpu';
+export const gpuTypeAnnotationKey = 'nvidia.com/use-gputype';
 export const devboxKey = 'cloud.sealos.io/devbox-manager';
 export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
 export const devboxIdKey = 'cloud.sealos.io/app-devbox-id';

@@ -4,7 +4,8 @@ import {
   PodStatusEnum,
   ReconfigStatus,
   gpuResourceKey,
-  devboxRemarkKey
+  devboxRemarkKey,
+  gpuTypeAnnotationKey
 } from '@/constants/devbox';
 
 // TODO: delete v2 string
@@ -17,6 +18,7 @@ export type KBDevboxTypeV2 = {
     creationTimestamp: string;
     annotations: {
       [devboxRemarkKey]?: string;
+      [gpuTypeAnnotationKey]?: string;
     };
   };
   spec: KBDevboxSpecV2;

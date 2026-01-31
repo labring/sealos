@@ -93,7 +93,8 @@ export const SuccessResponseSchema = z.object({
       .object({
         manufacturers: z.string(),
         type: z.string(),
-        amount: z.number()
+        amount: z.number(),
+        resource: z.record(z.string()).optional()
       })
       .optional()
       .openapi({

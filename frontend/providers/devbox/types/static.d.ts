@@ -4,12 +4,17 @@ export interface SourcePrice {
   storage: number;
   nodeports: number;
   gpu?: {
-    alias: string;
-    type: string;
+    annotationType: string;
     price: number;
     available: number;
     count: number;
     vm: number;
+    icon?: string;
+    name?: {
+      zh?: string;
+      en?: string;
+    };
+    resource?: Record<string, string>;
   }[];
 }
 

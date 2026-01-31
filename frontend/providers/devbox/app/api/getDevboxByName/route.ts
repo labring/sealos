@@ -8,6 +8,7 @@ import { ProtocolType } from '@/types/devbox';
 import { PortInfos } from '@/types/ingress';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 import { adaptDevboxDetailV2 } from '@/utils/adapt';
+import { getGpuAliasMap } from '@/services/backend/gpu';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -115,7 +116,8 @@ export async function GET(req: NextRequest) {
         };
       }) || [];
 
-    const data = adaptDevboxDetailV2([devboxBody, portInfos, template, configMaps, pvcs]);
+    const gpuAliasMap = await getGpuAliasMap();
+    const data = adaptDevboxDetailV2([devboxBody, portInfos, template, configMaps, pvcs], gpuAliasMap);
 
     return jsonRes({ data });
   } catch (err: any) {
