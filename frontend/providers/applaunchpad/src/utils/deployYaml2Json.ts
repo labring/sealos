@@ -5,6 +5,8 @@ import {
   gpuResourceKey,
   maxReplicasKey,
   minReplicasKey,
+  ownerReferencesKey,
+  ownerReferencesReadyValue,
   publicDomainKey
 } from '@/constants/app';
 import { SEALOS_USER_DOMAINS } from '@/store/static';
@@ -26,6 +28,37 @@ const createDeterministicNanoid = (seed: string): string => {
     return result;
   });
   return deterministicNanoid();
+};
+
+export const generateOwnerReference = (
+  name: string,
+  kind: 'Deployment' | 'StatefulSet',
+  uid: string
+) => {
+  return [
+    {
+      apiVersion: 'apps/v1',
+      kind,
+      name,
+      uid,
+      controller: true,
+      blockOwnerDeletion: true
+    }
+  ];
+};
+
+export const shouldHaveOwnerReference = (kind: string): boolean => {
+  const kindsWithOwnerRef = [
+    'Service',
+    'Ingress',
+    'ConfigMap',
+    'Secret',
+    'HorizontalPodAutoscaler',
+    'Certificate',
+    'Issuer',
+    'PersistentVolumeClaim'
+  ];
+  return kindsWithOwnerRef.includes(kind);
 };
 
 // Unified service name generation function
@@ -68,6 +101,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
       [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
       [deployPVCResizeKey]: `${totalStorage}Gi`,
+      [ownerReferencesKey]: ownerReferencesReadyValue,
       ...(remoteStores.length > 0 ? { remoteStores: JSON.stringify(remoteStores) } : {})
     },
     labels: {
@@ -327,7 +361,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   return yaml.dump(template[type]);
 };
 
-export const json2Service = (data: AppEditType) => {
+export const json2Service = (data: AppEditType, ownerReferences?: any[]) => {
   const openPublicPorts: any[] = [];
   const closedPublicPorts: any[] = [];
 
@@ -360,7 +394,8 @@ export const json2Service = (data: AppEditType) => {
       name: serviceName,
       labels: {
         [appDeployKey]: data.appName
-      }
+      },
+      ...(ownerReferences ? { ownerReferences } : {})
     },
     spec: {
       ports: closedPublicPorts,
@@ -379,7 +414,8 @@ export const json2Service = (data: AppEditType) => {
       name: serviceNameNodePort,
       labels: {
         [appDeployKey]: data.appName
-      }
+      },
+      ...(ownerReferences ? { ownerReferences } : {})
     },
     spec: {
       type: 'NodePort',
@@ -398,7 +434,7 @@ export const json2Service = (data: AppEditType) => {
     : `${clusterIpYaml}${nodePortYaml}`;
 };
 
-export const json2Ingress = (data: AppEditType) => {
+export const json2Ingress = (data: AppEditType, ownerReferences?: any[]) => {
   // different protocol annotations
   const map = {
     HTTP: {
@@ -449,7 +485,8 @@ export const json2Ingress = (data: AppEditType) => {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
             ...map[network.appProtocol ?? 'HTTP']
-          }
+          },
+          ...(ownerReferences ? { ownerReferences } : {})
         },
         spec: {
           rules: [
@@ -488,7 +525,8 @@ export const json2Ingress = (data: AppEditType) => {
           name: network.networkName,
           labels: {
             [appDeployKey]: data.appName
-          }
+          },
+          ...(ownerReferences ? { ownerReferences } : {})
         },
         spec: {
           acme: {
@@ -517,7 +555,8 @@ export const json2Ingress = (data: AppEditType) => {
           name: network.networkName,
           labels: {
             [appDeployKey]: data.appName
-          }
+          },
+          ...(ownerReferences ? { ownerReferences } : {})
         },
         spec: {
           secretName,
@@ -547,7 +586,7 @@ export const json2IngressObjects = (data: AppEditType): object[] => {
   return yamlString2Objects(json2Ingress(data));
 };
 
-export const json2ConfigMap = (data: AppEditType) => {
+export const json2ConfigMap = (data: AppEditType, ownerReferences?: any[]) => {
   if (data.configMapList.length === 0) return '';
 
   const configFile: { [key: string]: string } = {};
@@ -559,7 +598,8 @@ export const json2ConfigMap = (data: AppEditType) => {
     apiVersion: 'v1',
     kind: 'ConfigMap',
     metadata: {
-      name: data.appName
+      name: data.appName,
+      ...(ownerReferences ? { ownerReferences } : {})
     },
     data: configFile
   };
@@ -567,7 +607,7 @@ export const json2ConfigMap = (data: AppEditType) => {
   return yaml.dump(template);
 };
 
-export const json2Secret = (data: AppEditType) => {
+export const json2Secret = (data: AppEditType, ownerReferences?: any[]) => {
   const auth = strToBase64(`${data.secret.username}:${data.secret.password}`);
   const dockerconfigjson = strToBase64(
     JSON.stringify({
@@ -585,7 +625,8 @@ export const json2Secret = (data: AppEditType) => {
     apiVersion: 'v1',
     kind: 'Secret',
     metadata: {
-      name: data.appName
+      name: data.appName,
+      ...(ownerReferences ? { ownerReferences } : {})
     },
     data: {
       '.dockerconfigjson': dockerconfigjson
@@ -594,14 +635,15 @@ export const json2Secret = (data: AppEditType) => {
   };
   return yaml.dump(template);
 };
-export const json2HPA = (data: AppEditType) => {
+export const json2HPA = (data: AppEditType, ownerReferences?: any[]) => {
   const isDeployment = data.storeList?.length === 0;
 
   const template = {
     apiVersion: 'autoscaling/v2',
     kind: 'HorizontalPodAutoscaler',
     metadata: {
-      name: data.appName
+      name: data.appName,
+      ...(ownerReferences ? { ownerReferences } : {})
     },
     spec: {
       scaleTargetRef: {
