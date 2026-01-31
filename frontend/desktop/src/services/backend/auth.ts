@@ -91,8 +91,9 @@ export const generateAuthenticationToken = (
   if (expiresIn) {
     return sign(props, grobalJwtSecret(), { expiresIn: expiresIn });
   }
-  return sign(props, grobalJwtSecret(), { expiresIn: '60000' });
+  return sign(props, grobalJwtSecret(), { expiresIn: '7d' });
 };
+
 export const generateOnceToken = (props: OnceTokenPayload) =>
   sign(props, regionalJwtSecret(), { expiresIn: '1800000' });
 
