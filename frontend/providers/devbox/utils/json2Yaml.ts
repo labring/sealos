@@ -1,6 +1,6 @@
 import yaml from 'js-yaml';
 
-import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox';
+import { devboxKey, gpuTypeAnnotationKey, publicDomainKey } from '@/constants/devbox';
 import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox';
 import { produce } from 'immer';
 import { nanoid, parseTemplateConfig, str2Num } from './tools';
@@ -15,11 +15,12 @@ export const json2Devbox = (
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
-  // gpu node selector
-  const gpuMap = !!data.gpu?.type
+  const gpuResourceKeyValue = data.gpu?.resource?.card;
+  const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
+  const gpuAnnotationMap = hasGpu
     ? {
-        nodeSelector: {
-          [gpuNodeSelectorKey]: data.gpu.type
+        annotations: {
+          [gpuTypeAnnotationKey]: data.gpu.type
         }
       }
     : {};
@@ -27,7 +28,8 @@ export const json2Devbox = (
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
     metadata: {
-      name: data.name
+      name: data.name,
+      ...gpuAnnotationMap
     },
     spec: {
       squash: squashEnable === 'true',
@@ -40,15 +42,13 @@ export const json2Devbox = (
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
-        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
+        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu.amount } : {})
       },
-      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
       runtimeRef: {
         name: data.runtimeVersion,
         namespace: runtimeNamespace
       },
-      state: 'Running',
-      ...gpuMap
+      state: 'Running'
     }
   };
   if (devboxAffinityEnable === 'true') {
@@ -83,10 +83,12 @@ export const json2DevboxV2 = (
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
 ) => {
-  const gpuMap = !!data.gpu?.type
+  const gpuResourceKeyValue = data.gpu?.resource?.card;
+  const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
+  const gpuAnnotationMap = hasGpu
     ? {
-        nodeSelector: {
-          [gpuNodeSelectorKey]: data.gpu.type
+        annotations: {
+          [gpuTypeAnnotationKey]: data.gpu.type
         }
       }
     : {};
@@ -95,7 +97,8 @@ export const json2DevboxV2 = (
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
     metadata: {
-      name: data.name
+      name: data.name,
+      ...gpuAnnotationMap
     },
     spec: {
       squash: squashEnable === 'true',
@@ -109,9 +112,8 @@ export const json2DevboxV2 = (
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
         'ephemeral-storage': `${str2Num(data.storage)}Gi`,
-        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
+        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu.amount } : {})
       },
-      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
       templateID: data.templateUid,
       image: data.image,
       config: produce(parseTemplateConfig(data.templateConfig), (draft) => {
@@ -205,8 +207,7 @@ export const json2DevboxV2 = (
         draft.volumes = newVolumes.length > 0 ? newVolumes : undefined;
         draft.volumeMounts = newVolumeMounts.length > 0 ? newVolumeMounts : undefined;
       }),
-      state: 'Running',
-      ...gpuMap
+      state: 'Running'
     }
   };
   if (devboxAffinityEnable === 'true') {

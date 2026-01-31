@@ -50,6 +50,7 @@ export type GpuType = {
   manufacturers: string;
   type: string;
   amount: number;
+  resource?: Record<string, string>;
 };
 
 export type UserTask = {

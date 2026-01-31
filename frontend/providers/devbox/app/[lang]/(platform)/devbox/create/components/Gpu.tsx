@@ -75,6 +75,7 @@ export default function Gpu({
               setValue('gpu.type', value);
               // NOTE: maybe this should be set.
               setValue('gpu.manufacturers', 'nvidia');
+              setValue('gpu.resource', selected.resource);
               if (!selectedGpuAmount || selectedGpuAmount > available) {
                 setValue('gpu.amount', 1);
               }
