@@ -20,7 +20,7 @@ export const json2Devbox = (
   const gpuAnnotationMap = hasGpu
     ? {
         annotations: {
-          [gpuTypeAnnotationKey]: data.gpu.type
+          [gpuTypeAnnotationKey]: data.gpu?.type || ''
         }
       }
     : {};
@@ -42,7 +42,7 @@ export const json2Devbox = (
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
-        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu.amount } : {})
+        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {})
       },
       runtimeRef: {
         name: data.runtimeVersion,
@@ -88,7 +88,7 @@ export const json2DevboxV2 = (
   const gpuAnnotationMap = hasGpu
     ? {
         annotations: {
-          [gpuTypeAnnotationKey]: data.gpu.type
+          [gpuTypeAnnotationKey]: data.gpu?.type || ''
         }
       }
     : {};
@@ -112,7 +112,7 @@ export const json2DevboxV2 = (
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
         'ephemeral-storage': `${str2Num(data.storage)}Gi`,
-        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu.amount } : {})
+        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {})
       },
       templateID: data.templateUid,
       image: data.image,
