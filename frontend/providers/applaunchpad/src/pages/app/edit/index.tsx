@@ -11,6 +11,7 @@ import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
 import {
+  generateOwnerReference,
   json2ConfigMap,
   json2DeployCr,
   json2HPA,
@@ -268,7 +269,22 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (data.networks?.[index]) {
           data.networks[index].customDomain = customDomain;
         }
-        const ingressYaml = json2Ingress(data);
+
+        // Get ownerReferences from existing workload
+        let ownerReferences: any[] | undefined;
+        const workload = crOldYamls.current.find(
+          (item) => item.kind === YamlKindEnum.Deployment || item.kind === YamlKindEnum.StatefulSet
+        );
+        if (workload) {
+          const workloadObj = yaml.load(workload.value) as any;
+          const workloadUid = workloadObj?.metadata?.uid;
+          const workloadKind = workload.kind as 'Deployment' | 'StatefulSet';
+          if (workloadUid && workloadKind) {
+            ownerReferences = generateOwnerReference(data.appName, workloadKind, workloadUid);
+          }
+        }
+
+        const ingressYaml = json2Ingress(data, ownerReferences);
         setIsLoading(true);
         postDeployApp([ingressYaml], 'replace')
           .then(() => {
@@ -281,7 +297,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           .finally(() => setIsLoading(false));
       } catch (error) {}
     },
-    [formHook, setIsLoading, toast, t]
+    [formHook, setIsLoading, toast, t, appName]
   );
 
   useQuery(
