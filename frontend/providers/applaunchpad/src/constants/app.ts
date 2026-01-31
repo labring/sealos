@@ -97,6 +97,8 @@ export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
 export const gpuResourceKey = 'nvidia.com/gpu';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const sealafDeployKey = 'sealaf-app';
+export const ownerReferencesKey = 'cloud.sealos.io/owner-references';
+export const ownerReferencesReadyValue = 'ready';
 
 export enum Coin {
   cny = 'cny',

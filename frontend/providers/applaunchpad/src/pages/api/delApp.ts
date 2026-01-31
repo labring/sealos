@@ -3,7 +3,7 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { appDeployKey } from '@/constants/app';
+import { appDeployKey, ownerReferencesKey, ownerReferencesReadyValue } from '@/constants/app';
 
 export type DeleteAppParams = { name: string };
 
@@ -33,6 +33,44 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
       kubeconfig: await authSession(req.headers)
     });
 
+  // Check if app has ownerReferences annotation (new apps)
+  let hasOwnerReferences = false;
+  let workloadKind: 'Deployment' | 'StatefulSet' | null = null;
+
+  try {
+    // Try to read Deployment first
+    const deployment = await k8sApp.readNamespacedDeployment(name, namespace);
+    const annotation = deployment.body.metadata?.annotations?.[ownerReferencesKey];
+    hasOwnerReferences = annotation === ownerReferencesReadyValue;
+    workloadKind = 'Deployment';
+  } catch (err: any) {
+    if (err?.body?.code !== 404) {
+      console.error('Error reading Deployment:', err);
+    }
+    // Try to read StatefulSet
+    try {
+      const statefulSet = await k8sApp.readNamespacedStatefulSet(name, namespace);
+      const annotation = statefulSet.body.metadata?.annotations?.[ownerReferencesKey];
+      hasOwnerReferences = annotation === ownerReferencesReadyValue;
+      workloadKind = 'StatefulSet';
+    } catch (err2: any) {
+      if (err2?.body?.code !== 404) {
+        console.error('Error reading StatefulSet:', err2);
+      }
+    }
+  }
+
+  // If app has ownerReferences, only delete main workload (cascade delete handles rest)
+  if (hasOwnerReferences && workloadKind) {
+    if (workloadKind === 'Deployment') {
+      await k8sApp.deleteNamespacedDeployment(name, namespace);
+    } else {
+      await k8sApp.deleteNamespacedStatefulSet(name, namespace);
+    }
+    return;
+  }
+
+  // Legacy delete flow for apps without ownerReferences
   // delete Certificate
   const certificatesList = (await k8sCustomObjects.listNamespacedCustomObject(
     'cert-manager.io',
