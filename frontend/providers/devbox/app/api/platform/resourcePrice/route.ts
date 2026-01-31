@@ -29,13 +29,30 @@ type ResourceType =
   | 'infra-disk'
   | 'services.nodeports';
 
+type GpuAliasName = {
+  zh?: string;
+  en?: string;
+};
+
+type GpuAliasConfig = {
+  default?: string;
+  icon?: string;
+  name?: GpuAliasName;
+  resource?: Record<string, string>;
+};
+
+type GpuAliasMap = Record<string, GpuAliasConfig>;
+
 type GpuNodeType = {
   'gpu.count': number;
   'gpu.available': number;
   'gpu.used': number;
   'gpu.memory': number;
   'gpu.product': string;
-  'gpu.alias': string;
+  'gpu.annotationType'?: string;
+  'gpu.icon'?: string;
+  'gpu.name'?: GpuAliasName;
+  'gpu.resource'?: Record<string, string>;
 };
 
 const PRICE_SCALE = 1000000;
@@ -127,7 +144,7 @@ async function getGpuNode() {
     const gpuMap = configMap.data?.gpu;
 
     if (!gpuMap || !configMap.data?.alias) return [];
-    const alias = (JSON.parse(configMap.data.alias) || {}) as Record<string, string>;
+    const alias = (JSON.parse(configMap.data.alias) || {}) as GpuAliasMap;
 
     const parseGpuMap = JSON.parse(gpuMap) as Record<
       string,
@@ -159,8 +176,11 @@ async function getGpuNode() {
           ['gpu.available']: +item['gpu.available'],
           ['gpu.used']: +item['gpu.used'],
           ['gpu.memory']: +item['gpu.memory'],
-          ['gpu.product']: item['gpu.product'],
-          ['gpu.alias']: alias[item['gpu.product']] || item['gpu.product']
+          ['gpu.product']: item['gpu.product'], // use this to get gpu alias info
+          ['gpu.annotationType']: alias[item['gpu.product']]?.default, // transform to yaml annotation type
+          ['gpu.icon']: alias[item['gpu.product']]?.icon,
+          ['gpu.name']: alias[item['gpu.product']]?.name,
+          ['gpu.resource']: alias[item['gpu.product']]?.resource
         });
       }
     });
@@ -183,12 +203,14 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
     if (!gpuNode) return;
 
     gpuList.push({
-      alias: gpuNode['gpu.alias'],
-      type: gpuNode['gpu.product'],
+      annotationType: gpuNode['gpu.annotationType'] || '',
       price: (item.unit_price * valuationMap.gpu) / PRICE_SCALE,
       available: +gpuNode['gpu.available'],
       count: +gpuNode['gpu.count'],
-      vm: +gpuNode['gpu.memory'] / 1024
+      vm: +gpuNode['gpu.memory'] / 1024,
+      icon: gpuNode['gpu.icon'],
+      name: gpuNode['gpu.name'],
+      resource: gpuNode['gpu.resource']
     });
   });
 

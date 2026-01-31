@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import type { SyntheticEvent } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 
 import { cn } from '@sealos/shadcn-ui';
@@ -8,6 +9,7 @@ import { Label } from '@sealos/shadcn-ui/label';
 import { usePriceStore } from '@/stores/price';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { GpuAmountMarkList } from '@/constants/devbox';
+import type { SourcePrice } from '@/types/static';
 
 import {
   Select,
@@ -22,18 +24,36 @@ export default function Gpu({
 }: {
   countGpuInventory: (type: string) => number;
 }) {
+  type GpuPriceItem = NonNullable<SourcePrice['gpu']>[number];
+  const defaultGpuIcon = '/images/nvidia.svg';
+
   const t = useTranslations();
+  const locale = useLocale();
   const { sourcePrice } = usePriceStore();
   const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
 
   const selectedGpuType = watch('gpu.type');
   const selectedGpuAmount = watch('gpu.amount');
 
+  const getGpuDisplayName = (gpu?: GpuPriceItem) => {
+    if (!gpu) return '';
+    const name = gpu.name;
+    const localizedName = locale.includes('zh') ? name?.zh : name?.en;
+    return localizedName || gpu.annotationType || '';
+  };
+
   const selectedGpu = useMemo(() => {
-    const selected = sourcePrice?.gpu?.find((item) => item.type === selectedGpuType);
+    const selected = sourcePrice?.gpu?.find((item) => item.annotationType === selectedGpuType);
     if (!selected) return undefined;
     return selected;
   }, [sourcePrice?.gpu, selectedGpuType]);
+
+  const handleGpuIconError = (event: SyntheticEvent<HTMLImageElement>) => {
+    const target = event.currentTarget;
+    if (!target.src.endsWith(defaultGpuIcon)) {
+      target.src = defaultGpuIcon;
+    }
+  };
 
   if (!sourcePrice?.gpu) {
     return null;
@@ -46,13 +66,14 @@ export default function Gpu({
         <Select
           value={selectedGpuType || 'none'}
           onValueChange={(value) => {
-            const selected = sourcePrice?.gpu?.find((item) => item.type === value);
+            const selected = sourcePrice?.gpu?.find((item) => item.annotationType === value);
             const available = value !== 'none' ? countGpuInventory(value) : 0;
 
             if (value === 'none') {
               setValue('gpu', undefined);
             } else if (selected && available > 0) {
               setValue('gpu.type', value);
+              // NOTE: maybe this should be set.
               setValue('gpu.manufacturers', 'nvidia');
               if (!selectedGpuAmount || selectedGpuAmount > available) {
                 setValue('gpu.amount', 1);
@@ -65,8 +86,16 @@ export default function Gpu({
               {selectedGpu ? (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
-                    <Image src="/images/nvidia.svg" alt="NVIDIA" width={16} height={16} />
-                    <span className="text-sm font-medium text-zinc-900">{selectedGpu.alias}</span>
+                    <Image
+                      src={selectedGpu.icon ? `/images/${selectedGpu.icon}.svg` : defaultGpuIcon}
+                      alt={selectedGpu.annotationType}
+                      width={16}
+                      height={16}
+                      onError={handleGpuIconError}
+                    />
+                    <span className="text-sm font-medium text-zinc-900">
+                      {getGpuDisplayName(selectedGpu)}
+                    </span>
                   </div>
                   <span className="text-sm text-zinc-900">
                     {t('video_memory')}: {Math.round(selectedGpu.vm)}GB
@@ -87,13 +116,25 @@ export default function Gpu({
           <SelectContent>
             <SelectItem value="none">{t('No GPU')}</SelectItem>
             {sourcePrice?.gpu.map((item) => {
-              const available = countGpuInventory(item.type);
+              const available = countGpuInventory(item.annotationType);
               return (
-                <SelectItem key={item.type} value={item.type} disabled={available <= 0}>
+                <SelectItem
+                  key={item.annotationType}
+                  value={item.annotationType}
+                  disabled={available <= 0}
+                >
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
-                      <Image src="/images/nvidia.svg" alt="NVIDIA" width={16} height={16} />
-                      <span className="text-sm font-medium text-zinc-900">{item.alias}</span>
+                      <Image
+                        src={item.icon ? `/images/${item.icon}.svg` : defaultGpuIcon}
+                        alt={item.annotationType}
+                        width={16}
+                        height={16}
+                        onError={handleGpuIconError}
+                      />
+                      <span className="text-sm font-medium text-zinc-900">
+                        {getGpuDisplayName(item)}
+                      </span>
                     </div>
                     <span className="text-sm text-zinc-900">
                       {t('video_memory')}: {Math.round(item.vm)}GB
