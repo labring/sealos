@@ -17,19 +17,16 @@ export const json2Devbox = (
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
   const gpuResourceKeyValue = data.gpu?.resource?.card;
   const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
-  const gpuAnnotationMap = hasGpu
+  const gpuConfigAnnotation = hasGpu
     ? {
-        annotations: {
-          [gpuTypeAnnotationKey]: data.gpu?.type || ''
-        }
+        [gpuTypeAnnotationKey]: data.gpu?.type || ''
       }
-    : {};
+    : undefined;
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
     metadata: {
-      name: data.name,
-      ...gpuAnnotationMap
+      name: data.name
     },
     spec: {
       squash: squashEnable === 'true',
@@ -48,6 +45,13 @@ export const json2Devbox = (
         name: data.runtimeVersion,
         namespace: runtimeNamespace
       },
+      ...(gpuConfigAnnotation
+        ? {
+            config: {
+              annotations: gpuConfigAnnotation
+            }
+          }
+        : {}),
       state: 'Running'
     }
   };
@@ -85,20 +89,17 @@ export const json2DevboxV2 = (
 ) => {
   const gpuResourceKeyValue = data.gpu?.resource?.card;
   const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
-  const gpuAnnotationMap = hasGpu
+  const gpuConfigAnnotation = hasGpu
     ? {
-        annotations: {
-          [gpuTypeAnnotationKey]: data.gpu?.type || ''
-        }
+        [gpuTypeAnnotationKey]: data.gpu?.type || ''
       }
-    : {};
+    : undefined;
 
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
     metadata: {
-      name: data.name,
-      ...gpuAnnotationMap
+      name: data.name
     },
     spec: {
       squash: squashEnable === 'true',
@@ -123,6 +124,13 @@ export const json2DevboxV2 = (
           protocol: 'TCP',
           targetPort: str2Num(item.port)
         }));
+        if (gpuConfigAnnotation) {
+          const draftAny = draft as any;
+          draftAny.annotations = {
+            ...(draftAny.annotations || {}),
+            ...gpuConfigAnnotation
+          };
+        }
 
         // Clear user-configurable fields to rebuild from form data
         const newEnv: any[] = [];

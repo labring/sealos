@@ -28,10 +28,7 @@ import {
   memoryFormatToMi,
   storageFormatToNum
 } from '@/utils/tools';
-import {
-  devboxRemarkKey,
-  gpuTypeAnnotationKey
-} from '../constants/devbox';
+import { devboxRemarkKey, gpuTypeAnnotationKey } from '../constants/devbox';
 
 const getGpuResourceInfo = (
   resource: Record<string, any> | undefined,
@@ -61,7 +58,7 @@ export const adaptDevboxListItemV2 = (
   ],
   gpuAliasMap?: GpuAliasMap
 ): DevboxListItemTypeV2 => {
-  const gpuType = devbox.metadata?.annotations?.[gpuTypeAnnotationKey];
+  const gpuType = devbox.spec.config.annotations?.[gpuTypeAnnotationKey];
   const { amount: gpuAmount, resource: gpuResource } = getGpuResourceInfo(
     devbox.spec.resource as Record<string, any>,
     gpuType,
@@ -111,13 +108,10 @@ export const adaptDevboxListItemV2 = (
   };
 };
 
-export const adaptDevboxDetailV2 = ([
-  devbox,
-  portInfos,
-  template,
-  k8sConfigMaps,
-  k8sPvcs
-]: GetDevboxByNameReturn, gpuAliasMap?: GpuAliasMap): DevboxDetailTypeV2 => {
+export const adaptDevboxDetailV2 = (
+  [devbox, portInfos, template, k8sConfigMaps, k8sPvcs]: GetDevboxByNameReturn,
+  gpuAliasMap?: GpuAliasMap
+): DevboxDetailTypeV2 => {
   const status =
     devbox.status?.phase && devboxStatusMap[devbox.status.phase]
       ? devboxStatusMap[devbox.status.phase]
@@ -211,7 +205,7 @@ export const adaptDevboxDetailV2 = ([
     memory: memoryFormatToMi(devbox.spec.resource.memory),
     storage: storageFormatToNum(devbox.spec.resource['ephemeral-storage'] || '10Gi'),
     gpu: (() => {
-      const gpuType = devbox.metadata?.annotations?.[gpuTypeAnnotationKey];
+      const gpuType = devbox.spec.config.annotations?.[gpuTypeAnnotationKey];
       const { amount: gpuAmount, resource: gpuResource } = getGpuResourceInfo(
         devbox.spec.resource as Record<string, any>,
         gpuType,
