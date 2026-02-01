@@ -133,12 +133,22 @@ const DevboxCreatePage = () => {
 
   const countGpuInventory = useCallback(
     (type?: string) => {
+      if (!type) return 0;
       const available =
         sourcePrice?.gpu?.find((item) => item.annotationType === type)?.available || 0;
 
-      return available;
+      if (!isEdit) {
+        return available;
+      }
+
+      const originalGpu = oldDevboxEditData.current?.gpu;
+      if (!originalGpu || originalGpu.type !== type) {
+        return available;
+      }
+
+      return available + (originalGpu.amount || 0);
     },
-    [sourcePrice?.gpu]
+    [isEdit, sourcePrice?.gpu]
   );
 
   useEffect(() => {

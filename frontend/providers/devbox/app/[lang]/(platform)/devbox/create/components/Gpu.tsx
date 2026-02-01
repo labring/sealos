@@ -159,7 +159,7 @@ export default function Gpu({
             <Label className="text-sm font-medium text-gray-900">{t('count')}</Label>
             <div className="flex gap-2">
               {GpuAmountMarkList.map((item) => {
-                const available = selectedGpu?.available || 0;
+                const available = selectedGpuType ? countGpuInventory(selectedGpuType) : 0;
                 const hasInventory = item.value <= available;
                 const isSelected = selectedGpuAmount === item.value;
 

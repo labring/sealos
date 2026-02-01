@@ -142,7 +142,6 @@ async function getGpuNode() {
     if (!body.items || body.items.length === 0) return [];
 
     const configMap = body.items[0];
-    console.log('configMap', configMap);
     const gpuMap = configMap.data?.gpu;
 
     if (!gpuMap || !configMap.data?.alias) return [];
@@ -181,9 +180,7 @@ async function getGpuNode() {
       const aliasItem = (ref && alias[ref]) || alias[item['gpu.product']];
       const annotationType = aliasItem?.default || item['gpu.product'] || ref;
       const mergeKey = ref || item['gpu.product'];
-      const index = gpuList.findIndex(
-        (gpu) => (gpu['gpu.ref'] || gpu['gpu.product']) === mergeKey
-      );
+      const index = gpuList.findIndex((gpu) => (gpu['gpu.ref'] || gpu['gpu.product']) === mergeKey);
       if (index > -1) {
         gpuList[index]['gpu.count'] += Number(item['gpu.count']);
         gpuList[index]['gpu.available'] += Number(item['gpu.available']);
