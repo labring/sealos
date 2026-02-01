@@ -691,6 +691,7 @@ func (m *MongoDB) GetProperties() ([]common.PropertyQuery, error) {
 			UnitPrice: propertyType.UnitPrice,
 			Unit:      propertyType.UnitString,
 			Alias:     propertyType.Alias,
+			Enum:      propertyType.Enum,
 		}
 		if propertyType.ViewPrice > 0 {
 			property.UnitPrice = propertyType.ViewPrice
