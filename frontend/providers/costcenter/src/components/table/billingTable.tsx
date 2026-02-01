@@ -1,9 +1,15 @@
 import Amount from '@/components/billing/AmountTableHeader';
 import { TableHeaderID } from '@/constants/billing';
-import { valuationMap } from '@/constants/payment';
 import useAppTypeStore from '@/stores/appType';
+import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
 import { APPBillingItem, BillingType } from '@/types/billing';
+import {
+  buildResourceIndexMap,
+  getResourceDisplayValue,
+  getResourceUnit,
+  getSortedResources
+} from '@/utils/resourceMapping';
 import { Flex, TableContainerProps, Text } from '@chakra-ui/react';
 import {
   CellContext,
@@ -12,16 +18,22 @@ import {
   getCoreRowModel,
   useReactTable
 } from '@tanstack/react-table';
+import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, subHours } from 'date-fns';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import CurrencySymbol from '../CurrencySymbol';
 import { AppImg, BaseTable } from '../table/BaseTable';
+import request from '@/service/request';
+import { ApiResp } from '@/types';
+import { ValuationStandard } from '@/types/valuation';
+
 const getAmountCell = (data?: { isTotal?: boolean }) =>
   function AmountCell(props: CellContext<APPBillingItem, number>) {
     const isTotal = data?.isTotal || false;
     return <Amount total={isTotal} type={BillingType.CONSUME} amount={props.cell.getValue()} />;
   };
+
 const getAppTypeCell = () =>
   function TranslationCell(props: CellContext<APPBillingItem, APPBillingItem['app_type']>) {
     const { t } = useTranslation('applist');
@@ -30,12 +42,29 @@ const getAppTypeCell = () =>
     const text = t(appType);
     return t(text);
   };
+
 export function BillingDetailsTable({
   data,
   ...styles
 }: { data: APPBillingItem[] } & TableContainerProps) {
   const { t } = useTranslation();
   const { currency, gpuEnabled } = useEnvStore((s) => s);
+  const { getRegion } = useBillingStore();
+
+  const { data: propertiesData } = useQuery({
+    queryKey: ['properties', getRegion()?.uid],
+    queryFn: () =>
+      request.post<any, ApiResp<{ properties: ValuationStandard[] }>>('/api/properties', {
+        regionUid: getRegion()?.uid || ''
+      }),
+    staleTime: 5 * 60 * 1000
+  });
+
+  const resourceMap = useMemo(() => {
+    if (!propertiesData?.data?.properties) return new Map();
+    return buildResourceIndexMap(propertiesData.data.properties);
+  }, [propertiesData]);
+
   const columns = useMemo(() => {
     const columnHelper = createColumnHelper<APPBillingItem>();
     const customTh = (needCurrency?: boolean) =>
@@ -51,24 +80,13 @@ export function BillingDetailsTable({
           </Flex>
         );
       };
+
     const customCell = (isTotal?: boolean) =>
       function CustomCell(props: CellContext<APPBillingItem, number>) {
         return <Amount total={isTotal} type={BillingType.CONSUME} amount={props.cell.getValue()} />;
       };
-    const getUnit = (
-      x: 'cpu' | 'memory' | 'storage' | 'gpu' | 'network' | 'services.nodeports'
-    ) => {
-      return function CustomCell(props: CellContext<APPBillingItem, number>) {
-        const resourceEntity = valuationMap.get(x);
-        if (!resourceEntity) return '0';
-        const value = props.cell.getValue();
-        if (isNaN(value)) return '-';
-        const unit = resourceEntity.unit;
-        //return props.cell.getValue() / resourceEntity.scale + ' ' + t(unit, { ns: 'common' });
-        return value / resourceEntity.scale + ' ' + t(unit, { ns: 'common' });
-      };
-    };
-    return [
+
+    const baseColumns = [
       columnHelper.accessor((row) => row.app_name, {
         header: customTh(),
         id: TableHeaderID.APPName,
@@ -91,71 +109,110 @@ export function BillingDetailsTable({
         id: TableHeaderID.APPType,
         cell: getAppTypeCell(),
         enablePinning: true
-      }),
-      columnHelper.accessor((row) => row.used[0], {
-        id: TableHeaderID.CPU,
-        header: customTh(),
-        cell: getUnit('cpu')
-      }),
-      columnHelper.accessor((row) => row.used_amount[0], {
-        id: TableHeaderID.CPUAmount,
-        header: customTh(),
-        cell: customCell()
-      }),
-      columnHelper.accessor((row) => row.used[1], {
-        id: TableHeaderID.Memory,
-        header: customTh(),
-        cell: getUnit('memory')
-      }),
-      columnHelper.accessor((row) => row.used_amount[1], {
-        id: TableHeaderID.MemoryAmount,
-        header: customTh(),
-        cell: customCell()
-      }),
-      columnHelper.accessor((row) => row.used[2], {
-        id: TableHeaderID.Storage,
-        header: customTh(),
-        cell: getUnit('storage')
-      }),
-      columnHelper.accessor((row) => row.used_amount[2], {
-        id: TableHeaderID.StorageAmount,
-        header: customTh(),
-        cell: customCell()
-      }),
-      columnHelper.accessor((row) => row.used[3], {
-        id: TableHeaderID.Network,
-        header: customTh(),
-        cell: getUnit('network')
-      }),
-      columnHelper.accessor((row) => row.used_amount[3], {
-        id: TableHeaderID.NetworkAmount,
-        header: customTh(),
-        cell: customCell()
-      }),
-      columnHelper.accessor((row) => row.used[4], {
-        id: TableHeaderID.Port,
-        header: customTh(),
-        cell: getUnit('services.nodeports')
-      }),
-      columnHelper.accessor((row) => row.used_amount[4], {
-        id: TableHeaderID.PortAmount,
-        header: customTh(),
-        cell: customCell()
-      }),
-      ...(gpuEnabled
-        ? [
-            columnHelper.accessor((row) => row.used[5], {
-              id: TableHeaderID.GPU,
-              header: customTh(),
-              cell: getUnit('gpu')
-            }),
-            columnHelper.accessor((row) => row.used_amount[5], {
-              id: TableHeaderID.GPUAmount,
-              header: customTh(),
-              cell: customCell()
-            })
-          ]
-        : []),
+      })
+    ];
+
+    const resourceColumns: any[] = [];
+
+    if (resourceMap.size > 0) {
+      const sortedResources = getSortedResources(resourceMap);
+      const gpuIndices: number[] = [];
+
+      sortedResources.forEach(([enumIndex, resource]) => {
+        if (resource.resourceType === 'gpu') {
+          gpuIndices.push(enumIndex);
+          return;
+        }
+
+        // Get proper header text based on resource type
+        const getHeaderText = () => {
+          if (resource.resourceType === 'cpu') return TableHeaderID.CPU;
+          if (resource.resourceType === 'memory') return TableHeaderID.Memory;
+          if (resource.resourceType === 'storage') return TableHeaderID.Storage;
+          if (resource.resourceType === 'network') return TableHeaderID.Network;
+          if (resource.resourceType === 'services.nodeports') return TableHeaderID.Port;
+          return resource.alias || resource.name;
+        };
+
+        const getAmountHeaderText = () => {
+          if (resource.resourceType === 'cpu') return TableHeaderID.CPUAmount;
+          if (resource.resourceType === 'memory') return TableHeaderID.MemoryAmount;
+          if (resource.resourceType === 'storage') return TableHeaderID.StorageAmount;
+          if (resource.resourceType === 'network') return TableHeaderID.NetworkAmount;
+          if (resource.resourceType === 'services.nodeports') return TableHeaderID.PortAmount;
+          return `${resource.alias || resource.name} Amount`;
+        };
+
+        const headerText = getHeaderText();
+        const amountHeaderText = getAmountHeaderText();
+
+        resourceColumns.push(
+          columnHelper.accessor((row) => row.used[enumIndex], {
+            id: `${resource.resourceType}_${enumIndex}`,
+            header: () => <Text>{t(headerText)}</Text>,
+            cell(props) {
+              const value = props.getValue();
+              const displayValue = getResourceDisplayValue(value, enumIndex, resourceMap);
+              const unit = getResourceUnit(enumIndex, resourceMap);
+              return displayValue === '-' ? '-' : `${displayValue} ${t(unit, { ns: 'common' })}`;
+            }
+          })
+        );
+
+        resourceColumns.push(
+          columnHelper.accessor((row) => row.used_amount[enumIndex], {
+            id: `${resource.resourceType}_amount_${enumIndex}`,
+            header: () => <Text>{t(amountHeaderText)}</Text>,
+            cell: customCell()
+          })
+        );
+      });
+
+      // Add merged GPU column if GPU is enabled and GPU resources exist
+      if (gpuEnabled && gpuIndices.length > 0) {
+        const gpuConfig = resourceMap.get(gpuIndices[0]);
+
+        resourceColumns.push(
+          columnHelper.display({
+            id: 'gpu_usage',
+            header: () => <Text>{t(TableHeaderID.GPU)}</Text>,
+            cell(props) {
+              const row = props.row.original;
+              let totalUsed = 0;
+              gpuIndices.forEach((idx) => {
+                totalUsed += row.used[idx] || 0;
+              });
+
+              if (!totalUsed || isNaN(totalUsed)) return '-';
+
+              const displayValue = gpuConfig ? totalUsed / gpuConfig.scale : totalUsed;
+              const unit = gpuConfig?.unit || 'GPU Unit';
+              return `${displayValue} ${t(unit, { ns: 'common' })}`;
+            }
+          })
+        );
+
+        resourceColumns.push(
+          columnHelper.display({
+            id: 'gpu_amount',
+            header: () => <Text>{t(TableHeaderID.GPUAmount)}</Text>,
+            cell(props) {
+              const row = props.row.original;
+              let totalAmount = 0;
+              gpuIndices.forEach((idx) => {
+                totalAmount += row.used_amount[idx] || 0;
+              });
+
+              if (!totalAmount || isNaN(totalAmount)) return '-';
+
+              return <Amount type={BillingType.CONSUME} amount={totalAmount} />;
+            }
+          })
+        );
+      }
+    }
+
+    const endColumns = [
       columnHelper.accessor((row) => row.time, {
         id: TableHeaderID.TransactionTime,
         header: customTh(),
@@ -175,7 +232,10 @@ export function BillingDetailsTable({
         enablePinning: true
       })
     ];
-  }, [t, currency]);
+
+    return [...baseColumns, ...resourceColumns, ...endColumns];
+  }, [t, currency, gpuEnabled, resourceMap]);
+
   const table = useReactTable({
     data,
     state: {
@@ -187,5 +247,6 @@ export function BillingDetailsTable({
     columns,
     getCoreRowModel: getCoreRowModel()
   });
+
   return <BaseTable table={table} h="auto" {...styles} height={'auto'} />;
 }

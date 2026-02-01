@@ -80,7 +80,7 @@ function Valuation() {
               title,
               price,
               unit,
-              idx: props.idx,
+              idx: x.enum,
               icon,
               isGpu
             }

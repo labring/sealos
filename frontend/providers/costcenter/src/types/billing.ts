@@ -49,8 +49,8 @@ export type APPBillingItem = {
   time: string;
   order_id: string;
   namespace: string;
-  used: Record<'0' | '1' | '2' | '3' | '4' | '5', number>;
-  used_amount: Record<'0' | '1' | '2' | '3' | '4' | '5', number>;
+  used: Record<number, number>;
+  used_amount: Record<number, number>;
   amount: number;
 };
 export type BillingItem<T = Costs> = {
