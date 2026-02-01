@@ -49,6 +49,7 @@ type GpuNodeType = {
   'gpu.used': number;
   'gpu.memory': number;
   'gpu.product': string;
+  'gpu.ref'?: string;
   'gpu.annotationType'?: string;
   'gpu.icon'?: string;
   'gpu.name'?: GpuAliasName;
@@ -141,10 +142,15 @@ async function getGpuNode() {
     if (!body.items || body.items.length === 0) return [];
 
     const configMap = body.items[0];
+    console.log('configMap', configMap);
     const gpuMap = configMap.data?.gpu;
 
     if (!gpuMap || !configMap.data?.alias) return [];
     const alias = (JSON.parse(configMap.data.alias) || {}) as GpuAliasMap;
+    const aliasBackupRaw = configMap.data['alias-backup'];
+    const aliasBackup = aliasBackupRaw
+      ? (JSON.parse(aliasBackupRaw) as Record<string, string>)
+      : undefined;
 
     const parseGpuMap = JSON.parse(gpuMap) as Record<
       string,
@@ -155,6 +161,7 @@ async function getGpuNode() {
         'gpu.memory': string;
         'gpu.product': string;
         'gpu.devbox': string;
+        'gpu.ref'?: string;
       }
     >;
     const gpuValues = Object.values(parseGpuMap).filter(
@@ -165,7 +172,18 @@ async function getGpuNode() {
 
     // merge same type gpu
     gpuValues.forEach((item) => {
-      const index = gpuList.findIndex((gpu) => gpu['gpu.product'] === item['gpu.product']);
+      const fallbackRef =
+        item['gpu.product'] && aliasBackup
+          ? aliasBackup[item['gpu.product']] ||
+            aliasBackup[item['gpu.product'].replace(/\s+/g, '-')]
+          : undefined;
+      const ref = item['gpu.ref'] || fallbackRef;
+      const aliasItem = (ref && alias[ref]) || alias[item['gpu.product']];
+      const annotationType = aliasItem?.default || item['gpu.product'] || ref;
+      const mergeKey = ref || item['gpu.product'];
+      const index = gpuList.findIndex(
+        (gpu) => (gpu['gpu.ref'] || gpu['gpu.product']) === mergeKey
+      );
       if (index > -1) {
         gpuList[index]['gpu.count'] += Number(item['gpu.count']);
         gpuList[index]['gpu.available'] += Number(item['gpu.available']);
@@ -177,10 +195,11 @@ async function getGpuNode() {
           ['gpu.used']: +item['gpu.used'],
           ['gpu.memory']: +item['gpu.memory'],
           ['gpu.product']: item['gpu.product'], // use this to get gpu alias info
-          ['gpu.annotationType']: alias[item['gpu.product']]?.default, // transform to yaml annotation type
-          ['gpu.icon']: alias[item['gpu.product']]?.icon,
-          ['gpu.name']: alias[item['gpu.product']]?.name,
-          ['gpu.resource']: alias[item['gpu.product']]?.resource
+          ['gpu.ref']: ref,
+          ['gpu.annotationType']: annotationType, // transform to yaml annotation type
+          ['gpu.icon']: aliasItem?.icon,
+          ['gpu.name']: aliasItem?.name,
+          ['gpu.resource']: aliasItem?.resource
         });
       }
     });
@@ -192,6 +211,9 @@ async function getGpuNode() {
   }
 }
 
+const normalizeGpuKey = (value?: string) =>
+  value ? value.trim().replace(/\s+/g, '-').toLowerCase() : '';
+
 function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNodes: GpuNodeType[]) {
   const gpuList: userPriceType['gpu'] = [];
 
@@ -199,7 +221,11 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
   rawData?.forEach((item) => {
     if (!item.name.startsWith('gpu')) return;
     const gpuType = item.name.replace('gpu-', '');
-    const gpuNode = gpuNodes.find((item) => item['gpu.product'] === gpuType);
+    const normalizedType = normalizeGpuKey(gpuType);
+    const gpuNode = gpuNodes.find((gpu) => {
+      const keys = [gpu['gpu.ref'], gpu['gpu.product'], gpu['gpu.annotationType']];
+      return keys.some((key) => normalizeGpuKey(key) === normalizedType);
+    });
     if (!gpuNode) return;
 
     gpuList.push({
