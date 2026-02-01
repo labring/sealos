@@ -2,6 +2,7 @@ import { authSession } from '@/service/backend/auth';
 import { getRegionByUid, makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
+
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
     const kc = await authSession(req.headers);
@@ -15,6 +16,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (!client) return;
     const response = await client.post('/account/v1alpha1/properties');
     const res = response.data;
+    console.log(res.data, 'res');
     return jsonRes(resp, {
       code: 200,
       data: res.data,

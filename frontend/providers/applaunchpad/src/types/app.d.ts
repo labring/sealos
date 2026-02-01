@@ -39,6 +39,10 @@ export type GpuType = {
   manufacturers: string;
   type: string;
   amount: number;
+  // 新增字段用于存储 GPU 资源键
+  resource?: {
+    card: string; // 如 nvidia.com/gpu 或 kunlunxin.com/vxpu
+  };
 };
 
 export interface AppStatusMapType {
@@ -249,8 +253,18 @@ export type ResourceType =
 export type GpuNodeType = {
   'gpu.count': number;
   'gpu.memory': number;
-  'gpu.product': string;
+  'gpu.product': string; // 完整的产品名称，如 "NVIDIA GeForce RTX 3090"
   'gpu.alias': string;
   'gpu.available': number;
   'gpu.used': number;
+  'gpu.ref'?: string; // 新增：关联 alias 的 key，如 "RTX-3090"，用于价格匹配
+  // 新增字段用于支持多厂商 GPU
+  icon?: string;
+  name?: {
+    zh: string;
+    en: string;
+  };
+  resource?: {
+    card: string; // 动态的资源键，如 nvidia.com/gpu 或 kunlunxin.com/vxpu
+  };
 };

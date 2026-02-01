@@ -25,6 +25,7 @@ import {
   FormControl,
   Grid,
   IconButton,
+  Image,
   Input,
   Switch,
   useDisclosure,
@@ -71,7 +72,7 @@ const Form = ({
   onDomainVerified?: (params: { index: number; customDomain: string }) => void;
 }) => {
   if (!formHook) return null;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { formSliderListConfig } = useGlobalStore();
   const { userSourcePrice } = useUserStore();
   const router = useRouter();
@@ -263,28 +264,47 @@ const Form = ({
               label: t('No GPU'),
               value: ''
             },
-            ...userSourcePrice.gpu.map((item) => ({
-              icon: 'nvidia',
-              label: (
-                <Flex>
-                  <Box color={'myGray.900'}>{item.alias}</Box>
-                  <Box mx={3} color={'grayModern.900'}>
-                    |
-                  </Box>
-                  <Box color={'grayModern.900'}>
-                    {t('vm')} : {Math.round(item.vm)}G
-                  </Box>
-                  <Box mx={3} color={'grayModern.900'}>
-                    |
-                  </Box>
-                  <Flex pr={3}>
-                    <Box color={'grayModern.900'}>{t('Inventory')}&ensp;:&ensp;</Box>
-                    <Box color={'#FB7C3C'}>{countGpuInventory(item.type)}</Box>
+            ...userSourcePrice.gpu.map((item) => {
+              // 根据当前语言选择显示名称，向后兼容使用 alias
+              const displayName = item.name
+                ? i18n.language === 'zh'
+                  ? item.name.zh
+                  : item.name.en
+                : item.alias;
+
+              // 判断 icon 是否是 http 链接
+              const iconValue = item.icon || 'nvidia';
+              const isHttpIcon =
+                iconValue.startsWith('http://') || iconValue.startsWith('https://');
+
+              return {
+                label: (
+                  <Flex alignItems={'center'}>
+                    {/* GPU 厂商图标 - 支持 http 链接或 MyIcon */}
+                    {isHttpIcon ? (
+                      <Image src={iconValue} w={'16px'} h={'16px'} mr={2} alt={displayName} />
+                    ) : (
+                      <MyIcon name={iconValue as any} w={'16px'} h={'16px'} mr={2} />
+                    )}
+                    <Box color={'myGray.900'}>{displayName}</Box>
+                    <Box mx={3} color={'grayModern.900'}>
+                      |
+                    </Box>
+                    <Box color={'grayModern.900'}>
+                      {t('vm')} : {Math.round(item.vm)}G
+                    </Box>
+                    <Box mx={3} color={'grayModern.900'}>
+                      |
+                    </Box>
+                    <Flex pr={3}>
+                      <Box color={'grayModern.900'}>{t('Inventory')}&ensp;:&ensp;</Box>
+                      <Box color={'#FB7C3C'}>{countGpuInventory(item.type)}</Box>
+                    </Flex>
                   </Flex>
-                </Flex>
-              ),
-              value: item.type
-            }))
+                ),
+                value: item.type
+              };
+            })
           ]
         : [],
     [countGpuInventory, t, userSourcePrice?.gpu, refresh]
@@ -752,6 +772,14 @@ const Form = ({
                         const inventory = countGpuInventory(type);
                         if (type === '' || (selected && inventory > 0)) {
                           setValue('gpu.type', type);
+                          // 保存完整的 GPU 信息（厂商、资源配置）
+                          if (selected) {
+                            setValue('gpu.manufacturers', selected.manufacturers || 'nvidia');
+                            setValue('gpu.resource', selected.resource);
+                          } else {
+                            setValue('gpu.manufacturers', '');
+                            setValue('gpu.resource', undefined);
+                          }
                           const sliderList = countSliderList();
                           setValue('cpu', sliderList.cpu[1].value);
                           setValue('memory', sliderList.memory[1].value);

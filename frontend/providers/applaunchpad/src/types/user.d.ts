@@ -27,7 +27,23 @@ export type userPriceType = {
   cpu: number;
   memory: number;
   storage: number;
-  gpu?: { alias: string; type: string; price: number; inventory: number; vm: number }[];
+  gpu?: {
+    alias: string;
+    type: string;
+    price: number;
+    inventory: number;
+    vm: number;
+    // 新增字段用于支持多厂商 GPU
+    icon?: string;
+    manufacturers?: string;
+    name?: {
+      zh: string;
+      en: string;
+    };
+    resource?: {
+      card: string; // 动态的资源键，如 nvidia.com/gpu 或 kunlunxin.com/vxpu
+    };
+  }[];
   nodeports: number;
   ephemeralStorage: number;
 };

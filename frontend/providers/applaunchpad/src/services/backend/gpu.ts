@@ -12,7 +12,22 @@ export async function getGpuNode() {
     const { body } = await kc.makeApiClient(CoreV1Api).readNamespacedConfigMap(gpuCrName, gpuCrNS);
     const gpuMap = body?.data?.gpu;
     if (!gpuMap || !body?.data?.alias) return [];
-    const alias = (JSON.parse(body?.data?.alias) || {}) as Record<string, string>;
+
+    // 解析新的 alias ConfigMap 格式，包含 icon, name, resource 等字段
+    const aliasConfig = (JSON.parse(body?.data?.alias) || {}) as Record<
+      string,
+      {
+        default: string;
+        icon?: string;
+        name?: {
+          zh: string;
+          en: string;
+        };
+        resource?: {
+          card: string;
+        };
+      }
+    >;
 
     const parseGpuMap = JSON.parse(gpuMap) as Record<
       string,
@@ -22,6 +37,7 @@ export async function getGpuNode() {
         'gpu.product': string;
         'gpu.available': string;
         'gpu.used': string;
+        'gpu.ref': string; // 新增：关联到 alias 的 key
       }
     >;
 
@@ -32,6 +48,9 @@ export async function getGpuNode() {
     // merge same type gpu
     gpuValues.forEach((item) => {
       const index = gpuList.findIndex((gpu) => gpu['gpu.product'] === item['gpu.product']);
+      // 使用 gpu.ref 从 alias 中获取配置
+      const config = aliasConfig[item['gpu.ref']];
+
       if (index > -1) {
         gpuList[index]['gpu.count'] += Number(item['gpu.count']);
         gpuList[index]['gpu.available'] += Number(item['gpu.available']);
@@ -40,10 +59,15 @@ export async function getGpuNode() {
         gpuList.push({
           ['gpu.count']: +item['gpu.count'],
           ['gpu.memory']: +item['gpu.memory'],
-          ['gpu.product']: item['gpu.product'],
-          ['gpu.alias']: alias[item['gpu.product']] || item['gpu.product'],
+          ['gpu.product']: item['gpu.product'], // 完整的产品名称
+          ['gpu.alias']: config?.default || item['gpu.product'],
           ['gpu.available']: +item['gpu.available'],
-          ['gpu.used']: +item['gpu.used']
+          ['gpu.used']: +item['gpu.used'],
+          ['gpu.ref']: item['gpu.ref'], // 保存 ref 用于价格匹配
+          // 新增字段
+          icon: config?.icon,
+          name: config?.name,
+          resource: config?.resource
         });
       }
     });

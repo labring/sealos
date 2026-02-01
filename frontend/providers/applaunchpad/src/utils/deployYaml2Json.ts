@@ -1,8 +1,6 @@
 import {
   appDeployKey,
   deployPVCResizeKey,
-  gpuNodeSelectorKey,
-  gpuResourceKey,
   maxReplicasKey,
   minReplicasKey,
   ownerReferencesKey,
@@ -15,7 +13,7 @@ import { str2Num, strToBase64 } from '@/utils/tools';
 import type { V1OwnerReference } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
-import { customAlphabet, customRandom } from 'nanoid';
+import { customRandom } from 'nanoid';
 import crypto from 'crypto';
 
 // Create deterministic nanoid based on seed
@@ -95,6 +93,16 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   const localStores = data.storeList.filter((store) => store.storageType !== 'remote');
   const remoteStores = data.storeList.filter((store) => store.storageType === 'remote');
 
+  // GPU annotation - 所有厂商都添加 {manufacturer}.com/use-gputype
+  // NVIDIA: nvidia.com/use-gputype
+  // 昆仑芯: kunlunxin.com/use-gputype
+  const gpuAnnotations =
+    !!data.gpu?.type && data.gpu.manufacturers
+      ? {
+          [`${data.gpu.manufacturers}.com/use-gputype`]: data.gpu.type
+        }
+      : {};
+
   const metadata = {
     name: data.appName,
     annotations: {
@@ -124,6 +132,12 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     labels: {
       app: data.appName,
       restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
+    },
+    annotations: {
+      // 为所有 GPU 添加厂商特定的 annotation
+      // NVIDIA: nvidia.com/use-gputype
+      // 昆仑芯: kunlunxin.com/use-gputype
+      ...gpuAnnotations
     }
   };
   const imagePullSecrets = data.secret.use
@@ -133,6 +147,9 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         }
       ]
     : undefined;
+  // 动态获取 GPU 资源键
+  const gpuResourceKey = data.gpu?.resource?.card || 'nvidia.com/gpu';
+
   const commonContainer = {
     name: data.appName,
     image: `${data.secret.use ? `${data.secret.serverAddress}/` : ''}${data.imageName}`,
@@ -175,7 +192,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         return [data.cmdParam];
       }
     })(),
-    ports: data.networks.map((item, i) => ({
+    ports: data.networks.map((item) => ({
       containerPort: item.port,
       name: item.portName
     })),
@@ -275,14 +292,12 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     }
   }));
 
-  // gpu node selector
+  // GPU 配置
+  // 根据文档，不再使用 nodeSelector 和 runtimeClassName
+  // GPU 类型通过 metadata.annotations 指定
   const gpuMap = !!data.gpu?.type
     ? {
-        restartPolicy: 'Always',
-        runtimeClassName: 'nvidia',
-        nodeSelector: {
-          [gpuNodeSelectorKey]: data.gpu.type
-        }
+        restartPolicy: 'Always'
       }
     : {};
 
@@ -366,7 +381,7 @@ export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReferen
   const openPublicPorts: any[] = [];
   const closedPublicPorts: any[] = [];
 
-  data.networks.forEach((network, i) => {
+  data.networks.forEach((network) => {
     const port = {
       port: str2Num(network.port),
       targetPort: str2Num(network.port),
@@ -461,7 +476,7 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
 
   const result = data.networks
     .filter((item) => item.openPublicDomain && !item.openNodePort)
-    .map((network, i) => {
+    .map((network) => {
       const host = network.customDomain
         ? network.customDomain
         : `${network.publicDomain}.${network.domain}`;

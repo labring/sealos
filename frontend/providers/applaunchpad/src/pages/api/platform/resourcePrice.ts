@@ -24,13 +24,52 @@ export const valuationMap: Record<string, number> = {
   'services.nodeports': 1
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+const MOCK_GPU_NODES = [
+  {
+    'gpu.count': 2,
+    'gpu.memory': 24576,
+    'gpu.product': 'NVIDIA GeForce RTX 3090',
+    'gpu.alias': 'NVIDIA GeForce RTX 3090',
+    'gpu.available': 99,
+    'gpu.used': 0,
+    'gpu.ref': 'RTX-3090',
+    icon: 'nvidia',
+    name: { zh: 'RTX-3090', en: 'RTX-3090' },
+    resource: { card: 'nvidia.com/gpu' }
+  },
+  {
+    'gpu.count': 4,
+    'gpu.memory': 24576,
+    'gpu.product': 'NVIDIA-Tesla P40',
+    'gpu.alias': 'NVIDIA-Tesla P40',
+    'gpu.available': 99,
+    'gpu.used': 2,
+    'gpu.ref': 'Tesla-P40',
+    icon: 'nvidia',
+    name: { zh: 'Tesla-P40', en: 'Tesla-P40' },
+    resource: { card: 'nvidia.com/gpu' }
+  },
+  {
+    'gpu.count': 2,
+    'gpu.memory': 24576,
+    'gpu.product': 'kunlunxin P800',
+    'gpu.alias': 'kunlunxin P800',
+    'gpu.available': 99,
+    'gpu.used': 0,
+    'gpu.ref': 'kunlunxin-P800',
+    icon: 'kunlunxin',
+    name: { zh: '昆仑芯-P800', en: 'kunlunxin-P800' },
+    resource: { card: 'kunlunxin.com/vxpu' }
+  }
+];
+
+export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
   try {
     const gpuEnabled = global.AppConfig.common.gpuEnabled;
-    const [priceResponse, gpuNodes] = await Promise.all([
-      getResourcePrice(),
-      gpuEnabled ? getGpuNode() : Promise.resolve([])
-    ]);
+    let [gpuNodes, priceResponse] = await Promise.all([getGpuNode(), getResourcePrice()]);
+
+    console.log(gpuNodes, 'Mock gpuNodes');
+    console.log(priceResponse, 'priceResponse');
 
     const data: userPriceType = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
@@ -62,16 +101,28 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
 
   // count gpu price by gpuNode and accountPriceConfig
   rawData?.forEach((item) => {
-    if (!item.name.startsWith('gpu')) return;
-    const gpuType = item.name.replace('gpu-', '');
-    const gpuNode = gpuNodes.find((item) => item['gpu.product'] === gpuType);
+    if (!item.name.startsWith('gpu-')) return;
+
+    // 从价格项名称中提取 ref，如 "gpu-RTX-3090" -> "RTX-3090"
+    const refKey = item.name.replace('gpu-', '');
+
+    // 直接使用 gpu.ref 精确匹配
+    const gpuNode = gpuNodes.find((node) => node['gpu.ref'] === refKey);
     if (!gpuNode) return;
+
+    // 根据 icon 字段判断厂商
+    const manufacturers = gpuNode.icon || 'nvidia';
+
     gpuList.push({
       alias: gpuNode['gpu.alias'],
       type: gpuNode['gpu.product'],
       price: (item.unit_price * valuationMap.gpu) / PRICE_SCALE,
       inventory: +gpuNode['gpu.available'],
-      vm: +gpuNode['gpu.memory'] / 1024
+      vm: +gpuNode['gpu.memory'] / 1024,
+      icon: gpuNode.icon,
+      manufacturers: manufacturers,
+      name: gpuNode.name,
+      resource: gpuNode.resource
     });
   });
 
@@ -80,7 +131,6 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
 
 const getResourcePrice = async () => {
   const url = global.AppConfig.launchpad.components.billing.url;
-  console.log(url, 'url');
 
   const res = await fetch(`${url}/account/v1alpha1/properties`, {
     method: 'POST'
