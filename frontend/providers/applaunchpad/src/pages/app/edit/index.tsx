@@ -10,7 +10,9 @@ import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
+import type { V1OwnerReference } from '@kubernetes/client-node';
 import {
+  generateOwnerReference,
   json2ConfigMap,
   json2DeployCr,
   json2HPA,
@@ -22,7 +24,6 @@ import { serviceSideProps } from '@/utils/i18n';
 import { getErrText, patchYamlList } from '@/utils/tools';
 
 import { YamlKindEnum } from '@/utils/adapt';
-import yaml from 'js-yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -268,7 +269,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (data.networks?.[index]) {
           data.networks[index].customDomain = customDomain;
         }
-        const ingressYaml = json2Ingress(data);
+
+        // Get ownerReferences from existing workload
+        let ownerReferences: V1OwnerReference[] | undefined;
+        const workload = crOldYamls.current.find(
+          (item) => item.kind === YamlKindEnum.Deployment || item.kind === YamlKindEnum.StatefulSet
+        );
+        if (workload) {
+          const workloadUid = workload.metadata?.uid;
+          const workloadKind = workload.kind as 'Deployment' | 'StatefulSet';
+          if (workloadUid && workloadKind) {
+            ownerReferences = generateOwnerReference(data.appName, workloadKind, workloadUid);
+          }
+        }
+
+        const ingressYaml = json2Ingress(data, ownerReferences);
         setIsLoading(true);
         postDeployApp([ingressYaml], 'replace')
           .then(() => {
@@ -281,7 +296,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           .finally(() => setIsLoading(false));
       } catch (error) {}
     },
-    [formHook, setIsLoading, toast, t]
+    [formHook, setIsLoading, toast, t, appName]
   );
 
   useQuery(
@@ -429,7 +444,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       if (parsedData.sharedMemory) {
         formHook.setValue('sharedMemory', {
           enabled: parsedData.sharedMemory.enabled || false,
-          sizeLimit: parsedData.sharedMemory.sizeLimit || 64
+          sizeLimit: parsedData.sharedMemory.sizeLimit || 1
         });
       }
     } catch (error) {}

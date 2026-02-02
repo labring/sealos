@@ -21,7 +21,7 @@ export type StorageType = 'local' | 'remote';
 
 export interface SharedMemoryType {
   enabled: boolean;
-  sizeLimit: number; // unit: Mi
+  sizeLimit: number; // unit: Gi
 }
 
 export type DeployKindsType =

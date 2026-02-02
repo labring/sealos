@@ -200,6 +200,20 @@ const Form = ({
     // eslint-disable-next-line
   }, []);
 
+  // Listen to memory changes and adjust sharedMemory limit
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === 'memory' && value.sharedMemory?.enabled) {
+        const memoryInGi = Math.floor((value.memory || 0) / 1024);
+        const currentLimit = value.sharedMemory?.sizeLimit || 1;
+        if (currentLimit > memoryInGi) {
+          setValue('sharedMemory.sizeLimit', Math.max(memoryInGi, 1));
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
+
   // common form label
   const Label = ({
     children,
@@ -900,12 +914,13 @@ const Form = ({
                       </Label>
                       <Switch
                         size={'lg'}
-                        isChecked={getValues('sharedMemory.enabled') || false}
+                        isChecked={watch('sharedMemory.enabled') || false}
                         onChange={(e) => {
                           if (e.target.checked) {
+                            const memoryInGi = Math.floor(watch('memory') / 1024);
                             setValue('sharedMemory', {
                               enabled: true,
-                              sizeLimit: Math.min(getValues('memory'), 512)
+                              sizeLimit: Math.min(memoryInGi, 1)
                             });
                           } else {
                             setValue('sharedMemory', undefined);
@@ -913,7 +928,7 @@ const Form = ({
                         }}
                       />
                     </Flex>
-                    {getValues('sharedMemory.enabled') && (
+                    {watch('sharedMemory.enabled') && (
                       <Flex alignItems={'center'} gap={'12px'}>
                         <Flex alignItems={'center'} gap={'8px'}>
                           <Input
@@ -921,17 +936,18 @@ const Form = ({
                             h={'32px'}
                             type={'number'}
                             bg={'grayModern.50'}
-                            value={getValues('sharedMemory.sizeLimit') || 64}
+                            min={1}
+                            max={Math.floor(watch('memory') / 1024)}
+                            step={1}
+                            value={watch('sharedMemory.sizeLimit') || 1}
                             onChange={(e) => {
-                              const val = parseInt(e.target.value) || 64;
-                              setValue(
-                                'sharedMemory.sizeLimit',
-                                Math.min(val, getValues('memory'))
-                              );
+                              const val = parseInt(e.target.value) || 1;
+                              const maxGi = Math.floor(watch('memory') / 1024);
+                              setValue('sharedMemory.sizeLimit', Math.min(Math.max(val, 1), maxGi));
                             }}
                           />
                           <Box fontSize={'12px'} color={'grayModern.900'}>
-                            Mi
+                            Gi
                           </Box>
                         </Flex>
                         <Flex

@@ -9,6 +9,7 @@ import type { AppPatchPropsType } from '@/types/app';
 import { initK8s } from 'sealos-desktop-sdk/service';
 import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
 import type { V1Service } from '@kubernetes/client-node';
+import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deployYaml2Json';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -364,7 +365,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return item.value;
       })
       .filter((item) => item);
-    await applyYamlList(createYamlList as string[], 'create');
+
+    // Add ownerReferences to newly created resources
+    if (createYamlList.length > 0) {
+      // Get workload UID
+      let workloadUid: string | undefined;
+      let workloadKind: 'Deployment' | 'StatefulSet' | undefined;
+
+      try {
+        // Try to read Deployment first
+        const deployment = await k8sApp.readNamespacedDeployment(appName, namespace);
+        workloadUid = deployment.body.metadata?.uid;
+        workloadKind = 'Deployment';
+      } catch (err: any) {
+        if (err?.body?.code === 404) {
+          // Try StatefulSet
+          try {
+            const statefulSet = await k8sApp.readNamespacedStatefulSet(appName, namespace);
+            workloadUid = statefulSet.body.metadata?.uid;
+            workloadKind = 'StatefulSet';
+          } catch (err2) {
+            warnLog('Could not find workload for ownerReferences', { appName });
+          }
+        }
+      }
+
+      // Add ownerReferences to new resources
+      if (workloadUid && workloadKind) {
+        const ownerReferences = generateOwnerReference(appName, workloadKind, workloadUid);
+        const updatedCreateYamlList = createYamlList.map((yamlStr) => {
+          const resource = yaml.load(yamlStr as string) as any;
+          if (shouldHaveOwnerReference(resource.kind)) {
+            if (!resource.metadata) {
+              resource.metadata = {};
+            }
+            resource.metadata.ownerReferences = ownerReferences;
+            infoLog('Added ownerReferences to new resource', {
+              kind: resource.kind,
+              name: resource.metadata.name
+            });
+          }
+          return yaml.dump(resource);
+        });
+        await applyYamlList(updatedCreateYamlList, 'create');
+      } else {
+        await applyYamlList(createYamlList as string[], 'create');
+      }
+    }
 
     // delete
     await Promise.all(
