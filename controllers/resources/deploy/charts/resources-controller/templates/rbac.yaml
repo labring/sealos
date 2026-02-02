@@ -139,6 +139,18 @@ rules:
       - list
       - watch
   - apiGroups:
+      - ""
+    resources:
+      - events
+      - configmaps
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
       - app.sealos.io
     resources:
       - instances
