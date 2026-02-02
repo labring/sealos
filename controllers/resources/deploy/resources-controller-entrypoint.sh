@@ -105,9 +105,6 @@ cleanup_deployment_env() {
 cleanup_deployment_env
 
 HELM_SET_ARGS=()
-if [ -f "/root/.sealos/cloud/sealos.env" ]; then
-  source /root/.sealos/cloud/sealos.env
-fi
 
 if [ "${RESOURCES_ENV_AUTO_CONFIG_ENABLED}" = "true" ]; then
   varDatabaseMongodbURI=${varDatabaseMongodbURI:-"$(get_cm_value sealos-system sealos-config databaseMongodbURI)"}
