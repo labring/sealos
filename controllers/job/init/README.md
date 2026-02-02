@@ -5,21 +5,37 @@ sealos run 镜像时会在目标节点执行 Kubefile，本镜像通过 Helm 安
 
 ## 必填参数
 
-**无**（但建议至少配置 `PASSWORD_SALT` 以增强安全性）
+**无**
+
+## 默认密码管理规则
+
+当未指定 `ADMIN_PASSWORD` 环境变量时，系统将按以下规则自动处理管理员密码：
+
+1. **优先使用环境变量**：如果指定了 `ADMIN_PASSWORD`，直接使用该密码
+2. **从 ConfigMap 读取**：尝试从 `sealos-system` 命名空间下的 `sealos-cloud-admin` ConfigMap 读取 `PASSWORD` 字段
+3. **自动生成并保存**：如果 ConfigMap 不存在或密码为空，自动生成 16 位随机密码并保存到 ConfigMap
+
+> 查看保存的密码：`kubectl get cm sealos-cloud-admin -n sealos-system -o jsonpath='{.data.PASSWORD}'`
 
 ## 如何运行
 
 ```shell
-# 最简配置（使用默认管理员账号）
-# 建议配置（设置密码盐值）
+# 最简配置（自动生成或从 ConfigMap 读取密码）
+sealos run ghcr.io/labring/sealos-job-init-controller:latest
+
+# 自定义密码
+sealos run ghcr.io/labring/sealos-job-init-controller:latest \
+  --env ADMIN_PASSWORD="MyCustomPassword123"
+
+# 建议配置（设置密码盐值 + 自动密码）
 sealos run ghcr.io/labring/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="your-random-salt-string"
 ```
 
 ## 可选参数
 
+- ADMIN_PASSWORD: 管理员密码，若不指定则自动从 ConfigMap 读取或生成随机密码
 - PASSWORD_SALT: 密码盐值（建议传入以增强安全性）
-- ADMIN_PASSWORD: 管理员密码，默认 `sealos2023`
 - ADMIN_USER_NAME: 管理员用户名，默认 `admin`
 - WORKSPACE_PREFIX: 工作空间前缀，默认 `ns-`
 - DEFAULT_NAMESPACE / RELEASE_NAMESPACE: Helm 安装命名空间，默认 `account-system`
@@ -33,31 +49,38 @@ sealos run ghcr.io/labring/sealos-job-init-controller:latest \
 ## 示例
 
 ```shell
-# 1. 最简配置（使用默认管理员账号 admin/sealos2023）
+# 1. 最简配置（自动生成随机密码并保存到 ConfigMap）
 sealos run ghcr.io/labring/sealos-job-init-controller:latest
 
-# 2. 建议配置（设置密码盐值）
-sealos run ghcr.io/labring/sealos-job-init-controller:latest \
-  --env PASSWORD_SALT="your-random-salt-string"
+# 2. 查看自动生成的密码
+kubectl get cm sealos-cloud-admin -n sealos-system -o jsonpath='{.data.PASSWORD}'
 
-# 3. 自定义管理员账号
+# 3. 使用已保存的密码（从 ConfigMap 读取）
+sealos run ghcr.io/labring/sealos-job-init-controller:latest
+
+# 4. 自定义密码（不使用随机密码）
+sealos run ghcr.io/labring/sealos-job-init-controller:latest \
+  --env ADMIN_PASSWORD="MyStrongPassword123" \
+  --env PASSWORD_SALT="your-salt"
+
+# 5. 自定义管理员账号和密码
 sealos run ghcr.io/labring/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="your-salt" \
   --env ADMIN_PASSWORD="MyStrongPassword123" \
   --env ADMIN_USER_NAME="admin"
 
-# 4. 自定义命名空间和工作空间前缀
+# 6. 自定义命名空间和工作空间前缀
 sealos run ghcr.io/labring/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="your-salt" \
   --env DEFAULT_NAMESPACE="my-account-system" \
   --env WORKSPACE_PREFIX="workspace-"
 
-# 5. 使用 HELM_OPTS 自定义 Job 配置
+# 7. 使用 HELM_OPTS 自定义 Job 配置
 sealos run ghcr.io/labring/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="your-salt" \
   --env HELM_OPTS="--set ttlSecondsAfterFinished=3600 --set backoffLimit=2"
 
-# 6. 完整配置示例
+# 8. 完整配置示例
 sealos run ghcr.io/labring/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="my-secure-random-salt-12345" \
   --env ADMIN_PASSWORD="Admin@2024" \
