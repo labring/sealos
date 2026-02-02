@@ -8,6 +8,11 @@ import { RequestSchema } from './schema';
 import { devboxKey } from '@/constants/devbox';
 import { PatchUtils, V1Ingress } from '@kubernetes/client-node';
 import { nanoid, str2Num } from '@/utils/tools';
+import {
+  buildDevboxOwnerReference,
+  ensureDevboxOwnerReferences,
+  markDevboxOwnerReferencesReady
+} from '@/services/backend/ownerReferences';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +79,7 @@ export async function POST(req: NextRequest) {
       devboxName
     );
     const devbox = devboxResponse.body as any;
+    const ownerReference = buildDevboxOwnerReference(devbox);
     const existingExtraPorts = devbox?.spec?.network?.extraPorts || [];
     const existingAppPorts = devbox?.spec?.config?.appPorts || [];
 
@@ -167,9 +173,25 @@ export async function POST(req: NextRequest) {
       { headers: { 'Content-Type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
     );
 
-    const ingressYaml = json2Ingress({ name: devboxName, networks: [network] }, INGRESS_SECRET);
+    const ingressYaml = json2Ingress(
+      { name: devboxName, networks: [network] },
+      INGRESS_SECRET,
+      ownerReference || undefined
+    );
     if (ingressYaml) {
       await applyYamlList([ingressYaml], existingIngress ? 'replace' : 'create');
+    }
+
+    const ownerReferencesReady = await ensureDevboxOwnerReferences({
+      devboxName,
+      namespace,
+      ownerReference,
+      k8sCore,
+      k8sNetworkingApp,
+      k8sCustomObjects
+    });
+    if (ownerReferencesReady) {
+      await markDevboxOwnerReferencesReady(k8sCustomObjects, namespace, devboxName, ownerReference);
     }
 
     return jsonRes({

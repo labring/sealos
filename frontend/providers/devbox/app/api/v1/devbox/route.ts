@@ -14,6 +14,11 @@ import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
 import { adaptDevboxDetailV2 } from '@/utils/adapt';
 import { parseTemplateConfig } from '@/utils/tools';
+import {
+  buildDevboxOwnerReference,
+  ensureDevboxOwnerReferences,
+  markDevboxOwnerReferencesReady
+} from '@/services/backend/ownerReferences';
 
 export const dynamic = 'force-dynamic';
 
@@ -529,6 +534,24 @@ export async function POST(req: NextRequest) {
         return [];
       })()
     ]);
+
+    const ownerReference = buildDevboxOwnerReference(devboxBody);
+    const ownerReferencesReady = await ensureDevboxOwnerReferences({
+      devboxName: devboxForm.name,
+      namespace,
+      ownerReference,
+      k8sCore,
+      k8sNetworkingApp,
+      k8sCustomObjects
+    });
+    if (ownerReferencesReady) {
+      await markDevboxOwnerReferencesReady(
+        k8sCustomObjects,
+        namespace,
+        devboxForm.name,
+        ownerReference
+      );
+    }
 
     const resp = [devboxBody, [], template, [], []] as [
       KBDevboxTypeV2,
