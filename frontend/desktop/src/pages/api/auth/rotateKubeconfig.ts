@@ -6,10 +6,6 @@ import * as k8s from '@kubernetes/client-node';
 import { k8sRFC3339Time } from '@/utils/format';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 
-/**
- * Rotate kubeconfig by setting kubeConfigRotateAt timestamp
- * This triggers the backend to generate a new kubeconfig
- */
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const regionUser = await verifyAccessToken(req.headers);
@@ -43,11 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         previousKubeconfig = preBody.status.kubeConfig as string;
       }
     } catch (err) {
-      // Non-fatal: we can still poll for presence/change after patch.
       console.warn('Failed to read previous kubeconfig before rotation:', err);
     }
 
-    // Patch user spec with kubeConfigRotateAt to trigger rotation
     const patches = [
       {
         op: 'add',
@@ -72,7 +66,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     );
 
-    // Wait for the new kubeconfig to be generated
     const newKubeconfig = await watchKubeconfigUpdate(
       adminKc,
       group,
@@ -86,7 +79,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('Failed to get updated kubeconfig');
     }
 
-    // Switch namespace to user's workspace
     const kubeconfig = switchKubeconfigNamespace(newKubeconfig, regionUser.workspaceId);
 
     return jsonRes(res, {
@@ -105,9 +97,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-/**
- * Watch for kubeconfig update after rotation
- */
 async function watchKubeconfigUpdate(
   kc: k8s.KubeConfig,
   group: string,
@@ -115,8 +104,8 @@ async function watchKubeconfigUpdate(
   plural: string,
   name: string,
   previousKubeconfig?: string,
-  interval = 1000,
-  timeout = 45000
+  interval = 5000,
+  timeout = 60000
 ): Promise<string | null> {
   let lastSeenPhase: string | undefined;
   let lastSeenMessage: string | undefined;
@@ -142,7 +131,6 @@ async function watchKubeconfigUpdate(
       const currentKubeconfig = body?.status?.kubeConfig as string | undefined;
       if (currentKubeconfig) {
         if (previousKubeconfig === undefined) {
-          // No baseline to compare, return the first kubeconfig we see.
           return currentKubeconfig;
         }
         if (currentKubeconfig !== previousKubeconfig) {
