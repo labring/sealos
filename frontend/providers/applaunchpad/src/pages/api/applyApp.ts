@@ -27,7 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       allResources.push(...resources);
     });
 
-    console.log(allResources, 'allResources');
     const mainWorkloadIndex = allResources.findIndex(
       (resource) => resource.kind === 'Deployment' || resource.kind === 'StatefulSet'
     );

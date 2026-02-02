@@ -10,6 +10,7 @@ import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
+import type { V1OwnerReference } from '@kubernetes/client-node';
 import {
   generateOwnerReference,
   json2ConfigMap,
@@ -23,7 +24,6 @@ import { serviceSideProps } from '@/utils/i18n';
 import { getErrText, patchYamlList } from '@/utils/tools';
 
 import { YamlKindEnum } from '@/utils/adapt';
-import yaml from 'js-yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -271,13 +271,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         }
 
         // Get ownerReferences from existing workload
-        let ownerReferences: any[] | undefined;
+        let ownerReferences: V1OwnerReference[] | undefined;
         const workload = crOldYamls.current.find(
           (item) => item.kind === YamlKindEnum.Deployment || item.kind === YamlKindEnum.StatefulSet
         );
         if (workload) {
-          const workloadObj = yaml.load(workload.value) as any;
-          const workloadUid = workloadObj?.metadata?.uid;
+          const workloadUid = workload.metadata?.uid;
           const workloadKind = workload.kind as 'Deployment' | 'StatefulSet';
           if (workloadUid && workloadKind) {
             ownerReferences = generateOwnerReference(data.appName, workloadKind, workloadUid);

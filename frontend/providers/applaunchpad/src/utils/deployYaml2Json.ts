@@ -12,6 +12,7 @@ import {
 import { SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
 import { str2Num, strToBase64 } from '@/utils/tools';
+import type { V1OwnerReference } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { customAlphabet, customRandom } from 'nanoid';
@@ -34,7 +35,7 @@ export const generateOwnerReference = (
   name: string,
   kind: 'Deployment' | 'StatefulSet',
   uid: string
-) => {
+): V1OwnerReference[] => {
   return [
     {
       apiVersion: 'apps/v1',
@@ -361,7 +362,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   return yaml.dump(template[type]);
 };
 
-export const json2Service = (data: AppEditType, ownerReferences?: any[]) => {
+export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
   const openPublicPorts: any[] = [];
   const closedPublicPorts: any[] = [];
 
@@ -434,7 +435,7 @@ export const json2Service = (data: AppEditType, ownerReferences?: any[]) => {
     : `${clusterIpYaml}${nodePortYaml}`;
 };
 
-export const json2Ingress = (data: AppEditType, ownerReferences?: any[]) => {
+export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
   // different protocol annotations
   const map = {
     HTTP: {
@@ -586,7 +587,7 @@ export const json2IngressObjects = (data: AppEditType): object[] => {
   return yamlString2Objects(json2Ingress(data));
 };
 
-export const json2ConfigMap = (data: AppEditType, ownerReferences?: any[]) => {
+export const json2ConfigMap = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
   if (data.configMapList.length === 0) return '';
 
   const configFile: { [key: string]: string } = {};
@@ -607,7 +608,7 @@ export const json2ConfigMap = (data: AppEditType, ownerReferences?: any[]) => {
   return yaml.dump(template);
 };
 
-export const json2Secret = (data: AppEditType, ownerReferences?: any[]) => {
+export const json2Secret = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
   const auth = strToBase64(`${data.secret.username}:${data.secret.password}`);
   const dockerconfigjson = strToBase64(
     JSON.stringify({
@@ -635,7 +636,7 @@ export const json2Secret = (data: AppEditType, ownerReferences?: any[]) => {
   };
   return yaml.dump(template);
 };
-export const json2HPA = (data: AppEditType, ownerReferences?: any[]) => {
+export const json2HPA = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
   const isDeployment = data.storeList?.length === 0;
 
   const template = {
