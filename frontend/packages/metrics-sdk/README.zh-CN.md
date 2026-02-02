@@ -69,7 +69,8 @@ const cpuData = await client.launchpad.query({
 new MetricsClient({
   kubeconfig: string,
   metricsURL: string,
-  minioInstance: string
+  minioInstance: string,
+  whitelistKubernetesHosts: string[]
 });
 ```
 
@@ -78,6 +79,7 @@ new MetricsClient({
   `http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus`
   也可通过环境变量 `METRICS_URL` 覆盖，最好通过构造函数传入，避免环境变量污染，而且最好传一下地址，这样比环境变量或者默认值更清晰。
 - `minioInstance`：MinIO 指标的 `instance` 标签值；不传则读取 `OBJECT_STORAGE_INSTANCE`环境变量。minio 项目必填项，最好通过构造函数传入，避免环境变量污染。
+- `whitelistKubernetesHosts`：可选，白名单 Kubernetes API Server 地址列表；优先级高于环境变量 `WHITELIST_KUBERNETES_HOSTS`。本地开发环境建议通过此参数显式传入。
 
 ## 时间范围与查询方式
 
@@ -278,14 +280,27 @@ SDK 内部会执行以下校验流程：
 
 若无法获取，会抛出：`unable to get the sealos host`。
 
-**本地开发建议（其实是必须）：**
+**本地开发配置（其实是必须）：**
+
+**方式一：SDK 配置（推荐）**
+
+```typescript
+const client = new MetricsClient({
+  kubeconfig: kubeconfigString,
+  whitelistKubernetesHosts: ['https://YOUR-APISERVER:6443']
+});
+```
+
+**方式二：环境变量（fallback）**
 
 ```bash
 export WHITELIST_KUBERNETES_HOSTS="https://YOUR-APISERVER:6443"
 ```
 
+> **优先级**：SDK 配置优先级高于环境变量。建议使用 SDK 配置，更清晰明确。
+
 这样 SDK 将直接使用 kubeconfig 中的 `server`，避免被强制改写。
-这里可以传入多个，通过逗号隔开即可。
+白名单可以传入多个地址（SDK 配置使用数组，环境变量通过逗号隔开）。
 
 ## 环境变量
 
@@ -303,6 +318,7 @@ KUBERNETES_SERVICE_HOST=10.0.0.1
 KUBERNETES_SERVICE_PORT=6443
 
 # Whitelist K8s hosts (可选，开发环境必选)
+# 注意：SDK 配置的 whitelistKubernetesHosts 优先级高于此环境变量
 WHITELIST_KUBERNETES_HOSTS=https://10.0.0.1:6443,https://kubernetes.default.svc
 ```
 

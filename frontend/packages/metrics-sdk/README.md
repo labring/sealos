@@ -243,6 +243,7 @@ KUBERNETES_SERVICE_HOST=10.0.0.1
 KUBERNETES_SERVICE_PORT=6443
 
 # Whitelist K8s hosts (optional, comma-separated)
+# Note: SDK config (whitelistKubernetesHosts) takes precedence over this env var
 WHITELIST_KUBERNETES_HOSTS=https://10.0.0.1:6443,https://kubernetes.default.svc
 ```
 
@@ -251,9 +252,22 @@ WHITELIST_KUBERNETES_HOSTS=https://10.0.0.1:6443,https://kubernetes.default.svc
 If your dev environment is not running inside the Kubernetes cluster, you can allow the SDK to
 use the `server` from your kubeconfig by whitelisting it. This avoids the in-cluster host override.
 
+**Option 1: SDK Configuration (Recommended)**
+
+```typescript
+const client = new MetricsClient({
+  kubeconfig: kubeconfigString,
+  whitelistKubernetesHosts: ['https://YOUR-APISERVER:6443']
+});
+```
+
+**Option 2: Environment Variable (Fallback)**
+
 ```bash
 export WHITELIST_KUBERNETES_HOSTS="https://YOUR-APISERVER:6443"
 ```
+
+> **Priority**: SDK config takes precedence over environment variable. Use SDK config when possible for better clarity.
 
 Tip: Use this when your kubeconfig points to a reachable API server (VPN/localhost/port‑forward).
 
@@ -263,7 +277,8 @@ Tip: Use this when your kubeconfig points to a reachable API server (VPN/localho
 const client = new MetricsClient({
   kubeconfig: kubeconfigString,
   metricsURL: 'http://custom-metrics:8429',
-  minioInstance: 'custom-minio-instance'
+  minioInstance: 'custom-minio-instance',
+  whitelistKubernetesHosts: ['https://k8s.example.com:6443']
 });
 ```
 
@@ -316,6 +331,7 @@ interface MetricsClientConfig {
   kubeconfig: string;
   metricsURL?: string;
   minioInstance?: string;
+  whitelistKubernetesHosts?: string[];
 }
 ```
 

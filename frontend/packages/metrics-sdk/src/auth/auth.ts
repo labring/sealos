@@ -10,12 +10,14 @@ export class AuthService {
   private kubeConfig?: k8s.KubeConfig;
   private whitelistKubernetesHosts: string[];
 
-  constructor(kubeconfig: string) {
+  constructor(kubeconfig: string, whitelistKubernetesHosts?: string[]) {
     this.kubeconfig = kubeconfig;
-    this.whitelistKubernetesHosts = (process.env.WHITELIST_KUBERNETES_HOSTS || '')
-      .split(',')
-      .map((host) => host.trim())
-      .filter(Boolean);
+    this.whitelistKubernetesHosts =
+      whitelistKubernetesHosts ||
+      (process.env.WHITELIST_KUBERNETES_HOSTS || '')
+        .split(',')
+        .map((host) => host.trim())
+        .filter(Boolean);
   }
 
   resolveNamespace(namespace?: string): string {
