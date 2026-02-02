@@ -60,7 +60,8 @@ export const dbTypeMap = {
   },
   [DBTypeEnum.clickhouse]: {
     ...base,
-    connectKey: 'clickhouse'
+    connectKey: 'clickhouse',
+    passwordKey: 'admin-password'
   }
 };
 
@@ -131,11 +132,11 @@ export async function fetchDBSecret(
       }
       const secret = res.body;
 
-      // For backup secrets, we might need different password keys for some database types
       let passwordKey = dbTypeMap[dbType].passwordKey;
+
       if (isBackup) {
-        // Backup secrets might use 'admin-password' instead of 'password' for some types
-        if (dbType === DBTypeEnum.clickhouse || dbType === DBTypeEnum.kafka) {
+        // ! Backup secrets might use 'admin-password' instead of 'password' for some types
+        if (dbType === DBTypeEnum.kafka) {
           passwordKey = 'admin-password';
         }
       }
@@ -153,7 +154,12 @@ export async function fetchDBSecret(
         secretNameToTry
       );
 
-      return { username, password, secret };
+      return {
+        // ! Username override for clickhouse
+        username: dbType === 'clickhouse' ? 'default' : username,
+        password,
+        secret
+      };
     } catch (error) {
       throw error;
     }
