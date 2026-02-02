@@ -116,7 +116,6 @@ export default function Callback() {
               const handleLoginRedirect = async () => {
                 const appState = useAppStore.getState();
                 if (appState.autoDeployTemplate && appState.autoDeployTemplateForm) {
-                  console.log('[Callback] Found saved template in store, redirecting to /oauth');
                   const params = new URLSearchParams({
                     templateName: appState.autoDeployTemplate,
                     templateForm: JSON.stringify(appState.autoDeployTemplateForm)

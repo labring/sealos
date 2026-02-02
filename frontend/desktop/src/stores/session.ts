@@ -112,7 +112,6 @@ const useSessionStore = create<SessionState>()(
         // Also sets state.token so API requests (getRegionToken, etc.) can use it
         set({ globalToken: token, token: token });
         if (typeof window !== 'undefined') {
-          console.log('[SessionStore] Setting global token, state.token, and cookie');
           setSharedAuthCookie(token);
         }
       },
