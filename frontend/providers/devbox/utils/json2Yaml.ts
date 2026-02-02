@@ -124,12 +124,19 @@ export const json2DevboxV2 = (
           protocol: 'TCP',
           targetPort: str2Num(item.port)
         }));
+        const draftAny = draft as any;
         if (gpuConfigAnnotation) {
-          const draftAny = draft as any;
           draftAny.annotations = {
             ...(draftAny.annotations || {}),
             ...gpuConfigAnnotation
           };
+        } else if (draftAny.annotations?.[gpuTypeAnnotationKey]) {
+          // Remove GPU annotation when GPU is not used
+          delete draftAny.annotations[gpuTypeAnnotationKey];
+          // If annotations becomes empty, remove it completely
+          if (Object.keys(draftAny.annotations).length === 0) {
+            delete draftAny.annotations;
+          }
         }
 
         // Clear user-configurable fields to rebuild from form data

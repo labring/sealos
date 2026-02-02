@@ -105,7 +105,7 @@ export default function Gpu({
                   <span className="text-sm text-zinc-900">
                     {t('Inventory')}:{' '}
                     <span className="text-yellow-600">
-                      {selectedGpu.available}/{selectedGpu.count}
+                      {countGpuInventory(selectedGpuType!)}/{selectedGpu.count}
                     </span>
                   </span>
                 </div>
@@ -144,7 +144,7 @@ export default function Gpu({
                     <span className="text-sm text-zinc-900">
                       {t('Inventory')}:{' '}
                       <span className="text-yellow-600">
-                        {item.available}/{item.count}
+                        {available}/{item.count}
                       </span>
                     </span>
                   </div>

@@ -134,8 +134,9 @@ const DevboxCreatePage = () => {
   const countGpuInventory = useCallback(
     (type?: string) => {
       if (!type) return 0;
-      const available =
-        sourcePrice?.gpu?.find((item) => item.annotationType === type)?.available || 0;
+      const gpuItem = sourcePrice?.gpu?.find((item) => item.annotationType === type);
+      const available = gpuItem?.available || 0;
+      const total = gpuItem?.count || 0;
 
       if (!isEdit) {
         return available;
@@ -146,7 +147,11 @@ const DevboxCreatePage = () => {
         return available;
       }
 
-      return available + (originalGpu.amount || 0);
+      const calculatedAvailable = available + (originalGpu.amount || 0);
+
+      // prevent calculated available from exceeding total inventory
+      // this handles cases where backend's available already includes current devbox's resources
+      return Math.min(calculatedAvailable, total);
     },
     [isEdit, sourcePrice?.gpu]
   );
@@ -180,7 +185,6 @@ const DevboxCreatePage = () => {
     },
     {
       onSuccess(res) {
-        console.log('res', res);
         if (!res) {
           return;
         }
@@ -234,11 +238,13 @@ const DevboxCreatePage = () => {
           // prevent empty yamlList
           return toast.warning(t('submit_form_error'));
         }
+
         const patch = patchYamlList({
           parsedOldYamlList: parsedOldYamlList,
           parsedNewYamlList: parsedNewYamlList,
           originalYamlList: crOldYamls.current
         });
+
         await updateDevbox({
           patch,
           devboxName: formData.name

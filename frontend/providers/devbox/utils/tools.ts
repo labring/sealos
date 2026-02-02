@@ -6,7 +6,7 @@ import duration from 'dayjs/plugin/duration';
 import * as jsonpatch from 'fast-json-patch';
 import { useTranslations } from 'next-intl';
 
-import { YamlKindEnum } from '@/constants/devbox';
+import { YamlKindEnum, gpuTypeAnnotationKey } from '@/constants/devbox';
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox';
 
 dayjs.extend(duration);
@@ -51,7 +51,6 @@ export const memoryFormatToMi = (memory = '0') => {
   } else if (/Ti/gi.test(memory)) {
     value = value * 1024 * 1024;
   } else {
-    console.log('Invalid memory value');
     value = 0;
   }
 
@@ -74,7 +73,6 @@ export const storageFormatToMi = (storage = '0') => {
   } else if (/Ti/gi.test(storage)) {
     value = value * 1024 * 1024;
   } else {
-    console.log('Invalid storage value');
     value = 0;
   }
 
@@ -158,7 +156,6 @@ export const getErrText = (err: any, def = '') => {
     }
   }
 
-  msg && console.log('error =>', msg);
   return msg;
 };
 
@@ -172,7 +169,7 @@ export const patchYamlList = ({
 }: {
   parsedOldYamlList: string[];
   parsedNewYamlList: string[];
-  originalYamlList: DevboxKindsType[];
+  originalYamlList: DevboxKindsType[] | { filename: string; value: string }[];
 }) => {
   const oldFormJsonList = parsedOldYamlList
     .map((item) => yaml.loadAll(item))
@@ -181,6 +178,19 @@ export const patchYamlList = ({
   const newFormJsonList = parsedNewYamlList
     .map((item) => yaml.loadAll(item))
     .flat() as DevboxKindsType[];
+
+  // Convert originalYamlList to JSON objects if needed
+  const originalJsonList = (() => {
+    if (originalYamlList.length === 0) return [];
+    const first = originalYamlList[0];
+    // Check if it's { filename, value } format
+    if ('filename' in first && 'value' in first) {
+      return (originalYamlList as { filename: string; value: string }[])
+        .map((item) => yaml.loadAll(item.value))
+        .flat() as DevboxKindsType[];
+    }
+    return originalYamlList as DevboxKindsType[];
+  })();
 
   const actions: DevboxPatchPropsType = [];
 
@@ -216,7 +226,7 @@ export const patchYamlList = ({
       const actionsJson = (() => {
         try {
           /* find cr json */
-          let crOldYamlJson = originalYamlList.find(
+          let crOldYamlJson = originalJsonList.find(
             (item) =>
               item.kind === oldFormJson?.kind &&
               item?.metadata?.name === oldFormJson?.metadata?.name
@@ -253,6 +263,63 @@ export const patchYamlList = ({
             .filter((op): op is jsonpatch.Operation => op !== null);
 
           const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument;
+
+          // Handle remove operations for spec fields (e.g., GPU removal)
+          // JSON Merge Patch requires explicit null to delete fields
+          _patchRes.forEach((op) => {
+            if (op.op === 'remove') {
+              // Handle removal of entire annotations object (when GPU was the only annotation)
+              if (op.path === '/spec/config/annotations' && oldFormJson.kind === YamlKindEnum.Devbox) {
+                const oldAnnotations = (oldFormJson as any)?.spec?.config?.annotations;
+                if (oldAnnotations?.[gpuTypeAnnotationKey]) {
+                  // GPU annotation existed, set it to null explicitly
+                  if (!(patchResYamlJson as any).spec.config.annotations) {
+                    (patchResYamlJson as any).spec.config.annotations = {};
+                  }
+                  (patchResYamlJson as any).spec.config.annotations[gpuTypeAnnotationKey] = null;
+                }
+              } else if (
+                op.path.startsWith('/spec/resource/') ||
+                op.path.startsWith('/spec/config/annotations/')
+              ) {
+                // Handle removal of specific fields
+                const fieldPath = op.path.split('/');
+                let target: any = patchResYamlJson;
+                for (let i = 1; i < fieldPath.length - 1; i++) {
+                  if (target[fieldPath[i]] === undefined) {
+                    return;
+                  }
+                  target = target[fieldPath[i]];
+                }
+                // Unescape JSON Pointer tokens: ~1 -> /, ~0 -> ~
+                let fieldName = fieldPath[fieldPath.length - 1];
+                if (fieldName) {
+                  fieldName = fieldName.replace(/~1/g, '/').replace(/~0/g, '~');
+                  target[fieldName] = null;
+                }
+              }
+            } else if (
+              op.op === 'replace' &&
+              op.path === '/spec/config/annotations' &&
+              oldFormJson.kind === YamlKindEnum.Devbox
+            ) {
+              // When removing GPU, annotations might become empty object
+              // Check if GPU annotation was removed
+              const oldAnnotations = (oldFormJson as any)?.spec?.config?.annotations;
+              const newAnnotations = (op as any).value;
+              if (
+                oldAnnotations &&
+                oldAnnotations[gpuTypeAnnotationKey] &&
+                (!newAnnotations || !newAnnotations[gpuTypeAnnotationKey])
+              ) {
+                // GPU annotation was removed, set it to null explicitly
+                if (!(patchResYamlJson as any).spec.config.annotations) {
+                  (patchResYamlJson as any).spec.config.annotations = {};
+                }
+                (patchResYamlJson as any).spec.config.annotations[gpuTypeAnnotationKey] = null;
+              }
+            }
+          });
 
           // delete invalid field
           // @ts-ignore
