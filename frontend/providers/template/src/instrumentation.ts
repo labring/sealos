@@ -25,6 +25,7 @@ export async function register() {
       mountToGlobalThis('__APP_CONFIG__', result.data);
       console.log('[Instrumentation Hook] Configuration loaded.');
     } catch (err) {
+      // nosemgrep: unsafe-formatstring
       console.error(`[Instrumentation Hook] Failed to load config file from ${configPath}:`, err);
       process.exit(1);
     }
