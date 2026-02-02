@@ -21,7 +21,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    // Parse all resources from YAML list
     const allResources: any[] = [];
     yamlList.forEach((yamlStr) => {
       const resources = yaml.loadAll(yamlStr).filter((item) => item);
@@ -29,13 +28,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     console.log(allResources, 'allResources');
-    // Separate main workload (Deployment or StatefulSet) from dependent resources
     const mainWorkloadIndex = allResources.findIndex(
       (resource) => resource.kind === 'Deployment' || resource.kind === 'StatefulSet'
     );
 
     if (mainWorkloadIndex === -1) {
-      // No main workload found, use legacy flow
       const applyRes = await applyYamlList(yamlList, mode);
       jsonRes(res, { data: applyRes.map((item) => item.kind) });
       return;
@@ -44,12 +41,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const mainWorkload = allResources[mainWorkloadIndex];
     const dependentResources = allResources.filter((_, index) => index !== mainWorkloadIndex);
 
-    // Phase 1: Create main workload first
     const mainWorkloadYaml = yaml.dump(mainWorkload);
 
     await applyYamlList([mainWorkloadYaml], mode);
 
-    // Phase 2: Get UID from created workload
     let workloadUid: string;
     try {
       if (mainWorkload.kind === 'Deployment') {
@@ -74,7 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('Workload UID is empty');
     }
 
-    // Phase 3: Add ownerReferences to dependent resources
     const ownerReferences = generateOwnerReference(
       mainWorkload.metadata.name,
       mainWorkload.kind,
@@ -90,7 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     });
 
-    // Phase 4: Create dependent resources
     if (dependentResources.length > 0) {
       const dependentYamlList = dependentResources.map((resource) => yaml.dump(resource));
       await applyYamlList(dependentYamlList, mode);
