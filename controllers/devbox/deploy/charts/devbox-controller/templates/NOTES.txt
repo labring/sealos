@@ -1,0 +1,28 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+The Devbox Controller is running as a DaemonSet on nodes with label 'devbox.sealos.io/node'.
+
+To check the DaemonSet status:
+
+  $ kubectl get daemonset {{ include "devbox.fullname" . }}-controller-manager -n {{ .Release.Namespace }}
+
+To check the running pods:
+
+  $ kubectl get pods -n {{ .Release.Namespace }} -l control-plane=controller-manager
+
+To view the logs:
+
+  $ kubectl logs -n {{ .Release.Namespace }} -l control-plane=controller-manager --tail=100
+
+To learn more about the release:
+
+  $ helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+  $ helm get all {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+IMPORTANT: The controller runs with privileged access and requires nodes to be labeled:
+  
+  $ kubectl label nodes <node-name> devbox.sealos.io/node=
+
+The Devbox Controller has been deployed successfully!

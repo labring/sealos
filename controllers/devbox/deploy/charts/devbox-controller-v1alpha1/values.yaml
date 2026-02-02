@@ -1,0 +1,91 @@
+# Default values for devbox controller v1alpha1 helm chart.
+
+replicaCount: 2
+
+image: ghcr.io/labring/sealos-devbox-controller:latest
+imagePullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "devbox"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "controller-manager"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - "ALL"
+
+# 资源限制
+resources:
+  limits:
+    cpu: 1500m
+    memory: 2000Mi
+  requests:
+    cpu: 100m
+    memory: 640Mi
+
+# 环境变量配置
+env:
+  registryAddr: "sealos.hub:5000"
+  registryUser: "admin"
+  registryPassword: "passw0rd"
+
+# 额外的命令行参数
+extraArgs:
+  - --health-probe-bind-address=:8081
+
+# 额外的环境变量
+extraEnv: []
+  # - name: CUSTOM_VAR
+  #   value: "custom-value"
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# Affinity 配置
+affinity: {}
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #     - matchExpressions:
+  #       - key: kubernetes.io/arch
+  #         operator: In
+  #         values:
+  #         - amd64
+  #         - arm64
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Termination grace period
+terminationGracePeriodSeconds: 10
+
+# Revision history limit
+revisionHistoryLimit: 3
+
