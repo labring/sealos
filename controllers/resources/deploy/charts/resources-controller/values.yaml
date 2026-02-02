@@ -1,0 +1,74 @@
+# Default values for resources controller helm chart.
+
+replicaCount: 1
+
+image: ghcr.io/labring/sealos-resources-controller:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "resources"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "resources-controller-manager"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+
+service:
+  metrics:
+    port: 8443
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1280Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+secret:
+  name: "mongo-secret"
+  mongoURI: "mongodb://mongo:27017/resources"
+  trafficMongoURI: "mongodb://mongo:27017/traffic"
+  trafficsServiceConnectAddress: ""
+
+extraEnv: []
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+metrics:
+  enabled: false
+  certPath: /tmp/k8s-metrics-server/metrics-certs
+  secretName: metrics-server-cert
+
+volumes: []
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

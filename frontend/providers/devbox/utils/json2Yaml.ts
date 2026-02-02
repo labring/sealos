@@ -298,9 +298,38 @@ export const json2DevboxRelease = (data: {
   return yaml.dump(json);
 };
 
+export type OwnerReference = {
+  apiVersion: string;
+  kind: string;
+  name: string;
+  uid: string;
+  controller?: boolean;
+  blockOwnerDeletion?: boolean;
+};
+
+const normalizeOwnerReference = (ownerReference: OwnerReference): OwnerReference => ({
+  apiVersion: ownerReference.apiVersion,
+  kind: ownerReference.kind,
+  name: ownerReference.name,
+  uid: ownerReference.uid,
+  controller: ownerReference.controller ?? true,
+  blockOwnerDeletion: ownerReference.blockOwnerDeletion ?? false
+});
+
+const attachOwnerReference = (metadata: any, ownerReference?: OwnerReference) => {
+  if (!ownerReference) {
+    return metadata;
+  }
+  return {
+    ...metadata,
+    ownerReferences: [normalizeOwnerReference(ownerReference)]
+  };
+};
+
 export const json2Ingress = (
   data: Pick<DevboxEditTypeV2, 'name' | 'networks'>,
-  ingressSecret: string
+  ingressSecret: string,
+  ownerReference?: OwnerReference
 ) => {
   // different protocol annotations
   const map = {
@@ -336,16 +365,21 @@ export const json2Ingress = (
         apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
         metadata: {
-          name: networkName,
-          labels: {
-            [devboxKey]: data.name,
-            [publicDomainKey]: network.publicDomain
-          },
-          annotations: {
-            'kubernetes.io/ingress.class': 'nginx',
-            'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            ...map[(network.protocol as ProtocolType) || 'HTTP']
-          }
+          ...attachOwnerReference(
+            {
+              name: networkName,
+              labels: {
+                [devboxKey]: data.name,
+                [publicDomainKey]: network.publicDomain
+              },
+              annotations: {
+                'kubernetes.io/ingress.class': 'nginx',
+                'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
+                ...map[(network.protocol as ProtocolType) || 'HTTP']
+              }
+            },
+            ownerReference
+          )
         },
         spec: {
           rules: [
@@ -381,10 +415,15 @@ export const json2Ingress = (
         apiVersion: 'cert-manager.io/v1',
         kind: 'Issuer',
         metadata: {
-          name: networkName,
-          labels: {
-            [devboxKey]: data.name
-          }
+          ...attachOwnerReference(
+            {
+              name: networkName,
+              labels: {
+                [devboxKey]: data.name
+              }
+            },
+            ownerReference
+          )
         },
         spec: {
           acme: {
@@ -410,10 +449,15 @@ export const json2Ingress = (
         apiVersion: 'cert-manager.io/v1',
         kind: 'Certificate',
         metadata: {
-          name: networkName,
-          labels: {
-            [devboxKey]: data.name
-          }
+          ...attachOwnerReference(
+            {
+              name: networkName,
+              labels: {
+                [devboxKey]: data.name
+              }
+            },
+            ownerReference
+          )
         },
         spec: {
           secretName,
@@ -434,7 +478,10 @@ export const json2Ingress = (
 
   return result.join('\n---\n');
 };
-export const json2Service = (data: Pick<DevboxEditTypeV2, 'name' | 'networks'>) => {
+export const json2Service = (
+  data: Pick<DevboxEditTypeV2, 'name' | 'networks'>,
+  ownerReference?: OwnerReference
+) => {
   if (data.networks.length === 0) {
     return '';
   }
@@ -442,10 +489,15 @@ export const json2Service = (data: Pick<DevboxEditTypeV2, 'name' | 'networks'>) 
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name: data.name,
-      labels: {
-        [devboxKey]: data.name
-      }
+      ...attachOwnerReference(
+        {
+          name: data.name,
+          labels: {
+            [devboxKey]: data.name
+          }
+        },
+        ownerReference
+      )
     },
     spec: {
       ports: data.networks.map((item) => ({
@@ -462,7 +514,10 @@ export const json2Service = (data: Pick<DevboxEditTypeV2, 'name' | 'networks'>) 
   };
   return yaml.dump(template);
 };
-export const json2ConfigMap = (data: Pick<DevboxEditTypeV2, 'name' | 'configMaps'>) => {
+export const json2ConfigMap = (
+  data: Pick<DevboxEditTypeV2, 'name' | 'configMaps'>,
+  ownerReference?: OwnerReference
+) => {
   if (!data.configMaps || data.configMaps.length === 0) {
     return '';
   }
@@ -477,10 +532,15 @@ export const json2ConfigMap = (data: Pick<DevboxEditTypeV2, 'name' | 'configMaps
         apiVersion: 'v1',
         kind: 'ConfigMap',
         metadata: {
-          name: configMapName,
-          labels: {
-            [devboxKey]: data.name
-          }
+          ...attachOwnerReference(
+            {
+              name: configMapName,
+              labels: {
+                [devboxKey]: data.name
+              }
+            },
+            ownerReference
+          )
         },
         data: {
           [filename]: cm.content
@@ -494,7 +554,8 @@ export const json2ConfigMap = (data: Pick<DevboxEditTypeV2, 'name' | 'configMaps
 
 export const json2PVC = (
   data: Pick<DevboxEditTypeV2, 'name' | 'volumes'>,
-  storageClassName: string = 'nfs-csi'
+  storageClassName: string = 'nfs-csi',
+  ownerReference?: OwnerReference
 ) => {
   if (!data.volumes || data.volumes.length === 0) {
     return '';
@@ -509,10 +570,15 @@ export const json2PVC = (
         apiVersion: 'v1',
         kind: 'PersistentVolumeClaim',
         metadata: {
-          name: pvcName,
-          labels: {
-            [devboxKey]: data.name
-          }
+          ...attachOwnerReference(
+            {
+              name: pvcName,
+              labels: {
+                [devboxKey]: data.name
+              }
+            },
+            ownerReference
+          )
         },
         spec: {
           accessModes: ['ReadWriteMany'],

@@ -5,7 +5,8 @@ import {
   ReconfigStatus,
   gpuResourceKey,
   devboxRemarkKey,
-  gpuTypeAnnotationKey
+  gpuTypeAnnotationKey,
+  devboxOwnerRefReadyKey
 } from '@/constants/devbox';
 
 // TODO: delete v2 string
@@ -18,6 +19,7 @@ export type KBDevboxTypeV2 = {
     creationTimestamp: string;
     annotations: {
       [devboxRemarkKey]?: string;
+      [devboxOwnerRefReadyKey]?: string;
     };
   };
   spec: KBDevboxSpecV2;

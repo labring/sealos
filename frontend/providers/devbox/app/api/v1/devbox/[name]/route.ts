@@ -10,6 +10,11 @@ import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 import { UpdateDevboxRequestSchema, nanoid } from './schema';
+import {
+  ensureDevboxOwnerReferences,
+  getDevboxOwnerReference,
+  markDevboxOwnerReferencesReady
+} from '@/services/backend/ownerReferences';
 
 export const dynamic = 'force-dynamic';
 
@@ -765,6 +770,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
         
         throw error;
       }
+    }
+
+    const ownerReference = await getDevboxOwnerReference(k8sCustomObjects, namespace, devboxName);
+    const ownerReferencesReady = await ensureDevboxOwnerReferences({
+      devboxName,
+      namespace,
+      ownerReference,
+      k8sCore,
+      k8sNetworkingApp,
+      k8sCustomObjects
+    });
+    if (ownerReferencesReady) {
+      await markDevboxOwnerReferencesReady(k8sCustomObjects, namespace, devboxName, ownerReference);
     }
 
     const responseData: any = {};
