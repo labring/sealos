@@ -238,10 +238,9 @@
     "alert-title": "现在无法创建 DevBox，您已经用尽了全部资源。",
     "cancel": "取消",
     "confirm": "确认",
-    "please_upgrade_plan": {
-      "1": "请 ",
-      "2": "升级您的计划",
-      "3": "或删除使用上述资源的应用。"
+    "insufficient_quota_solution": {
+      "contact_admin": "请联系管理员提高限额",
+      "or_delete_apps": "，或删除使用上述资源的应用。"
     },
     "quota_available": "可用: ",
     "quota_in_use": "使用中: ",
@@ -372,9 +371,9 @@
   "please_fill_required_fields": "请填写所有必填项",
   "please_select_runtime": "请选择运行环境",
   "please_upgrade_plan": {
-    "0": "请 ",
-    "1": "升级您的计划",
-    "2": " 或调整设置"
+    "0": "",
+    "1": "请联系管理员提高限额",
+    "2": "，或调整设置"
   },
   "please_upload_file": "请上传文件",
   "port": "端口",

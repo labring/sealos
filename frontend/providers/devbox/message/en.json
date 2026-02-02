@@ -237,10 +237,9 @@
     "alert-title": "We can't create your DevBox right now. You've used all of your available resources.",
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "please_upgrade_plan": {
-      "1": "Please ",
-      "2": "upgrade your plan",
-      "3": " or delete unused apps occupying resources."
+    "insufficient_quota_solution": {
+      "contact_admin": "Please contact the administrator to increase quota",
+      "or_delete_apps": ", or delete unused apps occupying resources."
     },
     "quota_available": "Available: ",
     "quota_in_use": "In use: ",
@@ -370,9 +369,9 @@
   "please_fill_required_fields": "Please fill in all required fields",
   "please_select_runtime": "Please select your Runtime",
   "please_upgrade_plan": {
-    "0": "Please ",
-    "1": "upgrade your plan",
-    "2": " or adjust settings."
+    "0": "",
+    "1": "Please contact the administrator to increase quota",
+    "2": ", or adjust settings."
   },
   "please_upload_file": "Please upload a file",
   "port": "Port",

@@ -96,14 +96,13 @@ export function InsufficientQuotaDialog({
             </div>
 
             <div className="mt-3">
-              <span> {t('insufficient_quota_dialog.please_upgrade_plan.1')}</span>
               <a
                 className="cursor-pointer font-semibold text-blue-600 underline"
                 onClick={handleOpenCostcenter}
               >
-                {t('insufficient_quota_dialog.please_upgrade_plan.2')}
+                {t('insufficient_quota_dialog.insufficient_quota_solution.contact_admin')}
               </a>
-              <span>{t('insufficient_quota_dialog.please_upgrade_plan.3')}</span>
+              <span>{t('insufficient_quota_dialog.insufficient_quota_solution.or_delete_apps')}</span>
             </div>
           </DialogDescription>
         </DialogHeader>
