@@ -185,7 +185,7 @@ export function compareFirstLanguages(acceptLanguageHeader: string) {
 
 export function getTemplateEnvs(namespace?: string): EnvResponse {
   const TemplateEnvs: EnvResponse = {
-    SEALOS_CLOUD_DOMAIN: Config().cloud.domain,
+    SEALOS_CLOUD_DOMAIN: Config().template.userDomain ?? Config().cloud.domain,
     SEALOS_CERT_SECRET_NAME: Config().cloud.certSecretName,
     TEMPLATE_REPO_URL: Config().template.repo.url,
     TEMPLATE_REPO_BRANCH: Config().template.repo.branch,

@@ -31,4 +31,5 @@ template:
     excludedCategories: []
     sidebarMenuCount: 10
     desktopDomain: ''
+    userDomain: ''
     billingUrl: 'http://account-api.example.org'

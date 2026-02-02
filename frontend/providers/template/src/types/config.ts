@@ -178,6 +178,10 @@ const TemplateSchema = z
       .describe(
         'Desktop application domain used for postMessage origin whitelist and app navigation links'
       ),
+    userDomain: z
+      .string()
+      .optional()
+      .describe('Domain for user app deployments, fallback to cloud domain if not provided'),
     billingUrl: z.string().describe('Billing page URL used in guide bonus redemption flow')
   })
   .strict();
