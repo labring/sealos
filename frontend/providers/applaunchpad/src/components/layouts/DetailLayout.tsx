@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useLoading } from '@/hooks/useLoading';
+import { Skeleton } from '@sealos/shadcn-ui/skeleton';
 
 interface DetailLayoutProps {
   children: React.ReactNode;
@@ -46,6 +47,7 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
       }
     }
   );
+  const showSkeleton = appDetailInitialLoading && !appDetailError;
 
   useQuery(
     ['app-detail-pod', appName],
@@ -73,14 +75,35 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
         isLoading={appDetailInitialLoading}
       />
       <div className="flex-1 overflow-y-auto scrollbar-default relative flex gap-1.5 px-6 pb-6 pt-20">
-        <Sidebar />
+        {showSkeleton ? (
+          <div className="flex w-full gap-1.5">
+            <div className="w-[240px] shrink-0 space-y-3">
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+            </div>
+            <div className="flex-1 space-y-4">
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-32 w-full rounded-xl" />
+            </div>
+          </div>
+        ) : (
+          <>
+            <Sidebar />
 
-        <Loading
-          loading={appDetailInitialLoading || appDetailError}
-          fixed={false}
-          backdropProps={{ style: { background: 'rgba(255,255,255,0.75)', borderRadius: '12px' } }}
-        />
-        {children}
+            <Loading
+              loading={appDetailInitialLoading || appDetailError}
+              fixed={false}
+              backdropProps={{
+                style: { background: 'rgba(255,255,255,0.75)', borderRadius: '12px' }
+              }}
+            />
+            {children}
+          </>
+        )}
       </div>
     </div>
   );

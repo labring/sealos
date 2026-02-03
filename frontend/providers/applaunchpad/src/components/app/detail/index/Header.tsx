@@ -12,6 +12,7 @@ import UpdateModal from './UpdateModal';
 import { Button } from '@sealos/shadcn-ui/button';
 import { ButtonGroup } from '@sealos/shadcn-ui/button-group';
 import { ArrowLeft, Play, Pause, PencilLine, RotateCw, Trash2 } from 'lucide-react';
+import { Skeleton } from '@sealos/shadcn-ui/skeleton';
 
 const DelModal = dynamic(() => import('./DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
@@ -66,6 +67,27 @@ const Header = ({
       onSuccess: () => refetch()
     });
   }, [appName, executeOperation, refetch, t]);
+
+  if (isLoading) {
+    return (
+      <div className="fixed top-0 left-0 right-0 z-10 flex h-20 w-full items-center px-6 justify-between bg-zinc-50">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 pl-2">
+            <Skeleton className="h-6 w-6 rounded-full" />
+            <Skeleton className="h-6 w-40" />
+          </div>
+          <Skeleton className="h-6 w-20" />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <Skeleton className="h-10 w-[88px] rounded-lg" />
+          <Skeleton className="h-10 w-[88px] rounded-lg" />
+          <Skeleton className="h-10 w-[88px] rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed top-0 left-0 right-0 z-10 flex h-20 w-full items-center px-6 justify-between bg-zinc-50">
