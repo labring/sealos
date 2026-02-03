@@ -86,6 +86,7 @@ func main() {
 	var maximumLimitEphemeralStorage string
 	// pod matcher flag
 	var enablePodResourceMatcher bool
+	var enablePodGPUResourceMatcher bool
 	var enablePodEnvMatcher bool
 	var enablePodPortMatcher bool
 	var enablePodEphemeralStorageMatcher bool
@@ -119,6 +120,7 @@ func main() {
 	flag.StringVar(&maximumLimitEphemeralStorage, "maximum-limit-ephemeral-storage", "50Gi", "The maximum limit value of ephemeral storage in devbox.")
 	// pod matcher flag, pod resource matcher, env matcher, port matcher will be enabled by default, ephemeral storage matcher will be disabled by default
 	flag.BoolVar(&enablePodResourceMatcher, "enable-pod-resource-matcher", true, "If set, pod resource matcher will be enabled")
+	flag.BoolVar(&enablePodGPUResourceMatcher, "enable-pod-gpu-resource-matcher", false, "If set, pod gpu resource matcher will be enabled")
 	flag.BoolVar(&enablePodEnvMatcher, "enable-pod-env-matcher", true, "If set, pod env matcher will be enabled")
 	flag.BoolVar(&enablePodPortMatcher, "enable-pod-port-matcher", true, "If set, pod port matcher will be enabled")
 	flag.BoolVar(&enablePodEphemeralStorageMatcher, "enable-pod-ephemeral-storage-matcher", false, "If set, pod ephemeral storage matcher will be enabled")
@@ -227,6 +229,9 @@ func main() {
 	podMatchers := []matcher.PodMatcher{}
 	if enablePodResourceMatcher {
 		podMatchers = append(podMatchers, matcher.ResourceMatcher{})
+	}
+	if enablePodGPUResourceMatcher {
+		podMatchers = append(podMatchers, matcher.GPUResourceMatcher{})
 	}
 	if enablePodEnvMatcher {
 		podMatchers = append(podMatchers, matcher.EnvVarMatcher{})

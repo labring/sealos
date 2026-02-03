@@ -18,6 +18,7 @@ import (
 	"log/slog"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type PodMatcher interface {
@@ -48,6 +49,45 @@ func (r ResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	}
 	if container.Resources.Limits.Memory().Cmp(*expectContainer.Resources.Limits.Memory()) != 0 {
 		slog.Info("Memory limits are not equal")
+		return false
+	}
+	return true
+}
+
+type GPUResourceMatcher struct{}
+
+const gpuResourceName corev1.ResourceName = "nvidia.com/gpu"
+const gpuTypeAnnotation string = "nvidia.com/use-gputype"
+
+func (g GPUResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+	if len(pod.Spec.Containers) == 0 {
+		slog.Info("Pod has no containers")
+		return false
+	}
+	if len(expectPod.Spec.Containers) == 0 {
+		slog.Info("Expect pod has no containers")
+		return false
+	}
+	container := pod.Spec.Containers[0]
+	expectContainer := expectPod.Spec.Containers[0]
+
+	if container.Resources.Limits.Name(gpuResourceName, resource.DecimalSI).Cmp(
+		*expectContainer.Resources.Limits.Name(gpuResourceName, resource.DecimalSI),
+	) != 0 {
+		slog.Info("GPU limits are not equal")
+		return false
+	}
+	if container.Resources.Requests.Name(gpuResourceName, resource.DecimalSI).Cmp(
+		*expectContainer.Resources.Requests.Name(gpuResourceName, resource.DecimalSI),
+	) != 0 {
+		slog.Info("GPU requests are not equal")
+		return false
+	}
+
+	expectGPUType, expectOK := expectPod.Annotations[gpuTypeAnnotation]
+	actualGPUType, actualOK := pod.Annotations[gpuTypeAnnotation]
+	if expectOK != actualOK || expectGPUType != actualGPUType {
+		slog.Info("GPU type annotation is not equal")
 		return false
 	}
 	return true

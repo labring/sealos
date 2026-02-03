@@ -19,6 +19,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPodMatchExpectations(t *testing.T) {
@@ -168,6 +169,120 @@ func TestPodMatchExpectations(t *testing.T) {
 			result := PodMatchExpectations(expectPod, tt.pod, matchers...)
 			if result != tt.expected {
 				t.Errorf("CheckPodConsistency() = %v, expected %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestGPUResourceMatcher(t *testing.T) {
+	expectPod := &corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							gpuResourceName: resource.MustParse("1"),
+						},
+						Requests: corev1.ResourceList{
+							gpuResourceName: resource.MustParse("1"),
+						},
+					},
+				},
+			},
+		},
+	}
+	expectPod.Annotations = map[string]string{
+		gpuTypeAnnotation: "NVIDIA-Tesla P40",
+	}
+
+	tests := []struct {
+		name     string
+		pod      *corev1.Pod
+		expected bool
+	}{
+		{
+			name: "consistent gpu",
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									gpuResourceName: resource.MustParse("1"),
+								},
+								Requests: corev1.ResourceList{
+									gpuResourceName: resource.MustParse("1"),
+								},
+							},
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						gpuTypeAnnotation: "NVIDIA-Tesla P40",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "inconsistent gpu count",
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									gpuResourceName: resource.MustParse("2"),
+								},
+								Requests: corev1.ResourceList{
+									gpuResourceName: resource.MustParse("2"),
+								},
+							},
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						gpuTypeAnnotation: "NVIDIA-Tesla P40",
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "inconsistent gpu type",
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Resources: corev1.ResourceRequirements{
+								Limits: corev1.ResourceList{
+									gpuResourceName: resource.MustParse("1"),
+								},
+								Requests: corev1.ResourceList{
+									gpuResourceName: resource.MustParse("1"),
+								},
+							},
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						gpuTypeAnnotation: "NVIDIA GeForce RTX 3090",
+					},
+				},
+			},
+			expected: false,
+		},
+	}
+
+	gpuMatcher := GPUResourceMatcher{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := gpuMatcher.Match(expectPod, tt.pod)
+			if result != tt.expected {
+				t.Errorf("GPUResourceMatcher.Match() = %v, expected %v", result, tt.expected)
 			}
 		})
 	}
