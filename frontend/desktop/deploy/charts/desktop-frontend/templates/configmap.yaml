@@ -56,11 +56,11 @@ data:
         title: "{{ .Values.desktopConfig.layoutTitle }}"
         logo: "{{ .Values.desktopConfig.layoutLogo }}"
         backgroundImage: "{{ .Values.desktopConfig.layoutBackgroundImage }}"
-        forcedLanguage: "{{ .Values.desktopConfig.forcedLanguage }}"
+        forcedLanguage: {{ if eq .Values.desktopConfig.version "cn" }}"zh"{{ else }}"en"{{ end }}
         customerServiceURL: "{{ .Values.desktopConfig.customerServiceURL }}"
-        discordInviteLink: {{ if eq .Values.desktopConfig.currencySymbol "usd" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}
+        discordInviteLink: {{ if eq .Values.desktopConfig.version "en" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}
         gtmId: {{ if .Values.desktopConfig.gtmId }}"{{ .Values.desktopConfig.gtmId }}"{{ else }}null{{ end }}
-        currencySymbol: "{{ .Values.desktopConfig.currencySymbol }}"
+        currencySymbol: {{ if eq .Values.desktopConfig.version "cn" }}"shellCoin"{{ else }}"usd"{{ end }}
         meta:
           title: "{{ .Values.desktopConfig.metaTitle }}"
           description: "{{ .Values.desktopConfig.metaDescription }}"

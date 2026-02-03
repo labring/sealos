@@ -15,7 +15,7 @@ sealos run desktop-frontend:latest -e CLOUD_DOMAIN=cloud.example.com
 
 # Chinese version with GitHub OAuth
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.version=cn --set desktopConfig.forcedLanguage=zh --set desktopConfig.currencySymbol=shellCoin --set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=xxx --set desktopConfig.githubClientSecret=yyy"
+  -e HELM_OPTIONS="--set desktopConfig.version=cn --set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=xxx --set desktopConfig.githubClientSecret=yyy"
 
 # English version with Google OAuth and GTM
 sealos run desktop-frontend:latest \
@@ -175,11 +175,11 @@ desktop:
     title: "Sealos Cloud"
     logo: "/logo.svg"
     backgroundImage: "/images/bg-light.svg"
-    forcedLanguage: "en"
+    forcedLanguage: "en"  # Auto-configured based on version: "cn"→"zh", "en"→"en"
     customerServiceURL: ""
-    discordInviteLink: ""
+    discordInviteLink: ""  # Auto-configured: shown for "en", empty for "cn"
     gtmId: null
-    currencySymbol: "usd"
+    currencySymbol: "usd"  # Auto-configured based on version: "cn"→"shellCoin", "en"→"usd"
     meta:
       title: "Sealos Cloud"
       description: "Sealos Cloud"

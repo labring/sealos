@@ -60,9 +60,10 @@ desktopConfig:
 
   # Currency and language configuration
   # Options: "cn" (Chinese) or "en" (English)
+  # forcedLanguage and currencySymbol will be auto-configured based on version:
+  # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
+  # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
   version: "en"
-  forcedLanguage: "en"
-  currencySymbol: "usd"
 
   # Google Tag Manager
   gtmId: ""

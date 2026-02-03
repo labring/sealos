@@ -73,8 +73,9 @@ desktopConfig:
 ```yaml
 desktopConfig:
   version: "en"                               # UI 版本: "cn" 或 "en"
-  forcedLanguage: "en"                        # 界面语言: "zh" 或 "en"
-  currencySymbol: "usd"                       # 货币符号: "usd" 或 "shellCoin"
+  # forcedLanguage 和 currencySymbol 会根据 version 自动配置:
+  # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
+  # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
 ```
 
 ### 6. Google Tag Manager
@@ -298,8 +299,6 @@ sealos run desktop-frontend:latest \
     --set desktopConfig.cloudDomain=production.example.com
     --set desktopConfig.regionUID=prod-region-001
     --set desktopConfig.version=cn
-    --set desktopConfig.forcedLanguage=zh
-    --set desktopConfig.currencySymbol=shellCoin
     --set desktopConfig.githubEnabled=true
     --set desktopConfig.githubClientId=prod-github-id
     --set desktopConfig.githubClientSecret=prod-github-secret

@@ -15,7 +15,7 @@ sealos run desktop-frontend:latest -e CLOUD_DOMAIN=cloud.example.com
 
 # 中文版本 + GitHub 登录
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.version=cn --set desktopConfig.forcedLanguage=zh --set desktopConfig.currencySymbol=shellCoin --set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=xxx --set desktopConfig.githubClientSecret=yyy"
+  -e HELM_OPTIONS="--set desktopConfig.version=cn --set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=xxx --set desktopConfig.githubClientSecret=yyy"
 
 # 英文版本 + Google 登录 + GTM
 sealos run desktop-frontend:latest \
@@ -175,11 +175,11 @@ desktop:
     title: "Sealos Cloud"
     logo: "/logo.svg"
     backgroundImage: "/images/bg-light.svg"
-    forcedLanguage: "en"
+    forcedLanguage: "en"  # 自动根据 version 配置: "cn"→"zh", "en"→"en"
     customerServiceURL: ""
-    discordInviteLink: ""
+    discordInviteLink: ""  # 自动根据 version 配置: "en"时显示, "cn"时为空
     gtmId: null
-    currencySymbol: "usd"
+    currencySymbol: "usd"  # 自动根据 version 配置: "cn"→"shellCoin", "en"→"usd"
     meta:
       title: "Sealos Cloud"
       description: "Sealos Cloud"
@@ -393,13 +393,13 @@ sealos build -t docker.io/labring/sealos-cloud-desktop:latest -f Kubefile .
 **中文版本：**
 ```bash
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.version=cn --set desktopConfig.forcedLanguage=zh --set desktopConfig.currencySymbol=shellCoin"
+  -e HELM_OPTIONS="--set desktopConfig.version=cn"
 ```
 
 **英文版本：**
 ```bash
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.version=en --set desktopConfig.forcedLanguage=en --set desktopConfig.currencySymbol=usd"
+  -e HELM_OPTIONS="--set desktopConfig.version=en"
 ```
 
 ### 2. 如何启用第三方登录？
