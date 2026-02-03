@@ -1,0 +1,143 @@
+replicaCount: 1
+
+image: ghcr.io/labring/sealos-desktop-frontend:latest
+imagePullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "sealos-desktop"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "desktop-frontend"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+
+service:
+  port: 3000
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Desktop frontend configuration
+desktopConfig:
+  # Basic cloud configuration
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  regionUID: "randomRegionUID"
+  certSecretName: "wildcard-cert"
+
+  # Database connections
+  databaseMongodbURI: ""
+  databaseGlobalCockroachdbURI: ""
+  databaseLocalCockroachdbURI: ""
+
+  # Authentication secrets
+  passwordSalt: "randomSalt"
+  jwtInternal: ""
+  jwtRegional: ""
+  jwtGlobal: ""
+
+  # Billing configuration
+  billingUrl: "http://account-service.account-system.svc:2333"
+  billingToken: ""
+
+  # Currency and language (auto-configured based on CURRENCY env var)
+  # Options: "cn" (CNY) or "en" (USD)
+  version: "en"
+  forcedLanguage: "en"
+  currencySymbol: "usd"
+
+  # Google Tag Manager
+  gtmId: ""
+
+  # Discord invite link (USD version only)
+  discordInviteLink: ""
+
+  # Feature flags
+  guideEnabled: false
+  apiEnabled: false
+  rechargeEnabled: false
+  enterpriseRealNameAuthEnabled: false
+  trackingEnabled: false
+  realNameAuthEnabled: false
+  licenseCheckEnabled: false
+
+  # OAuth providers
+  githubEnabled: false
+  githubClientId: ""
+  githubClientSecret: ""
+
+  wechatEnabled: false
+  wechatClientId: ""
+  wechatClientSecret: ""
+
+  googleEnabled: false
+  googleClientId: ""
+  googleClientSecret: ""
+
+  oauth2Enabled: false
+  oauth2CallbackUrl: ""
+  oauth2ClientId: ""
+  oauth2ClientSecret: ""
+  oauth2AuthUrl: ""
+  oauth2TokenUrl: ""
+  oauth2UserInfoUrl: ""
+
+  # Captcha configuration
+  turnstileEnabled: false
+  turnstileSiteKey: ""
+  turnstileSecretKey: ""
+
+# Auto configure from sealos-system configmap
+autoConfigEnabled: true
+
+livenessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 2
+  successThreshold: 3
+  failureThreshold: 3
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  # Will be auto-configured from desktopConfig.cloudDomain
+  hosts: []
+  tls: []
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: auth-system-manager-role
+  name: {{ include "desktop.fullname" . }}-manager-role
 rules:
   - apiGroups:
       - user.sealos.io
@@ -57,28 +57,27 @@ rules:
       - deleterequests/status
     verbs:
       - get
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: desktop-user-role-binding
+  name: {{ include "desktop.fullname" . }}-user-role-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: auth-system-manager-role
+  name: {{ include "desktop.fullname" . }}-manager-role
 subjects:
   - kind: ServiceAccount
-    name: desktop-frontend
-    namespace: sealos
+    name: {{ include "desktop.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: recharge-gift-cm-reader
-  namespace: sealos
+  name: {{ include "desktop.fullname" . }}-recharge-gift-cm-reader
+  namespace: {{ .Release.Namespace }}
 rules:
-  - apiGroups: [""] # "" indicates the core API group
+  - apiGroups: [""]
     resources: ["configmaps"]
     resourceNames: ["recharge-gift"]
     verbs: ["get", "watch", "list"]
@@ -86,12 +85,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: recharge-gift-cm-reader-rolebinding
-  namespace: sealos
+  name: {{ include "desktop.fullname" . }}-recharge-gift-cm-reader-rolebinding
+  namespace: {{ .Release.Namespace }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: recharge-gift-cm-reader
+  name: {{ include "desktop.fullname" . }}-recharge-gift-cm-reader
 subjects:
   - kind: Group
     name: system:serviceaccounts
@@ -100,7 +99,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: account-editor-role
+  name: {{ include "desktop.fullname" . }}-account-editor-role
 rules:
   - apiGroups: ["account.sealos.io"]
     resources: ["accounts"]
@@ -118,20 +117,20 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: desktop-account-editor-role-binding
+  name: {{ include "desktop.fullname" . }}-account-editor-role-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: account-editor-role
+  name: {{ include "desktop.fullname" . }}-account-editor-role
 subjects:
   - kind: ServiceAccount
-    name: desktop-frontend
-    namespace: sealos
+    name: {{ include "desktop.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: app-reader-role
+  name: {{ include "desktop.fullname" . }}-app-reader-role
 rules:
   - apiGroups: ["app.sealos.io"]
     resources: ["apps"]
@@ -140,12 +139,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: desktop-app-reader-role-binding
+  name: {{ include "desktop.fullname" . }}-app-reader-role-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: app-reader-role
+  name: {{ include "desktop.fullname" . }}-app-reader-role
 subjects:
   - kind: ServiceAccount
-    name: desktop-frontend
-    namespace: sealos
+    name: {{ include "desktop.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}

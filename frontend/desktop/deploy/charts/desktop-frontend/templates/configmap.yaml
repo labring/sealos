@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "desktop.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "desktop.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    cloud:
+      domain: "{{ .Values.desktopConfig.cloudDomain }}"
+      port: "{{ .Values.desktopConfig.cloudPort }}"
+      regionUID: "{{ .Values.desktopConfig.regionUID }}"
+      certSecretName: "{{ .Values.desktopConfig.certSecretName }}"
+      proxyDomain: "{{ .Values.desktopConfig.cloudDomain }}"
+      allowedOrigins:
+        - "https://applaunchpad.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://dbprovider.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://costcenter.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://cronjob.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://objectstorage.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://template.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://terminal.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://kubepanel.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://license.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://devbox.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://aiproxy-web.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://aiproxy.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://sealaf-api.{{ .Values.desktopConfig.cloudDomain }}"
+        - "https://sealaf.{{ .Values.desktopConfig.cloudDomain }}"
+
+    common:
+      guideEnabled: {{ .Values.desktopConfig.guideEnabled }}
+      apiEnabled: {{ .Values.desktopConfig.apiEnabled }}
+      rechargeEnabled: {{ .Values.desktopConfig.rechargeEnabled }}
+      enterpriseRealNameAuthEnabled: {{ .Values.desktopConfig.enterpriseRealNameAuthEnabled }}
+      trackingEnabled: {{ .Values.desktopConfig.trackingEnabled }}
+      realNameAuthEnabled: {{ .Values.desktopConfig.realNameAuthEnabled }}
+      licenseCheckEnabled: {{ .Values.desktopConfig.licenseCheckEnabled }}
+      realNameReward: 0
+      realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
+      templateUrl: "https://template.example.org"
+      applaunchpadUrl: "https://applaunchpad.example.org"
+      dbproviderUrl: "https://dbprovider.example.org"
+      objectstorageUrl: "https://objectstorage.example.org"
+      cfSiteKey: ""
+
+    database:
+      mongodbURI: "{{ .Values.desktopConfig.databaseMongodbURI }}"
+      globalCockroachdbURI: "{{ .Values.desktopConfig.databaseGlobalCockroachdbURI }}"
+      regionalCockroachdbURI: "{{ .Values.desktopConfig.databaseLocalCockroachdbURI }}"
+
+    desktop:
+      layout:
+        version: "{{ .Values.desktopConfig.version }}"
+        title: "Sealos Cloud"
+        logo: "/logo.svg"
+        backgroundImage: "/images/bg-light.svg"
+        forcedLanguage: "{{ .Values.desktopConfig.forcedLanguage }}"
+        customerServiceURL: ""
+        discordInviteLink: {{ if eq .Values.desktopConfig.currencySymbol "usd" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}
+        gtmId: {{ if .Values.desktopConfig.gtmId }}"{{ .Values.desktopConfig.gtmId }}"{{ else }}null{{ end }}
+        currencySymbol: "{{ .Values.desktopConfig.currencySymbol }}"
+        meta:
+          title: "Sealos Cloud"
+          description: "Sealos Cloud"
+          keywords: "Sealos Cloud"
+          scripts: []
+          noscripts: []
+        common:
+          githubStarEnabled: true
+          accountSettingEnabled: true
+          docsUrl: "https://sealos.run/docs/Intro/"
+          aiAssistantEnabled: false
+          bannerEnabled: false
+          subscriptionEnabled: false
+          guestModeEnabled: false
+          emailAlertEnabled: false
+          phoneAlertEnabled: false
+          announcementEnabled: false
+      auth:
+        proxyAddress: ""
+        callbackURL: "https://{{ .Values.desktopConfig.cloudDomain }}{{ if .Values.desktopConfig.cloudPort }}:{{ .Values.desktopConfig.cloudPort }}{{ end }}/callback"
+        signUpEnabled: true
+        baiduToken: ""
+        hasBaiduToken: false
+        bingAd:
+          tenant: ""
+          clientId: ""
+          clientSecret: ""
+          refreshToken: ""
+          developerToken: ""
+          customerId: 0
+          customerAccountId: 0
+          conversionName: ""
+        jwt:
+          internal: "{{ .Values.desktopConfig.jwtInternal }}"
+          regional: "{{ .Values.desktopConfig.jwtRegional }}"
+          global: "{{ .Values.desktopConfig.jwtGlobal }}"
+        idp:
+          password:
+            enabled: true
+            salt: "{{ .Values.desktopConfig.passwordSalt }}"
+          github:
+            enabled: {{ .Values.desktopConfig.githubEnabled }}
+            proxyAddress: ""
+            clientID: "{{ .Values.desktopConfig.githubClientId }}"
+            clientSecret: "{{ .Values.desktopConfig.githubClientSecret }}"
+          wechat:
+            enabled: {{ .Values.desktopConfig.wechatEnabled }}
+            proxyAddress: ""
+            clientID: "{{ .Values.desktopConfig.wechatClientId }}"
+            clientSecret: "{{ .Values.desktopConfig.wechatClientSecret }}"
+          google:
+            enabled: {{ .Values.desktopConfig.googleEnabled }}
+            proxyAddress: ""
+            clientID: "{{ .Values.desktopConfig.googleClientId }}"
+            clientSecret: "{{ .Values.desktopConfig.googleClientSecret }}"
+          oauth2:
+            enabled: {{ .Values.desktopConfig.oauth2Enabled }}
+            callbackURL: "{{ .Values.desktopConfig.oauth2CallbackUrl }}"
+            clientID: "{{ .Values.desktopConfig.oauth2ClientId }}"
+            proxyAddress: ""
+            clientSecret: "{{ .Values.desktopConfig.oauth2ClientSecret }}"
+            authURL: "{{ .Values.desktopConfig.oauth2AuthUrl }}"
+            tokenURL: "{{ .Values.desktopConfig.oauth2TokenUrl }}"
+            userInfoURL: "{{ .Values.desktopConfig.oauth2UserInfoUrl }}"
+          sms:
+            enabled: false
+            ali:
+              enabled: false
+              endpoint: ""
+              templateCode: ""
+              signName: ""
+              accessKeyID: ""
+              accessKeySecret: ""
+          email:
+            enabled: false
+            host: ""
+            port: 0
+            user: ""
+            password: ""
+            language: ""
+        captcha:
+          turnstile:
+            enabled: {{ .Values.desktopConfig.turnstileEnabled }}
+            siteKey: "{{ .Values.desktopConfig.turnstileSiteKey }}"
+            secretKey: "{{ .Values.desktopConfig.turnstileSecretKey }}"
+          ali:
+            enabled: false
+            endpoint: ""
+            sceneId: ""
+            prefix: ""
+            accessKeyID: ""
+            accessKeySecret: ""
+        billingUrl: "{{ .Values.desktopConfig.billingUrl }}"
+        billingToken: "{{ .Values.desktopConfig.billingToken }}"
+        workorderUrl: ""
+        cloudVitrualMachineUrl: "https://cloudvirtualmachine.example.org"
+
+      teamManagement:
+        maxTeamCount: 0
+        maxTeamMemberCount: 0
+
+    tracking:
+      websiteId: ""
+      hostUrl: {{ if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run"{{ else }}""{{ end }}
+      scriptUrl: {{ if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run/sealos"{{ else }}""{{ end }}
+
+    realNameOSS:
+      accessKey: ""
+      accessKeySecret: ""
+      endpoint: ""
+      ssl: false
+      port: 0
+      realNameBucket: ""
+      enterpriseRealNameBucket: ""
