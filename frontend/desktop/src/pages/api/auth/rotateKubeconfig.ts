@@ -137,9 +137,7 @@ async function watchKubeconfigUpdate(
           return currentKubeconfig;
         }
       }
-    } catch (err) {
-      console.error(`Failed to get status for ${name}:`, err);
-    }
+    } catch (err) {}
 
     if (Date.now() - startTime >= timeout) {
       console.error(
