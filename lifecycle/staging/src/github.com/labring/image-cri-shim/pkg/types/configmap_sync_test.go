@@ -189,3 +189,136 @@ func TestSyncConfigFromConfigMapMissingData(t *testing.T) {
 		t.Fatalf("expected config file to remain unchanged")
 	}
 }
+
+func TestConfigMapPrioritySync(t *testing.T) {
+	tests := []struct {
+		name                    string
+		configMapYAML           string
+		existingConfig          *Config
+		expectedPriorities      map[string]int // registry domain -> expected priority
+		expectedOfflinePriority int
+	}{
+		{
+			name: "sync priority and offlinePriority from ConfigMap",
+			configMapYAML: `
+version: v1
+offlinePriority: 900
+sealos:
+  address: http://sealos.hub:5000
+  auth:
+    username: admin
+    password: passw0rd
+registries:
+  - address: docker.io
+    auth:
+      username: dockeruser
+      password: dockerpass
+    priority: 600
+  - address: registry.example.com
+    auth:
+      username: reguser
+      password: regpass
+    priority: 800
+`,
+			existingConfig: &Config{
+				Address: "http://old-hub:5000",
+				Auth:    "olduser:oldpass",
+				Registries: []Registry{
+					{Address: "old-registry.io"},
+				},
+			},
+			expectedPriorities: map[string]int{
+				"index.docker.io":      600,
+				"registry.example.com": 800,
+			},
+			expectedOfflinePriority: 900,
+		},
+		{
+			name: "sync with zero priority (synced as-is)",
+			configMapYAML: `
+version: v1
+sealos:
+  address: http://sealos.hub:5000
+  auth:
+    username: admin
+    password: passw0rd
+registries:
+  - address: docker.io
+    auth:
+      username: dockeruser
+      password: dockerpass
+    priority: 0  # Zero, synced as-is
+`,
+			existingConfig: &Config{},
+			expectedPriorities: map[string]int{
+				"index.docker.io": 0, // ConfigMap value 0 is synced as-is
+			},
+			expectedOfflinePriority: 0, // Not set in ConfigMap, stays 0
+		},
+		{
+			name: "sync custom priorities higher than default",
+			configMapYAML: `
+version: v1
+offlinePriority: 1200
+sealos:
+  address: http://sealos.hub:5000
+registries:
+  - address: docker.io
+    priority: 500
+  - address: fast-registry.io
+    priority: 1500
+`,
+			existingConfig: &Config{},
+			expectedPriorities: map[string]int{
+				"index.docker.io":  500,
+				"fast-registry.io": 1500,
+			},
+			expectedOfflinePriority: 1200,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Parse ConfigMap YAML
+			spec := new(registryConfigSpec)
+			if err := yaml.Unmarshal([]byte(tt.configMapYAML), spec); err != nil {
+				t.Fatalf("failed to parse ConfigMap YAML: %v", err)
+			}
+
+			// Merge with existing config
+			cfg := tt.existingConfig
+			mergeShimConfig(cfg, spec)
+
+			// Verify offlinePriority
+			if cfg.OfflinePriority != tt.expectedOfflinePriority {
+				t.Errorf("expected offlinePriority %d, got %d",
+					tt.expectedOfflinePriority, cfg.OfflinePriority)
+			}
+
+			// Verify registry priorities
+			for _, reg := range cfg.Registries {
+				// Normalize domain for comparison
+				domain := normalizeDomainForTest(reg.Address)
+				expectedPriority, ok := tt.expectedPriorities[domain]
+				if !ok {
+					t.Errorf("unexpected registry in config: %s", domain)
+					continue
+				}
+				if reg.Priority != expectedPriority {
+					t.Errorf("registry %s: expected priority %d, got %d",
+						domain, expectedPriority, reg.Priority)
+				}
+			}
+		})
+	}
+}
+
+// Helper function to normalize domain name for testing
+func normalizeDomainForTest(address string) string {
+	switch address {
+	case "docker.io":
+		return "index.docker.io"
+	default:
+		return address
+	}
+}

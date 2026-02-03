@@ -1,4 +1,3 @@
-import { useSystemConfigStore } from '@/store/config';
 import { SlideDataType } from '@/types/app';
 import { Box, Center, Flex, Text, useBreakpointValue } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
@@ -8,6 +7,7 @@ import { Autoplay } from 'swiper/modules';
 import { Swiper, SwiperRef, SwiperSlide } from 'swiper/react';
 import { ArrowRightIcon } from '../icons/ArrowRight';
 import Image from 'next/image';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const Card = ({ item, onClick }: { item: SlideDataType; onClick: () => void }) => {
   return (
@@ -56,7 +56,7 @@ const Card = ({ item, onClick }: { item: SlideDataType; onClick: () => void }) =
 
 export default React.memo(function Banner() {
   const swiperRef = useRef<SwiperRef>(null);
-  const { systemConfig } = useSystemConfigStore();
+  const clientAppConfig = useClientAppConfig();
   const router = useRouter();
   const isSmallScreen = useBreakpointValue({ base: true, xl: false });
 
@@ -108,19 +108,14 @@ export default React.memo(function Banner() {
           disableOnInteraction: false
         }}
       >
-        {systemConfig?.slideData.map((item, index) => (
+        {clientAppConfig.carousel.slides.map((item, index, arr) => (
           <SwiperSlide key={index}>
             <Flex w="full" h="213px" gap={'16px'} overflow={'hidden'}>
               <Card item={item} onClick={() => goDeploy(item.templateName)} />
               {!isSmallScreen && (
                 <Card
-                  item={systemConfig?.slideData[(index + 1) % systemConfig?.slideData.length]}
-                  onClick={() =>
-                    goDeploy(
-                      (systemConfig?.slideData[(index + 1) % systemConfig?.slideData.length])
-                        .templateName
-                    )
-                  }
+                  item={arr[(index + 1) % arr.length]}
+                  onClick={() => goDeploy(arr[(index + 1) % arr.length].templateName)}
                 />
               )}
             </Flex>

@@ -2,6 +2,8 @@ package gateway
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -44,7 +46,7 @@ func (g *Gateway) handleAgentForwardMode(
 	_ = sessionResult.AgentChannel.Close()
 
 	if err != nil {
-		sessionLogger.WithError(err).Error("Failed to connect to backend")
+		sessionLogger.WithError(err).Error("Failed to connect to devbox")
 		fmt.Fprintf(channel,
 			"Failed to connect to devbox: %v\r\n"+
 				"Make sure your SSH agent has the correct key and that the key is in ~/.ssh/authorized_keys on the devbox\r\n",
@@ -56,11 +58,13 @@ func (g *Gateway) handleAgentForwardMode(
 
 	defer backendConn.Close()
 
-	sessionLogger.Info("Backend connected via agent forwarding")
+	sessionLogger.Info("Devbox connected")
+	defer sessionLogger.Info("Devbox disconnected")
 
 	backendChannel, backendRequests, err := backendConn.OpenChannel("session", nil)
 	if err != nil {
-		sessionLogger.WithError(err).Error("Failed to open backend channel")
+		sessionLogger.WithError(err).Error("Failed to open devbox channel")
+		fmt.Fprintf(channel, "Failed to open devbox session: %v\r\n", err)
 		return
 	}
 	defer backendChannel.Close()
@@ -196,7 +200,7 @@ func (g *Gateway) connectToBackend(
 	ctx *sessionContext,
 	agentChannel ssh.Channel,
 ) (*ssh.Client, error) {
-	backendAddr := fmt.Sprintf("%s:%d", ctx.info.PodIP, g.options.SSHBackendPort)
+	devboxAddr := net.JoinHostPort(ctx.info.PodIP, strconv.Itoa(g.options.SSHBackendPort))
 
 	agentClient := agent.NewClient(agentChannel)
 
@@ -208,12 +212,9 @@ func (g *Gateway) connectToBackend(
 		Timeout:         g.options.BackendConnectTimeoutAgent,
 	}
 
-	ctx.logger.WithFields(log.Fields{
-		"backend_addr": backendAddr,
-		"backend_user": ctx.realUser,
-	}).Info("Connecting to backend with agent authentication")
+	ctx.logger.WithField("devbox_addr", devboxAddr).Info("Connecting to devbox")
 
-	conn, err := ssh.Dial("tcp", backendAddr, backendConfig)
+	conn, err := ssh.Dial("tcp", devboxAddr, backendConfig)
 	if err != nil {
 		return nil, err
 	}

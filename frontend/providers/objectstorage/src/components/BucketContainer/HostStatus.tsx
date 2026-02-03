@@ -75,7 +75,9 @@ export function HostStatus() {
     [QueryKey.openHost, currentBucket?.name],
     async (bucket: string) => {
       // Check permission first
-      await checkPermission({ bucketName: bucket });
+      if (currentBucket?.crName) {
+        await checkPermission({ bucketName: currentBucket?.crName });
+      }
       // If permission check passes, then open host
       return openHost({ bucket });
     },

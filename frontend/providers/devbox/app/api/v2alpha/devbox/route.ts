@@ -599,7 +599,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const resp = [devboxBody, [], template] as [KBDevboxTypeV2, [], typeof template];
+    const resp = [devboxBody, [], template, [], []] as [
+      KBDevboxTypeV2,
+      [],
+      typeof template,
+      [],
+      []
+    ];
     const adaptedData = adaptDevboxDetailV2(resp);
 
     //3.read-ssh-keys！！！！！

@@ -7,7 +7,7 @@ import MyIcon from '@/components/Icon';
 import { CurrencySymbol, MyTooltip } from '@sealos/ui';
 import { type ResourceUsage } from '@/utils/usage';
 import { PriceIcon } from '@/components/icons/PriceIcon';
-import { useSystemConfigStore } from '@/store/config';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export const usePriceCalculation = ({ cpu, memory, storage, nodeport }: ResourceUsage) => {
   const { userSourcePrice } = useUserStore();
@@ -64,7 +64,7 @@ export const usePriceCalculation = ({ cpu, memory, storage, nodeport }: Resource
 const PriceBox = (props: ResourceUsage) => {
   const { t } = useTranslation();
   const priceList = usePriceCalculation(props);
-  const { envs } = useSystemConfigStore();
+  const clientAppConfig = useClientAppConfig();
 
   return (
     <Box bg={'#FFF'} borderRadius={'10px'}>
@@ -107,7 +107,7 @@ const PriceBox = (props: ResourceUsage) => {
               )}
             </Flex>
             <Flex ml={'auto'} minW={'45px'} alignItems={'center'} gap={'4px'} whiteSpace={'nowrap'}>
-              <CurrencySymbol type={envs?.CURRENCY_SYMBOL} />
+              <CurrencySymbol type={clientAppConfig.currencySymbolType} />
               {item.value}
             </Flex>
           </Flex>

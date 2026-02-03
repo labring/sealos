@@ -4,7 +4,7 @@ import { MOCK_APP_DETAIL } from '@/mock/apps';
 import Header from '@/components/app/detail/index/Header';
 import { useAppStore } from '@/store/app';
 import { useQuery } from '@tanstack/react-query';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useLoading } from '@/hooks/useLoading';
 
@@ -16,7 +16,12 @@ interface DetailLayoutProps {
 export default function DetailLayout({ children, appName }: DetailLayoutProps) {
   const { toast } = useToast();
   const router = useRouter();
-  const { appDetail = MOCK_APP_DETAIL, setAppDetail, intervalLoadPods } = useAppStore();
+  const {
+    appDetail = MOCK_APP_DETAIL,
+    appDetailPods,
+    setAppDetail,
+    intervalLoadPods
+  } = useAppStore();
   const { Loading } = useLoading();
 
   const {
@@ -65,6 +70,7 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
         appStatus={appDetail?.status}
         isPause={appDetail?.isPause}
         refetch={refetch}
+        isLoading={appDetailInitialLoading}
       />
       <div className="flex-1 overflow-y-auto scrollbar-default relative flex gap-1.5 px-6 pb-6 pt-20">
         <Sidebar />

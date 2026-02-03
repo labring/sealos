@@ -52,7 +52,9 @@ func (g *Gateway) handleProxyJumpMode(
 		proxyLogger.WithField("devbox_addr", devboxAddr).
 			WithError(err).
 			Error("Failed to connect to devbox")
-		_ = newChannel.Reject(ssh.ConnectionFailed, fmt.Sprintf("failed to connect: %v", err))
+		errMsg := fmt.Sprintf("Failed to connect to devbox: %v\r\n"+
+			"The devbox may be starting up or the SSH service is not ready\r\n", err)
+		_ = newChannel.Reject(ssh.ConnectionFailed, errMsg)
 
 		return
 	}
@@ -74,7 +76,7 @@ func (g *Gateway) handleProxyJumpMode(
 	proxyLogger.Info("Tunnel established")
 
 	// Proxy data between client channel and devbox connection
-	g.proxyChannelToConn(channel, conn)
+	g.proxyChannelToConn(channel, conn, proxyLogger)
 
 	proxyLogger.Info("Tunnel closed")
 }

@@ -295,17 +295,32 @@ const PublicTemplate = ({
   }, [overviewQueries.data]);
 
   const isClientSide = useClientSideValue(true);
+
+  // Get the first template for guide3 - works in both overview and category modes
+  const firstTemplate = useMemo(() => {
+    if (viewMode === 'overview') {
+      // In overview mode, get first template from any category
+      const allCategories = Object.values(overviewData) as any[][];
+      for (const templates of allCategories) {
+        if (templates && templates.length > 0) {
+          return templates[0];
+        }
+      }
+      return null;
+    }
+    return templateRepositoryList[0] || null;
+  }, [viewMode, overviewData, templateRepositoryList]);
+
   useEffect(() => {
-    if (!guide3 && isClientSide && templateRepositoryList.length > 0) {
+    if (!guide3 && isClientSide && firstTemplate) {
       startDriver(
         startGuide3(t, () => {
-          const first = templateRepositoryList[0];
           setStartedTemplate({
-            uid: first.uid,
-            name: first.name,
-            iconId: first.iconId || '',
-            templateUid: first.templates?.[0]?.uid || '',
-            description: first.description
+            uid: firstTemplate.uid,
+            name: firstTemplate.name,
+            iconId: firstTemplate.iconId || '',
+            templateUid: firstTemplate.templates?.[0]?.uid || '',
+            description: firstTemplate.description
           });
           setGuide3(true);
           destroyDriver();
@@ -313,7 +328,7 @@ const PublicTemplate = ({
         })
       );
     }
-  }, [guide3, isClientSide, templateRepositoryList, setGuide3, setStartedTemplate, router, t]);
+  }, [guide3, isClientSide, firstTemplate, setGuide3, setStartedTemplate, router, t]);
 
   // Query to get framework templates to determine which languages have frameworks
   // Only load when user views framework category (lazy loading)

@@ -2,6 +2,8 @@
 # Image URL to use all building/pushing image targets
 IMG ?= ghcr.io/labring/sealos-user-controller:latest
 TARGETARCH ?= amd64
+LICENSE_KEY ?=
+CONTROLLER_LICENSE_PKG=github.com/labring/sealos/controllers/pkg/license
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.6
@@ -44,6 +46,7 @@ help: ## Display this help.
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	cp -r config/crd/bases/* deploy/charts/user/crds/
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
@@ -65,7 +68,9 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build:  ## Build manager binary.
-	CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags "-s -w" -trimpath -o bin/manager main.go
+	LD_FLAGS="-s -w"; \
+	[ -n "$(LICENSE_KEY)" ] && LD_FLAGS+=" -X ${CONTROLLER_LICENSE_PKG}.encryptionKey=${LICENSE_KEY}"; \
+	CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

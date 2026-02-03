@@ -12,7 +12,7 @@ import {
   unBindRequest,
   autoInitRegionToken
 } from '@/api/auth';
-import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
 import request from '@/services/request';
@@ -21,11 +21,13 @@ import { MERGE_USER_READY } from '@/types/response/utils';
 import { AxiosError, HttpStatusCode } from 'axios';
 import { gtmLoginSuccess } from '@/utils/gtm';
 import { useGuideModalStore } from '@/stores/guideModal';
+import { ensureLocaleCookie } from '@/utils/ssrLocale';
+import useAppStore from '@/stores/app';
 
 export default function Callback() {
   const router = useRouter();
   const setProvider = useSessionStore((s) => s.setProvider);
-  const setToken = useSessionStore((s) => s.setToken);
+  const setGlobalToken = useSessionStore((s) => s.setGlobalToken);
   const provider = useSessionStore((s) => s.provider);
   const compareState = useSessionStore((s) => s.compareState);
   const { setSigninPageAction } = useSigninPageStore();
@@ -80,7 +82,6 @@ export default function Callback() {
           if (action === 'LOGIN') {
             const data = await signInRequest(provider)({
               code,
-              inviterId: getInviterId() ?? undefined,
               semData: getUserSemData() ?? undefined,
               adClickData: getAdClickData() ?? undefined
             }).catch((e) => e);
@@ -107,9 +108,26 @@ export default function Callback() {
             }
 
             if (data.data && data.code === 200 && !('error' in data.data)) {
-              const token = data.data?.token;
-              setToken(token);
+              const globalToken = data.data?.token; // This is the global token from OAuth
+              setGlobalToken(globalToken); // Sets global token and cookie
               const needInit = data.data.needInit;
+
+              // Helper function to handle redirect after login
+              const handleLoginRedirect = async () => {
+                const appState = useAppStore.getState();
+                if (appState.autoDeployTemplate && appState.autoDeployTemplateForm) {
+                  const params = new URLSearchParams({
+                    templateName: appState.autoDeployTemplate,
+                    templateForm: JSON.stringify(appState.autoDeployTemplateForm)
+                  });
+                  if (appState.autolaunch) {
+                    params.append('openapp', appState.autolaunch);
+                  }
+                  await router.replace(`/oauth?${params.toString()}`);
+                } else {
+                  await router.replace('/');
+                }
+              };
 
               if (needInit) {
                 try {
@@ -124,7 +142,7 @@ export default function Callback() {
                     await sessionConfig(initResult.data);
                     const { setInitGuide } = useGuideModalStore.getState();
                     setInitGuide(true);
-                    await router.replace('/');
+                    await handleLoginRedirect();
                   }
                 } catch (error) {
                   console.error('Auto init failed, fallback to manual:', error);
@@ -145,7 +163,7 @@ export default function Callback() {
               const regionTokenRes = await getRegionToken();
               if (regionTokenRes?.data) {
                 await sessionConfig(regionTokenRes.data);
-                await router.replace('/');
+                await handleLoginRedirect();
               }
             } else {
               throw new Error();
@@ -202,6 +220,7 @@ export default function Callback() {
   );
 }
 
-export async function getServerSideProps() {
+export async function getServerSideProps({ req, res }: any) {
+  ensureLocaleCookie({ req, res, defaultLocale: 'en' });
   return { props: {} };
 }

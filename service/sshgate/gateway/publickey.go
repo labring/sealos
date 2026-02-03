@@ -1,7 +1,9 @@
 package gateway
 
 import (
-	"fmt"
+	"net"
+	"strconv"
+	"time"
 
 	"github.com/labring/sealos/service/sshgate/registry"
 	log "github.com/sirupsen/logrus"
@@ -16,7 +18,7 @@ func (g *Gateway) handlePublicKeyMode(
 	username string,
 	logger *log.Entry,
 ) {
-	backendAddr := fmt.Sprintf("%s:%d", info.PodIP, g.options.SSHBackendPort)
+	devboxAddr := net.JoinHostPort(info.PodIP, strconv.Itoa(g.options.SSHBackendPort))
 
 	backendConfig := &ssh.ClientConfig{
 		User: username,
@@ -28,16 +30,31 @@ func (g *Gateway) handlePublicKeyMode(
 		Timeout:         g.options.BackendConnectTimeoutPublicKey,
 	}
 
-	backendConn, err := ssh.Dial("tcp", backendAddr, backendConfig)
+	backendConn, err := ssh.Dial("tcp", devboxAddr, backendConfig)
 	if err != nil {
-		logger.WithField("backend_addr", backendAddr).
+		logger.WithField("devbox_addr", devboxAddr).
 			WithError(err).
-			Error("Failed to connect to backend")
+			Error("Failed to connect to devbox")
+
+		// Reject the first channel with error message so client knows what happened
+		// Connection will be closed after return, other channels will fail automatically
+		errMsg := "Failed to connect to devbox: " + err.Error() + "\r\n" +
+			"The devbox may be starting up or the SSH service is not ready\r\n"
+		select {
+		case newChannel, ok := <-chans:
+			if ok {
+				_ = newChannel.Reject(ssh.ConnectionFailed, errMsg)
+			}
+		case <-time.After(g.options.SessionRequestTimeout):
+			logger.Debug("Timeout waiting for channel to reject")
+		}
+
 		return
 	}
 	defer backendConn.Close()
 
-	logger.Info("Backend connected")
+	logger.Info("Devbox connected")
+	defer logger.Info("Devbox disconnected")
 
 	SafeGo(logger, func() {
 		g.handleGlobalRequestsPublicKey(reqs, backendConn, logger)
@@ -82,8 +99,10 @@ func (g *Gateway) handleChannelPublicKey(
 		newChannel.ExtraData(),
 	)
 	if err != nil {
-		channelLogger.WithError(err).Warn("Failed to open backend channel")
-		_ = newChannel.Reject(ssh.ConnectionFailed, err.Error())
+		channelLogger.WithError(err).Warn("Failed to open devbox channel")
+		errMsg := "Failed to open devbox channel: " + err.Error() + "\r\n" +
+			"The devbox session may have been terminated\r\n"
+		_ = newChannel.Reject(ssh.ConnectionFailed, errMsg)
 		return
 	}
 	defer backendChannel.Close()
@@ -97,6 +116,7 @@ func (g *Gateway) handleChannelPublicKey(
 	defer channel.Close()
 
 	channelLogger.Debug("Channel established")
+	defer channelLogger.Debug("Channel closed")
 
 	// Use synchronized proxy to ensure exit-status is forwarded before closing
 	g.proxyChannelWithRequests(

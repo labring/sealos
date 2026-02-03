@@ -1,8 +1,6 @@
 export type AppConfigType = {
   common: {
     docUrl: string
-    isInvitationActive: boolean
-    invitationUrl: string
   }
   auth: {
     appTokenJwtKey: string

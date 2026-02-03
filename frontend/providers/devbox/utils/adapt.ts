@@ -42,6 +42,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     template,
     remark: devbox.metadata?.annotations?.[devboxRemarkKey] || '',
     status: devboxStatusMap[devbox.status.phase] || devboxStatusMap.Error, // use devbox.status.phase to get status
+    state: devbox.spec.state || 'Error',
     sshPort:
       devbox.spec.network.type === 'SSHGate' ? 2233 : devbox.status?.network.nodePort || 65535,
     createTime: devbox.metadata.creationTimestamp,
@@ -62,11 +63,75 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
 export const adaptDevboxDetailV2 = ([
   devbox,
   portInfos,
-  template
+  template,
+  k8sConfigMaps,
+  k8sPvcs
 ]: GetDevboxByNameReturn): DevboxDetailTypeV2 => {
+  const status =
+    devbox.status?.phase && devboxStatusMap[devbox.status.phase]
+      ? devboxStatusMap[devbox.status.phase]
+      : devboxStatusMap.Pending;
+
+  const config = devbox.spec.config as any;
+  const devboxName = devbox.metadata.name || 'devbox';
+
+  const envs: Array<{ key: string; value: string }> = [];
+  if (config?.env && Array.isArray(config.env)) {
+    config.env.forEach((item: any) => {
+      if (item.name && item.value !== undefined) {
+        envs.push({
+          key: item.name,
+          value: item.value
+        });
+      }
+    });
+  }
+
+  const configMaps: Array<{ id: string; path: string; content: string }> = [];
+  const volumes: Array<{ id: string; path: string; size: number }> = [];
+
+  if (config?.volumes && config?.volumeMounts) {
+    const volumesArray = config.volumes as any[];
+    const volumeMountsArray = config.volumeMounts as any[];
+
+    volumesArray.forEach((volume: any) => {
+      const volumeMount = volumeMountsArray.find((vm: any) => vm.name === volume.name);
+      if (!volumeMount) return;
+
+      if (volume.configMap) {
+        const configMapName = volume.configMap.name;
+        const match = configMapName.match(new RegExp(`${devboxName}-cm-(.+)`));
+        const id = match ? match[1] : '';
+
+        const k8sConfigMap = k8sConfigMaps.find((cm) => cm.metadata?.name === configMapName);
+        const content = k8sConfigMap?.data ? Object.values(k8sConfigMap.data)[0] || '' : '';
+
+        configMaps.push({
+          id,
+          path: volumeMount.mountPath,
+          content
+        });
+      } else if (volume.persistentVolumeClaim) {
+        const pvcName = volume.persistentVolumeClaim.claimName;
+        const match = pvcName.match(new RegExp(`${devboxName}-pvc-(.+)`));
+        const id = match ? match[1] : '';
+
+        const k8sPvc = k8sPvcs.find((pvc) => pvc.metadata?.name === pvcName);
+        const sizeStr = k8sPvc?.spec?.resources?.requests?.storage || '1Gi';
+        const size = parseInt(sizeStr.replace(/Gi/i, '')) || 1;
+
+        volumes.push({
+          id,
+          path: volumeMount.mountPath,
+          size
+        });
+      }
+    });
+  }
+
   return {
     id: devbox.metadata?.uid || ``,
-    name: devbox.metadata.name || 'devbox',
+    name: devboxName,
     templateUid: devbox.spec.templateID,
     templateName: template.name,
     templateRepositoryName: template.templateRepository.name,
@@ -75,7 +140,8 @@ export const adaptDevboxDetailV2 = ([
     templateConfig: JSON.stringify(devbox.spec.config),
     image: template.image,
     iconId: template.templateRepository.iconId || '',
-    status: devboxStatusMap[devbox.status.phase] || devboxStatusMap.Error, // use devbox.status.phase to get status
+    status: devboxStatusMap[devbox.status.phase] || devboxStatusMap.Error,
+    state: devbox.spec.state || 'Error',
     sshPort:
       devbox.spec.network.type === 'SSHGate' ? 2233 : devbox.status?.network.nodePort || 65535,
     isPause: devbox.status.phase === 'Stopped' || devbox.status.phase === 'Shutdown',
@@ -84,10 +150,13 @@ export const adaptDevboxDetailV2 = ([
     memory: memoryFormatToMi(devbox.spec.resource.memory),
     gpu: {
       type: devbox.spec.nodeSelector?.[gpuNodeSelectorKey] || '',
-      amount: Number(devbox.spec.resource[gpuResourceKey] || 1),
+      amount: Number(devbox.spec.resource[gpuResourceKey] || 0),
       manufacturers: 'nvidia'
     },
     networks: portInfos || [],
+    envs,
+    configMaps,
+    volumes,
     networkType: devbox.spec.network.type
   };
 };

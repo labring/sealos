@@ -3,7 +3,7 @@ import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { ROLE_LIST, UserRole } from '@/types/team';
-import { compareFirstLanguages } from '@/utils/tools';
+import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { Button, Flex, Image, Text, VStack } from '@chakra-ui/react';
 import { track } from '@sealos/gtm';
 import { dehydrate, QueryClient, useMutation, useQuery } from '@tanstack/react-query';
@@ -166,9 +166,7 @@ const Callback: NextPage = () => {
   );
 };
 export async function getServerSideProps({ req, res, locales }: any) {
-  const local =
-    req?.cookies?.NEXT_LOCALE || compareFirstLanguages(req?.headers?.['accept-language'] || 'zh');
-  res.setHeader('Set-Cookie', `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`);
+  const local = ensureLocaleCookie({ req, res, defaultLocale: 'en' });
 
   const queryClient = new QueryClient();
   const props = {

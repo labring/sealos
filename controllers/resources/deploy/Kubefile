@@ -3,11 +3,7 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY manifests manifests
+COPY charts charts
+COPY resources-controller-entrypoint.sh resources-controller-entrypoint.sh
 
-ENV DEFAULT_NAMESPACE resources-system
-ENV MONGO_URI "mongodb://mongo:27017/resources"
-ENV TRAFFIC_MONGO_URI "mongodb://mongo:27017/traffic"
-
-
-CMD ["kubectl apply -f manifests/deploy.yaml -f manifests/deploy-manager.yaml -n $DEFAULT_NAMESPACE && ( kubectl create -f manifests/mongo-secret.yaml -n $DEFAULT_NAMESPACE || true )"]
+CMD ["bash resources-controller-entrypoint.sh"]

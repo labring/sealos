@@ -55,9 +55,6 @@
   "guide_steps": "{{count}}步骤",
   "guide_title": "你好, {{name}}. 欢迎来到你的免费计划",
   "includes_credits": "包含 ${{credits}} 积分",
-  "input_invite_id": "输入邀请码",
-  "invite_friend": "邀请好友注册 Sealos，立领 10元 余额",
-  "invite_id": "邀请码",
   "invite_link_copied": "邀请链接已复制",
   "join_discord_prompt": {
     "cancel": "以后再说",
@@ -103,7 +100,6 @@
   "quickstart_guide": "快速入门指南",
   "quit_guide": "退出指南",
   "quit_guide_description": "要重新启动指南，请单击此处。\n如果您正在寻找额外的支持，请选择文档以查找与您的任务相关的文章。",
-  "referral": "推荐",
   "register": "注册",
   "remember_me": "记住我",
   "request_new_link": "重新发送验证码",

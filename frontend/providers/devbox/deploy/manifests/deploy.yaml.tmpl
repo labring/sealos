@@ -34,6 +34,30 @@ spec:
       labels:
         app: devbox-frontend
     spec:
+      initContainers:
+        - name: devbox-frontend-init
+          image: ghcr.io/labring/sealos-devbox-frontend:latest
+          imagePullPolicy: Always
+          env:
+          - name: DATABASE_URL
+            value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
+          command:
+          - sh
+          - -c
+          args:
+          - |-
+            cd /app/providers/devbox
+            MIGRATION="20260125094114_add_template_repository_kind"
+            HAS_MIGRATION=$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM _prisma_migrations WHERE migration_name='${MIGRATION}' AND rolled_back_at IS NULL LIMIT 1;")
+            if [ "$HAS_MIGRATION" = "1" ]; then
+              prisma migrate deploy
+              exit 0
+            fi
+            HAS_ENUM=$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname IN ('TemplateRepositoryKind','template_repository_kind') AND e.enumlabel = 'SERVICE' LIMIT 1;")
+            if [ "$HAS_ENUM" = "1" ]; then
+              prisma migrate resolve --applied "$MIGRATION"
+            fi
+            prisma migrate deploy
       containers:
         - name: devbox-frontend
           env:
@@ -49,6 +73,8 @@ spec:
               value: https://sealos.io/docs/msa/privacy-policy
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
+            - name: SSH_DOMAIN
+              value: {{ default "" .sshDomain }}
             - name: INGRESS_SECRET
               value: wildcard-cert
             - name: REGISTRY_ADDR
@@ -69,8 +95,6 @@ spec:
               value: 'false'
             - name: STORAGE_LIMIT
               value: 10Gi # default is 10Gi
-            - name: PRIVACY_URL
-              value: https://sealos.run/docs/msa/privacy-policy
             - name: RETAG_SVC_URL
               value: http://devbox-service.devbox-system.svc.cluster.local:8092
             - name: JWT_SECRET
@@ -83,6 +107,18 @@ spec:
               value: 'false'
             - name: ENABLE_WEBIDE_FEATURE
               value: 'false'
+            - name: ENABLE_ADVANCED_CONFIG
+              value: 'false'
+            - name: CPU_SLIDE_MARK_LIST
+              value: '1,2,4,8,16'
+            - name: MEMORY_SLIDE_MARK_LIST
+              value: '2,4,8,16,32'
+            - name: DEVBOX_DOMAIN_CHALLENGE_SECRET
+              value: {{ .devboxDomainChallengeSecret }}
+            - name: NFS_STORAGE_CLASS_NAME
+              value: {{ default "nfs-csi" .nfsStorageClassName }}
+            - name: CUSTOM_SCRIPTS
+              value: '{{ default "[]" .customScripts }}'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

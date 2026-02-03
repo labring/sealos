@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "account.fullname" . }}-controller-manager
+  labels:
+    control-plane: controller-manager
+    {{- include "account.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        checksum/account-manager-env: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        control-plane: controller-manager
+        {{- include "account.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "account.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: manager
+          command:
+            - /manager
+          args:
+            - --health-probe-bind-address=:8081
+            - --leader-elect
+            {{- if .Values.metrics.enabled }}
+            - --metrics-secure=true
+            - --metrics-bind-address=:8443
+            {{- else }}
+            - --metrics-bind-address=127.0.0.1:8080
+            {{- end }}
+          env:
+            - name: ACCOUNT_NAMESPACE
+              value: {{ .Values.env.accountNamespace | quote }}
+            - name: NAMESPACE_NAME
+              value: {{ .Values.env.userNamespace | quote }}
+            - name: WHITELIST
+              value: {{ .Values.env.whitelist | quote }}
+            - name: ACCOUNT_SYSTEM_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+          envFrom:
+            - secretRef:
+                name: {{ .Values.paymentSecretName }}
+                optional: true
+            - configMapRef:
+                name: account-manager-env
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+              protocol: TCP
+            {{- if .Values.metrics.enabled }}
+            - containerPort: 8443
+              name: https
+              protocol: TCP
+            {{- end }}
+          image: "{{ .Values.image }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.metrics.enabled }}
+            - name: metrics-certs
+              mountPath: {{ .Values.metrics.certPath }}
+              readOnly: true
+            {{- end }}
+            - mountPath: /tmp/k8s-webhook-server/serving-certs
+              name: cert
+              readOnly: true
+      terminationGracePeriodSeconds: 10
+      affinity:
+        {{- if .Values.affinity }}
+        {{- toYaml .Values.affinity | nindent 8 }}
+        {{- else }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: control-plane
+                      operator: In
+                      values:
+                        - controller-manager
+                topologyKey: kubernetes.io/hostname
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        {{- if .Values.metrics.enabled }}
+        - name: metrics-certs
+          secret:
+            secretName: {{ .Values.metrics.secretName }}
+            optional: false
+            items:
+              - key: ca.crt
+                path: ca.crt
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+        {{- end }}
+        {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: webhook-server-cert

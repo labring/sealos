@@ -9,6 +9,7 @@ export const defaultEnv: Env = {
   documentUrlZH: 'https://sealos.run/docs/overview/intro',
   documentUrlEN: 'https://sealos.io/docs/overview/intro',
   sealosDomain: 'dev.sealos.plus',
+  sshDomain: 'dev.sealos.plus',
   ingressSecret: 'wildcard-cert',
   registryAddr: 'hub.dev.sealos.plus',
   devboxAffinityEnable: 'true',
@@ -21,8 +22,11 @@ export const defaultEnv: Env = {
   storageLimit: '10Gi',
   enableImportFeature: 'false',
   enableWebideFeature: 'false',
+  enableAdvancedConfig: 'false',
   cpuSlideMarkList: '1,2,4,8,16',
-  memorySlideMarkList: '2,4,8,16,32'
+  memorySlideMarkList: '2,4,8,16,32',
+  nfsStorageClassName: 'nfs-csi',
+  webIdePort: 9999
 };
 
 type State = {

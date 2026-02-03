@@ -88,7 +88,7 @@ export const getWechatResult = (payload: { code: string }) =>
   });
 
 export const getGlobalNotification = () => {
-  return request.get<any, ApiResp<TNotification>>('/api/notification/global');
+  return request.get<any, ApiResp<TNotification[]>>('/api/notification/global');
 };
 
 export const listNotification = () =>
@@ -154,3 +154,10 @@ export const sendAlertBindEmailCode = (data: { id: string }) =>
 
 export const sendAlertBindPhoneCode = (data: { id: string }) =>
   request.post<any, ApiResp>('/api/account/alerts/bind/phone/sms', data);
+
+export const createTemplateInstance = (data: {
+  templateName: string;
+  templateForm: Record<string, any>;
+}) => {
+  return request.post<any, ApiResp<any>>('/api/platform/createTemplateInstance', data);
+};

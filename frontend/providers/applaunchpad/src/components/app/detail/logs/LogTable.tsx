@@ -98,7 +98,7 @@ export const LogTable = ({
       .map((field) => ({
         accessorKey: field.accessorKey,
         header: () => {
-          return t('log_table.' + field.label) || field.label;
+          return t('log_table.' + field.label, { defaultValue: field.label });
         },
         cell: ({ row }) => {
           let value = get(row.original, field.accessorKey, '');

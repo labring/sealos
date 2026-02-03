@@ -33,7 +33,7 @@ interface EmailCheckFormProps {
 export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { setToken } = useSessionStore();
+  const { setGlobalToken } = useSessionStore();
 
   const [pinValue, setPinValue] = useState('');
   const { formValues, startTime } = useSigninFormStore();
@@ -63,14 +63,11 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/email/verify', {
         id: data.id,
         code: data.code
-        // inviterId: getInviterId(),
-        // semData: getUserSemData(),
-        // bdVid: getBaiduId()
       }),
     async onSuccess(result) {
       const globalToken = result.data?.token;
       if (!globalToken) throw Error();
-      setToken(globalToken);
+      setGlobalToken(globalToken); // Sets global token and cookie
       if (result.data?.needInit) {
         try {
           // 自动初始化工作空间

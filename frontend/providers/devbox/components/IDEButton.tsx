@@ -88,6 +88,7 @@ const IDEButton = memo(
     const { openConfirm, ConfirmChild } = useConfirm({
       title: 'prompt',
       content: 'webide_fee_warning',
+      contentParams: { port: env.webIdePort },
       confirmText: 'confirm',
       cancelText: 'cancel'
     });
@@ -118,17 +119,21 @@ const IDEButton = memo(
           if (currentIDE === 'webide') {
             const portsResponse = await getDevboxPorts(devboxName);
             const existingPorts = portsResponse.ports || [];
-            const port9999 = existingPorts.find((p) => p.number === 9999);
+            const webIdePortConfig = existingPorts.find((p) => p.number === env.webIdePort);
 
-            if (port9999 && port9999.exposesPublicDomain && port9999.publicDomain) {
-              const webIDEUrl = `https://${port9999.publicDomain}/?folder=/home/devbox/project`;
+            if (
+              webIdePortConfig &&
+              webIdePortConfig.exposesPublicDomain &&
+              webIdePortConfig.publicDomain
+            ) {
+              const webIDEUrl = `https://${webIdePortConfig.publicDomain}/?folder=/home/devbox/project`;
               window.open(webIDEUrl, '_blank');
               return;
             }
 
             const executeWebIDE = async () => {
               toast.info('Creating Web IDE network...');
-              const response = await updateDevboxWebIDEPort(devboxName, 9999);
+              const response = await updateDevboxWebIDEPort(devboxName, env.webIdePort);
 
               if (response.publicDomain) {
                 const webIDEUrl = `https://${response.publicDomain}/?folder=/home/devbox/project`;
@@ -154,9 +159,9 @@ const IDEButton = memo(
             userName,
             token,
             workingDir,
-            host: env.sealosDomain,
+            host: env.sshDomain,
             port: sshPort.toString(),
-            configHost: `${env.sealosDomain}_${env.namespace}_${devboxName}`
+            configHost: `${env.sshDomain}_${env.namespace}_${devboxName}`
           });
 
           if (currentIDE === 'gateway') {
@@ -172,11 +177,11 @@ const IDEButton = memo(
 
           const idePrefix = ideObj[currentIDE].prefix;
           const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
-            `${userName}@${env.sealosDomain}`
+            `${userName}@${env.sshDomain}`
           )}&sshPort=${encodeURIComponent(sshPort)}&base64PrivateKey=${encodeURIComponent(
             base64PrivateKey
           )}&sshHostLabel=${encodeURIComponent(
-            `${env.sealosDomain}_${env.namespace}_${devboxName}`
+            `${env.sshDomain}_${env.namespace}_${devboxName}`
           )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(token)}`;
           window.location.href = fullUri;
         } catch (error: any) {
@@ -191,7 +196,9 @@ const IDEButton = memo(
         devboxName,
         runtimeType,
         env.sealosDomain,
+        env.sshDomain,
         env.namespace,
+        env.webIdePort,
         sshPort,
         setGuideIDE,
         openConfirm
@@ -533,10 +540,7 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
     }
   ];
 };
-const getRightColumnItems = (
-  currencySymbol: string,
-  enableWebideFeature: string
-): MenuItem[] => {
+const getRightColumnItems = (currencySymbol: string, enableWebideFeature: string): MenuItem[] => {
   if (currencySymbol === 'usd') {
     return [
       { value: 'cursor', menuLabel: 'Cursor' },

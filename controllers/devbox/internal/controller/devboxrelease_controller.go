@@ -97,7 +97,11 @@ func (r *DevboxreleaseReconciler) Reconcile(
 	)
 
 	devbox := &devboxv1alpha2.Devbox{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: devboxRelease.Namespace, Name: devboxRelease.Spec.DevboxName}, devbox); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Namespace: devboxRelease.Namespace, Name: devboxRelease.Spec.DevboxName},
+		devbox,
+	); err != nil {
 		logger.Error(err, "Failed to get devbox", "devbox", devboxRelease.Spec.DevboxName)
 		return ctrl.Result{}, err
 	}
@@ -141,7 +145,11 @@ func (r *DevboxreleaseReconciler) Reconcile(
 		)
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			latestRelease := &devboxv1alpha2.DevBoxRelease{}
-			if err := r.Get(ctx, client.ObjectKeyFromObject(devboxRelease), latestRelease); err != nil {
+			if err := r.Get(
+				ctx,
+				client.ObjectKeyFromObject(devboxRelease),
+				latestRelease,
+			); err != nil {
 				return err
 			}
 			latestRelease.Status.Phase = devboxv1alpha2.DevBoxReleasePhasePending
@@ -188,11 +196,24 @@ func (r *DevboxreleaseReconciler) Reconcile(
 			)
 			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 		} else if err != nil {
-			logger.Error(err, "Failed to create release tag", "devbox", devboxRelease.Spec.DevboxName, "devboxRelease", devboxRelease.Name, "version", devboxRelease.Spec.Version)
+			logger.Error(
+				err,
+				"Failed to create release tag",
+				"devbox",
+				devboxRelease.Spec.DevboxName,
+				"devboxRelease",
+				devboxRelease.Name,
+				"version",
+				devboxRelease.Spec.Version,
+			)
 			// Update status to failed with retry
 			_ = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				latestRelease := &devboxv1alpha2.DevBoxRelease{}
-				if err := r.Get(ctx, client.ObjectKeyFromObject(devboxRelease), latestRelease); err != nil {
+				if err := r.Get(
+					ctx,
+					client.ObjectKeyFromObject(devboxRelease),
+					latestRelease,
+				); err != nil {
 					return err
 				}
 				latestRelease.Status.Phase = devboxv1alpha2.DevBoxReleasePhaseFailed
@@ -212,7 +233,11 @@ func (r *DevboxreleaseReconciler) Reconcile(
 		// Update status to success with retry
 		err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			latestRelease := &devboxv1alpha2.DevBoxRelease{}
-			if err := r.Get(ctx, client.ObjectKeyFromObject(devboxRelease), latestRelease); err != nil {
+			if err := r.Get(
+				ctx,
+				client.ObjectKeyFromObject(devboxRelease),
+				latestRelease,
+			); err != nil {
 				return err
 			}
 			latestRelease.Status.Phase = devboxv1alpha2.DevBoxReleasePhaseSuccess
@@ -234,7 +259,14 @@ func (r *DevboxreleaseReconciler) Reconcile(
 		if devboxRelease.Spec.StartDevboxAfterRelease {
 			err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 				devbox := &devboxv1alpha2.Devbox{}
-				if err := r.Get(ctx, client.ObjectKey{Namespace: devboxRelease.Namespace, Name: devboxRelease.Spec.DevboxName}, devbox); err != nil {
+				if err := r.Get(
+					ctx,
+					client.ObjectKey{
+						Namespace: devboxRelease.Namespace,
+						Name:      devboxRelease.Spec.DevboxName,
+					},
+					devbox,
+				); err != nil {
 					return err
 				}
 				logger.Info(
@@ -294,7 +326,10 @@ func (r *DevboxreleaseReconciler) Release(
 	devboxRelease *devboxv1alpha2.DevBoxRelease,
 ) error {
 	logger := log.FromContext(ctx)
-	if err := r.ReTag(devboxRelease.Status.SourceImage, devboxRelease.Status.TargetImage); err != nil {
+	if err := r.ReTag(
+		devboxRelease.Status.SourceImage,
+		devboxRelease.Status.TargetImage,
+	); err != nil {
 		logger.Error(
 			err,
 			"Failed to re-tag image",

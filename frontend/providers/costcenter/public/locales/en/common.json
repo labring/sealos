@@ -4,6 +4,7 @@
   "all_regions": "All Regions",
   "annual_income_and_expenditure": "Top-ups and Cost",
   "apply": "Apply",
+  "actions": "Actions",
   "balance": "Balance",
   "balance_subscription_tooltip": "Once you subscribe to a plan, this balance will not be consumed. However, if your plan's AI credits are exhausted, you can use this balance for AI Proxy services.",
   "before_the_next_billing_date": "before the next billing date",
@@ -14,8 +15,10 @@
     "cost_and_revenue_trends": "Cost & Top-up Trends",
     "recharge": "Recharge History"
   },
+  "in_debt": "In Debt",
   "bonus": "Bonus",
   "bonus_amount": "Bonus Amount",
+  "being_cancelled_banner": "Your subscription is cancelled. Resources will be deleted after <1>{{date}}</1>. Please back up your data or renew to avoid loss.",
   "calculating": "Calculating...",
   "cancel": "Cancel",
   "cancellation_will_take_effect_on_next_billing_cycle": "Cancellation will take effect on next billing cycle",
@@ -25,6 +28,8 @@
   "close": "Close",
   "common_valuation": "Basic Pricing",
   "congratulations": "Congratulations",
+  "subscription_renewed_title": "Subscription renewed",
+  "subscription_renewed_desc": "Your subscription has been renewed and will\ncontinue at the end of your billing period.",
   "contact_us": "Contact Us",
   "cost": "Cost",
   "cost_form": "Cost Form",
@@ -64,16 +69,21 @@
   "promotion_code_applied": "Promotion code \"{{code}}\" applied",
   "pending_upgrade_title": "Unpaid Order Exists",
   "pending_upgrade_message": "There is an unpaid upgrade order to {{planName}}. Please choose to continue paying the original order or cancel it and pay for the new order.",
+  "invoice_payment_message": "You have an unpaid bill. Please complete the payment to continue using the service.",
+  "go_to_payment": "Go to Payment",
   "continue_payment": "Continue Paying",
   "cancel_and_pay_new": "Cancel & Pay New",
   "canceling_invoice": "Canceling order...",
   "cancel_invoice_success": "Order canceled successfully",
   "cancel_invoice_error": "Failed to cancel order",
   "expiration_time": "Expiration Date",
+  "expired": "Expired",
+  "expired_on": "Expired On",
   "expires": "EXP",
   "failed_to_create_portal_session": "Failed to create portal session",
   "failed_to_redeem_gift_code": "Failed to redeem",
   "free_plan": "Free Plan",
+  "free_plan_expiry_banner": "You are currently on the Free Plan, which will expire on <1>{{date}}</1>. Please click the button on the right to upgrade and ensure uninterrupted service.",
   "get_code": "verification",
   "gift_card_redemption": "Redeem Code",
   "gift_code": "Code",
@@ -157,18 +167,21 @@
         "placeholder": "Enter fax number"
       },
       "invoice_title": {
-        "placeholder": "Enter invoice title"
+        "placeholder": "Enter invoice title",
+        "placeholder_personal": "Personal invoices usually require name"
       },
       "phone": {
         "placeholder": "Enter phone number"
       },
       "tax_registration_number": {
-        "placeholder": "Enter tax registration number"
+        "placeholder": "Enter tax registration number",
+        "placeholder_personal": "Personal invoices usually require ID number"
       },
       "type": {
         "list": {
           "normal": "VAT invoice (Normal)",
-          "special": "VAT invoice (Special)"
+          "special": "VAT invoice (Special)",
+          "personal": "Personal"
         }
       }
     },
@@ -291,6 +304,15 @@
   "region_workspace_cost": "{{region}} / {{workspace}} Cost",
   "remain": "Remaining",
   "remaining_balance": "Balance",
+  "renew": "Renew",
+  "renew_plan": "Renew Plan",
+  "resume_plan_success_title": "Plan renewed",
+  "resume_plan_success_desc": "Auto-renewal has been restored.",
+  "resume_plan_failed_title": "Renew failed",
+  "resume_plan_failed_desc": "Failed to renew your plan. Please try again later.",
+  "resume_plan_expired_title": "Subscription expired",
+  "resume_plan_expired_desc": "This subscription has expired. Please re-subscribe.",
+  "renew_subscription": "Renew Subscription",
   "renews_at_full_price": "Renews at full price.",
   "resource": "resource",
   "resource_name": "Resource Name",
@@ -362,9 +384,23 @@
   },
   "unknown": "Unknown",
   "unknown_workspace": "Unknown Workspace",
+  "unsubscribe": "Unsubscribe",
   "until_then_your_current_plan_remains_active": "Until then, your current plan remains active",
   "upgrade": "Upgrade",
   "upgrade_plan": "Upgrade Plan",
+  "cancel_plan": "Cancel Plan",
+  "cancelled": "Cancelled",
+  "canceling_plan": "Canceling...",
+  "cancel_plan_warning_before_date": "Your resources will be kept until the current subscription period ends (",
+  "cancel_plan_warning_after_date": "). ",
+  "cancel_plan_warning_delete": "After that, all workspace resources will be deleted",
+  "cancel_plan_warning_after_delete": ". Please backup your work in advance to avoid data loss.",
+  "cancel_plan_enter_prefix": "Please enter",
+  "cancel_plan_enter_suffix": "to confirm:",
+  "cancel_plan_success_title": "Plan cancelled",
+  "cancel_plan_success_desc": "Your subscription will not renew after the current period ends.",
+  "cancel_plan_failed_title": "Cancel failed",
+  "cancel_plan_failed_desc": "Failed to cancel your plan. Please try again later.",
   "usage": {
     "title": "Usage"
   },
@@ -399,6 +435,7 @@
       "contracts": "Custom Contracts"
     }
   },
+  "plan_cancelled": "Plan Cancelled",
   "card_brands": {
     "visa": "Visa",
     "mastercard": "Mastercard",

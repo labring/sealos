@@ -38,10 +38,13 @@
   "avatar": "Avatar",
   "balance_popover": {
     "balance": "Balance",
+    "cancelled_notice": "Your subscription is cancelled. Resources will be deleted after {{date}}. Please back up your data or renew to avoid loss.",
     "check_costcenter_tip": "Check more details in Cost Center",
     "expired_at": "Expired At:",
+    "expires_on": "Expires on:",
     "payg_plan": "PAYG",
     "plan_suffix": "Plan",
+    "renew_subscription_button": "Renew subscription",
     "subscription_status": {
       "expired": "Expired",
       "limited_trial": "Limited Trial"
@@ -188,7 +191,6 @@
   "invitation_reminder": "Invitation reminder",
   "invite_member": "Invite Member",
   "invite_members_to_workspace": "Invite members to workspace {{workspace}}",
-  "inviter_id_tips": "Invitation code (Only mobile registration is supported, optional)",
   "irreversibleactiontips": "This action is irreversible, please proceed with caution.",
   "jump_over": "Jump Over",
   "laf_on_sealos": "Laf on Sealos",
@@ -223,8 +225,10 @@
   "name_of_team": "Name of Workspace",
   "nav_links": {
     "balance": "Balance",
+    "cancelled": "Cancelled",
     "plan_expired": "Expired",
     "plan_suffix": "Plan",
+    "renew": "Renew",
     "subscribe": "Subscribe",
     "upgrade_plan": "Upgrade"
   },
@@ -238,6 +242,8 @@
   "no_apps_found": "No Apps Found",
   "no_realname_auth": "Identity Not Verified",
   "notification": "Notification",
+  "no_notifications_yet": "No notifications yet",
+  "no_notifications_desc": "Recent notifications will be shown here. Everything is going well.",
   "noworkspacecreated": "You haven't created a workspace yet",
   "official_account_login": "Official account login",
   "old_email": "Old email",
@@ -292,7 +298,6 @@
   "receive_tips": "{{managerName}} invites you to join {{teamName}} wtih the {{role}}",
   "recharge_amount": "Recharge Amount",
   "redirecting_to_homepage_in_3_seconds": "Redirecting to homepage in 3 seconds",
-  "referral": "Referral",
   "refresh_qr_code": "Refresh the QR code",
   "region": "Region",
   "reject": "Reject",

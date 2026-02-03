@@ -66,6 +66,7 @@ type DevboxReconciler struct {
 
 	DebugMode                 bool
 	MergeBaseImageTopLayer    bool
+	EnableBlockIOResource     bool
 	StartupConfigMapName      string
 	StartupConfigMapNamespace string
 
@@ -233,7 +234,11 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 			}
 		} else if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
-			logger.Info("devbox already scheduled to node", "node", devbox.Status.CommitRecords[devbox.Status.ContentID].Node)
+			logger.Info(
+				"devbox already scheduled to node",
+				"node",
+				devbox.Status.CommitRecords[devbox.Status.ContentID].Node,
+			)
 			return ctrl.Result{}, nil
 		}
 	}
@@ -425,11 +430,19 @@ func (r *DevboxReconciler) syncSecret(
 		// Secret already exists, update with retry
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			latestSecret := &corev1.Secret{}
-			if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, latestSecret); err != nil {
+			if err := r.Get(
+				ctx,
+				client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name},
+				latestSecret,
+			); err != nil {
 				return err
 			}
 			// update controller reference
-			if err := controllerutil.SetControllerReference(devbox, latestSecret, r.Scheme); err != nil {
+			if err := controllerutil.SetControllerReference(
+				devbox,
+				latestSecret,
+				r.Scheme,
+			); err != nil {
 				return fmt.Errorf("failed to update owner reference: %w", err)
 			}
 			// TODO: delete this code after we have a way to sync secret to devbox
@@ -487,7 +500,12 @@ func (r *DevboxReconciler) syncPod(
 ) error {
 	logger := log.FromContext(ctx)
 	podList := &corev1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+	if err := r.List(
+		ctx,
+		podList,
+		client.InNamespace(devbox.Namespace),
+		client.MatchingLabels(recLabels),
+	); err != nil {
 		return err
 	}
 	switch devbox.Spec.State {
@@ -800,12 +818,21 @@ func (r *DevboxReconciler) syncDevboxPhase(
 
 	// Fetch pod list
 	podList := &corev1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+	if err := r.List(
+		ctx,
+		podList,
+		client.InNamespace(devbox.Namespace),
+		client.MatchingLabels(recLabels),
+	); err != nil {
 		return err
 	}
 
 	// Refresh devbox to get latest status
-	if err := r.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, devbox); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name},
+		devbox,
+	); err != nil {
 		return fmt.Errorf("failed to get devbox: %w", err)
 	}
 
@@ -935,7 +962,12 @@ func (r *DevboxReconciler) deletePod(
 	}
 
 	// Delete pod
-	if err := r.Delete(ctx, pod, client.GracePeriodSeconds(0), client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
+	if err := r.Delete(
+		ctx,
+		pod,
+		client.GracePeriodSeconds(0),
+		client.PropagationPolicy(metav1.DeletePropagationBackground),
+	); err != nil {
 		if !apierrors.IsNotFound(err) {
 			logger.Error(err, "delete pod failed")
 			return err
@@ -1017,7 +1049,7 @@ func (r *DevboxReconciler) handleStorageDelete(
 	if r.isStorageAlreadyCleanedUp(devbox) {
 		logger.Info("devbox storage already cleaned up, skipping cleanup",
 			"devbox", devbox.Name,
-			"state", devbox.Spec.State)
+			"state", devbox.Status.State)
 		return nil
 	}
 
@@ -1043,8 +1075,8 @@ func (r *DevboxReconciler) handleStorageDelete(
 // isStorageAlreadyCleanedUp checks if storage cleanup is already done
 // shutdown or stopped devbox is already cleaned up
 func (r *DevboxReconciler) isStorageAlreadyCleanedUp(devbox *devboxv1alpha2.Devbox) bool {
-	return devbox.Spec.State == devboxv1alpha2.DevboxStateShutdown ||
-		devbox.Spec.State == devboxv1alpha2.DevboxStateStopped
+	return devbox.Status.State == devboxv1alpha2.DevboxStateShutdown ||
+		devbox.Status.State == devboxv1alpha2.DevboxStateStopped
 }
 
 // validateAndGetCommitRecord validates devbox status and returns the current commit record
@@ -1132,7 +1164,12 @@ func (r *DevboxReconciler) handleSubResourceDelete(
 
 	// Delete Pod
 	podList := &corev1.PodList{}
-	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+	if err := r.List(
+		ctx,
+		podList,
+		client.InNamespace(devbox.Namespace),
+		client.MatchingLabels(recLabels),
+	); err != nil {
 		return err
 	}
 	for i := range podList.Items {
@@ -1170,15 +1207,30 @@ func (r *DevboxReconciler) handleSubResourceDelete(
 			return err
 		}
 	}
-	if err := r.deleteResourcesByLabels(ctx, &corev1.Pod{}, devbox.Namespace, recLabels); err != nil {
+	if err := r.deleteResourcesByLabels(
+		ctx,
+		&corev1.Pod{},
+		devbox.Namespace,
+		recLabels,
+	); err != nil {
 		return err
 	}
 	// Delete Service
-	if err := r.deleteResourcesByLabels(ctx, &corev1.Service{}, devbox.Namespace, recLabels); err != nil {
+	if err := r.deleteResourcesByLabels(
+		ctx,
+		&corev1.Service{},
+		devbox.Namespace,
+		recLabels,
+	); err != nil {
 		return err
 	}
 	// Delete Configmap
-	if err := r.deleteResourcesByLabels(ctx, &corev1.ConfigMap{}, devbox.Namespace, recLabels); err != nil {
+	if err := r.deleteResourcesByLabels(
+		ctx,
+		&corev1.ConfigMap{},
+		devbox.Namespace,
+		recLabels,
+	); err != nil {
 		return err
 	}
 	// Delete Secret
@@ -1206,7 +1258,7 @@ func (r *DevboxReconciler) generateDevboxPod(
 		Name:        devbox.Name,
 		Namespace:   devbox.Namespace,
 		Labels:      helper.GeneratePodLabels(devbox),
-		Annotations: helper.GeneratePodAnnotations(devbox),
+		Annotations: helper.GeneratePodAnnotations(devbox, r.EnableBlockIOResource),
 	}
 
 	// ports := devbox.Spec.Config.Ports
@@ -1307,7 +1359,10 @@ func (r *DevboxReconciler) getAcceptanceConsideration(
 	}
 	ann := node.Annotations
 	ac := helper.AcceptanceConsideration{}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationContainerFSAvailableThreshold], 64); err != nil {
+	if v, err := strconv.ParseFloat(
+		ann[devboxv1alpha2.AnnotationContainerFSAvailableThreshold],
+		64,
+	); err != nil {
 		logger.Info(
 			"failed to parse containerfs available threshold. use default value instead",
 			"value",
@@ -1337,7 +1392,10 @@ func (r *DevboxReconciler) getAcceptanceConsideration(
 	} else {
 		ac.CPULimitRatio = v
 	}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationMemoryRequestRatio], 64); err != nil {
+	if v, err := strconv.ParseFloat(
+		ann[devboxv1alpha2.AnnotationMemoryRequestRatio],
+		64,
+	); err != nil {
 		logger.Info(
 			"failed to parse memory request ratio. use default value instead",
 			"value",
@@ -1347,7 +1405,10 @@ func (r *DevboxReconciler) getAcceptanceConsideration(
 	} else {
 		ac.MemoryRequestRatio = v
 	}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationMemoryLimitRatio], 64); err != nil {
+	if v, err := strconv.ParseFloat(
+		ann[devboxv1alpha2.AnnotationMemoryLimitRatio],
+		64,
+	); err != nil {
 		logger.Info(
 			"failed to parse memory limit ratio. use default value instead",
 			"value",
@@ -1403,7 +1464,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get storage limit")
 		goto unsuitable // If we can't get the storage limit, we assume the node is not suitable
 	} else if storageLimitBytes > 0 && availableBytes < uint64(storageLimitBytes) {
-		logger.Info("available bytes less than storage limit", "availableBytes", availableBytes, "storageLimitBytes", storageLimitBytes)
+		logger.Info(
+			"available bytes less than storage limit",
+			"availableBytes",
+			availableBytes,
+			"storageLimitBytes",
+			storageLimitBytes,
+		)
 		goto unsuitable // If available bytes are less than the storage limit, we assume the node is not suitable
 	}
 	availablePercentage = float64(availableBytes) / float64(capacityBytes) * 100
@@ -1418,7 +1485,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get total CPU request")
 		goto unsuitable // If we can't get the CPU request, we assume the node is not suitable
 	} else if cpuRequestRatio < ac.CPURequestRatio {
-		logger.Info("cpu request ratio is less than cpu overcommitment request ratio", "RequestRatio", cpuRequestRatio, "ratio", ac.CPURequestRatio)
+		logger.Info(
+			"cpu request ratio is less than cpu overcommitment request ratio",
+			"RequestRatio",
+			cpuRequestRatio,
+			"ratio",
+			ac.CPURequestRatio,
+		)
 		score += getScoreUnit(0)
 	}
 	cpuLimitRatio, err = r.getTotalCPULimitRatio(ctx)
@@ -1426,7 +1499,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get total CPU limit")
 		goto unsuitable // If we can't get the CPU limit, we assume the node is not suitable
 	} else if cpuLimitRatio < ac.CPULimitRatio {
-		logger.Info("cpu limit ratio is less than cpu overcommitment limit ratio", "LimitRatio", cpuLimitRatio, "ratio", ac.CPULimitRatio)
+		logger.Info(
+			"cpu limit ratio is less than cpu overcommitment limit ratio",
+			"LimitRatio",
+			cpuLimitRatio,
+			"ratio",
+			ac.CPULimitRatio,
+		)
 		score += getScoreUnit(0)
 	}
 	memoryRequestRatio, err = r.getTotalMemoryRequestRatio(ctx)
@@ -1434,7 +1513,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get total memory request")
 		goto unsuitable // If we can't get the memory request, we assume the node is not suitable
 	} else if memoryRequestRatio < ac.MemoryRequestRatio {
-		logger.Info("memory request ratio is less than memory overcommitment request ratio", "RequestRatio", memoryRequestRatio, "ratio", ac.MemoryRequestRatio)
+		logger.Info(
+			"memory request ratio is less than memory overcommitment request ratio",
+			"RequestRatio",
+			memoryRequestRatio,
+			"ratio",
+			ac.MemoryRequestRatio,
+		)
 		score += getScoreUnit(0)
 	}
 	memoryLimitRatio, err = r.getTotalMemoryLimitRatio(ctx)
@@ -1442,7 +1527,13 @@ func (r *DevboxReconciler) getAcceptanceScore(
 		logger.Error(err, "failed to get total memory limit")
 		goto unsuitable // If we can't get the memory limit, we assume the node is not suitable
 	} else if memoryLimitRatio < ac.MemoryLimitRatio {
-		logger.Info("memory limit ratio is less than memory overcommitment limit ratio", "LimitRatio", memoryLimitRatio, "ratio", ac.MemoryLimitRatio)
+		logger.Info(
+			"memory limit ratio is less than memory overcommitment limit ratio",
+			"LimitRatio",
+			memoryLimitRatio,
+			"ratio",
+			ac.MemoryLimitRatio,
+		)
 		score += getScoreUnit(0)
 	}
 	return score
@@ -1580,24 +1671,6 @@ func (r *DevboxReconciler) getTotalMemoryLimitRatio(ctx context.Context) (float6
 	return ratio, nil
 }
 
-type ControllerRestartPredicate struct {
-	predicate.Funcs
-	duration  time.Duration
-	checkTime time.Time
-}
-
-func NewControllerRestartPredicate(duration time.Duration) *ControllerRestartPredicate {
-	return &ControllerRestartPredicate{
-		checkTime: time.Now().Add(-duration),
-		duration:  duration,
-	}
-}
-
-// skip create event p.duration ago
-func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
-	return e.Object.GetCreationTimestamp().After(p.checkTime)
-}
-
 // ContentIDChangedPredicate triggers reconcile when devbox status.contentID changes
 type ContentIDChangedPredicate struct {
 	predicate.Funcs
@@ -1651,15 +1724,34 @@ func (p NetworkTypeChangedPredicate) Update(e event.UpdateEvent) bool {
 	return false
 }
 
+// PhaseChangedPredicate triggers reconcile when devbox status.phase changes or status.phase is `Error`
+type PhaseChangedPredicate struct {
+	predicate.Funcs
+}
+
+func (p PhaseChangedPredicate) Update(e event.UpdateEvent) bool {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		return false
+	}
+	oldDevbox, oldOk := e.ObjectOld.(*devboxv1alpha2.Devbox)
+	newDevbox, newOk := e.ObjectNew.(*devboxv1alpha2.Devbox)
+	if oldOk && newOk {
+		return oldDevbox.Status.Phase != newDevbox.Status.Phase ||
+			newDevbox.Status.Phase == devboxv1alpha2.DevboxPhaseError
+	}
+	return false
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, devboxv1alpha2.PodNodeNameIndex, func(rawObj client.Object) []string {
-		pod, _ := rawObj.(*corev1.Pod)
-		if pod.Spec.NodeName == "" {
-			return nil
-		}
-		return []string{pod.Spec.NodeName}
-	}); err != nil {
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &corev1.Pod{}, devboxv1alpha2.PodNodeNameIndex, func(rawObj client.Object) []string {
+			pod, _ := rawObj.(*corev1.Pod)
+			if pod.Spec.NodeName == "" {
+				return nil
+			}
+			return []string{pod.Spec.NodeName}
+		}); err != nil {
 		return fmt.Errorf("failed to index field %s: %w", devboxv1alpha2.PodNodeNameIndex, err)
 	}
 	return ctrl.NewControllerManagedBy(mgr).
@@ -1669,14 +1761,12 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			NetworkTypeChangedPredicate{},          // enqueue request if devbox status.network.type is updated
 			ContentIDChangedPredicate{},            // enqueue request if devbox status.contentID is updated
 			LastContainerStatusChangedPredicate{},  // enqueue request if devbox status.lastContainerStatus is updated
-		),
-		)).
+			PhaseChangedPredicate{},                // enqueue request if devbox status.phase is updated or status.phase is `Error`
+		))).
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})).
 		// enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		// enqueue request if service spec is updated
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
-		// enqueue request if secret spec is updated
-		WithEventFilter(NewControllerRestartPredicate(r.RestartPredicateDuration)).
 		Complete(r)
 }

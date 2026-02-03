@@ -7,7 +7,14 @@ export type SubscriptionType = z.infer<typeof SubscriptionTypeSchema>;
 export const PaymentMethodSchema = z.enum(['stripe', 'balance']);
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
 
-export const OperatorSchema = z.enum(['created', 'upgraded', 'downgraded', 'renewed', 'canceled']);
+export const OperatorSchema = z.enum([
+  'created',
+  'upgraded',
+  'downgraded',
+  'renewed',
+  'canceled',
+  'resumed'
+]);
 export type Operator = z.infer<typeof OperatorSchema>;
 
 // Stripe 信息
@@ -49,6 +56,24 @@ export const SubscriptionPlanSchema = z.object({
 
 export type SubscriptionPlan = z.infer<typeof SubscriptionPlanSchema>;
 
+// 发票信息
+export const InvoiceInfoSchema = z.object({
+  ID: z.string(),
+  PaymentUrl: z.url(),
+  AmountDue: z.number(),
+  Currency: z.string(),
+  Status: z.string(),
+  CreatedAt: z.number(),
+  DueDate: z.number(),
+  HasDiscount: z.boolean(),
+  DiscountAmount: z.number(),
+  Subtotal: z.number(),
+  Total: z.number(),
+  Description: z.string(),
+  PaymentMethodType: z.string()
+});
+export type InvoiceInfo = z.infer<typeof InvoiceInfoSchema>;
+
 // 工作空间订阅
 export const WorkspaceSubscriptionSchema = z.object({
   ID: z.string(),
@@ -69,7 +94,8 @@ export const WorkspaceSubscriptionSchema = z.object({
   UpdateAt: z.string(),
   ExpireAt: z.string().nullable(),
   Traffic: z.array(z.any()).nullable(),
-  type: SubscriptionTypeSchema
+  type: SubscriptionTypeSchema,
+  InvoiceInfo: InvoiceInfoSchema.optional()
 });
 export type WorkspaceSubscription = z.infer<typeof WorkspaceSubscriptionSchema>;
 
@@ -126,7 +152,7 @@ export type UpgradeAmountRequest = z.infer<typeof UpgradeAmountRequestSchema>;
 
 export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.extend({
   planName: z.string(),
-  period: z.enum(['1m', '1y']), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
+  period: z.enum(['1m', '1y']).optional(), // 订阅周期：1m=1个月，1y=1年（需与套餐价格表的 billing_cycle 匹配）
   payMethod: PaymentMethodSchema, // 支付方式：stripe 或 balance
   operator: OperatorSchema,
   cardId: z.string().optional(),
@@ -137,6 +163,16 @@ export const SubscriptionPayRequestSchema = WorkspaceSubscriptionRequestSchema.e
       userType: z.enum(['subscription', 'payg'])
     })
     .optional()
+}).superRefine((val, ctx) => {
+  const operator = val.operator;
+  const periodRequiredOperators: Operator[] = ['created', 'upgraded', 'downgraded', 'renewed'];
+  if (periodRequiredOperators.includes(operator) && !val.period) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['period'],
+      message: 'period is required'
+    });
+  }
 });
 export type SubscriptionPayRequest = z.infer<typeof SubscriptionPayRequestSchema>;
 

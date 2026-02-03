@@ -123,16 +123,18 @@ const Release = () => {
       const config = parseTemplateConfig(result.template.config);
       const releaseArgs = config.releaseArgs.join(' ');
       const releaseCommand = config.releaseCommand.join(' ');
-      const { cpu, memory, networks, name, gpu } = devbox;
-      const newNetworks = networks.map((network) => {
-        return {
-          port: network.port,
-          appProtocol: network.protocol,
-          protocol: 'TCP',
-          openPublicDomain: network.openPublicDomain,
-          domain: env.ingressDomain
-        };
-      });
+      const { cpu, memory, networks, name, gpu, configMaps, volumes, envs } = devbox;
+      const newNetworks = networks
+        .filter((network) => network.port !== env.webIdePort)
+        .map((network) => {
+          return {
+            port: network.port,
+            appProtocol: network.protocol,
+            protocol: 'TCP',
+            openPublicDomain: network.openPublicDomain,
+            domain: env.ingressDomain
+          };
+        });
       const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`;
 
       const transformData = {
@@ -157,7 +159,27 @@ const Release = () => {
         cmdParam: releaseArgs,
         labels: {
           [devboxIdKey]: devbox.id
-        }
+        },
+        configMapList:
+          configMaps?.map((cm) => ({
+            mountPath: cm.path,
+            value: cm.content,
+            key: cm.path.split('/').pop() || 'config',
+            volumeName: `${name}-volume-cm-${cm.id}`
+          })) || [],
+        storeList:
+          volumes?.map((vol) => ({
+            name: `${name}-pvc-${vol.id}`,
+            path: vol.path,
+            value: vol.size,
+            storageType: 'remote',
+            storageClassName: env.nfsStorageClassName
+          })) || [],
+        envs:
+          envs?.map((env) => ({
+            key: env.key,
+            value: env.value
+          })) || []
       };
       setDeployData(transformData);
 
@@ -182,7 +204,14 @@ const Release = () => {
       // If has apps, show the drawer
       setOnOpenSelectApp(true);
     },
-    [devbox, env.ingressDomain, env.namespace, env.registryAddr]
+    [
+      devbox,
+      env.ingressDomain,
+      env.namespace,
+      env.registryAddr,
+      env.webIdePort,
+      env.nfsStorageClassName
+    ]
   );
 
   const handleDelDevboxVersion = useCallback(

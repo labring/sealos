@@ -23,7 +23,6 @@ import { useIDEStore } from '@/stores/ide';
 import { usePriceStore } from '@/stores/price';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
-import { useUserStore } from '@/stores/user';
 import { useQuotaGuarded } from '@sealos/shared';
 import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 import ErrorModal from '@/components/ErrorModal';
@@ -70,7 +69,7 @@ const DevboxCreatePage = () => {
     const name = searchParams.get('name');
     const from = searchParams.get('from');
     const scrollTo = searchParams.get('scrollTo');
-    if (name) {
+    if (name && name !== captureDevboxName) {
       setCaptureDevboxName(name);
       if (from) {
         setCaptureFrom(from);

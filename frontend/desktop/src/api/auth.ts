@@ -34,7 +34,6 @@ export const _passwordLoginRequest =
       | {
           user: string;
           password: string;
-          inviterId: string | null | undefined;
           semData: SemData | null | undefined;
           adClickData: AdClickData | null | undefined;
         }
@@ -115,7 +114,7 @@ export const _getNewSmsCodeRequest =
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
   (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string; semData?: SemData; adClickData?: AdClickData }) =>
+  (data: { code: string; semData?: SemData; adClickData?: AdClickData }) =>
     request.post<
       typeof data,
       ApiResp<
@@ -130,17 +129,13 @@ export const _oauthProviderSignIn =
       >
     >(`/api/auth/oauth/${provider.toLocaleLowerCase()}`, data);
 export const _oauthProviderBind =
-  (request: AxiosInstance) =>
-  (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string }) =>
+  (request: AxiosInstance) => (provider: ProviderType) => (data: { code: string }) =>
     request.post<
       typeof data,
       ApiResp<{ code: string | null | undefined }, ValueOf<typeof BIND_STATUS>>
     >(`/api/auth/oauth/${provider.toLocaleLowerCase()}/bind`, data);
 export const _oauthProviderUnbind =
-  (request: AxiosInstance) =>
-  (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string }) =>
+  (request: AxiosInstance) => (provider: ProviderType) => (data: { code: string }) =>
     request.post<typeof data, ApiResp<{ code: string | null | undefined }, ValueOf<UNBIND_STATUS>>>(
       `/api/auth/oauth/${provider.toLocaleLowerCase()}/unbind`,
       data

@@ -73,7 +73,8 @@ const generateBotTemplate = ({
     },
     {
       invoiceKey: `发票类型`,
-      invoiceValue: detail.type === 'special' ? '专票' : '普票'
+      invoiceValue:
+        detail.type === 'personal' ? '个人' : detail.type === 'special' ? '专票' : '普票'
     },
     {
       invoiceKey: `税号`,

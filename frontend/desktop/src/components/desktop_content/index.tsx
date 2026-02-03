@@ -1,12 +1,13 @@
 import { getWorkspaceQuota } from '@/api/platform';
 import AppWindow from '@/components/app_window';
-import useAppStore from '@/stores/app';
+import useAppStore, { BRAIN_APP_KEY, SESSION_RESTORE_APP_KEY } from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
 import { Box, Flex, Image, Button, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import { ChakraIndicator } from './ChakraIndicator';
@@ -40,6 +41,7 @@ export const blurBackgroundStyles = {
 
 export default function Desktop() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { isAppBar } = useDesktopConfigStore();
   const {
     installedApps: apps,
@@ -47,7 +49,9 @@ export default function Desktop() {
     openApp,
     setToHighestLayerById,
     closeAppById,
-    setAutoLaunch
+    setAutoLaunch,
+    currentAppKey,
+    autolaunch
   } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
@@ -58,12 +62,84 @@ export default function Desktop() {
     useSessionStore();
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
+  const prevRestoreAppKeyRef = useRef<string>('');
   const [isClient, setIsClient] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(true);
   const guideModal = useGuideModalStore();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (!isClient) return;
+
+    const prevKey = prevRestoreAppKeyRef.current;
+    prevRestoreAppKeyRef.current = currentAppKey;
+
+    if (!currentAppKey) {
+      if (!isRestoring && prevKey) {
+        sessionStorage.removeItem(SESSION_RESTORE_APP_KEY);
+      }
+      return;
+    }
+
+    if (currentAppKey === BRAIN_APP_KEY) {
+      sessionStorage.removeItem(SESSION_RESTORE_APP_KEY);
+      return;
+    }
+
+    sessionStorage.setItem(SESSION_RESTORE_APP_KEY, currentAppKey);
+  }, [isClient, currentAppKey, isRestoring]);
+
+  // Restore current app after page refresh
+  useEffect(() => {
+    if (!isClient) {
+      return;
+    }
+
+    // openapp/autolaunch has higher priority than restore
+    if (router.isReady) {
+      const hasOpenAppQuery = Object.hasOwn(router.query, 'openapp');
+      const isStripeCallback = router.query?.stripeState === 'success' && !!router.query?.payId;
+      if (hasOpenAppQuery || !!autolaunch || isStripeCallback) {
+        setIsRestoring(false);
+        return;
+      }
+    }
+
+    if (apps.length === 0) {
+      return;
+    }
+
+    const sessionRestoreKey = sessionStorage.getItem(SESSION_RESTORE_APP_KEY) || '';
+    const restoreAppKey = currentAppKey || sessionRestoreKey;
+
+    if (restoreAppKey) {
+      const savedApp = apps.find((app) => app.key === restoreAppKey);
+      const isAppRunning = runningInfo.some((app) => app.key === restoreAppKey);
+
+      if (savedApp && !isAppRunning) {
+        openApp(savedApp).then(() => {
+          // Wait a bit for the app to render before hiding loading
+          setTimeout(() => setIsRestoring(false), 100);
+        });
+        return;
+      }
+    }
+
+    // No app to restore or app already running
+    setIsRestoring(false);
+  }, [
+    router.isReady,
+    router.query,
+    autolaunch,
+    currentAppKey,
+    apps,
+    runningInfo,
+    openApp,
+    isClient
+  ]);
 
   const infoData = useQuery({
     queryFn: UserInfo,
@@ -227,12 +303,54 @@ export default function Desktop() {
     }
   }, []);
 
+  // Show loading during app restoration
+  if (isRestoring) {
+    return (
+      <Box
+        id="desktop"
+        className={styles.desktop}
+        position={'relative'}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Box
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          zIndex={-10}
+          overflow="hidden"
+        >
+          <Image
+            src={backgroundImage || desktopBackgroundImage || '/images/bg-light.svg'}
+            alt=""
+            width="100%"
+            height="100vh"
+            objectFit="cover"
+            objectPosition="bottom"
+          />
+        </Box>
+
+        {/* opened apps - need to render during restore */}
+        {runningInfo.map((process) => {
+          return (
+            <AppWindow key={process.pid} style={{ height: '100vh' }} pid={process.pid}>
+              <IframeWindow pid={process.pid} />
+            </AppWindow>
+          );
+        })}
+      </Box>
+    );
+  }
+
   return (
     <Box id="desktop" className={styles.desktop} position={'relative'}>
       <Box position="absolute" top="0" left="0" right="0" bottom="0" zIndex={-10} overflow="hidden">
         <Image
           src={backgroundImage || desktopBackgroundImage || '/images/bg-light.svg'}
-          alt="background"
+          alt=""
           width="100%"
           height="100vh"
           objectFit="cover"

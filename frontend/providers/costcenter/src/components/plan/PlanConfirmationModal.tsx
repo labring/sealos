@@ -15,24 +15,24 @@ import { openInNewWindow } from '@/utils/windowUtils';
 interface PlanConfirmationModalProps {
   plan?: SubscriptionPlan;
   workspaceName?: string;
-  isCreateMode?: boolean;
   isOpen?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
   onPaymentSuccess?: () => void;
   isSubmitting?: boolean;
+  isRenew?: boolean;
 }
 
 const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((props, _ref) => {
   const {
     plan: planProp,
     workspaceName: workspaceNameProp,
-    isCreateMode: isCreateModeProp,
     isOpen,
     onConfirm,
     onCancel,
     onPaymentSuccess,
-    isSubmitting: isSubmittingProp
+    isSubmitting: isSubmittingProp,
+    isRenew = false
   } = props;
 
   const { t } = useTranslation();
@@ -59,12 +59,10 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     setPromotionCodeError,
     stopPaymentWaiting,
     subscriptionData,
-    lastTransactionData,
     hideModal,
     resetConfirmationModal,
     pendingUpgrade,
     setPendingUpgrade,
-    showPendingUpgradeDialog,
     setShowPendingUpgradeDialog,
     plansData,
     paymentWaitingInvoiceId,
@@ -75,7 +73,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   // Get plan and context from store (props take precedence for backward compatibility)
   const plan = planProp || pendingPlan || undefined;
   const workspaceName = workspaceNameProp || modalContext.workspaceName;
-  const isCreateMode = isCreateModeProp ?? modalContext.isCreateMode ?? false;
+  const operatorFromContext = modalContext.operator;
+  const businessOperation = modalContext.businessOperation;
 
   const region = getRegion();
   const workspace = session?.user?.nsid || '';
@@ -84,10 +83,29 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   const payMethod: PaymentMethod = 'stripe';
 
   const isPaygUser = isPaygType();
-  const operator = isCreateMode || isPaygUser ? 'created' : 'upgraded';
+  // Always use operator from context, fallback to 'created' for PAYG users only
+  const operator = operatorFromContext || (isPaygUser ? 'created' : 'upgraded');
+  // Determine business operation for UI display (prioritize businessOperation from context, fallback to isRenew prop, then infer from operator)
+  const finalBusinessOperation =
+    businessOperation ||
+    (isRenew ? 'renew' : undefined) ||
+    (operator === 'created'
+      ? 'create'
+      : operator === 'upgraded'
+      ? 'upgrade'
+      : operator === 'downgraded'
+      ? 'downgrade'
+      : undefined);
+  const isCreateMode = finalBusinessOperation === 'create';
+  const isRenewMode = finalBusinessOperation === 'renew';
+  const isUpgradeMode = finalBusinessOperation === 'upgrade';
+  const isDowngradeMode = finalBusinessOperation === 'downgrade';
+  // getUpgradeAmount API only supports 'created' | 'upgraded', not 'downgraded'
+  const canQueryUpgradeAmount = operator === 'created' || operator === 'upgraded';
 
-  // Don't query upgrade-amount when payment is waiting
-  const queryEnabled = isOpen && !!(plan && workspace && regionDomain) && !isPaymentWaiting;
+  // Don't query upgrade-amount when payment is waiting or operator is downgraded
+  const queryEnabled =
+    isOpen && !!(plan && workspace && regionDomain) && !isPaymentWaiting && canQueryUpgradeAmount;
 
   const {
     data: upgradeAmountData,
@@ -107,13 +125,17 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     ],
     queryFn: () => {
       if (!plan || !workspace || !regionDomain) return null;
+      // Type assertion: getUpgradeAmount only accepts 'created' | 'upgraded'
+      // We've already checked canQueryUpgradeAmount in queryEnabled
+      const validOperator =
+        operator === 'created' || operator === 'upgraded' ? operator : 'upgraded';
       return getUpgradeAmount({
         workspace,
         regionDomain,
         planName: plan.Name,
         period,
         payMethod,
-        operator,
+        operator: validOperator,
         promotionCode: redeemCode || undefined
       });
     },
@@ -163,7 +185,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
     setAmountLoading(shouldShowLoading);
   }, [amountLoading, queryEnabled, upgradeAmountData, isUpgradeAmountError, setAmountLoading]);
 
-  const { data: cardInfoData, isLoading: cardInfoLoading } = useQuery({
+  const { isLoading: cardInfoLoading } = useQuery({
     queryKey: ['card-info', workspace, regionDomain],
     queryFn: () =>
       getCardInfo({
@@ -385,7 +407,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
   // Handle cancel payment waiting invoice mutation
   const cancelPaymentWaitingMutation = useMutation({
     mutationFn: cancelInvoice,
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Show success toast
       toast({
         title: t('common:success'),
@@ -456,8 +478,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       pendingUpgrade.original_amount !== undefined && pendingUpgrade.original_amount > 0
         ? pendingUpgrade.original_amount
         : pendingUpgrade.total_amount !== undefined && pendingUpgrade.total_amount > 0
-          ? pendingUpgrade.total_amount
-          : pendingUpgrade.amount_due;
+        ? pendingUpgrade.total_amount
+        : pendingUpgrade.amount_due;
 
     // Set discount information if available
     const hasDiscount = pendingUpgrade.has_discount ?? false;
@@ -580,7 +602,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       {/* Pending Upgrade Dialog */}
       {pendingUpgrade && (
         <PendingUpgradeDialog
-          pendingUpgrade={pendingUpgrade}
+          planName={pendingUpgrade.plan_name}
           onContinuePayment={handleContinuePendingPayment}
           onCancelAndPayNew={handleCancelAndPayNew}
           isCanceling={cancelInvoiceMutation.isLoading}
@@ -607,7 +629,15 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
         >
           <div className="flex justify-center items-center px-6 py-5">
             <h2 className="text-2xl font-semibold text-gray-900 text-center leading-none">
-              {isCreateMode ? t('common:create_workspace') : t('common:subscribe_plan')}
+              {isRenewMode
+                ? t('common:renew_subscription')
+                : isCreateMode
+                ? t('common:create_workspace')
+                : isDowngradeMode
+                ? t('common:downgrade_plan')
+                : isUpgradeMode
+                ? t('common:upgrade_plan')
+                : t('common:subscribe_plan')}
             </h2>
           </div>
 
@@ -621,6 +651,7 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
             onPaymentCancel={handlePaymentCancel}
             isSubmitting={isSubmittingProp}
             isCancelingInvoice={cancelPaymentWaitingMutation.isLoading}
+            isRenew={isRenew}
           />
         </DialogContent>
       </Dialog>

@@ -4,8 +4,10 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/pem"
+	"io"
 	"net"
 	"os"
+	"syscall"
 	"testing"
 	"time"
 
@@ -481,6 +483,144 @@ func TestGetUsernameFromPermissions(t *testing.T) {
 		_, err := gateway.GetUsernameFromPermissions(perms)
 		if err == nil {
 			t.Error("Expected error for missing username")
+		}
+	})
+}
+
+func TestIsHealthCheckProbeError(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name: "ECONNRESET wrapped in OpError",
+			err: &net.OpError{
+				Op:  "write",
+				Net: "tcp",
+				Err: syscall.ECONNRESET,
+			},
+			expected: true,
+		},
+		{
+			name: "EPIPE wrapped in OpError",
+			err: &net.OpError{
+				Op:  "write",
+				Net: "tcp",
+				Err: syscall.EPIPE,
+			},
+			expected: true,
+		},
+		{
+			name:     "EOF",
+			err:      io.EOF,
+			expected: true,
+		},
+		{
+			name: "other syscall error (ETIMEDOUT)",
+			err: &net.OpError{
+				Op:  "read",
+				Net: "tcp",
+				Err: syscall.ETIMEDOUT,
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := gateway.IsHealthCheckProbeError(tt.err)
+			if result != tt.expected {
+				t.Errorf("IsHealthCheckProbeError(%v) = %v, want %v", tt.err, result, tt.expected)
+			}
+		})
+	}
+}
+
+// TestNewServerConn_HealthCheckProbe tests that health check probes produce errors
+// that are correctly identified by IsHealthCheckProbeError.
+//
+// Real-world LB health check flow:
+//  1. LB establishes TCP connection to sshgate
+//  2. LB immediately closes connection (sends FIN or RST)
+//  3. sshgate's ssh.NewServerConn tries to WRITE SSH version string
+//  4. sshgate receives RST when writing to closed connection -> "write: connection reset by peer"
+//
+// Note: Local loopback may produce EPIPE instead of ECONNRESET due to timing differences,
+// but both are handled by IsHealthCheckProbeError.
+func TestNewServerConn_HealthCheckProbe(t *testing.T) {
+	reg := registry.New()
+	hostKey, _, _, _ := generateTestKeys(t)
+	gw := gateway.New(hostKey, reg, gateway.WithSSHHandshakeTimeout(2*time.Second))
+
+	// Start a test server
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("Failed to start listener: %v", err)
+	}
+	defer listener.Close()
+
+	t.Run("TCP RST (SetLinger 0)", func(t *testing.T) {
+		// Simulate LB health check: connect and immediately close with RST
+		clientConn, err := net.Dial("tcp", listener.Addr().String())
+		if err != nil {
+			t.Fatalf("Failed to connect: %v", err)
+		}
+
+		serverConn, err := listener.Accept()
+		if err != nil {
+			t.Fatalf("Failed to accept: %v", err)
+		}
+
+		// Set SO_LINGER to 0 and close to send RST
+		if tcpConn, ok := clientConn.(*net.TCPConn); ok {
+			_ = tcpConn.SetLinger(0)
+		}
+		clientConn.Close()
+
+		// Now try SSH handshake - should fail with health check error
+		_, _, _, sshErr := gw.NewServerConn(serverConn)
+		if sshErr == nil {
+			t.Fatal("Expected error, got nil")
+		}
+
+		t.Logf("Got error: %v", sshErr)
+
+		if !gateway.IsHealthCheckProbeError(sshErr) {
+			t.Errorf("Expected health check probe error, got: %v", sshErr)
+		}
+	})
+
+	t.Run("Immediate close (FIN)", func(t *testing.T) {
+		// Simulate: connect and gracefully close -> produces EOF
+		clientConn, err := net.Dial("tcp", listener.Addr().String())
+		if err != nil {
+			t.Fatalf("Failed to connect: %v", err)
+		}
+
+		serverConn, err := listener.Accept()
+		if err != nil {
+			t.Fatalf("Failed to accept: %v", err)
+		}
+
+		// Gracefully close
+		clientConn.Close()
+
+		// Now try SSH handshake - should fail with EOF
+		_, _, _, sshErr := gw.NewServerConn(serverConn)
+		if sshErr == nil {
+			t.Fatal("Expected error, got nil")
+		}
+
+		t.Logf("Got error: %v", sshErr)
+
+		if !gateway.IsHealthCheckProbeError(sshErr) {
+			t.Errorf("Expected health check probe error, got: %v", sshErr)
 		}
 	})
 }

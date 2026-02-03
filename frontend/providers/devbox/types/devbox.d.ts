@@ -64,6 +64,18 @@ export interface DevboxEditType {
   env?: DevboxEnvType[];
 }
 
+export interface DevboxConfigMapType {
+  id?: string;
+  path: string;
+  content: string;
+}
+
+export interface DevboxVolumeType {
+  id?: string;
+  path: string;
+  size: number;
+}
+
 export interface DevboxEditTypeV2 {
   name: string;
   templateUid: string;
@@ -76,6 +88,9 @@ export interface DevboxEditTypeV2 {
   networks: PortInfos;
   networkType?: 'NodePort' | 'Tailnet' | 'SSHGate';
   env?: DevboxEnvType[];
+  envs?: Array<{ key: string; value: string }>;
+  configMaps?: DevboxConfigMapType[];
+  volumes?: DevboxVolumeType[];
 }
 
 export interface DevboxStatusMapType {
@@ -129,6 +144,7 @@ export interface DevboxDetailTypeV2 extends json2DevboxData {
   templateRepositoryName: string;
   templateRepositoryDescription: string | null;
   status: DevboxStatusMapType;
+  state: DevboxStatusEnum;
   usedCpu?: MonitorDataResult;
   usedMemory?: MonitorDataResult;
   sshConfig?: {
@@ -162,6 +178,7 @@ export interface DevboxListItemTypeV2 {
     name: string;
   };
   status: DevboxStatusMapType;
+  state: DevboxStatusEnum;
   createTime: string;
   cpu: number;
   memory: number;

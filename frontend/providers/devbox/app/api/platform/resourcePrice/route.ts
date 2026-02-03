@@ -26,8 +26,7 @@ type ResourceType =
   | 'minio'
   | 'infra-cpu'
   | 'infra-memory'
-  | 'infra-disk'
-  | 'services.nodeports';
+  | 'infra-disk';
 
 type GpuNodeType = {
   'gpu.count': number;
@@ -44,8 +43,7 @@ const valuationMap: Record<string, number> = {
   cpu: 1000,
   memory: 1024,
   storage: 1024,
-  gpu: 1000,
-  ['services.nodeports']: 1
+  gpu: 1000
 };
 
 export async function GET(req: NextRequest) {
@@ -75,7 +73,6 @@ export async function GET(req: NextRequest) {
     const data: userPriceType = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
-      nodeports: countSourcePrice(priceResponse, 'services.nodeports'),
       gpu: GPU_ENABLE === 'true' ? countGpuSource(priceResponse, gpuNodes) : undefined
     };
 

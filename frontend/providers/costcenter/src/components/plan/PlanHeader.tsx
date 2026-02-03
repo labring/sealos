@@ -4,8 +4,14 @@ import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
+import CancelPlanModal from './CancelPlanModal';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createSubscriptionPayment } from '@/api/plan';
+import { useCustomToast } from '@/hooks/useCustomToast';
+import { useState } from 'react';
 
-export function getPlanBackgroundClass(planName: string, isPayg: boolean): string {
+export function getPlanBackgroundClass(planName: string, isPayg: boolean, inDebt: boolean): string {
+  if (inDebt) return 'bg-plan-debt';
   if (isPayg) return 'bg-plan-payg';
 
   const normalizedPlanName = planName.toLowerCase();
@@ -35,10 +41,13 @@ export function getPlanBackgroundClass(planName: string, isPayg: boolean): strin
 
 interface PlanHeaderProps {
   children?: ({ trigger }: { trigger: React.ReactNode }) => React.ReactNode;
+  onRenewSuccess?: () => void;
 }
 
-export function PlanHeader({ children }: PlanHeaderProps) {
+export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
   const { t } = useTranslation();
+  const { toast } = useCustomToast();
+  const queryClient = useQueryClient();
   const plansData = usePlanStore((state) => state.plansData);
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const lastTransactionData = usePlanStore((state) => state.lastTransactionData);
@@ -47,6 +56,77 @@ export function PlanHeader({ children }: PlanHeaderProps) {
   const subscription = subscriptionData?.subscription;
   const lastTransaction = lastTransactionData?.transaction;
   const planName = subscription?.PlanName || t('common:free_plan');
+  const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
+  const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
+  const stateLower = subscription?.Status?.toLowerCase?.() || '';
+  const isNormal = stateLower === 'normal';
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+
+  const cancelPlanMutation = useMutation({
+    mutationFn: createSubscriptionPayment,
+    onSuccess: async (data) => {
+      if (data?.code === 200) {
+        toast({
+          title: t('common:cancel_plan_success_title'),
+          description: t('common:cancel_plan_success_desc'),
+          variant: 'success'
+        });
+        setCancelModalOpen(false);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['subscription-info'], exact: false }),
+          queryClient.invalidateQueries({ queryKey: ['last-transaction'], exact: false }),
+          queryClient.invalidateQueries({ queryKey: ['workspace-subscription-list'], exact: false })
+        ]);
+        return;
+      }
+
+      toast({
+        title: t('common:cancel_plan_failed_title'),
+        description: data?.message || data?.error || t('common:cancel_plan_failed_desc'),
+        variant: 'destructive'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:cancel_plan_failed_title'),
+        description: error?.message || t('common:cancel_plan_failed_desc'),
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const resumePlanMutation = useMutation({
+    mutationFn: createSubscriptionPayment,
+    onSuccess: async (data) => {
+      if (data?.code === 200) {
+        toast({
+          title: t('common:resume_plan_success_title'),
+          description: t('common:resume_plan_success_desc'),
+          variant: 'success'
+        });
+        onRenewSuccess?.();
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['subscription-info'], exact: false }),
+          queryClient.invalidateQueries({ queryKey: ['last-transaction'], exact: false }),
+          queryClient.invalidateQueries({ queryKey: ['workspace-subscription-list'], exact: false })
+        ]);
+        return;
+      }
+
+      toast({
+        title: t('common:resume_plan_failed_title'),
+        description: data?.message || data?.error || t('common:resume_plan_failed_desc'),
+        variant: 'destructive'
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common:resume_plan_failed_title'),
+        description: error?.message || t('common:resume_plan_failed_desc'),
+        variant: 'destructive'
+      });
+    }
+  });
 
   const renewalTime = subscription?.CurrentPeriodEndAt
     ? new Date(subscription.CurrentPeriodEndAt)
@@ -60,7 +140,7 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         .replace(/\//g, '/')
         .replace(',', '')
     : '-';
-  const expTime = subscription?.ExpireAt
+  const expTime = subscription?.CurrentPeriodEndAt
     ? new Date(subscription.CurrentPeriodEndAt)
         .toLocaleString('zh-CN', {
           year: 'numeric',
@@ -74,7 +154,10 @@ export function PlanHeader({ children }: PlanHeaderProps) {
     : '-';
   const isPaygType = subscription?.type === 'PAYG';
   const planDisplayName = isPaygType ? 'PAYG' : planName;
-  const backgroundClass = getPlanBackgroundClass(planName, isPaygType);
+  const inDebt = subscription?.Status?.toLowerCase() === 'debt';
+  const backgroundClass = isCancelled
+    ? 'bg-plan-cancelled'
+    : getPlanBackgroundClass(planName, isPaygType, inDebt);
 
   // Find current plan details from plans list
   const currentPlan = plans?.find((plan) => plan.Name === subscription?.PlanName);
@@ -89,7 +172,8 @@ export function PlanHeader({ children }: PlanHeaderProps) {
   }
 
   // Check if there's a downgrade and show next plan info
-  const isDowngrade = lastTransaction?.Operator === 'downgraded';
+  const isDowngrade =
+    lastTransaction?.Operator === 'downgraded' && lastTransaction?.Status === 'pending';
   const nextPlanName = isDowngrade ? lastTransaction?.NewPlanName : null;
 
   if (isPaygType) {
@@ -100,13 +184,20 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         >
           <div>
             <span className="text-slate-500 text-sm">{t('common:current_workspace_plan')}</span>
-            <h1 className="font-semibold text-2xl">{planDisplayName}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-semibold text-2xl">{planDisplayName}</h1>
+              {inDebt && (
+                <span className="bg-red-500 text-white text-xs font-medium px-2 py-1 rounded">
+                  {t('common:expired')}
+                </span>
+              )}
+            </div>
           </div>
 
           {children?.({
             trigger: (
               <Button size="lg" variant="outline">
-                <span>{t('common:subscribe_plan')}</span>
+                <span>{inDebt ? t('common:renew') : t('common:subscribe_plan')}</span>
               </Button>
             )
           })}
@@ -121,17 +212,84 @@ export function PlanHeader({ children }: PlanHeaderProps) {
         <div className="flex justify-between items-center">
           <div>
             <span className="text-slate-500 text-sm">{t('common:current_workspace_plan')}</span>
-            <h1 className="font-semibold text-2xl">{isPaygType ? 'PAYG' : planName}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-semibold text-2xl">{isPaygType ? 'PAYG' : planName}</h1>
+              {inDebt && (
+                <span className="bg-red-100 text-red-600 text-xs font-medium px-2 py-1 rounded-full">
+                  {t('common:expired')}
+                </span>
+              )}
+            </div>
           </div>
 
-          {children?.({
-            trigger: (
-              <Button size="lg">
-                <Sparkles />
-                <span>{t('common:upgrade_plan')}</span>
+          <div className="flex items-center gap-3">
+            {isNormal && !isFreePlan && (
+              <Button
+                size="lg"
+                variant="outline"
+                disabled={isCancelled}
+                onClick={() => {
+                  if (isCancelled) return;
+                  setCancelModalOpen(true);
+                }}
+              >
+                <span>{isCancelled ? t('common:cancelled') : t('common:cancel_plan')}</span>
               </Button>
-            )
-          })}
+            )}
+            {isCancelled && (
+              <Button
+                size="lg"
+                disabled={resumePlanMutation.isLoading}
+                onClick={() => {
+                  if (!subscription) return;
+
+                  const statusLower = subscription.Status?.toLowerCase?.() || '';
+                  const isDeleted = statusLower === 'deleted';
+                  const periodEndMs = subscription.CurrentPeriodEndAt
+                    ? new Date(subscription.CurrentPeriodEndAt).getTime()
+                    : 0;
+                  const isExpired = !periodEndMs || periodEndMs <= Date.now();
+
+                  if (isDeleted || isExpired) {
+                    toast({
+                      title: t('common:resume_plan_expired_title'),
+                      description: t('common:resume_plan_expired_desc'),
+                      variant: 'destructive'
+                    });
+                    return;
+                  }
+
+                  const payMethod =
+                    subscription.PayMethod === 'balance' || subscription.PayMethod === 'stripe'
+                      ? subscription.PayMethod
+                      : 'stripe';
+
+                  resumePlanMutation.mutate({
+                    workspace: subscription.Workspace,
+                    regionDomain: subscription.RegionDomain,
+                    planName: subscription.PlanName,
+                    payMethod,
+                    operator: 'resumed'
+                  });
+                }}
+              >
+                <Sparkles />
+                <span>{t('common:renew_plan')}</span>
+              </Button>
+            )}
+
+            {/* Keep UpgradePlanDialog mounted even when cancelled, so message-driven open works */}
+            {children?.({
+              trigger: isCancelled ? (
+                <span className="hidden" />
+              ) : (
+                <Button size="lg">
+                  <Sparkles />
+                  <span>{inDebt ? t('common:renew') : t('common:upgrade_plan')}</span>
+                </Button>
+              )
+            })}
+          </div>
         </div>
 
         <Separator className="border-slate-200" />
@@ -186,12 +344,14 @@ export function PlanHeader({ children }: PlanHeaderProps) {
             </Tooltip>
           </div>
           <span className="text-card-foreground font-semibold text-base leading-none flex items-center gap-2">
-            {renewalTime}
+            {isCancelled ? '-' : renewalTime}
           </span>
         </div>
 
         <div className="flex gap-2 flex-col">
-          <span className="text-sm text-muted-foreground">{t('common:expiration_time')}</span>
+          <span className="text-sm text-muted-foreground">
+            {inDebt ? t('common:expired_on') : t('common:expiration_time')}
+          </span>
           <span className="text-card-foreground font-semibold text-base leading-none flex items-center gap-2">
             {expTime}
           </span>
@@ -206,6 +366,30 @@ export function PlanHeader({ children }: PlanHeaderProps) {
           </div>
         )}
       </div>
+
+      {subscription && (
+        <CancelPlanModal
+          isOpen={cancelModalOpen}
+          workspaceName={subscription.Workspace}
+          currentPeriodEndAt={subscription.CurrentPeriodEndAt}
+          isSubmitting={cancelPlanMutation.isLoading}
+          onClose={() => setCancelModalOpen(false)}
+          onConfirm={async () => {
+            const payMethod =
+              subscription.PayMethod === 'balance' || subscription.PayMethod === 'stripe'
+                ? subscription.PayMethod
+                : 'stripe';
+
+            cancelPlanMutation.mutate({
+              workspace: subscription.Workspace,
+              regionDomain: subscription.RegionDomain,
+              planName: subscription.PlanName,
+              payMethod,
+              operator: 'canceled'
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

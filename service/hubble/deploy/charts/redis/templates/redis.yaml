@@ -1,0 +1,117 @@
+{{- if eq .Values.kbVersion "0.8.2" }}
+apiVersion: apps.kubeblocks.io/v1alpha1
+kind: Cluster
+metadata:
+  name: {{.Release.Name}}
+  namespace: {{.Release.Namespace}}
+spec:
+  affinity:
+    {{- if .Values.nodeSelector }}
+    nodeLabels:
+      {{- toYaml .Values.nodeSelector | nindent 6 }}
+    {{- end }}
+    podAntiAffinity: Required
+    tenancy: SharedNode
+    topologyKeys: [ ]
+  clusterDefinitionRef: redis
+  clusterVersionRef: redis-7.0.6
+  componentSpecs:
+    - componentDefRef: redis
+      monitor: true
+      name: redis
+      replicas: {{.Values.cluster.replicas}}
+      serviceAccountName: kb-{{.Release.Name}}
+      rsmTransformPolicy: ToSts
+      enabledLogs:
+        - running
+      resources: {{- toYaml .Values.cluster.resources | nindent 8 }}
+      switchPolicy:
+        type: Noop
+      volumeClaimTemplates:
+        - name: data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: {{.Values.cluster.storage}}
+    {{- if .Values.sentinel.enable }}
+    - componentDefRef: redis-sentinel
+      monitor: true
+      name: redis-sentinel
+      rsmTransformPolicy: ToSts
+      replicas: {{.Values.sentinel.replicas}}
+      resources: {{- toYaml .Values.sentinel.resources | nindent 8 }}
+      volumeClaimTemplates:
+        - name: data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: {{.Values.sentinel.storage}}
+    {{- end }}
+  terminationPolicy: Delete
+  tolerations: []
+{{- end }}
+{{- if eq .Values.kbVersion "0.9.3" }}
+apiVersion: apps.kubeblocks.io/v1alpha1
+kind: Cluster
+metadata:
+  name: {{.Release.Name}}
+  namespace: {{.Release.Namespace}}
+spec:
+  affinity:
+    {{- if .Values.nodeSelector }}
+    nodeLabels:
+      {{- toYaml .Values.nodeSelector | nindent 6 }}
+    {{- end }}
+    podAntiAffinity: Preferred
+    tenancy: SharedNode
+    topologyKeys:
+      - kubernetes.io/hostname
+  backup:
+    enabled: true
+    pitrEnabled: false
+    retentionPeriod: 7d
+    method: datafile
+    cron: "0 2 * * *"
+  clusterDefinitionRef: redis
+  componentSpecs:
+    - componentDef: redis-7
+      serviceVersion: 7.2.7
+      name: redis
+      replicas: {{ .Values.cluster.replicas }}
+      serviceAccountName: kb-{{.Release.Name}}
+      resources: {{- toYaml .Values.cluster.resources | nindent 8 }}
+      env:
+        - name: CUSTOM_SENTINEL_MASTER_NAME
+      enabledLogs:
+        - running
+      switchPolicy:
+        type: Noop
+      volumeClaimTemplates:
+        - name: data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 5Gi
+    - componentDef: redis-sentinel-7
+      name: redis-sentinel
+      serviceVersion: 7.2.7
+      replicas: 3
+      resources: {{- toYaml .Values.sentinel.resources | nindent 8 }}
+      serviceAccountName: kb-{{.Release.Name}}
+      volumeClaimTemplates:
+        - name: data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+  terminationPolicy: Delete
+  topology: replication
+{{- end }}

@@ -6,7 +6,8 @@ import {
   DOMAIN_BINDING_DOCUMENTATION_LINK,
   DOMAIN_REG_QUERY_LINK,
   INFRASTRUCTURE_PROVIDER,
-  REQUIRES_DOMAIN_REG
+  REQUIRES_DOMAIN_REG,
+  SEALOS_USER_DOMAINS
 } from '@/store/static';
 import NextLink from 'next/link';
 import { BookOpen, CheckCircle, Copy, Loader2 } from 'lucide-react';
@@ -69,6 +70,25 @@ const CustomAccessModal = ({
 
   const sanitizeDomain = (input: string) =>
     input.match(/((?!-)[a-z0-9-]{1,63}(?<!-)\.)+[a-z]{2,6}/i)?.[0];
+
+  // Check if domain is an internal domain (any SEALOS_USER_DOMAINS)
+  const isInternalDomain = (domain: string): boolean => {
+    if (!domain) return false;
+    const normalizedDomain = domain.toLowerCase().trim();
+
+    // Check against all user domains
+    for (const userDomain of SEALOS_USER_DOMAINS) {
+      const userDomainLower = userDomain.name.toLowerCase();
+      if (
+        normalizedDomain === userDomainLower ||
+        normalizedDomain.endsWith(`.${userDomainLower}`)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  };
 
   const isValidDomain = useMemo(() => {
     return !!sanitizeDomain(customDomain);
@@ -286,6 +306,12 @@ const CustomAccessModal = ({
                           setVerificationMethod('CNAME'); // Reset to try CNAME first
                           setPreviousState(null);
                           authDomain(true);
+
+                          // Check if domain is an internal domain
+                          if (isInternalDomain(sanitizedDomain)) {
+                            toast.error(t('domain_cannot_use_internal'));
+                            return;
+                          }
                         }
                       }}
                       className="h-10 text-sm font-medium px-4 rounded-lg shadow-none"

@@ -56,12 +56,21 @@ export const useAppStore = create<State>()(
         const pods = await getAppPodsByAppName(appName);
 
         // one pod running, app is running
+        // NOTE: When pods is empty, it's usually "not loaded yet" instead of "all terminated".
+        const runningCount = pods.filter(
+          (pod) => pod.status.value === PodStatusEnum.running
+        ).length;
+        const terminatedCount = pods.filter(
+          (pod) => pod.status.value === PodStatusEnum.terminated
+        ).length;
+        const allTerminated = pods.length > 0 && terminatedCount === pods.length;
+
         const appStatus =
-          pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
+          pods.length === 0
+            ? appStatusMap.waiting
+            : runningCount > 0
             ? appStatusMap.running
-            : // Show error state when all pods are terminated.
-            pods.filter((pod) => pod.status.value === PodStatusEnum.terminated).length ===
-              pods.length
+            : allTerminated
             ? appStatusMap.error
             : appStatusMap.creating;
 
@@ -86,7 +95,7 @@ export const useAppStore = create<State>()(
       },
       loadAvgMonitorData: async (appName) => {
         const pods = await getAppPodsByAppName(appName);
-        const queryName = pods[0].podName || appName;
+        const queryName = pods?.[0]?.podName || appName;
         const [averageCpu, averageMemory] = await Promise.all([
           getAppMonitorData({
             queryKey: 'average_cpu',
@@ -110,7 +119,7 @@ export const useAppStore = create<State>()(
       },
       loadDetailMonitorData: async (appName) => {
         const pods = await getAppPodsByAppName(appName);
-        const queryName = pods[0].podName || appName;
+        const queryName = pods?.[0]?.podName || appName;
 
         set((state) => {
           state.appDetailPods = pods.map((pod) => {

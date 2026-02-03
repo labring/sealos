@@ -3,6 +3,7 @@ import { useCopyData } from '@/hooks/useCopyData';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
+import { clearSharedAuthCookie } from '@/utils/cookieUtils';
 import {
   Box,
   Center,
@@ -81,6 +82,7 @@ export default function Account() {
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
+    clearSharedAuthCookie(); // Clear shared cookie for cross-domain logout
     delSession();
     queryclient.clear();
     router.replace('/signin');
@@ -95,13 +97,6 @@ export default function Account() {
         page: page,
         mode: mode
       }
-    });
-  };
-
-  const openReferralApp = () => {
-    openDesktopApp({
-      appKey: 'system-invite',
-      pathname: '/'
     });
   };
 
@@ -322,7 +317,7 @@ export default function Account() {
                           getPlanBackgroundClass(
                             subscriptionInfo?.subscription?.PlanName ?? '',
                             !!subscriptionInfo?.subscription,
-                            subscriptionInfo?.subscription.Status === 'Debt'
+                            subscriptionInfo?.subscription?.Status?.toLowerCase() === 'debt'
                           )
                         )}
                       >
@@ -349,26 +344,6 @@ export default function Account() {
                     </Text>
                   </Flex>
                 </MenuItem>
-
-                {authConfig?.invite.enabled && (
-                  <MenuItem
-                    mt="0px"
-                    py="6px"
-                    px="8px"
-                    borderRadius="8px"
-                    _hover={{ bg: '#F4F4F5' }}
-                    onClick={openReferralApp}
-                  >
-                    <Flex alignItems="center" gap="8px">
-                      <Center w="20px" h="20px">
-                        <Gift size={16} color="#737373" />
-                      </Center>
-                      <Text fontSize="14px" fontWeight="400">
-                        {t('common:referral')}
-                      </Text>
-                    </Flex>
-                  </MenuItem>
-                )}
               </Box>
               <Divider bg={'#E4E4E7'} />
               <Box p={'8px'}>

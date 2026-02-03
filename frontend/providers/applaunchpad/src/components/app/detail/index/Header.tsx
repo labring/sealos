@@ -21,13 +21,15 @@ const Header = ({
   appStatus = appStatusMap[AppStatusEnum.waiting],
   isPause = false,
   refetch,
-  source
+  source,
+  isLoading = false
 }: {
   appName?: string;
   appStatus?: AppStatusMapType;
   isPause?: boolean;
   refetch: () => void;
   source?: TAppSource;
+  isLoading?: boolean;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();

@@ -22,18 +22,17 @@ import (
 	"strings"
 
 	v1 "github.com/labring/sealos/webhook/admission/api/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
-
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	//+kubebuilder:scaffold:imports
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 var (
@@ -44,7 +43,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	//utilruntime.Must(netv1.AddToScheme(scheme))
+	// utilruntime.Must(netv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -53,14 +52,39 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 	var ingressAnnotationString string
-	var domains v1.DomainList
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	var cnameDomains v1.DomainList
+	var denyDomains v1.DomainList
+	flag.StringVar(
+		&metricsAddr,
+		"metrics-bind-address",
+		":8080",
+		"The address the metric endpoint binds to.",
+	)
+	flag.StringVar(
+		&probeAddr,
+		"health-probe-bind-address",
+		":8081",
+		"The address the probe endpoint binds to.",
+	)
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&ingressAnnotationString, "ingress-mutating-annotations", "", "Ingress annotations: 'key1=value1,key2=value2'")
-	flag.Var(&domains, "domains", "Domains to be used for check ingress cname")
+	flag.StringVar(
+		&ingressAnnotationString,
+		"ingress-mutating-annotations",
+		"",
+		"Ingress annotations: 'key1=value1,key2=value2'",
+	)
+	flag.Var(
+		&cnameDomains,
+		"cnameDomains",
+		"Domains to be used for checking ingress host CNAME (comma-separated)",
+	)
+	flag.Var(
+		&denyDomains,
+		"denyDomains",
+		"Forbidden domain suffixes for user namespaces ingress hosts (comma-separated). Example: 'cloud.example.com,app.example.com'",
+	)
 	opts := zap.Options{
 		Development: true,
 	}
@@ -69,12 +93,14 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	if len(domains) == 0 {
+	if len(cnameDomains) == 0 {
 		setupLog.Error(nil, "domains is empty")
 		os.Exit(1)
 	}
-
-	setupLog.Info("domains:", "domains", strings.Join(domains, ","))
+	setupLog.Info("cname domains:", "domains", strings.Join(cnameDomains, ","))
+	if len(denyDomains) > 0 {
+		setupLog.Info("deny domains:", "domains", strings.Join(denyDomains, ","))
+	}
 	setupLog.Info("ingress annotations:", "annotation", ingressAnnotationString)
 	ingressAnnotations := make(map[string]string)
 	if ingressAnnotationString != "" {
@@ -93,9 +119,13 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: metricsserver.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port: 9443,
+		}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "849b6b0b.sealos.io",
@@ -117,7 +147,8 @@ func main() {
 	}
 
 	if (&v1.IngressValidator{
-		Domains: domains,
+		CnameDomains: cnameDomains,
+		DenyDomains:  denyDomains,
 	}).SetupWithManager(mgr) != nil {
 		setupLog.Error(err, "unable to create ingress validator webhook")
 		os.Exit(1)
@@ -125,7 +156,7 @@ func main() {
 
 	if (&v1.IngressMutator{
 		IngressAnnotations: ingressAnnotations,
-		Domains:            domains,
+		CnameDomains:       cnameDomains,
 	}).SetupWithManager(mgr) != nil {
 		setupLog.Error(err, "unable to create ingress mutator webhook")
 		os.Exit(1)

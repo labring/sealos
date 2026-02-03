@@ -85,6 +85,7 @@ type DebtReconciler struct {
 	processID                   string
 	SkipExpiredUserTimeDuration time.Duration
 	SendDebtStatusEmailBody     map[v1.DebtStatusType]string
+	debtEmailLanguage           string
 }
 
 type VmsConfig struct {
@@ -102,52 +103,11 @@ var DebtConfig = v1.DefaultDebtConfig
 
 func (r *DebtReconciler) DetermineCurrentStatus(
 	oweamount int64,
-	userUID uuid.UUID,
+	_ uuid.UUID,
 	updateIntervalSeconds int64,
 	lastStatus v1.DebtStatusType,
 ) (v1.DebtStatusType, error) {
-	if SubscriptionEnabled {
-		return r.determineCurrentStatusWithSubscription(
-			oweamount,
-			userUID,
-			updateIntervalSeconds,
-			lastStatus,
-		)
-	}
 	return determineCurrentStatus(oweamount, updateIntervalSeconds, lastStatus), nil
-}
-
-func (r *DebtReconciler) determineCurrentStatusWithSubscription(
-	oweamount int64,
-	userUID uuid.UUID,
-	updateIntervalSeconds int64,
-	lastStatus v1.DebtStatusType,
-) (v1.DebtStatusType, error) {
-	userSubscription, err := r.AccountV2.GetSubscription(&types.UserQueryOpts{UID: userUID})
-	if err != nil {
-		return v1.NormalPeriod, fmt.Errorf("failed to get user subscription: %w", err)
-	}
-
-	if oweamount > 0 && userSubscription.Status == types.SubscriptionStatusNormal {
-		if oweamount >= 5*BaseUnit {
-			return v1.NormalPeriod, nil
-		} else if oweamount > 1*BaseUnit {
-			return v1.LowBalancePeriod, nil
-		}
-		return v1.CriticalBalancePeriod, nil
-	}
-	if lastStatus == v1.NormalPeriod || lastStatus == v1.LowBalancePeriod ||
-		lastStatus == v1.CriticalBalancePeriod {
-		return v1.DebtPeriod, nil
-	}
-	if lastStatus == v1.DebtPeriod && updateIntervalSeconds >= DebtConfig[v1.DebtDeletionPeriod] {
-		return v1.DebtDeletionPeriod, nil
-	}
-	if lastStatus == v1.DebtDeletionPeriod &&
-		updateIntervalSeconds >= DebtConfig[v1.FinalDeletionPeriod] {
-		return v1.FinalDeletionPeriod, nil
-	}
-	return lastStatus, nil // Maintain current debt state if no transition
 }
 
 func determineCurrentStatus(
@@ -356,6 +316,13 @@ func (r *DebtReconciler) Init() {
 	r.failedUserLocks = &sync.Map{}
 	r.processID = uuid.NewString()
 
+	currency := strings.ToLower(strings.TrimSpace(os.Getenv("STRIPE_CURRENCY")))
+	if currency == "usd" {
+		r.debtEmailLanguage = "en"
+	} else {
+		r.debtEmailLanguage = "zh"
+	}
+
 	setupList := []func() error{
 		r.setupSmsConfig,
 		r.setupVmsConfig,
@@ -381,7 +348,15 @@ func (r *DebtReconciler) Init() {
 		}
 		r.SendDebtStatusEmailBody[status] = email
 	}
-	r.Info("debt config", "DebtConfig", DebtConfig, "DebtDetectionCycle", r.DebtDetectionCycle)
+	r.Info(
+		"debt config",
+		"DebtConfig",
+		DebtConfig,
+		"DebtDetectionCycle",
+		r.DebtDetectionCycle,
+		"debtEmailLanguage",
+		r.debtEmailLanguage,
+	)
 }
 
 func setDefaultDebtPeriodWaitSecond() {
@@ -551,8 +526,8 @@ func (r *DebtReconciler) start() {
 	}()
 
 	// 2.1 recharge record processing
-	//wg.Add(1)
-	//go func() {
+	// wg.Add(1)
+	// go func() {
 	//	defer wg.Done()
 	//	r.processWithTimeRange(
 	//		&types.Payment{},
@@ -579,7 +554,7 @@ func (r *DebtReconciler) start() {
 	//			return nil
 	//		},
 	//	)
-	//}()
+	// }()
 
 	// 2.2 subscription change processing
 	// wg.Add(1)
@@ -847,10 +822,6 @@ func (r *DebtReconciler) SendUserDebtMsg(
 	if r.SmsConfig == nil && r.VmsConfig == nil && r.smtpConfig == nil {
 		return nil
 	}
-	emailTmpl, ok := r.SendDebtStatusEmailBody[v1.DebtStatusType(currentStatus)]
-	if !ok {
-		return nil
-	}
 	if isBasicUser && currentStatus == types.LowBalancePeriod {
 		return nil
 	}
@@ -917,43 +888,43 @@ func (r *DebtReconciler) SendUserDebtMsg(
 	}
 	if r.smtpConfig != nil && len(emails) > 0 {
 		var emailBody string
-		emailSubject := "Low Account Balance Reminder"
-		if SubscriptionEnabled {
-			var userInfo types.UserInfo
-			err = r.AccountV2.GetGlobalDB().
-				Where(types.UserInfo{UserUID: userUID}).
-				Find(&userInfo).
-				Error
-			if err != nil {
-				return fmt.Errorf("failed to get user info: %w", err)
-			}
-			emailRender := &utils.EmailDebtRender{
-				Type:          string(currentStatus),
-				CurrentStatus: currentStatus,
-				Domain:        r.AccountV2.GetLocalRegion().Domain,
-			}
-			if types.ContainDebtStatus(types.DebtStates, currentStatus) {
-				if oweamount <= 0 {
-					emailRender.GraceReason = []string{string(utils.GraceReasonNoBalance)}
-				} else {
-					emailRender.GraceReason = []string{string(utils.GraceReasonSubExpired)}
-				}
-			}
-			emailRender.SetUserInfo(&userInfo)
+		var emailSubject string
+		var emailTmpl string
 
-			tmp, err := template.New("debt-reconcile").Parse(emailTmpl)
-			if err != nil {
-				return fmt.Errorf("failed to parse email template: %w", err)
-			}
-			var rendered bytes.Buffer
-			if err = tmp.Execute(&rendered, emailRender.Build()); err != nil {
-				return fmt.Errorf("failed to render email template: %w", err)
-			}
-			emailBody = rendered.String()
-			emailSubject = emailRender.GetSubject()
-		} else {
-			emailBody = emailTmpl
+		emailRender := &utils.EmailDebtRender{
+			Type:          string(currentStatus),
+			CurrentStatus: currentStatus,
+			Domain:        r.AccountV2.GetLocalRegion().Domain,
 		}
+		emailRender.SetLanguage(r.debtEmailLanguage)
+		emailRender.SetBalance(oweamount)
+
+		if types.ContainDebtStatus(types.DebtStates, currentStatus) {
+			if r.debtEmailLanguage == "zh" {
+				emailRender.GraceReason = []string{"余额不足"}
+			} else {
+				emailRender.GraceReason = []string{string(utils.GraceReasonNoBalance)}
+			}
+		}
+
+		if _user != nil {
+			emailRender.SetUserName(_user.Name)
+		}
+
+		emailTmpl = utils.GetDebtEmailTemplate(r.debtEmailLanguage)
+
+		tmp, err := template.New("debt-reconcile").Parse(emailTmpl)
+		if err != nil {
+			return fmt.Errorf("failed to parse email template: %w", err)
+		}
+		var rendered bytes.Buffer
+		if err = tmp.Execute(&rendered, emailRender.Build()); err != nil {
+			return fmt.Errorf("failed to render email template: %w", err)
+		}
+		emailBody = rendered.String()
+		emailSubject = emailRender.GetSubject()
+
+		// 发送邮件
 		if err = r.smtpConfig.SendEmailWithTitleMultiple(emailSubject, emailBody, emails); err != nil {
 			return fmt.Errorf("failed to send email notice: %w", err)
 		}

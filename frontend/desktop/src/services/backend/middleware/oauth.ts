@@ -17,16 +17,10 @@ import { AdClickData } from '@/types/adClick';
 export const OauthCodeFilter = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: {
-    code: string;
-    inviterId?: string;
-    semData?: SemData;
-    adClickData?: AdClickData;
-  }) => void
+  next: (data: { code: string; semData?: SemData; adClickData?: AdClickData }) => void
 ) => {
-  const { code, inviterId, semData, adClickData } = req.body as {
+  const { code, semData, adClickData } = req.body as {
     code?: string;
-    inviterId?: string;
     semData?: SemData;
     adClickData?: AdClickData;
   };
@@ -40,7 +34,6 @@ export const OauthCodeFilter = async (
   await Promise.resolve(
     next?.({
       code,
-      inviterId,
       semData,
       adClickData
     })

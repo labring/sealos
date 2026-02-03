@@ -42,7 +42,7 @@ export default function Workspace() {
   const [workspaceNameFieldDirty, setWorkspaceNameFieldDirty] = useState(false);
   const { setInitGuide } = useGuideModalStore();
   const { cloudConfig } = useConfigStore();
-  const { token } = useSessionStore();
+  const { globalToken } = useSessionStore();
   const regionListQuery = useQuery({
     queryKey: ['regionList'],
     queryFn: getRegionList
@@ -75,8 +75,8 @@ export default function Workspace() {
       }
       if (selectedRegion.uid !== cloudConfig?.regionUID) {
         const target = new URL(`https://${selectedRegion.domain}/switchRegion`);
-        if (!token) throw Error('No token found');
-        target.searchParams.append('token', token);
+        if (!globalToken) throw Error('No global token found');
+        target.searchParams.append('token', globalToken);
         target.searchParams.append('workspaceName', encodeURIComponent(workspaceName.trim()));
         // target.searchParams.append('regionUid', encodeURIComponent(region.uid));
         target.searchParams.append('switchRegionType', SwitchRegionType.INIT);
@@ -90,6 +90,7 @@ export default function Workspace() {
       if (!initRegionTokenResult.data) {
         throw new Error('No result data');
       }
+      // globalToken is already set in session store, no need to pass it
       await sessionConfig(initRegionTokenResult.data);
       await router.replace('/');
     } catch (error) {

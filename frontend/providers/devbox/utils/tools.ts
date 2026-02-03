@@ -340,16 +340,6 @@ export const parseTemplateConfig = (config: string) => {
     workingDir: string;
     releaseCommand: string[];
     releaseArgs: string[];
-    env?: Array<{
-      name: string;
-      value?: string;
-      valueFrom?: {
-        secretKeyRef: {
-          name: string;
-          key: string;
-        };
-      };
-    }>;
     appPorts: {
       name: string;
       port: number;
@@ -360,6 +350,29 @@ export const parseTemplateConfig = (config: string) => {
       containerPort: number;
       name: string;
       protocol: string;
+    }[];
+    env?: {
+      name: string;
+      value?: string;
+      valueFrom?: {
+        secretKeyRef: {
+          name: string;
+          key: string;
+        };
+      };
+    }[];
+    volumes?: {
+      name: string;
+      configMap?: {
+        name: string;
+      };
+      persistentVolumeClaim?: {
+        claimName: string;
+      };
+    }[];
+    volumeMounts?: {
+      name: string;
+      mountPath: string;
     }[];
   };
 };

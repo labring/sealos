@@ -292,6 +292,7 @@
   "domain_cname_verify_failed_toast": "CNAME record verification failed",
   "domain_input_tip": "Please purchase a domain name and fill it below.",
   "domain_invalid_toast": "'{{domain}}' is not a valid domain",
+  "domain_cannot_use_internal": "Cannot use internal domain",
   "domain_not_bound_modal_cancel": "Cancel",
   "domain_not_bound_modal_confirm": "Confirm",
   "domain_not_bound_modal_description": "Are you sure you want to close the pop-up?",
