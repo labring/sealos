@@ -17,6 +17,7 @@ package matcher
 import (
 	"testing"
 
+	utilsresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -208,10 +209,10 @@ func TestGPUResourceMatcher(t *testing.T) {
 				{
 					Resources: corev1.ResourceRequirements{
 						Limits: corev1.ResourceList{
-							gpuResourceName: resource.MustParse("1"),
+							utilsresource.GpuResourceName: resource.MustParse("1"),
 						},
 						Requests: corev1.ResourceList{
-							gpuResourceName: resource.MustParse("1"),
+							utilsresource.GpuResourceName: resource.MustParse("1"),
 						},
 					},
 				},
@@ -219,7 +220,7 @@ func TestGPUResourceMatcher(t *testing.T) {
 		},
 	}
 	expectPod.Annotations = map[string]string{
-		gpuTypeAnnotation: "NVIDIA-Tesla P40",
+		utilsresource.GpuTypeAnnotation: "NVIDIA-Tesla P40",
 	}
 
 	tests := []struct {
@@ -235,10 +236,10 @@ func TestGPUResourceMatcher(t *testing.T) {
 						{
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									gpuResourceName: resource.MustParse("1"),
+									utilsresource.GpuResourceName: resource.MustParse("1"),
 								},
 								Requests: corev1.ResourceList{
-									gpuResourceName: resource.MustParse("1"),
+									utilsresource.GpuResourceName: resource.MustParse("1"),
 								},
 							},
 						},
@@ -246,7 +247,7 @@ func TestGPUResourceMatcher(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						gpuTypeAnnotation: "NVIDIA-Tesla P40",
+						utilsresource.GpuTypeAnnotation: "NVIDIA-Tesla P40",
 					},
 				},
 			},
@@ -260,10 +261,10 @@ func TestGPUResourceMatcher(t *testing.T) {
 						{
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									gpuResourceName: resource.MustParse("2"),
+									utilsresource.GpuResourceName: resource.MustParse("2"),
 								},
 								Requests: corev1.ResourceList{
-									gpuResourceName: resource.MustParse("2"),
+									utilsresource.GpuResourceName: resource.MustParse("2"),
 								},
 							},
 						},
@@ -271,7 +272,7 @@ func TestGPUResourceMatcher(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						gpuTypeAnnotation: "NVIDIA-Tesla P40",
+						utilsresource.GpuTypeAnnotation: "NVIDIA-Tesla P40",
 					},
 				},
 			},
@@ -285,10 +286,10 @@ func TestGPUResourceMatcher(t *testing.T) {
 						{
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									gpuResourceName: resource.MustParse("1"),
+									utilsresource.GpuResourceName: resource.MustParse("1"),
 								},
 								Requests: corev1.ResourceList{
-									gpuResourceName: resource.MustParse("1"),
+									utilsresource.GpuResourceName: resource.MustParse("1"),
 								},
 							},
 						},
@@ -296,7 +297,7 @@ func TestGPUResourceMatcher(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
-						gpuTypeAnnotation: "NVIDIA GeForce RTX 3090",
+						utilsresource.GpuTypeAnnotation: "NVIDIA GeForce RTX 3090",
 					},
 				},
 			},

@@ -15,8 +15,12 @@
 package resource
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
+
+const GpuResourceName corev1.ResourceName = "nvidia.com/gpu"
+const GpuTypeAnnotation string = "nvidia.com/use-gputype"
 
 type RequestRate struct {
 	CPU    float64

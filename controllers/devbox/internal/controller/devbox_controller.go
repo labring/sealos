@@ -732,7 +732,8 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, next
 			WorkingDir: helper.GetWorkingDir(devbox),
 			Command:    helper.GetCommand(devbox),
 			Args:       helper.GetArgs(devbox),
-			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestRate, r.EphemeralStorage)},
+			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestRate, r.EphemeralStorage),
+		},
 	}
 
 	terminationGracePeriodSeconds := 300

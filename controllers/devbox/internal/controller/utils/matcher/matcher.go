@@ -17,6 +17,7 @@ package matcher
 import (
 	"log/slog"
 
+	utilsresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -56,9 +57,6 @@ func (r ResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 
 type GPUResourceMatcher struct{}
 
-const gpuResourceName corev1.ResourceName = "nvidia.com/gpu"
-const gpuTypeAnnotation string = "nvidia.com/use-gputype"
-
 func (g GPUResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	if len(pod.Spec.Containers) == 0 {
 		slog.Info("Pod has no containers")
@@ -71,21 +69,21 @@ func (g GPUResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	container := pod.Spec.Containers[0]
 	expectContainer := expectPod.Spec.Containers[0]
 
-	if container.Resources.Limits.Name(gpuResourceName, resource.DecimalSI).Cmp(
-		*expectContainer.Resources.Limits.Name(gpuResourceName, resource.DecimalSI),
+	if container.Resources.Limits.Name(utilsresource.GpuResourceName, resource.DecimalSI).Cmp(
+		*expectContainer.Resources.Limits.Name(utilsresource.GpuResourceName, resource.DecimalSI),
 	) != 0 {
 		slog.Info("GPU limits are not equal")
 		return false
 	}
-	if container.Resources.Requests.Name(gpuResourceName, resource.DecimalSI).Cmp(
-		*expectContainer.Resources.Requests.Name(gpuResourceName, resource.DecimalSI),
+	if container.Resources.Requests.Name(utilsresource.GpuResourceName, resource.DecimalSI).Cmp(
+		*expectContainer.Resources.Requests.Name(utilsresource.GpuResourceName, resource.DecimalSI),
 	) != 0 {
 		slog.Info("GPU requests are not equal")
 		return false
 	}
 
-	expectGPUType, expectOK := expectPod.Annotations[gpuTypeAnnotation]
-	actualGPUType, actualOK := pod.Annotations[gpuTypeAnnotation]
+	expectGPUType, expectOK := expectPod.Annotations[utilsresource.GpuTypeAnnotation]
+	actualGPUType, actualOK := pod.Annotations[utilsresource.GpuTypeAnnotation]
 	if expectOK != actualOK || expectGPUType != actualGPUType {
 		slog.Info("GPU type annotation is not equal")
 		return false
