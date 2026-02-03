@@ -11,23 +11,24 @@ Sealos Desktop Frontend deployment using Helm charts with auto-configuration sup
 sealos run desktop-frontend:latest
 
 # With custom domain
-sealos run desktop-frontend:latest -- CLOUD_DOMAIN=cloud.example.com
+sealos run desktop-frontend:latest -e CLOUD_DOMAIN=cloud.example.com
 
-# CNY version with GitHub OAuth
-sealos run desktop-frontend:latest -- CURRENCY=cny GITHUB_ENABLED=true GITHUB_CLIENT_ID=xxx GITHUB_CLIENT_SECRET=yyy
+# Chinese version with GitHub OAuth
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.version=cn --set desktopConfig.forcedLanguage=zh --set desktopConfig.currencySymbol=shellCoin --set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=xxx --set desktopConfig.githubClientSecret=yyy"
 
-# USD version with Google OAuth and GTM
-sealos run desktop-frontend:latest -- CURRENCY=usd GOOGLE_ENABLED=true GOOGLE_CLIENT_ID=xxx GOOGLE_CLIENT_SECRET=yyy GTM_ID=GTM-XXX
+# English version with Google OAuth and GTM
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.githubEnabled=false --set desktopConfig.googleEnabled=true --set desktopConfig.googleClientId=xxx --set desktopConfig.googleClientSecret=yyy --set desktopConfig.gtmId=GTM-XXX"
 ```
 
 ## Environment Variables
 
-### Currency & Language
+### Google Tag Manager
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CURRENCY` | `usd` | Currency: `cny` or `usd` |
-| `GTM_ID` | `""` | Google Tag Manager ID (USD version only) |
+| `GTM_ID` | `""` | Google Tag Manager ID |
 
 ### Feature Flags
 
@@ -119,15 +120,6 @@ The following values are **automatically retrieved** from the `sealos-system/sea
 | `databaseGlobalCockroachdbURI` | `desktopConfig.databaseGlobalCockroachdbURI` | Global CockroachDB URI |
 | `databaseLocalCockroachdbURI` | `desktopConfig.databaseLocalCockroachdbURI` | Local CockroachDB URI |
 | `passwordSalt` | `desktopConfig.passwordSalt` | Password hash salt |
-
-## Currency Auto-Configuration
-
-The chart automatically configures version, language, and currency symbol based on the `CURRENCY` environment variable:
-
-| Currency | Version | Language | Currency Symbol |
-|----------|---------|----------|-----------------|
-| `cny` | `cn` | `zh` | `shellCoin` |
-| `usd` (default) | `en` | `en` | `usd` |
 
 ## ConfigMap Structure
 
@@ -329,22 +321,62 @@ kubectl logs -n sealos -l app.kubernetes.io/name=desktop-frontend --tail=100 -f
 
 ## Advanced Usage
 
+### Using Helm Values for Custom Configuration
+
+All config.yaml settings can be customized via Helm `--set` parameters through the `HELM_OPTIONS` environment variable. See [HELM_VALUES_GUIDE.md](HELM_VALUES_GUIDE.md) for complete documentation.
+
+**Quick examples:**
+
+```bash
+# UI customization via HELM_OPTIONS
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.layoutTitle=\"My Cloud Platform\" --set desktopConfig.metaTitle=\"My Cloud\""
+
+# OAuth providers via HELM_OPTIONS
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=your-client-id --set desktopConfig.githubClientSecret=your-client-secret"
+
+# Features and communication
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.guideEnabled=true --set desktopConfig.rechargeEnabled=true --set desktopConfig.smsEnabled=true --set desktopConfig.emailEnabled=true --set desktopConfig.emailHost=smtp.example.com --set desktopConfig.emailPort=587"
+
+# Combine environment variables and HELM_OPTIONS
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.layoutTitle=\"My Cloud\"" \
+  -e CLOUD_DOMAIN=override.example.com \
+  -e GITHUB_ENABLED=true
+```
+
+**Common customization options:**
+
+- **UI customization**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`
+- **OAuth providers**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` and their `*ClientId`, `*ClientSecret`
+- **Features**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
+- **Communication**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
+- **URLs**: `templateUrl`, `applaunchpadUrl`, `dbproviderUrl`, `objectstorageUrl`, `workorderUrl`
+- **Database**: `databaseMongodbURI`, `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
+- **Team management**: `maxTeamCount`, `maxTeamMemberCount`
+
+For 60+ configurable parameters across 23 categories, see [HELM_VALUES_GUIDE.md](HELM_VALUES_GUIDE.md).
+
 ### Disable Auto-Configuration
 
 ```bash
-sealos run desktop-frontend:latest -- AUTO_CONFIG_ENABLED=false CLOUD_DOMAIN=cloud.example.com DATABASE_MONGODB_URI=mongodb://...
+sealos run desktop-frontend:latest \
+  -e AUTO_CONFIG_ENABLED=false \
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=cloud.example.com --set desktopConfig.databaseMongodbURI=mongodb://..."
 ```
 
 ### Custom Helm Options
 
 ```bash
-HELM_OPTS="--timeout 10m --install" sealos run desktop-frontend:latest
+sealos run desktop-frontend:latest -e HELM_OPTIONS="--timeout 10m"
 ```
 
 ### Override Namespace
 
 ```bash
-RELEASE_NAMESPACE=my-namespace sealos run desktop-frontend:latest
+sealos run desktop-frontend:latest -e RELEASE_NAMESPACE=my-namespace
 ```
 
 ## Build Image

@@ -11,23 +11,24 @@ Sealos Desktop 前端使用 Helm Chart 部署，支持自动配置。
 sealos run desktop-frontend:latest
 
 # 自定义域名
-sealos run desktop-frontend:latest -- CLOUD_DOMAIN=cloud.example.com
+sealos run desktop-frontend:latest -e CLOUD_DOMAIN=cloud.example.com
 
-# 人民币版本 + GitHub 登录
-sealos run desktop-frontend:latest -- CURRENCY=cny GITHUB_ENABLED=true GITHUB_CLIENT_ID=xxx GITHUB_CLIENT_SECRET=yyy
+# 中文版本 + GitHub 登录
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.version=cn --set desktopConfig.forcedLanguage=zh --set desktopConfig.currencySymbol=shellCoin --set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=xxx --set desktopConfig.githubClientSecret=yyy"
 
-# 美元版本 + Google 登录 + GTM
-sealos run desktop-frontend:latest -- CURRENCY=usd GOOGLE_ENABLED=true GOOGLE_CLIENT_ID=xxx GOOGLE_CLIENT_SECRET=yyy GTM_ID=GTM-XXX
+# 英文版本 + Google 登录 + GTM
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.googleEnabled=true --set desktopConfig.googleClientId=xxx --set desktopConfig.googleClientSecret=yyy --set desktopConfig.gtmId=GTM-XXX"
 ```
 
 ## 环境变量
 
-### 货币与语言
+### Google Tag Manager
 
 | 变量 | 默认值 | 描述 |
 |----------|---------|-------------|
-| `CURRENCY` | `usd` | 货币类型：`cny` 或 `usd` |
-| `GTM_ID` | `""` | Google Tag Manager ID（仅美元版本） |
+| `GTM_ID` | `""` | Google Tag Manager ID |
 
 ### 功能开关
 
@@ -119,15 +120,6 @@ sealos run desktop-frontend:latest -- CURRENCY=usd GOOGLE_ENABLED=true GOOGLE_CL
 | `databaseGlobalCockroachdbURI` | `desktopConfig.databaseGlobalCockroachdbURI` | 全局 CockroachDB URI |
 | `databaseLocalCockroachdbURI` | `desktopConfig.databaseLocalCockroachdbURI` | 本地 CockroachDB URI |
 | `passwordSalt` | `desktopConfig.passwordSalt` | 密码哈希盐 |
-
-## 货币自动配置
-
-Chart 会根据 `CURRENCY` 环境变量自动配置版本、语言和货币符号：
-
-| 货币 | 版本 | 语言 | 货币符号 |
-|----------|---------|----------|-----------------|
-| `cny` | `cn` | `zh` | `shellCoin` |
-| `usd`（默认） | `en` | `en` | `usd` |
 
 ## ConfigMap 结构
 
@@ -329,22 +321,63 @@ kubectl logs -n sealos -l app.kubernetes.io/name=desktop-frontend --tail=100 -f
 
 ## 高级用法
 
+### 使用 Helm Values 自定义配置
+
+所有 config.yaml 设置都可以通过 `HELM_OPTIONS` 环境变量传递 Helm `--set` 参数来自定义。完整文档请参阅 [HELM_VALUES_GUIDE_CN.md](HELM_VALUES_GUIDE_CN.md)。
+
+**快速示例：**
+
+```bash
+# UI 自定义通过 HELM_OPTIONS
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.layoutTitle=\"我的云平台\" --set desktopConfig.metaTitle=\"我的云平台\""
+
+# OAuth 提供商
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=your-client-id --set desktopConfig.githubClientSecret=your-client-secret"
+
+# 功能和通讯配置
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.guideEnabled=true --set desktopConfig.rechargeEnabled=true --set desktopConfig.smsEnabled=true --set desktopConfig.emailEnabled=true --set desktopConfig.emailHost=smtp.example.com --set desktopConfig.emailPort=587"
+
+# 结合环境变量和 HELM_OPTIONS
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.layoutTitle=\"我的云平台\"" \
+  -e CLOUD_DOMAIN=override.example.com \
+  -e GITHUB_ENABLED=true
+```
+
+**常用自定义选项：**
+
+- **UI 自定义**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`
+- **OAuth 提供商**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` 及其对应的 `*ClientId`, `*ClientSecret`
+- **功能开关**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
+- **通讯配置**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
+- **URL 配置**: `templateUrl`, `applaunchpadUrl`, `dbproviderUrl`, `objectstorageUrl`, `workorderUrl`
+- **数据库配置**: `databaseMongodbURI`, `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
+- **团队管理**: `maxTeamCount`, `maxTeamMemberCount`
+
+查看 23 个分类共 60+ 可配置参数，请参阅 [HELM_VALUES_GUIDE_CN.md](HELM_VALUES_GUIDE_CN.md)。
+
 ### 禁用自动配置
 
 ```bash
-sealos run desktop-frontend:latest -- AUTO_CONFIG_ENABLED=false CLOUD_DOMAIN=cloud.example.com DATABASE_MONGODB_URI=mongodb://...
+sealos run desktop-frontend:latest \
+  -e AUTO_CONFIG_ENABLED=false \
+  -e CLOUD_DOMAIN=cloud.example.com \
+  -e DATABASE_MONGODB_URI=mongodb://...
 ```
 
 ### 自定义 Helm 选项
 
 ```bash
-HELM_OPTS="--timeout 10m --install" sealos run desktop-frontend:latest
+sealos run desktop-frontend:latest -e HELM_OPTIONS="--timeout 10m --install"
 ```
 
 ### 覆盖命名空间
 
 ```bash
-RELEASE_NAMESPACE=my-namespace sealos run desktop-frontend:latest
+sealos run desktop-frontend:latest -e RELEASE_NAMESPACE=my-namespace
 ```
 
 ## 构建镜像
@@ -355,30 +388,50 @@ sealos build -t docker.io/labring/sealos-cloud-desktop:latest -f Kubefile .
 
 ## 常见问题
 
-### 1. 如何更改货币类型？
+### 1. 如何配置中文/英文版本？
 
-设置 `CURRENCY` 环境变量为 `cny` 或 `usd`：
-
+**中文版本：**
 ```bash
-sealos run --env CURRENCY="cny" desktop-frontend:latest
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.version=cn --set desktopConfig.forcedLanguage=zh --set desktopConfig.currencySymbol=shellCoin"
+```
+
+**英文版本：**
+```bash
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.version=en --set desktopConfig.forcedLanguage=en --set desktopConfig.currencySymbol=usd"
 ```
 
 ### 2. 如何启用第三方登录？
 
-设置对应的 OAuth 提供商环境变量，例如 GitHub：
-
+**方式 1: 使用环境变量（推荐）**
 ```bash
-sealos run \
-  --env GITHUB_ENABLED="true" \
-  --env GITHUB_CLIENT_ID="your-client-id" \
-  --env GITHUB_CLIENT_SECRET="your-client-secret" \
-  desktop-frontend:latest
+sealos run desktop-frontend:latest \
+  -e GITHUB_ENABLED=true \
+  -e GITHUB_CLIENT_ID=your-client-id \
+  -e GITHUB_CLIENT_SECRET=your-client-secret
+```
+
+**方式 2: 使用 HELM_OPTIONS（推荐用于复杂配置）**
+```bash
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=your-client-id --set desktopConfig.githubClientSecret=your-client-secret"
 ```
 
 ### 3. 如何更新配置？
 
-修改环境变量后重新运行 `sealos run`，或直接更新 ConfigMap：
+**方式 1: 使用环境变量（推荐用于少量配置）**
+```bash
+sealos run desktop-frontend:latest -e CLOUD_DOMAIN=new.example.com
+```
 
+**方式 2: 使用 HELM_OPTIONS（推荐用于多个配置）**
+```bash
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=new.example.com --set desktopConfig.layoutTitle=\"New Title\" --set desktopConfig.guideEnabled=true"
+```
+
+**方式 3: 直接编辑 ConfigMap**
 ```bash
 kubectl edit configmap sealos-desktop-config -n sealos
 kubectl rollout restart deployment sealos-desktop -n sealos
@@ -387,6 +440,31 @@ kubectl rollout restart deployment sealos-desktop -n sealos
 ### 4. 配置文件在哪里？
 
 配置存储在 `sealos-desktop-config` ConfigMap 中，挂载到 Pod 的 `/app/data/config.yaml`。
+
+查看配置：
+```bash
+kubectl get configmap sealos-desktop-config -n sealos -o yaml
+kubectl exec -n sealos deployment/sealos-desktop -- cat /app/data/config.yaml
+```
+
+### 5. 环境变量和 HELM_OPTIONS 的区别和优先级？
+
+**使用场景：**
+- **环境变量**: 少量配置、快速测试、常用配置项
+- **HELM_OPTIONS**: 多个配置、生产部署、访问所有 60+ 参数
+
+**优先级从高到低：**
+1. 环境变量（如 `CLOUD_DOMAIN`）
+2. HELM_OPTIONS 中的 `--set` 参数
+3. values.yaml 默认值
+
+**示例：**
+```bash
+# 环境变量会覆盖 HELM_OPTIONS 的值
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com" \
+  -e CLOUD_DOMAIN=from-env.com  # 这个值会生效
+```
 
 ## 技术支持
 

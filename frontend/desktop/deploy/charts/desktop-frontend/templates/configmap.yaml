@@ -37,13 +37,13 @@ data:
       trackingEnabled: {{ .Values.desktopConfig.trackingEnabled }}
       realNameAuthEnabled: {{ .Values.desktopConfig.realNameAuthEnabled }}
       licenseCheckEnabled: {{ .Values.desktopConfig.licenseCheckEnabled }}
-      realNameReward: 0
-      realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
-      templateUrl: "https://template.example.org"
-      applaunchpadUrl: "https://applaunchpad.example.org"
-      dbproviderUrl: "https://dbprovider.example.org"
-      objectstorageUrl: "https://objectstorage.example.org"
-      cfSiteKey: ""
+      realNameReward: {{ .Values.desktopConfig.realNameReward }}
+      realNameCallbackUrl: "{{ .Values.desktopConfig.realNameCallbackUrl }}"
+      templateUrl: "{{ .Values.desktopConfig.templateUrl }}"
+      applaunchpadUrl: "{{ .Values.desktopConfig.applaunchpadUrl }}"
+      dbproviderUrl: "{{ .Values.desktopConfig.dbproviderUrl }}"
+      objectstorageUrl: "{{ .Values.desktopConfig.objectstorageUrl }}"
+      cfSiteKey: "{{ .Values.desktopConfig.cfSiteKey }}"
 
     database:
       mongodbURI: "{{ .Values.desktopConfig.databaseMongodbURI }}"
@@ -53,24 +53,24 @@ data:
     desktop:
       layout:
         version: "{{ .Values.desktopConfig.version }}"
-        title: "Sealos Cloud"
-        logo: "/logo.svg"
-        backgroundImage: "/images/bg-light.svg"
+        title: "{{ .Values.desktopConfig.layoutTitle }}"
+        logo: "{{ .Values.desktopConfig.layoutLogo }}"
+        backgroundImage: "{{ .Values.desktopConfig.layoutBackgroundImage }}"
         forcedLanguage: "{{ .Values.desktopConfig.forcedLanguage }}"
-        customerServiceURL: ""
+        customerServiceURL: "{{ .Values.desktopConfig.customerServiceURL }}"
         discordInviteLink: {{ if eq .Values.desktopConfig.currencySymbol "usd" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}
         gtmId: {{ if .Values.desktopConfig.gtmId }}"{{ .Values.desktopConfig.gtmId }}"{{ else }}null{{ end }}
         currencySymbol: "{{ .Values.desktopConfig.currencySymbol }}"
         meta:
-          title: "Sealos Cloud"
-          description: "Sealos Cloud"
-          keywords: "Sealos Cloud"
+          title: "{{ .Values.desktopConfig.metaTitle }}"
+          description: "{{ .Values.desktopConfig.metaDescription }}"
+          keywords: "{{ .Values.desktopConfig.metaKeywords }}"
           scripts: []
           noscripts: []
         common:
           githubStarEnabled: true
           accountSettingEnabled: true
-          docsUrl: "https://sealos.run/docs/Intro/"
+          docsUrl: "{{ .Values.desktopConfig.layoutDocsUrl }}"
           aiAssistantEnabled: false
           bannerEnabled: false
           subscriptionEnabled: false
@@ -103,75 +103,75 @@ data:
             salt: "{{ .Values.desktopConfig.passwordSalt }}"
           github:
             enabled: {{ .Values.desktopConfig.githubEnabled }}
-            proxyAddress: ""
+            proxyAddress: "{{ .Values.desktopConfig.githubProxyAddress }}"
             clientID: "{{ .Values.desktopConfig.githubClientId }}"
             clientSecret: "{{ .Values.desktopConfig.githubClientSecret }}"
           wechat:
             enabled: {{ .Values.desktopConfig.wechatEnabled }}
-            proxyAddress: ""
+            proxyAddress: "{{ .Values.desktopConfig.wechatProxyAddress }}"
             clientID: "{{ .Values.desktopConfig.wechatClientId }}"
             clientSecret: "{{ .Values.desktopConfig.wechatClientSecret }}"
           google:
             enabled: {{ .Values.desktopConfig.googleEnabled }}
-            proxyAddress: ""
+            proxyAddress: "{{ .Values.desktopConfig.googleProxyAddress }}"
             clientID: "{{ .Values.desktopConfig.googleClientId }}"
             clientSecret: "{{ .Values.desktopConfig.googleClientSecret }}"
           oauth2:
             enabled: {{ .Values.desktopConfig.oauth2Enabled }}
             callbackURL: "{{ .Values.desktopConfig.oauth2CallbackUrl }}"
             clientID: "{{ .Values.desktopConfig.oauth2ClientId }}"
-            proxyAddress: ""
+            proxyAddress: "{{ .Values.desktopConfig.oauth2ProxyAddress }}"
             clientSecret: "{{ .Values.desktopConfig.oauth2ClientSecret }}"
             authURL: "{{ .Values.desktopConfig.oauth2AuthUrl }}"
             tokenURL: "{{ .Values.desktopConfig.oauth2TokenUrl }}"
             userInfoURL: "{{ .Values.desktopConfig.oauth2UserInfoUrl }}"
           sms:
-            enabled: false
+            enabled: {{ .Values.desktopConfig.smsEnabled }}
             ali:
-              enabled: false
-              endpoint: ""
-              templateCode: ""
-              signName: ""
-              accessKeyID: ""
-              accessKeySecret: ""
+              enabled: {{ .Values.desktopConfig.smsAliEnabled }}
+              endpoint: "{{ .Values.desktopConfig.smsAliEndpoint }}"
+              templateCode: "{{ .Values.desktopConfig.smsAliTemplateCode }}"
+              signName: "{{ .Values.desktopConfig.smsAliSignName }}"
+              accessKeyID: "{{ .Values.desktopConfig.smsAliAccessKeyID }}"
+              accessKeySecret: "{{ .Values.desktopConfig.smsAliAccessKeySecret }}"
           email:
-            enabled: false
-            host: ""
-            port: 0
-            user: ""
-            password: ""
-            language: ""
+            enabled: {{ .Values.desktopConfig.emailEnabled }}
+            host: "{{ .Values.desktopConfig.emailHost }}"
+            port: {{ .Values.desktopConfig.emailPort }}
+            user: "{{ .Values.desktopConfig.emailUser }}"
+            password: "{{ .Values.desktopConfig.emailPassword }}"
+            language: "{{ .Values.desktopConfig.emailLanguage }}"
         captcha:
           turnstile:
             enabled: {{ .Values.desktopConfig.turnstileEnabled }}
             siteKey: "{{ .Values.desktopConfig.turnstileSiteKey }}"
             secretKey: "{{ .Values.desktopConfig.turnstileSecretKey }}"
           ali:
-            enabled: false
-            endpoint: ""
-            sceneId: ""
-            prefix: ""
-            accessKeyID: ""
-            accessKeySecret: ""
+            enabled: {{ .Values.desktopConfig.aliCaptchaEnabled }}
+            endpoint: "{{ .Values.desktopConfig.aliCaptchaEndpoint }}"
+            sceneId: "{{ .Values.desktopConfig.aliCaptchaSceneId }}"
+            prefix: "{{ .Values.desktopConfig.aliCaptchaPrefix }}"
+            accessKeyID: "{{ .Values.desktopConfig.aliCaptchaAccessKeyID }}"
+            accessKeySecret: "{{ .Values.desktopConfig.aliCaptchaAccessKeySecret }}"
         billingUrl: "{{ .Values.desktopConfig.billingUrl }}"
         billingToken: "{{ .Values.desktopConfig.billingToken }}"
-        workorderUrl: ""
-        cloudVitrualMachineUrl: "https://cloudvirtualmachine.example.org"
+        workorderUrl: "{{ .Values.desktopConfig.workorderUrl }}"
+        cloudVitrualMachineUrl: "{{ .Values.desktopConfig.cloudVirtualMachineUrl }}"
 
       teamManagement:
-        maxTeamCount: 0
-        maxTeamMemberCount: 0
+        maxTeamCount: {{ .Values.desktopConfig.maxTeamCount }}
+        maxTeamMemberCount: {{ .Values.desktopConfig.maxTeamMemberCount }}
 
     tracking:
-      websiteId: ""
-      hostUrl: {{ if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run"{{ else }}""{{ end }}
-      scriptUrl: {{ if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run/sealos"{{ else }}""{{ end }}
+      websiteId: "{{ .Values.desktopConfig.trackingWebsiteId }}"
+      hostUrl: {{ if .Values.desktopConfig.trackingHostUrl }}"{{ .Values.desktopConfig.trackingHostUrl }}"{{ else if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run"{{ else }}""{{ end }}
+      scriptUrl: {{ if .Values.desktopConfig.trackingScriptUrl }}"{{ .Values.desktopConfig.trackingScriptUrl }}"{{ else if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run/sealos"{{ else }}""{{ end }}
 
     realNameOSS:
-      accessKey: ""
-      accessKeySecret: ""
-      endpoint: ""
-      ssl: false
-      port: 0
-      realNameBucket: ""
-      enterpriseRealNameBucket: ""
+      accessKey: "{{ .Values.desktopConfig.realNameOSSAccessKey }}"
+      accessKeySecret: "{{ .Values.desktopConfig.realNameOSSAccessKeySecret }}"
+      endpoint: "{{ .Values.desktopConfig.realNameOSSEndpoint }}"
+      ssl: {{ .Values.desktopConfig.realNameOSSSSL }}
+      port: {{ .Values.desktopConfig.realNameOSSPort }}
+      realNameBucket: "{{ .Values.desktopConfig.realNameOSSRealNameBucket }}"
+      enterpriseRealNameBucket: "{{ .Values.desktopConfig.realNameOSSEnterpriseRealNameBucket }}"

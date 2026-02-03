@@ -58,8 +58,8 @@ desktopConfig:
   billingUrl: "http://account-service.account-system.svc:2333"
   billingToken: ""
 
-  # Currency and language (auto-configured based on CURRENCY env var)
-  # Options: "cn" (CNY) or "en" (USD)
+  # Currency and language configuration
+  # Options: "cn" (Chinese) or "en" (English)
   version: "en"
   forcedLanguage: "en"
   currencySymbol: "usd"
@@ -79,18 +79,42 @@ desktopConfig:
   realNameAuthEnabled: false
   licenseCheckEnabled: false
 
+  # Common URLs (default values)
+  realNameReward: 0
+  realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
+  templateUrl: "https://template.example.org"
+  applaunchpadUrl: "https://applaunchpad.example.org"
+  dbproviderUrl: "https://dbprovider.example.org"
+  objectstorageUrl: "https://objectstorage.example.org"
+  cfSiteKey: ""
+
+  # Desktop layout configuration
+  layoutTitle: "Sealos Cloud"
+  layoutLogo: "/logo.svg"
+  layoutBackgroundImage: "/images/bg-light.svg"
+  customerServiceURL: ""
+  layoutDocsUrl: "https://sealos.run/docs/Intro/"
+
+  # Meta tags
+  metaTitle: "Sealos Cloud"
+  metaDescription: "Sealos Cloud"
+  metaKeywords: "Sealos Cloud"
+
   # OAuth providers
   githubEnabled: false
   githubClientId: ""
   githubClientSecret: ""
+  githubProxyAddress: ""
 
   wechatEnabled: false
   wechatClientId: ""
   wechatClientSecret: ""
+  wechatProxyAddress: ""
 
   googleEnabled: false
   googleClientId: ""
   googleClientSecret: ""
+  googleProxyAddress: ""
 
   oauth2Enabled: false
   oauth2CallbackUrl: ""
@@ -99,11 +123,59 @@ desktopConfig:
   oauth2AuthUrl: ""
   oauth2TokenUrl: ""
   oauth2UserInfoUrl: ""
+  oauth2ProxyAddress: ""
 
   # Captcha configuration
   turnstileEnabled: false
   turnstileSiteKey: ""
   turnstileSecretKey: ""
+
+  # SMS configuration (Aliyun)
+  smsEnabled: false
+  smsAliEnabled: false
+  smsAliEndpoint: ""
+  smsAliTemplateCode: ""
+  smsAliSignName: ""
+  smsAliAccessKeyID: ""
+  smsAliAccessKeySecret: ""
+
+  # Email configuration
+  emailEnabled: false
+  emailHost: ""
+  emailPort: 0
+  emailUser: ""
+  emailPassword: ""
+  emailLanguage: ""
+
+  # Ali captcha configuration
+  aliCaptchaEnabled: false
+  aliCaptchaEndpoint: ""
+  aliCaptchaSceneId: ""
+  aliCaptchaPrefix: ""
+  aliCaptchaAccessKeyID: ""
+  aliCaptchaAccessKeySecret: ""
+
+  # Tracking configuration
+  trackingWebsiteId: ""
+  trackingHostUrl: ""
+  trackingScriptUrl: ""
+
+  # RealName OSS configuration
+  realNameOSSAccessKey: ""
+  realNameOSSAccessKeySecret: ""
+  realNameOSSEndpoint: ""
+  realNameOSSSSL: false
+  realNameOSSPort: 0
+  realNameOSSRealNameBucket: ""
+  realNameOSSEnterpriseRealNameBucket: ""
+
+  # Workorder and cloud virtual machine URLs
+  workorderUrl: ""
+  cloudVirtualMachineUrl: "https://cloudvirtualmachine.example.org"
+
+  # Team management
+  maxTeamCount: 0
+  maxTeamMemberCount: 0
 
 # Auto configure from sealos-system configmap
 autoConfigEnabled: true
