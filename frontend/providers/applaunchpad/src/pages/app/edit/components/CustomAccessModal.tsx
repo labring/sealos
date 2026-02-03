@@ -301,17 +301,17 @@ const CustomAccessModal = ({
                       onClick={() => {
                         const sanitizedDomain = sanitizeDomain(customDomain);
                         if (sanitizedDomain) {
+                          // Check if domain is an internal domain first
+                          if (isInternalDomain(sanitizedDomain)) {
+                            toast.error(t('domain_cannot_use_internal'));
+                            return;
+                          }
+
                           setCustomDomain(sanitizedDomain);
                           setProcessPhase('VERIFY_DOMAIN');
                           setVerificationMethod('CNAME'); // Reset to try CNAME first
                           setPreviousState(null);
                           authDomain(true);
-
-                          // Check if domain is an internal domain
-                          if (isInternalDomain(sanitizedDomain)) {
-                            toast.error(t('domain_cannot_use_internal'));
-                            return;
-                          }
                         }
                       }}
                       className="h-10 text-sm font-medium px-4 rounded-lg shadow-none"
