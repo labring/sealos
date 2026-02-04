@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import * as JsYaml from 'js-yaml';
-import { memoryFormatToMi, cpuFormatToM } from '@/utils/tools';
+import { memoryFormatToMi, cpuFormatToM, storageQuantityToMi } from '@/utils/tools';
 import { UserQuotaItemType } from '@/types/user';
 
 // Load default kc
@@ -225,8 +225,8 @@ export async function getUserQuota(
     },
     {
       type: 'storage',
-      limit: memoryFormatToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['requests.storage'] || '') / 1024
+      limit: storageQuantityToMi(status?.hard?.['requests.storage'] || '') / 1024,
+      used: storageQuantityToMi(status?.used?.['requests.storage'] || '') / 1024
     },
     {
       type: 'gpu',

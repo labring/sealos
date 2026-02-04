@@ -78,6 +78,14 @@ export const memoryFormatToMi = (memory: string) => {
   return Number(value.toFixed(2));
 };
 
+export const storageQuantityToMi = (quantity: string) => {
+  if (!quantity || quantity === '0') return 0;
+  const s = String(quantity).trim();
+  if (/[KMGT]i/i.test(s)) return memoryFormatToMi(s);
+  if (/^\d+\.?\d*$/.test(s)) return Number((parseFloat(s) / (1024 * 1024)).toFixed(2));
+  return memoryFormatToMi(s);
+};
+
 export async function getUserQuota(
   kc: k8s.KubeConfig,
   namespace: string
@@ -100,8 +108,8 @@ export async function getUserQuota(
     },
     {
       type: 'storage',
-      limit: memoryFormatToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['requests.storage'] || '') / 1024
+      limit: storageQuantityToMi(status?.hard?.['requests.storage'] || '') / 1024,
+      used: storageQuantityToMi(status?.used?.['requests.storage'] || '') / 1024
     },
     {
       type: 'gpu',

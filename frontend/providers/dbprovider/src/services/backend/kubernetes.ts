@@ -1,5 +1,5 @@
 import { UserQuotaItemType } from '@/types/user';
-import { cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
+import { cpuFormatToM, memoryFormatToMi, storageQuantityToMi } from '@/utils/tools';
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 
@@ -235,8 +235,8 @@ export async function getUserQuota(
     },
     {
       type: 'storage',
-      limit: memoryFormatToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['requests.storage'] || '') / 1024
+      limit: storageQuantityToMi(status?.hard?.['requests.storage'] || '') / 1024,
+      used: storageQuantityToMi(status?.used?.['requests.storage'] || '') / 1024
     }
     // {
     //   type: 'gpu',

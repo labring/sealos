@@ -10,8 +10,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { getUserQuota } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
-
     const quota = await getUserQuota();
+
     const gpuEnabled = global.AppConfig.common.gpuEnabled;
     const filteredQuota = gpuEnabled ? quota : quota.filter((item) => item.type !== 'gpu');
 
@@ -23,6 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
   } catch (error) {
+    console.log(error);
     jsonRes(res, { code: 500, message: 'get price error' });
   }
 }

@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
-import { memoryFormatToMi, cpuFormatToM } from './tools';
+import { memoryFormatToMi, cpuFormatToM, storageQuantityToMi } from './tools';
 import type { UserQuotaItemType } from '../types';
 import { IncomingHttpHeaders } from 'http';
 import { errLog, infoLog } from './logger';
@@ -181,8 +181,8 @@ async function getUserQuota(kc: k8s.KubeConfig, namespace: string): Promise<User
     },
     {
       type: 'storage',
-      limit: memoryFormatToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['requests.storage'] || '') / 1024
+      limit: storageQuantityToMi(status?.hard?.['requests.storage'] || '') / 1024,
+      used: storageQuantityToMi(status?.used?.['requests.storage'] || '') / 1024
     },
     {
       type: 'gpu',
