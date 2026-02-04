@@ -12,6 +12,13 @@ export const gpuResourceKey = 'nvidia.com/gpu';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const templateDisplayNameKey = 'cloud.sealos.io/deploy-on-sealos-displayName';
 
+/**
+ * ownerReferences (template instance cascade deletion)
+ * - label key to indicate instance and its dependents are linked by ownerReferences
+ */
+export const ownerReferencesKey = 'cloud.sealos.io/owner-references';
+export const ownerReferencesReadyValue = 'ready';
+
 // db
 export const kubeblocksTypeKey = 'clusterdefinition.kubeblocks.io/name';
 export const dbProviderKey = 'sealos-db-provider-cr';
