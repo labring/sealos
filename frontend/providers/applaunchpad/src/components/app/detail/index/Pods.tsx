@@ -1,28 +1,21 @@
 import { restartPodByName } from '@/api/app';
-import MyIcon from '@/components/Icon';
-import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import type { PodDetailType } from '@/types/app';
-import { QuestionOutlineIcon } from '@chakra-ui/icons';
+import { CircleHelp, ScrollText, Terminal, FolderOpen } from 'lucide-react';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import {
-  Box,
-  Button,
-  Text,
-  Center,
-  Flex,
   Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-  useDisclosure
-} from '@chakra-ui/react';
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@sealos/shadcn-ui/table';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useCallback, useState } from 'react';
@@ -49,7 +42,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
     content: 'Please confirm to restart the Pod?'
   });
   const { appDetail = MOCK_APP_DETAIL, appDetailPods } = useAppStore();
-  const { isOpen: isOpenPodFile, onOpen: onOpenPodFile, onClose: onClosePodFile } = useDisclosure();
+  const [isOpenPodFile, setIsOpenPodFile] = useState(false);
 
   const handleRestartPod = useCallback(
     async (podName: string) => {
@@ -80,264 +73,214 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       title: 'Pod Name',
       key: 'podName',
       render: (_: PodDetailType, i: number) => (
-        <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
-          {_?.podName}
-        </Box>
-      )
-    },
-    {
-      title: 'Containers',
-      key: 'containers',
-      render: (item: PodDetailType) => (
-        <Flex gap={'6px'}>
-          {item.containerStatuses.map((container) => {
-            return (
-              <MyTooltip
-                key={container.name}
-                label={
-                  <>
-                    <Box>{container.name}</Box>
-                    <Box color={container.state.color}>
-                      {container.state.label}{' '}
-                      {container.state.reason && <>({container.state.reason})</>}
-                    </Box>
-                    <Flex gap={'8px'}>
-                      {container.cpuLimit && (
-                        <span>
-                          {t('CPU')}: {container.cpuLimit}
-                        </span>
-                      )}{' '}
-                      {container.memoryLimit && (
-                        <span>
-                          {t('Memory')}: {container.memoryLimit}
-                        </span>
-                      )}
-                    </Flex>
-                  </>
-                }
-              >
-                <Box
-                  width={'16px'}
-                  height={'16px'}
-                  backgroundColor={container.state.color}
-                  borderRadius={'4px'}
-                />
-              </MyTooltip>
-            );
-          })}
-        </Flex>
+        <div className="text-sm text-zinc-900 font-medium">{_?.podName}</div>
       )
     },
     {
       title: 'Status',
       key: 'status',
       render: (item: PodDetailType) => (
-        <Box color={item.status.color}>
-          {item.status.label}
-          {!!item.status.reason && (
-            <MyTooltip
-              label={`Reason: ${item.status.reason}${
-                item.status.message ? `\nMessage: ${item.status.message}` : ''
-              }`}
-              whiteSpace={'pre-wrap'}
-              wordBreak={'break-all'}
-              maxW={'300px'}
-            >
-              <QuestionOutlineIcon ml={1} />
-            </MyTooltip>
-          )}
-        </Box>
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1.5">
+            {item.containerStatuses.map((container) => {
+              return (
+                <Tooltip key={container.name}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className="w-2 h-2 rounded-xs"
+                      style={{ backgroundColor: container.state.color }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="rounded-xl">
+                    <div className="text-sm text-zinc-900 font-normal p-2 space-y-1">
+                      <div>{container.name}</div>
+                      <div style={{ color: container.state.color }}>
+                        {container.state.label}{' '}
+                        {container.state.reason && <>({container.state.reason})</>}
+                      </div>
+                      <div className="flex gap-2">
+                        {container.cpuLimit && (
+                          <span>
+                            {t('CPU')}: {container.cpuLimit}
+                          </span>
+                        )}{' '}
+                        {container.memoryLimit && (
+                          <span>
+                            {t('Memory')}: {container.memoryLimit}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+          <div style={{ color: item.status.color }}>
+            {item.status.label}
+            {!!item.status.reason && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <CircleHelp className="inline-block ml-1 w-3 h-3 cursor-pointer" />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="rounded-xl max-w-[300px] whitespace-pre-wrap break-all"
+                >
+                  <p className="text-sm text-zinc-900 font-normal p-2">
+                    Reason: {item.status.reason}
+                    {item.status.message ? `\nMessage: ${item.status.message}` : ''}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </div>
       )
     },
     {
       title: 'Restarts Num',
       key: 'restarts',
       render: (item: PodDetailType) => (
-        <Flex alignItems={'center'} fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
+        <div className="flex items-center text-sm text-zinc-700 font-normal gap-2">
           {item.restarts}
           {!!item.containerStatuses[0]?.state.reason && (
-            <Flex alignItems={'center'} color={item.containerStatuses[0]?.state.color}>
-              (<Text>{item.containerStatuses[0].state.reason}</Text>)
-            </Flex>
+            <div
+              className="flex items-center"
+              style={{ color: item.containerStatuses[0]?.state.color }}
+            >
+              (<span>{item.containerStatuses[0].state.reason}</span>)
+            </div>
           )}
-        </Flex>
+        </div>
       )
     },
     {
       title: 'Age',
       key: 'age',
       render: (item: PodDetailType) => (
-        <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
-          {item.age}
-        </Box>
+        <div className="text-sm text-zinc-700 font-normal">{item.age}</div>
       )
     },
     {
-      title: 'Cpu',
-      key: 'cpu',
-      render: (item: PodDetailType) => (
-        <Box h={'45px'} w={'120px'} position={'relative'}>
-          <Box h={'45px'} w={'120px'} position={'absolute'}>
-            <PodLineChart type="blue" data={item.usedCpu} />
-            <Box
-              color={'#0077A9'}
-              fontSize={'sm'}
-              fontWeight={'bold'}
-              position={'absolute'}
-              right={'4px'}
-              bottom={'0px'}
-              pointerEvents={'none'}
-              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
-            >
-              {item?.usedCpu?.yData[item?.usedCpu?.yData?.length - 1]}%
-            </Box>
-          </Box>
-        </Box>
-      )
-    },
-    {
-      title: 'Memory',
-      key: 'memory',
-      render: (item: PodDetailType) => (
-        <Box h={'45px'} w={'120px'} position={'relative'}>
-          <Box h={'45px'} w={'120px'} position={'absolute'}>
-            <PodLineChart type="purple" data={item.usedMemory} />
-            <Text
-              color={'#6F5DD7'}
-              fontSize={'sm'}
-              fontWeight={'bold'}
-              position={'absolute'}
-              right={'4px'}
-              bottom={'0px'}
-              pointerEvents={'none'}
-              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
-            >
-              {item?.usedMemory?.yData[item?.usedMemory?.yData?.length - 1]}%
-            </Text>
-          </Box>
-        </Box>
-      )
-    },
-    {
-      title: 'Operation',
+      title: '',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
-        <Flex alignItems={'center'} className="driver-detail-operate">
-          <MyTooltip label={t('Log')} offset={[0, 10]}>
-            <Button variant={'square'} onClick={() => setLogsPodIndex(i)}>
-              <MyIcon name="log" w="18px" h="18px" fill={'#485264'} />
-            </Button>
-          </MyTooltip>
-          <MyTooltip offset={[0, 10]} label={t('Terminal')}>
-            <Button
-              variant={'square'}
-              onClick={() => {
-                track('deployment_action', {
-                  event_type: 'terminal_open',
-                  module: 'applaunchpad'
-                });
-                const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
-                sealosApp.runEvents('openDesktopApp', {
-                  appKey: 'system-terminal',
-                  query: {
-                    defaultCommand
-                  },
-                  messageData: { type: 'new terminal', command: defaultCommand }
-                });
-              }}
-            >
-              <MyIcon
-                className="driver-detail-terminal"
-                name={'terminal'}
-                w="18px"
-                h="18px"
-                fill={'#485264'}
-              />
-            </Button>
-          </MyTooltip>
-          <MyTooltip offset={[0, 10]} label={t('Details')}>
-            <Button variant={'square'} onClick={() => setDetailPodIndex(i)}>
-              <MyIcon name={'detail'} w="18px" h="18px" fill={'#485264'} />
-            </Button>
-          </MyTooltip>
-          <MyTooltip offset={[0, 10]} label={t('Restart')}>
-            <Button
-              variant={'square'}
-              onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
-            >
-              <MyIcon name={'restart'} w="18px" h="18px" fill={'#485264'} />
-            </Button>
-          </MyTooltip>
-          {appDetail.storeList?.length > 0 && (
-            <MyTooltip offset={[0, 10]} label={t('File Management')}>
+        <div className="flex items-center gap-2 driver-detail-operate justify-end">
+          <Button
+            variant="outline"
+            className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
+            onClick={() => setDetailPodIndex(i)}
+          >
+            {t('Details')}
+          </Button>
+
+          <Button
+            variant="outline"
+            className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
+            onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
+          >
+            {t('Restart')}
+          </Button>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button
-                variant={'square'}
+                variant="outline"
+                className="w-9 h-9 rounded-lg border-zinc-200 hover:bg-zinc-50 driver-detail-terminal"
                 onClick={() => {
-                  setDetailFilePodIndex(i);
-                  onOpenPodFile();
+                  track('deployment_action', {
+                    event_type: 'terminal_open',
+                    module: 'applaunchpad'
+                  });
+                  const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
+                  sealosApp.runEvents('openDesktopApp', {
+                    appKey: 'system-terminal',
+                    query: {
+                      defaultCommand
+                    },
+                    messageData: { type: 'new terminal', command: defaultCommand }
+                  });
                 }}
               >
-                <MyIcon name={'file'} w="18px" h="18px" fill={'#485264'} />
+                <Terminal className="w-4 h-4 text-zinc-500" />
               </Button>
-            </MyTooltip>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="rounded-xl">
+              <p className="text-sm text-zinc-900 font-normal p-2">{t('Terminal')}</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {appDetail.storeList?.length > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-9 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
+                  onClick={() => {
+                    setDetailFilePodIndex(i);
+                    setIsOpenPodFile(true);
+                  }}
+                >
+                  <FolderOpen className="w-4 h-4 text-zinc-500" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="rounded-xl">
+                <p className="text-sm text-zinc-900 font-normal p-2">{t('File Management')}</p>
+              </TooltipContent>
+            </Tooltip>
           )}
-        </Flex>
+        </div>
       )
     }
   ];
 
   return (
-    <Box h={'100%'} py={'20px'} px={'32px'} position={'relative'}>
-      <Flex>
-        <Box fontSize={'14px'} fontWeight={'bold'} color={'grayModern.900'}>
-          {t('Pods List')}
-        </Box>
-        <Text ml={'8px'} fontSize={'14px'} fontWeight={'bold'} color={'grayModern.500'}>
-          ({pods.length})
-        </Text>
-      </Flex>
+    <div className="h-full p-5 relative bg-white rounded-lg shadow-xs border-[0.5px] border-zinc-200">
+      <div className="text-zinc-900 text-base font-medium flex items-center gap-2">
+        {t('Pods List')}
+        <span className="text-base font-medium leading-none text-zinc-500 bg-zinc-100 rounded-full px-2 py-0.5 border-[0.5px] border-zinc-200">
+          {pods.length}
+        </span>
+      </div>
 
-      <TableContainer mt={'12px'} overflow={'auto'}>
-        <Table variant={'simple'} backgroundColor={'white'}>
-          <Thead backgroundColor={'grayModern.50'}>
-            <Tr>
-              {columns.map((item) => (
-                <Th
-                  py={4}
+      <div className="mt-3 overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-zinc-50">
+              {columns.map((item, index) => (
+                <TableHead
                   key={item.key}
-                  border={'none'}
-                  fontSize={'12px'}
-                  fontWeight={'500'}
-                  color={'grayModern.600'}
-                  _first={{
-                    borderLeftRadius: '6px'
-                  }}
-                  _last={{
-                    borderRightRadius: '6px'
-                  }}
+                  className={`h-10 px-4 py-3 text-sm font-normal text-zinc-500 text-left ${
+                    index === 0
+                      ? 'rounded-l-lg'
+                      : index === columns.length - 1
+                      ? 'rounded-r-lg'
+                      : ''
+                  }`}
                 >
                   {t(item.title)}
-                </Th>
+                </TableHead>
               ))}
-            </Tr>
-          </Thead>
-          <Tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {pods.map((app, i) => (
-              <Tr key={app.podName}>
+              <TableRow key={app.podName} className="!border-b border-zinc-100">
                 {columns.map((col) => (
-                  <Td key={col.key} border={'none'}>
+                  <TableCell key={col.key} className="px-4 py-2">
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
-                        ? `${app[col.dataIndex]}`
-                        : '-'}
-                  </Td>
+                      ? `${app[col.dataIndex]}`
+                      : '-'}
+                  </TableCell>
                 ))}
-              </Tr>
+              </TableRow>
             ))}
-          </Tbody>
+          </TableBody>
         </Table>
-      </TableContainer>
+      </div>
 
       {logsPodIndex !== undefined && (
         <LogsModal
@@ -358,6 +301,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       )}
       {detailPodIndex !== undefined && (
         <DetailModel
+          appName={appName}
           pod={pods[detailPodIndex]}
           podAlias={pods[detailPodIndex]?.podName || ''}
           pods={pods.map((item, i) => ({
@@ -374,7 +318,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       {isOpenPodFile && appDetail.storeList?.length > 0 && detailFilePodIndex !== undefined && (
         <PodFileModal
           isOpen={isOpenPodFile}
-          onClose={onClosePodFile}
+          onClose={() => setIsOpenPodFile(false)}
           pod={pods[detailFilePodIndex]}
           podAlias={pods[detailFilePodIndex]?.podName || ''}
           pods={pods.map((item, i) => ({
@@ -387,7 +331,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
         />
       )}
       <RestartConfirmChild />
-    </Box>
+    </div>
   );
 };
 
