@@ -202,7 +202,7 @@ func TestPodMatchExpectations(t *testing.T) {
 	}
 }
 
-func TestGPUResourceMatcher(t *testing.T) {
+func TestExtraResourceMatcher(t *testing.T) {
 	expectPod := &corev1.Pod{
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -219,10 +219,6 @@ func TestGPUResourceMatcher(t *testing.T) {
 			},
 		},
 	}
-	expectPod.Annotations = map[string]string{
-		utilsresource.GpuTypeAnnotation: "NVIDIA-Tesla P40",
-	}
-
 	tests := []struct {
 		name     string
 		pod      *corev1.Pod
@@ -245,11 +241,7 @@ func TestGPUResourceMatcher(t *testing.T) {
 						},
 					},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						utilsresource.GpuTypeAnnotation: "NVIDIA-Tesla P40",
-					},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 			},
 			expected: true,
 		},
@@ -270,23 +262,20 @@ func TestGPUResourceMatcher(t *testing.T) {
 						},
 					},
 				},
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						utilsresource.GpuTypeAnnotation: "NVIDIA-Tesla P40",
-					},
-				},
+				ObjectMeta: metav1.ObjectMeta{},
 			},
 			expected: false,
 		},
 		{
-			name: "inconsistent gpu type",
+			name: "unexpected extra resource",
 			pod: &corev1.Pod{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									utilsresource.GpuResourceName: resource.MustParse("1"),
+									utilsresource.GpuResourceName:           resource.MustParse("1"),
+									corev1.ResourceName("example.com/fpga"): resource.MustParse("1"),
 								},
 								Requests: corev1.ResourceList{
 									utilsresource.GpuResourceName: resource.MustParse("1"),
@@ -295,6 +284,60 @@ func TestGPUResourceMatcher(t *testing.T) {
 						},
 					},
 				},
+				ObjectMeta: metav1.ObjectMeta{},
+			},
+			expected: false,
+		},
+	}
+
+	extraMatcher := ExtraResourceMatcher{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extraMatcher.Match(expectPod, tt.pod)
+			if result != tt.expected {
+				t.Errorf("ExtraResourceMatcher.Match() = %v, expected %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestExpectedAnnotationsMatcher(t *testing.T) {
+	expectPod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				utilsresource.GpuTypeAnnotation: "NVIDIA-Tesla P40",
+			},
+		},
+	}
+
+	tests := []struct {
+		name     string
+		pod      *corev1.Pod
+		expected bool
+	}{
+		{
+			name: "consistent annotations",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						utilsresource.GpuTypeAnnotation: "NVIDIA-Tesla P40",
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "missing expected annotation",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "different annotation value",
+			pod: &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						utilsresource.GpuTypeAnnotation: "NVIDIA GeForce RTX 3090",
@@ -305,12 +348,12 @@ func TestGPUResourceMatcher(t *testing.T) {
 		},
 	}
 
-	gpuMatcher := GPUResourceMatcher{}
+	annotationMatcher := ExpectedAnnotationsMatcher{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := gpuMatcher.Match(expectPod, tt.pod)
+			result := annotationMatcher.Match(expectPod, tt.pod)
 			if result != tt.expected {
-				t.Errorf("GPUResourceMatcher.Match() = %v, expected %v", result, tt.expected)
+				t.Errorf("ExpectedAnnotationsMatcher.Match() = %v, expected %v", result, tt.expected)
 			}
 		})
 	}
