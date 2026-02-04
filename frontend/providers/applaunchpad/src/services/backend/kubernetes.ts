@@ -2,7 +2,7 @@ import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
 import { UserQuotaItemType } from '@/types/user';
-import { memoryFormatToMi, cpuFormatToM } from '@/utils/tools';
+import { memoryFormatToMi, cpuFormatToM, storageQuantityToMi } from '@/utils/tools';
 
 export function K8sApiDefault(): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
@@ -160,13 +160,13 @@ export async function getUserQuota(
     },
     {
       type: 'storage',
-      limit: memoryFormatToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['requests.storage'] || '') / 1024
+      limit: storageQuantityToMi(status?.hard?.['requests.storage'] || '') / 1024,
+      used: storageQuantityToMi(status?.used?.['requests.storage'] || '') / 1024
     },
     {
       type: 'ephemeral-storage',
-      limit: memoryFormatToMi(status?.hard?.['limits.ephemeral-storage'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['limits.ephemeral-storage'] || '') / 1024
+      limit: storageQuantityToMi(status?.hard?.['limits.ephemeral-storage'] || '') / 1024,
+      used: storageQuantityToMi(status?.used?.['limits.ephemeral-storage'] || '') / 1024
     },
     {
       type: 'nodeports',

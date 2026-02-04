@@ -5,7 +5,7 @@ import { UserQuotaItemType } from '@/types/user';
 import {
   cpuFormatToM,
   memoryFormatToMi,
-  storageFormatToMi,
+  storageQuantityToMi,
   storageFormatToNum
 } from '@/utils/tools';
 
@@ -231,8 +231,8 @@ export async function getUserQuota(
     },
     {
       type: 'storage',
-      limit: storageFormatToMi(status?.hard?.['limits.ephemeral-storage'] || '') / 1024,
-      used: storageFormatToMi(status?.used?.['limits.ephemeral-storage'] || '') / 1024
+      limit: storageQuantityToMi(status?.hard?.['limits.ephemeral-storage'] || '') / 1024,
+      used: storageQuantityToMi(status?.used?.['limits.ephemeral-storage'] || '') / 1024
     },
     {
       type: 'nodeports',
