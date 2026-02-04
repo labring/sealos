@@ -34,12 +34,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       [
         DBTypeEnum.mongodb,
         [
-          'mongo',
+          'mongosh',
+          '-u',
+          username,
+          '-p',
+          password,
           '--quiet',
-          `-u${username}`,
-          `-p${password}`,
           '--eval',
-          "db.adminCommand('listDatabases').databases.forEach(function(db) {print(db.name);})"
+          'db.adminCommand({listDatabases: 1}).databases.forEach(function(db) {print(db.name);})'
         ]
       ]
     ]);
