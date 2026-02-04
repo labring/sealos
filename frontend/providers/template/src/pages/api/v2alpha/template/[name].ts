@@ -8,6 +8,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { mapValues, reduce } from 'lodash';
+import { applyWithInstanceOwnerReferences } from '@/services/backend/instanceOwnerReferencesApply';
 import {
   getCachedTemplates,
   getTemplateFromCache,
@@ -135,10 +136,12 @@ async function handleTemplateDeployment(
     // Validate kubeconfig and get K8s client
     let namespace: string;
     let applyYamlList: (yamlList: string[], type: 'create' | 'replace' | 'dryrun') => Promise<any>;
+    let k8sCustomObjects: Awaited<ReturnType<typeof getK8s>>['k8sCustomObjects'];
     try {
       const k8sResult = await getK8s({ kubeconfig });
       namespace = k8sResult.namespace;
       applyYamlList = k8sResult.applyYamlList;
+      k8sCustomObjects = k8sResult.k8sCustomObjects;
     } catch (err: any) {
       return res.status(401).json({
         message: 'Invalid kubeconfig or insufficient permissions',
@@ -178,7 +181,11 @@ async function handleTemplateDeployment(
 
     const yamls = correctYaml.map((item) => item.value);
 
-    await applyYamlList(yamls, 'create');
+    await applyWithInstanceOwnerReferences(
+      { applyYamlList, k8sCustomObjects, namespace },
+      yamls,
+      'create'
+    );
 
     return res.status(204).end();
   } catch (err: any) {
