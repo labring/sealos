@@ -65,6 +65,35 @@ readinessProbe:
   initialDelaySeconds: 5
   periodSeconds: 10
 
+# Metrics（默认关闭；开启后会创建对应 Service 并让 controller 暴露 metrics 端口）
+metrics:
+  enabled: false
+  # 对应 controller 的 --metrics-bind-address 监听端口
+  port: 8443
+
+# devbox-service（retag 服务，端口 8092）
+devboxService:
+  enabled: true
+  replicaCount: 3
+  image: ghcr.io/labring/sealos-devbox-service:latest
+  imagePullPolicy: Always
+  service:
+    port: 8092
+  resources:
+    requests:
+      cpu: 50m
+      memory: 50Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    GIN_MODE: "release"
+    LOG_LEVEL: "info"
+    USER: "admin"
+    PASSWORD: "passw0rd"
+    # 用于 devbox-service 的 /tag 接口鉴权（JWT 校验密钥）
+    JWTSecret: ""
+
 # Affinity 配置
 affinity: {}
   # nodeAffinity:
@@ -81,7 +110,16 @@ affinity: {}
 nodeSelector: {}
 
 # Tolerations
-tolerations: []
+tolerations:
+  - effect: NoSchedule
+    key: devbox.sealos.io/node
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
 
 # Termination grace period
 terminationGracePeriodSeconds: 10

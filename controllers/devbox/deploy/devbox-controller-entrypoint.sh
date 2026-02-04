@@ -125,6 +125,28 @@ if [ -n "${REGISTRY_PASSWORD}" ]; then
   add_set_string env.registryPassword "${REGISTRY_PASSWORD}"
 fi
 
+# Auto-configure devbox-service JWTSecret from sealos-config if devboxService is enabled
+# Only apply to v1alpha1 chart (v2alpha2 doesn't have devbox-service)
+if [ "${DEVBOX_VERSION}" = "v1alpha1" ]; then
+  # Check if devboxService.enabled is true (default is true in values.yaml)
+  DEVBOX_SERVICE_ENABLED=${DEVBOX_SERVICE_ENABLED:-"true"}
+  if [ "${DEVBOX_SERVICE_ENABLED}" != "false" ]; then
+    # Try to get JWTSecret from sealos-config (same as account controller)
+    varJwtInternal=${varJwtInternal:-"$(get_cm_value sealos-system sealos-config jwtInternal)"}
+    if [ -n "${varJwtInternal}" ]; then
+      add_set_string devboxService.env.JWTSecret "${varJwtInternal}"
+    fi
+    
+    # Auto-configure registry credentials for devbox-service if not explicitly set
+    if [ -n "${REGISTRY_USER}" ]; then
+      add_set_string devboxService.env.USER "${REGISTRY_USER}"
+    fi
+    if [ -n "${REGISTRY_PASSWORD}" ]; then
+      add_set_string devboxService.env.PASSWORD "${REGISTRY_PASSWORD}"
+    fi
+  fi
+fi
+
 if ! helm status "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" >/dev/null 2>&1; then
   if kubectl get namespace "${RELEASE_NAMESPACE}" >/dev/null 2>&1; then
     kubectl label namespace "${RELEASE_NAMESPACE}" app.kubernetes.io/managed-by=Helm --overwrite >/dev/null 2>&1 || true
@@ -135,6 +157,13 @@ if ! helm status "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" >/dev/null 2>&1; th
   if [ "${DEVBOX_VERSION}" = "v1alpha1" ]; then
     adopt_namespaced_resource deployment devbox-controller-manager
     adopt_namespaced_resource serviceaccount controller-manager
+    # Adopt devbox-service resources if enabled
+    DEVBOX_SERVICE_ENABLED=${DEVBOX_SERVICE_ENABLED:-"true"}
+    if [ "${DEVBOX_SERVICE_ENABLED}" != "false" ]; then
+      adopt_namespaced_resource configmap devbox-service-env
+      adopt_namespaced_resource service devbox-service
+      adopt_namespaced_resource deployment devbox-service
+    fi
   else
     adopt_namespaced_resource daemonset devbox-controller-manager
     adopt_namespaced_resource serviceaccount devbox-controller-manager

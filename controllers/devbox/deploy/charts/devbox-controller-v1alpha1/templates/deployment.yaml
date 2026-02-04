@@ -44,6 +44,11 @@ spec:
             {{- range .Values.extraArgs }}
             - {{ . }}
             {{- end }}
+            {{- if .Values.metrics.enabled }}
+            - --metrics-bind-address=:{{ .Values.metrics.port }}
+            {{- else }}
+            - --metrics-bind-address=0
+            {{- end }}
             - --registry-addr={{ .Values.env.registryAddr }}
             - --registry-user={{ .Values.env.registryUser }}
             - --registry-password={{ .Values.env.registryPassword }}
@@ -51,6 +56,15 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          ports:
+            - name: health
+              containerPort: 8081
+              protocol: TCP
+            {{- if .Values.metrics.enabled }}
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+              protocol: TCP
+            {{- end }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
