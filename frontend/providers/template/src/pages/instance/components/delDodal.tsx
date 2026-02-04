@@ -1,6 +1,5 @@
-import { deleteAllResources } from '@/api/delete';
+import { delInstanceByName } from '@/api/delete';
 import { useToast } from '@/hooks/useToast';
-import { useResourceStore } from '@/store/resource';
 import {
   Box,
   Button,
@@ -26,7 +25,6 @@ const DelModal = ({
   onSuccess: () => void;
 }) => {
   const { t } = useTranslation();
-  const { resource } = useResourceStore();
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -34,7 +32,7 @@ const DelModal = ({
   const handleDelApp = useCallback(async () => {
     try {
       setLoading(true);
-      await deleteAllResources(resource);
+      await delInstanceByName(name);
       toast({
         title: t('Delete successful'),
         status: 'success'
@@ -49,7 +47,7 @@ const DelModal = ({
       console.error(error);
     }
     setLoading(false);
-  }, [resource, toast, t, onSuccess, onClose]);
+  }, [name, toast, t, onSuccess, onClose]);
 
   return (
     <Modal isOpen onClose={onClose}>
