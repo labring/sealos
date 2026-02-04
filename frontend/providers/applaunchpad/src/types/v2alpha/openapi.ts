@@ -10,32 +10,25 @@ export const ErrorResponseSchema = z.object({
   error: z.string().optional()
 });
 
-// Get sealos domain from global config, window location, or default
-const getSealosDomain = () => {
+// Get production server URL from current environment
+const getProductionServerUrl = () => {
   try {
-    // Server-side: use global.AppConfig
-    if (typeof global !== 'undefined' && global.AppConfig?.cloud?.domain) {
-      return global.AppConfig.cloud.domain;
+    // Client-side: use window.location.origin directly
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return `${window.location.origin}/api/v2alpha`;
     }
-    // Client-side: derive from window.location
-    if (typeof window !== 'undefined' && window.location?.hostname) {
-      // hostname format: applaunchpad.cloud.sealos.io -> cloud.sealos.io
-      const hostname = window.location.hostname;
-      const parts = hostname.split('.');
-      if (parts.length > 1 && parts[0] === 'applaunchpad') {
-        return parts.slice(1).join('.');
-      }
-      return hostname;
+    // Server-side: construct from global.AppConfig
+    if (typeof global !== 'undefined' && global.AppConfig?.cloud?.domain) {
+      return `https://applaunchpad.${global.AppConfig.cloud.domain}/api/v2alpha`;
     }
   } catch (error) {
     // Ignore error
   }
-  return 'cloud.sealos.io';
+  return 'https://applaunchpad.cloud.sealos.io/api/v2alpha';
 };
 
-// Factory function to create openapi document with dynamic domain
-export const createOpenApiDocument = (domain?: string) => {
-  const sealosDomain = domain || getSealosDomain();
+// Factory function to create openapi document with dynamic URL
+export const createOpenApiDocument = () => {
   return createDocument({
     openapi: '3.0.0',
     info: {
@@ -49,7 +42,7 @@ export const createOpenApiDocument = (domain?: string) => {
         description: 'Development'
       },
       {
-        url: `https://applaunchpad.${sealosDomain}/api/v2alpha`,
+        url: getProductionServerUrl(),
         description: 'Production'
       }
     ],
