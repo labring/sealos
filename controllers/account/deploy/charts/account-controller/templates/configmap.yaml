@@ -1,0 +1,50 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: account-manager-env
+  namespace: {{ .Release.Namespace }}
+  labels:
+    control-plane: controller-manager
+    {{- include "account.labels" . | nindent 4 }}
+data:
+  {{- $data := dict
+      "ApproachingDeletionPeriod" .Values.accountEnv.approachingDeletionPeriod
+      "ImminentDeletionPeriod" .Values.accountEnv.imminentDeletionPeriod
+      "FinalDeletionPeriod" .Values.accountEnv.finalDeletionPeriod
+      "DebtDetectionCycleSeconds" .Values.accountEnv.debtDetectionCycleSeconds
+      "OSAdminSecret" .Values.accountEnv.osAdminSecret
+      "OSInternalEndpoint" .Values.accountEnv.osInternalEndpoint
+      "OSNamespace" .Values.accountEnv.osNamespace
+      "MONGO_URI" .Values.accountEnv.mongoURI
+      "LOCAL_COCKROACH_URI" .Values.accountEnv.localCockroachURI
+      "GLOBAL_COCKROACH_URI" .Values.accountEnv.globalCockroachURI
+      "TRAFFIC_MONGO_URI" .Values.accountEnv.trafficMongoURI
+      "LOCAL_REGION" .Values.accountEnv.localRegion
+      "DOMAIN" .Values.accountEnv.cloudDomain
+      "PORT" .Values.accountEnv.cloudPort
+      "ACCOUNT_API_JWT_SECRET" .Values.accountEnv.accountApiJwtSecret
+      "BASE_BALANCE" .Values.accountEnv.baseBalance
+      "QUOTA_LIMITS_CPU" .Values.accountEnv.quotaLimitsCpu
+      "QUOTA_LIMITS_MEMORY" .Values.accountEnv.quotaLimitsMemory
+      "QUOTA_LIMITS_STORAGE" .Values.accountEnv.quotaLimitsStorage
+      "QUOTA_LIMITS_GPU" .Values.accountEnv.quotaLimitsGpu
+      "QUOTA_LIMITS_PODS" .Values.accountEnv.quotaLimitsPods
+      "QUOTA_LIMITS_NODE_PORTS" .Values.accountEnv.quotaLimitsNodePorts
+      "QUOTA_OBJECT_STORAGE_SIZE" .Values.accountEnv.quotaObjectStorageSize
+      "QUOTA_OBJECT_STORAGE_BUCKET" .Values.accountEnv.quotaObjectStorageBucket
+      "LIMIT_RANGE_EPHEMERAL_STORAGE" .Values.accountEnv.limitRangeEphemeralStorage
+      "REWARD_PROCESSING" .Values.accountEnv.rewardProcessing
+      "WHITELIST_KUBERNETES_HOSTS" (default (printf "https://%s:6443" .Values.accountEnv.cloudDomain) .Values.accountEnv.whitelistKubernetesHosts)
+  -}}
+  {{- if eq (default "preserve" .Values.accountEnvMergeStrategy) "preserve" }}
+  {{- $existing := (lookup "v1" "ConfigMap" .Release.Namespace "account-manager-env") }}
+  {{- if $existing }}
+  {{- range $k, $v := $existing.data }}
+  {{- $_ := set $data $k $v }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- range $k, $v := $data }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}

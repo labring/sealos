@@ -1,14 +1,52 @@
-import { useSystemConfigStore } from '@/store/config';
 import { useSearchStore } from '@/store/search';
+import { ApplicationType, SideBarMenuType } from '@/types/app';
 import { Flex, Text } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
+import { useMemo } from 'react';
+import { getTemplates } from '@/api/platform';
 
 export default function SideBar() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { appType, setAppType } = useSearchStore();
   const router = useRouter();
-  const { sideBarMenu } = useSystemConfigStore();
+
+  const { data } = useQuery(['listTemplate', i18n.language], () => getTemplates(i18n.language), {
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    retry: 3,
+    /**
+     * Avoid executing axios with a relative baseURL during SSR render.
+     * The server will prefetch and hydrate this query from `_app.getInitialProps`.
+     */
+    enabled: typeof window !== 'undefined'
+  });
+
+  const sideBarMenu: SideBarMenuType[] = useMemo(() => {
+    const base: SideBarMenuType[] = [
+      {
+        id: 'applications',
+        type: ApplicationType.All,
+        value: 'SideBar.Applications'
+      }
+    ];
+
+    const menuKeys = data?.menuKeys ?? '';
+    if (!menuKeys) return base;
+
+    const menus: SideBarMenuType[] = menuKeys
+      .split(',')
+      .map((i) => i.trim())
+      .filter(Boolean)
+      .map((i) => ({
+        id: i,
+        type: i as ApplicationType,
+        value: `SideBar.${i}`
+      }));
+
+    return [...base, ...menus];
+  }, [data?.menuKeys]);
 
   return (
     <Flex flexDirection="column" mt="8px" flex={1}>
@@ -29,7 +67,9 @@ export default function SideBar() {
               cursor={'pointer'}
               id={item.id}
               onClick={() => {
-                router.replace('/');
+                if (router.pathname !== '/') {
+                  router.replace('/');
+                }
                 setAppType(item.type);
               }}
             >

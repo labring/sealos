@@ -39,11 +39,7 @@ const SIZE_UNITS = {
 
 // Custom Error Classes
 class PortError extends Error {
-  constructor(
-    message: string,
-    public code: number = 500,
-    public details?: any
-  ) {
+  constructor(message: string, public code: number = 500, public details?: any) {
     super(message);
     this.name = 'PortError';
   }
@@ -694,7 +690,9 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
       }
     } else {
       throw new PortValidationError(
-        `Cannot set isPublic for non-application protocol. Current protocol: ${finalAppProtocol || updatedNetwork.protocol}`,
+        `Cannot set isPublic for non-application protocol. Current protocol: ${
+          finalAppProtocol || updatedNetwork.protocol
+        }`,
         {
           currentAppProtocol: finalAppProtocol,
           currentProtocol: updatedNetwork.protocol,
@@ -926,12 +924,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 updateData.image.imageRegistry === null
                   ? null
                   : updateData.image.imageRegistry
-                    ? {
-                        username: updateData.image.imageRegistry.username,
-                        password: updateData.image.imageRegistry.password,
-                        serverAddress: updateData.image.imageRegistry.apiUrl
-                      }
-                    : undefined
+                  ? {
+                      username: updateData.image.imageRegistry.username,
+                      password: updateData.image.imageRegistry.password,
+                      serverAddress: updateData.image.imageRegistry.apiUrl
+                    }
+                  : undefined
             })
           };
 
