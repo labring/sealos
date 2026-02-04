@@ -9,6 +9,7 @@ export interface MetricsClientConfig {
   metricsURL?: string;
   minioInstance?: string;
   whitelistKubernetesHosts?: string[];
+  authCacheTTL?: number;
 }
 
 export class MetricsClient {
@@ -23,7 +24,11 @@ export class MetricsClient {
       'http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus';
     const metricsURL = config.metricsURL || process.env.METRICS_URL || defaultURL;
 
-    this.authService = new AuthService(config.kubeconfig, config.whitelistKubernetesHosts);
+    this.authService = new AuthService(
+      config.kubeconfig,
+      config.whitelistKubernetesHosts,
+      config.authCacheTTL
+    );
 
     this.launchpad = new LaunchpadService(metricsURL, this.authService);
     this.database = new DatabaseService(metricsURL, this.authService);

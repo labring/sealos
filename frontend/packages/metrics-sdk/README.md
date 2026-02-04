@@ -278,9 +278,54 @@ const client = new MetricsClient({
   kubeconfig: kubeconfigString,
   metricsURL: 'http://custom-metrics:8429',
   minioInstance: 'custom-minio-instance',
-  whitelistKubernetesHosts: ['https://k8s.example.com:6443']
+  whitelistKubernetesHosts: ['https://k8s.example.com:6443'],
+  authCacheTTL: 600000 // 10 minutes
 });
 ```
+
+### Authentication Cache
+
+The SDK caches authentication results to avoid redundant Kubernetes API calls for the same namespace.
+
+**Cache Behavior:**
+
+- **Default TTL**: 5 minutes (300000 ms)
+- **Cache Key**: namespace
+- **Cached Data**: Permission check result (allowed/denied)
+- **Memory Only**: Cache is cleared on process restart
+
+**Configuration:**
+
+```typescript
+// Default (cache enabled, 5 min TTL)
+const client = new MetricsClient({
+  kubeconfig: '...'
+});
+
+// Custom TTL (10 minutes)
+const client = new MetricsClient({
+  kubeconfig: '...',
+  authCacheTTL: 600000
+});
+
+// Disable cache
+const client = new MetricsClient({
+  kubeconfig: '...',
+  authCacheTTL: 0
+});
+```
+
+**Performance Impact:**
+
+- Eliminates 2 network requests per query (readyz + permission check) when cache hits
+- Especially beneficial for high-frequency queries on the same namespace
+- Example: 10 queries to same namespace = 18 requests → 2 requests (90% reduction)
+
+**Security Considerations:**
+
+- Permission changes take effect after TTL expires
+- Shorter TTL = more secure but less performant
+- Recommended: Keep default 5 min for most use cases
 
 ## How It Works
 
@@ -292,6 +337,13 @@ SDK uses `@kubernetes/client-node` to validate user permissions:
 // Checks if user has 'get pods' permission in namespace
 await authService.authenticate(namespace);
 ```
+
+**Authentication Cache:**
+
+- Caches permission check results per namespace
+- Cache hit = skip 2 network requests (readyz + permission check)
+- Default 5-min TTL ensures permission changes propagate quickly
+- Cache miss or expired = perform full authentication
 
 ### 2. PromQL Construction
 
@@ -332,6 +384,7 @@ interface MetricsClientConfig {
   metricsURL?: string;
   minioInstance?: string;
   whitelistKubernetesHosts?: string[];
+  authCacheTTL?: number; // milliseconds, default 300000 (5 min), set 0 to disable
 }
 ```
 

@@ -70,7 +70,8 @@ new MetricsClient({
   kubeconfig: string,
   metricsURL: string,
   minioInstance: string,
-  whitelistKubernetesHosts: string[]
+  whitelistKubernetesHosts: string[],
+  authCacheTTL: number
 });
 ```
 
@@ -80,6 +81,51 @@ new MetricsClient({
   也可通过环境变量 `METRICS_URL` 覆盖，最好通过构造函数传入，避免环境变量污染，而且最好传一下地址，这样比环境变量或者默认值更清晰。
 - `minioInstance`：MinIO 指标的 `instance` 标签值；不传则读取 `OBJECT_STORAGE_INSTANCE`环境变量。minio 项目必填项，最好通过构造函数传入，避免环境变量污染。
 - `whitelistKubernetesHosts`：可选，白名单 Kubernetes API Server 地址列表；优先级高于环境变量 `WHITELIST_KUBERNETES_HOSTS`。本地开发环境建议通过此参数显式传入。
+- `authCacheTTL`：可选，认证缓存过期时间（毫秒），默认 300000 (5 分钟)，设置为 0 禁用缓存。
+
+### 认证缓存
+
+SDK 会缓存认证结果，避免对同一 namespace 的重复 Kubernetes API 调用。
+
+**缓存行为：**
+
+- **默认 TTL**：5 分钟 (300000 ms)
+- **缓存键**：namespace
+- **缓存数据**：权限检查结果（允许/拒绝）
+- **仅内存**：进程重启后缓存清空
+
+**配置示例：**
+
+```typescript
+// 默认配置（启用缓存，5 分钟 TTL）
+const client = new MetricsClient({
+  kubeconfig: '...'
+});
+
+// 自定义 TTL（10 分钟）
+const client = new MetricsClient({
+  kubeconfig: '...',
+  authCacheTTL: 600000
+});
+
+// 禁用缓存
+const client = new MetricsClient({
+  kubeconfig: '...',
+  authCacheTTL: 0
+});
+```
+
+**性能影响：**
+
+- 缓存命中时，每次查询节省 2 个网络请求（readyz + 权限检查）
+- 特别适合高频查询同一 namespace 的场景
+- 示例：对同一 namespace 的 10 次查询 = 18 个请求 → 2 个请求（减少 90%）
+
+**安全考虑：**
+
+- 权限变更在 TTL 过期后生效
+- TTL 越短越安全，但性能越低
+- 建议：大多数场景保持默认 5 分钟
 
 ## 时间范围与查询方式
 
@@ -270,6 +316,13 @@ SDK 内部会执行以下校验流程：
 3. 通过 `SelfSubjectAccessReview` 检查是否具备 `get pods` 权限
 
 如果没有权限，会抛出：`No permission for this namespace`。
+
+**认证缓存：**
+
+- 每个 namespace 的权限检查结果会被缓存
+- 缓存命中 = 跳过 2 个网络请求（readyz + 权限检查）
+- 默认 5 分钟 TTL 确保权限变更能够快速生效
+- 缓存未命中或已过期 = 执行完整认证流程
 
 ## Kubernetes Host 处理规则
 

@@ -9,8 +9,13 @@ export class AuthService {
   private authApi?: k8s.AuthorizationV1Api;
   private kubeConfig?: k8s.KubeConfig;
   private whitelistKubernetesHosts: string[];
+  private authCache: Map<string, { allowed: boolean; expiresAt: number }>;
+  private cacheTTL: number;
+  private inFlightAuth: Map<string, Promise<void>>;
+  private lastCacheSweepAt: number;
+  private readonly cacheSweepIntervalMs: number;
 
-  constructor(kubeconfig: string, whitelistKubernetesHosts?: string[]) {
+  constructor(kubeconfig: string, whitelistKubernetesHosts?: string[], cacheTTL?: number) {
     this.kubeconfig = kubeconfig;
     this.whitelistKubernetesHosts =
       whitelistKubernetesHosts ||
@@ -18,6 +23,11 @@ export class AuthService {
         .split(',')
         .map((host) => host.trim())
         .filter(Boolean);
+    this.cacheTTL = cacheTTL ?? 300000; // 5 minutes default
+    this.authCache = new Map();
+    this.inFlightAuth = new Map();
+    this.lastCacheSweepAt = 0;
+    this.cacheSweepIntervalMs = 60000;
   }
 
   resolveNamespace(namespace?: string): string {
@@ -82,6 +92,18 @@ export class AuthService {
     return kc.getContextObject(contextName)?.namespace;
   }
 
+  private sweepExpiredCache(): void {
+    if (this.cacheTTL <= 0 || this.authCache.size === 0) return;
+    const now = Date.now();
+    if (now - this.lastCacheSweepAt < this.cacheSweepIntervalMs) return;
+    this.lastCacheSweepAt = now;
+    for (const [namespace, cache] of this.authCache.entries()) {
+      if (cache.expiresAt <= now) {
+        this.authCache.delete(namespace);
+      }
+    }
+  }
+
   private async pingReadyz(): Promise<void> {
     const kc = this.getKubeConfig();
     const cluster = kc.getCurrentCluster();
@@ -139,39 +161,102 @@ export class AuthService {
   }
 
   async authenticate(namespace: string): Promise<void> {
-    if (!namespace) {
+    const ns = namespace.trim();
+    if (!ns) {
       throw new Error('Namespace not found');
     }
 
+    this.sweepExpiredCache();
+
+    if (this.cacheTTL > 0) {
+      const cached = this.authCache.get(ns);
+      if (cached) {
+        if (cached.expiresAt > Date.now()) {
+          if (!cached.allowed) {
+            throw new Error('No permission for this namespace');
+          }
+          return;
+        }
+        this.authCache.delete(ns);
+      }
+    }
+
+    const inFlight = this.inFlightAuth.get(ns);
+    if (inFlight) return inFlight;
+
     const { authApi } = this.getK8sClient();
 
-    await this.pingReadyz();
+    const authPromise = (async () => {
+      await this.pingReadyz();
 
-    const review: k8s.V1SelfSubjectAccessReview = {
-      apiVersion: 'authorization.k8s.io/v1',
-      kind: 'SelfSubjectAccessReview',
-      spec: {
-        resourceAttributes: {
-          namespace,
-          verb: 'get',
-          group: '',
-          version: 'v1',
-          resource: 'pods'
+      const review: k8s.V1SelfSubjectAccessReview = {
+        apiVersion: 'authorization.k8s.io/v1',
+        kind: 'SelfSubjectAccessReview',
+        spec: {
+          resourceAttributes: {
+            namespace: ns,
+            verb: 'get',
+            group: '',
+            version: 'v1',
+            resource: 'pods'
+          }
         }
+      };
+
+      try {
+        const response = await authApi.createSelfSubjectAccessReview(review);
+
+        if (!response.body.status?.allowed) {
+          if (this.cacheTTL > 0) {
+            this.authCache.set(ns, {
+              allowed: false,
+              expiresAt: Date.now() + this.cacheTTL
+            });
+          }
+          throw new Error('No permission for this namespace');
+        }
+
+        if (this.cacheTTL > 0) {
+          this.authCache.set(ns, {
+            allowed: true,
+            expiresAt: Date.now() + this.cacheTTL
+          });
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          throw new Error(`Authentication failed: ${error.message}`);
+        }
+        throw error;
       }
+    })().finally(() => {
+      this.inFlightAuth.delete(ns);
+    });
+
+    this.inFlightAuth.set(ns, authPromise);
+    return authPromise;
+  }
+
+  clearCache(): void {
+    this.authCache.clear();
+  }
+
+  clearNamespaceCache(namespace: string): void {
+    this.authCache.delete(namespace);
+  }
+
+  getCacheStats(): {
+    size: number;
+    entries: Array<{ namespace: string; allowed: boolean; expiresIn: number }>;
+  } {
+    this.sweepExpiredCache();
+    const entries = Array.from(this.authCache.entries()).map(([namespace, cache]) => ({
+      namespace,
+      allowed: cache.allowed,
+      expiresIn: Math.max(0, cache.expiresAt - Date.now())
+    }));
+    return {
+      size: this.authCache.size,
+      entries
     };
-
-    try {
-      const response = await authApi.createSelfSubjectAccessReview(review);
-
-      if (!response.body.status?.allowed) {
-        throw new Error('No permission for this namespace');
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`Authentication failed: ${error.message}`);
-      }
-      throw error;
-    }
   }
 }
