@@ -27,8 +27,8 @@ import 'cronstrue/locales/zh_CN';
 import dayjs from 'dayjs';
 import { flatMap } from 'lodash';
 import { getLangStore } from './cookieUtils';
-import { cpuFormatToM, memoryFormatToMi } from './tools';
 import { ObjectStorageCR, ObjectStorageItemType } from '@/types/objectStorage';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 export function sortItemsByCreateTime<T extends { createTime: string }>(items: T[]): T[] {
   return items.sort((a, b) => {
@@ -77,8 +77,10 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
         : StatusMap[StatusEnum.Waiting],
     // isPause: !!app?.metadata?.annotations?.[pauseKey],
     createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-    cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu),
-    memory: memoryFormatToMi(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory),
+    cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu ?? '0'),
+    memory: memoryFormatToMi(
+      app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory ?? '0'
+    ),
     activeReplicas: app.status?.readyReplicas || 0,
     maxReplicas: +(app.metadata?.annotations?.[maxReplicasKey] || app.status?.readyReplicas || 0),
     minReplicas: +(app.metadata?.annotations?.[minReplicasKey] || app.status?.readyReplicas || 0),

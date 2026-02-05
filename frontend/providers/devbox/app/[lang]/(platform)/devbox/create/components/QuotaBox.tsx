@@ -27,8 +27,7 @@ const QuotaBox = ({ className }: { className?: string }) => {
 
         const tip = `${t('total')}: ${(limit / scale).toFixed(2)} ${unit}
 ${t('used')}: ${(used / scale).toFixed(2)} ${unit}
-${t('remaining')}: ${((limit - used) / scale).toFixed(2)} ${unit}`;
-
+${t('remaining')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
         return { ...item, tip, Icon };
       });
   }, [userQuota, t]);

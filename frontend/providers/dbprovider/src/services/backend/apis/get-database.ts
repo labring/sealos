@@ -3,8 +3,9 @@ import { getK8s } from '../kubernetes';
 import { z } from 'zod';
 import { KbPgClusterType } from '@/types/cluster';
 import { dbDetailV1Schema } from '@/types/schemas/db';
-import { formatPodTime, cpuFormatToM, memoryFormatToMi, storageFormatToNum } from '@/utils/tools';
+import { formatPodTime, storageFormatToNum } from '@/utils/tools';
 import type { V1Pod, V1Service } from '@kubernetes/client-node';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 type DatabaseDetail = z.infer<typeof dbDetailV1Schema>;
 
@@ -103,8 +104,8 @@ function adaptDatabaseDetailV1(
     typeof creationTimestamp === 'string'
       ? creationTimestamp
       : creationTimestamp
-        ? new Date(creationTimestamp as any).toISOString()
-        : null;
+      ? new Date(creationTimestamp as any).toISOString()
+      : null;
 
   return {
     name: cluster.metadata?.name || '',

@@ -36,6 +36,7 @@
     "@sealos/driver": "workspace:^",
     "@sealos/gtm": "workspace:^",
     "@sealos/shadcn-ui": "workspace:^",
+    "@sealos/shared": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tailwindcss/postcss": "^4.1.10",
     "@tanstack/react-query": "^4.35.3",

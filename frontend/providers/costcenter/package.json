@@ -21,6 +21,7 @@
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "0.18.0",
     "@sealos/shadcn-ui": "workspace:^",
+    "@sealos/shared": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@stripe/stripe-js": "^1.54.2",
     "@tailwindcss/postcss": "^4.1.10",

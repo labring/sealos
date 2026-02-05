@@ -44,8 +44,7 @@ const QuotaBox = () => {
 
         const tip = `${t('Total')}: ${(limit / scale).toFixed(2)} ${unit}
 ${t('common.Used')}: ${(used / scale).toFixed(2)} ${unit}
-${t('common.Surplus')}: ${((limit - used) / scale).toFixed(2)} ${unit}`;
-
+${t('common.Surplus')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
         return { ...item, tip, color };
       });
   }, [userQuota, t]);
