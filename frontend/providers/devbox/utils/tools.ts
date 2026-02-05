@@ -55,14 +55,6 @@ export const memoryFormatToMi = (memory = '0') => {
   return Number(value.toFixed(2));
 };
 
-export const storageFormatToNum = (storage = '0') => {
-  return +`${storage.replace(/gi/i, '')}`;
-};
-
-export const printMemory = (val: number) => {
-  return val >= 1024 ? `${Math.round(val / 1024)} Gi` : `${val} Mi`;
-};
-
 export function downLoadBlob(content: BlobPart, type: string, fileName: string) {
   const blob = new Blob([content], { type });
 
@@ -295,10 +287,6 @@ export const formatPodTime = (createTimeStamp: Date = new Date()) => {
     return `${minutes}m${seconds}s`;
   }
   return `${seconds}s`;
-};
-
-export const formatMoney = (mone: number) => {
-  return mone / 1000000;
 };
 
 export function calculateUptime(createdTime: Date): string {

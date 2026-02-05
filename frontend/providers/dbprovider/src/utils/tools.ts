@@ -96,51 +96,6 @@ export const str2Num = (str?: string | number) => {
 };
 
 /**
- * add ./ in path
- */
-export const pathFormat = (str: string) => {
-  if (str.startsWith('/')) return `.${str}`;
-  return `./${str}`;
-};
-export const pathToNameFormat = (str: string) => {
-  if (!str.startsWith('/')) return str.replace(/(\/|\.)/g, '-').toLocaleLowerCase();
-  return str
-    .substring(1)
-    .replace(/(\/|\.)/g, '-')
-    .toLocaleLowerCase();
-};
-
-/**
- * read a file text content
- */
-export const reactLocalFileContent = (file: File) => {
-  return new Promise((resolve: (_: string) => void, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result as string);
-    };
-    reader.onerror = (err) => {
-      reject(err);
-    };
-    reader.readAsText(file);
-  });
-};
-
-/**
- * str to base64
- */
-export const strToBase64 = (str: string) => {
-  try {
-    const base64 = window.btoa(str);
-
-    return base64;
-  } catch (error) {
-    console.log(error);
-  }
-  return '';
-};
-
-/**
  * Format CPU value to standard C format
  * @param cpu CPU value, like "500m", "1", "2"
  * @returns Standardized CPU value with C suffix, like "0.5C", "1C", "2C"
@@ -350,13 +305,6 @@ export const getErrText = (err: any, def = '') => {
   return msg;
 };
 
-export const delay = (ms: number) =>
-  new Promise((resolve) => {
-    setTimeout(() => {
-      resolve('');
-    }, ms);
-  });
-
 export const convertCronTime = (cronTime: string, offset: 8 | -8) => {
   let [minute, hour, dayOfMonth, month, dayOfWeek] = cronTime.split(' ');
 
@@ -484,10 +432,6 @@ export const adjustDifferencesForIni = (
       oldValue: diff.oldValue
     };
   });
-};
-
-export const formatMoney = (mone: number) => {
-  return mone / 1000000;
 };
 
 /**

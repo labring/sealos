@@ -10,11 +10,6 @@ export const formatTime = (time: string | number | Date, formatStr = 'yyyy-MM-dd
   return format(date, formatStr, { locale: zhCN });
 };
 
-export const formatRelativeTime = (time: string | number | Date) => {
-  const date = typeof time === 'string' ? parseISO(time) : time;
-  return formatDistanceToNow(date, { addSuffix: true, locale: zhCN });
-};
-
 export const formatTrafficAuto = (mb: number, decimals: number = 0): string => {
   if (mb === 0) return '0 MB Traffic';
 

@@ -1,9 +1,6 @@
 import { useToast } from '@/hooks/useToast';
-import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
-import { cloneDeep, forEach, isNumber, isBoolean, isObject, has } from 'lodash';
-import { templateDeployKey } from '@/constants/keys';
-import { EnvResponse } from '@/types';
+import { isObject, has } from 'lodash';
 
 /**
  * copy text data
@@ -34,54 +31,6 @@ export const useCopyData = () => {
       }
     }
   };
-};
-
-/**
- * format string to number or ''
- */
-export const str2Num = (str?: string | number) => {
-  return !!str ? +str : '';
-};
-
-/**
- * add ./ in path
- */
-export const pathFormat = (str: string) => {
-  if (str.startsWith('/')) return `.${str}`;
-  return `./${str}`;
-};
-export const pathToNameFormat = (str: string) => {
-  return str.replace(/(\/|\.)/g, 'vn-').toLocaleLowerCase();
-};
-
-/**
- * read a file text content
- */
-export const reactLocalFileContent = (file: File) => {
-  return new Promise((resolve: (_: string) => void, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result as string);
-    };
-    reader.onerror = (err) => {
-      reject(err);
-    };
-    reader.readAsText(file);
-  });
-};
-
-/**
- * str to base64
- */
-export const strToBase64 = (str: string) => {
-  try {
-    const base64 = window.btoa(str);
-
-    return base64;
-  } catch (error) {
-    console.log(error);
-  }
-  return '';
 };
 
 /**
@@ -140,41 +89,6 @@ export const printMemory = (val: number) => {
 };
 
 /**
- * format pod createTime
- */
-export const formatPodTime = (createTimeStamp: Date = new Date()) => {
-  const podStartTimeStamp = dayjs(createTimeStamp);
-
-  let timeDiff = Math.floor(dayjs().diff(podStartTimeStamp) / 1000);
-
-  // 计算天数
-  const days = Math.floor(timeDiff / (24 * 60 * 60));
-  timeDiff -= days * 24 * 60 * 60;
-
-  // 计算小时数
-  const hours = Math.floor(timeDiff / (60 * 60));
-  timeDiff -= hours * 60 * 60;
-
-  // 计算分钟数
-  const minutes = Math.floor(timeDiff / 60);
-  timeDiff -= minutes * 60;
-
-  // 计算秒数
-  const seconds = timeDiff;
-
-  if (days > 0) {
-    return `${days}d${hours}h`;
-  }
-  if (hours > 0) {
-    return `${hours}h${minutes}m`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m${seconds}s`;
-  }
-  return `${seconds}s`;
-};
-
-/**
  * download file
  */
 export function downLoadBold(content: BlobPart, type: string, fileName: string) {
@@ -192,42 +106,6 @@ export function downLoadBold(content: BlobPart, type: string, fileName: string) 
   // 模拟点击 a 标签下载文件
   link.click();
 }
-
-export const parseGithubUrl = (url: string) => {
-  if (!url) return null;
-  let urlObj = new URL(url);
-  let pathParts = urlObj.pathname.split('/');
-
-  return {
-    hostname: urlObj.hostname,
-    organization: pathParts[1],
-    repository: pathParts[2],
-    branch: pathParts[3],
-    remainingPath: pathParts.slice(4).join('/') + urlObj.search
-  };
-};
-
-export const processEnvValue = (obj: any, labelName: string) => {
-  const newDeployment = cloneDeep(obj);
-
-  forEach(newDeployment?.spec?.template?.spec?.containers, (container) => {
-    forEach(container?.env, (env) => {
-      if (isObject(env.value)) {
-        env.value = JSON.stringify(env.value);
-      } else if (isNumber(env.value) || isBoolean(env.value)) {
-        env.value = env.value.toString();
-      }
-    });
-  });
-
-  if (labelName) {
-    newDeployment.metadata = newDeployment.metadata || {};
-    newDeployment.metadata.labels = newDeployment.metadata.labels || {};
-    newDeployment.metadata.labels[templateDeployKey] = labelName;
-  }
-
-  return newDeployment;
-};
 
 export function deepSearch(obj: any): string {
   if (has(obj, 'message')) {
@@ -263,7 +141,3 @@ export function compareFirstLanguages(acceptLanguageHeader: string) {
   if (indexOfEn === -1 || indexOfZh < indexOfEn) return 'zh';
   return 'en';
 }
-
-export const formatMoney = (mone: number) => {
-  return mone / 1000000;
-};
