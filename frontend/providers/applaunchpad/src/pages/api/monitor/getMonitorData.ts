@@ -87,6 +87,37 @@ const AdapterChartData: Record<
       };
     });
     return newDataArray;
+  },
+  gpu: (data: MonitorServiceResult) => {
+    const newDataArray = data.data.result.map((item) => {
+      // GPU data uses 'podname' instead of 'pod'
+      let name = item.metric.podname || item.metric.pod;
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
+      return {
+        name: name,
+        xData: xData,
+        yData: yData
+      };
+    });
+    return newDataArray;
+  },
+  gpu_memory: (data: MonitorServiceResult) => {
+    const newDataArray = data.data.result.map((item) => {
+      // GPU memory data uses 'podname' instead of 'pod'
+      let name = item.metric.podname || item.metric.pod;
+      let xData = item.values.map((value) => value[0]);
+      // Convert bytes to GB (1 GB = 1024 * 1024 * 1024 bytes)
+      let yData = item.values.map((value) =>
+        (parseFloat(value[1]) / (1024 * 1024 * 1024)).toFixed(2)
+      );
+      return {
+        name: name,
+        xData: xData,
+        yData: yData
+      };
+    });
+    return newDataArray;
   }
 };
 
