@@ -174,7 +174,7 @@ export function UpgradePlanCard({
           )}
         </div>
 
-        <p className="text-sm text-gray-600 mb-4 leading-relaxed">{plan.Description}</p>
+        <p className="text-sm text-gray-600 mb-4 leading-relaxed h-[3lh]">{plan.Description}</p>
 
         <div className="mb-4">
           {originalPrice > 0 && (

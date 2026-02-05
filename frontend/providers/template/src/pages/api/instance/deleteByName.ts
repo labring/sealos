@@ -1,30 +1,39 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { authSession } from '@/services/backend/auth';
-import { CRDMeta, getK8s } from '@/services/backend/kubernetes';
+import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { withErrorHandler } from '@/services/backend/middleware';
+import {
+  deleteInstanceOnly,
+  getInstanceOrThrow404,
+  isInstanceOwnerReferencesReady,
+  legacyDeleteInstanceAll
+} from '@/services/backend/instanceDelete';
 
 export default withErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { instanceName } = req.query as { instanceName: string };
-  const { k8sCustomObjects, namespace } = await getK8s({
+  const k8s = await getK8s({
     kubeconfig: await authSession(req.headers)
   });
 
-  const InstanceCRD: CRDMeta = {
-    group: 'app.sealos.io',
-    version: 'v1',
-    namespace: namespace,
-    plural: 'instances'
-  };
+  let instance;
+  try {
+    instance = await getInstanceOrThrow404(k8s.k8sCustomObjects, k8s.namespace, instanceName);
+  } catch (error: any) {
+    if (error?.body?.code === 404) {
+      return jsonRes(res, { code: 404, message: 'Instance not found in namespace' });
+    }
+    throw error;
+  }
 
-  await k8sCustomObjects.deleteNamespacedCustomObject(
-    InstanceCRD.group,
-    InstanceCRD.version,
-    InstanceCRD.namespace,
-    InstanceCRD.plural,
-    instanceName
-  );
+  if (isInstanceOwnerReferencesReady(instance)) {
+    await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+    return jsonRes(res, { message: `Instance "${instanceName}" deleted successfully` });
+  }
 
-  jsonRes(res, { message: `Custom object "${instanceName}" deleted successfully` });
+  await legacyDeleteInstanceAll(k8s, instanceName);
+  await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+
+  return jsonRes(res, { message: `Instance "${instanceName}" deleted successfully` });
 });

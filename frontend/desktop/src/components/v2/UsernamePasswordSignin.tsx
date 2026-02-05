@@ -44,7 +44,7 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   const router = useRouter();
   const { t } = useTranslation();
   const toast = useToast();
-  const { setToken, setSession } = useSessionStore();
+  const { setGlobalToken, setSession } = useSessionStore();
   const isGuest = useSessionStore((state) => state.isGuest);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -77,7 +77,8 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
     },
     onSuccess: async (result) => {
       if (result?.data?.token) {
-        setToken(result.data.token);
+        const globalToken = result.data.token; // This is the global token from login
+        setGlobalToken(globalToken); // Sets global token and cookie
         if (result.data.needInit) {
           try {
             const initResult = await autoInitRegionToken();
