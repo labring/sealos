@@ -404,7 +404,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			}
 			// update devbox status with latestDevbox status
 			logger.Info("updating devbox status")
-			logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
+			// logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
 			devbox.Status.Phase = helper.GenerateDevboxPhase(devbox, podList)
 			helper.UpdateDevboxStatus(devbox, latestDevbox)
 			return r.Status().Update(ctx, latestDevbox)

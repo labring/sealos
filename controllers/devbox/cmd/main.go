@@ -87,7 +87,7 @@ func main() {
 	// pod matcher flag
 	var enablePodResourceMatcher bool
 	var enablePodExtraResourceMatcher bool
-	var enablePodExpectedAnnotationsMatcher bool
+	var enablePodAnnotationsMatcher bool
 	var enablePodEnvMatcher bool
 	var enablePodPortMatcher bool
 	var enablePodEphemeralStorageMatcher bool
@@ -122,7 +122,7 @@ func main() {
 	// pod matcher flag, pod resource matcher, env matcher, port matcher will be enabled by default, ephemeral storage matcher will be disabled by default
 	flag.BoolVar(&enablePodResourceMatcher, "enable-pod-resource-matcher", true, "If set, pod resource matcher will be enabled")
 	flag.BoolVar(&enablePodExtraResourceMatcher, "enable-pod-extra-resource-matcher", true, "If set, pod extra resource matcher will be enabled")
-	flag.BoolVar(&enablePodExpectedAnnotationsMatcher, "enable-pod-expected-annotations-matcher", true, "If set, pod expected annotations matcher will be enabled")
+	flag.BoolVar(&enablePodAnnotationsMatcher, "enable-pod-expected-annotations-matcher", true, "If set, pod expected annotations matcher will be enabled")
 	flag.BoolVar(&enablePodEnvMatcher, "enable-pod-env-matcher", true, "If set, pod env matcher will be enabled")
 	flag.BoolVar(&enablePodPortMatcher, "enable-pod-port-matcher", true, "If set, pod port matcher will be enabled")
 	flag.BoolVar(&enablePodEphemeralStorageMatcher, "enable-pod-ephemeral-storage-matcher", false, "If set, pod ephemeral storage matcher will be enabled")
@@ -235,8 +235,8 @@ func main() {
 	if enablePodExtraResourceMatcher {
 		podMatchers = append(podMatchers, matcher.ExtraResourceMatcher{})
 	}
-	if enablePodExpectedAnnotationsMatcher {
-		podMatchers = append(podMatchers, matcher.ExpectedAnnotationsMatcher{})
+	if enablePodAnnotationsMatcher {
+		podMatchers = append(podMatchers, matcher.AnnotationsMatcher{})
 	}
 	if enablePodEnvMatcher {
 		podMatchers = append(podMatchers, matcher.EnvVarMatcher{})

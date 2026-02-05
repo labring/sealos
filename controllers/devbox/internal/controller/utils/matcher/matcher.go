@@ -16,9 +16,14 @@ package matcher
 
 import (
 	"log/slog"
+	"os"
 
 	corev1 "k8s.io/api/core/v1"
 )
+
+func init() {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})))
+}
 
 type PodMatcher interface {
 	Match(expectPod *corev1.Pod, pod *corev1.Pod) bool
@@ -94,7 +99,7 @@ func compareExtraResourceList(expect corev1.ResourceList, actual corev1.Resource
 	return true
 }
 
-func compareExpectedAnnotations(expect map[string]string, actual map[string]string) bool {
+func compareAnnotations(expect map[string]string, actual map[string]string) bool {
 	if len(expect) == 0 {
 		return true
 	}
@@ -128,10 +133,10 @@ func (m ExtraResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool
 	return checkPodResources(expectPod, pod, extraResourceChecker)
 }
 
-type ExpectedAnnotationsMatcher struct{}
+type AnnotationsMatcher struct{}
 
-func (m ExpectedAnnotationsMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
-	return compareExpectedAnnotations(expectPod.Annotations, pod.Annotations)
+func (m AnnotationsMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+	return compareAnnotations(expectPod.Annotations, pod.Annotations)
 }
 
 type EphemeralStorageMatcher struct{}

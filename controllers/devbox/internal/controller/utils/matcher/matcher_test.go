@@ -348,12 +348,12 @@ func TestExpectedAnnotationsMatcher(t *testing.T) {
 		},
 	}
 
-	annotationMatcher := ExpectedAnnotationsMatcher{}
+	annotationMatcher := AnnotationsMatcher{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := annotationMatcher.Match(expectPod, tt.pod)
 			if result != tt.expected {
-				t.Errorf("ExpectedAnnotationsMatcher.Match() = %v, expected %v", result, tt.expected)
+				t.Errorf("AnnotationsMatcher.Match() = %v, expected %v", result, tt.expected)
 			}
 		})
 	}
