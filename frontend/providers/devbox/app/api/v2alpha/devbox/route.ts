@@ -517,6 +517,7 @@ export async function POST(req: NextRequest) {
           select: {
             uid: true,
             iconId: true,
+            icon: true,
             name: true,
             kind: true,
             description: true
@@ -681,7 +682,8 @@ export async function GET(req: NextRequest) {
         uid: true,
         templateRepository: {
           select: {
-            iconId: true
+            iconId: true,
+            icon: true
           }
         }
       }

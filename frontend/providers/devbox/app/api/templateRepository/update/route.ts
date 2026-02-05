@@ -3,7 +3,11 @@ import { authSessionWithJWT } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
 import { getRegionUid } from '@/utils/env';
-import { updateTemplateRepositorySchema } from '@/utils/validate';
+import {
+  normalizeTemplateIcon,
+  updateTemplateRepositorySchema,
+  validateTemplateIcon
+} from '@/utils/validate';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 export async function POST(req: NextRequest) {
@@ -18,6 +22,15 @@ export async function POST(req: NextRequest) {
       });
     }
     const query = updateTemplateRepositorySchema.parse(queryRaw);
+    const hasIconInput = query.icon !== undefined;
+    const iconCheck = validateTemplateIcon(query.icon);
+    if (!iconCheck.ok) {
+      return jsonRes({
+        code: 400,
+        error: iconCheck.error
+      });
+    }
+    const normalizedIcon = normalizeTemplateIcon(query.icon);
     const { payload } = await authSessionWithJWT(headerList);
     const templateRepository = await devboxDB.templateRepository.findUnique({
       where: {
@@ -89,7 +102,8 @@ export async function POST(req: NextRequest) {
         data: {
           description: query.description,
           name: query.templateRepositoryName,
-          isPublic: query.isPublic
+          isPublic: query.isPublic,
+          ...(hasIconInput ? { icon: normalizedIcon } : {})
         }
       });
       await tx.templateRepositoryTag.deleteMany({

@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
         uid: true,
         templateRepository: {
           select: {
-            iconId: true
+            iconId: true,
+            icon: true
           }
         },
         name: true

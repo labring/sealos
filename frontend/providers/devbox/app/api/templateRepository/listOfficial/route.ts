@@ -24,6 +24,7 @@ export const GET = async function GET(req: NextRequest) {
       select: {
         kind: true,
         iconId: true,
+        icon: true,
         name: true,
         uid: true,
         description: true,

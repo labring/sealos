@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
           select: {
             uid: true,
             iconId: true,
+            icon: true,
             name: true,
             kind: true,
             description: true

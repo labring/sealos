@@ -190,6 +190,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
 
   const displayTemplate = {
     iconId: isEdit ? devboxDetail?.iconId || 'custom' : startedTemplate?.iconId || 'custom',
+    icon: isEdit ? devboxDetail?.icon || null : startedTemplate?.icon || null,
     name: isEdit ? devboxDetail?.templateRepositoryName || '' : startedTemplate?.name || '',
     description: isEdit
       ? devboxDetail?.templateRepositoryDescription || ''
@@ -207,6 +208,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
               <RuntimeIcon
                 iconId={displayTemplate.iconId}
+                icon={displayTemplate.icon}
                 alt={displayTemplate.name}
                 width={40}
                 height={40}
