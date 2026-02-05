@@ -404,7 +404,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			}
 			// update devbox status with latestDevbox status
 			logger.Info("updating devbox status")
-			logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
+			// logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
 			devbox.Status.Phase = helper.GenerateDevboxPhase(devbox, podList)
 			helper.UpdateDevboxStatus(devbox, latestDevbox)
 			return r.Status().Update(ctx, latestDevbox)
@@ -732,7 +732,8 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, next
 			WorkingDir: helper.GetWorkingDir(devbox),
 			Command:    helper.GetCommand(devbox),
 			Args:       helper.GetArgs(devbox),
-			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestRate, r.EphemeralStorage)},
+			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestRate, r.EphemeralStorage),
+		},
 	}
 
 	terminationGracePeriodSeconds := 300

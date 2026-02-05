@@ -16,24 +16,43 @@ package matcher
 
 import (
 	"log/slog"
+	"os"
 
 	corev1 "k8s.io/api/core/v1"
 )
+
+func init() {
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})))
+}
 
 type PodMatcher interface {
 	Match(expectPod *corev1.Pod, pod *corev1.Pod) bool
 }
 
-type ResourceMatcher struct{}
+type resourceChecker func(expectPod *corev1.Pod, pod *corev1.Pod, expectContainer *corev1.Container, container *corev1.Container) bool
 
-func (r ResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+func checkPodResources(expectPod *corev1.Pod, pod *corev1.Pod, checker resourceChecker) bool {
 	if len(pod.Spec.Containers) == 0 {
 		slog.Info("Pod has no containers")
 		return false
 	}
-	container := pod.Spec.Containers[0]
-	expectContainer := expectPod.Spec.Containers[0]
+	if len(expectPod.Spec.Containers) == 0 {
+		slog.Info("Expect pod has no containers")
+		return false
+	}
+	return checker(expectPod, pod, &expectPod.Spec.Containers[0], &pod.Spec.Containers[0])
+}
 
+func isCommonResourceName(name corev1.ResourceName) bool {
+	switch name {
+	case corev1.ResourceCPU, corev1.ResourceMemory, corev1.ResourceEphemeralStorage:
+		return true
+	default:
+		return false
+	}
+}
+
+func commonResourceChecker(_ *corev1.Pod, _ *corev1.Pod, expectContainer *corev1.Container, container *corev1.Container) bool {
 	if container.Resources.Requests.Cpu().Cmp(*expectContainer.Resources.Requests.Cpu()) != 0 {
 		slog.Info("CPU requests are not equal")
 		return false
@@ -51,6 +70,73 @@ func (r ResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 		return false
 	}
 	return true
+}
+
+func compareExtraResourceList(expect corev1.ResourceList, actual corev1.ResourceList, listName string) bool {
+	for name, expectQty := range expect {
+		if isCommonResourceName(name) {
+			continue
+		}
+		actualQty, ok := actual[name]
+		if !ok {
+			slog.Info("Extra resource missing", "list", listName, "resource", name)
+			return false
+		}
+		if actualQty.Cmp(expectQty) != 0 {
+			slog.Info("Extra resource not equal", "list", listName, "resource", name)
+			return false
+		}
+	}
+	for name := range actual {
+		if isCommonResourceName(name) {
+			continue
+		}
+		if _, ok := expect[name]; !ok {
+			slog.Info("Unexpected extra resource", "list", listName, "resource", name)
+			return false
+		}
+	}
+	return true
+}
+
+func compareAnnotations(expect map[string]string, actual map[string]string) bool {
+	if len(expect) == 0 {
+		return true
+	}
+	for key, value := range expect {
+		if actual == nil {
+			slog.Info("Expected annotation missing", "annotation", key)
+			return false
+		}
+		if actualValue, ok := actual[key]; !ok || actualValue != value {
+			slog.Info("Annotation is not equal", "annotation", key)
+			return false
+		}
+	}
+	return true
+}
+
+func extraResourceChecker(expectPod *corev1.Pod, pod *corev1.Pod, expectContainer *corev1.Container, container *corev1.Container) bool {
+	return compareExtraResourceList(expectContainer.Resources.Limits, container.Resources.Limits, "limits") &&
+		compareExtraResourceList(expectContainer.Resources.Requests, container.Resources.Requests, "requests")
+}
+
+type ResourceMatcher struct{}
+
+func (r ResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+	return checkPodResources(expectPod, pod, commonResourceChecker)
+}
+
+type ExtraResourceMatcher struct{}
+
+func (m ExtraResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+	return checkPodResources(expectPod, pod, extraResourceChecker)
+}
+
+type AnnotationsMatcher struct{}
+
+func (m AnnotationsMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+	return compareAnnotations(expectPod.Annotations, pod.Annotations)
 }
 
 type EphemeralStorageMatcher struct{}
@@ -84,12 +170,17 @@ func (e EnvVarMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	container := pod.Spec.Containers[0]
 	expectContainer := expectPod.Spec.Containers[0]
 
-	for _, env := range container.Env {
+	// Match based on "expect": the actual container env can contain extra variables.
+	for _, expectEnv := range expectContainer.Env {
 		found := false
-		for _, expectEnv := range expectContainer.Env {
-			if env.Name == "SEALOS_COMMIT_IMAGE_NAME" {
-				found = true
-				break
+		for _, env := range container.Env {
+			// SEALOS_COMMIT_IMAGE_NAME value may vary; only require existence.
+			if expectEnv.Name == "SEALOS_COMMIT_IMAGE_NAME" {
+				if env.Name == expectEnv.Name {
+					found = true
+					break
+				}
+				continue
 			}
 			if env.Name == expectEnv.Name && env.Value == expectEnv.Value {
 				found = true
@@ -97,7 +188,7 @@ func (e EnvVarMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 			}
 		}
 		if !found {
-			slog.Info("Environment variables are not equal", "env not found", env.Name, "env value", env.Value)
+			slog.Info("Environment variables are not equal", "env not found", expectEnv.Name, "env value", expectEnv.Value)
 			return false
 		}
 	}
