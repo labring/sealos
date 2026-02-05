@@ -6,7 +6,6 @@ import path from 'path';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { readTemplates } from '../../listTemplate';
 import { GetTemplateByName } from '../../getTemplateSource';
-import { Config } from '@/config';
 
 function simplifyResourceValue(
   resource: { min: number; max: number },
@@ -41,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const originalPath = process.cwd();
     const jsonPath = path.resolve(originalPath, 'templates.json');
+    const cdnUrl = process.env.CDN_URL;
 
     if (!fs.existsSync(jsonPath)) {
       return jsonRes(res, {
@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const templates = readTemplates(jsonPath, Config().template.cdnHost, [], language);
+    const templates = readTemplates(jsonPath, cdnUrl, [], language);
     const template = templates.find((t) => t.metadata.name === templateName);
 
     if (!template) {

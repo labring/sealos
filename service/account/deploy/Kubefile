@@ -1,9 +1,11 @@
 FROM scratch
-COPY charts charts
 COPY registry registry
-COPY account-service-entrypoint.sh account-service-entrypoint.sh
+COPY manifests manifests
+COPY scripts scripts
 
-ENV RELEASE_NAMESPACE=account-system
-ENV RELEASE_NAME=account-service
+ENV DEFAULT_NAMESPACE account-system
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+ENV certSecretName="wildcard-cert"
 
-CMD ["bash account-service-entrypoint.sh"]
+CMD ["bash scripts/init.sh"]

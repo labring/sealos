@@ -8,6 +8,11 @@ rules:
   - ""
   resources:
   - configmaps
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
   - events
   - pods
   - secrets

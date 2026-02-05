@@ -6,7 +6,6 @@ import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { mapValues, reduce } from 'lodash';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetTemplateByName } from '../getTemplateSource';
-import { applyWithInstanceOwnerReferences } from '@/services/backend/instanceOwnerReferencesApply';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -15,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       templateForm: Record<string, string>;
     };
 
-    const { namespace, applyYamlList, k8sCustomObjects } = await getK8s({
+    const { namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
@@ -50,15 +49,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const yamls = correctYaml.map((item) => item.value);
 
-    const { appliedKinds } = await applyWithInstanceOwnerReferences(
-      { applyYamlList, k8sCustomObjects, namespace },
-      yamls,
-      'create'
-    );
+    const applyRes = await applyYamlList(yamls, 'create');
 
     jsonRes(res, {
       code: 200,
-      data: appliedKinds
+      data: applyRes
     });
   } catch (err: any) {
     console.log(err);

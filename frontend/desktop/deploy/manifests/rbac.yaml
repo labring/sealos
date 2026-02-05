@@ -1,0 +1,151 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: auth-system-manager-role
+rules:
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - users
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - users/status
+    verbs:
+      - get
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - operationrequests
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - operationrequests/status
+    verbs:
+      - get
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - deleterequests
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - deleterequests/status
+    verbs:
+      - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: desktop-user-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: auth-system-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: desktop-frontend
+    namespace: sealos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: recharge-gift-cm-reader
+  namespace: sealos
+rules:
+  - apiGroups: [""] # "" indicates the core API group
+    resources: ["configmaps"]
+    resourceNames: ["recharge-gift"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: recharge-gift-cm-reader-rolebinding
+  namespace: sealos
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: recharge-gift-cm-reader
+subjects:
+  - kind: Group
+    name: system:serviceaccounts
+    apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: account-editor-role
+rules:
+  - apiGroups: ["account.sealos.io"]
+    resources: ["accounts"]
+    verbs: ["list", "get", "create", "update", "patch", "watch"]
+  - apiGroups: ["notification.sealos.io"]
+    resources: ["notifications"]
+    verbs: ["list", "get", "create", "update", "patch", "watch"]
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["patch"]
+  - apiGroups: ['license.sealos.io']
+    resources: ['licenses']
+    verbs: ['*']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: desktop-account-editor-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: account-editor-role
+subjects:
+  - kind: ServiceAccount
+    name: desktop-frontend
+    namespace: sealos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: app-reader-role
+rules:
+  - apiGroups: ["app.sealos.io"]
+    resources: ["apps"]
+    verbs: ["list", "get", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: desktop-app-reader-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: app-reader-role
+subjects:
+  - kind: ServiceAccount
+    name: desktop-frontend
+    namespace: sealos

@@ -7,7 +7,6 @@ type PropertyQuery struct {
 	Alias     string  `json:"alias,omitempty" bson:"alias,omitempty" example:"gpu-tesla-v100"`
 	UnitPrice float64 `json:"unit_price"      bson:"unit_price"      example:"10000"`
 	Unit      string  `json:"unit"            bson:"unit"            example:"1m"`
-	Enum      uint8   `json:"enum,omitempty"  bson:"enum,omitempty"  example:"1"`
 }
 
 type TimeCostsMap [][]any

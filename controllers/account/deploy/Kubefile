@@ -3,7 +3,18 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY charts charts
-COPY account-controller-entrypoint.sh account-controller-entrypoint.sh
+COPY manifests manifests
 
-CMD ["bash account-controller-entrypoint.sh"]
+ENV DEFAULT_NAMESPACE account-system
+ENV cloudDomain="cloud.sealos.io"
+ENV cloudPort=""
+ENV MONGO_URI "mongodb://mongo:27017/resources"
+ENV GLOBAL_COCKROACH_URI ""
+ENV ACCOUNT_API_JWT_SECRET="secret"
+ENV LOCAL_COCKROACH_URI ""
+ENV LOCAL_REGION ""
+ENV OSNamespace="objectstorage-system"
+ENV OSAdminSecret=""
+ENV OSInternalEndpoint=""
+
+CMD ["( kubectl create ns $DEFAULT_NAMESPACE || true ) && ( kubectl create -f manifests/account-manager-config.yaml -n $DEFAULT_NAMESPACE || true ) && kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE"]

@@ -9,7 +9,6 @@ import util from 'util';
 import * as k8s from '@kubernetes/client-node';
 import { getYamlTemplate } from '@/utils/json-yaml';
 import { getTemplateEnvs } from '@/utils/common';
-import { Config } from '@/config';
 
 const execAsync = util.promisify(exec);
 
@@ -66,6 +65,7 @@ export async function GetTemplateStatic() {
 }
 
 export async function updateRepo() {
+  const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
   const originalPath = process.cwd();
   const targetPath = path.resolve(originalPath, 'templates');
   const jsonPath = path.resolve(originalPath, 'templates.json');
@@ -94,7 +94,7 @@ export async function updateRepo() {
   }
 
   let fileList: unknown[] = [];
-  const _targetPath = path.join(targetPath, Config().template.repo.localDir);
+  const _targetPath = path.join(targetPath, targetFolder);
   readFileList(_targetPath, fileList);
 
   const templateStaticMap: { [key: string]: number } = await GetTemplateStatic();

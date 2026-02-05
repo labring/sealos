@@ -30,7 +30,6 @@ import { useTranslation } from 'next-i18next';
 import { GroupAddIcon } from '@sealos/ui';
 import { useCopyData } from '@/hooks/useCopyData';
 import { track } from '@sealos/gtm';
-import { needsClipboardWorkaround } from '@/utils/browserDetect';
 
 export default function InviteMember({
   ns_uid,
@@ -45,8 +44,6 @@ export default function InviteMember({
   const { onOpen, isOpen, onClose } = useDisclosure();
   const session = useSessionStore((s) => s.session);
   const [role, setRole] = useState(UserRole.Developer);
-  const [inviteLink, setInviteLink] = useState<string>('');
-  const [isFallbackMode, setIsFallbackMode] = useState(false);
   const toast = useToast();
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -89,49 +86,16 @@ export default function InviteMember({
   const generateLink = (code: string) => {
     return window.location.origin + encodeURI(`/WorkspaceInvite/?code=${code}`);
   };
-
   const handleGenLink: MouseEventHandler<HTMLButtonElement> = async (e) => {
     e.preventDefault();
-
-    // Get the invitation link first
     const data = await getLinkCode.mutateAsync({
       ns_uid,
       role
     });
     const code = data.data?.code!;
     const link = generateLink(code);
-
-    // Check if browser needs workaround (Safari/iOS)
-    if (needsClipboardWorkaround()) {
-      // Safari: Show link and separate copy button
-      setInviteLink(link);
-      setIsFallbackMode(true);
-      return;
-    }
-
-    // Other browsers: Try to copy directly
-    try {
-      await copyData(link, t('v2:invite_link_copied'));
-      setIsFallbackMode(false);
-    } catch (error) {
-      // If copy fails, fall back to showing the link
-      console.warn('Direct copy failed, showing link for manual copy', error);
-      setInviteLink(link);
-      setIsFallbackMode(true);
-    }
+    await copyData(link, t('v2:invite_link_copied'));
   };
-
-  const handleCopyLink: MouseEventHandler<HTMLButtonElement> = async (e) => {
-    e.preventDefault();
-    await copyData(inviteLink, t('v2:invite_link_copied'));
-  };
-
-  const handleClose = () => {
-    setInviteLink('');
-    setIsFallbackMode(false);
-    onClose();
-  };
-
   return (
     <>
       {[UserRole.Manager, UserRole.Owner].includes(ownRole) ? (
@@ -148,7 +112,7 @@ export default function InviteMember({
       ) : (
         <></>
       )}
-      <Modal isOpen={isOpen} onClose={handleClose} isCentered>
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent
           borderRadius={'4px'}
@@ -200,8 +164,6 @@ export default function InviteMember({
                         onClick={(e) => {
                           e.preventDefault();
                           setRole(idx);
-                          setInviteLink(''); // Clear link when role changes
-                          setIsFallbackMode(false);
                         }}
                         key={idx}
                       >
@@ -225,36 +187,9 @@ export default function InviteMember({
                   isDisabled={getLinkCode.isLoading}
                   onClick={handleGenLink}
                 >
-                  {inviteLink && isFallbackMode
-                    ? t('common:regenerate_link')
-                    : t('common:generate_invitation_link')}
+                  {t('common:generate_invitation_link')}
                 </Button>
               </HStack>
-              {inviteLink && isFallbackMode && (
-                <Flex
-                  mt="16px"
-                  p="12px"
-                  borderRadius="4px"
-                  border="1px solid #DEE0E2"
-                  bgColor="#FBFBFC"
-                  gap="8px"
-                  alignItems="center"
-                >
-                  <Text
-                    flex="1"
-                    fontSize="sm"
-                    color="#5A646E"
-                    overflow="hidden"
-                    textOverflow="ellipsis"
-                    whiteSpace="nowrap"
-                  >
-                    {inviteLink}
-                  </Text>
-                  <Button size="sm" variant="outline" onClick={handleCopyLink} flexShrink={0}>
-                    {t('common:copy')}
-                  </Button>
-                </Flex>
-              )}
             </ModalBody>
           )}
         </ModalContent>

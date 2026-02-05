@@ -6,7 +6,6 @@ import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { Cron } from 'croner';
-import { Config } from '@/config';
 
 export function replaceRawWithCDN(url: string, cdnUrl: string) {
   let parsedUrl = parseGithubUrl(url);
@@ -62,7 +61,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const originalPath = process.cwd();
   const jsonPath = path.resolve(originalPath, 'templates.json');
+  const cdnUrl = process.env.CDN_URL;
   const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
+  const blacklistedCategories = process.env.BLACKLIST_CATEGORIES
+    ? process.env.BLACKLIST_CATEGORIES.split(',')
+    : [];
+  const menuCount = Number(process.env.SIDEBAR_MENU_COUNT) || 10;
 
   try {
     if (!global.updateRepoCronJob) {
@@ -84,18 +88,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await fetch(`${baseurl}/api/updateRepo`);
     }
 
-    const templates = readTemplates(
-      jsonPath,
-      Config().template.cdnHost,
-      Config().template.excludedCategories,
-      language
-    );
+    const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories, language);
 
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
     console.log(`[${timestamp}] language: ${language}, templates count: ${templates.length}`);
 
     const categories = templates.map((item) => (item.spec?.categories ? item.spec.categories : []));
-    const topKeys = findTopKeyWords(categories, Config().template.sidebarMenuCount);
+    const topKeys = findTopKeyWords(categories, menuCount);
 
     jsonRes(res, { data: { templates: templates, menuKeys: topKeys.join(',') }, code: 200 });
   } catch (error) {

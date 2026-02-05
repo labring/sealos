@@ -12,7 +12,6 @@
   "confirm_password": "确认密码",
   "continue": "继续",
   "copy_kubeconfig": "复制 Kubeconfig",
-  "copy_failed": "复制失败",
   "copy_success": "复制成功",
   "create_workspace": "创建工作空间",
   "database_create_desc": "点击应用，进行数据库创建",

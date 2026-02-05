@@ -1,9 +1,8 @@
 import { EnvResponse } from '@/types/index';
 import { GET } from '@/services/request';
-import { TemplateType } from '@/types/app';
+import { SystemConfigType, TemplateType } from '@/types/app';
 import type { UserTask, userPriceType } from '@/types/user';
 import useSessionStore from '@/store/session';
-import { ClientAppConfig } from '@/types/config';
 
 export const updateRepo = () => GET('/api/updateRepo');
 
@@ -15,6 +14,10 @@ export const getTemplates = (language?: string) =>
 export const getPlatformEnv = (
   { insideCloud }: { insideCloud: boolean } = { insideCloud: false }
 ) => GET<EnvResponse>('/api/platform/getEnv', { insideCloud });
+
+export const getSystemConfig = () => {
+  return GET<SystemConfigType>('/api/platform/getSystemConfig');
+};
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
 
@@ -38,8 +41,3 @@ export const getPriceBonus = () =>
       Authorization: useSessionStore.getState().getSession()?.token
     }
   });
-
-/**
- * Get client app configuration
- */
-export const getClientAppConfig = () => GET<ClientAppConfig>('/api/platform/getClientAppConfig');

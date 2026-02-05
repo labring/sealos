@@ -1,4 +1,3 @@
-import { Config } from '@/config';
 import { authAppToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 
@@ -6,7 +5,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (!Config().template.features.guide)
+    if (process.env.GUIDE_ENABLED !== 'true')
       jsonRes(res, {
         code: 500
       });
@@ -16,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 401, message: 'token is valid' });
     }
 
-    const url = !Config().template.billingUrl;
+    const url = process.env.BILLING_URL;
     if (!url) {
       return jsonRes(res, { code: 500, message: 'billing is error' });
     }

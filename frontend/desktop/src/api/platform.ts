@@ -154,10 +154,3 @@ export const sendAlertBindEmailCode = (data: { id: string }) =>
 
 export const sendAlertBindPhoneCode = (data: { id: string }) =>
   request.post<any, ApiResp>('/api/account/alerts/bind/phone/sms', data);
-
-export const createTemplateInstance = (data: {
-  templateName: string;
-  templateForm: Record<string, any>;
-}) => {
-  return request.post<any, ApiResp<any>>('/api/platform/createTemplateInstance', data);
-};

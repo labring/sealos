@@ -25,9 +25,8 @@ import Head from 'next/head';
 import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
+import { useSystemConfigStore } from '@/store/config';
 import { useQuotaGuarded } from '@sealos/shared';
-import { Config } from '@/config';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -59,8 +58,8 @@ export default function EditApp({
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
+  const { setEnvs } = useSystemConfigStore();
   const { setAppType } = useSearchStore();
-  const clientAppConfig = useClientAppConfig();
 
   const detailName = useMemo(
     () => templateSource?.source?.defaults?.app_name?.value || '',
@@ -71,6 +70,9 @@ export default function EditApp({
     ['getPlatformEnvs'],
     () => getPlatformEnv({ insideCloud }),
     {
+      onSuccess(data) {
+        setEnvs(data);
+      },
       retry: 3
     }
   );
@@ -135,6 +137,18 @@ export default function EditApp({
   const handleOutside = useCallback(async () => {
     setCached(JSON.stringify({ ...formHook.getValues(), cachedKey: templateName }));
 
+    // Ensure platformEnvs is loaded
+    let envs = platformEnvs;
+    if (!envs?.DESKTOP_DOMAIN) {
+      try {
+        envs = await getPlatformEnv({ insideCloud });
+        setEnvs(envs);
+      } catch (error) {
+        console.error('Failed to get platform envs:', error);
+        return;
+      }
+    }
+
     const params = new URLSearchParams();
     ['k', 's', 'bd_vid'].forEach((param) => {
       const value = router.query[param];
@@ -145,7 +159,7 @@ export default function EditApp({
 
     const queryString = params.toString();
 
-    const baseUrl = `https://${clientAppConfig.desktopDomain}/`;
+    const baseUrl = `https://${envs.DESKTOP_DOMAIN}/`;
     const encodedTemplateQuery = encodeURIComponent(
       `?templateName=${templateName}&sealos_inside=true`
     );
@@ -155,7 +169,7 @@ export default function EditApp({
     }`;
 
     window.open(href, '_self');
-  }, [router, templateName, setCached, formHook, clientAppConfig]);
+  }, [router, templateName, platformEnvs, setCached, formHook, insideCloud, setEnvs]);
 
   const handleInside = useCallback(async () => {
     const yamls = yamlList.map((item) => item.value);
@@ -422,9 +436,8 @@ export default function EditApp({
 }
 
 export async function getServerSideProps(content: any) {
-  const forcedLanguage = Config().template.ui.forcedLanguage;
-  const brandName = Config().template.ui.brandName;
-
+  const forcedLanguage = process.env.FORCED_LANGUAGE;
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
   const locale =
     forcedLanguage ||
     content?.req?.cookies?.NEXT_LOCALE ||

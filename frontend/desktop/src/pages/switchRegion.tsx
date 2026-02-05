@@ -19,7 +19,7 @@ import { useEffect } from 'react';
 
 const Callback: NextPage = () => {
   const router = useRouter();
-  const setGlobalToken = useSessionStore((s) => s.setGlobalToken);
+  const setToken = useSessionStore((s) => s.setToken);
   const delSession = useSessionStore((s) => s.delSession);
   const { token: curToken, session } = useSessionStore((s) => s);
   const { lastWorkSpaceId } = useSessionStore();
@@ -108,9 +108,10 @@ const Callback: NextPage = () => {
           // const regionUid = query.regionUid as unknown as string;
           if (!!curToken) {
             delSession();
+            setToken('');
           }
           // console.log(query, globalToken);
-          setGlobalToken(globalToken); // Sets global token and cookie
+          setToken(globalToken);
           // await router.replace('/workspace');
           const initRegionTokenResult = await initMutation.mutateAsync({
             // regionUid: regionUid ,
@@ -124,7 +125,7 @@ const Callback: NextPage = () => {
           return;
         } catch (error) {
           console.error(error);
-          setGlobalToken('');
+          setToken('');
           await router.replace('/signin');
           return;
         }
@@ -138,8 +139,9 @@ const Callback: NextPage = () => {
         try {
           if (!!curToken) {
             delSession();
+            setToken('');
           }
-          setGlobalToken(globalToken); // Sets global token and cookie
+          setToken(globalToken);
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
             await sessionConfig(regionTokenRes.data);
@@ -159,7 +161,7 @@ const Callback: NextPage = () => {
           }
         } catch (error) {
           console.error(error);
-          setGlobalToken('');
+          setToken('');
           await router.replace('/signin');
           return;
         }

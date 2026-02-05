@@ -17,17 +17,14 @@ import { getTemplateEnvs } from '@/utils/common';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
-import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const envEnableReadme = process.env.ENABLE_README_FETCH;
     const queryIncludeReadme = req.query.includeReadme !== 'false';
 
-    const includeReadme = !Config().template.features.fetchReadme
-      ? 'false'
-      : queryIncludeReadme
-      ? 'true'
-      : 'true';
+    const includeReadme =
+      envEnableReadme === 'false' ? 'false' : queryIncludeReadme ? 'true' : 'true';
 
     const { templateName, locale = 'en' } = req.query as {
       templateName: string;
@@ -120,12 +117,13 @@ export async function GetTemplateByName({
   locale?: string;
   includeReadme?: string;
 }) {
-  const cdnUrl = Config().template.cdnHost;
+  const cdnUrl = process.env.CDN_URL;
+  const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
 
   const TemplateEnvs = getTemplateEnvs(namespace);
 
   const originalPath = process.cwd();
-  const targetPath = path.resolve(originalPath, 'templates', Config().template.repo.localDir);
+  const targetPath = path.resolve(originalPath, 'templates', targetFolder);
 
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));

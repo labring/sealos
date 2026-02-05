@@ -185,3 +185,8 @@ export type SideBarMenuType = {
   value: string;
   type: ApplicationType;
 };
+
+export type SystemConfigType = {
+  showCarousel: boolean;
+  slideData: SlideDataType[];
+};

@@ -283,7 +283,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
 
           return init();
         })
-        .then(async (state) => {
+        .then((state) => {
           // Skip normal app opening logic if this is a Stripe callback
           if (isStripeCallback || !state) return;
 

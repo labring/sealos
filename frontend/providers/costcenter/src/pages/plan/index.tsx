@@ -721,22 +721,21 @@ export default function Plan() {
         </div>
       ) : (
         <>
-          {lastTransactionData?.transaction?.Operator === 'downgraded' &&
-            lastTransactionData?.transaction?.Status === 'pending' && (
-              <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
-                <div className="size-5 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Info className="text-orange-600" />
-                </div>
-                <div className="text-orange-600 text-sm leading-5">
-                  {t('common:downgrade_warning_message', {
-                    planName: lastTransactionData?.transaction?.NewPlanName,
-                    date: new Date(
-                      lastTransactionData?.transaction?.StartAt || ''
-                    ).toLocaleDateString()
-                  })}
-                </div>
+          {lastTransactionData?.transaction?.Operator === 'downgraded' && (
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
+              <div className="size-5 rounded-full flex items-center justify-center flex-shrink-0">
+                <Info className="text-orange-600" />
               </div>
-            )}
+              <div className="text-orange-600 text-sm leading-5">
+                {t('common:downgrade_warning_message', {
+                  planName: lastTransactionData?.transaction?.NewPlanName,
+                  date: new Date(
+                    lastTransactionData?.transaction?.StartAt || ''
+                  ).toLocaleDateString()
+                })}
+              </div>
+            </div>
+          )}
 
           {invoicePaymentUrl && (
             <InvoicePaymentBanner

@@ -2,7 +2,6 @@
   "name": "@sealos/shared",
   "version": "1.0.0",
   "description": "Shared utilities, types, and components for Sealos frontend applications",
-  "license": "ISC",
   "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -10,8 +9,7 @@
     ".": "./src/index.ts",
     "./chakra": "./src/components/chakra/index.ts",
     "./shadcn": "./src/components/shadcn/index.ts",
-    "./components/shadcn/styles.css": "./src/components/shadcn/styles.css",
-    "./server/config": "./src-server/config/index.ts"
+    "./components/shadcn/styles.css": "./src/components/shadcn/styles.css"
   },
   "typesVersions": {
     "*": {
@@ -20,98 +18,55 @@
       ],
       "shadcn": [
         "src/components/shadcn/index.ts"
-      ],
-      "server/config": [
-        "src-server/config/index.ts"
       ]
     }
   },
   "scripts": {
     "build": "exit 0",
-    "lint": "eslint src src-server --ext .ts,.tsx",
+    "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
   },
+  "keywords": [
+    "sealos",
+    "shared"
+  ],
+  "author": "",
+  "license": "ISC",
   "peerDependencies": {
     "@chakra-ui/icons": "^2",
     "@chakra-ui/react": "^2",
-    "@tanstack/react-query": "^4",
     "immer": "^10",
-    "js-yaml": "^4.1.0",
     "lucide-react": ">=0.460.0",
-    "picocolors": "^1.1.1",
     "react": "^18.0 || ^19.0 || ^19.0.0-rc",
     "react-dom": "^18.0 || ^19.0 || ^19.0.0-rc",
     "sealos-desktop-sdk": "workspace:*",
-    "zod": "^3 || ^4",
-    "zustand": "^4 || ^5"
+    "zustand": "^4 || ^5",
+    "zod": "^3 || ^4"
   },
   "peerDependenciesMeta": {
     "@chakra-ui/icons": {
-      "optional": true,
-      "description": "Optional for frontend code (Chakra UI components)"
+      "optional": true
     },
     "@chakra-ui/react": {
-      "optional": true,
-      "description": "Optional for frontend code (Chakra UI components)"
-    },
-    "js-yaml": {
-      "optional": false,
-      "description": "Required for backend code (./server export)"
-    },
-    "picocolors": {
-      "optional": false,
-      "description": "Required for backend code (./server export, error formatting)"
-    },
-    "immer": {
-      "optional": false,
-      "description": "Required for frontend code (state management)"
-    },
-    "lucide-react": {
-      "optional": false,
-      "description": "Required for frontend code (icons)"
-    },
-    "react": {
-      "optional": false,
-      "description": "Required for frontend code"
-    },
-    "react-dom": {
-      "optional": false,
-      "description": "Required for frontend code"
-    },
-    "sealos-desktop-sdk": {
-      "optional": false,
-      "description": "Required for frontend code"
-    },
-    "zustand": {
-      "optional": false,
-      "description": "Required for frontend code (state management)"
-    },
-    "zod": {
-      "optional": false,
-      "description": "Required for frontend code (schema validation)"
+      "optional": true
     }
   },
   "devDependencies": {
     "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/react": "^2.8.1",
-    "@tanstack/react-query": "^4.36.1",
-    "@types/js-yaml": "^4.0.9",
-    "@types/node": "^20.7.1",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
-    "immer": "^10.2.0",
-    "js-yaml": "^4.1.0",
     "lucide-react": "^0.476.0",
-    "picocolors": "^1.1.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.9.3",
-    "zod": "^4.3.5",
-    "zustand": "^4.5.6"
+    "zustand": "^4.5.6",
+    "immer": "^10.2.0",
+    "zod": "^3.22.4"
   }
 }

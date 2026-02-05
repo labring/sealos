@@ -48,7 +48,7 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
           )}
         </div>
 
-        <p className="text-sm text-gray-600 mb-4 leading-relaxed h-[3lh]">{plan.Description}</p>
+        <p className="text-sm text-gray-600 mb-4 leading-relaxed">{plan.Description}</p>
 
         <div className="mb-4">
           <div className="flex items-baseline">

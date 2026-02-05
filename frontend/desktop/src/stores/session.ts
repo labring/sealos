@@ -4,14 +4,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { nanoid } from 'nanoid';
-import { setSharedAuthCookie } from '@/utils/cookieUtils';
 
 export type OauthAction = 'LOGIN' | 'BIND' | 'UNBIND' | 'PROXY';
 
 type SessionState = {
-  session?: Session; // session.token is app token
-  token: string; // region token (used for API requests)
-  globalToken: string; // global token (used for cross-domain auth cookie)
+  session?: Session;
+  token: string;
   provider?: OauthProvider;
   firstUse: Date | null;
   hasEverLoggedIn: boolean;
@@ -30,8 +28,7 @@ type SessionState = {
   lastSigninProvier?: string;
   setLastSigninProvider: (provider?: string) => void;
   setProvider: (provider?: OauthProvider) => void;
-  setToken: (token: string, rememberMe?: boolean) => void; // Sets region token
-  setGlobalToken: (token: string) => void; // Sets global token and cookie
+  setToken: (token: string, rememberMe?: boolean) => void;
   lastWorkSpaceId: string;
   setWorkSpaceId: (id: string) => void;
   setGuestSession: () => void;
@@ -49,8 +46,7 @@ const useSessionStore = create<SessionState>()(
       lastSigninProvier: undefined,
       firstUse: null,
       hasEverLoggedIn: false,
-      token: '', // Region token
-      globalToken: '', // Global token
+      token: '',
       lastWorkSpaceId: '',
       showGuestLoginModal: false,
       setFirstUse(d) {
@@ -104,15 +100,15 @@ const useSessionStore = create<SessionState>()(
         set({ provider });
       },
       setToken: (token, rememberMe = false) => {
-        // Sets region token (used for API requests)
         set({ token });
-      },
-      setGlobalToken: (token) => {
-        // Sets global token and immediately updates cookie
-        // Also sets state.token so API requests (getRegionToken, etc.) can use it
-        set({ globalToken: token, token: token });
         if (typeof window !== 'undefined') {
-          setSharedAuthCookie(token);
+          if (rememberMe) {
+            localStorage.setItem('auth_token', token);
+            sessionStorage.removeItem('auth_token');
+          } else {
+            sessionStorage.setItem('auth_token', token);
+            localStorage.removeItem('auth_token');
+          }
         }
       },
       setWorkSpaceId: (id) => {
@@ -142,9 +138,7 @@ const useSessionStore = create<SessionState>()(
     {
       name: sessionKey,
       partialize: (state) => {
-        const { showGuestLoginModal, globalToken, ...rest } = state;
-        // Exclude globalToken and showGuestLoginModal from persistence
-        // globalToken is ephemeral and should only exist in memory + cookie
+        const { showGuestLoginModal, ...rest } = state;
         return rest;
       }
     }
