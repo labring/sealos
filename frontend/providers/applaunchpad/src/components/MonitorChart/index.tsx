@@ -8,6 +8,11 @@ import MyIcon from '../Icon';
 import { useTranslation } from 'next-i18next';
 import styles from './index.module.css';
 
+type ChartColorStyle = {
+  backgroundColor: string;
+  lineColor: string;
+};
+
 type MonitorChart = FlexProps & {
   data: {
     xData: string[];
@@ -24,6 +29,9 @@ type MonitorChart = FlexProps & {
   yDataFormatter?: (values: number[]) => number[];
   unit?: string;
   isShowLegend?: boolean;
+  yAxisMax?: number | 'auto';
+  yAxisMin?: number;
+  chartColor?: ChartColorStyle;
 };
 
 const MonitorChart = ({
@@ -34,6 +42,9 @@ const MonitorChart = ({
   yDataFormatter,
   unit,
   isShowLegend = true,
+  yAxisMax = 100,
+  yAxisMin = 0,
+  chartColor,
   ...props
 }: MonitorChart) => {
   const { screenWidth } = useGlobalStore();
@@ -143,11 +154,11 @@ const MonitorChart = ({
       yAxis: {
         type: 'value',
         splitNumber: 2,
-        max: 100,
-        min: 0,
+        max: yAxisMax === 'auto' ? undefined : yAxisMax,
+        min: yAxisMin,
         boundaryGap: false,
         axisLabel: {
-          formatter: yAxisLabelFormatter
+          formatter: yAxisLabelFormatter || ((value: number) => `${value}${unit || ''}`)
         },
         axisLine: {
           show: false
@@ -160,6 +171,7 @@ const MonitorChart = ({
         }
       },
       series: data?.yData?.map((item, index) => {
+        const colorStyle = chartColor || LineStyleMap[index % LineStyleMap.length];
         return {
           name: item.name,
           data: item.data,
@@ -169,16 +181,16 @@ const MonitorChart = ({
           animationDuration: 300,
           animationEasingUpdate: 'linear',
           areaStyle: {
-            color: LineStyleMap[index % LineStyleMap.length].backgroundColor
+            color: colorStyle.backgroundColor
           },
           lineStyle: {
             width: '1',
-            color: LineStyleMap[index % LineStyleMap.length].lineColor,
+            color: colorStyle.lineColor,
             type: item?.lineStyleType || 'solid'
           },
           itemStyle: {
             width: 1.5,
-            color: LineStyleMap[index % LineStyleMap.length].lineColor
+            color: colorStyle.lineColor
           },
           emphasis: {
             // highlight
@@ -187,7 +199,7 @@ const MonitorChart = ({
         };
       })
     }),
-    [data?.xData, data?.yData]
+    [data?.xData, data?.yData, unit, yAxisMax, yAxisMin, yAxisLabelFormatter, chartColor, t]
   );
 
   useEffect(() => {
@@ -228,19 +240,17 @@ const MonitorChart = ({
           flex={'1 0 20%'}
           gap={'12px'}
         >
-          {data?.yData?.map((item, index) => (
-            <Flex key={item?.name + index} alignItems={'center'} w={'fit-content'}>
-              <MyIcon
-                width={'16px'}
-                name="chart"
-                color={LineStyleMap[index % LineStyleMap.length].lineColor}
-                mr="6px"
-              />
-              <Text fontSize={'11px'} color={'grayModern.900'} fontWeight={500}>
-                {item?.name}
-              </Text>
-            </Flex>
-          ))}
+          {data?.yData?.map((item, index) => {
+            const colorStyle = chartColor || LineStyleMap[index % LineStyleMap.length];
+            return (
+              <Flex key={item?.name + index} alignItems={'center'} w={'fit-content'}>
+                <MyIcon width={'16px'} name="chart" color={colorStyle.lineColor} mr="6px" />
+                <Text fontSize={'11px'} color={'grayModern.900'} fontWeight={500}>
+                  {item?.name}
+                </Text>
+              </Flex>
+            );
+          })}
         </Flex>
       )}
     </Flex>
