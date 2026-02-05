@@ -14,6 +14,7 @@ import { getAppMonitorData } from '@/api/app';
 import EmptyChart from '@/components/Icon/icons/emptyChart.svg';
 import { track } from '@sealos/gtm';
 import { generatePvcNameRegex } from '@/utils/tools';
+import { GPU_ENABLED } from '@/store/static';
 
 // GPU chart color style - defined outside component to avoid re-creation on each render
 const GPU_CHART_COLOR = {
@@ -373,47 +374,51 @@ export default function MonitorPage({ appName }: { appName: string }) {
                 </Center>
               )}
             </Box>
-            <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
-              GPU: {gpuLatestAvg}%
-            </Box>
-            <Box mt={'24px'} height={'200px'} position={'relative'}>
-              {gpuChartData?.yData?.length > 0 ? (
-                <MonitorChart
-                  data={gpuChartData}
-                  title={'chartTitle'}
-                  unit="%"
-                  chartColor={GPU_CHART_COLOR}
-                />
-              ) : (
-                <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
-                  <EmptyChart />
-                  <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
-                    {t('no_data_available')}
-                  </Text>
-                </Center>
-              )}
-            </Box>
-            <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
-              GPU Memory: {gpuMemoryLatestAvg} GB
-            </Box>
-            <Box mt={'24px'} height={'200px'} position={'relative'}>
-              {gpuMemoryChartData?.yData?.length > 0 ? (
-                <MonitorChart
-                  data={gpuMemoryChartData}
-                  title={'chartTitle'}
-                  unit=" GB"
-                  yAxisMax="auto"
-                  chartColor={GPU_CHART_COLOR}
-                />
-              ) : (
-                <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
-                  <EmptyChart />
-                  <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
-                    {t('no_data_available')}
-                  </Text>
-                </Center>
-              )}
-            </Box>
+            {GPU_ENABLED && (
+              <>
+                <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
+                  GPU: {gpuLatestAvg}%
+                </Box>
+                <Box mt={'24px'} height={'200px'} position={'relative'}>
+                  {gpuChartData?.yData?.length > 0 ? (
+                    <MonitorChart
+                      data={gpuChartData}
+                      title={'chartTitle'}
+                      unit="%"
+                      chartColor={GPU_CHART_COLOR}
+                    />
+                  ) : (
+                    <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
+                      <EmptyChart />
+                      <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
+                        {t('no_data_available')}
+                      </Text>
+                    </Center>
+                  )}
+                </Box>
+                <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
+                  GPU Memory: {gpuMemoryLatestAvg} GB
+                </Box>
+                <Box mt={'24px'} height={'200px'} position={'relative'}>
+                  {gpuMemoryChartData?.yData?.length > 0 ? (
+                    <MonitorChart
+                      data={gpuMemoryChartData}
+                      title={'chartTitle'}
+                      unit=" GB"
+                      yAxisMax="auto"
+                      chartColor={GPU_CHART_COLOR}
+                    />
+                  ) : (
+                    <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
+                      <EmptyChart />
+                      <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
+                        {t('no_data_available')}
+                      </Text>
+                    </Center>
+                  )}
+                </Box>
+              </>
+            )}
           </>
         ) : (
           <Stack flex={1} bg={'white'} borderRadius={'8px'} py={'16px'}>
