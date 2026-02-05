@@ -28,11 +28,9 @@ import type {
 import { InternetMigrationCR, MigrateItemType } from '@/types/migrate';
 import {
   convertCronTime,
-  cpuFormatToM,
   decodeFromHex,
   formatPodTime,
   formatTime,
-  memoryFormatToMi,
   storageFormatToNum
 } from '@/utils/tools';
 import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
@@ -46,6 +44,7 @@ dayjs.extend(timezone);
 import type { BackupItemType } from '../types/db';
 import z from 'zod';
 import { dbDetailSchema, dbEditSchema, dbTypeSchema } from '@/types/schemas/db';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 export const getDBSource = (
   db: KbPgClusterType
