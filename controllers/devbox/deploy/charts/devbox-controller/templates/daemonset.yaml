@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "devbox.fullname" . }}-controller-manager
+  labels:
+    control-plane: controller-manager
+    {{- include "devbox.labels" . | nindent 4 }}
+spec:
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  {{- with .Values.updateStrategy }}
+  updateStrategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        control-plane: controller-manager
+        {{- include "devbox.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "devbox.serviceAccountName" . }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: manager
+          command:
+            - /manager
+          args:
+            {{- if .Values.metrics.enabled }}
+            - --metrics-bind-address=:{{ .Values.metrics.port }}
+            {{- else }}
+            - --metrics-bind-address=127.0.0.1:8080
+            {{- end }}
+            - --health-probe-bind-address=:8081
+            {{- if .Values.env.registryAddr }}
+            - --registry-addr={{ .Values.env.registryAddr }}
+            {{- end }}
+            {{- if .Values.env.registryUser }}
+            - --registry-user={{ .Values.env.registryUser }}
+            {{- end }}
+            {{- if .Values.env.registryPassword }}
+            - --registry-password={{ .Values.env.registryPassword }}
+            {{- end }}
+            {{- if .Values.env.enableBlockIOResource }}
+            - --enable-block-io-resource={{ .Values.env.enableBlockIOResource }}
+            {{- end }}
+            {{- with .Values.extraArgs }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          image: "{{ .Values.image }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: containerd-run-dir
+              mountPath: /run/containerd
+            - name: containerd-var-run-dir
+              mountPath: /var/run/containerd
+            - name: containerd-dir
+              mountPath: /var/lib/containerd
+              mountPropagation: Bidirectional
+            - name: hosts-dir
+              mountPath: /etc/containerd/certs.d
+            - name: tmp-dir
+              mountPath: /tmp
+            {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: containerd-run-dir
+          hostPath:
+            path: /run/containerd
+            type: Directory
+        - name: containerd-var-run-dir
+          hostPath:
+            path: /var/run/containerd
+            type: Directory
+        - name: containerd-dir
+          hostPath:
+            path: /var/lib/containerd
+            type: Directory
+        - name: hosts-dir
+          hostPath:
+            path: /etc/containerd/certs.d
+            type: Directory
+        - name: tmp-dir
+          hostPath:
+            path: /tmp
+            type: Directory
+        {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+

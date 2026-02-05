@@ -3,12 +3,10 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY manifests manifests
+COPY charts charts
+COPY devbox-controller-entrypoint.sh devbox-controller-entrypoint.sh
 
-ENV registryAddr="sealos.hub:5000"
-ENV registryUser=admin
-ENV registryPassword=passw0rd
-ENV authAddr="sealos.hub:5000"
-ENV enablePodEphemeralStorageMatcher=false
+# Default to v2alpha2, can be overridden with environment variable DEVBOX_VERSION
+ENV DEVBOX_VERSION=v2alpha2
 
-CMD ["kubectl apply -f manifests"]
+CMD ["bash devbox-controller-entrypoint.sh"]

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: devbox
+description: Helm chart for the sealos devbox controller
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+

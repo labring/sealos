@@ -1,0 +1,25 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+The Devbox Controller (v1alpha1) is running as a Deployment with {{ .Values.replicaCount }} replica(s).
+
+To check the Deployment status:
+
+  $ kubectl get deployment {{ include "devbox-v1alpha1.fullname" . }}-controller-manager -n {{ .Release.Namespace }}
+
+To check the running pods:
+
+  $ kubectl get pods -n {{ .Release.Namespace }} -l control-plane=controller-manager
+
+To view the logs:
+
+  $ kubectl logs -n {{ .Release.Namespace }} -l control-plane=controller-manager --tail=100
+
+To learn more about the release:
+
+  $ helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+  $ helm get all {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+The Devbox Controller has been deployed successfully!
+

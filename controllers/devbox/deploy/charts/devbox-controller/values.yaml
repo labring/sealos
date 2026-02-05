@@ -1,0 +1,105 @@
+# Default values for devbox controller helm chart.
+
+image: ghcr.io/labring/sealos-devbox-controller:latest
+imagePullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "devbox"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "devbox-controller-manager"
+
+podAnnotations: {}
+podLabels: {}
+
+# DaemonSet 需要 privileged 和 root 权限来访问 containerd
+podSecurityContext:
+  runAsUser: 0
+
+securityContext:
+  privileged: true
+  runAsUser: 0
+
+# 资源限制（根据生产环境配置）
+resources:
+  limits:
+    cpu: 1500m
+    memory: 2000Mi
+  requests:
+    cpu: 100m
+    memory: 640Mi
+
+# 环境变量配置
+env:
+  registryAddr: "hub.hzh.sealos.run"
+  registryUser: "admin"
+  registryPassword: "passw0rd"
+  enableBlockIOResource: true
+
+# 额外的命令行参数
+extraArgs: []
+  # - --some-flag=value
+
+# 额外的环境变量
+extraEnv: []
+  # - name: CUSTOM_VAR
+  #   value: "custom-value"
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+metrics:
+  ## Metrics disabled by default
+  enabled: false
+  port: 8443
+
+# DaemonSet 特定配置
+revisionHistoryLimit: 10
+terminationGracePeriodSeconds: 10
+
+# DaemonSet 更新策略
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 0
+    maxUnavailable: 1
+
+# 优先级类名（用于关键系统组件）
+priorityClassName: system-node-critical
+
+# 节点选择器 - 只在有 devbox.sealos.io/node 标签的节点运行
+nodeSelector:
+  devbox.sealos.io/node: ""
+
+# 容忍度 - 允许在特定污点的节点运行
+tolerations:
+  - effect: NoSchedule
+    key: devbox.sealos.io/node
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+
+# 额外的 volumes（hostPath volumes 已在模板中定义）
+volumes: []
+
+# 额外的 volumeMounts
+volumeMounts: []
