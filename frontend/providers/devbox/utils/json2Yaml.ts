@@ -7,6 +7,8 @@ import { nanoid, parseTemplateConfig, str2Num } from './tools';
 import { getUserNamespace } from './user';
 import { RuntimeNamespaceMap } from '@/types/static';
 
+const GPU_CORES_DEFAULT = 100;
+
 export const json2Devbox = (
   data: DevboxEditType,
   runtimeNamespaceMap: RuntimeNamespaceMap,
@@ -16,7 +18,9 @@ export const json2Devbox = (
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
   const gpuResourceKeyValue = data.gpu?.resource?.card;
+  const gpuCoresResourceKeyValue = data.gpu?.resource?.cores;
   const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
+  const hasGpuCores = hasGpu && !!gpuCoresResourceKeyValue;
   const gpuConfigAnnotation = hasGpu
     ? {
         [gpuTypeAnnotationKey]: data.gpu?.type || ''
@@ -39,7 +43,8 @@ export const json2Devbox = (
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
-        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {})
+        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {}),
+        ...(hasGpuCores ? { [gpuCoresResourceKeyValue]: GPU_CORES_DEFAULT } : {})
       },
       runtimeRef: {
         name: data.runtimeVersion,
@@ -88,7 +93,9 @@ export const json2DevboxV2 = (
   squashEnable: string = 'false'
 ) => {
   const gpuResourceKeyValue = data.gpu?.resource?.card;
+  const gpuCoresResourceKeyValue = data.gpu?.resource?.cores;
   const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
+  const hasGpuCores = hasGpu && !!gpuCoresResourceKeyValue;
   const gpuConfigAnnotation = hasGpu
     ? {
         [gpuTypeAnnotationKey]: data.gpu?.type || ''
@@ -113,7 +120,8 @@ export const json2DevboxV2 = (
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
         'ephemeral-storage': `${str2Num(data.storage)}Gi`,
-        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {})
+        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {}),
+        ...(hasGpuCores ? { [gpuCoresResourceKeyValue]: GPU_CORES_DEFAULT } : {})
       },
       templateID: data.templateUid,
       image: data.image,
