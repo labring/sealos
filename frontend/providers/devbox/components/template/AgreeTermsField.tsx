@@ -8,9 +8,10 @@ import { FormControl, FormField, FormItem, FormMessage } from '@sealos/shadcn-ui
 
 interface AgreeTermsFieldProps {
   form: UseFormReturn<any>;
+  disabled?: boolean;
 }
 
-const AgreeTermsField = ({ form }: AgreeTermsFieldProps) => {
+const AgreeTermsField = ({ form, disabled = false }: AgreeTermsFieldProps) => {
   const t = useTranslations();
   const { env } = useEnvStore();
   const locale = useLocale();
@@ -32,7 +33,11 @@ const AgreeTermsField = ({ form }: AgreeTermsFieldProps) => {
           <FormControl>
             <div className="flex gap-3">
               <div className="pt-0.5">
-                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={disabled ? undefined : field.onChange}
+                  disabled={disabled}
+                />
               </div>
               <span className="text-sm font-medium text-zinc-900">
                 {t('have_read_and_agree_to_the ')}
