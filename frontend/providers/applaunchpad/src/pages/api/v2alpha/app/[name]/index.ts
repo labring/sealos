@@ -26,6 +26,8 @@ import {
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import { json2DeployCr, json2Service, json2Ingress } from '@/utils/deployYaml2Json';
 import { appDeployKey } from '@/constants/app';
+import { sendError, sendValidationError } from '@/utils/apiError';
+import { ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 // Constants
 const DELAY_SHORT = 2000;
@@ -232,7 +234,12 @@ async function validateAppExists(name: string, k8s: any, res: NextApiResponse): 
     await k8s.getDeployApp(name);
     return true;
   } catch (error: any) {
-    res.status(404).json({ error: `App ${name} not found` });
+    sendError(res, {
+      status: 404,
+      type: ErrorType.RESOURCE_ERROR,
+      code: ErrorCode.NOT_FOUND,
+      message: `Application "${name}" not found in the current namespace. Please verify the application name.`
+    });
     return false;
   }
 }
@@ -824,20 +831,37 @@ async function manageAppPorts(
 }
 
 function handlePortError(error: any, res: NextApiResponse): void {
-  const errorTypes = {
-    [PortConflictError.name]: 'PORT_CONFLICT_ERROR',
-    [PortNotFoundError.name]: 'PORT_NOT_FOUND_ERROR',
-    [PortValidationError.name]: 'PORT_VALIDATION_ERROR',
-    [PortError.name]: 'PORT_OPERATION_ERROR'
-  };
-
-  if (error instanceof PortError) {
-    res.status(error.code).json({
-      error: {
-        type: errorTypes[error.name] || 'PORT_OPERATION_ERROR',
-        message: error.message,
-        details: error.details
-      }
+  if (error instanceof PortConflictError) {
+    sendError(res, {
+      status: error.code,
+      type: ErrorType.RESOURCE_ERROR,
+      code: ErrorCode.CONFLICT,
+      message: error.message,
+      details: error.details
+    });
+  } else if (error instanceof PortNotFoundError) {
+    sendError(res, {
+      status: error.code,
+      type: ErrorType.RESOURCE_ERROR,
+      code: ErrorCode.NOT_FOUND,
+      message: error.message,
+      details: error.details
+    });
+  } else if (error instanceof PortValidationError) {
+    sendError(res, {
+      status: error.code,
+      type: ErrorType.VALIDATION_ERROR,
+      code: ErrorCode.INVALID_PARAMETER,
+      message: error.message,
+      details: error.details
+    });
+  } else if (error instanceof PortError) {
+    sendError(res, {
+      status: error.code,
+      type: ErrorType.OPERATION_ERROR,
+      code: ErrorCode.OPERATION_FAILED,
+      message: error.message,
+      details: error.details
     });
   }
 }
@@ -853,10 +877,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const parseResult = GetAppByAppNameQuerySchema.safeParse(req.query);
 
       if (!parseResult.success) {
-        return res.status(400).json({
-          error: 'Invalid request params.',
-          details: parseResult.error.issues
-        });
+        return sendValidationError(
+          res,
+          parseResult.error,
+          'Application name path parameter is invalid or missing.'
+        );
       }
 
       if (!(await validateAppExists(name, k8s, res))) {
@@ -871,23 +896,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const parseResult = DeleteAppByNameQuerySchema.safeParse(req.query);
 
       if (!parseResult.success) {
-        return res.status(400).json({
-          error: 'Invalid request params.',
-          details: parseResult.error.issues
-        });
+        return sendValidationError(
+          res,
+          parseResult.error,
+          'Application name path parameter is invalid or missing.'
+        );
       }
 
-      await deleteAppByName(name, k8s);
-
-      return res.status(204).end();
+      try {
+        await deleteAppByName(name, k8s);
+        return res.status(204).end();
+      } catch (err: any) {
+        console.error('Kubernetes delete application error:', err);
+        return sendError(res, {
+          status: 500,
+          type: ErrorType.OPERATION_ERROR,
+          code: ErrorCode.KUBERNETES_ERROR,
+          message: `Failed to delete application "${name}". The Kubernetes operation encountered an error.`,
+          details: err.message
+        });
+      }
     } else if (method === 'PATCH') {
       const parseResult = UpdateAppResourcesSchema.safeParse(req.body);
 
       if (!parseResult.success) {
-        return res.status(400).json({
-          error: 'Invalid request body.',
-          details: parseResult.error.issues
-        });
+        return sendValidationError(
+          res,
+          parseResult.error,
+          'Request body validation failed. Please check the update configuration format.'
+        );
       }
 
       if (!(await validateAppExists(name, k8s, res))) {
@@ -902,7 +939,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const currentAppResponse = await getAppByName(name, k8s);
           currentAppData = await processAppResponse(currentAppResponse, false);
           if (!currentAppData) {
-            throw new Error(`App ${name} not found`);
+            return sendError(res, {
+              status: 404,
+              type: ErrorType.RESOURCE_ERROR,
+              code: ErrorCode.NOT_FOUND,
+              message: `Application "${name}" not found in the current namespace. Please verify the application name.`
+            });
           }
         }
 
@@ -960,21 +1002,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         return res.status(204).end();
       } catch (error: any) {
-        return res.status(500).json({
-          error: error.message || 'Failed to update application',
-          details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        console.error('Kubernetes update application error:', error);
+        return sendError(res, {
+          status: 500,
+          type: ErrorType.OPERATION_ERROR,
+          code: ErrorCode.KUBERNETES_ERROR,
+          message: `Failed to update application "${name}". The Kubernetes operation encountered an error.`,
+          details: error.message
         });
       }
     } else {
       res.setHeader('Allow', ['GET', 'DELETE', 'PATCH']);
-      return res.status(405).json({
-        error: 'Method not allowed'
+      return sendError(res, {
+        status: 405,
+        type: ErrorType.CLIENT_ERROR,
+        code: ErrorCode.METHOD_NOT_ALLOWED,
+        message: `HTTP method ${method} is not supported for this endpoint. Allowed methods: GET, DELETE, PATCH.`
       });
     }
   } catch (err: any) {
-    return res.status(500).json({
-      error: err.message || 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    console.error('Unexpected error in app handler:', err);
+    return sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message:
+        'An unexpected error occurred while processing your request. Please try again or contact support.',
+      details: err.message
     });
   }
 }

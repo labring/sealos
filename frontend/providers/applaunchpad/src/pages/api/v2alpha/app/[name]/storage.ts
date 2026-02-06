@@ -5,70 +5,68 @@ import { UpdateStorageSchema } from '@/types/v2alpha/request_schema';
 import { json2DeployCr } from '@/utils/deployYaml2Json';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import type { AppEditType } from '@/types/app';
+import { sendError, sendValidationError } from '@/utils/apiError';
+import { ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import { z } from 'zod';
+
+const AppNameParamSchema = z.object({
+  name: z.string().min(1, { message: 'Application name is required' })
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (req.method !== 'PATCH') {
       res.setHeader('Allow', ['PATCH']);
-      return res.status(405).json({
-        error: 'Method not allowed'
+      return sendError(res, {
+        status: 405,
+        type: ErrorType.CLIENT_ERROR,
+        code: ErrorCode.METHOD_NOT_ALLOWED,
+        message: `HTTP method ${req.method} is not supported. Use PATCH to update application storage.`
       });
     }
 
-    const { name: appName } = req.query as { name: string };
+    const paramResult = AppNameParamSchema.safeParse(req.query);
+    if (!paramResult.success) {
+      return sendValidationError(
+        res,
+        paramResult.error,
+        'Application name path parameter is invalid or missing.'
+      );
+    }
+
+    const { name: appName } = paramResult.data;
 
     const parseResult = UpdateStorageSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({
-        error: 'Invalid request body.',
-        details: parseResult.error.issues
-      });
+      return sendValidationError(
+        res,
+        parseResult.error,
+        'Storage configuration validation failed. Please check path format and size values.'
+      );
     }
 
     const { storage } = parseResult.data;
-
-    if (storage.length === 0) {
-      return res.status(400).json({
-        error: 'At least one storage configuration is required'
-      });
-    }
-
-    const paths = storage.map((s) => s.path);
-
-    if (new Set(paths).size !== paths.length) {
-      return res.status(400).json({
-        error: 'Duplicate storage paths are not allowed'
-      });
-    }
-
-    for (const store of storage) {
-      if (!store.size.match(/^\d+(\.\d+)?(Gi|Mi|Ti)$/i)) {
-        return res.status(400).json({
-          error: `Invalid storage size format: ${store.size}. Use format like "10Gi", "1Ti", etc.`
-        });
-      }
-
-      if (!store.path.startsWith('/')) {
-        return res.status(400).json({
-          error: `Storage path must be absolute: ${store.path}`
-        });
-      }
-    }
 
     const k8s = await createK8sContext(req);
     const currentAppResponse = await getAppByName(appName, k8s);
     const currentAppData = await processAppResponse(currentAppResponse, false);
 
     if (!currentAppData) {
-      return res.status(404).json({
-        error: `App ${appName} not found`
+      return sendError(res, {
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: `Application "${appName}" not found in the current namespace. Please verify the application name.`
       });
     }
 
     if (currentAppData.kind !== 'statefulset') {
-      return res.status(400).json({
-        error:
-          'Storage updates are only supported for StatefulSet applications. Convert your application to StatefulSet first.'
+      return sendError(res, {
+        status: 400,
+        type: ErrorType.CLIENT_ERROR,
+        code: ErrorCode.STORAGE_REQUIRES_STATEFULSET,
+        message: `Storage updates are only supported for StatefulSet applications. Application "${appName}" is currently a ${currentAppData.kind}.`,
+        details: 'Convert your application to StatefulSet to enable storage management.'
       });
     }
 
@@ -137,17 +135,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(204).end();
     } catch (error: any) {
-      console.error('Failed to update storage:', error);
-      return res.status(500).json({
-        error: error.message || 'Failed to update storage',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      console.error('Kubernetes update storage error:', error);
+      return sendError(res, {
+        status: 500,
+        type: ErrorType.OPERATION_ERROR,
+        code: ErrorCode.STORAGE_UPDATE_FAILED,
+        message: `Failed to update storage for application "${appName}". The StatefulSet recreation or PVC update failed.`,
+        details: error.message
       });
     }
   } catch (error: any) {
-    console.error('Error in storage handler:', error);
-    return res.status(500).json({
-      error: error.message || 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    console.error('Unexpected error in storage handler:', error);
+    return sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message:
+        'An unexpected error occurred while processing the storage update. Please try again or contact support.',
+      details: error.message
     });
   }
 }

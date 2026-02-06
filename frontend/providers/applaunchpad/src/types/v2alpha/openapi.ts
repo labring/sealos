@@ -2,13 +2,11 @@ import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 import { LaunchpadApplicationSchema } from '@/types/v2alpha/schema';
 import { CreateLaunchpadRequestSchema, UpdateAppResourcesSchema } from './request_schema';
+import { ErrorResponseSchema, ErrorType, ErrorCode, createErrorExample } from './error';
 
-export const ErrorResponseSchema = z.object({
-  code: z.number(),
-  message: z.string(),
-  data: z.string().optional(),
-  error: z.string().optional()
-});
+// Re-export for backward compatibility
+export { ErrorType, ErrorCode, ErrorResponseSchema, createErrorExample } from './error';
+export type { ErrorTypeValue, ErrorCodeType } from './error';
 
 // Get production server URL from current environment
 const getProductionServerUrl = () => {
@@ -44,6 +42,10 @@ export const createOpenApiDocument = () => {
       {
         url: getProductionServerUrl(),
         description: 'Production'
+      },
+      {
+        url: `https://applaunchpad.192.168.12.53.nip.io/api/v2alpha`,
+        description: 'Development'
       }
     ],
     tags: [
@@ -105,19 +107,19 @@ export const createOpenApiDocument = () => {
                   examples: {
                     invalidSchema: {
                       summary: 'Invalid schema validation',
-                      value: {
-                        code: 400,
-                        message: 'Validation failed',
-                        error: 'CPU must be in range [0.1, 32]'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_VALUE,
+                        'Invalid request body. Please check the application configuration format.'
+                      )
                     },
                     duplicateName: {
                       summary: 'Duplicate application name',
-                      value: {
-                        code: 400,
-                        message: 'Application name already exists',
-                        error: 'An application with this name is already running'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.ALREADY_EXISTS,
+                        'An application with this name already exists in the current namespace.'
+                      )
                     }
                   }
                 }
@@ -131,11 +133,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
-                      value: {
-                        code: 401,
-                        message: 'Authentication required',
-                        error: 'No kubeconfig provided in Authorization header'
-                      }
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Authentication required. Please provide valid credentials in the Authorization header.'
+                      )
                     }
                   }
                 }
@@ -149,12 +151,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
-                      value: {
-                        code: 403,
-                        message: 'Forbidden',
-                        error:
-                          'User does not have permission to create deployments in this namespace'
-                      }
+                      value: createErrorExample(
+                        ErrorType.AUTHORIZATION_ERROR,
+                        ErrorCode.PERMISSION_DENIED,
+                        'Insufficient permissions to perform this operation. Please check your access rights.'
+                      )
                     }
                   }
                 }
@@ -168,11 +169,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     resourceConflict: {
                       summary: 'Resource conflict',
-                      value: {
-                        code: 409,
-                        message: 'Resource conflict',
-                        error: 'Application with this name already exists'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.CONFLICT,
+                        'A resource with this configuration already exists and conflicts with the request.'
+                      )
                     }
                   }
                 }
@@ -186,11 +187,12 @@ export const createOpenApiDocument = () => {
                   examples: {
                     kubernetesError: {
                       summary: 'Kubernetes API error',
-                      value: {
-                        code: 500,
-                        message: 'Failed to create application',
-                        error: 'Kubernetes API returned an error: connection timeout'
-                      }
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.KUBERNETES_ERROR,
+                        'Failed to create application. The Kubernetes operation encountered an error.',
+                        'namespaces "ns-xxx" not found'
+                      )
                     }
                   }
                 }
@@ -267,11 +269,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name format',
-                      value: {
-                        code: 400,
-                        message: 'Invalid path parameter',
-                        error: 'Application name cannot be empty'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Application name path parameter is invalid or missing.'
+                      )
                     }
                   }
                 }
@@ -281,7 +283,17 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: ErrorResponseSchema,
+                  examples: {
+                    missingAuth: {
+                      summary: 'Missing authentication',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Authentication required. Please provide valid credentials in the Authorization header.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -289,7 +301,17 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: ErrorResponseSchema,
+                  examples: {
+                    insufficientPermissions: {
+                      summary: 'Insufficient permissions',
+                      value: createErrorExample(
+                        ErrorType.AUTHORIZATION_ERROR,
+                        ErrorCode.PERMISSION_DENIED,
+                        'Insufficient permissions to perform this operation. Please check your access rights.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -301,11 +323,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     notFound: {
                       summary: 'Application not found',
-                      value: {
-                        code: 404,
-                        message: 'Application not found',
-                        error: 'No application with name "web-api" exists in this namespace'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Application not found in the current namespace. Please verify the application name.'
+                      )
                     }
                   }
                 }
@@ -319,11 +341,12 @@ export const createOpenApiDocument = () => {
                   examples: {
                     kubernetesError: {
                       summary: 'Kubernetes API error',
-                      value: {
-                        code: 500,
-                        message: 'Failed to retrieve application',
-                        error: 'Unable to communicate with Kubernetes API'
-                      }
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.KUBERNETES_ERROR,
+                        'Failed to retrieve application. The Kubernetes operation encountered an error.',
+                        'deployments.apps "web-api" not found'
+                      )
                     }
                   }
                 }
@@ -376,36 +399,35 @@ export const createOpenApiDocument = () => {
                   examples: {
                     invalidSchema: {
                       summary: 'Schema validation failed',
-                      value: {
-                        code: 400,
-                        message: 'Invalid request body',
-                        error: 'CPU must be in range [0.1, 32]'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_VALUE,
+                        'Invalid request body. Please check the application configuration format.'
+                      )
                     },
                     unsupportedOperation: {
                       summary: 'Unsupported operation',
-                      value: {
-                        code: 400,
-                        message: 'Unsupported operation',
-                        error:
-                          'Cannot update storage on Deployment. Storage updates are only supported for StatefulSet applications.'
-                      }
+                      value: createErrorExample(
+                        ErrorType.CLIENT_ERROR,
+                        ErrorCode.UNSUPPORTED_OPERATION,
+                        'This operation is not supported for the current application state.'
+                      )
                     },
                     duplicatePorts: {
                       summary: 'Duplicate port numbers',
-                      value: {
-                        code: 400,
-                        message: 'Port conflict',
-                        error: 'Duplicate port number 80 found in ports array'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.CONFLICT,
+                        'Port conflict detected. Duplicate port numbers are not allowed.'
+                      )
                     },
                     emptyUpdate: {
                       summary: 'No fields provided',
-                      value: {
-                        code: 400,
-                        message: 'Validation failed',
-                        error: 'At least one field must be provided for update'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_VALUE,
+                        'Request body validation failed. Please check the update configuration format.'
+                      )
                     }
                   }
                 }
@@ -435,19 +457,19 @@ export const createOpenApiDocument = () => {
                   examples: {
                     appNotFound: {
                       summary: 'Application not found',
-                      value: {
-                        code: 404,
-                        message: 'Application not found',
-                        error: 'No application with name "web-api" exists'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Application not found in the current namespace. Please verify the application name.'
+                      )
                     },
                     portNotFound: {
                       summary: 'Port not found for update',
-                      value: {
-                        code: 404,
-                        message: 'Port not found',
-                        error: 'Port with portName "abc123" not found in application configuration'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Port not found in the application configuration.'
+                      )
                     }
                   }
                 }
@@ -461,11 +483,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     resourceConflict: {
                       summary: 'Resource conflict',
-                      value: {
-                        code: 409,
-                        message: 'Resource conflict',
-                        error: 'Application is currently being updated by another operation'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.CONFLICT,
+                        'A resource with this configuration already exists and conflicts with the request.'
+                      )
                     }
                   }
                 }
@@ -479,11 +501,12 @@ export const createOpenApiDocument = () => {
                   examples: {
                     updateFailed: {
                       summary: 'Update operation failed',
-                      value: {
-                        code: 500,
-                        message: 'Failed to update application',
-                        error: 'Kubernetes API error: unable to patch deployment'
-                      }
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.KUBERNETES_ERROR,
+                        'Failed to update application. The Kubernetes operation encountered an error.',
+                        'Operation cannot be fulfilled on deployments.apps "web-api": the object has been modified'
+                      )
                     }
                   }
                 }
@@ -520,11 +543,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
-                      value: {
-                        code: 400,
-                        message: 'Invalid path parameter',
-                        error: 'Application name cannot be empty'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Application name path parameter is invalid or missing.'
+                      )
                     }
                   }
                 }
@@ -546,12 +569,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
-                      value: {
-                        code: 403,
-                        message: 'Forbidden',
-                        error:
-                          'User does not have permission to delete deployments in this namespace'
-                      }
+                      value: createErrorExample(
+                        ErrorType.AUTHORIZATION_ERROR,
+                        ErrorCode.PERMISSION_DENIED,
+                        'Insufficient permissions to perform this operation. Please check your access rights.'
+                      )
                     }
                   }
                 }
@@ -565,11 +587,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     notFound: {
                       summary: 'Application not found',
-                      value: {
-                        code: 404,
-                        message: 'Application not found',
-                        error: 'No application with name "web-api" exists'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Application not found in the current namespace. Please verify the application name.'
+                      )
                     }
                   }
                 }
@@ -583,11 +605,12 @@ export const createOpenApiDocument = () => {
                   examples: {
                     deletionInProgress: {
                       summary: 'Deletion already in progress',
-                      value: {
-                        code: 409,
-                        message: 'Conflict',
-                        error: 'Application is already being deleted'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        undefined,
+                        'Conflict',
+                        'Application is already being deleted'
+                      )
                     }
                   }
                 }
@@ -601,11 +624,12 @@ export const createOpenApiDocument = () => {
                   examples: {
                     deletionFailed: {
                       summary: 'Deletion failed',
-                      value: {
-                        code: 500,
-                        message: 'Failed to delete application',
-                        error: 'Kubernetes API error: unable to delete deployment'
-                      }
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.KUBERNETES_ERROR,
+                        'Failed to delete application. The Kubernetes operation encountered an error.',
+                        'deployments.apps "web-api" not found'
+                      )
                     }
                   }
                 }
@@ -644,28 +668,28 @@ export const createOpenApiDocument = () => {
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
-                      value: {
-                        code: 400,
-                        message: 'Invalid path parameter',
-                        error: 'Application name cannot be empty'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Application name path parameter is invalid or missing.'
+                      )
                     },
                     alreadyRunning: {
                       summary: 'Application already running',
-                      value: {
-                        code: 400,
-                        message: 'Invalid operation',
-                        error: 'Application is already running'
-                      }
+                      value: createErrorExample(
+                        ErrorType.CLIENT_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid operation. The application state does not allow this action.'
+                      )
                     },
                     missingMetadata: {
                       summary: 'Missing pause metadata',
-                      value: {
-                        code: 400,
-                        message: 'Cannot start application',
-                        error:
-                          'No stored configuration found. Application may not have been properly paused.'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        undefined,
+                        'Cannot start application',
+                        'No stored configuration found. Application may not have been properly paused.'
+                      )
                     }
                   }
                 }
@@ -695,11 +719,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     notFound: {
                       summary: 'Application not found',
-                      value: {
-                        code: 404,
-                        message: 'Application not found',
-                        error: 'No application with name "web-api" exists'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Application not found in the current namespace. Please verify the application name.'
+                      )
                     }
                   }
                 }
@@ -713,11 +737,12 @@ export const createOpenApiDocument = () => {
                   examples: {
                     startFailed: {
                       summary: 'Start operation failed',
-                      value: {
-                        code: 500,
-                        message: 'Failed to start application',
-                        error: 'Unable to update deployment replicas'
-                      }
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.KUBERNETES_ERROR,
+                        'Failed to start application. The Kubernetes operation encountered an error.',
+                        'deployments.apps "web-api" not found'
+                      )
                     }
                   }
                 }
@@ -756,19 +781,19 @@ export const createOpenApiDocument = () => {
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
-                      value: {
-                        code: 400,
-                        message: 'Invalid path parameter',
-                        error: 'Application name cannot be empty'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Application name path parameter is invalid or missing.'
+                      )
                     },
                     alreadyPaused: {
                       summary: 'Application already paused',
-                      value: {
-                        code: 400,
-                        message: 'Invalid operation',
-                        error: 'Application is already paused (replicas = 0)'
-                      }
+                      value: createErrorExample(
+                        ErrorType.CLIENT_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid operation. The application state does not allow this action.'
+                      )
                     }
                   }
                 }
@@ -798,11 +823,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     notFound: {
                       summary: 'Application not found',
-                      value: {
-                        code: 404,
-                        message: 'Application not found',
-                        error: 'No application with name "web-api" exists'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Application not found in the current namespace. Please verify the application name.'
+                      )
                     }
                   }
                 }
@@ -816,11 +841,12 @@ export const createOpenApiDocument = () => {
                   examples: {
                     pauseFailed: {
                       summary: 'Pause operation failed',
-                      value: {
-                        code: 500,
-                        message: 'Failed to pause application',
-                        error: 'Unable to update deployment annotations or scale replicas'
-                      }
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.KUBERNETES_ERROR,
+                        'Failed to pause application. The Kubernetes operation encountered an error.',
+                        'deployments.apps "web-api" not found'
+                      )
                     }
                   }
                 }
@@ -859,11 +885,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
-                      value: {
-                        code: 400,
-                        message: 'Invalid path parameter',
-                        error: 'Application name cannot be empty'
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Application name path parameter is invalid or missing.'
+                      )
                     }
                   }
                 }
@@ -893,11 +919,11 @@ export const createOpenApiDocument = () => {
                   examples: {
                     notFound: {
                       summary: 'Application not found',
-                      value: {
-                        code: 404,
-                        message: 'Application not found',
-                        error: 'No application with name "web-api" exists'
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Application not found in the current namespace. Please verify the application name.'
+                      )
                     }
                   }
                 }
@@ -911,11 +937,12 @@ export const createOpenApiDocument = () => {
                   examples: {
                     restartFailed: {
                       summary: 'Restart operation failed',
-                      value: {
-                        code: 500,
-                        message: 'Failed to restart application',
-                        error: 'Unable to update pod template annotations'
-                      }
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.KUBERNETES_ERROR,
+                        'Failed to restart application. The Kubernetes operation encountered an error.',
+                        'deployments.apps "web-api" not found'
+                      )
                     }
                   }
                 }

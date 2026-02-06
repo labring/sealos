@@ -11,6 +11,8 @@ import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
 import { LaunchpadApplicationSchema } from '@/types/v2alpha/schema';
+import { sendError, sendValidationError } from '@/utils/apiError';
+import { ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 async function processAppResponse(
   response: PromiseSettledResult<any>[]
@@ -41,29 +43,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const parseResult = CreateLaunchpadRequestSchema.safeParse(req.body);
 
       if (!parseResult.success) {
-        return res.status(400).json({
-          error: 'Invalid request body.',
-          details: parseResult.error.issues
-        });
+        return sendValidationError(
+          res,
+          parseResult.error,
+          'Request body validation failed. Please check the application configuration format.'
+        );
       }
 
       const standardRequest = parseResult.data;
       const legacyRequest = transformToLegacySchema(standardRequest);
 
-      const k8s = await createK8sContext(req);
-      await createApp(legacyRequest, k8s);
-
-      return res.status(204).end();
+      try {
+        const k8s = await createK8sContext(req);
+        await createApp(legacyRequest, k8s);
+        return res.status(204).end();
+      } catch (err: any) {
+        console.error('Kubernetes create application error:', err);
+        return sendError(res, {
+          status: 500,
+          type: ErrorType.OPERATION_ERROR,
+          code: ErrorCode.KUBERNETES_ERROR,
+          message:
+            'Failed to create application in Kubernetes cluster. Please check cluster status and permissions.',
+          details: err.message
+        });
+      }
     } else {
       res.setHeader('Allow', ['POST']);
-      return res.status(405).json({
-        error: 'Method not allowed'
+      return sendError(res, {
+        status: 405,
+        type: ErrorType.CLIENT_ERROR,
+        code: ErrorCode.METHOD_NOT_ALLOWED,
+        message: `HTTP method ${method} is not supported for this endpoint. Use POST to create an application.`
       });
     }
   } catch (err: any) {
-    return res.status(500).json({
-      error: err.message || 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    console.error('Internal error:', err);
+    return sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message:
+        'An unexpected internal error occurred while processing your request. Please try again or contact support if the issue persists.',
+      details: err.message
     });
   }
 }
