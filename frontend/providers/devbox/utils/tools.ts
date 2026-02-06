@@ -11,6 +11,10 @@ import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox';
 
 dayjs.extend(duration);
 
+const decodeJsonPointerToken = (token: string) => token.replace(/~1/g, '/').replace(/~0/g, '~');
+const isUnsafeProtoKey = (key: string) =>
+  key === '__proto__' || key === 'prototype' || key === 'constructor';
+
 export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
     return 0;
@@ -283,18 +287,23 @@ export const patchYamlList = ({
                 op.path.startsWith('/spec/config/annotations/')
               ) {
                 // Handle removal of specific fields
-                const fieldPath = op.path.split('/');
+                const fieldPath = op.path
+                  .split('/')
+                  .slice(1)
+                  .map(decodeJsonPointerToken);
+                if (fieldPath.some(isUnsafeProtoKey)) {
+                  return;
+                }
                 let target: any = patchResYamlJson;
-                for (let i = 1; i < fieldPath.length - 1; i++) {
-                  if (target[fieldPath[i]] === undefined) {
+                for (let i = 0; i < fieldPath.length - 1; i++) {
+                  const key = fieldPath[i];
+                  if (!Object.prototype.hasOwnProperty.call(target, key)) {
                     return;
                   }
-                  target = target[fieldPath[i]];
+                  target = target[key];
                 }
-                // Unescape JSON Pointer tokens: ~1 -> /, ~0 -> ~
-                let fieldName = fieldPath[fieldPath.length - 1];
-                if (fieldName) {
-                  fieldName = fieldName.replace(/~1/g, '/').replace(/~0/g, '~');
+                const fieldName = fieldPath[fieldPath.length - 1];
+                if (fieldName && !isUnsafeProtoKey(fieldName)) {
                   target[fieldName] = null;
                 }
               }
