@@ -1,0 +1,57 @@
+{
+  "name": "sealos-metrics-sdk",
+  "version": "0.1.0",
+  "description": "Sealos metrics monitoring SDK",
+  "type": "module",
+  "author": "mlhiter",
+  "scripts": {
+    "test": "tsx test/index.ts",
+    "build": "rollup -c",
+    "dev": "rollup -c -w"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist/",
+    "README.zh-CN.md",
+    "README.md"
+  ],
+  "keywords": [
+    "sealos",
+    "metrics",
+    "monitoring",
+    "sdk"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "axios": "^1.5.1",
+    "dayjs": "^1.11.10"
+  },
+  "peerDependencies": {
+    "@kubernetes/client-node": "^0.18.1"
+  },
+  "devDependencies": {
+    "@kubernetes/client-node": "^0.18.1",
+    "@rollup/plugin-typescript": "^11.1.4",
+    "@types/node": "^20.7.1",
+    "dotenv": "^16.3.1",
+    "rollup": "2.79.1",
+    "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-dts": "^4.2.3",
+    "tslib": "^2.6.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.0.0"
+  }
+}
