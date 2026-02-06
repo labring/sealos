@@ -294,17 +294,15 @@ export const patchYamlList = ({
                 if (fieldPath.some(isUnsafeProtoKey)) {
                   return;
                 }
-                let target: any = patchResYamlJson;
-                for (let i = 0; i < fieldPath.length - 1; i++) {
-                  const key = fieldPath[i];
-                  if (!Object.prototype.hasOwnProperty.call(target, key)) {
-                    return;
-                  }
-                  target = target[key];
-                }
-                const fieldName = fieldPath[fieldPath.length - 1];
-                if (fieldName && !isUnsafeProtoKey(fieldName)) {
-                  target[fieldName] = null;
+
+                const nullOp: jsonpatch.Operation = {
+                  op: 'add',
+                  path: op.path,
+                  value: null
+                };
+                const nullOpError = jsonpatch.validate([nullOp], patchResYamlJson);
+                if (!nullOpError) {
+                  jsonpatch.applyPatch(patchResYamlJson, [nullOp], true);
                 }
               }
             } else if (
