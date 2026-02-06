@@ -319,6 +319,7 @@ const PublicTemplate = ({
             uid: firstTemplate.uid,
             name: firstTemplate.name,
             iconId: firstTemplate.iconId || '',
+            icon: firstTemplate.icon || null,
             templateUid: firstTemplate.templates?.[0]?.uid || '',
             description: firstTemplate.description
           });
@@ -638,6 +639,7 @@ const PublicTemplate = ({
                     <TemplateCard
                       key={tr.uid}
                       iconId={tr.iconId || ''}
+                      icon={tr.icon || null}
                       templateRepositoryName={tr.name}
                       templateRepositoryDescription={tr.description}
                       templateRepositoryUid={tr.uid}
@@ -689,6 +691,7 @@ const PublicTemplate = ({
                     <TemplateCard
                       key={tr.uid}
                       iconId={tr.iconId || ''}
+                      icon={tr.icon || null}
                       templateRepositoryName={tr.name}
                       templateRepositoryDescription={tr.description}
                       templateRepositoryUid={tr.uid}
@@ -785,6 +788,7 @@ const TemplateSection = ({
             <TemplateCard
               key={tr.uid}
               iconId={tr.iconId || ''}
+              icon={tr.icon || null}
               templateRepositoryName={tr.name}
               templateRepositoryDescription={tr.description}
               templateRepositoryUid={tr.uid}

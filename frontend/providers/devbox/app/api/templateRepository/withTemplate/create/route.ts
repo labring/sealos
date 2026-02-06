@@ -7,7 +7,11 @@ import { ERROR_ENUM } from '@/services/error';
 import { retagSvcClient } from '@/services/retag';
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import { getRegionUid } from '@/utils/env';
-import { createTemplateRepositorySchema } from '@/utils/validate';
+import {
+  createTemplateRepositorySchema,
+  normalizeTemplateIcon,
+  validateTemplateIcon
+} from '@/utils/validate';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -23,6 +27,15 @@ export async function POST(req: NextRequest) {
       });
     }
     const query = createTemplateRepositorySchema.parse(queryRaw);
+    const hasIconInput = query.icon !== undefined;
+    const iconCheck = validateTemplateIcon(query.icon);
+    if (!iconCheck.ok) {
+      return jsonRes({
+        code: 400,
+        error: iconCheck.error
+      });
+    }
+    const normalizedIcon = normalizeTemplateIcon(query.icon);
     const { kubeConfig, payload, token } = await authSessionWithJWT(headerList);
     const { namespace, k8sCustomObjects } = await getK8s({
       kubeconfig: kubeConfig
@@ -114,7 +127,8 @@ export async function POST(req: NextRequest) {
       select: {
         templateRepository: {
           select: {
-            iconId: true
+            iconId: true,
+            icon: true
           }
         }
       }
@@ -149,6 +163,7 @@ export async function POST(req: NextRequest) {
         regionUid: getRegionUid(),
         organizationUid: payload.organizationUid,
         iconId: origionalTemplate?.templateRepository.iconId,
+        icon: hasIconInput ? normalizedIcon : origionalTemplate?.templateRepository.icon || null,
         kind: TemplateRepositoryKind.CUSTOM,
         name: query.templateRepositoryName,
         isPublic: query.isPublic

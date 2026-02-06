@@ -88,6 +88,7 @@ export async function POST(
           select: {
             uid: true,
             iconId: true,
+            icon: true,
             name: true,
             kind: true
           }
