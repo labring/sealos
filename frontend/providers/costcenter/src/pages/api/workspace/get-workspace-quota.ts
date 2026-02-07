@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import { UserQuotaItem, WorkspaceQuotaRequestSchema } from '@/types/workspace';
+import { cpuFormatToM, memoryFormatToMi, storageFormatToMi } from '@sealos/shared';
 
 type QuotaStatus = Record<string, string>;
 type UpstreamQuotaResponse = {
@@ -9,47 +10,6 @@ type UpstreamQuotaResponse = {
     hard?: QuotaStatus;
     used?: QuotaStatus;
   };
-};
-
-const cpuFormatToM = (cpu: string) => {
-  if (!cpu || cpu === '0') {
-    return 0;
-  }
-  let value = parseFloat(cpu);
-
-  if (/n/gi.test(cpu)) {
-    value = value / 1000 / 1000;
-  } else if (/u/gi.test(cpu)) {
-    value = value / 1000;
-  } else if (/m/gi.test(cpu)) {
-    value = value;
-  } else {
-    value = value * 1000;
-  }
-  if (value < 0.1) return 0;
-  return Number(value.toFixed(4));
-};
-
-const memoryFormatToMi = (memory: string) => {
-  if (!memory || memory === '0') {
-    return 0;
-  }
-
-  let value = parseFloat(memory);
-
-  if (/Ki/gi.test(memory)) {
-    value = value / 1024;
-  } else if (/Mi/gi.test(memory)) {
-    value = value;
-  } else if (/Gi/gi.test(memory)) {
-    value = value * 1024;
-  } else if (/Ti/gi.test(memory)) {
-    value = value * 1024 * 1024;
-  } else {
-    value = 0;
-  }
-
-  return Number(value.toFixed(2));
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -97,8 +57,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       {
         type: 'storage',
-        limit: memoryFormatToMi(hard['requests.storage'] || ''),
-        used: memoryFormatToMi(used['requests.storage'] || '')
+        limit: storageFormatToMi(hard['requests.storage'] || ''),
+        used: storageFormatToMi(used['requests.storage'] || '')
       },
       {
         type: 'nodeport',

@@ -15,3 +15,6 @@ export * from './components';
 
 // i18n
 export * from './i18n';
+
+// Utils
+export * from './utils';
