@@ -6,6 +6,7 @@ import useEnvStore from '@/stores/env';
 import { APPBillingItem, BillingType } from '@/types/billing';
 import {
   buildResourceIndexMap,
+  getDefaultResourceIndexMap,
   getResourceDisplayValue,
   getResourceUnit,
   getSortedResources
@@ -61,7 +62,7 @@ export function BillingDetailsTable({
   });
 
   const resourceMap = useMemo(() => {
-    if (!propertiesData?.data?.properties) return new Map();
+    if (!propertiesData?.data?.properties?.length) return getDefaultResourceIndexMap();
     return buildResourceIndexMap(propertiesData.data.properties);
   }, [propertiesData]);
 

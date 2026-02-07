@@ -55,6 +55,42 @@ export function buildResourceIndexMap(
   return indexMap;
 }
 
+const DEFAULT_RESOURCE_ORDER: Array<{
+  name: string;
+  enum: number;
+  resourceType: ResourceConfig['resourceType'];
+}> = [
+  { name: 'cpu', enum: 0, resourceType: 'cpu' },
+  { name: 'memory', enum: 1, resourceType: 'memory' },
+  { name: 'storage', enum: 2, resourceType: 'storage' },
+  { name: 'network', enum: 3, resourceType: 'network' },
+  { name: 'services.nodeports', enum: 4, resourceType: 'services.nodeports' },
+  { name: 'gpu', enum: 5, resourceType: 'gpu' }
+];
+
+/**
+ * Default resource index map when properties API is not available or returns empty.
+ * Uses legacy fixed indices 0-5 for backward compatibility.
+ */
+export function getDefaultResourceIndexMap(): Map<number, ResourceConfig> {
+  const indexMap = new Map<number, ResourceConfig>();
+  DEFAULT_RESOURCE_ORDER.forEach(({ name, enum: enumIndex, resourceType }) => {
+    const valuationConfig = valuationMap.get(
+      name as 'cpu' | 'memory' | 'storage' | 'gpu' | 'network' | 'services.nodeports'
+    );
+    if (valuationConfig) {
+      indexMap.set(enumIndex, {
+        name,
+        unit: valuationConfig.unit,
+        scale: valuationConfig.scale,
+        bg: valuationConfig.bg,
+        resourceType
+      });
+    }
+  });
+  return indexMap;
+}
+
 /**
  * Get formatted resource display value with unit conversion
  */
