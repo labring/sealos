@@ -103,14 +103,11 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
   rawData?.forEach((item) => {
     if (!item.name.startsWith('gpu-')) return;
 
-    // 从价格项名称中提取 ref，如 "gpu-RTX-3090" -> "RTX-3090"
     const refKey = item.name.replace('gpu-', '');
 
-    // 直接使用 gpu.ref 精确匹配
     const gpuNode = gpuNodes.find((node) => node['gpu.ref'] === refKey);
     if (!gpuNode) return;
 
-    // 根据 icon 字段判断厂商
     const manufacturers = gpuNode.icon || 'nvidia';
 
     gpuList.push({

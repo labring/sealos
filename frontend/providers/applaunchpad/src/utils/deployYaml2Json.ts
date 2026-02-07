@@ -93,10 +93,6 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   const localStores = data.storeList.filter((store) => store.storageType !== 'remote');
   const remoteStores = data.storeList.filter((store) => store.storageType === 'remote');
 
-  // GPU annotation - 所有厂商都添加 {manufacturer}.com/use-gputype
-  // NVIDIA: nvidia.com/use-gputype
-  // 昆仑芯: kunlunxin.com/use-gputype
-  // 支持的所有 GPU 厂商列表
   const supportedGpuManufacturers = ['nvidia', 'kunlunxin'];
 
   const gpuAnnotations =
@@ -104,8 +100,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       ? {
           [`${data.gpu.manufacturers}.com/use-gputype`]: data.gpu.type
         }
-      : // 当没有 GPU 时，将所有可能的 GPU annotations 设置为 null 以便删除
-        supportedGpuManufacturers.reduce(
+      : supportedGpuManufacturers.reduce(
           (acc, manufacturer) => {
             acc[`${manufacturer}.com/use-gputype`] = null;
             return acc;
@@ -143,10 +138,6 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       app: data.appName,
       restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
     },
-    // 为所有 GPU 添加厂商特定的 annotation
-    // NVIDIA: nvidia.com/use-gputype
-    // 昆仑芯: kunlunxin.com/use-gputype
-    // 当没有 GPU 时，设置为 null 以删除旧的 annotations
     annotations: gpuAnnotations
   };
   const imagePullSecrets = data.secret.use
@@ -156,7 +147,6 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         }
       ]
     : undefined;
-  // 动态获取 GPU 资源键
   const gpuResourceKey = data.gpu?.resource?.card || 'nvidia.com/gpu';
 
   const commonContainer = {
@@ -301,9 +291,6 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     }
   }));
 
-  // GPU 配置
-  // 根据文档，不再使用 nodeSelector 和 runtimeClassName
-  // GPU 类型通过 metadata.annotations 指定
   const gpuMap = !!data.gpu?.type
     ? {
         restartPolicy: 'Always'

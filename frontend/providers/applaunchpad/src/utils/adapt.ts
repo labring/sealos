@@ -94,13 +94,11 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
 
   const storeAmount = localStoreAmount;
 
-  // 检查 resources.limits 中的 GPU 资源键，判断厂商
   const resourceLimits = app.spec?.template?.spec?.containers?.[0]?.resources?.limits || {};
   const gpuResourceKey = Object.keys(resourceLimits).find(
     (key) => key.includes('gpu') || key.includes('vxpu') || key.includes('npu')
   );
 
-  // 根据资源键推断厂商
   let gpuManufacturers = '';
   if (gpuResourceKey?.includes('nvidia.com')) {
     gpuManufacturers = 'nvidia';
@@ -108,7 +106,6 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     gpuManufacturers = 'kunlunxin';
   }
 
-  // 从对应厂商的 annotation 中读取 GPU 类型（从 Pod template metadata.annotations 中读取）
   const gpuType = gpuManufacturers
     ? app?.spec?.template?.metadata?.annotations?.[`${gpuManufacturers}.com/use-gputype`] || ''
     : '';
@@ -370,7 +367,6 @@ export const adaptAppDetail = async (
     return results.filter((item) => item.value);
   };
 
-  // 检查 resources.limits 中的 GPU 资源键，判断厂商
   const resourceLimitsInDetail =
     appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits || {};
   const gpuResourceKeyInDetail = Object.keys(resourceLimitsInDetail).find(
@@ -380,7 +376,6 @@ export const adaptAppDetail = async (
   const useGpu =
     !!gpuResourceKeyInDetail && !!Number(resourceLimitsInDetail[gpuResourceKeyInDetail]);
 
-  // 根据资源键推断厂商
   let gpuManufacturersInDetail = '';
   if (gpuResourceKeyInDetail?.includes('nvidia.com')) {
     gpuManufacturersInDetail = 'nvidia';
@@ -388,7 +383,6 @@ export const adaptAppDetail = async (
     gpuManufacturersInDetail = 'kunlunxin';
   }
 
-  // 从对应厂商的 annotation 中读取 GPU 类型（从 Pod template metadata.annotations 中读取）
   const gpuTypeInDetail = gpuManufacturersInDetail
     ? appDeploy?.spec?.template?.metadata?.annotations?.[
         `${gpuManufacturersInDetail}.com/use-gputype`
