@@ -1,11 +1,13 @@
 import yaml from 'js-yaml';
 
-import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox';
+import { devboxKey, gpuTypeAnnotationKey, publicDomainKey } from '@/constants/devbox';
 import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox';
 import { produce } from 'immer';
 import { nanoid, parseTemplateConfig, str2Num } from './tools';
 import { getUserNamespace } from './user';
 import { RuntimeNamespaceMap } from '@/types/static';
+
+const GPU_CORES_DEFAULT = 100;
 
 export const json2Devbox = (
   data: DevboxEditType,
@@ -15,14 +17,15 @@ export const json2Devbox = (
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
-  // gpu node selector
-  const gpuMap = !!data.gpu?.type
+  const gpuResourceKeyValue = data.gpu?.resource?.card;
+  const gpuCoresResourceKeyValue = data.gpu?.resource?.cores;
+  const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
+  const hasGpuCores = hasGpu && !!gpuCoresResourceKeyValue;
+  const gpuConfigAnnotation = hasGpu
     ? {
-        nodeSelector: {
-          [gpuNodeSelectorKey]: data.gpu.type
-        }
+        [gpuTypeAnnotationKey]: data.gpu?.type || ''
       }
-    : {};
+    : undefined;
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
@@ -40,15 +43,21 @@ export const json2Devbox = (
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
-        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
+        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {}),
+        ...(hasGpuCores ? { [gpuCoresResourceKeyValue]: GPU_CORES_DEFAULT } : {})
       },
-      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
       runtimeRef: {
         name: data.runtimeVersion,
         namespace: runtimeNamespace
       },
-      state: 'Running',
-      ...gpuMap
+      ...(gpuConfigAnnotation
+        ? {
+            config: {
+              annotations: gpuConfigAnnotation
+            }
+          }
+        : {}),
+      state: 'Running'
     }
   };
   if (devboxAffinityEnable === 'true') {
@@ -83,13 +92,15 @@ export const json2DevboxV2 = (
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
 ) => {
-  const gpuMap = !!data.gpu?.type
+  const gpuResourceKeyValue = data.gpu?.resource?.card;
+  const gpuCoresResourceKeyValue = data.gpu?.resource?.cores;
+  const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
+  const hasGpuCores = hasGpu && !!gpuCoresResourceKeyValue;
+  const gpuConfigAnnotation = hasGpu
     ? {
-        nodeSelector: {
-          [gpuNodeSelectorKey]: data.gpu.type
-        }
+        [gpuTypeAnnotationKey]: data.gpu?.type || ''
       }
-    : {};
+    : undefined;
 
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
@@ -109,9 +120,9 @@ export const json2DevboxV2 = (
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
         'ephemeral-storage': `${str2Num(data.storage)}Gi`,
-        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
+        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {}),
+        ...(hasGpuCores ? { [gpuCoresResourceKeyValue]: GPU_CORES_DEFAULT } : {})
       },
-      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
       templateID: data.templateUid,
       image: data.image,
       config: produce(parseTemplateConfig(data.templateConfig), (draft) => {
@@ -121,6 +132,20 @@ export const json2DevboxV2 = (
           protocol: 'TCP',
           targetPort: str2Num(item.port)
         }));
+        const draftAny = draft as any;
+        if (gpuConfigAnnotation) {
+          draftAny.annotations = {
+            ...(draftAny.annotations || {}),
+            ...gpuConfigAnnotation
+          };
+        } else if (draftAny.annotations?.[gpuTypeAnnotationKey]) {
+          // Remove GPU annotation when GPU is not used
+          delete draftAny.annotations[gpuTypeAnnotationKey];
+          // If annotations becomes empty, remove it completely
+          if (Object.keys(draftAny.annotations).length === 0) {
+            delete draftAny.annotations;
+          }
+        }
 
         // Clear user-configurable fields to rebuild from form data
         const newEnv: any[] = [];
@@ -205,8 +230,7 @@ export const json2DevboxV2 = (
         draft.volumes = newVolumes.length > 0 ? newVolumes : undefined;
         draft.volumeMounts = newVolumeMounts.length > 0 ? newVolumeMounts : undefined;
       }),
-      state: 'Running',
-      ...gpuMap
+      state: 'Running'
     }
   };
   if (devboxAffinityEnable === 'true') {

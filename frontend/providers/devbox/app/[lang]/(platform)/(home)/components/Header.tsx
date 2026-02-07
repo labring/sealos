@@ -76,7 +76,6 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
       memory: 1
     });
 
-    console.log('exceededQuotaItems', exceededQuotaItems);
     if (exceededQuotaItems.length > 0) {
       setExceededQuotas(exceededQuotaItems);
       setExceededDialogOpen(true);

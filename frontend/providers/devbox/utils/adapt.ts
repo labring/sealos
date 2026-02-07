@@ -20,6 +20,7 @@ import { IngressListItemType } from '@/types/ingress';
 import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
 
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
+import type { GpuAliasMap } from '@/types/gpu';
 import {
   calculateUptime,
   cpuFormatToM,
@@ -27,20 +28,42 @@ import {
   memoryFormatToMi,
   storageFormatToNum
 } from '@/utils/tools';
-import { devboxRemarkKey, gpuNodeSelectorKey, gpuResourceKey } from '../constants/devbox';
+import { devboxRemarkKey, gpuTypeAnnotationKey } from '../constants/devbox';
 
-export const adaptDevboxListItemV2 = ([devbox, template]: [
-  KBDevboxTypeV2,
-  {
-    templateRepository: {
-      iconId: string | null;
-    };
-    uid: string;
-    name: string;
+const getGpuResourceInfo = (
+  resource: Record<string, any> | undefined,
+  gpuType?: string,
+  gpuAliasMap?: GpuAliasMap
+) => {
+  if (!resource || !gpuType || !gpuAliasMap) {
+    return { amount: 0, resource: undefined };
   }
-]): DevboxListItemTypeV2 => {
-  const gpuType = devbox.spec.nodeSelector?.[gpuNodeSelectorKey];
-  const gpuAmount = devbox.spec.resource[gpuResourceKey];
+
+  const matchedAlias = Object.values(gpuAliasMap).find((alias) => alias?.default === gpuType);
+  const resourceKey = matchedAlias?.resource?.card;
+  const amount = resourceKey ? Number(resource?.[resourceKey] || 0) : 0;
+  return { amount, resource: matchedAlias?.resource };
+};
+
+export const adaptDevboxListItemV2 = (
+  [devbox, template]: [
+    KBDevboxTypeV2,
+    {
+      templateRepository: {
+        iconId: string | null;
+      };
+      uid: string;
+      name: string;
+    }
+  ],
+  gpuAliasMap?: GpuAliasMap
+): DevboxListItemTypeV2 => {
+  const gpuType = devbox.spec.config.annotations?.[gpuTypeAnnotationKey];
+  const { amount: gpuAmount, resource: gpuResource } = getGpuResourceInfo(
+    devbox.spec.resource as Record<string, any>,
+    gpuType,
+    gpuAliasMap
+  );
 
   return {
     id: devbox.metadata?.uid || ``,
@@ -55,14 +78,14 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
-    gpu:
-      gpuType || gpuAmount
-        ? {
-            type: gpuType || '',
-            amount: Number(gpuAmount || 0),
-            manufacturers: 'nvidia'
-          }
-        : undefined,
+    gpu: gpuType
+      ? {
+          type: gpuType,
+          amount: Number(gpuAmount || 0),
+          manufacturers: 'nvidia',
+          resource: gpuResource
+        }
+      : undefined,
     usedCpu: {
       name: '',
       xData: new Array(30).fill(0),
@@ -85,13 +108,10 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
   };
 };
 
-export const adaptDevboxDetailV2 = ([
-  devbox,
-  portInfos,
-  template,
-  k8sConfigMaps,
-  k8sPvcs
-]: GetDevboxByNameReturn): DevboxDetailTypeV2 => {
+export const adaptDevboxDetailV2 = (
+  [devbox, portInfos, template, k8sConfigMaps, k8sPvcs]: GetDevboxByNameReturn,
+  gpuAliasMap?: GpuAliasMap
+): DevboxDetailTypeV2 => {
   const status =
     devbox.status?.phase && devboxStatusMap[devbox.status.phase]
       ? devboxStatusMap[devbox.status.phase]
@@ -184,11 +204,23 @@ export const adaptDevboxDetailV2 = ([
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
     storage: storageFormatToNum(devbox.spec.resource['ephemeral-storage'] || '10Gi'),
-    gpu: {
-      type: devbox.spec.nodeSelector?.[gpuNodeSelectorKey] || '',
-      amount: Number(devbox.spec.resource[gpuResourceKey] || 0),
-      manufacturers: 'nvidia'
-    },
+    gpu: (() => {
+      const gpuType = devbox.spec.config.annotations?.[gpuTypeAnnotationKey];
+      const { amount: gpuAmount, resource: gpuResource } = getGpuResourceInfo(
+        devbox.spec.resource as Record<string, any>,
+        gpuType,
+        gpuAliasMap
+      );
+      if (!gpuType) {
+        return undefined;
+      }
+      return {
+        type: gpuType,
+        amount: Number(gpuAmount || 0),
+        manufacturers: 'nvidia',
+        resource: gpuResource
+      };
+    })(),
     usedCpu: {
       name: '',
       xData: new Array(30).fill(0),

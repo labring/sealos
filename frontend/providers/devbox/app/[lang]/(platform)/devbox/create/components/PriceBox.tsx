@@ -54,7 +54,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
 
       gp = (() => {
         if (!gpu || !gpu.amount) return 0;
-        const item = sourcePrice?.gpu?.find((item) => item.type === gpu.type);
+        const item = sourcePrice?.gpu?.find((item) => item.annotationType === gpu.type);
         if (!item) return 0;
         return +(item.price * gpu.amount * 24);
       })();

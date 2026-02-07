@@ -5,6 +5,7 @@ import {
   ReconfigStatus,
   gpuResourceKey,
   devboxRemarkKey,
+  gpuTypeAnnotationKey,
   devboxOwnerRefReadyKey
 } from '@/constants/devbox';
 
@@ -95,6 +96,12 @@ export interface KBDevboxSpec {
     name: string;
     namespace: string;
   };
+  config?: {
+    annotations?: {
+      [gpuTypeAnnotationKey]?: string;
+    };
+    [key: string]: any;
+  };
   nodeSelector?: {
     [gpuNodeSelectorKey]: string;
   };
@@ -119,7 +126,12 @@ export interface KBDevboxSpec {
 }
 export interface KBDevboxSpecV2 {
   squash?: boolean;
-  config: object;
+  config: {
+    annotations?: {
+      [gpuTypeAnnotationKey]?: string;
+    };
+    [key: string]: any;
+  };
   image: string;
   templateID: string;
   network: {

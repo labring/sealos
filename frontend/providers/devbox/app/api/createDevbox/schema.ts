@@ -13,6 +13,9 @@ const GpuSchema = z
     }),
     amount: z.number().default(1).openapi({
       description: 'GPU amount'
+    }),
+    resource: z.record(z.string()).optional().openapi({
+      description: 'GPU resource map'
     })
   })
   .optional();
