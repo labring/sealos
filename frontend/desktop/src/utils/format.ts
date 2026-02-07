@@ -6,6 +6,12 @@ export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH
 export const k8sFormatTime = (time: string | number | Date) => {
   return dayjs(time).format('TYYMM-DDTHH-mm-ss');
 };
+
+// RFC3339 format without milliseconds (Go layout: 2006-01-02T15:04:05Z07:00)
+// Use this for CRD/spec fields that are parsed as time.
+export const k8sRFC3339Time = (time: string | number | Date) => {
+  return dayjs(time).format('YYYY-MM-DDTHH:mm:ssZ');
+};
 // 1¥=10000
 export const formatMoney = (mone: number) => {
   return mone / 1000000;
