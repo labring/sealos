@@ -547,14 +547,29 @@ func (r *UserReconciler) syncServiceAccount(
 		sa.Name = user.Name
 		sa.Namespace = config.GetUserSystemNamespace()
 		sa.Labels = map[string]string{}
+
+		// Check if SA exists and needs rotation
 		if err = r.Get(context.Background(), client.ObjectKey{
 			Namespace: config.GetUserSystemNamespace(),
 			Name:      user.Name,
-		}, sa); err != nil {
-			if apierrors.IsNotFound(err) {
-				r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "sa %s not found, kubeConfig renew", user.Name)
+		}, sa); err == nil {
+			// SA exists, check if we need to rotate (delete and recreate)
+			if r.shouldRotateKubeConfig(user) {
+				if delErr := r.Delete(ctx, sa); delErr != nil && !apierrors.IsNotFound(delErr) {
+					return fmt.Errorf("failed to delete serviceaccount for rotation: %w", delErr)
+				}
+				// Reset SA to recreate it
+				sa = &v1.ServiceAccount{}
+				sa.Name = user.Name
+				sa.Namespace = config.GetUserSystemNamespace()
+				sa.Labels = map[string]string{}
+				r.Recorder.Eventf(user, v1.EventTypeNormal, "ServiceAccountRotated", "ServiceAccount %s deleted for kubeconfig rotation", user.Name)
 			}
+		} else if !apierrors.IsNotFound(err) {
+			// Error other than not found
+			return err
 		}
+
 		secretName := kubeconfig.SecretName(user.Name)
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, sa, func() error {
 			sa.Annotations = map[string]string{
@@ -629,11 +644,15 @@ func (r *UserReconciler) syncServiceAccountSecrets(
 
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		secretName := sa.Secrets[0].Name
-		secrets := &v1.Secret{}
-		secrets.Name = secretName
-		secrets.Namespace = config.GetUserSystemNamespace()
+		secrets := &v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: config.GetUserSystemNamespace(),
+			},
+		}
 		var err error
 		if err = r.Get(ctx, client.ObjectKeyFromObject(secrets), secrets); err == nil {
+			// Secret already exists, no need to recreate
 			return nil
 		}
 		var change controllerutil.OperationResult
@@ -702,6 +721,9 @@ func (r *UserReconciler) syncKubeConfig(
 		return
 	}
 	user.Status.ObservedCSRExpirationSeconds = user.Spec.CSRExpirationSeconds
+	if r.shouldRotateKubeConfig(user) {
+		user.Status.ObservedKubeConfigRotateAt = user.Spec.KubeConfigRotateAt
+	}
 	cfg := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).
 		WithServiceAccountConfig(config.GetUserSystemNamespace(), sa)
 	apiConfig, err := cfg.Apply(r.config, r.Client)
@@ -820,6 +842,16 @@ func (r *UserReconciler) syncFinalStatus(
 	} else {
 		user.Status.Phase = userv1.UserActive
 	}
+}
+
+func (r *UserReconciler) shouldRotateKubeConfig(user *userv1.User) bool {
+	if user.Spec.KubeConfigRotateAt == nil {
+		return false
+	}
+	if user.Status.ObservedKubeConfigRotateAt == nil {
+		return true
+	}
+	return !user.Spec.KubeConfigRotateAt.Equal(user.Status.ObservedKubeConfigRotateAt)
 }
 
 func (r *UserReconciler) updateStatus(
