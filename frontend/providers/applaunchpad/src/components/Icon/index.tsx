@@ -61,7 +61,8 @@ export const IconMap = {
   arrowRight: require('./icons/arrowRight.svg').default,
   chart: require('./icons/chart.svg').default,
   export: require('./icons/export.svg').default,
-  loading: require('./icons/loading.svg').default
+  loading: require('./icons/loading.svg').default,
+  kunlunxin: require('./icons/gpu/kunlunxin.svg').default
 };
 
 export type IconType = keyof typeof IconMap;

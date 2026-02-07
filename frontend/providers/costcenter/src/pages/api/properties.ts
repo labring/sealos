@@ -2,6 +2,20 @@ import { authSession } from '@/service/backend/auth';
 import { getRegionByUid, makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
+
+/**
+ * Get resource configuration and pricing information
+ *
+ * Backend should return format:
+ * {
+ *   properties: [
+ *     { name: "cpu", enum: 0, unit_price: 2.4444, unit: "1m" },
+ *     { name: "memory", enum: 1, unit_price: 1.092501427, unit: "1Mi" },
+ *     { name: "gpu-kunlunxin-P800", alias: "kunlunxin-P800", enum: 6, unit_price: 1500, unit: "1m" }
+ *   ]
+ * }
+ * Note: enum value should match the key in billing API's used/used_amount
+ */
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
     const kc = await authSession(req.headers);
@@ -15,6 +29,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (!client) return;
     const response = await client.post('/account/v1alpha1/properties');
     const res = response.data;
+    console.log(res.data, 'properties response');
     return jsonRes(resp, {
       code: 200,
       data: res.data,

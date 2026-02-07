@@ -3,6 +3,7 @@ export type ValuationStandard = {
   alias?: string;
   unit: string;
   unit_price?: number;
+  enum: number;
 };
 export type ValuationBillingRecord = {
   price: number;

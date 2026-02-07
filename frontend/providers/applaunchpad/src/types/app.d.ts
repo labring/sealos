@@ -39,6 +39,9 @@ export type GpuType = {
   manufacturers: string;
   type: string;
   amount: number;
+  resource?: {
+    card: string;
+  };
 };
 
 export interface AppStatusMapType {
@@ -253,4 +256,13 @@ export type GpuNodeType = {
   'gpu.alias': string;
   'gpu.available': number;
   'gpu.used': number;
+  'gpu.ref'?: string;
+  icon?: string;
+  name?: {
+    zh: string;
+    en: string;
+  };
+  resource?: {
+    card: string;
+  };
 };

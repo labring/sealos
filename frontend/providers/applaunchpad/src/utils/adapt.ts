@@ -34,8 +34,6 @@ import {
   minReplicasKey,
   PodStatusEnum,
   publicDomainKey,
-  gpuNodeSelectorKey,
-  gpuResourceKey,
   AppSourceConfigs
 } from '@/constants/app';
 import {
@@ -96,7 +94,21 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
 
   const storeAmount = localStoreAmount;
 
-  const gpuNodeSelector = app?.spec?.template?.spec?.nodeSelector;
+  const resourceLimits = app.spec?.template?.spec?.containers?.[0]?.resources?.limits || {};
+  const gpuResourceKey = Object.keys(resourceLimits).find(
+    (key) => key.includes('gpu') || key.includes('vxpu') || key.includes('npu')
+  );
+
+  let gpuManufacturers = '';
+  if (gpuResourceKey?.includes('nvidia.com')) {
+    gpuManufacturers = 'nvidia';
+  } else if (gpuResourceKey?.includes('kunlunxin.com')) {
+    gpuManufacturers = 'kunlunxin';
+  }
+
+  const gpuType = gpuManufacturers
+    ? app?.spec?.template?.metadata?.annotations?.[`${gpuManufacturers}.com/use-gputype`] || ''
+    : '';
 
   return {
     id: app.metadata?.uid || ``,
@@ -109,11 +121,9 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
       app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
     gpu: {
-      type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
-      amount: Number(
-        app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 1
-      ),
-      manufacturers: 'nvidia'
+      type: gpuType,
+      amount: gpuResourceKey ? Number(resourceLimits[gpuResourceKey] || 0) : 0,
+      manufacturers: gpuManufacturers
     },
     usedCpu: {
       name: '',
@@ -357,10 +367,27 @@ export const adaptAppDetail = async (
     return results.filter((item) => item.value);
   };
 
-  const useGpu = !!Number(
-    appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey]
+  const resourceLimitsInDetail =
+    appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits || {};
+  const gpuResourceKeyInDetail = Object.keys(resourceLimitsInDetail).find(
+    (key) => key.includes('gpu') || key.includes('vxpu') || key.includes('npu')
   );
-  const gpuNodeSelector = useGpu ? appDeploy?.spec?.template?.spec?.nodeSelector : null;
+
+  const useGpu =
+    !!gpuResourceKeyInDetail && !!Number(resourceLimitsInDetail[gpuResourceKeyInDetail]);
+
+  let gpuManufacturersInDetail = '';
+  if (gpuResourceKeyInDetail?.includes('nvidia.com')) {
+    gpuManufacturersInDetail = 'nvidia';
+  } else if (gpuResourceKeyInDetail?.includes('kunlunxin.com')) {
+    gpuManufacturersInDetail = 'kunlunxin';
+  }
+
+  const gpuTypeInDetail = gpuManufacturersInDetail
+    ? appDeploy?.spec?.template?.metadata?.annotations?.[
+        `${gpuManufacturersInDetail}.com/use-gputype`
+      ] || ''
+    : '';
 
   // Get remote store names from annotations to filter them out
   const remoteStoresJson = appDeploy?.metadata?.annotations?.remoteStores;
@@ -446,11 +473,11 @@ export const adaptAppDetail = async (
       ) || undefined,
     sharedMemory: getSharedMemory(),
     gpu: {
-      type: gpuNodeSelector?.[gpuNodeSelectorKey] || '',
-      amount: Number(
-        appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey] || 1
-      ),
-      manufacturers: 'nvidia'
+      type: gpuTypeInDetail,
+      amount: gpuResourceKeyInDetail
+        ? Number(resourceLimitsInDetail[gpuResourceKeyInDetail] || 0)
+        : 0,
+      manufacturers: gpuManufacturersInDetail
     },
     usedCpu: {
       name: '',

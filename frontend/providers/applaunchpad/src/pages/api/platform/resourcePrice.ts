@@ -24,7 +24,7 @@ export const valuationMap: Record<string, number> = {
   'services.nodeports': 1
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
   try {
     const gpuEnabled = global.AppConfig.common.gpuEnabled;
     const [priceResponse, gpuNodes] = await Promise.all([
@@ -45,7 +45,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data
     });
   } catch (error) {
-    console.log(error);
     jsonRes(res, { code: 500, message: 'get price error' });
   }
 }
@@ -62,16 +61,25 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
 
   // count gpu price by gpuNode and accountPriceConfig
   rawData?.forEach((item) => {
-    if (!item.name.startsWith('gpu')) return;
-    const gpuType = item.name.replace('gpu-', '');
-    const gpuNode = gpuNodes.find((item) => item['gpu.product'] === gpuType);
+    if (!item.name.startsWith('gpu-')) return;
+
+    const refKey = item.name.replace('gpu-', '');
+
+    const gpuNode = gpuNodes.find((node) => node['gpu.ref'] === refKey);
     if (!gpuNode) return;
+
+    const manufacturers = gpuNode.icon || 'nvidia';
+
     gpuList.push({
       alias: gpuNode['gpu.alias'],
       type: gpuNode['gpu.product'],
       price: (item.unit_price * valuationMap.gpu) / PRICE_SCALE,
       inventory: +gpuNode['gpu.available'],
-      vm: +gpuNode['gpu.memory'] / 1024
+      vm: +gpuNode['gpu.memory'] / 1024,
+      icon: gpuNode.icon,
+      manufacturers: manufacturers,
+      name: gpuNode.name,
+      resource: gpuNode.resource
     });
   });
 
@@ -80,7 +88,6 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
 
 const getResourcePrice = async () => {
   const url = global.AppConfig.launchpad.components.billing.url;
-  console.log(url, 'url');
 
   const res = await fetch(`${url}/account/v1alpha1/properties`, {
     method: 'POST'
