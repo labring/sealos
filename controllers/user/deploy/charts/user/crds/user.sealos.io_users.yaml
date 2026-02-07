@@ -55,11 +55,17 @@ spec:
                     certificate. The certificate signer may issue a certificate with a different
                     validity duration so a client must check the delta between the notBefore and
                     notAfter fields in the issued certificate to determine the actual duration.
-
-
+                    
+                    
                     The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
                   format: int32
                   type: integer
+                kubeConfigRotateAt:
+                  description: kubeConfigRotateAt is a manual trigger for kubeconfig
+                    rotation. When set/updated, controller will recreate token secret
+                    and kubeconfig.
+                  format: date-time
+                  type: string
               type: object
             status:
               description: UserStatus defines the observed state of User
@@ -104,6 +110,11 @@ spec:
                   default: 7200
                   format: int32
                   type: integer
+                observedKubeConfigRotateAt:
+                  description: ObservedKubeConfigRotateAt records the last processed
+                    rotation request.
+                  format: date-time
+                  type: string
                 observedGeneration:
                   description: The generation observed by the user controller.
                   format: int64
