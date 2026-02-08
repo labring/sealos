@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "account.fullname" . }}-controller-manager
+  name: {{ include "account-controller.fullname" . }}-controller-manager
   labels:
     control-plane: controller-manager
-    {{- include "account.labels" . | nindent 4 }}
+    {{- include "account-controller.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -20,7 +20,7 @@ spec:
         {{- end }}
       labels:
         control-plane: controller-manager
-        {{- include "account.labels" . | nindent 8 }}
+        {{- include "account-controller.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -29,7 +29,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "account.serviceAccountName" . }}
+      serviceAccountName: {{ include "account-controller.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

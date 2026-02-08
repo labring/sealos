@@ -2,11 +2,10 @@
 set -ex
 
 HELM_OPTS=${HELM_OPTS:-""}
-RELEASE_NAME=${RELEASE_NAME:-"account"}
+RELEASE_NAME=${RELEASE_NAME:-"account-controller"}
 RELEASE_NAMESPACE=${RELEASE_NAMESPACE:-"account-system"}
 CHART_PATH=${CHART_PATH:-"./charts/account-controller"}
 ACCOUNT_ENV_MERGE_STRATEGY=${ACCOUNT_ENV_MERGE_STRATEGY:-"overwrite"}
-ACCOUNT_ENV_AUTO_CONFIG_ENABLED=${ACCOUNT_ENV_AUTO_CONFIG_ENABLED:-"true"}
 ACCOUNT_BACKUP_ENABLED=${ACCOUNT_BACKUP_ENABLED:-"true"}
 ACCOUNT_BACKUP_DIR=${ACCOUNT_BACKUP_DIR:-"/tmp/sealos-backup/account-controller"}
 
@@ -33,12 +32,6 @@ get_cm_value() {
   local name="$2"
   local key="$3"
   kubectl get configmap "${name}" -n "${namespace}" -o "jsonpath={.data.${key}}" 2>/dev/null || true
-}
-
-add_set_string() {
-  local key="$1"
-  local value="$2"
-  HELM_SET_ARGS+=(--set-string "${key}=${value}")
 }
 
 backup_ns_resource() {
@@ -94,61 +87,38 @@ backup_account_resources() {
   backup_ns_resource certificate account-serving-cert
 }
 
+# 执行备份
 backup_account_resources
 
 HELM_SET_ARGS=()
 
-if [ "${ACCOUNT_ENV_AUTO_CONFIG_ENABLED}" = "true" ]; then
-  SEALOS_CLOUD_DOMAIN=${SEALOS_CLOUD_DOMAIN:-"$(get_cm_value sealos-system sealos-config cloudDomain)"}
-  SEALOS_CLOUD_PORT=${SEALOS_CLOUD_PORT:-"$(get_cm_value sealos-system sealos-config cloudPort)"}
-  varJwtInternal=${varJwtInternal:-"$(get_cm_value sealos-system sealos-config jwtInternal)"}
-  varRegionUID=${varRegionUID:-"$(get_cm_value sealos-system sealos-config regionUID)"}
-  varDatabaseGlobalCockroachdbURI=${varDatabaseGlobalCockroachdbURI:-"$(get_cm_value sealos-system sealos-config databaseGlobalCockroachdbURI)"}
-  varDatabaseLocalCockroachdbURI=${varDatabaseLocalCockroachdbURI:-"$(get_cm_value sealos-system sealos-config databaseLocalCockroachdbURI)"}
-  varDatabaseMongodbURI=${varDatabaseMongodbURI:-"$(get_cm_value sealos-system sealos-config databaseMongodbURI)"}
-  trafficMONGO=$(get_cm_value sealos-system nm-agent-config MONGO_URI)
-  if [ -z "${trafficMONGO}" ]; then
-    trafficMONGO="${varDatabaseMongodbURI}"
-  fi
+AUTO_CONFIG_HELM_OPTS=""
 
-  ACCOUNT_ENV_OS_ADMIN_SECRET=${ACCOUNT_ENV_OS_ADMIN_SECRET:-"object-storage-user-0"}
-  ACCOUNT_ENV_OS_INTERNAL_ENDPOINT=${ACCOUNT_ENV_OS_INTERNAL_ENDPOINT:-"object-storage.objectstorage-system.svc"}
-  ACCOUNT_ENV_OS_NAMESPACE=${ACCOUNT_ENV_OS_NAMESPACE:-"objectstorage-system"}
-  ACCOUNT_ENV_REWARD_PROCESSING=${ACCOUNT_ENV_REWARD_PROCESSING:-"false"}
-  ACCOUNT_ENV_LIMIT_RANGE_EPHEMERAL_STORAGE=${ACCOUNT_ENV_LIMIT_RANGE_EPHEMERAL_STORAGE:-"0"}
-  ACCOUNT_ENV_QUOTA_LIMITS_CPU=${ACCOUNT_ENV_QUOTA_LIMITS_CPU:-"16"}
-  ACCOUNT_ENV_QUOTA_LIMITS_MEMORY=${ACCOUNT_ENV_QUOTA_LIMITS_MEMORY:-"64Gi"}
-  ACCOUNT_ENV_QUOTA_LIMITS_STORAGE=${ACCOUNT_ENV_QUOTA_LIMITS_STORAGE:-"200Gi"}
-  ACCOUNT_ENV_QUOTA_LIMITS_GPU=${ACCOUNT_ENV_QUOTA_LIMITS_GPU:-"8"}
-  ACCOUNT_ENV_QUOTA_LIMITS_PODS=${ACCOUNT_ENV_QUOTA_LIMITS_PODS:-"20"}
-  ACCOUNT_ENV_QUOTA_LIMITS_NODE_PORTS=${ACCOUNT_ENV_QUOTA_LIMITS_NODE_PORTS:-"10"}
-  ACCOUNT_ENV_QUOTA_OBJECT_STORAGE_SIZE=${ACCOUNT_ENV_QUOTA_OBJECT_STORAGE_SIZE:-"20Gi"}
-  ACCOUNT_ENV_QUOTA_OBJECT_STORAGE_BUCKET=${ACCOUNT_ENV_QUOTA_OBJECT_STORAGE_BUCKET:-"20"}
+CLOUD_DOMAIN=$(get_cm_value sealos-system sealos-config cloudDomain)
+CLOUD_PORT=$(get_cm_value sealos-system sealos-config cloudPort)
+JWT_INTERNAL=$(get_cm_value sealos-system sealos-config jwtInternal)
+REGION_UID=$(get_cm_value sealos-system sealos-config regionUID)
+GLOBAL_COCKROACH_URI=$(get_cm_value sealos-system sealos-config databaseGlobalCockroachdbURI)
+LOCAL_COCKROACH_URI=$(get_cm_value sealos-system sealos-config databaseLocalCockroachdbURI)
+MONGODB_URI=$(get_cm_value sealos-system sealos-config databaseMongodbURI)
 
-  add_set_string accountEnv.accountApiJwtSecret "${varJwtInternal}"
-  add_set_string accountEnv.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
-  add_set_string accountEnv.cloudPort "${SEALOS_CLOUD_PORT}"
-  add_set_string accountEnv.globalCockroachURI "${varDatabaseGlobalCockroachdbURI}"
-  add_set_string accountEnv.localCockroachURI "${varDatabaseLocalCockroachdbURI}"
-  add_set_string accountEnv.mongoURI "${varDatabaseMongodbURI}"
-  add_set_string accountEnv.trafficMongoURI "${trafficMONGO}"
-  add_set_string accountEnv.localRegion "${varRegionUID}"
-  add_set_string accountEnv.osAdminSecret "${ACCOUNT_ENV_OS_ADMIN_SECRET}"
-  add_set_string accountEnv.osInternalEndpoint "${ACCOUNT_ENV_OS_INTERNAL_ENDPOINT}"
-  add_set_string accountEnv.osNamespace "${ACCOUNT_ENV_OS_NAMESPACE}"
-  add_set_string accountEnv.rewardProcessing "${ACCOUNT_ENV_REWARD_PROCESSING}"
-  add_set_string accountEnv.limitRangeEphemeralStorage "${ACCOUNT_ENV_LIMIT_RANGE_EPHEMERAL_STORAGE}"
-  add_set_string accountEnv.quotaLimitsCpu "${ACCOUNT_ENV_QUOTA_LIMITS_CPU}"
-  add_set_string accountEnv.quotaLimitsMemory "${ACCOUNT_ENV_QUOTA_LIMITS_MEMORY}"
-  add_set_string accountEnv.quotaLimitsStorage "${ACCOUNT_ENV_QUOTA_LIMITS_STORAGE}"
-  add_set_string accountEnv.quotaLimitsGpu "${ACCOUNT_ENV_QUOTA_LIMITS_GPU}"
-  add_set_string accountEnv.quotaLimitsPods "${ACCOUNT_ENV_QUOTA_LIMITS_PODS}"
-  add_set_string accountEnv.quotaLimitsNodePorts "${ACCOUNT_ENV_QUOTA_LIMITS_NODE_PORTS}"
-  add_set_string accountEnv.quotaObjectStorageSize "${ACCOUNT_ENV_QUOTA_OBJECT_STORAGE_SIZE}"
-  add_set_string accountEnv.quotaObjectStorageBucket "${ACCOUNT_ENV_QUOTA_OBJECT_STORAGE_BUCKET}"
-  if [ -n "${SEALOS_CLOUD_DOMAIN}" ]; then
-    add_set_string accountEnv.whitelistKubernetesHosts "https://${SEALOS_CLOUD_DOMAIN}:6443"
-  fi
+TRAFFIC_MONGO=$(get_cm_value sealos-system nm-agent-config MONGO_URI)
+if [ -z "${TRAFFIC_MONGO}" ] && [ -n "${MONGODB_URI}" ]; then
+  TRAFFIC_MONGO="${MONGODB_URI}"
+fi
+
+[ -n "${CLOUD_DOMAIN}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.cloudDomain=${CLOUD_DOMAIN}"
+[ -n "${CLOUD_PORT}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.cloudPort=${CLOUD_PORT}"
+[ -n "${JWT_INTERNAL}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.accountApiJwtSecret=${JWT_INTERNAL}"
+[ -n "${REGION_UID}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.localRegion=${REGION_UID}"
+[ -n "${GLOBAL_COCKROACH_URI}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.globalCockroachURI=${GLOBAL_COCKROACH_URI}"
+[ -n "${LOCAL_COCKROACH_URI}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.localCockroachURI=${LOCAL_COCKROACH_URI}"
+[ -n "${MONGODB_URI}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.mongoURI=${MONGODB_URI}"
+[ -n "${TRAFFIC_MONGO}" ] && AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.trafficMongoURI=${TRAFFIC_MONGO}"
+
+
+if [ -n "${CLOUD_DOMAIN}" ]; then
+  AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string accountEnv.whitelistKubernetesHosts=https://${CLOUD_DOMAIN}:6443"
 fi
 
 if ! helm status "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" >/dev/null 2>&1; then
@@ -180,4 +150,11 @@ if [ -n "${ACCOUNT_ENV_MERGE_STRATEGY}" ]; then
   HELM_SET_ARGS+=(--set-string "accountEnvMergeStrategy=${ACCOUNT_ENV_MERGE_STRATEGY}")
 fi
 
-helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" "${HELM_SET_ARGS[@]}" ${HELM_OPTS}
+# merge all helm_opts
+# 1. AUTO_CONFIG_HELM_OPTS (Configuration automatically obtained from ConfigMap)
+# 2. HELM_SET_ARGS (parameters set internally in the script)
+# 3. HELM_OPTS (the parameter passed by the user via --env, with the highest priority, can override the previous configuration)
+helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" \
+  ${AUTO_CONFIG_HELM_OPTS} \
+  "${HELM_SET_ARGS[@]}" \
+  ${HELM_OPTS}
