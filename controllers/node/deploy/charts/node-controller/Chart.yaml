@@ -1,6 +1,6 @@
 apiVersion: v2
-name: node
-description: A Helm chart for Kubernetes
+name: node-controller
+description: Node Controller Helm Chart for Kubernetes
 
 # A chart can be either an 'application' or a 'library' chart.
 #

@@ -4,6 +4,6 @@ USER 65532:65532
 
 COPY registry registry
 COPY charts charts
-COPY drop drop
-COPY entrypoint.sh entrypoint.sh
-CMD ["bash entrypoint.sh"]
+COPY node-controller-entrypoint.sh node-controller-entrypoint.sh
+
+CMD ["bash node-controller-entrypoint.sh"]
