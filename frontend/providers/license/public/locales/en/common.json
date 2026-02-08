@@ -26,6 +26,7 @@
   "CPU": "CPU",
   "Memory": "Memory",
   "Nodes": "Nodes",
+  "Workspaces": "Workspaces",
   "Users": "Users / Workspaces",
   "Cores": "Cores",
   "file.upload error description": "Failed to upload files",
