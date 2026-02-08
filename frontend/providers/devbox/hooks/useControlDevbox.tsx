@@ -11,7 +11,7 @@ import { DevboxStatusEnum } from '@/constants/devbox';
 import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 
 export const useControlDevbox = (refetchDevboxData: () => void) => {
-  const { isOutStandingPayment } = useUserStore();
+  const { isOutStandingPayment, session } = useUserStore();
   const t = useTranslations();
   const { executeOperation, errorModalState, closeErrorModal } = useDevboxOperation();
 
@@ -80,14 +80,23 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
 
   const handleGoToTerminal = useCallback(
     async (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
-      const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`;
       try {
+        const ns = session?.user?.nsid;
+        if (!ns) return;
+        // Devbox is expected to be a StatefulSet. Use the stable first pod name.
+        const pod = `${devbox.name}-0`;
         sealosApp.runEvents('openDesktopApp', {
           appKey: 'system-terminal',
+          pathname: '/exec',
           query: {
-            defaultCommand
+            ns,
+            pod
           },
-          messageData: { type: 'new terminal', command: defaultCommand }
+          messageData: {
+            type: 'InternalAppCall',
+            ns,
+            pod
+          }
         });
         track({
           event: 'deployment_action',
@@ -101,7 +110,7 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         });
       }
     },
-    [executeOperation]
+    [executeOperation, session?.user?.nsid]
   );
 
   return {
