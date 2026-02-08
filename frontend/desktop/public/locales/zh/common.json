@@ -340,5 +340,79 @@
   "you_can_use_the_kubectl_command_directly_from_the_terminal": "您可通过终端直接使用 kubectl 命令",
   "you_can_view_fees_through_the_fee_center": "您可通过费用中心查看费用",
   "you_have_not_purchased_the_license": "您还没有购买 License",
-  "yuan": "元"
+  "yuan": "元",
+  "alert_settings": {
+    "menu_item": "告警设置",
+    "title": "告警设置",
+    "description": "当余额不足或服务异常时，我们将通过以下方式通知您。",
+    "loading": "加载中...",
+    "phone": {
+      "section_title": "发送手机短信",
+      "enable_all": "启用 (全选)",
+      "no_phone_numbers": "暂无手机号",
+      "add_phone": "添加手机号",
+      "bound_badge": "已绑定手机号"
+    },
+    "email": {
+      "section_title": "发送邮件",
+      "enable_all": "启用 (全选)",
+      "no_emails": "暂无邮箱",
+      "add_email": "添加邮箱",
+      "bound_badge": "已绑定邮箱"
+    },
+    "bind": {
+      "phone_title": "绑定手机号",
+      "email_title": "绑定邮箱",
+      "phone_label": "手机号",
+      "email_label": "邮箱",
+      "phone_placeholder": "请输入手机号",
+      "email_placeholder": "请输入邮箱",
+      "code_label": "验证码",
+      "code_placeholder": "请输入验证码",
+      "send_code": "发送验证码",
+      "sending": "发送中...",
+      "resend": "重新发送 ({{count}}s)",
+      "complete_bind": "完成绑定",
+      "verifying": "验证中...",
+      "phone_required": "请输入手机号",
+      "email_required": "请输入邮箱",
+      "phone_invalid": "请输入正确的手机号",
+      "email_invalid": "请输入正确的邮箱",
+      "code_required": "请输入验证码",
+      "code_invalid": "验证码错误",
+      "already_bound": "该手机号/邮箱已绑定",
+      "account_bound_phone": "该手机号已绑定到账户，无需重复绑定",
+      "account_bound_email": "该邮箱已绑定到账户，无需重复绑定",
+      "code_sent": "验证码已发送",
+      "send_code_failed": "发送验证码失败",
+      "verify_failed": "验证失败"
+    },
+    "delete": {
+      "title": "确认删除",
+      "confirm_phone": [
+        "确认要删除手机号 ",
+        " 吗？"
+      ],
+      "confirm_email": [
+        "确认要删除邮箱 ",
+        " 吗？"
+      ],
+      "confirm_generic": "确认要删除吗？",
+      "cancel": "取消",
+      "delete": "删除"
+    },
+    "messages": {
+      "fetch_failed": "获取告警列表失败",
+      "create_success": "创建成功",
+      "create_failed": "创建失败",
+      "delete_success": "删除成功",
+      "delete_failed": "删除失败",
+      "update_success": "更新成功",
+      "update_failed": "更新失败"
+    }
+  },
+  "refresh_kubeconfig": "刷新 Kubeconfig",
+  "kubeconfig_rotating": "正在刷新 Kubeconfig...",
+  "kubeconfig_rotated_successfully": "Kubeconfig 刷新成功",
+  "kubeconfig_rotation_failed": "Kubeconfig 刷新失败"
 }
