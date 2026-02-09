@@ -37,6 +37,17 @@
   pointer-events: none;
 }
 
+.errorOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+}
+
 .topLeft {
   position: absolute;
   top: 10px;

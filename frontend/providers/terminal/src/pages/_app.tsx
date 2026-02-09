@@ -8,6 +8,7 @@ import useSessionStore from '@/store/session';
 import { useRouter } from 'next/router';
 import { useEffect, useCallback } from 'react';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { appWithTranslation } from 'next-i18next';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,7 +20,7 @@ const queryClient = new QueryClient({
   }
 });
 
-export default function App({ Component, pageProps }: AppProps) {
+function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const { setSession } = useSessionStore();
 
@@ -213,3 +214,5 @@ export default function App({ Component, pageProps }: AppProps) {
     </QueryClientProvider>
   );
 }
+
+export default appWithTranslation(App);
