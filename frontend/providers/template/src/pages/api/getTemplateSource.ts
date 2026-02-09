@@ -131,9 +131,19 @@ export async function GetTemplateByName({
   const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   const _tempalte = jsonData.find((item) => item.metadata.name === templateName);
   const _tempalteName = _tempalte ? _tempalte.spec.fileName : `${templateName}.yaml`;
-  const yamlString = _tempalte?.spec?.filePath
-    ? fs.readFileSync(_tempalte?.spec?.filePath, 'utf-8')
-    : fs.readFileSync(`${targetPath}/${_tempalteName}`, 'utf-8');
+
+  // Determine the file path to read
+  const templateFilePath = _tempalte?.spec?.filePath || `${targetPath}/${_tempalteName}`;
+
+  // Check if template file exists before reading
+  if (!fs.existsSync(templateFilePath)) {
+    return {
+      code: 40400,
+      message: `Template '${templateName}' not found`
+    };
+  }
+
+  const yamlString = fs.readFileSync(templateFilePath, 'utf-8');
 
   let { appYaml, templateYaml } = getYamlTemplate(yamlString);
 

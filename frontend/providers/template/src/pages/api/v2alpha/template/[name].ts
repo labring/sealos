@@ -81,6 +81,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { name: templateName } = req.query as { name: string };
   const language = (req.query.language as string) || 'en';
 
+  // Skip dynamic route for 'instance' - let instance.ts handle it
+  if (templateName === 'instance') {
+    // This should not happen as static routes have priority, but just in case
+    const instanceHandler = await import('./instance');
+    return instanceHandler.default(req, res);
+  }
+
   if (!templateName) {
     return res.status(400).json({
       message: 'Template name is required'
@@ -156,8 +163,8 @@ async function handleTemplateDeployment(
       });
 
     if (code !== 20000) {
-      return res.status(400).json({
-        message: message || 'Failed to load template'
+      return res.status(404).json({
+        message: message || `Template '${templateName}' not found`
       });
     }
 
