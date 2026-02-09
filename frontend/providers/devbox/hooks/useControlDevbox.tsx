@@ -83,8 +83,7 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
       try {
         const ns = session?.user?.nsid;
         if (!ns) return;
-        // Devbox is expected to be a StatefulSet. Use the stable first pod name.
-        const pod = `${devbox.name}-0`;
+        const pod = devbox.name;
         sealosApp.runEvents('openDesktopApp', {
           appKey: 'system-terminal',
           pathname: '/exec',
