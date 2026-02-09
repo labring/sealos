@@ -6,9 +6,10 @@ import { Switch } from '@sealos/shadcn-ui/switch';
 
 interface IsPublicFieldProps {
   form: UseFormReturn<any>;
+  disabled?: boolean;
 }
 // TODO: add FormMessage to every form field
-const IsPublicField = ({ form }: IsPublicFieldProps) => {
+const IsPublicField = ({ form, disabled = false }: IsPublicFieldProps) => {
   const t = useTranslations();
 
   return (
@@ -23,7 +24,11 @@ const IsPublicField = ({ form }: IsPublicFieldProps) => {
             </FormLabel>
             <FormControl>
               <div className="flex items-center gap-2">
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={disabled ? undefined : field.onChange}
+                  disabled={disabled}
+                />
               </div>
             </FormControl>
           </div>
