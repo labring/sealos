@@ -6,7 +6,7 @@ import { debounce } from 'lodash';
 import { useEffect, useMemo, useRef } from 'react';
 import styles from './index.module.scss';
 
-export type ExecTerminalRuntimePhase = 'idle' | 'connecting' | 'started' | 'error';
+export type ExecTerminalRuntimePhase = 'idle' | 'connecting' | 'started' | 'ended' | 'error';
 
 type ExecTerminalRuntimeProps = {
   kubeconfig: string;
@@ -156,6 +156,8 @@ export default function ExecTerminalRuntime(props: ExecTerminalRuntimeProps) {
         logError('session.ended', message);
         props.onPhaseChange('error');
         props.onError(message);
+      } else {
+        props.onPhaseChange('ended');
       }
       writeSystemLine(kind, message);
     };

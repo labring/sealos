@@ -1,6 +1,6 @@
 import { Button, HStack, Spinner, Text, VStack } from '@chakra-ui/react';
 import dynamic from 'next/dynamic';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ExecTerminalRuntimePhase } from './ExecTerminalRuntime';
 import styles from './index.module.scss';
 
@@ -47,6 +47,24 @@ export default function ExecTerminal(props: ExecTerminalProps) {
   const handlePhaseChange = useCallback((p: ExecTerminalRuntimePhase) => {
     setPhase(p);
   }, []);
+
+  const reconnect = useCallback(() => {
+    setPhase('idle');
+    setErrorMessage('');
+    setRetrySeq((s) => s + 1);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'ended' && phase !== 'error') return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.isComposing) return;
+      if (e.key !== 'Enter' && e.code !== 'Enter' && e.code !== 'NumpadEnter') return;
+      e.preventDefault();
+      reconnect();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [phase, reconnect]);
 
   const handleError = useCallback(
     (msg: string) => {
@@ -102,6 +120,23 @@ export default function ExecTerminal(props: ExecTerminalProps) {
           <Spinner thickness="4px" speed="0.65s" emptyColor="gray.600" color="gray.200" size="xl" />
         </div>
       )}
+      {phase === 'ended' && (
+        <div className={styles.endedOverlay}>
+          <VStack spacing={3} align="center">
+            <Text fontSize="sm" color="whiteAlpha.900">
+              Session ended
+            </Text>
+            <Text fontSize="xs" color="whiteAlpha.700" maxW="80vw" whiteSpace="pre-wrap">
+              The remote exec session has exited. You can reconnect to start a new session.
+            </Text>
+            <HStack spacing={2}>
+              <Button size="sm" colorScheme="gray" variant="solid" onClick={reconnect}>
+                Reconnect
+              </Button>
+            </HStack>
+          </VStack>
+        </div>
+      )}
       {phase === 'error' && (
         <div className={styles.errorOverlay}>
           <VStack spacing={3} align="center">
@@ -114,16 +149,7 @@ export default function ExecTerminal(props: ExecTerminalProps) {
               </Text>
             )}
             <HStack spacing={2}>
-              <Button
-                size="sm"
-                colorScheme="gray"
-                variant="solid"
-                onClick={() => {
-                  setPhase('idle');
-                  setErrorMessage('');
-                  setRetrySeq((s) => s + 1);
-                }}
-              >
+              <Button size="sm" colorScheme="gray" variant="solid" onClick={reconnect}>
                 Retry
               </Button>
             </HStack>
