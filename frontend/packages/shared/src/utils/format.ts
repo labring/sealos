@@ -1,5 +1,8 @@
+import { Quantity } from './quantities';
+
 /**
  * Format CPU usage values to millicores.
+ * @deprecated - Better using {@link Quantity | the Quantity class} for representing resource values
  */
 export const cpuFormatToM = (cpu: string) => {
   if (!cpu || cpu === '0') {
@@ -25,6 +28,7 @@ export const cpuFormatToM = (cpu: string) => {
 
 /**
  * Format memory usage values to mebibytes.
+ * @deprecated - Better using {@link Quantity | the Quantity class} for representing resource values
  */
 export const memoryFormatToMi = (memory: string) => {
   if (!memory || memory === '0') {
@@ -50,6 +54,7 @@ export const memoryFormatToMi = (memory: string) => {
 
 /**
  * Format storage usage values to mebibytes.
+ * @deprecated - Better using {@link Quantity | the Quantity class} for representing resource values
  */
 export const storageFormatToMi = (storage: string) => {
   const value = String(storage).trim();
