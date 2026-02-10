@@ -2980,8 +2980,8 @@ importers:
         specifier: 0.18.0
         version: 0.18.0
       '@labring/sealos-tty-client':
-        specifier: file:labring-sealos-tty-client-0.0.1.tgz
-        version: file:providers/terminal/labring-sealos-tty-client-0.0.1.tgz
+        specifier: ^0.0.1
+        version: 0.0.1
       '@sealos/shared':
         specifier: workspace:^
         version: link:../../packages/shared
@@ -8658,6 +8658,12 @@ packages:
       - encoding
       - supports-color
       - utf-8-validate
+    dev: false
+
+  /@labring/sealos-tty-client@0.0.1:
+    resolution: {integrity: sha512-g77UJqa6UBFEx+2T3a3oVMHSPfEEXoRrT5352D7HSxD/cLFmmiivaIKmaay0lH3HfqzeiCPSoMihWWPujELnmw==}
+    dependencies:
+      zod: 4.3.6
     dev: false
 
   /@leichtgewicht/ip-codec@2.0.5:
@@ -31411,12 +31417,4 @@ packages:
     resolution: {tarball: https://github.com/component/global/archive/v2.0.1.tar.gz}
     name: global
     version: 2.0.1
-    dev: false
-
-  file:providers/terminal/labring-sealos-tty-client-0.0.1.tgz:
-    resolution: {integrity: sha512-g77UJqa6UBFEx+2T3a3oVMHSPfEEXoRrT5352D7HSxD/cLFmmiivaIKmaay0lH3HfqzeiCPSoMihWWPujELnmw==, tarball: file:providers/terminal/labring-sealos-tty-client-0.0.1.tgz}
-    name: '@labring/sealos-tty-client'
-    version: 0.0.1
-    dependencies:
-      zod: 4.3.6
     dev: false
