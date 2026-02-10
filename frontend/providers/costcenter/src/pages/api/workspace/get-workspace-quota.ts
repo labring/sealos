@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import { UserQuotaItem, WorkspaceQuotaRequestSchema } from '@/types/workspace';
+import { Quantity } from '@sealos/shared';
 
 type QuotaStatus = Record<string, string>;
 type UpstreamQuotaResponse = {
@@ -9,47 +10,6 @@ type UpstreamQuotaResponse = {
     hard?: QuotaStatus;
     used?: QuotaStatus;
   };
-};
-
-const cpuFormatToM = (cpu: string) => {
-  if (!cpu || cpu === '0') {
-    return 0;
-  }
-  let value = parseFloat(cpu);
-
-  if (/n/gi.test(cpu)) {
-    value = value / 1000 / 1000;
-  } else if (/u/gi.test(cpu)) {
-    value = value / 1000;
-  } else if (/m/gi.test(cpu)) {
-    value = value;
-  } else {
-    value = value * 1000;
-  }
-  if (value < 0.1) return 0;
-  return Number(value.toFixed(4));
-};
-
-const memoryFormatToMi = (memory: string) => {
-  if (!memory || memory === '0') {
-    return 0;
-  }
-
-  let value = parseFloat(memory);
-
-  if (/Ki/gi.test(memory)) {
-    value = value / 1024;
-  } else if (/Mi/gi.test(memory)) {
-    value = value;
-  } else if (/Gi/gi.test(memory)) {
-    value = value * 1024;
-  } else if (/Ti/gi.test(memory)) {
-    value = value * 1024 * 1024;
-  } else {
-    value = 0;
-  }
-
-  return Number(value.toFixed(2));
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -84,38 +44,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hard = response?.data?.quota?.hard || {};
     const used = response?.data?.quota?.used || {};
 
-    const quota: UserQuotaItem[] = [
-      {
+    const quota: UserQuotaItem[] = [];
+
+    if (hard['limits.cpu'] !== undefined || used['limits.cpu'] !== undefined) {
+      quota.push({
         type: 'cpu',
-        limit: cpuFormatToM(hard['limits.cpu'] || ''),
-        used: cpuFormatToM(used['limits.cpu'] || '')
-      },
-      {
+        limit: Quantity.fromJSON(hard['limits.cpu'] || '0'),
+        used: Quantity.fromJSON(used['limits.cpu'] || '0')
+      });
+    }
+
+    if (hard['limits.memory'] !== undefined || used['limits.memory'] !== undefined) {
+      quota.push({
         type: 'memory',
-        limit: memoryFormatToMi(hard['limits.memory'] || ''),
-        used: memoryFormatToMi(used['limits.memory'] || '')
-      },
-      {
+        limit: Quantity.fromJSON(hard['limits.memory'] || '0'),
+        used: Quantity.fromJSON(used['limits.memory'] || '0')
+      });
+    }
+
+    if (hard['requests.storage'] !== undefined || used['requests.storage'] !== undefined) {
+      quota.push({
         type: 'storage',
-        limit: memoryFormatToMi(hard['requests.storage'] || ''),
-        used: memoryFormatToMi(used['requests.storage'] || '')
-      },
-      {
+        limit: Quantity.fromJSON(hard['requests.storage'] || '0'),
+        used: Quantity.fromJSON(used['requests.storage'] || '0')
+      });
+    }
+
+    if (hard['services.nodeports'] !== undefined || used['services.nodeports'] !== undefined) {
+      quota.push({
         type: 'nodeport',
-        limit: Number(hard['services.nodeports']) || 0,
-        used: Number(used['services.nodeports']) || 0
-      },
-      {
+        limit: Quantity.fromJSON(hard['services.nodeports'] || '0'),
+        used: Quantity.fromJSON(used['services.nodeports'] || '0')
+      });
+    }
+
+    if (hard['traffic'] !== undefined || used['traffic'] !== undefined) {
+      quota.push({
         type: 'traffic',
-        limit: Number(hard['traffic']) || 0,
-        used: Number(used['traffic']) || 0
-      },
-      {
+        limit: Quantity.fromJSON(hard['traffic'] || '0'),
+        used: Quantity.fromJSON(used['traffic'] || '0')
+      });
+    }
+
+    const gpuHardValue = hard['limits.nvidia.com/gpu'] || hard['requests.nvidia.com/gpu'];
+    const gpuUsedValue = used['limits.nvidia.com/gpu'] || used['requests.nvidia.com/gpu'];
+    if (gpuHardValue !== undefined || gpuUsedValue !== undefined) {
+      quota.push({
         type: 'gpu',
-        limit: Number(hard['limits.nvidia.com/gpu'] || hard['requests.nvidia.com/gpu'] || 0),
-        used: Number(used['limits.nvidia.com/gpu'] || used['requests.nvidia.com/gpu'] || 0)
-      }
-    ];
+        limit: Quantity.fromJSON(gpuHardValue || '0'),
+        used: Quantity.fromJSON(gpuUsedValue || '0')
+      });
+    }
 
     return jsonRes(res, {
       data: { quota }
