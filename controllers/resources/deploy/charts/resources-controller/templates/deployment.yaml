@@ -15,7 +15,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
-        checksum/resources-mongo-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/resources-config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -46,17 +46,9 @@ spec:
             {{- else }}
             - --metrics-bind-address=127.0.0.1:8080
             {{- end }}
-          env:
-            - name: MONGO_URI
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secret.name }}
-                  key: MONGO_URI
-            - name: TRAFFIC_MONGO_URI
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.secret.name }}
-                  key: TRAFFIC_MONGO_URI
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.configmap.name }}
           {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
