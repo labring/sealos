@@ -3,6 +3,7 @@ package helper
 import (
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -669,6 +670,22 @@ func ParseAdminFlushSubscriptionQuotaReq(c *gin.Context) (*AdminFlushSubscriptio
 	}
 	if flushSubscriptionQuota.PlanName == "" {
 		return nil, errors.New("planName cannot be empty")
+	}
+	return flushSubscriptionQuota, nil
+}
+
+type AdminFlushSubscriptionQuotaAllReq struct {
+	DryRun   bool   `json:"dryRun" bson:"dryRun"`
+	PlanName string `json:"planName" bson:"planName"`
+}
+
+func ParseAdminFlushSubscriptionQuotaAllReq(c *gin.Context) (*AdminFlushSubscriptionQuotaAllReq, error) {
+	flushSubscriptionQuota := &AdminFlushSubscriptionQuotaAllReq{}
+	if err := c.ShouldBindJSON(flushSubscriptionQuota); err != nil {
+		if errors.Is(err, io.EOF) {
+			return flushSubscriptionQuota, nil
+		}
+		return nil, fmt.Errorf("bind json error: %w", err)
 	}
 	return flushSubscriptionQuota, nil
 }
