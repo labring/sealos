@@ -803,6 +803,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
           select: {
             uid: true,
             iconId: true,
+            icon: true,
             name: true,
             kind: true,
             description: true

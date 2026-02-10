@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
           select: {
             uid: true,
             iconId: true,
+            icon: true,
             name: true,
             kind: true
           }

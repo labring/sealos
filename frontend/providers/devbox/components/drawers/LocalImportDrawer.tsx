@@ -55,6 +55,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
   const [selectedRuntime, setSelectedRuntime] = useState<{
     name: string;
     iconId: string;
+    icon?: string | null;
     templateRepositoryUid: string;
     templateUid: string;
     version: string;
@@ -70,6 +71,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
   const handleRuntimeSelect = (runtime: {
     name: string;
     iconId: string;
+    icon?: string | null;
     templateRepositoryUid: string;
     templateUid: string;
     version: string;

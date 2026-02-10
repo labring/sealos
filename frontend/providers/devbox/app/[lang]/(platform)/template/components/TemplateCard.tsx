@@ -40,6 +40,7 @@ import { destroyDriver } from '@/hooks/driver';
 interface TemplateCardProps {
   isPublic?: boolean;
   iconId: string;
+  icon?: string | null;
   isDisabled?: boolean;
   inPublicStore?: boolean;
   templateRepositoryName: string;
@@ -53,6 +54,7 @@ interface TemplateCardProps {
 const TemplateCard = ({
   isPublic,
   iconId,
+  icon,
   templateRepositoryName,
   templateRepositoryDescription,
   templateRepositoryUid,
@@ -111,18 +113,32 @@ const TemplateCard = ({
     };
 
     const loadImages = async () => {
-      await preloadImage(`/images/runtime/${iconId}.svg`);
+      const fallbackSrc = iconId ? `/images/runtime/${iconId}.svg` : '/images/runtime/custom.svg';
+      const src = (() => {
+        if (icon) {
+          const trimmed = icon.trim();
+          if (/^<svg[\s>]/i.test(trimmed)) {
+            return `data:image/svg+xml;utf8,${encodeURIComponent(trimmed)}`;
+          }
+          if (/^https:\/\//i.test(trimmed)) {
+            return trimmed;
+          }
+        }
+        return fallbackSrc;
+      })();
+      await preloadImage(src);
       setImageLoaded(true);
     };
 
     loadImages();
-  }, [iconId]);
+  }, [iconId, icon]);
 
   const handleSelectTemplate = () => {
     setStartedTemplate({
       uid: templateRepositoryUid,
       name: templateRepositoryName,
       iconId,
+      icon,
       templateUid: selectedVersion,
       description: templateRepositoryDescription
     });
@@ -152,6 +168,7 @@ const TemplateCard = ({
                 {!imageLoaded && <Skeleton className="absolute inset-0 h-8 w-8 rounded-lg" />}
                 <RuntimeIcon
                   iconId={iconId}
+                  icon={icon}
                   alt={templateRepositoryName}
                   width={32}
                   height={32}

@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
         uid: true,
         isPublic: true,
         iconId: true,
+        icon: true,
         // organizationUid: true,
         organization: {
           select: {
