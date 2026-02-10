@@ -2980,8 +2980,8 @@ importers:
         specifier: 0.18.0
         version: 0.18.0
       '@labring/sealos-tty-client':
-        specifier: ^0.0.1
-        version: 0.0.1
+        specifier: ^0.0.2
+        version: 0.0.2
       '@sealos/shared':
         specifier: workspace:^
         version: link:../../packages/shared
@@ -8660,8 +8660,8 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@labring/sealos-tty-client@0.0.1:
-    resolution: {integrity: sha512-g77UJqa6UBFEx+2T3a3oVMHSPfEEXoRrT5352D7HSxD/cLFmmiivaIKmaay0lH3HfqzeiCPSoMihWWPujELnmw==}
+  /@labring/sealos-tty-client@0.0.2:
+    resolution: {integrity: sha512-CdF7nqnoW+5zJZi1gKVpcX1BfwiANl0yV8v3yPwiysDIxIypsruRpqjf/RcQTGJi5AnmH2H4Cj5GZZoDVhuvEA==}
     dependencies:
       zod: 4.3.6
     dev: false
