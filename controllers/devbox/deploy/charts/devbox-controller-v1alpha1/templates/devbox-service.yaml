@@ -1,0 +1,83 @@
+{{- if .Values.devboxService.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: devbox-service-env
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: devbox-service
+    {{- include "devbox-v1alpha1.labels" . | nindent 4 }}
+data:
+  GIN_MODE: {{ default "release" .Values.devboxService.env.GIN_MODE | quote }}
+  LOG_LEVEL: {{ default "info" .Values.devboxService.env.LOG_LEVEL | quote }}
+  USER: {{ default "admin" .Values.devboxService.env.USER | quote }}
+  PASSWORD: {{ default "passw0rd" .Values.devboxService.env.PASSWORD | quote }}
+  JWTSecret: {{ .Values.devboxService.env.JWTSecret | default "" | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devbox-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: devbox-service
+    cloud.sealos.io/app-deploy-manager: devbox-service
+    {{- include "devbox-v1alpha1.labels" . | nindent 4 }}
+spec:
+  ports:
+    - name: http
+      port: {{ .Values.devboxService.service.port }}
+      protocol: TCP
+      targetPort: http
+  selector:
+    app: devbox-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devbox-service
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    originImageName: {{ .Values.devboxService.image | quote }}
+    deploy.cloud.sealos.io/minReplicas: {{ .Values.devboxService.replicaCount | quote }}
+    deploy.cloud.sealos.io/maxReplicas: {{ .Values.devboxService.replicaCount | quote }}
+  labels:
+    app: devbox-service
+    cloud.sealos.io/app-deploy-manager: devbox-service
+    {{- include "devbox-v1alpha1.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.devboxService.replicaCount }}
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: devbox-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: devbox-service
+    spec:
+      automountServiceAccountToken: false
+      serviceAccountName: default
+      containers:
+        - name: devbox-service
+          image: {{ .Values.devboxService.image | quote }}
+          imagePullPolicy: {{ .Values.devboxService.imagePullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: devbox-service-env
+                optional: false
+          resources:
+            {{- toYaml .Values.devboxService.resources | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.devboxService.service.port }}
+              protocol: TCP
+{{- end }}
+
+
