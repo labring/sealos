@@ -60,8 +60,9 @@ export default function ExecTerminalRuntime(props: ExecTerminalRuntimeProps) {
     const logError = (scope: string, err: unknown) => {
       try {
         console.error(
-          `[terminal.exec] ${scope}`,
+          '[terminal.exec]',
           {
+            scope: scope,
             namespace: props.namespace,
             pod: props.pod,
             container: props.container,
