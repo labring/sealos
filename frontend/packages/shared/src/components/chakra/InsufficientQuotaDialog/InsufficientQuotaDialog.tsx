@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { InsufficientQuotaDialogView } from './InsufficientQuotaDialogView';
 import { useQuotaStore } from '../../../store/quota';

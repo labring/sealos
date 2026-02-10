@@ -11,7 +11,7 @@ export * from './store';
 export * from './hooks';
 
 // Components
-export * from './components';
+export * from './components/common';
 
 // i18n
 export * from './i18n';
