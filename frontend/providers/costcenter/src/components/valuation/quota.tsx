@@ -15,6 +15,8 @@ import {
 } from '@sealos/shadcn-ui/table-layout';
 import RegionMenu from '../menu/RegionMenu';
 import NamespaceMenu from '../menu/NamespaceMenu';
+import { Quantity, Scale } from '@sealos/shared';
+import { WorkspaceQuotaResponseSchema } from '@/types/workspace';
 
 export default function Quota() {
   const { t } = useTranslation();
@@ -30,20 +32,34 @@ export default function Quota() {
   );
   const { gpuEnabled } = useEnvStore();
 
-  const quota = (filtersSelected ? (data?.data?.quota ?? []) : [])
+  // Parse response data using Zod schema to ensure Quantity instances are created
+  const parsedData = data?.data ? WorkspaceQuotaResponseSchema.safeParse(data.data) : null;
+  const quotaItems = parsedData?.success ? parsedData.data.quota : [];
+
+  const quota = (filtersSelected ? quotaItems : [])
     .filter((item) => gpuEnabled || item.type !== 'gpu')
     .map((item) => {
       const mapping = valuationMap.get(item.type);
 
+      // All quota values (limit, used, remain) are represented as Quantity.
+      // After Zod parsing, these are guaranteed to be Quantity instances.
+      const limit = item.limit;
+      const used = item.used;
+      const remain = limit.sub(used);
+
+      // Calculate progress percentage based on raw value at Scale.None.
+      const progressValue = limit.equals(Quantity.ZERO)
+        ? 0
+        : (Number(used.scaledValue(Scale.None)) / Number(limit.scaledValue(Scale.None))) * 100;
+
       return {
         type: item.type,
         icon: mapping?.icon,
-        limit: item.limit,
-        used: item.used,
-        remain: item.limit - item.used,
-        scale: mapping?.scale ?? 1,
+        limit,
+        used,
+        remain,
         title: t(item.type),
-        unitKey: mapping?.unit ? 'units.' + mapping.unit : ''
+        progressValue
       };
     });
 
@@ -83,22 +99,16 @@ export default function Quota() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Progress value={100 * (item.used / item.limit)} className="h-1 w-4/5" />
+                  <Progress value={item.progressValue} className="h-1 w-4/5" />
                 </TableCell>
                 <TableCell>
-                  <span>{(item.limit / item.scale).toFixed(2)}</span>
-                  <span> </span>
-                  <span>{t(item.unitKey, { count: item.limit / item.scale })}</span>
+                  <span>{item.limit.formatForDisplay({ format: 'BinarySI' })}</span>
                 </TableCell>
                 <TableCell>
-                  <span>{(item.used / item.scale).toFixed(2)}</span>
-                  <span> </span>
-                  <span>{t(item.unitKey, { count: item.used / item.scale })}</span>
+                  <span>{item.used.formatForDisplay({ format: 'BinarySI' })}</span>
                 </TableCell>
                 <TableCell>
-                  <span>{(item.remain / item.scale).toFixed(2)}</span>
-                  <span> </span>
-                  <span>{t(item.unitKey, { count: item.remain / item.scale })}</span>
+                  <span>{item.remain.formatForDisplay({ format: 'BinarySI' })}</span>
                 </TableCell>
               </TableRow>
             ))

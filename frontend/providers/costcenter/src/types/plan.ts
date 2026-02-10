@@ -1,4 +1,28 @@
 import { z } from 'zod';
+import { Quantity, QuantitySchema } from '@sealos/shared';
+
+/** Schema for a single resource value (quantity string/number from API). */
+const MaxResourcesValueSchema = z.union([
+  QuantitySchema,
+  // For backwards compatibility
+  z.number().transform((n) => Quantity.newQuantity(BigInt(Math.floor(Number(n))), 'DecimalSI'))
+]);
+
+/** Parsed plan max resources: resource type -> Quantity. */
+export const MaxResourcesRecordSchema = z.record(z.string(), MaxResourcesValueSchema);
+export type MaxResourcesRecord = z.infer<typeof MaxResourcesRecordSchema>;
+
+/** Deserializes MaxResources JSON string into Record<string, Quantity>. */
+export const MaxResourcesSchema = z.string().transform((s): MaxResourcesRecord => {
+  let obj: unknown;
+  try {
+    obj = JSON.parse(s || '{}');
+  } catch {
+    return {};
+  }
+  const result = MaxResourcesRecordSchema.safeParse(obj);
+  return result.success ? result.data : {};
+});
 
 // 基础类型定义
 export const SubscriptionTypeSchema = z.enum(['SUBSCRIPTION', 'PAYG']);
@@ -44,7 +68,7 @@ export const SubscriptionPlanSchema = z.object({
   UpgradePlanList: z.array(z.string()).nullable(),
   DowngradePlanList: z.array(z.string()).nullable(),
   MaxSeats: z.number(),
-  MaxResources: z.string(),
+  MaxResources: MaxResourcesSchema,
   Traffic: z.number(),
   Prices: z.array(PlanPriceSchema),
   CreatedAt: z.string(),

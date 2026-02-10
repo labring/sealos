@@ -1,21 +1,70 @@
 import { QuantityParseError } from './errors';
 import { Scale as ScaleConst, type Format, type Scale } from './types';
 
+/**
+ * Options for formatting a quantity string for display purposes.
+ *
+ * This is separate from `toString()` which strictly follows Kubernetes canonicalization.
+ * Use `formatForDisplay()` for user-facing output where readability and precision control are needed.
+ */
+export type QuantityDisplayOptions = {
+  /**
+   * Suffix category to use when formatting.
+   *
+   * - When omitted, uses the remembered `Quantity.format` from parsing.
+   * - For BinarySI, scale values are interpreted as base-1024 exponents (Ki=10, Mi=20, Gi=30, etc.).
+   * - For DecimalSI/DecimalExponent, scale values are base-10 exponents.
+   */
+  format?: Format;
+  /**
+   * Output scaling strategy.
+   *
+   * - `"auto"`: automatically select the most readable scale (e.g., 256.1Mi or 1.1Gi).
+   * - `"canonical"`: use Kubernetes canonicalization (same as `toString()`).
+   * - `"preserve"`: preserve parsed suffix category (best-effort, numeric part still canonicalized).
+   * - `Scale`: force a specific scale. For BinarySI, this maps to base-1024 exponents.
+   */
+  scale?: Scale | 'auto' | 'canonical' | 'preserve';
+  /**
+   * When forcing a specific `scale`, whether to round to an integer mantissa
+   * using Kubernetes semantics (ceil away from 0). Defaults to `false`.
+   */
+  round?: boolean;
+  /**
+   * Maximum fractional digits to keep when `round=false`.
+   *
+   * - Defaults to `2` for better readability in tables/UI.
+   * - Set to `Infinity` to keep full precision.
+   * - Trailing zeros are automatically trimmed unless `round=true`.
+   */
+  digits?: number;
+};
+
 const MAX_INT64: bigint = (1n << 63n) - 1n;
 
 const absBigInt = (v: bigint): bigint => (v < 0n ? -v : v);
+
+const pow2BigInt = (exp: number): bigint => {
+  if (!Number.isInteger(exp) || exp < 0) {
+    throw new RangeError(`pow2 exponent must be a non-negative integer, got: ${exp}`);
+  }
+  return 1n << BigInt(exp);
+};
 
 const pow10BigInt = (exp: number): bigint => {
   if (!Number.isInteger(exp) || exp < 0) {
     throw new RangeError(`pow10 exponent must be a non-negative integer, got: ${exp}`);
   }
+
+  // Avoid bitwise ops: JS bitwise converts to 32-bit signed integers.
   let result = 1n;
   let base = 10n;
   let e = exp;
+
   while (e > 0) {
-    if (e & 1) result *= base;
+    if (e % 2 === 1) result *= base;
     base *= base;
-    e >>= 1;
+    e = Math.floor(e / 2);
   }
   return result;
 };
@@ -434,6 +483,146 @@ const parseFromParts = (parts: ParsedParts): { value: bigint; scale: number; for
   return { value: normalized.value, scale: normalized.scale, format: outFormat };
 };
 
+const DECIMAL_SI_EXPONENTS: readonly number[] = [-9, -6, -3, 0, 3, 6, 9, 12, 15, 18] as const;
+const BINARY_SI_BITS: readonly number[] = [0, 10, 20, 30, 40, 50, 60] as const;
+
+const clampToDecimalSIExponent = (exp: number): number => {
+  // Snap to multiples of 3 and clamp into [-9, 18]
+  let e = Math.trunc(exp / 3) * 3;
+  if (e > 18) e = 18;
+  if (e < -9) e = -9;
+  return e;
+};
+
+const clampToBinarySIBits = (bits: number): number => {
+  // Snap to multiples of 10 and clamp into [0, 60]
+  let b = Math.trunc(bits / 10) * 10;
+  if (b > 60) b = 60;
+  if (b < 0) b = 0;
+  return b;
+};
+
+const chooseAutoDecimalExponent = (absValue: bigint, scale: number): number => {
+  // Pick the largest exp (multiple of 3) such that abs(q) >= 10^exp
+  // so mantissa will be in [1, 1000) (before rounding).
+  for (let i = DECIMAL_SI_EXPONENTS.length - 1; i >= 0; i--) {
+    const exp = DECIMAL_SI_EXPONENTS[i]!;
+    if (compareAmounts(absValue, scale, 1n, exp) >= 0) return exp;
+  }
+  return -9;
+};
+
+const chooseAutoBinaryBits = (absValue: bigint, scale: number): number => {
+  // Pick the largest bits (multiple of 10) such that abs(q) >= 2^bits
+  // so mantissa will be in [1, 1024) (before rounding).
+  for (let i = BINARY_SI_BITS.length - 1; i >= 0; i--) {
+    const bits = BINARY_SI_BITS[i]!;
+    if (compareAmounts(absValue, scale, pow2BigInt(bits), 0) >= 0) return bits;
+  }
+  return 0;
+};
+
+const buildMantissaRationalForDecimal = (
+  value: bigint,
+  valueScale: number,
+  targetExp: number
+): { numer: bigint; denom: bigint } => {
+  // mantissa = (value * 10^valueScale) / 10^targetExp
+  if (value === 0n) return { numer: 0n, denom: 1n };
+  if (valueScale >= targetExp) {
+    return { numer: value * pow10BigInt(valueScale - targetExp), denom: 1n };
+  }
+  return { numer: value, denom: pow10BigInt(targetExp - valueScale) };
+};
+
+const buildMantissaRationalForBinary = (
+  value: bigint,
+  valueScale: number,
+  targetBits: number
+): { numer: bigint; denom: bigint } => {
+  // mantissa = (value * 10^valueScale) / 2^targetBits
+  if (value === 0n) return { numer: 0n, denom: 1n };
+  const two = pow2BigInt(targetBits);
+  if (valueScale >= 0) {
+    return { numer: value * pow10BigInt(valueScale), denom: two };
+  }
+  // valueScale < 0 => value / 10^-valueScale
+  return { numer: value, denom: two * pow10BigInt(-valueScale) };
+};
+
+const roundedAbsScaled = (numer: bigint, denom: bigint, digits: number): bigint => {
+  // returns |numer/denom| rounded to `digits` decimal places, as an integer scaled by 10^digits
+  const a = absBigInt(numer);
+  if (a === 0n) return 0n;
+  const scale = pow10BigInt(digits);
+  const scaled = a * scale;
+  let q = scaled / denom;
+  const r = scaled % denom;
+  if (r * 2n >= denom) q += 1n; // round half-up (ties away from 0 in magnitude)
+  return q;
+};
+
+const formatRationalDecimal = (numer: bigint, denom: bigint, digits: number): string => {
+  if (denom <= 0n) throw new RangeError('denominator must be positive');
+  if (numer === 0n) return '0';
+
+  const neg = numer < 0n;
+  const a = absBigInt(numer);
+
+  // Exact expansion (terminating) – denom in our usage is always 2^x * 5^y
+  if (digits === Infinity) {
+    const intPart = a / denom;
+    let rem = a % denom;
+    if (rem === 0n) return (neg ? '-' : '') + intPart.toString(10);
+
+    let frac = '';
+    // Safety cap (should be plenty for 2^60 * 10^9 => <= 69 digits)
+    for (let i = 0; i < 256 && rem !== 0n; i++) {
+      rem *= 10n;
+      const d = rem / denom;
+      rem = rem % denom;
+      frac += d.toString(10); // single digit 0..9
+    }
+    frac = frac.replace(/0+$/g, '');
+    const out = frac.length === 0 ? intPart.toString(10) : `${intPart.toString(10)}.${frac}`;
+    return neg ? `-${out}` : out;
+  }
+
+  if (!Number.isInteger(digits) || digits < 0) {
+    throw new RangeError(`digits must be a non-negative integer or Infinity, got: ${digits}`);
+  }
+  if (digits > 256) {
+    throw new RangeError(`digits too large for display: ${digits} (max 256)`);
+  }
+
+  let intPart = a / denom;
+  const rem = a % denom;
+
+  if (digits === 0) {
+    if (rem === 0n) return (neg ? '-' : '') + intPart.toString(10);
+    if (rem * 2n >= denom) intPart += 1n;
+    return (neg ? '-' : '') + intPart.toString(10);
+  }
+
+  const scale = pow10BigInt(digits);
+  let frac = (rem * scale) / denom;
+  const r2 = (rem * scale) % denom;
+  if (r2 * 2n >= denom) frac += 1n;
+
+  if (frac === scale) {
+    // carry
+    frac = 0n;
+    intPart += 1n;
+  }
+
+  let fracStr = frac.toString(10);
+  while (fracStr.length < digits) fracStr = `0${fracStr}`;
+  fracStr = fracStr.replace(/0+$/g, '');
+
+  const out = fracStr.length === 0 ? intPart.toString(10) : `${intPart.toString(10)}.${fracStr}`;
+  return neg ? `-${out}` : out;
+};
+
 export class Quantity {
   /**
    * The remembered suffix category from parsing (or explicitly set via `withFormat()`).
@@ -569,7 +758,13 @@ export class Quantity {
   /**
    * Return the canonical Kubernetes quantity string.
    *
+   * This method strictly follows Kubernetes canonicalization rules:
+   * - No precision loss
+   * - No fractional digits
+   * - Uses the largest possible exponent/suffix
+   *
    * This is the string used for JSON serialization as well.
+   * For display formatting with precision control, use `formatForDisplay()` instead.
    */
   toString(): string {
     const cached = stringCache.get(this);
@@ -577,6 +772,121 @@ export class Quantity {
     const s = this.#canonicalizeString();
     stringCache.set(this, s);
     return s;
+  }
+
+  /**
+   * Format a quantity string for display purposes with optional precision control.
+   *
+   * Defaults when options are omitted:
+   * - `scale`: `'auto'` (choose the most readable unit)
+   * - `format`: this quantity's remembered format from parsing
+   * - `round`: `false`
+   * - `digits`: `2`
+   *
+   * @param options - Display formatting options; all have defaults and can be omitted
+   * @returns Formatted string suitable for UI display
+   */
+  formatForDisplay(options?: QuantityDisplayOptions): string {
+    const opts = options ?? {};
+    const scaleOpt = opts.scale ?? 'auto';
+
+    // Canonical display: exactly k8s string form (optionally with format override)
+    if (scaleOpt === 'canonical') {
+      const q = opts.format ? this.withFormat(opts.format) : this;
+      return q.toString();
+    }
+
+    if (this.#value === 0n) return '0';
+
+    const format: Format = opts.format ?? this.format;
+    const roundInt = opts.round === true;
+
+    const digits: number = roundInt ? 0 : opts.digits ?? 2;
+
+    if (digits !== Infinity && (!Number.isInteger(digits) || digits < 0)) {
+      throw new RangeError(`digits must be a non-negative integer or Infinity, got: ${digits}`);
+    }
+    if (digits !== Infinity && digits > 256) {
+      throw new RangeError(`digits too large for display: ${digits} (max 256)`);
+    }
+
+    const absValue = absBigInt(this.#value);
+
+    // ===== BinarySI display =====
+    if (format === 'BinarySI') {
+      let bits: number;
+      if (typeof scaleOpt === 'string') {
+        // 'auto' | 'preserve'
+        bits = chooseAutoBinaryBits(absValue, this.#scale);
+      } else {
+        bits = Number(scaleOpt);
+      }
+      bits = clampToBinarySIBits(bits);
+
+      // For auto-ish display, if rounding would produce 1024.00Ki, bump to next unit (Mi), etc.
+      if (!roundInt && digits !== Infinity && (scaleOpt === 'auto' || scaleOpt === 'preserve')) {
+        const cur = buildMantissaRationalForBinary(this.#value, this.#scale, bits);
+        const scaled = roundedAbsScaled(cur.numer, cur.denom, digits);
+        const threshold = 1024n * pow10BigInt(digits);
+        if (scaled >= threshold && bits < 60) bits += 10;
+      }
+
+      const suffix = constructSuffix(2, bits, 'BinarySI');
+      const r = buildMantissaRationalForBinary(this.#value, this.#scale, bits);
+
+      if (roundInt) {
+        // integer mantissa, ceil away from 0
+        const { q } = divRoundAwayFromZero(r.numer, r.denom);
+        return `${q.toString(10)}${suffix}`;
+      }
+
+      const mant = formatRationalDecimal(r.numer, r.denom, digits);
+      return `${mant}${suffix}`;
+    }
+
+    // ===== DecimalSI / DecimalExponent display =====
+    let exp10: number;
+    if (typeof scaleOpt === 'string') {
+      // 'auto' | 'preserve'
+      exp10 = chooseAutoDecimalExponent(absValue, this.#scale);
+    } else {
+      exp10 = Number(scaleOpt);
+    }
+
+    // For DecimalSI, snap/clamp exponent to SI exponents.
+    if (format === 'DecimalSI') {
+      exp10 = clampToDecimalSIExponent(exp10);
+    } else {
+      // DecimalExponent: keep exp10 as-is, but still nice to align to multiples of 3 for readability
+      // when user didn't force it.
+      if (typeof scaleOpt === 'string') {
+        exp10 = clampToDecimalSIExponent(exp10);
+      }
+    }
+
+    // Same “bump if rounds to 1000” rule for auto-ish display.
+    if (!roundInt && digits !== Infinity && (scaleOpt === 'auto' || scaleOpt === 'preserve')) {
+      const cur = buildMantissaRationalForDecimal(this.#value, this.#scale, exp10);
+      const scaled = roundedAbsScaled(cur.numer, cur.denom, digits);
+      const threshold = 1000n * pow10BigInt(digits);
+      if (scaled >= threshold && exp10 < 18) exp10 += 3;
+    }
+
+    // Suffix (fallback: if DecimalSI can't represent this exponent, show e{exp})
+    let suffix = constructSuffix(10, exp10, format);
+    if (format === 'DecimalSI' && suffix === '' && exp10 !== 0) {
+      suffix = `e${exp10}`;
+    }
+
+    if (roundInt) {
+      // integer mantissa in the chosen decimal exponent
+      const { q } = scaledInt(this.#value, this.#scale, exp10);
+      return `${q.toString(10)}${suffix}`;
+    }
+
+    const r = buildMantissaRationalForDecimal(this.#value, this.#scale, exp10);
+    const mant = formatRationalDecimal(r.numer, r.denom, digits);
+    return `${mant}${suffix}`;
   }
 
   /**
