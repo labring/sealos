@@ -12,7 +12,8 @@ import { useRouter } from 'next/router';
 import { useEffect, useState, useCallback } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
-import { InsufficientQuotaDialog, QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
+import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
+import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
 
 function App({ Component, pageProps }: AppProps) {
   const [queryClient] = useState(
