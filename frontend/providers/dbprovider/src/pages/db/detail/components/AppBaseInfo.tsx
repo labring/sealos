@@ -271,6 +271,13 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   const onclickConnectDB = useCallback(() => {
     if (!secret) return;
+    const ns = session?.user?.nsid;
+    if (!ns) return;
+    const stsName = dbStatefulSet?.metadata?.name || '';
+    if (!stsName) return;
+    const pod = `${stsName}-0`;
+    const container = dbStatefulSet?.spec?.template?.spec?.containers?.[0]?.name || undefined;
+
     const commandMap = {
       [DBTypeEnum.postgresql]: `psql '${secret.connection}'`,
       [DBTypeEnum.mongodb]: `mongosh '${secret.connection}'`,
@@ -294,14 +301,32 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       context: 'app'
     } as any);
 
+    const command = defaultCommand ? ['sh', '-lc', defaultCommand] : undefined;
+
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-terminal',
+      pathname: '/exec',
       query: {
-        defaultCommand
+        ns,
+        pod,
+        ...(container ? { container } : {}),
+        ...(command ? { command: JSON.stringify(command) } : {})
       },
-      messageData: { type: 'new terminal', command: defaultCommand }
+      messageData: {
+        type: 'InternalAppCall',
+        ns,
+        pod,
+        ...(container ? { container } : {}),
+        ...(command ? { command } : {})
+      }
     });
-  }, [db.dbType, secret]);
+  }, [
+    db.dbType,
+    dbStatefulSet?.metadata?.name,
+    dbStatefulSet?.spec?.template?.spec?.containers,
+    secret,
+    session?.user?.nsid
+  ]);
 
   const refetchAll = useCallback(() => {
     refetchDBStatefulSet();
