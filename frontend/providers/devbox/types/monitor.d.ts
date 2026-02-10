@@ -10,6 +10,8 @@ export type MonitorQueryKey = {
   disk: string;
   average_memory: string;
   average_cpu: string;
+  gpu: string;
+  gpu_memory: string;
 };
 
 export interface MonitorServiceResult {
@@ -28,6 +30,8 @@ export interface MonitorServiceResult {
         namespace: string;
         node: string;
         pod: string;
+        podname?: string;
+        podnamespace?: string;
         server: string;
         service: string;
         __name__: string;
@@ -38,6 +42,10 @@ export interface MonitorServiceResult {
         type?: string;
         cmd?: string;
         persistentvolumeclaim?: string;
+        ctrname?: string;
+        deviceuuid?: string;
+        vdeviceid?: string;
+        zone?: string;
       };
       value: [number, string];
       values: [[number, string]];

@@ -32,9 +32,10 @@ interface MonitorChartProps {
   data?: MonitorDataResult;
   isShowLabel?: boolean;
   splitNumber?: number;
-  maxValue?: number;
+  maxValue?: number | 'auto';
   className?: string;
   isShowText?: boolean;
+  valueUnit?: string;
 }
 
 const MonitorChart = ({
@@ -44,13 +45,15 @@ const MonitorChart = ({
   splitNumber = 2,
   maxValue = 100,
   className,
-  isShowText = true
+  isShowText = true,
+  valueUnit = '%'
 }: MonitorChartProps) => {
   const { screenWidth } = useGlobalStore();
   const xData =
     data?.xData?.map((time) => (time ? dayjs(time * 1000).format('MM-DD HH:mm') : '')) ||
     new Array(30).fill(0);
   const yData = data?.yData || new Array(30).fill('');
+  const resolvedMaxValue = typeof maxValue === 'number' ? maxValue : undefined;
 
   const Dom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
@@ -94,9 +97,10 @@ const MonitorChart = ({
       type: 'value',
       boundaryGap: false,
       splitNumber,
-      max: maxValue,
+      ...(resolvedMaxValue !== undefined
+        ? { max: resolvedMaxValue, interval: resolvedMaxValue / splitNumber }
+        : {}),
       min: 0,
-      interval: maxValue / splitNumber,
       axisLabel: {
         show: isShowLabel,
         formatter: '{value}'
@@ -133,7 +137,7 @@ const MonitorChart = ({
             </div>
             <div style="display: flex; align-items: center; font-size: 12px; font-weight: 500;">
               <span style="display: inline-block; width: 8px; height: 8px; background-color: ${map[type].lineColor}; margin-right: 8px; border-radius: 2px;"></span>
-              <span style="color: #09090B;">${yValue || 0}%</span>
+              <span style="color: #09090B;">${yValue || 0}${valueUnit}</span>
             </div>
           </div>
         `;
@@ -170,6 +174,23 @@ const MonitorChart = ({
     myChart.current.setOption(option.current);
   }, [xData, yData]);
 
+  // max value changed, update
+  useEffect(() => {
+    if (!myChart.current || !myChart?.current?.getOption()) return;
+    const yAxis = option.current.yAxis as {
+      max?: number;
+      interval?: number;
+    };
+    if (resolvedMaxValue !== undefined) {
+      yAxis.max = resolvedMaxValue;
+      yAxis.interval = resolvedMaxValue / splitNumber;
+    } else {
+      delete yAxis.max;
+      delete yAxis.interval;
+    }
+    myChart.current.setOption(option.current);
+  }, [resolvedMaxValue, splitNumber]);
+
   // type changed, update
   useEffect(() => {
     if (!myChart.current || !myChart?.current?.getOption()) return;
@@ -191,7 +212,8 @@ const MonitorChart = ({
       <div ref={Dom} style={{ width: '100%', height: '100%' }} />
       {isShowText && (
         <span className="pointer-events-none absolute right-0 bottom-0.5 text-xs font-medium text-zinc-600 [text-shadow:1px_1px_0_#FFF,-1px_-1px_0_#FFF,1px_-1px_0_#FFF,-1px_1px_0_#FFF]">
-          {data?.yData[data?.yData?.length - 1]}%
+          {data?.yData[data?.yData?.length - 1]}
+          {valueUnit}
         </span>
       )}
     </div>
