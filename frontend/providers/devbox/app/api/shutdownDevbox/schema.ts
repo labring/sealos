@@ -7,11 +7,11 @@ export const RequestSchema = z.object({
     description: 'Devbox name to shutdown'
   }),
   shutdownMode: z
-    .enum(['Stopped', 'Shutdown'] as const)
+    .enum(['Stopped', 'Shutdown', 'Paused'] as const)
     .default('Stopped')
     .openapi({
       description:
-        'Shutdown mode: Stopped is to shut down and not release the port, and will continue to charge port fees(a little bit); Shutdown is to shut down and release the port, and will not continue to charge any fees'
+        'Shutdown mode: Stopped is to shut down and not release the port, and will continue to charge port fees(a little bit); Shutdown is to shut down and release the port, and will not continue to charge any fees; Paused is to pause the devbox, and will not continue to charge any fees'
     }),
   onlyIngress: z.boolean().optional().default(false).openapi({
     description: 'Only modify ingress without changing devbox state'
