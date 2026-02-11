@@ -114,8 +114,11 @@ export default function Network({
           {networks.length === 0 && <AppendNetworksButton onClick={() => appendNetworks()} />}
           {/* Port List */}
           {networks.map((network, i) => {
-            const isReservedPort =
-              env.enableWebideFeature === 'true' && network.port === env.webIdePort;
+            const webIDEPortName = `webide-${env.webIdePort}`;
+            const isManagedWebIDEPort =
+              env.enableWebideFeature === 'true' &&
+              network.port === env.webIdePort &&
+              network.portName === webIDEPortName;
             return (
               <div key={network.id} className="flex w-full flex-col gap-3">
                 <div className="guide-network-configuration flex w-full items-center gap-4">
@@ -131,7 +134,7 @@ export default function Network({
                         type="number"
                         min={1}
                         max={65535}
-                        disabled={isReservedPort}
+                        disabled={isManagedWebIDEPort}
                         {...register(`networks.${i}.port`, {
                           valueAsNumber: true,
                           min: {
@@ -154,6 +157,12 @@ export default function Network({
                               return !isDuplicate || t('The port number cannot be repeated');
                             },
                             reservedPort: (value) => {
+                              if (env.enableWebideFeature !== 'true') {
+                                return true;
+                              }
+                              if (value === env.webIdePort && network.portName === webIDEPortName) {
+                                return true;
+                              }
                               if (value === env.webIdePort) {
                                 return t('port_reserved', { port: env.webIdePort });
                               }
@@ -174,7 +183,7 @@ export default function Network({
                             className="driver-deploy-network-switch"
                             id={`openPublicDomain-${i}`}
                             checked={!!network.openPublicDomain}
-                            disabled={isReservedPort}
+                            disabled={isManagedWebIDEPort}
                             onCheckedChange={(checked) => {
                               const devboxName = getValues('name');
                               if (!devboxName) {
@@ -196,7 +205,7 @@ export default function Network({
                           <div className="flex items-center">
                             <Select
                               value={network.protocol}
-                              disabled={isReservedPort}
+                              disabled={isManagedWebIDEPort}
                               onValueChange={(val: ProtocolType) => {
                                 updateNetworks(i, {
                                   ...getValues('networks')[i],
@@ -224,7 +233,7 @@ export default function Network({
                               <Button
                                 variant="ghost"
                                 className="cursor-pointer text-sm/5 whitespace-nowrap text-blue-600 hover:bg-white hover:text-blue-700"
-                                disabled={isReservedPort}
+                                disabled={isManagedWebIDEPort}
                                 onClick={() =>
                                   setCustomAccessModalData({
                                     publicDomain: network.publicDomain!,
@@ -247,7 +256,7 @@ export default function Network({
                         variant="outline"
                         size="icon"
                         className="h-9 w-9 bg-white text-neutral-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-                        disabled={isReservedPort}
+                        disabled={isManagedWebIDEPort}
                         onClick={() => removeNetworks(i)}
                       >
                         <Trash2 className="h-4 w-4" />
