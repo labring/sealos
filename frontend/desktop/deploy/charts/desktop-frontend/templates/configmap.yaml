@@ -39,10 +39,7 @@ data:
       licenseCheckEnabled: {{ .Values.desktopConfig.licenseCheckEnabled }}
       realNameReward: {{ .Values.desktopConfig.realNameReward }}
       realNameCallbackUrl: "{{ .Values.desktopConfig.realNameCallbackUrl }}"
-      templateUrl: "{{ .Values.desktopConfig.templateUrl }}"
-      applaunchpadUrl: "{{ .Values.desktopConfig.applaunchpadUrl }}"
-      dbproviderUrl: "{{ .Values.desktopConfig.dbproviderUrl }}"
-      objectstorageUrl: "{{ .Values.desktopConfig.objectstorageUrl }}"
+      templateUrl: "https://template.{{ .Values.desktopConfig.cloudDomain }}"
       cfSiteKey: "{{ .Values.desktopConfig.cfSiteKey }}"
 
     database:
@@ -61,6 +58,19 @@ data:
         discordInviteLink: {{ if eq .Values.desktopConfig.version "en" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}
         gtmId: {{ if .Values.desktopConfig.gtmId }}"{{ .Values.desktopConfig.gtmId }}"{{ else }}null{{ end }}
         currencySymbol: {{ if eq .Values.desktopConfig.version "cn" }}"shellCoin"{{ else }}"usd"{{ end }}
+        authTitle:
+          zh: "{{.Values.desktopConfig.authTitle.zh}}"
+          en: "{{.Values.desktopConfig.authTitle.en}}"
+        authBackgroundImage:
+          zh: "{{.Values.desktopConfig.authBackgroundImage.zh}}"
+          en: "{{.Values.desktopConfig.authBackgroundImage.en}}"
+        protocol:
+          serviceProtocol:
+            zh: "{{.Values.desktopConfig.protocol.serviceProtocol.zh}}"
+            en: "{{.Values.desktopConfig.protocol.serviceProtocol.en}}"
+          privateProtocol:
+            zh: "{{.Values.desktopConfig.protocol.privateProtocol.zh}}"
+            en: "{{.Values.desktopConfig.protocol.privateProtocol.en}}"
         meta:
           title: "{{ .Values.desktopConfig.metaTitle }}"
           description: "{{ .Values.desktopConfig.metaDescription }}"
@@ -156,7 +166,6 @@ data:
         billingUrl: "{{ .Values.desktopConfig.billingUrl }}"
         billingToken: "{{ .Values.desktopConfig.billingToken }}"
         workorderUrl: "{{ .Values.desktopConfig.workorderUrl }}"
-        cloudVitrualMachineUrl: "{{ .Values.desktopConfig.cloudVirtualMachineUrl }}"
 
       teamManagement:
         maxTeamCount: {{ .Values.desktopConfig.maxTeamCount }}
