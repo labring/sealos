@@ -16,7 +16,8 @@ import {
   MenuList,
   Text,
   useBreakpointValue,
-  useDisclosure
+  useDisclosure,
+  useToast
 } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -31,10 +32,10 @@ import {
   Copy,
   Dock,
   FileCode,
-  Gift,
   Globe,
   LogOut,
   ReceiptText,
+  RefreshCw,
   User
 } from 'lucide-react';
 import AccountCenter from './AccountCenter';
@@ -46,6 +47,7 @@ import { Badge } from '@sealos/shadcn-ui/badge';
 import { cn } from '@sealos/shadcn-ui';
 import { getPlanBackgroundClass } from '@/utils/styling';
 import { AlertSettings } from './AlertSettings';
+import { rotateKubeconfig } from '@/api/auth';
 
 const baseItemStyle = {
   minW: '36px',
@@ -63,10 +65,11 @@ export default function Account() {
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
-  const { delSession, session, setToken } = useSessionStore();
+  const { delSession, session, setToken, setSessionProp } = useSessionStore();
   const user = session?.user;
   const queryclient = useQueryClient();
   const kubeconfig = session?.kubeconfig || '';
+  const toast = useToast();
   const showDisclosure = useDisclosure();
   const [, setNotificationAmount] = useState(0);
   const { openDesktopApp, autolaunch } = useAppStore();
@@ -75,6 +78,7 @@ export default function Account() {
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
   const [alertSettingsOpen, setAlertSettingsOpen] = useState(false);
+  const [isRotatingKubeconfig, setIsRotatingKubeconfig] = useState(false);
 
   const emailAlertEnabled = layoutConfig?.common.emailAlertEnabled && authConfig?.idp.email.enabled;
   const phoneAlertEnabled = layoutConfig?.common.phoneAlertEnabled && authConfig?.idp.sms.enabled;
@@ -87,6 +91,51 @@ export default function Account() {
     queryclient.clear();
     router.replace('/signin');
     setToken('');
+  };
+
+  const handleRotateKubeconfig = async (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (isRotatingKubeconfig) return;
+
+    try {
+      setIsRotatingKubeconfig(true);
+      toast({
+        title: t('kubeconfig_rotating'),
+        status: 'info',
+        duration: 3000,
+        isClosable: true,
+        position: 'top'
+      });
+
+      const res = await rotateKubeconfig();
+
+      if (res.code === 200 && res.data?.kubeconfig) {
+        // Update session with new kubeconfig
+        setSessionProp('kubeconfig', res.data.kubeconfig);
+
+        toast({
+          title: t('kubeconfig_rotated_successfully'),
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+          position: 'top'
+        });
+      } else {
+        throw new Error(res.message || 'Failed to rotate kubeconfig');
+      }
+    } catch (error: any) {
+      console.error('Failed to rotate kubeconfig:', error);
+      toast({
+        title: t('kubeconfig_rotation_failed'),
+        description: error?.message || 'An error occurred',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top'
+      });
+    } finally {
+      setIsRotatingKubeconfig(false);
+    }
   };
 
   const openCostcenterApp = ({ page = 'plan', mode = '' }: { page?: string; mode?: string }) => {
@@ -381,16 +430,49 @@ export default function Account() {
                         Kubeconfig
                       </Text>
                     </Flex>
-                    <Box
-                      p="2px"
-                      cursor="pointer"
-                      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
-                        e.stopPropagation();
-                        kubeconfig && copyData(kubeconfig);
-                      }}
-                    >
-                      <Copy size={16} color="#737373" />
-                    </Box>
+                    <Flex alignItems="center" gap="4px">
+                      <Box
+                        p="2px"
+                        cursor={isRotatingKubeconfig ? 'not-allowed' : 'pointer'}
+                        onClick={handleRotateKubeconfig}
+                        opacity={isRotatingKubeconfig ? 0.5 : 1}
+                        transition="opacity 0.2s"
+                        title={t('refresh_kubeconfig')}
+                        _hover={{
+                          color: 'blue.600'
+                        }}
+                        color="#737373"
+                        sx={
+                          isRotatingKubeconfig
+                            ? {
+                                '& svg': {
+                                  animation: 'spin 1s linear infinite'
+                                },
+                                '@keyframes spin': {
+                                  from: { transform: 'rotate(0deg)' },
+                                  to: { transform: 'rotate(360deg)' }
+                                }
+                              }
+                            : {}
+                        }
+                      >
+                        <RefreshCw size={16} />
+                      </Box>
+                      <Box
+                        p="2px"
+                        cursor="pointer"
+                        onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+                          e.stopPropagation();
+                          kubeconfig && copyData(kubeconfig);
+                        }}
+                        _hover={{
+                          color: 'blue.600'
+                        }}
+                        color="#737373"
+                      >
+                        <Copy size={16} />
+                      </Box>
+                    </Flex>
                   </Flex>
                 </MenuItem>
 

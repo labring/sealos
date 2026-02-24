@@ -453,5 +453,9 @@
       "update_success": "Updated successfully",
       "update_failed": "Failed to update"
     }
-  }
+  },
+  "refresh_kubeconfig": "Refresh Kubeconfig",
+  "kubeconfig_rotating": "Rotating Kubeconfig...",
+  "kubeconfig_rotated_successfully": "Kubeconfig refreshed successfully",
+  "kubeconfig_rotation_failed": "Failed to refresh Kubeconfig"
 }

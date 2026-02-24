@@ -1,11 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ include "account.fullname" . }}-leader-election-role
+  name: {{ include "account-controller.fullname" . }}-leader-election-role
   namespace: {{ .Release.Namespace }}
   labels:
     control-plane: controller-manager
-    {{- include "account.labels" . | nindent 4 }}
+    {{- include "account-controller.labels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""
@@ -42,7 +42,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "account.fullname" . }}-manager-role
+  name: {{ include "account-controller.fullname" . }}-manager-role
 rules:
   - apiGroups:
       - ""
@@ -446,7 +446,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "account.fullname" . }}-metrics-reader
+  name: {{ include "account-controller.fullname" . }}-metrics-reader
 rules:
   - nonResourceURLs:
       - /metrics
@@ -456,7 +456,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "account.fullname" . }}-proxy-role
+  name: {{ include "account-controller.fullname" . }}-proxy-role
 rules:
   - apiGroups:
       - authentication.k8s.io
@@ -474,42 +474,42 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ include "account.fullname" . }}-leader-election-rolebinding
+  name: {{ include "account-controller.fullname" . }}-leader-election-rolebinding
   namespace: {{ .Release.Namespace }}
   labels:
     control-plane: controller-manager
-    {{- include "account.labels" . | nindent 4 }}
+    {{- include "account-controller.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: {{ include "account.fullname" . }}-leader-election-role
+  name: {{ include "account-controller.fullname" . }}-leader-election-role
 subjects:
   - kind: ServiceAccount
-    name: {{ include "account.serviceAccountName" . }}
+    name: {{ include "account-controller.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "account.fullname" . }}-manager-rolebinding
+  name: {{ include "account-controller.fullname" . }}-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "account.fullname" . }}-manager-role
+  name: {{ include "account-controller.fullname" . }}-manager-role
 subjects:
   - kind: ServiceAccount
-    name: {{ include "account.serviceAccountName" . }}
+    name: {{ include "account-controller.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "account.fullname" . }}-proxy-rolebinding
+  name: {{ include "account-controller.fullname" . }}-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "account.fullname" . }}-proxy-role
+  name: {{ include "account-controller.fullname" . }}-proxy-role
 subjects:
   - kind: ServiceAccount
-    name: {{ include "account.serviceAccountName" . }}
+    name: {{ include "account-controller.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}

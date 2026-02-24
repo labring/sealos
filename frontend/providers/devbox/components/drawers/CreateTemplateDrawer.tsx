@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@/i18n';
 import { createTemplateRepository } from '@/api/template';
 import { templateNameSchema, versionSchema } from '@/utils/validate';
+import { useErrorMessage } from '@/hooks/useErrorMessage';
 
 import {
   Drawer,
@@ -39,6 +40,7 @@ interface CreateTemplateModalProps {
 
 const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemplateModalProps) => {
   const t = useTranslations();
+  const { getErrorMessage, getErrorCode } = useErrorMessage();
 
   const formSchema = z.object({
     name: z.string().min(1, t('input_template_name_placeholder')).pipe(templateNameSchema),
@@ -90,10 +92,16 @@ const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemp
       toast.success(t('create_template_success'));
       router.push(`/template?tab=private`);
     } catch (error) {
-      if (error == '409:templateRepository name already exists') {
+      if (
+        getErrorCode(error) === 409 ||
+        (typeof error === 'object' &&
+          error !== null &&
+          'error' in error &&
+          (error as any).error === 'templateRepository name already exists')
+      ) {
         return toast.error(t('template_repository_name_already_exists'));
       }
-      toast.error(error as string);
+      toast.error(getErrorMessage(error, 'create_failed'));
     }
   };
 

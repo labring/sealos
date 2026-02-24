@@ -8,3 +8,15 @@ data:
   {{- range .Values.gpuAlias }}
   {{ .name }}: "{{ .value }}"
   {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: node-gpu-info
+  namespace: node-system
+  labels:
+    {{- include "node.labels" . | nindent 4 }}
+data:
+  gpu: ""
+  alias: ""
+  nodeLabel: {{ .Values.gpuLabelMapping | toJson | quote }}

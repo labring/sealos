@@ -35,6 +35,10 @@ type UserSpec struct {
 	// +optional
 	//+kubebuilder:default:=7200
 	CSRExpirationSeconds int32 `json:"csrExpirationSeconds,omitempty"`
+	// kubeConfigRotateAt 用于手动触发 kubeconfig 轮转。
+	// 当字段被设置或更新时，controller 会重建 token Secret 与 kubeconfig。
+	// +optional
+	KubeConfigRotateAt *metav1.Time `json:"kubeConfigRotateAt,omitempty"`
 }
 type RoleType string
 
@@ -61,6 +65,9 @@ type UserStatus struct {
 	KubeConfig string    `json:"kubeConfig"`
 	//+kubebuilder:default:=7200
 	ObservedCSRExpirationSeconds int32 `json:"observedCSRExpirationSeconds,omitempty"`
+	// ObservedKubeConfigRotateAt 记录已处理的轮转请求时间戳。
+	// +optional
+	ObservedKubeConfigRotateAt *metav1.Time `json:"observedKubeConfigRotateAt,omitempty"`
 	// The generation observed by the user controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
