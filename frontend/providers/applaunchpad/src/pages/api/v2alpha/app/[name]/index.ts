@@ -26,8 +26,8 @@ import {
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import { json2DeployCr, json2Service, json2Ingress } from '@/utils/deployYaml2Json';
 import { appDeployKey } from '@/constants/app';
-import { sendError, sendValidationError } from '@/utils/apiError';
-import { ErrorType, ErrorCode } from '@/types/v2alpha/error';
+
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 // Constants
 const DELAY_SHORT = 2000;

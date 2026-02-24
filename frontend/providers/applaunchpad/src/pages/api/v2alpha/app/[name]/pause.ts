@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { pauseApp, createK8sContext } from '@/services/backend';
-import { sendError, sendValidationError } from '@/utils/apiError';
-import { ErrorType, ErrorCode } from '@/types/v2alpha/error';
+
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 import { z } from 'zod';
 
 const AppNameParamSchema = z.object({

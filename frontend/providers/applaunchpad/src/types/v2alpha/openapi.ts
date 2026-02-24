@@ -1,11 +1,31 @@
-import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 import { LaunchpadApplicationSchema } from '@/types/v2alpha/schema';
 import { CreateLaunchpadRequestSchema, UpdateAppResourcesSchema } from './request_schema';
-import { ErrorResponseSchema, ErrorType, ErrorCode, createErrorExample } from './error';
+import {
+  ErrorType,
+  ErrorCode,
+  createErrorExample,
+  Error400Schema,
+  Error401Schema,
+  Error403Schema,
+  Error404Schema,
+  Error409Schema,
+  Error500Schema
+} from './error';
 
 // Re-export for backward compatibility
-export { ErrorType, ErrorCode, ErrorResponseSchema, createErrorExample } from './error';
+export {
+  ErrorType,
+  ErrorCode,
+  createErrorExample,
+  Error400Schema,
+  Error401Schema,
+  Error403Schema,
+  Error404Schema,
+  Error409Schema,
+  Error500Schema
+} from './error';
+export { ErrorResponseSchema } from './error';
 export type { ErrorTypeValue, ErrorCodeType } from './error';
 
 // Get production server URL from current environment
@@ -103,7 +123,7 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid request body or parameters',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalidSchema: {
                       summary: 'Invalid schema validation',
@@ -111,14 +131,6 @@ export const createOpenApiDocument = () => {
                         ErrorType.VALIDATION_ERROR,
                         ErrorCode.INVALID_VALUE,
                         'Invalid request body. Please check the application configuration format.'
-                      )
-                    },
-                    duplicateName: {
-                      summary: 'Duplicate application name',
-                      value: createErrorExample(
-                        ErrorType.RESOURCE_ERROR,
-                        ErrorCode.ALREADY_EXISTS,
-                        'An application with this name already exists in the current namespace.'
                       )
                     }
                   }
@@ -129,7 +141,7 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error401Schema,
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
@@ -147,7 +159,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error403Schema,
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -162,17 +174,17 @@ export const createOpenApiDocument = () => {
               }
             },
             '409': {
-              description: 'Conflict - Resource already exists',
+              description: 'Conflict - Application already exists',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error409Schema,
                   examples: {
-                    resourceConflict: {
-                      summary: 'Resource conflict',
+                    alreadyExists: {
+                      summary: 'Application already exists',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
-                        ErrorCode.CONFLICT,
-                        'A resource with this configuration already exists and conflicts with the request.'
+                        ErrorCode.ALREADY_EXISTS,
+                        'An application with this name already exists in the current namespace.'
                       )
                     }
                   }
@@ -183,7 +195,7 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     kubernetesError: {
                       summary: 'Kubernetes API error',
@@ -265,7 +277,7 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid path parameters',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name format',
@@ -283,7 +295,7 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error401Schema,
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
@@ -301,7 +313,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error403Schema,
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -319,7 +331,7 @@ export const createOpenApiDocument = () => {
               description: 'Not Found - Application not found',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     notFound: {
                       summary: 'Application not found',
@@ -337,7 +349,7 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     kubernetesError: {
                       summary: 'Kubernetes API error',
@@ -395,7 +407,7 @@ export const createOpenApiDocument = () => {
                 'Bad Request - Invalid request body, unsupported operation, or port conflicts',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalidSchema: {
                       summary: 'Schema validation failed',
@@ -411,14 +423,6 @@ export const createOpenApiDocument = () => {
                         ErrorType.CLIENT_ERROR,
                         ErrorCode.UNSUPPORTED_OPERATION,
                         'This operation is not supported for the current application state.'
-                      )
-                    },
-                    duplicatePorts: {
-                      summary: 'Duplicate port numbers',
-                      value: createErrorExample(
-                        ErrorType.VALIDATION_ERROR,
-                        ErrorCode.CONFLICT,
-                        'Port conflict detected. Duplicate port numbers are not allowed.'
                       )
                     },
                     emptyUpdate: {
@@ -437,7 +441,17 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: Error401Schema,
+                  examples: {
+                    missingAuth: {
+                      summary: 'Missing authentication',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Authentication required. Please provide valid credentials in the Authorization header.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -445,7 +459,17 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: Error403Schema,
+                  examples: {
+                    insufficientPermissions: {
+                      summary: 'Insufficient permissions',
+                      value: createErrorExample(
+                        ErrorType.AUTHORIZATION_ERROR,
+                        ErrorCode.PERMISSION_DENIED,
+                        'Insufficient permissions to perform this operation. Please check your access rights.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -453,7 +477,7 @@ export const createOpenApiDocument = () => {
               description: 'Not Found - Application or port not found',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     appNotFound: {
                       summary: 'Application not found',
@@ -476,10 +500,10 @@ export const createOpenApiDocument = () => {
               }
             },
             '409': {
-              description: 'Conflict - Update conflicts with current state',
+              description: 'Conflict - Update conflicts with current state or port conflict',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error409Schema,
                   examples: {
                     resourceConflict: {
                       summary: 'Resource conflict',
@@ -487,6 +511,14 @@ export const createOpenApiDocument = () => {
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.CONFLICT,
                         'A resource with this configuration already exists and conflicts with the request.'
+                      )
+                    },
+                    portConflict: {
+                      summary: 'Duplicate port numbers',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.CONFLICT,
+                        'Port conflict detected. Duplicate port numbers are not allowed.'
                       )
                     }
                   }
@@ -497,7 +529,7 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error - Unexpected error during update',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     updateFailed: {
                       summary: 'Update operation failed',
@@ -539,7 +571,7 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid parameters',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
@@ -557,7 +589,17 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: Error401Schema,
+                  examples: {
+                    missingAuth: {
+                      summary: 'Missing authentication',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Authentication required. Please provide valid credentials in the Authorization header.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -565,7 +607,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error403Schema,
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -583,7 +625,7 @@ export const createOpenApiDocument = () => {
               description: 'Not Found - Application not found',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     notFound: {
                       summary: 'Application not found',
@@ -601,14 +643,14 @@ export const createOpenApiDocument = () => {
               description: 'Conflict - Cannot delete in current state',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error409Schema,
                   examples: {
                     deletionInProgress: {
                       summary: 'Deletion already in progress',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
-                        undefined,
-                        'Conflict',
+                        ErrorCode.CONFLICT,
+                        'Application is already being deleted.',
                         'Application is already being deleted'
                       )
                     }
@@ -620,7 +662,7 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     deletionFailed: {
                       summary: 'Deletion failed',
@@ -664,7 +706,7 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid parameters or application state',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
@@ -678,16 +720,16 @@ export const createOpenApiDocument = () => {
                       summary: 'Application already running',
                       value: createErrorExample(
                         ErrorType.CLIENT_ERROR,
-                        ErrorCode.INVALID_PARAMETER,
-                        'Invalid operation. The application state does not allow this action.'
+                        ErrorCode.UNSUPPORTED_OPERATION,
+                        'The application is already running. Start is only allowed on paused applications.'
                       )
                     },
                     missingMetadata: {
                       summary: 'Missing pause metadata',
                       value: createErrorExample(
-                        ErrorType.VALIDATION_ERROR,
-                        undefined,
-                        'Cannot start application',
+                        ErrorType.CLIENT_ERROR,
+                        ErrorCode.UNSUPPORTED_OPERATION,
+                        'Cannot start application: no stored configuration found. The application may not have been properly paused.',
                         'No stored configuration found. Application may not have been properly paused.'
                       )
                     }
@@ -699,7 +741,17 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: Error401Schema,
+                  examples: {
+                    missingAuth: {
+                      summary: 'Missing authentication',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Authentication required. Please provide valid credentials in the Authorization header.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -707,7 +759,17 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: Error403Schema,
+                  examples: {
+                    insufficientPermissions: {
+                      summary: 'Insufficient permissions',
+                      value: createErrorExample(
+                        ErrorType.AUTHORIZATION_ERROR,
+                        ErrorCode.PERMISSION_DENIED,
+                        'Insufficient permissions to perform this operation. Please check your access rights.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -715,7 +777,7 @@ export const createOpenApiDocument = () => {
               description: 'Not Found - Application not found',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     notFound: {
                       summary: 'Application not found',
@@ -733,7 +795,7 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     startFailed: {
                       summary: 'Start operation failed',
@@ -777,7 +839,7 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid parameters or application state',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
@@ -791,8 +853,8 @@ export const createOpenApiDocument = () => {
                       summary: 'Application already paused',
                       value: createErrorExample(
                         ErrorType.CLIENT_ERROR,
-                        ErrorCode.INVALID_PARAMETER,
-                        'Invalid operation. The application state does not allow this action.'
+                        ErrorCode.UNSUPPORTED_OPERATION,
+                        'The application is already paused. Pause is only allowed on running applications.'
                       )
                     }
                   }
@@ -803,7 +865,17 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: Error401Schema,
+                  examples: {
+                    missingAuth: {
+                      summary: 'Missing authentication',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Authentication required. Please provide valid credentials in the Authorization header.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -811,7 +883,17 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: Error403Schema,
+                  examples: {
+                    insufficientPermissions: {
+                      summary: 'Insufficient permissions',
+                      value: createErrorExample(
+                        ErrorType.AUTHORIZATION_ERROR,
+                        ErrorCode.PERMISSION_DENIED,
+                        'Insufficient permissions to perform this operation. Please check your access rights.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -819,7 +901,7 @@ export const createOpenApiDocument = () => {
               description: 'Not Found - Application not found',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     notFound: {
                       summary: 'Application not found',
@@ -837,7 +919,7 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     pauseFailed: {
                       summary: 'Pause operation failed',
@@ -881,7 +963,7 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid parameters',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
@@ -899,7 +981,17 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: Error401Schema,
+                  examples: {
+                    missingAuth: {
+                      summary: 'Missing authentication',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Authentication required. Please provide valid credentials in the Authorization header.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -907,7 +999,17 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema
+                  schema: Error403Schema,
+                  examples: {
+                    insufficientPermissions: {
+                      summary: 'Insufficient permissions',
+                      value: createErrorExample(
+                        ErrorType.AUTHORIZATION_ERROR,
+                        ErrorCode.PERMISSION_DENIED,
+                        'Insufficient permissions to perform this operation. Please check your access rights.'
+                      )
+                    }
+                  }
                 }
               }
             },
@@ -915,7 +1017,7 @@ export const createOpenApiDocument = () => {
               description: 'Not Found - Application not found',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     notFound: {
                       summary: 'Application not found',
@@ -933,7 +1035,7 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     restartFailed: {
                       summary: 'Restart operation failed',

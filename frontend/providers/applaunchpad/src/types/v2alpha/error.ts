@@ -1,86 +1,85 @@
 import { z } from 'zod';
 import 'zod-openapi/extend';
+import { NextApiResponse } from 'next';
+import { ZodError, ZodIssue } from 'zod';
 
-/**
- * Error types for high-level error classification (similar to Stripe)
- * Use these to categorize errors at the application level
- */
+// ============================================================================
+// Error Type — high-level classification
+// ============================================================================
+
 export const ErrorType = {
-  VALIDATION_ERROR: 'validation_error', // Request validation failures (schema, format)
-  CLIENT_ERROR: 'client_error', // Client request errors (method not allowed, etc.)
-  RESOURCE_ERROR: 'resource_error', // Resource not found, conflicts, etc.
-  OPERATION_ERROR: 'operation_error', // Operation/deployment failures
-  AUTHENTICATION_ERROR: 'authentication_error', // Auth required or invalid
-  AUTHORIZATION_ERROR: 'authorization_error', // Permission denied
-  INTERNAL_ERROR: 'internal_error' // Server errors
+  VALIDATION_ERROR: 'validation_error', // Request body or path params fail schema/type validation
+  CLIENT_ERROR: 'client_error', // Request is valid but the operation is semantically disallowed
+  RESOURCE_ERROR: 'resource_error', // Resource not found, already exists, or in conflict
+  OPERATION_ERROR: 'operation_error', // Server-side operation failed during execution
+  AUTHENTICATION_ERROR: 'authentication_error', // Missing or expired credentials
+  AUTHORIZATION_ERROR: 'authorization_error', // Insufficient permissions
+  INTERNAL_ERROR: 'internal_error' // Unexpected server exception or dependency failure
 } as const;
 
 export type ErrorTypeValue = (typeof ErrorType)[keyof typeof ErrorType];
 
-/**
- * Specific error codes for programmatic error handling
- * Use these codes for client-side error classification and internationalization
- */
-export const ErrorCode = {
-  // Validation errors
-  REQUIRED_FIELD_MISSING: 'REQUIRED_FIELD_MISSING',
-  INVALID_FORMAT: 'INVALID_FORMAT',
-  INVALID_VALUE: 'INVALID_VALUE',
-  INVALID_PARAMETER: 'INVALID_PARAMETER',
+// ============================================================================
+// Error Code — specific code for programmatic handling and i18n
+// Each code maps to exactly one ErrorType — see design doc for the full mapping.
+// ============================================================================
 
-  // Client errors
+export const ErrorCode = {
+  // validation_error
+  INVALID_PARAMETER: 'INVALID_PARAMETER', // Schema/type validation failed; details contains field-level issues
+  INVALID_VALUE: 'INVALID_VALUE', // Field value violates a business rule
+
+  // client_error
   METHOD_NOT_ALLOWED: 'METHOD_NOT_ALLOWED',
   UNSUPPORTED_OPERATION: 'UNSUPPORTED_OPERATION',
+  STORAGE_REQUIRES_STATEFULSET: 'STORAGE_REQUIRES_STATEFULSET', // Internal: K8s workload constraint
 
-  // Resource errors
+  // resource_error
   NOT_FOUND: 'NOT_FOUND',
   ALREADY_EXISTS: 'ALREADY_EXISTS',
   CONFLICT: 'CONFLICT',
 
-  // Operation errors
-  DEPLOYMENT_ROLLOUT_FAILED: 'DEPLOYMENT_ROLLOUT_FAILED',
-  SERVICE_CREATE_FAILED: 'SERVICE_CREATE_FAILED',
-  POD_STARTUP_FAILED: 'POD_STARTUP_FAILED',
-  STATEFULSET_UPDATE_FAILED: 'STATEFULSET_UPDATE_FAILED',
+  // operation_error
+  KUBERNETES_ERROR: 'KUBERNETES_ERROR', // K8s API call failed; details contains raw error
   STORAGE_UPDATE_FAILED: 'STORAGE_UPDATE_FAILED',
-  STORAGE_REQUIRES_STATEFULSET: 'STORAGE_REQUIRES_STATEFULSET',
-  OPERATION_FAILED: 'OPERATION_FAILED',
+  OPERATION_FAILED: 'OPERATION_FAILED', // Generic fallback
 
-  // Authentication errors
+  // authentication_error
   AUTHENTICATION_REQUIRED: 'AUTHENTICATION_REQUIRED',
-  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
 
-  // Authorization errors
+  // authorization_error
   PERMISSION_DENIED: 'PERMISSION_DENIED',
-  INSUFFICIENT_PERMISSIONS: 'INSUFFICIENT_PERMISSIONS',
 
-  // Internal errors
+  // internal_error
   INTERNAL_ERROR: 'INTERNAL_ERROR',
-  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
-  KUBERNETES_ERROR: 'KUBERNETES_ERROR'
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE'
 } as const;
 
 export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
 
+// ============================================================================
+// Response schema (Zod + OpenAPI)
+// ============================================================================
+
 /**
  * Standard error response schema for all API endpoints (Stripe-style)
  *
- * @example Validation error with Zod issues array
+ * @example Validation error with field-level details
  * {
  *   error: {
  *     type: "validation_error",
  *     code: "INVALID_PARAMETER",
- *     message: "Application name path parameter is invalid or missing.",
- *     details: [{ path: ['name'], message: 'Required' }]
+ *     message: "Request body validation failed.",
+ *     details: [{ field: "image.imageName", message: "Required" }]
  *   }
  * }
  *
- * @example Kubernetes operation error with error message string
+ * @example Operation error with raw error string
  * {
  *   error: {
  *     type: "operation_error",
  *     code: "KUBERNETES_ERROR",
- *     message: "Failed to pause application \"web-api\". The Kubernetes operation encountered an error.",
+ *     message: "Failed to pause application \"web-api\".",
  *     details: "deployments.apps \"web-api\" not found"
  *   }
  * }
@@ -102,39 +101,244 @@ export const ErrorResponseSchema = z
         example: 'validation_error'
       }),
       code: z.enum(Object.values(ErrorCode) as [ErrorCodeType, ...ErrorCodeType[]]).openapi({
-        description:
-          'Specific error code for programmatic handling. Use this for client-side error classification and internationalization.',
-        example: 'REQUIRED_FIELD_MISSING'
+        description: 'Specific error code for programmatic handling and i18n. Always present.',
+        example: 'INVALID_PARAMETER'
       }),
       message: z.string().openapi({
-        description: 'Human-readable error message that can be displayed to users or developers',
-        example: 'Required field is missing'
+        description: 'Human-readable error message',
+        example: 'Request body validation failed.'
       }),
-      details: z.any().optional().openapi({
-        description:
-          'Additional error context. Usually a simple string (e.g., Kubernetes error message), or an array of validation errors from Zod. Only included when additional information is available.',
-        example: 'deployments.apps "web-api" not found'
-      })
+      details: z
+        .union([z.array(z.object({ field: z.string(), message: z.string() })), z.string()])
+        .optional()
+        .openapi({
+          description:
+            'Extra context. For INVALID_PARAMETER: Array<{ field: string, message: string }>. For operation/internal errors: raw error string. Omitted for other codes.',
+          example: [{ field: 'image.imageName', message: 'Required' }]
+        })
     })
   })
   .openapi({
     title: 'Error Response',
     description:
-      'Standard error response format for all API endpoints. All error responses follow this structure for consistency. Inspired by Stripe API design.'
+      'Standard error response format for all API endpoints. Inspired by Stripe API design.'
   });
 
+export type ApiErrorResponse = z.infer<typeof ErrorResponseSchema>;
+
+// ============================================================================
+// Server helpers
+// ============================================================================
+
 /**
- * Helper function to create consistent error examples for OpenAPI documentation
+ * Send a standardized error response.
+ *
+ * @example
+ * sendError(res, {
+ *   status: 404,
+ *   type: ErrorType.RESOURCE_ERROR,
+ *   code: ErrorCode.NOT_FOUND,
+ *   message: 'Application "web-api" not found.'
+ * });
+ */
+export function sendError(
+  res: NextApiResponse,
+  config: {
+    status: number;
+    type: ErrorTypeValue;
+    code: ErrorCodeType;
+    message: string;
+    details?: any;
+  }
+): void {
+  const response: ApiErrorResponse = {
+    error: {
+      type: config.type,
+      code: config.code,
+      message: config.message,
+      ...(config.details !== undefined && { details: config.details })
+    }
+  };
+  res.status(config.status).json(response);
+}
+
+/**
+ * Convert a Zod issue path to dot-notation field string.
+ * e.g. ['ports', 0, 'number'] → 'ports[0].number'
+ */
+function zodPathToField(path: ZodIssue['path']): string {
+  return path.reduce<string>((acc, segment, i) => {
+    if (typeof segment === 'number') return `${acc}[${segment}]`;
+    return i === 0 ? segment : `${acc}.${segment}`;
+  }, '');
+}
+
+/**
+ * Send a validation error response.
+ * Transforms validation issues into { field, message }[] format per API contract.
+ *
+ * @example
+ * sendValidationError(res, zodError, 'Request body validation failed.');
+ */
+export function sendValidationError(
+  res: NextApiResponse,
+  error: ZodError,
+  message: string = 'Validation failed'
+): void {
+  sendError(res, {
+    status: 400,
+    type: ErrorType.VALIDATION_ERROR,
+    code: ErrorCode.INVALID_PARAMETER,
+    message,
+    details: error.issues.map((issue) => ({
+      field: zodPathToField(issue.path),
+      message: issue.message
+    }))
+  });
+}
+
+// ============================================================================
+// Per-status-code schemas for OpenAPI documentation
+// Each schema narrows type/code to only the values permitted by that HTTP status.
+// See docs/v2alpha-error-api-design.md § "Status Code → type / code Constraints"
+// ============================================================================
+
+const ValidationFieldIssue = z.object({
+  field: z.string().openapi({ example: 'ports[0].number' }),
+  message: z.string().openapi({ example: 'Required' })
+});
+
+export const Error400Schema = z
+  .object({
+    error: z.object({
+      type: z.enum([ErrorType.VALIDATION_ERROR, ErrorType.CLIENT_ERROR]).openapi({
+        description: 'High-level error type for categorization'
+      }),
+      code: z
+        .enum([
+          ErrorCode.INVALID_PARAMETER,
+          ErrorCode.INVALID_VALUE,
+          ErrorCode.UNSUPPORTED_OPERATION,
+          ErrorCode.STORAGE_REQUIRES_STATEFULSET
+        ])
+        .openapi({ description: 'Specific error code for programmatic handling and i18n' }),
+      message: z.string().openapi({ description: 'Human-readable error message' }),
+      details: z
+        .union([z.array(ValidationFieldIssue), z.string()])
+        .optional()
+        .openapi({
+          description:
+            'For INVALID_PARAMETER: Array<{ field: string, message: string }>. For INVALID_VALUE: optional string. Omitted for other codes.',
+          example: [{ field: 'image.imageName', message: 'Required' }]
+        })
+    })
+  })
+  .openapi({ title: 'Error 400' });
+
+export const Error401Schema = z
+  .object({
+    error: z.object({
+      type: z.literal(ErrorType.AUTHENTICATION_ERROR).openapi({
+        description: 'High-level error type for categorization'
+      }),
+      code: z.literal(ErrorCode.AUTHENTICATION_REQUIRED).openapi({
+        description: 'Specific error code for programmatic handling and i18n'
+      }),
+      message: z.string().openapi({ description: 'Human-readable error message' }),
+      details: z.string().optional().openapi({
+        description: 'Typically omitted. May contain additional context in edge cases.'
+      })
+    })
+  })
+  .openapi({ title: 'Error 401' });
+
+export const Error403Schema = z
+  .object({
+    error: z.object({
+      type: z.literal(ErrorType.AUTHORIZATION_ERROR).openapi({
+        description: 'High-level error type for categorization'
+      }),
+      code: z.literal(ErrorCode.PERMISSION_DENIED).openapi({
+        description: 'Specific error code for programmatic handling and i18n'
+      }),
+      message: z.string().openapi({ description: 'Human-readable error message' }),
+      details: z.string().optional().openapi({
+        description: 'Typically omitted. May contain additional context in edge cases.'
+      })
+    })
+  })
+  .openapi({ title: 'Error 403' });
+
+export const Error404Schema = z
+  .object({
+    error: z.object({
+      type: z.literal(ErrorType.RESOURCE_ERROR).openapi({
+        description: 'High-level error type for categorization'
+      }),
+      code: z.literal(ErrorCode.NOT_FOUND).openapi({
+        description: 'Specific error code for programmatic handling and i18n'
+      }),
+      message: z.string().openapi({ description: 'Human-readable error message' }),
+      details: z.string().optional().openapi({
+        description: 'Typically omitted. May contain additional context in edge cases.'
+      })
+    })
+  })
+  .openapi({ title: 'Error 404' });
+
+export const Error409Schema = z
+  .object({
+    error: z.object({
+      type: z.literal(ErrorType.RESOURCE_ERROR).openapi({
+        description: 'High-level error type for categorization'
+      }),
+      code: z.enum([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT]).openapi({
+        description: 'Specific error code for programmatic handling and i18n'
+      }),
+      message: z.string().openapi({ description: 'Human-readable error message' }),
+      details: z.string().optional().openapi({
+        description: 'Typically omitted. May contain additional context in edge cases.'
+      })
+    })
+  })
+  .openapi({ title: 'Error 409' });
+
+export const Error500Schema = z
+  .object({
+    error: z.object({
+      type: z.enum([ErrorType.OPERATION_ERROR, ErrorType.INTERNAL_ERROR]).openapi({
+        description: 'High-level error type for categorization'
+      }),
+      code: z
+        .enum([
+          ErrorCode.KUBERNETES_ERROR,
+          ErrorCode.STORAGE_UPDATE_FAILED,
+          ErrorCode.OPERATION_FAILED,
+          ErrorCode.INTERNAL_ERROR,
+          ErrorCode.SERVICE_UNAVAILABLE
+        ])
+        .openapi({ description: 'Specific error code for programmatic handling and i18n' }),
+      message: z.string().openapi({ description: 'Human-readable error message' }),
+      details: z.string().optional().openapi({
+        description: 'Raw error string from the underlying system, for troubleshooting.',
+        example: 'deployments.apps "web-api" not found'
+      })
+    })
+  })
+  .openapi({ title: 'Error 500' });
+
+/**
+ * Helper to create consistent error examples for OpenAPI documentation.
  */
 export const createErrorExample = (
   type: ErrorTypeValue,
-  code: ErrorCodeType | undefined,
+  code: ErrorCodeType,
   message: string,
   details?: any
 ) => ({
   error: {
     type,
-    ...(code && { code }),
+    code,
     message,
     ...(details !== undefined && { details })
   }

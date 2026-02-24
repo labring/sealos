@@ -5,8 +5,8 @@ import { UpdateStorageSchema } from '@/types/v2alpha/request_schema';
 import { json2DeployCr } from '@/utils/deployYaml2Json';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import type { AppEditType } from '@/types/app';
-import { sendError, sendValidationError } from '@/utils/apiError';
-import { ErrorType, ErrorCode } from '@/types/v2alpha/error';
+
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 import { z } from 'zod';
 
 const AppNameParamSchema = z.object({

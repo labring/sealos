@@ -11,8 +11,8 @@ import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
 import { LaunchpadApplicationSchema } from '@/types/v2alpha/schema';
-import { sendError, sendValidationError } from '@/utils/apiError';
-import { ErrorType, ErrorCode } from '@/types/v2alpha/error';
+
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 async function processAppResponse(
   response: PromiseSettledResult<any>[]
