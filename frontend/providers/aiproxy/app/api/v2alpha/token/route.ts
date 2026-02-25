@@ -4,10 +4,10 @@ import { validateCreateParams } from '@/app/api/user/token/route'
 import { ApiProxyBackendResp } from '@/types/api.d'
 import { TokenInfo } from '@/types/user/token'
 import { kcOrAppTokenAuthDecoded } from '@/utils/backend/auth'
+import { sendError, ErrorType, ErrorCode } from '@/lib/v2alpha/error'
 
 export const dynamic = 'force-dynamic'
 
-// create token—后
 async function createTokenInBackend(name: string, group: string): Promise<'created' | 'exists'> {
   const url = new URL(
     `/api/token/${group}?auto_create_group=true&ignore_exist=true`,
@@ -45,17 +45,20 @@ async function createTokenInBackend(name: string, group: string): Promise<'creat
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    // get namespace from kubeconfig or workspaceId from JWT token
     const group = await kcOrAppTokenAuthDecoded(request.headers)
 
     const body = await request.json()
 
     const validationError = validateCreateParams(body)
     if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 400 })
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
+        message: validationError,
+      })
     }
 
-    // create aiproxy token
     await createTokenInBackend(body.name, group)
     return new NextResponse(null, { status: 204 })
   } catch (error) {
@@ -63,15 +66,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const errorMessage = error instanceof Error ? error.message : String(error)
     if (errorMessage.startsWith('Auth:')) {
-      return NextResponse.json(
-        {
-          error: errorMessage,
-        },
-        { status: 401 }
-      )
+      return sendError({
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Unauthorized, please login again.',
+        details: errorMessage,
+      })
     }
 
-    return new NextResponse(null, { status: 500 })
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Failed to create token.',
+      details: errorMessage,
+    })
   }
 }
-

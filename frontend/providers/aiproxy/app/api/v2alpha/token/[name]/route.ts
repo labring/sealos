@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ApiProxyBackendResp } from '@/types/api.d'
 import { TokenInfo } from '@/types/user/token'
 import { kcOrAppTokenAuthDecoded } from '@/utils/backend/auth'
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error'
 
 import { tokenNameParamSchema } from './schema'
 
@@ -46,7 +47,7 @@ async function findTokenByName(name: string, group: string): Promise<TokenInfo |
       throw new Error(result.message || 'Failed to search token')
     }
 
-    const foundToken = result.data?.tokens?.find(tokenInfo => tokenInfo.name === name)
+    const foundToken = result.data?.tokens?.find((tokenInfo) => tokenInfo.name === name)
 
     if (!foundToken) {
       return null
@@ -58,7 +59,7 @@ async function findTokenByName(name: string, group: string): Promise<TokenInfo |
     throw error
   }
 }
-// delete token—后端
+
 async function deleteTokenInBackend(name: string, group: string): Promise<void> {
   try {
     const tokenInfo = await findTokenByName(name, group)
@@ -67,7 +68,6 @@ async function deleteTokenInBackend(name: string, group: string): Promise<void> 
       throw new Error('Token not found')
     }
 
-    // delete  by id
     const url = new URL(
       `/api/token/${group}/${tokenInfo.id}`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
@@ -94,9 +94,7 @@ async function deleteTokenInBackend(name: string, group: string): Promise<void> 
     const responseText = await response.text()
 
     if (!response.ok) {
-      throw new Error(
-        responseText || `HTTP error! status: ${response.status}`
-      )
+      throw new Error(responseText || `HTTP error! status: ${response.status}`)
     }
 
     if (!responseText) {
@@ -113,40 +111,31 @@ async function deleteTokenInBackend(name: string, group: string): Promise<void> 
   }
 }
 
-// delete aiproxy token-前端
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { name: string } }
 ): Promise<NextResponse> {
   try {
-    // get namespace from kubeconfig or workspaceId from JWT token
     const group = await kcOrAppTokenAuthDecoded(request.headers)
 
-    // validate path parameter
     const validationResult = tokenNameParamSchema.safeParse(params)
 
     if (!validationResult.success) {
-      return NextResponse.json(
-        {
-          error: validationResult.error.errors[0]?.message || 'Invalid token name',
-        },
-        { status: 400 }
-      )
+      return sendValidationError(validationResult.error, 'Invalid token name.')
     }
 
     const { name } = validationResult.data
 
-    // delete aiproxy token
     try {
       await deleteTokenInBackend(name, group)
     } catch (error) {
       if (error instanceof Error && error.message === 'Token not found') {
-        return NextResponse.json(
-          {
-            error: 'The specified token does not exist',
-          },
-          { status: 404 }
-        )
+        return sendError({
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'The specified token does not exist.',
+        })
       }
       throw error
     }
@@ -157,20 +146,21 @@ export async function DELETE(
 
     const errorMessage = error instanceof Error ? error.message : String(error)
     if (errorMessage.startsWith('Auth:')) {
-      return NextResponse.json(
-        {
-          error: errorMessage,
-        },
-        { status: 401 }
-      )
+      return sendError({
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Unauthorized, please login again.',
+        details: errorMessage,
+      })
     }
 
-    return NextResponse.json(
-      {
-        error: errorMessage || 'Unknown error',
-      },
-      { status: 500 }
-    )
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Failed to delete token.',
+      details: errorMessage,
+    })
   }
 }
-

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ApiProxyBackendResp } from '@/types/api.d'
 import { TokenInfo } from '@/types/user/token'
 import { kcOrAppTokenAuthDecoded } from '@/utils/backend/auth'
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error'
 
 import { tokenSearchQuerySchema } from './schema'
 
@@ -12,11 +13,7 @@ type TokenSearchResponse = {
 }
 export const dynamic = 'force-dynamic'
 
-// search aiproxy tokens-后端
-async function searchTokensInBackend(
-  group: string,
-  name?: string
-): Promise<TokenSearchResponse> {
+async function searchTokensInBackend(group: string, name?: string): Promise<TokenSearchResponse> {
   try {
     const url = new URL(
       `/api/token/${group}/search`,
@@ -29,7 +26,6 @@ async function searchTokensInBackend(
       url.searchParams.append('p', '1')
       url.searchParams.append('per_page', '10')
     }
-    // get aiproxy backend token
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
@@ -69,8 +65,6 @@ async function searchTokensInBackend(
   }
 }
 
-
-// search aiproxy tokens-前端
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const group = await kcOrAppTokenAuthDecoded(request.headers)
@@ -78,33 +72,27 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const queryParams = {
       name: searchParams.get('name') || undefined,
     }
-// validate query params
+
     const validationResult = tokenSearchQuerySchema.safeParse(queryParams)
 
     if (!validationResult.success) {
-      return NextResponse.json(
-        {
-          error: validationResult.error.errors[0]?.message || 'Invalid query parameters',
-        },
-        { status: 400 }
-      )
+      return sendValidationError(validationResult.error, 'Invalid query parameters.')
     }
 
     const { name } = validationResult.data
 
-    // search aiproxy tokens
     try {
       const result = await searchTokensInBackend(group, name)
 
       return NextResponse.json(result.tokens, { status: 200 })
     } catch (error) {
       if (error instanceof Error && error.message === 'Token not found') {
-        return NextResponse.json(
-          {
-            error: 'The specified token does not exist',
-          },
-          { status: 404 }
-        )
+        return sendError({
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'The specified token does not exist.',
+        })
       }
       throw error
     }
@@ -113,20 +101,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const errorMessage = error instanceof Error ? error.message : String(error)
     if (errorMessage.startsWith('Auth:')) {
-      return NextResponse.json(
-        {
-          error: errorMessage,
-        },
-        { status: 401 }
-      )
+      return sendError({
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Unauthorized, please login again.',
+        details: errorMessage,
+      })
     }
 
-    return NextResponse.json(
-      {
-        error: errorMessage || 'Unknown error',
-      },
-      { status: 500 }
-    )
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Failed to search tokens.',
+      details: errorMessage,
+    })
   }
 }
-

@@ -29,6 +29,13 @@ This API provides endpoints for managing AI service tokens.
   - Success: Returns \`204 No Content\` with empty response body
   - Failure: Returns \`4XX\` or \`5XX\` with error details
 
+### Error Response Format
+
+All error responses use the standardized v2alpha format:
+\`\`\`json
+{ "error": { "type": "...", "code": "...", "message": "...", "details": "..." } }
+\`\`\`
+
 ### Authentication
 
 All endpoints require authentication via Bearer token or Kubernetes config in the Authorization header.
@@ -119,9 +126,11 @@ Create a new API token for accessing AI services.
                     validation_error: {
                       summary: 'Validation error',
                       value: {
-                        code: 400,
-                        message: 'Validation failed',
-                        error: 'Token name is required',
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Token name is required.',
+                        },
                       },
                     },
                   },
@@ -139,9 +148,12 @@ Create a new API token for accessing AI services.
                     unauthorized: {
                       summary: 'Authentication failed',
                       value: {
-                        code: 401,
-                        message: 'Unauthorized',
-                        error: 'Auth: Token is missing',
+                        error: {
+                          type: 'authentication_error',
+                          code: 'AUTHENTICATION_REQUIRED',
+                          message: 'Unauthorized, please login again.',
+                          details: 'Auth: Token is missing',
+                        },
                       },
                     },
                   },
@@ -159,9 +171,11 @@ Create a new API token for accessing AI services.
                     server_error: {
                       summary: 'Server error',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to create token',
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to create token.',
+                        },
                       },
                     },
                   },
@@ -223,9 +237,12 @@ Delete a specific token by its name.
                     validation_error: {
                       summary: 'Invalid token name',
                       value: {
-                        code: 400,
-                        message: 'Validation failed',
-                        error: 'Token name is required',
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid token name.',
+                          details: [{ field: 'name', message: 'Token name is required' }],
+                        },
                       },
                     },
                   },
@@ -253,9 +270,11 @@ Delete a specific token by its name.
                     not_found: {
                       summary: 'Token does not exist',
                       value: {
-                        code: 404,
-                        message: 'Token not found',
-                        error: 'The specified token does not exist',
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'The specified token does not exist.',
+                        },
                       },
                     },
                   },
@@ -329,42 +348,42 @@ Search and retrieve tokens.
                     default_list: {
                       summary: 'Default list (first 10 tokens)',
                       value: [
-                          {
-                            id: 123,
-                            name: 'production-token',
-                            key: 'sk-****abc123',
-                            group: 'ns-admin',
-                            subnet: '0.0.0.0/0',
-                            models: ['gpt-4', 'gpt-3.5-turbo'],
-                            status: 1,
-                            quota: 1000.0,
-                            used_amount: 250.5,
-                            request_count: 500,
-                            created_at: 1697001600,
-                            accessed_at: 1697088000,
-                            expired_at: -1,
-                          }
-                        ]
+                        {
+                          id: 123,
+                          name: 'production-token',
+                          key: 'sk-****abc123',
+                          group: 'ns-admin',
+                          subnet: '0.0.0.0/0',
+                          models: ['gpt-4', 'gpt-3.5-turbo'],
+                          status: 1,
+                          quota: 1000.0,
+                          used_amount: 250.5,
+                          request_count: 500,
+                          created_at: 1697001600,
+                          accessed_at: 1697088000,
+                          expired_at: -1,
+                        },
+                      ],
                     },
                     specific_token: {
                       summary: 'Search by name',
                       value: [
-                          {
-                            id: 123,
-                            name: 'my-api-token',
-                            key: 'sk-****abc123',
-                            group: 'ns-admin',
-                            subnet: '0.0.0.0/0',
-                            models: null,
-                            status: 1,
-                            quota: 500.0,
-                            used_amount: 100.0,
-                            request_count: 200,
-                            created_at: 1697001600,
-                            accessed_at: 1697088000,
-                            expired_at: -1,
-                          }
-                        ],
+                        {
+                          id: 123,
+                          name: 'my-api-token',
+                          key: 'sk-****abc123',
+                          group: 'ns-admin',
+                          subnet: '0.0.0.0/0',
+                          models: null,
+                          status: 1,
+                          quota: 500.0,
+                          used_amount: 100.0,
+                          request_count: 200,
+                          created_at: 1697001600,
+                          accessed_at: 1697088000,
+                          expired_at: -1,
+                        },
+                      ],
                     },
                     empty_list: {
                       summary: 'No tokens found',
@@ -408,9 +427,11 @@ Search and retrieve tokens.
                     not_found: {
                       summary: 'Token not found',
                       value: {
-                        code: 404,
-                        message: 'Token not found',
-                        error: 'The specified token does not exist',
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'The specified token does not exist.',
+                        },
                       },
                     },
                   },
@@ -478,8 +499,7 @@ Search and retrieve tokens.
             models: {
               type: 'array',
               nullable: true,
-              description:
-                'List of allowed AI models (null means all models are allowed)',
+              description: 'List of allowed AI models (null means all models are allowed)',
               items: {
                 type: 'string',
               },
@@ -523,8 +543,7 @@ Search and retrieve tokens.
             expired_at: {
               type: 'integer',
               format: 'int64',
-              description:
-                'Expiration timestamp (Unix epoch in seconds, -1 means never expires)',
+              description: 'Expiration timestamp (Unix epoch in seconds, -1 means never expires)',
               example: -1,
             },
           },
@@ -564,25 +583,58 @@ Search and retrieve tokens.
         },
         ErrorResponse: {
           type: 'object',
-          description: 'Error response',
+          description: 'Standardized v2alpha error response',
+          required: ['error'],
           properties: {
-            code: {
-              type: 'integer',
-              description: 'HTTP status code',
-              example: 400,
-            },
-            message: {
-              type: 'string',
-              description: 'Error message',
-              example: 'Validation failed',
-            },
             error: {
-              type: 'string',
-              description: 'Detailed error description',
-              example: 'Token name is required',
+              type: 'object',
+              required: ['type', 'code', 'message'],
+              properties: {
+                type: {
+                  type: 'string',
+                  description: 'High-level error category',
+                  enum: [
+                    'validation_error',
+                    'authentication_error',
+                    'authorization_error',
+                    'resource_error',
+                    'operation_error',
+                    'client_error',
+                    'internal_error',
+                  ],
+                  example: 'validation_error',
+                },
+                code: {
+                  type: 'string',
+                  description: 'Specific error code for programmatic handling and i18n',
+                  example: 'INVALID_PARAMETER',
+                },
+                message: {
+                  type: 'string',
+                  description: 'Human-readable error message',
+                  example: 'Token name is required.',
+                },
+                details: {
+                  description:
+                    'Extra context. For INVALID_PARAMETER: Array<{ field, message }>. For other codes: raw error string.',
+                  oneOf: [
+                    {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        required: ['field', 'message'],
+                        properties: {
+                          field: { type: 'string', example: 'name' },
+                          message: { type: 'string', example: 'Token name is required' },
+                        },
+                      },
+                    },
+                    { type: 'string' },
+                  ],
+                },
+              },
             },
           },
-          required: ['code', 'message', 'error'],
         },
       },
     },
@@ -595,4 +647,3 @@ Search and retrieve tokens.
     },
   })
 }
-
