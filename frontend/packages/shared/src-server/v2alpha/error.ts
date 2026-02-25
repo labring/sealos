@@ -36,6 +36,7 @@ export const ErrorCode = {
 
   // operation_error
   KUBERNETES_ERROR: 'KUBERNETES_ERROR', // K8s API call failed; details contains raw error
+  INVALID_RESOURCE_SPEC: 'INVALID_RESOURCE_SPEC', // K8s admission webhook or resource spec rejected
   STORAGE_UPDATE_FAILED: 'STORAGE_UPDATE_FAILED',
   OPERATION_FAILED: 'OPERATION_FAILED', // Generic fallback
 
@@ -44,6 +45,7 @@ export const ErrorCode = {
 
   // authorization_error
   PERMISSION_DENIED: 'PERMISSION_DENIED',
+  INSUFFICIENT_BALANCE: 'INSUFFICIENT_BALANCE', // Balance too low to perform the operation
 
   // internal_error
   INTERNAL_ERROR: 'INTERNAL_ERROR',

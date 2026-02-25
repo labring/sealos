@@ -1,14 +1,16 @@
-import { jsonRes } from '@/services/backend/response';
 import { document } from '@/types/apis/v2alpha';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     return res.json(document);
   }
 
-  return jsonRes(res, {
-    code: 405,
-    message: 'Method not allowed'
+  return sendError(res, {
+    status: 405,
+    type: ErrorType.CLIENT_ERROR,
+    code: ErrorCode.METHOD_NOT_ALLOWED,
+    message: 'Method not allowed. Use GET.'
   });
 }

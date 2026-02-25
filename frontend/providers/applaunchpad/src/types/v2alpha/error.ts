@@ -108,7 +108,7 @@ export const Error403Schema = z
       type: z.literal(ErrorType.AUTHORIZATION_ERROR).openapi({
         description: 'High-level error type for categorization'
       }),
-      code: z.literal(ErrorCode.PERMISSION_DENIED).openapi({
+      code: z.enum([ErrorCode.PERMISSION_DENIED, ErrorCode.INSUFFICIENT_BALANCE]).openapi({
         description: 'Specific error code for programmatic handling and i18n'
       }),
       message: z.string().openapi({ description: 'Human-readable error message' }),
@@ -164,8 +164,7 @@ export const Error500Schema = z
           ErrorCode.KUBERNETES_ERROR,
           ErrorCode.STORAGE_UPDATE_FAILED,
           ErrorCode.OPERATION_FAILED,
-          ErrorCode.INTERNAL_ERROR,
-          ErrorCode.SERVICE_UNAVAILABLE
+          ErrorCode.INTERNAL_ERROR
         ])
         .openapi({ description: 'Specific error code for programmatic handling and i18n' }),
       message: z.string().openapi({ description: 'Human-readable error message' }),

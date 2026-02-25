@@ -1,5 +1,14 @@
 import { createDocument } from 'zod-openapi';
 import { z } from 'zod';
+import {
+  Error400Schema,
+  Error401Schema,
+  Error403Schema,
+  Error404Schema,
+  Error409Schema,
+  Error500Schema,
+  Error503Schema
+} from '@/types/v2alpha/error';
 import { dbEditSchema, dbStatusSchema } from '@/types/schemas/v2alpha/db';
 
 import * as createDatabaseSchemas from './database/create-database';
@@ -30,18 +39,19 @@ import * as logsFileSchemas from './logs/file';
 export * as logsFileSchemas from './logs/file';
 
 import * as databaseVersionListSchemas from './database/version/list';
+export * as databaseVersionListSchemas from './database/version/list';
 
 import * as enablePublicAccessSchemas from './network/enable-public-access';
 export * as enablePublicAccessSchemas from './network/enable-public-access';
 
 import * as disablePublicAccessSchemas from './network/disable-public-access';
+export * as disablePublicAccessSchemas from './network/disable-public-access';
 
 const getDatabaseResponseDocSchema = dbEditSchema.extend({
   uid: z.string().describe('Unique identifier of the database resource'),
   status: dbStatusSchema.describe('Current status of the database cluster'),
   createdAt: z.string().describe('Creation timestamp of the database cluster')
 });
-export * as disablePublicAccessSchemas from './network/disable-public-access';
 
 export const document = createDocument({
   openapi: '3.1.0',
@@ -56,6 +66,11 @@ export const document = createDocument({
       '**Mutation Operations (POST, PATCH, DELETE):**\n' +
       '- Return `204 No Content` on success without response body\n' +
       '- Return appropriate error status codes (400, 401, 403, 404, 409, 500, 503) with error details\n\n' +
+      '**Error Response Format:**\n' +
+      'All error responses use a standardized v2alpha format:\n' +
+      '```json\n' +
+      '{ "error": { "type": "...", "code": "...", "message": "...", "details": "..." } }\n' +
+      '```\n\n' +
       '**Features:**\n' +
       '- Database lifecycle management (create, update, delete, start, pause, restart)\n' +
       '- Resource scaling (CPU, memory, storage, replicas)\n' +
@@ -361,35 +376,7 @@ export const document = createDocument({
               'Bad Request - Invalid request body, resource values, or parameter configuration',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: {
-                      type: 'number',
-                      example: 400
-                    },
-                    message: {
-                      type: 'string',
-                      example: 'Invalid request body'
-                    },
-                    error: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          field: {
-                            type: 'string',
-                            example: 'resource.cpu'
-                          },
-                          message: {
-                            type: 'string',
-                            example: 'CPU must be in range [0.1, 32]'
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -397,13 +384,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -412,13 +393,7 @@ export const document = createDocument({
               'Forbidden - Insufficient permissions to create databases in this namespace',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -426,13 +401,7 @@ export const document = createDocument({
             description: 'Conflict - Database with this name already exists',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Database already exists' }
-                  }
-                }
+                schema: Error409Schema
               }
             }
           },
@@ -440,13 +409,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to create database due to server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -455,13 +418,7 @@ export const document = createDocument({
               'Service Unavailable - Kubernetes cluster is unavailable or not responding',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -528,13 +485,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -542,13 +493,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to list databases',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -556,13 +501,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to retrieve databases',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -570,13 +509,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -637,23 +570,7 @@ export const document = createDocument({
             description: 'Bad Request - Invalid resource values or configuration',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid resource values' },
-                    error: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          field: { type: 'string', example: 'resource.storage' },
-                          message: { type: 'string', example: 'Cannot decrease storage size' }
-                        }
-                      }
-                    }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -661,13 +578,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -675,13 +586,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to update databases',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -689,13 +594,7 @@ export const document = createDocument({
             description: 'Not Found - Database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -704,13 +603,7 @@ export const document = createDocument({
               'Conflict - Database is currently being updated or in an incompatible state',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Database update already in progress' }
-                  }
-                }
+                schema: Error409Schema
               }
             }
           },
@@ -718,13 +611,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to update database',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -732,13 +619,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -779,13 +660,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -793,13 +668,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to view database details',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -807,13 +676,7 @@ export const document = createDocument({
             description: 'Not Found - Database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -821,13 +684,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to retrieve database details',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -835,13 +692,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -874,13 +725,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -888,13 +733,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to delete databases',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -902,13 +741,7 @@ export const document = createDocument({
             description: 'Not Found - Database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -916,13 +749,7 @@ export const document = createDocument({
             description: 'Conflict - Database cannot be deleted in its current state',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Database is currently being updated' }
-                  }
-                }
+                schema: Error409Schema
               }
             }
           },
@@ -930,13 +757,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to delete database',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -944,13 +765,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -985,13 +800,7 @@ export const document = createDocument({
             description: 'Bad Request - Database is already running',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Database is already running' }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -999,13 +808,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -1013,13 +816,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to start databases',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -1027,13 +824,7 @@ export const document = createDocument({
             description: 'Not Found - Database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -1041,13 +832,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to start database',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -1055,13 +840,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -1096,13 +875,7 @@ export const document = createDocument({
             description: 'Bad Request - Database is already paused or in an incompatible state',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Database is already paused' }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -1110,13 +883,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -1124,13 +891,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to pause databases',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -1138,13 +899,7 @@ export const document = createDocument({
             description: 'Not Found - Database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -1152,13 +907,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to pause database',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -1166,13 +915,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -1207,13 +950,7 @@ export const document = createDocument({
             description: 'Bad Request - Database cannot be restarted in its current state',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Database must be running to restart' }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -1221,13 +958,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -1235,13 +966,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to restart databases',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -1249,13 +974,7 @@ export const document = createDocument({
             description: 'Not Found - Database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -1263,13 +982,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to restart database',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -1277,13 +990,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -1356,13 +1063,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -1370,13 +1071,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to list backups',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -1384,13 +1079,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to retrieve backups',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -1398,13 +1087,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -1470,16 +1153,7 @@ export const document = createDocument({
               'Bad Request - Invalid request body, description too long, or unsupported database type',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    error: {
-                      type: 'string',
-                      example:
-                        'Description is too long. Maximum length is 31 characters when encoded for Kubernetes labels.'
-                    }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -1487,13 +1161,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -1501,13 +1169,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to create backups',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -1515,13 +1177,7 @@ export const document = createDocument({
             description: 'Not Found - Database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -1529,13 +1185,7 @@ export const document = createDocument({
             description: 'Conflict - Another backup is currently in progress',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Backup already in progress' }
-                  }
-                }
+                schema: Error409Schema
               }
             }
           },
@@ -1543,13 +1193,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to create backup',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -1557,13 +1201,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Backup storage provider is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Backup storage unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -1630,13 +1268,7 @@ export const document = createDocument({
             description: 'Bad Request - Invalid request body or database name',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid database name format' }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -1644,13 +1276,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -1658,13 +1284,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to restore backups',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -1672,13 +1292,7 @@ export const document = createDocument({
             description: 'Not Found - Backup or original database not found',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Backup not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -1686,13 +1300,7 @@ export const document = createDocument({
             description: 'Conflict - Database with the provided name already exists',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Database with this name already exists' }
-                  }
-                }
+                schema: Error409Schema
               }
             }
           },
@@ -1700,13 +1308,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to restore database',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -1714,13 +1316,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Backup storage or Kubernetes cluster unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Service unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -1761,13 +1357,7 @@ export const document = createDocument({
             description: 'Bad Request - Missing or invalid parameters',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid backup name' }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -1775,13 +1365,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -1789,13 +1373,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to delete backups',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -1803,13 +1381,7 @@ export const document = createDocument({
             description: 'Not Found - Backup not found',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Backup not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -1817,13 +1389,7 @@ export const document = createDocument({
             description: 'Conflict - Backup is currently being used for a restore operation',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Backup is currently in use' }
-                  }
-                }
+                schema: Error409Schema
               }
             }
           },
@@ -1831,13 +1397,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to delete backup',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -1845,13 +1405,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Backup storage provider is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Backup storage unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -1886,13 +1440,7 @@ export const document = createDocument({
             description: 'Bad Request - Invalid database name',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid parameters' }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -1900,13 +1448,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -1914,13 +1456,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to modify network access',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -1928,13 +1464,7 @@ export const document = createDocument({
             description: 'Not Found - Database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -1942,13 +1472,7 @@ export const document = createDocument({
             description: 'Conflict - Public access is already enabled',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Public access already enabled' }
-                  }
-                }
+                schema: Error409Schema
               }
             }
           },
@@ -1956,13 +1480,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to enable public access',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -1970,13 +1488,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -2011,13 +1523,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -2025,13 +1531,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to modify network access',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -2039,16 +1539,7 @@ export const document = createDocument({
             description: 'Not Found - Database not found or public access not enabled',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: {
-                      type: 'string',
-                      example: 'Public access not enabled for this database'
-                    }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -2056,13 +1547,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to disable public access',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -2070,13 +1555,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -2104,13 +1583,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -2118,13 +1591,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to list database versions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -2132,13 +1599,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to retrieve database versions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -2146,13 +1607,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -2242,13 +1697,7 @@ export const document = createDocument({
             description: 'Bad Request - Invalid query parameters',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid page or pageSize parameter' }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -2256,13 +1705,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -2270,13 +1713,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to access logs',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -2284,13 +1721,7 @@ export const document = createDocument({
             description: 'Not Found - Pod or log file not found',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Pod or log file not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -2298,13 +1729,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to retrieve logs',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -2312,13 +1737,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }
@@ -2376,13 +1795,7 @@ export const document = createDocument({
             description: 'Bad Request - Invalid query parameters',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid dbType or logType parameter' }
-                  }
-                }
+                schema: Error400Schema
               }
             }
           },
@@ -2390,13 +1803,7 @@ export const document = createDocument({
             description: 'Unauthorized - Invalid or missing authentication credentials',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
+                schema: Error401Schema
               }
             }
           },
@@ -2404,13 +1811,7 @@ export const document = createDocument({
             description: 'Forbidden - Insufficient permissions to access logs',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
+                schema: Error403Schema
               }
             }
           },
@@ -2418,13 +1819,7 @@ export const document = createDocument({
             description: 'Not Found - Pod not found or no log files available',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Pod not found' }
-                  }
-                }
+                schema: Error404Schema
               }
             }
           },
@@ -2432,13 +1827,7 @@ export const document = createDocument({
             description: 'Internal Server Error - Failed to list log files',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
+                schema: Error500Schema
               }
             }
           },
@@ -2446,13 +1835,7 @@ export const document = createDocument({
             description: 'Service Unavailable - Kubernetes cluster is unavailable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
+                schema: Error503Schema
               }
             }
           }

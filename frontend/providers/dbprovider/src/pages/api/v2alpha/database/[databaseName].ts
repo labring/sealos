@@ -1,79 +1,91 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { ResponseCode, ResponseMessages } from '@/types/response';
 import { getDatabaseSchemas, updateDatabaseSchemas } from '@/types/apis/v2alpha';
 import { updateDatabase } from '@/services/backend/v2alpha/update-database';
 import { getDatabase } from '@/services/backend/v2alpha/get-database';
 import { deleteDatabase } from '@/services/backend/v2alpha/delete-database';
+import {
+  sendError,
+  sendK8sError,
+  sendValidationError,
+  ErrorType,
+  ErrorCode
+} from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
   if (!kubeconfig) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
   const k8s = await getK8s({ kubeconfig }).catch(() => null);
 
   if (!k8s) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
   const pathParamsParseResult = getDatabaseSchemas.pathParams.safeParse(req.query);
   if (!pathParamsParseResult.success) {
-    return jsonRes(res, {
-      code: ResponseCode.BAD_REQUEST,
-      message: ResponseMessages[ResponseCode.BAD_REQUEST],
-      error: pathParamsParseResult.error.issues
-    });
+    return sendValidationError(res, pathParamsParseResult.error, 'Invalid request parameters.');
   }
 
   if (req.method === 'PATCH') {
     try {
       const bodyParseResult = updateDatabaseSchemas.body.safeParse(req.body);
       if (!bodyParseResult.success) {
-        return jsonRes(res, {
-          code: 400,
-          message:
-            'Invalid request body. ' +
-            bodyParseResult.error.issues.map((i) => i.message).join(', '),
-          error: bodyParseResult.error.issues
-        });
+        return sendValidationError(res, bodyParseResult.error, 'Invalid request body.');
       }
 
       const { quota } = bodyParseResult.data;
       const validCpuValues = [1, 2, 3, 4, 5, 6, 7, 8];
       const validMemoryValues = [1, 2, 4, 6, 8, 12, 16, 32];
       if (quota.cpu !== undefined && !validCpuValues.includes(quota.cpu)) {
-        return res.status(400).json({
-          error: `Invalid CPU value. Must be one of: cores (minimum 1 core)`
+        return sendError(res, {
+          status: 400,
+          type: ErrorType.VALIDATION_ERROR,
+          code: ErrorCode.INVALID_VALUE,
+          message: 'Invalid CPU value. Must be one of: 1, 2, 3, 4, 5, 6, 7, 8 cores.'
         });
       }
 
       if (quota.memory !== undefined && !validMemoryValues.includes(quota.memory)) {
-        return res.status(400).json({
-          error: `Invalid memory value. Must be one of GB (minimum 1 GB)`
+        return sendError(res, {
+          status: 400,
+          type: ErrorType.VALIDATION_ERROR,
+          code: ErrorCode.INVALID_VALUE,
+          message: 'Invalid memory value. Must be one of: 1, 2, 4, 6, 8, 12, 16, 32 GB.'
         });
       }
 
       if (quota.storage !== undefined && (quota.storage < 1 || quota.storage > 300)) {
-        return res.status(400).json({
-          error: 'Invalid storage value. Must be between 1 and 300 GB'
+        return sendError(res, {
+          status: 400,
+          type: ErrorType.VALIDATION_ERROR,
+          code: ErrorCode.INVALID_VALUE,
+          message: 'Invalid storage value. Must be between 1 and 300 GB.'
         });
       }
 
       if (quota.replicas !== undefined && (quota.replicas < 1 || quota.replicas > 20)) {
-        return res.status(400).json({
-          error: 'Invalid replicas value. Must be between 1 and 20'
+        return sendError(res, {
+          status: 400,
+          type: ErrorType.VALIDATION_ERROR,
+          code: ErrorCode.INVALID_VALUE,
+          message: 'Invalid replicas value. Must be between 1 and 20.'
         });
       }
+
       await updateDatabase(k8s, {
         params: pathParamsParseResult.data,
         body: bodyParseResult.data
@@ -81,8 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(204).end();
     } catch (err: any) {
-      const errorResponse = handleK8sError(err);
-      return jsonRes(res, errorResponse);
+      return sendK8sError(res, err);
     }
   } else if (req.method === 'GET') {
     try {
@@ -100,8 +111,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.json(result);
     } catch (err: any) {
-      const errorResponse = handleK8sError(err);
-      return jsonRes(res, errorResponse);
+      return sendK8sError(res, err);
     }
   } else if (req.method === 'DELETE') {
     try {
@@ -111,12 +121,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(204).end();
     } catch (err: any) {
-      const errorResponse = handleK8sError(err);
-      return jsonRes(res, errorResponse);
+      return sendK8sError(res, err);
     }
   } else {
-    return res.status(405).json({
-      error: 'Method not allowed'
+    return sendError(res, {
+      status: 405,
+      type: ErrorType.CLIENT_ERROR,
+      code: ErrorCode.METHOD_NOT_ALLOWED,
+      message: 'Method not allowed. Use GET, PATCH, or DELETE.'
     });
   }
 }

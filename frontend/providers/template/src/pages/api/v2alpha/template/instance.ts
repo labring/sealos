@@ -5,6 +5,7 @@ import { mapValues, reduce } from 'lodash';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetTemplateByName } from '../../getTemplateSource';
 import JsYaml from 'js-yaml';
+import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 interface CreateInstanceRequest {
   name: string;
@@ -111,8 +112,11 @@ function extractResourceQuota(resource: any): ResourceQuota | undefined {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      message: 'Method not allowed'
+    return sendError(res, {
+      status: 405,
+      type: ErrorType.CLIENT_ERROR,
+      code: ErrorCode.METHOD_NOT_ALLOWED,
+      message: 'Method not allowed. Use POST.'
     });
   }
 
@@ -121,8 +125,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Validate required fields
     if (!name || typeof name !== 'string' || name.trim() === '') {
-      return res.status(400).json({
-        message: 'Instance name is required'
+      return sendError(res, {
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
+        message: 'Instance name is required.'
       });
     }
 
@@ -130,20 +137,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const k8sNameRegex = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
     const trimmedName = name.trim();
     if (!k8sNameRegex.test(trimmedName)) {
-      return res.status(400).json({
+      return sendError(res, {
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_VALUE,
         message:
-          'Instance name must start and end with a lowercase letter or number, and can only contain lowercase letters, numbers, and hyphens'
+          'Instance name must start and end with a lowercase letter or number, and can only contain lowercase letters, numbers, and hyphens.'
       });
     }
     if (trimmedName.length > 63) {
-      return res.status(400).json({
-        message: 'Instance name must be 63 characters or less'
+      return sendError(res, {
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_VALUE,
+        message: 'Instance name must be 63 characters or less.'
       });
     }
 
     if (!templateName || typeof templateName !== 'string' || templateName.trim() === '') {
-      return res.status(400).json({
-        message: 'Template name is required'
+      return sendError(res, {
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
+        message: 'Template name is required.'
       });
     }
 
@@ -152,9 +168,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       kubeconfig = await authSession(req.headers);
     } catch (err) {
-      return res.status(401).json({
-        message: 'Invalid or missing kubeconfig',
-        error: 'Authentication failed'
+      return sendError(res, {
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Invalid or missing kubeconfig.'
       });
     }
 
@@ -166,9 +184,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       namespace = k8sResult.namespace;
       applyYamlList = k8sResult.applyYamlList;
     } catch (err: any) {
-      return res.status(401).json({
-        message: 'Invalid kubeconfig or insufficient permissions',
-        error: err?.message || 'Failed to authenticate with Kubernetes cluster'
+      return sendError(res, {
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Invalid kubeconfig or insufficient permissions.',
+        details: err?.message || 'Failed to authenticate with Kubernetes cluster'
       });
     }
 
@@ -180,14 +201,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
     if (code !== 20000) {
-      return res.status(404).json({
-        message: message || `Template '${templateName}' not found`
+      return sendError(res, {
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: message || `Template '${templateName}' not found.`
       });
     }
 
     if (!dataSource || !templateYaml || !appYaml || !TemplateEnvs) {
-      return res.status(404).json({
-        message: `Template '${templateName}' not found or invalid`
+      return sendError(res, {
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: `Template '${templateName}' not found or invalid.`
       });
     }
 
@@ -220,8 +247,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Check for missing required args
     if (missingRequiredArgs.length > 0) {
-      return res.status(400).json({
-        message: `Missing required parameters: ${missingRequiredArgs.join(', ')}`
+      return sendError(res, {
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_VALUE,
+        message: `Missing required parameters: ${missingRequiredArgs.join(', ')}.`
       });
     }
 
@@ -235,8 +265,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const yamlDocs = JsYaml.loadAll(appYaml).filter((doc) => doc);
       if (yamlDocs.length === 0) {
-        return res.status(500).json({
-          message: 'Failed to parse template YAML: no valid documents found'
+        return sendError(res, {
+          status: 500,
+          type: ErrorType.INTERNAL_ERROR,
+          code: ErrorCode.INTERNAL_ERROR,
+          message: 'Failed to parse template YAML: no valid documents found.'
         });
       }
 
@@ -257,17 +290,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       if (!instanceFound) {
-        return res.status(500).json({
-          message: 'Failed to process template: Instance resource not found in template YAML'
+        return sendError(res, {
+          status: 500,
+          type: ErrorType.INTERNAL_ERROR,
+          code: ErrorCode.INTERNAL_ERROR,
+          message: 'Failed to process template: Instance resource not found in template YAML.'
         });
       }
 
       updatedAppYaml = updatedDocs.map((doc) => JsYaml.dump(doc)).join('---\n');
     } catch (yamlErr: any) {
       console.error('Failed to update Instance name in YAML:', yamlErr);
-      return res.status(500).json({
-        message: 'Failed to process template YAML',
-        error: yamlErr?.message || String(yamlErr)
+      return sendError(res, {
+        status: 500,
+        type: ErrorType.INTERNAL_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to process template YAML.',
+        details: yamlErr?.message || String(yamlErr)
       });
     }
 
@@ -279,16 +318,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (!generateStr || generateStr.trim() === '') {
-      return res.status(500).json({
-        message: 'Failed to generate YAML from template: empty result'
+      return sendError(res, {
+        status: 500,
+        type: ErrorType.INTERNAL_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to generate YAML from template: empty result.'
       });
     }
 
     const correctYaml = generateYamlList(generateStr, trimmedName);
 
     if (!correctYaml || correctYaml.length === 0) {
-      return res.status(500).json({
-        message: 'Failed to generate YAML list from template: no resources generated'
+      return sendError(res, {
+        status: 500,
+        type: ErrorType.INTERNAL_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to generate YAML list from template: no resources generated.'
       });
     }
 
@@ -297,8 +342,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .filter((yaml) => yaml && yaml.trim() !== '');
 
     if (yamls.length === 0) {
-      return res.status(500).json({
-        message: 'Failed to generate valid YAML: all resources are empty'
+      return sendError(res, {
+        status: 500,
+        type: ErrorType.INTERNAL_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Failed to generate valid YAML: all resources are empty.'
       });
     }
 
@@ -312,9 +360,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // 409 Conflict - Resource already exists
       if (errMessage.includes('already exists') || k8sErr?.body?.code === 409) {
-        return res.status(409).json({
-          message: `Instance '${trimmedName}' already exists`,
-          error: errMessage
+        return sendError(res, {
+          status: 409,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.ALREADY_EXISTS,
+          message: `Instance '${trimmedName}' already exists.`,
+          details: errMessage
         });
       }
 
@@ -324,9 +375,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         errMessage.includes('Forbidden') ||
         k8sErr?.body?.code === 403
       ) {
-        return res.status(403).json({
-          message: 'Permission denied: insufficient privileges to create resources',
-          error: errMessage
+        return sendError(res, {
+          status: 403,
+          type: ErrorType.AUTHORIZATION_ERROR,
+          code: ErrorCode.PERMISSION_DENIED,
+          message: 'Permission denied: insufficient privileges to create resources.',
+          details: errMessage
         });
       }
 
@@ -337,9 +391,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         errMessage.includes('admission webhook') ||
         k8sErr?.body?.code === 422
       ) {
-        return res.status(422).json({
-          message: 'Failed to create instance: invalid resource specification',
-          error: errMessage
+        return sendError(res, {
+          status: 422,
+          type: ErrorType.OPERATION_ERROR,
+          code: ErrorCode.INVALID_RESOURCE_SPEC,
+          message: 'Failed to create instance: invalid resource specification.',
+          details: errMessage
         });
       }
 
@@ -350,16 +407,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         errMessage.includes('unavailable') ||
         k8sErr?.body?.code === 503
       ) {
-        return res.status(503).json({
-          message: 'Kubernetes cluster is temporarily unavailable',
-          error: errMessage
+        return sendError(res, {
+          status: 503,
+          type: ErrorType.INTERNAL_ERROR,
+          code: ErrorCode.SERVICE_UNAVAILABLE,
+          message: 'Kubernetes cluster is temporarily unavailable.',
+          details: errMessage
         });
       }
 
       // 500 Internal Server Error - Other K8s errors
-      return res.status(500).json({
-        message: 'Failed to create instance in Kubernetes',
-        error: errMessage
+      return sendError(res, {
+        status: 500,
+        type: ErrorType.OPERATION_ERROR,
+        code: ErrorCode.KUBERNETES_ERROR,
+        message: 'Failed to create instance in Kubernetes.',
+        details: errMessage
       });
     }
 
@@ -372,9 +435,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Validate Instance was actually created
     if (!instanceResource) {
       console.error('Instance resource not found in created resources:', createdResources);
-      return res.status(500).json({
-        message: 'Instance resource was not created successfully',
-        error: 'Instance not found in Kubernetes response'
+      return sendError(res, {
+        status: 500,
+        type: ErrorType.INTERNAL_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Instance resource was not created successfully.',
+        details: 'Instance not found in Kubernetes response'
       });
     }
 
@@ -385,9 +451,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Validate Instance has required fields
     if (!instanceName) {
       console.error('Instance resource missing name:', instanceResource);
-      return res.status(500).json({
-        message: 'Instance resource created but missing name',
-        error: 'Invalid Instance resource returned from Kubernetes'
+      return sendError(res, {
+        status: 500,
+        type: ErrorType.INTERNAL_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Instance resource created but missing name.',
+        details: 'Invalid Instance resource returned from Kubernetes'
       });
     }
 
@@ -427,9 +496,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json(instanceResponse);
   } catch (err: any) {
     console.error('Error creating instance:', err);
-    return res.status(500).json({
-      message: 'Failed to create instance',
-      error: err?.message || err
+    return sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Failed to create instance.',
+      details: err?.message || String(err)
     });
   }
 }

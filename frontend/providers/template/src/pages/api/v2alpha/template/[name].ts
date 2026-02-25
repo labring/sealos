@@ -16,6 +16,7 @@ import {
   setCachedTemplateDetail
 } from './templateCache';
 import { Config } from '@/config';
+import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 // estimate min—max equality
 function simplifyResourceValue(
@@ -89,8 +90,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (!templateName) {
-    return res.status(400).json({
-      message: 'Template name is required'
+    return sendError(res, {
+      status: 400,
+      type: ErrorType.VALIDATION_ERROR,
+      code: ErrorCode.INVALID_PARAMETER,
+      message: 'Template name is required.'
     });
   }
 
@@ -108,8 +112,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return handleTemplateDetails(req, res, templateName, language);
   }
 
-  return res.status(405).json({
-    message: 'Method not allowed'
+  return sendError(res, {
+    status: 405,
+    type: ErrorType.CLIENT_ERROR,
+    code: ErrorCode.METHOD_NOT_ALLOWED,
+    message: 'Method not allowed. Use GET or POST.'
   });
 }
 
@@ -124,8 +131,11 @@ async function handleTemplateDeployment(
     const args = req.body as Record<string, string>;
 
     if (!args || typeof args !== 'object' || Object.keys(args).length === 0) {
-      return res.status(400).json({
-        message: 'Template parameters are required'
+      return sendError(res, {
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
+        message: 'Template parameters are required.'
       });
     }
 
@@ -134,9 +144,11 @@ async function handleTemplateDeployment(
     try {
       kubeconfig = await authSession(req.headers);
     } catch (err) {
-      return res.status(401).json({
-        message: 'Invalid or missing kubeconfig',
-        error: 'Authentication failed'
+      return sendError(res, {
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Invalid or missing kubeconfig.'
       });
     }
 
@@ -150,9 +162,12 @@ async function handleTemplateDeployment(
       applyYamlList = k8sResult.applyYamlList;
       k8sCustomObjects = k8sResult.k8sCustomObjects;
     } catch (err: any) {
-      return res.status(401).json({
-        message: 'Invalid kubeconfig or insufficient permissions',
-        error: err?.message || 'Failed to authenticate with Kubernetes cluster'
+      return sendError(res, {
+        status: 401,
+        type: ErrorType.AUTHENTICATION_ERROR,
+        code: ErrorCode.AUTHENTICATION_REQUIRED,
+        message: 'Invalid kubeconfig or insufficient permissions.',
+        details: err?.message || 'Failed to authenticate with Kubernetes cluster'
       });
     }
 
@@ -163,8 +178,11 @@ async function handleTemplateDeployment(
       });
 
     if (code !== 20000) {
-      return res.status(404).json({
-        message: message || `Template '${templateName}' not found`
+      return sendError(res, {
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: message || `Template '${templateName}' not found.`
       });
     }
 
@@ -197,9 +215,12 @@ async function handleTemplateDeployment(
     return res.status(204).end();
   } catch (err: any) {
     console.error('Error deploying template:', err);
-    return res.status(500).json({
-      message: 'Failed to deploy template',
-      error: err
+    return sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Failed to deploy template.',
+      details: err?.message || String(err)
     });
   }
 }
@@ -216,16 +237,22 @@ async function handleTemplateDetails(
     const jsonPath = path.resolve(originalPath, 'templates.json');
 
     if (!fs.existsSync(jsonPath)) {
-      return res.status(404).json({
-        message: 'Templates not found'
+      return sendError(res, {
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: 'Templates catalog not found.'
       });
     }
     getCachedTemplates(jsonPath, Config().template.cdnHost, [], language);
     const template = getTemplateFromCache(templateName);
 
     if (!template) {
-      return res.status(404).json({
-        message: `Template '${templateName}' not found`
+      return sendError(res, {
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: `Template '${templateName}' not found.`
       });
     }
 
@@ -302,9 +329,12 @@ async function handleTemplateDetails(
     res.status(200).json(result);
   } catch (error) {
     console.error('Error in template detail API:', error);
-    res.status(500).json({
-      message: 'Failed to get template details',
-      error: error
+    sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Failed to get template details.',
+      details: error instanceof Error ? error.message : String(error)
     });
   }
 }

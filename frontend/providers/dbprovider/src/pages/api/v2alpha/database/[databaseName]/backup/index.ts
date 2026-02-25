@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { handleK8sError, jsonRes } from '@/services/backend/response';
-import { ResponseCode, ResponseMessages } from '@/types/response';
 import { json2ManualBackup } from '@/utils/json2Yaml';
 import {
   DBBackupMethodNameMap,
@@ -14,6 +12,13 @@ import { customAlphabet } from 'nanoid';
 import z from 'zod';
 import { BACKUP_REMARK_LABEL_KEY, BackupStatusEnum } from '@/constants/backup';
 import { decodeFromHex } from '@/utils/tools';
+import {
+  sendError,
+  sendK8sError,
+  sendValidationError,
+  ErrorType,
+  ErrorCode
+} from '@/types/v2alpha/error';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 8);
 
@@ -28,25 +33,32 @@ const createBackupBodySchema = z.object({
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
   if (!kubeconfig) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
   const k8s = await getK8s({ kubeconfig }).catch(() => null);
   if (!k8s) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
   const { databaseName } = req.query as { databaseName: string };
 
   if (!databaseName) {
-    return res.status(400).json({
-      error: 'Database name is required in URL path'
+    return sendError(res, {
+      status: 400,
+      type: ErrorType.VALIDATION_ERROR,
+      code: ErrorCode.INVALID_PARAMETER,
+      message: 'Database name is required in URL path.'
     });
   }
 
@@ -93,33 +105,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(backups);
     } catch (err: any) {
-      return jsonRes(res, handleK8sError(err));
+      return sendK8sError(res, err);
     }
   }
 
   if (req.method === 'POST') {
     try {
-      // Parse request body
       const bodyParseResult = createBackupBodySchema.safeParse(req.body);
       if (!bodyParseResult.success) {
-        return res.status(400).json({
-          error: 'Invalid request body.',
-          details: bodyParseResult.error.issues
-        });
+        return sendValidationError(res, bodyParseResult.error, 'Invalid request body.');
       }
 
       const { description, name } = bodyParseResult.data;
 
-      // Validate description length: Kubernetes label value max 63 chars
-      // Hex encoding doubles the length, so max 31 chars for original string
       if (description && Buffer.from(description).toString('hex').length > 63) {
-        return res.status(400).json({
-          error:
+        return sendError(res, {
+          status: 400,
+          type: ErrorType.VALIDATION_ERROR,
+          code: ErrorCode.INVALID_VALUE,
+          message:
             'Description is too long. Maximum length is 31 characters when encoded for Kubernetes labels.'
         });
       }
 
-      // Get database cluster info to extract dbType
       const clusterGroup = 'apps.kubeblocks.io';
       const clusterVersion = 'v1alpha1';
       const clusterPlural = 'clusters';
@@ -133,34 +141,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       )) as any;
 
       if (!clusterInfo) {
-        return res.status(404).json({
-          error: 'Database not found'
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'Database not found.'
         });
       }
 
-      // Extract dbType from cluster labels
       const dbType = clusterInfo.metadata?.labels?.['clusterdefinition.kubeblocks.io/name'];
 
       if (!dbType) {
-        return res.status(500).json({
-          error: 'Cannot determine database type from cluster'
+        return sendError(res, {
+          status: 500,
+          type: ErrorType.INTERNAL_ERROR,
+          code: ErrorCode.INTERNAL_ERROR,
+          message: 'Cannot determine database type from cluster.'
         });
       }
 
-      // Generate 8-character random lowercase backup name
       const backupName = name || `${databaseName}-backup-${nanoid()}`;
-
-      // Create backup policy name based on database type
-      const backupPolicyName = `${databaseName}-${DBBackupPolicyNameMap[dbType as DBTypeEnum]}-backup-policy`;
+      const backupPolicyName = `${databaseName}-${
+        DBBackupPolicyNameMap[dbType as DBTypeEnum]
+      }-backup-policy`;
       const backupMethod = DBBackupMethodNameMap[dbType as DBTypeEnum];
 
       if (!backupMethod) {
-        return res.status(400).json({
-          error: `Unsupported database type: ${dbType}`
+        return sendError(res, {
+          status: 400,
+          type: ErrorType.VALIDATION_ERROR,
+          code: ErrorCode.INVALID_VALUE,
+          message: `Unsupported database type: ${dbType}.`
         });
       }
 
-      // Generate backup YAML
       const backupYaml = json2ManualBackup({
         name: backupName,
         backupPolicyName,
@@ -168,44 +182,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         remark: description
       });
 
-      // Apply the backup YAML
       await k8s.applyYamlList([backupYaml], 'create');
 
       return res.status(204).end();
     } catch (err: any) {
       console.error('Error creating backup:', err);
 
-      // Check if database not found
       if (err?.response?.statusCode === 404) {
-        return res.status(404).json({
-          error: 'Database not found'
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'Database not found.'
         });
       }
 
-      // Check if it's a label validation error
       if (err?.response?.statusCode === 422) {
         const errorMessage =
           err?.response?.body?.message || err?.message || 'Invalid backup configuration';
         if (errorMessage.includes('must be no more than 63 characters')) {
-          return res.status(400).json({
-            error:
+          return sendError(res, {
+            status: 400,
+            type: ErrorType.VALIDATION_ERROR,
+            code: ErrorCode.INVALID_VALUE,
+            message:
               'Description is too long. Maximum length is 31 characters when encoded for Kubernetes labels.'
           });
         }
-        return res.status(400).json({
-          error: errorMessage
+        return sendError(res, {
+          status: 400,
+          type: ErrorType.VALIDATION_ERROR,
+          code: ErrorCode.INVALID_VALUE,
+          message: errorMessage
         });
       }
 
-      // Return error without code field
-      const errorInfo = handleK8sError(err);
-      return res.status(errorInfo.code || 500).json({
-        error: errorInfo.message || 'Internal server error'
-      });
+      return sendK8sError(res, err);
     }
   }
 
-  return res.status(405).json({
-    error: 'Method not allowed'
+  return sendError(res, {
+    status: 405,
+    type: ErrorType.CLIENT_ERROR,
+    code: ErrorCode.METHOD_NOT_ALLOWED,
+    message: 'Method not allowed. Use GET or POST.'
   });
 }

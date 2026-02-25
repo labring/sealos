@@ -3,13 +3,14 @@ import { TemplateInputSchema, TemplateNamePathSchema, BaseResponseSchema } from 
 export const TemplateArgSchema = TemplateInputSchema;
 export const TemplateCreateSchema = z.object({
   name: z.string().describe('Template name'),
-  args: z.record(z.string(), TemplateArgSchema).describe('Template arguments configuration')
+  args: z.object({}).catchall(TemplateArgSchema).describe('Template arguments configuration')
 });
 
 export const pathParams = TemplateNamePathSchema;
 
 export const requestBody = z
-  .record(z.string(), z.string())
+  .object({})
+  .catchall(z.string().describe('Template variable value'))
   .describe(
     'Template variable values (key-value pairs for template arguments, sent directly without "args" wrapper)'
   );

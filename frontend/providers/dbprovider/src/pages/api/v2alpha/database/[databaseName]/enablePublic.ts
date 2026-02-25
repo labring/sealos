@@ -1,34 +1,40 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { handleK8sError, jsonRes } from '@/services/backend/response';
-import { ResponseCode, ResponseMessages } from '@/types/response';
 import { adaptDBDetail } from '@/utils/adapt';
 import { KbPgClusterType } from '@/types/cluster';
 import { json2NetworkService } from '@/utils/json2Yaml';
+import { sendError, sendK8sError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
   if (!kubeconfig) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
   const k8s = await getK8s({ kubeconfig }).catch(() => null);
   if (!k8s) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
   const { databaseName } = req.query as { databaseName: string };
 
   if (!databaseName) {
-    return res.status(400).json({
-      error: 'Database name is required'
+    return sendError(res, {
+      status: 400,
+      type: ErrorType.VALIDATION_ERROR,
+      code: ErrorCode.INVALID_PARAMETER,
+      message: 'Database name is required.'
     });
   }
 
@@ -45,8 +51,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const dbDetail = adaptDBDetail(clusterData);
 
       if (!dbDetail) {
-        return res.status(404).json({
-          error: 'Database not found'
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'Database not found.'
         });
       }
 
@@ -94,11 +103,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(204).end();
     } catch (err: any) {
-      return jsonRes(res, handleK8sError(err));
+      return sendK8sError(res, err);
     }
   }
 
-  return res.status(405).json({
-    error: 'Method not allowed'
+  return sendError(res, {
+    status: 405,
+    type: ErrorType.CLIENT_ERROR,
+    code: ErrorCode.METHOD_NOT_ALLOWED,
+    message: 'Method not allowed. Use POST.'
   });
 }

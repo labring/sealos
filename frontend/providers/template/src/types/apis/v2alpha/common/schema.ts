@@ -40,7 +40,8 @@ export const TemplateBaseSchema = z.object({
   gitRepo: z.string().url().describe('Git repository URL'),
   category: z.array(z.string()).describe('Template categories (e.g., ["ai", "database"])'),
   args: z
-    .record(z.string(), TemplateInputSchema)
+    .object({})
+    .catchall(TemplateInputSchema.describe('Template argument configuration'))
     .describe('Arguments required for template deployment'),
   deployCount: z.number().describe('Number of deployments (includes multiplier for display)')
 });

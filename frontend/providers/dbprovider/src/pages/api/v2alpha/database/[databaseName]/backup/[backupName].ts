@@ -1,14 +1,20 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { handleK8sError, jsonRes } from '@/services/backend/response';
-import { ResponseCode, ResponseMessages } from '@/types/response';
 import { json2CreateCluster, json2Account } from '@/utils/json2Yaml';
 import { DBTypeEnum, defaultDBEditValue, templateDeployKey } from '@/constants/db';
 import type { DBEditType } from '@/types/db';
 import { cpuFormatToM, memoryFormatToMi, storageFormatToGi } from '@/utils/tools';
 import { customAlphabet } from 'nanoid';
 import z from 'zod';
+import {
+  sendError,
+  sendK8sError,
+  sendValidationError,
+  ErrorType,
+  ErrorCode
+} from '@/types/v2alpha/error';
+
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 8);
 const restoreBodySchema = z.object({
   replicas: z.number().min(1).optional(),
@@ -55,17 +61,21 @@ function parseKubernetesResource(
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
   if (!kubeconfig) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
   const k8s = await getK8s({ kubeconfig }).catch(() => null);
   if (!k8s) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
@@ -75,8 +85,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   if (!databaseName || !backupName) {
-    return res.status(400).json({
-      error: 'Database name and backup name are required'
+    return sendError(res, {
+      status: 400,
+      type: ErrorType.VALIDATION_ERROR,
+      code: ErrorCode.INVALID_PARAMETER,
+      message: 'Database name and backup name are required.'
     });
   }
 
@@ -84,10 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const bodyParseResult = restoreBodySchema.safeParse(req.body);
       if (!bodyParseResult.success) {
-        return res.status(400).json({
-          error: 'Invalid request body.',
-          details: bodyParseResult.error.issues
-        });
+        return sendValidationError(res, bodyParseResult.error, 'Invalid request body.');
       }
 
       const { replicas, name } = bodyParseResult.data;
@@ -106,8 +116,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       )) as any;
 
       if (!backupInfo) {
-        return res.status(404).json({
-          error: 'Backup not found'
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'Backup not found.'
         });
       }
 
@@ -213,18 +226,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(204).end();
     } catch (err: any) {
       if (err?.response?.statusCode === 404) {
-        return res.status(404).json({
-          error: 'Backup not found'
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'Backup not found.'
         });
       }
 
       if (err?.response?.statusCode === 409) {
-        return res.status(409).json({
-          error: 'Database with this name already exists'
+        return sendError(res, {
+          status: 409,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.ALREADY_EXISTS,
+          message: 'Database with this name already exists.'
         });
       }
 
-      return jsonRes(res, handleK8sError(err));
+      return sendK8sError(res, err);
     }
   }
 
@@ -247,11 +266,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (err?.response?.statusCode === 404) {
         return res.status(204).end();
       }
-      return jsonRes(res, handleK8sError(err));
+      return sendK8sError(res, err);
     }
   }
 
-  return res.status(405).json({
-    error: 'Method not allowed'
+  return sendError(res, {
+    status: 405,
+    type: ErrorType.CLIENT_ERROR,
+    code: ErrorCode.METHOD_NOT_ALLOWED,
+    message: 'Method not allowed. Use POST or DELETE.'
   });
 }

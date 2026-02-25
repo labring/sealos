@@ -1,29 +1,36 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createDatabaseSchemas } from '@/types/apis/v2alpha';
-import { ResponseCode, ResponseMessages } from '@/types/response';
 import { createDatabase } from '@/services/backend/v2alpha/create-database';
 import { getDatabaseList } from '@/services/backend/v2alpha/list-database';
+import {
+  sendError,
+  sendK8sError,
+  sendValidationError,
+  ErrorType,
+  ErrorCode
+} from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
   if (!kubeconfig) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
-  const k8s = await getK8s({ kubeconfig }).catch((error) => {
-    return null;
-  });
+  const k8s = await getK8s({ kubeconfig }).catch(() => null);
 
   if (!k8s) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
@@ -31,33 +38,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const bodyParseResult = createDatabaseSchemas.body.safeParse(req.body);
       if (!bodyParseResult.success) {
-        return jsonRes(res, {
-          code: 400,
-          message: 'Invalid request body.',
-          error: bodyParseResult.error.issues
-        });
+        return sendValidationError(res, bodyParseResult.error, 'Invalid request body.');
       }
 
-      // 创建数据库
       await createDatabase(k8s, {
         body: bodyParseResult.data
       });
 
       return res.status(204).end();
     } catch (err: any) {
-      let errorResponse;
-
       if (err.response || err.body) {
-        errorResponse = handleK8sError(err);
-      } else {
-        errorResponse = {
-          code: 500,
-          message: err.message || 'Internal server error',
-          error: process.env.NODE_ENV === 'development' ? err.stack : undefined
-        };
+        return sendK8sError(res, err);
       }
-
-      return jsonRes(res, errorResponse);
+      return sendError(res, {
+        status: 500,
+        type: ErrorType.INTERNAL_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'Internal server error.',
+        details: err?.message
+      });
     }
   }
 
@@ -82,12 +81,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json(simplified);
     } catch (err: any) {
-      const errorResponse = handleK8sError(err);
-      return jsonRes(res, errorResponse);
+      return sendK8sError(res, err);
     }
   }
 
-  return res.status(405).json({
-    error: 'Method not allowed'
+  return sendError(res, {
+    status: 405,
+    type: ErrorType.CLIENT_ERROR,
+    code: ErrorCode.METHOD_NOT_ALLOWED,
+    message: 'Method not allowed. Use GET or POST.'
   });
 }

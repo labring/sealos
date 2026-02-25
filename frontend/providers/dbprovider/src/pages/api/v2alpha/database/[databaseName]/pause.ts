@@ -1,25 +1,34 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes, handleK8sError } from '@/services/backend/response';
 import { pauseDatabaseSchemas } from '@/types/apis/v2alpha';
-import { ResponseCode, ResponseMessages } from '@/types/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { pauseDatabase } from '@/services/backend/v2alpha/pause-database';
+import {
+  sendError,
+  sendK8sError,
+  sendValidationError,
+  ErrorType,
+  ErrorCode
+} from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
   if (!kubeconfig) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
   const k8s = await getK8s({ kubeconfig }).catch(() => null);
   if (!k8s) {
-    return jsonRes(res, {
-      code: ResponseCode.UNAUTHORIZED,
-      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
     });
   }
 
@@ -27,10 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const pathParamsParseResult = pauseDatabaseSchemas.pathParams.safeParse(req.query);
       if (!pathParamsParseResult.success) {
-        return res.status(400).json({
-          error: 'Invalid request params.',
-          details: pathParamsParseResult.error.issues
-        });
+        return sendValidationError(res, pathParamsParseResult.error, 'Invalid request parameters.');
       }
 
       await pauseDatabase(
@@ -43,11 +49,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(204).end();
     } catch (error) {
-      return jsonRes(res, handleK8sError(error));
+      return sendK8sError(res, error);
     }
   }
 
-  return res.status(405).json({
-    error: 'Method not allowed'
+  return sendError(res, {
+    status: 405,
+    type: ErrorType.CLIENT_ERROR,
+    code: ErrorCode.METHOD_NOT_ALLOWED,
+    message: 'Method not allowed. Use POST.'
   });
 }

@@ -1,9 +1,9 @@
 import { getK8s, K8sApi } from '@/services/backend/kubernetes';
-import { handleK8sError, jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { versionListSchema } from '@/types/schemas/db';
 import { DBTypeEnum } from '@/constants/db';
 import z from 'zod';
+import { sendError, sendK8sError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kc = K8sApi();
@@ -26,7 +26,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [DBTypeEnum.clickhouse]: []
       };
 
-      // source price
       const { k8sCustomObjects } = k8s;
 
       const { body } = (await k8sCustomObjects.listClusterCustomObject(
@@ -45,12 +44,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.json(DBVersion);
     } catch (err) {
       console.log('error get db by name', err);
-      jsonRes(res, handleK8sError(err));
+      return sendK8sError(res, err);
     }
   } else {
-    return jsonRes(res, {
-      code: 405,
-      message: 'Method not allowed'
+    return sendError(res, {
+      status: 405,
+      type: ErrorType.CLIENT_ERROR,
+      code: ErrorCode.METHOD_NOT_ALLOWED,
+      message: 'Method not allowed. Use GET.'
     });
   }
 }

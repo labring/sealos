@@ -1,10 +1,10 @@
-import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
 import { findTopKeyWords } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { getCachedTemplates } from './templateCache';
 import { Config } from '@/config';
+import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = (req.query.language as string) || 'en';
   const originalPath = process.cwd();
@@ -57,6 +57,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Return templates array directly
     res.status(200).json(simplifiedTemplates);
   } catch (error) {
-    jsonRes(res, { code: 500, data: 'api listTemplate error', error: error });
+    sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'Failed to load templates.',
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 }
