@@ -36,7 +36,6 @@ data:
       enterpriseRealNameAuthEnabled: {{ .Values.desktopConfig.enterpriseRealNameAuthEnabled }}
       trackingEnabled: {{ .Values.desktopConfig.trackingEnabled }}
       realNameAuthEnabled: {{ .Values.desktopConfig.realNameAuthEnabled }}
-      licenseCheckEnabled: {{ .Values.desktopConfig.licenseCheckEnabled }}
       realNameReward: {{ .Values.desktopConfig.realNameReward }}
       realNameCallbackUrl: "{{ .Values.desktopConfig.realNameCallbackUrl }}"
       templateUrl: "https://template.{{ .Values.desktopConfig.cloudDomain }}"
@@ -109,7 +108,7 @@ data:
           global: "{{ .Values.desktopConfig.jwtGlobal }}"
         idp:
           password:
-            enabled: true
+            enabled: {{.Values.desktopConfig.passwordEnabled }}
             salt: "{{ .Values.desktopConfig.passwordSalt }}"
           github:
             enabled: {{ .Values.desktopConfig.githubEnabled }}
