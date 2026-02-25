@@ -78,7 +78,6 @@ desktopConfig:
   enterpriseRealNameAuthEnabled: false
   trackingEnabled: false
   realNameAuthEnabled: false
-  licenseCheckEnabled: false
 
   # Common URLs (default values)
   realNameReward: 0
@@ -109,6 +108,7 @@ desktopConfig:
   metaDescription: "Sealos Cloud"
   metaKeywords: "Sealos Cloud"
 
+  passwordEnabled: true
   # OAuth providers
   githubEnabled: false
   githubClientId: ""
