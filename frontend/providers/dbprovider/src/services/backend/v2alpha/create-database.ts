@@ -170,7 +170,13 @@ export async function createDatabase(
   const yamlList = [account, cluster];
 
   if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
-    if (!(rawDbForm.dbType === 'apecloud-mysql' && rawDbForm.dbVersion === 'mysql-5.7.42')) {
+    const isMysql5742 =
+      rawDbForm.dbType === 'apecloud-mysql' && rawDbForm.dbVersion === 'mysql-5.7.42';
+    const tz = rawDbForm.parameterConfig?.timeZone;
+    const shouldApplyMysql5742Timezone = isMysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
+
+    // For MySQL 5.7.42, only allow timezone configuration to be applied.
+    if (!isMysql5742 || shouldApplyMysql5742Timezone) {
       let dynamicMaxConnections: number = 0;
       try {
         dynamicMaxConnections = getScore(rawDbForm.dbType, rawDbForm.cpu, rawDbForm.memory);
@@ -182,7 +188,7 @@ export async function createDatabase(
         rawDbForm.dbName,
         rawDbForm.dbType,
         rawDbForm.dbVersion,
-        rawDbForm.parameterConfig || {},
+        shouldApplyMysql5742Timezone ? { timeZone: tz as string } : rawDbForm.parameterConfig || {},
         dynamicMaxConnections
       );
 
