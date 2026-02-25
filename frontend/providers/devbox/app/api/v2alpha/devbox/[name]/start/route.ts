@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { devboxKey } from '@/constants/devbox';
+import { sendError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,10 +89,11 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
 
     return new NextResponse(null, { status: 204 });
   } catch (err: any) {
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Failed to start DevBox',
-      error: err
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Failed to start devbox'
     });
   }
 }

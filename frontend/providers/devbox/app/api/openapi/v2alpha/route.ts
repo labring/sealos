@@ -1,86 +1,49 @@
-import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 import { NextResponse } from 'next/server';
 import {
   RequestSchema as CreateDevboxRequestSchema,
-  SuccessResponseSchema as CreateDevboxSuccessResponseSchema,
   DevboxListResponseSchemaV1 as GetDevboxListResponseSchema
 } from '../../v2alpha/devbox/schema';
 
 import {
   UpdateDevboxRequestSchema,
-  UpdateDevboxResponseSchema,
-  ErrorResponseSchema as UpdateDevboxErrorResponseSchema,
   DevboxDetailResponseSchema,
-  DeleteDevboxRequestSchema,
-  DeleteDevboxResponseSchema as DeleteDevboxSuccessResponseSchema
+  DeleteDevboxRequestSchema
 } from '../../v2alpha/devbox/[name]/schema';
 
-import {
-  RequestSchema as StartDevboxRequestSchema,
-  SuccessResponseSchema as StartDevboxSuccessResponseSchema,
-  ErrorResponseSchema as StartDevboxErrorResponseSchema
-} from '../../v2alpha/devbox/[name]/start/schema';
+import { RequestSchema as StartDevboxRequestSchema } from '../../v2alpha/devbox/[name]/start/schema';
 
-import {
-  RequestSchema as PauseDevboxRequestSchema,
-  SuccessResponseSchema as PauseDevboxSuccessResponseSchema,
-  ErrorResponseSchema as PauseDevboxErrorResponseSchema
-} from '../../v2alpha/devbox/[name]/pause/schema';
+import { RequestSchema as PauseDevboxRequestSchema } from '../../v2alpha/devbox/[name]/pause/schema';
 
-import {
-  RequestSchema as ShutdownDevboxRequestSchema,
-  SuccessResponseSchema as ShutdownDevboxSuccessResponseSchema,
-  ErrorResponseSchema as ShutdownDevboxErrorResponseSchema
-} from '../../v2alpha/devbox/[name]/shutdown/schema';
+import { RequestSchema as ShutdownDevboxRequestSchema } from '../../v2alpha/devbox/[name]/shutdown/schema';
 
-import {
-  RequestSchema as RestartDevboxRequestSchema,
-  SuccessResponseSchema as RestartDevboxSuccessResponseSchema,
-  ErrorResponseSchema as RestartDevboxErrorResponseSchema
-} from '../../v2alpha/devbox/[name]/restart/schema';
+import { RequestSchema as RestartDevboxRequestSchema } from '../../v2alpha/devbox/[name]/restart/schema';
 
-import {
-  AutostartRequestSchema,
-  AutostartSuccessResponseSchema,
-  AutostartErrorResponseSchema
-} from '../../v2alpha/devbox/[name]/autostart/schema';
+import { AutostartRequestSchema } from '../../v2alpha/devbox/[name]/autostart/schema';
+
 import {
   RequestSchema as ReleaseDevboxRequestSchema,
-  SuccessResponseSchema as ReleaseDevboxSuccessResponseSchema,
-  ErrorResponseSchema as ReleaseDevboxErrorResponseSchema,
   GetSuccessResponseSchema as ReleaseDevboxGetSuccessResponseSchema
 } from '../../v2alpha/devbox/[name]/release/schema';
 
 import {
-  SuccessResponseSchema as DeleteReleaseSuccessResponseSchema,
-  ErrorResponseSchema as DeleteReleaseErrorResponseSchema
-} from '../../v2alpha/devbox/[name]/release/[tag]/schema';
-
-import {
   DeployDevboxPathParamsSchema,
-  DeployDevboxRequestSchema,
-  DeployDevboxSuccessResponseSchema,
-  DeployDevboxErrorResponseSchema
+  DeployDevboxRequestSchema
 } from '../../v2alpha/devbox/[name]/release/[tag]/deploy/schema';
 
-import {
-  SuccessResponseSchema as GetDevboxTemplatesSuccessResponseSchema,
-  ErrorResponseSchema as GetDevboxTemplatesErrorResponseSchema
-} from '../../v2alpha/devbox/templates/schema';
+import { SuccessResponseSchema as GetDevboxTemplatesSuccessResponseSchema } from '../../v2alpha/devbox/templates/schema';
 
 import { MonitorSuccessResponseSchema } from '../../v2alpha/devbox/[name]/monitor/schema';
 
-import {
-  GetSuccessResponseSchema as GetDeployListSuccessResponseSchema,
-  ErrorResponseSchema as GetDeployListErrorResponseSchema
-} from '../../v2alpha/devbox/[name]/deploy/schema';
+import { GetSuccessResponseSchema as GetDeployListSuccessResponseSchema } from '../../v2alpha/devbox/[name]/deploy/schema';
 
-const ErrorResponseSchema = z.object({
-  code: z.number(),
-  message: z.string(),
-  data: z.string().optional()
-});
+import {
+  Error400Schema,
+  Error404Schema,
+  Error409Schema,
+  Error422Schema,
+  Error500Schema
+} from '@/lib/v2alpha/error';
 
 const tmpOpenApiDocument = (sealosDomain: string) =>
   createDocument({
@@ -101,7 +64,23 @@ All endpoints require authentication via kubeconfig or JWT token.
 
 ## API Organization
 - Query: Read-only operations (GET requests)
-- Mutation: Write operations (POST/PUT/PATCH/DELETE requests)`
+- Mutation: Write operations (POST/PUT/PATCH/DELETE requests)
+
+## Error Response Format
+
+All error responses use the standardized v2alpha format:
+\`\`\`json
+{ "error": { "type": "...", "code": "...", "message": "...", "details": "..." } }
+\`\`\`
+
+| HTTP Status | type | Example codes |
+|-------------|------|---------------|
+| 400 | \`validation_error\` / \`client_error\` | \`INVALID_PARAMETER\`, \`INVALID_VALUE\` |
+| 401 | \`authentication_error\` | \`AUTHENTICATION_REQUIRED\` |
+| 404 | \`resource_error\` | \`NOT_FOUND\` |
+| 409 | \`resource_error\` | \`ALREADY_EXISTS\` |
+| 422 | \`operation_error\` | \`INVALID_RESOURCE_SPEC\` |
+| 500 | \`internal_error\` / \`operation_error\` | \`INTERNAL_ERROR\`, \`OPERATION_FAILED\` |`
     },
     tags: [
       {
@@ -200,14 +179,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Failed to retrieve devbox list from Kubernetes or match templates.',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     retrieval_failed: {
                       summary: 'Failed to get devbox list',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        data: 'Failed to list devboxes from Kubernetes'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to list devboxes from Kubernetes'
+                        }
                       }
                     }
                   }
@@ -219,7 +200,8 @@ All endpoints require authentication via kubeconfig or JWT token.
         post: {
           tags: ['Mutation'],
           summary: 'Create new devbox',
-          description: 'Create a new Devbox instance with customizable runtime, resources, and ports. CPU and memory quota must be in range [0.1, 32].',
+          description:
+            'Create a new Devbox instance with customizable runtime, resources, and ports. CPU and memory quota must be in range [0.1, 32].',
           requestBody: {
             description:
               'Devbox creation configuration including runtime, resources, ports, and environment settings',
@@ -240,7 +222,8 @@ All endpoints require authentication via kubeconfig or JWT token.
                     }
                   },
                   advanced: {
-                    summary: 'Advanced Devbox with ports and environment variables (supports flexible CPU/memory values)',
+                    summary:
+                      'Advanced Devbox with ports and environment variables (supports flexible CPU/memory values)',
                     value: {
                       name: 'my-python-api',
                       runtime: 'python',
@@ -305,19 +288,22 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Bad Request - Invalid request parameters, malformed JSON, or validation errors in the request body.',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     validation_error: {
                       summary: 'Validation error example',
                       value: {
-                        code: 400,
-                        message: 'Invalid request body',
-                        error: [
-                          {
-                            path: ['name'],
-                            message: 'String must contain at least 1 character(s)'
-                          }
-                        ]
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid request body',
+                          details: [
+                            {
+                              field: 'name',
+                              message: 'String must contain at least 1 character(s)'
+                            }
+                          ]
+                        }
                       }
                     }
                   }
@@ -329,13 +315,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Not Found - The specified runtime environment does not exist or is not available.',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     runtime_not_found: {
                       summary: 'Runtime not found example',
                       value: {
-                        code: 404,
-                        message: "Runtime 'invalid-runtime' not found"
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: "Runtime 'invalid-runtime' not found or not available"
+                        }
                       }
                     }
                   }
@@ -347,13 +336,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Conflict - A Devbox with the specified name already exists in the current namespace.',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error409Schema,
                   examples: {
                     name_conflict: {
                       summary: 'Name conflict example',
                       value: {
-                        code: 409,
-                        message: 'Devbox already exists'
+                        error: {
+                          type: 'resource_error',
+                          code: 'ALREADY_EXISTS',
+                          message: 'Devbox already exists'
+                        }
                       }
                     }
                   }
@@ -365,14 +357,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Failed to create Devbox due to server-side issues or resource constraints.',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     server_error: {
                       summary: 'Server error example',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        data: 'Failed to create Kubernetes resources'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Internal server error'
+                        }
                       }
                     }
                   }
@@ -471,13 +465,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid devbox name format.',
               content: {
                 'application/json': {
-                  schema: UpdateDevboxErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid devbox name',
                       value: {
-                        code: 400,
-                        message: 'Devbox name is required'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Devbox name is required'
+                        }
                       }
                     }
                   }
@@ -489,13 +486,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Not Found - The specified Devbox does not exist in the current namespace.',
               content: {
                 'application/json': {
-                  schema: UpdateDevboxErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     devbox_not_found: {
                       summary: 'Devbox not found',
                       value: {
-                        code: 404,
-                        message: 'Devbox not found'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Devbox not found'
+                        }
                       }
                     }
                   }
@@ -507,23 +507,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Failed to retrieve devbox information from Kubernetes or database.',
               content: {
                 'application/json': {
-                  schema: UpdateDevboxErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     retrieval_failed: {
                       summary: 'Failed to get devbox details',
                       value: {
-                        code: 500,
-                        message: 'Internal server error occurred while retrieving devbox details',
                         error: {
-                          type: 'INTERNAL_ERROR'
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Internal server error'
                         }
-                      }
-                    },
-                    template_not_found: {
-                      summary: 'Template not found',
-                      value: {
-                        code: 500,
-                        message: 'Template not found'
                       }
                     }
                   }
@@ -535,7 +528,8 @@ All endpoints require authentication via kubeconfig or JWT token.
         patch: {
           tags: ['Mutation'],
           summary: 'Update devbox configuration',
-          description: 'Update Devbox resources and port configurations without restart. CPU and memory quota must be in range [0.1, 32].',
+          description:
+            'Update Devbox resources and port configurations without restart. CPU and memory quota must be in range [0.1, 32].',
           parameters: [
             {
               name: 'name',
@@ -586,7 +580,8 @@ All endpoints require authentication via kubeconfig or JWT token.
                     }
                   },
                   both: {
-                    summary: 'Update both resources and ports (supports flexible CPU/memory values)',
+                    summary:
+                      'Update both resources and ports (supports flexible CPU/memory values)',
                     value: {
                       quota: {
                         cpu: 0.5,
@@ -669,13 +664,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid devbox name format or validation error.',
               content: {
                 'application/json': {
-                  schema: UpdateDevboxErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid devbox name',
                       value: {
-                        code: 400,
-                        message: 'Invalid devbox name format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name format'
+                        }
                       }
                     }
                   }
@@ -686,13 +684,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Not Found - The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: UpdateDevboxErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     not_found: {
                       summary: 'Devbox not found',
                       value: {
-                        code: 404,
-                        message: 'Devbox not found'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Devbox not found'
+                        }
                       }
                     }
                   }
@@ -704,14 +705,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Failed to delete Devbox or its associated resources.',
               content: {
                 'application/json': {
-                  schema: UpdateDevboxErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     deletion_failed: {
                       summary: 'Deletion operation failed',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to delete Kubernetes resources'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Internal server error'
+                        }
                       }
                     }
                   }
@@ -770,13 +773,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid request parameters or devbox name format.',
               content: {
                 'application/json': {
-                  schema: AutostartErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid devbox name',
                       value: {
-                        code: 400,
-                        message: 'Invalid devbox name format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name format'
+                        }
                       }
                     }
                   }
@@ -787,13 +793,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Not Found - The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: AutostartErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     not_found: {
                       summary: 'Devbox not found',
                       value: {
-                        code: 404,
-                        message: 'Devbox not found'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Devbox not found'
+                        }
                       }
                     }
                   }
@@ -804,14 +813,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Internal Server Error - Failed to create autostart resources.',
               content: {
                 'application/json': {
-                  schema: AutostartErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     creation_failed: {
                       summary: 'Resource creation failed',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to create RBAC resources'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to create autostart resources'
+                        }
                       }
                     }
                   }
@@ -864,13 +875,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid request parameters or devbox name format.',
               content: {
                 'application/json': {
-                  schema: StartDevboxErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid name format',
                       value: {
-                        code: 400,
-                        message: 'Invalid devbox name format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name format'
+                        }
                       }
                     }
                   }
@@ -881,13 +895,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Not Found - The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: StartDevboxErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     not_found: {
                       summary: 'Devbox not found',
                       value: {
-                        code: 404,
-                        message: 'Devbox not found'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Devbox not found'
+                        }
                       }
                     }
                   }
@@ -898,14 +915,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Internal Server Error - Failed to start Devbox or restore services.',
               content: {
                 'application/json': {
-                  schema: StartDevboxErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     start_failed: {
                       summary: 'Start operation failed',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to restore ingress configuration'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to start devbox'
+                        }
                       }
                     }
                   }
@@ -959,13 +978,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid request parameters or devbox name format.',
               content: {
                 'application/json': {
-                  schema: PauseDevboxErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid name format',
                       value: {
-                        code: 400,
-                        message: 'Invalid devbox name format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name format'
+                        }
                       }
                     }
                   }
@@ -976,13 +998,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Not Found - The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: PauseDevboxErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     not_found: {
                       summary: 'Devbox not found',
                       value: {
-                        code: 404,
-                        message: 'Devbox not found'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Devbox not found'
+                        }
                       }
                     }
                   }
@@ -994,14 +1019,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Failed to pause Devbox or update ingress configuration.',
               content: {
                 'application/json': {
-                  schema: PauseDevboxErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     pause_failed: {
                       summary: 'Pause operation failed',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to update ingress to pause state'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to pause devbox'
+                        }
                       }
                     }
                   }
@@ -1055,13 +1082,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid request parameters or devbox name format.',
               content: {
                 'application/json': {
-                  schema: ShutdownDevboxErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid name format',
                       value: {
-                        code: 400,
-                        message: 'Invalid devbox name format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name format'
+                        }
                       }
                     }
                   }
@@ -1072,13 +1102,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Not Found - The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: ShutdownDevboxErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     not_found: {
                       summary: 'Devbox not found',
                       value: {
-                        code: 404,
-                        message: 'Devbox not found'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Devbox not found'
+                        }
                       }
                     }
                   }
@@ -1089,14 +1122,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Internal Server Error - Failed to shutdown Devbox or release ports.',
               content: {
                 'application/json': {
-                  schema: ShutdownDevboxErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     shutdown_failed: {
                       summary: 'Shutdown operation failed',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to release port resources'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to shutdown devbox'
+                        }
                       }
                     }
                   }
@@ -1150,13 +1185,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid request parameters or devbox name format.',
               content: {
                 'application/json': {
-                  schema: RestartDevboxErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid name format',
                       value: {
-                        code: 400,
-                        message: 'Invalid devbox name format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name format'
+                        }
                       }
                     }
                   }
@@ -1167,32 +1205,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Not Found - The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: RestartDevboxErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     not_found: {
                       summary: 'Devbox not found',
                       value: {
-                        code: 404,
-                        message: 'Devbox not found'
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            '408': {
-              description:
-                'Request Timeout - Pods did not delete within the expected time window during restart.',
-              content: {
-                'application/json': {
-                  schema: RestartDevboxErrorResponseSchema,
-                  examples: {
-                    timeout: {
-                      summary: 'Restart timeout',
-                      value: {
-                        code: 408,
-                        message: 'Restart timeout - pods did not delete within expected time',
-                        error: 'Pod deletion took longer than 5 minutes'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Devbox not found'
+                        }
                       }
                     }
                   }
@@ -1203,14 +1225,26 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Internal Server Error - Failed to complete the restart cycle.',
               content: {
                 'application/json': {
-                  schema: RestartDevboxErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     restart_failed: {
                       summary: 'Restart operation failed',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to restore services after restart'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to restart devbox'
+                        }
+                      }
+                    },
+                    restart_timeout: {
+                      summary: 'Restart timeout',
+                      value: {
+                        error: {
+                          type: 'operation_error',
+                          code: 'OPERATION_FAILED',
+                          message: 'Timeout waiting for pods to restart'
+                        }
                       }
                     }
                   }
@@ -1279,13 +1313,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid devbox name format.',
               content: {
                 'application/json': {
-                  schema: ReleaseDevboxErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid devbox name',
                       value: {
-                        code: 400,
-                        message: 'Invalid devbox name format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name format'
+                        }
                       }
                     }
                   }
@@ -1297,14 +1334,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Failed to retrieve release list from Kubernetes.',
               content: {
                 'application/json': {
-                  schema: ReleaseDevboxErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     retrieval_failed: {
                       summary: 'Failed to get releases',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to list DevboxRelease resources'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to list DevboxRelease resources'
+                        }
                       }
                     }
                   }
@@ -1367,14 +1406,19 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid request body, tag format, or devbox name.',
               content: {
                 'application/json': {
-                  schema: ReleaseDevboxErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_tag: {
                       summary: 'Invalid tag format',
                       value: {
-                        code: 400,
-                        message: 'Invalid request body',
-                        error: 'Tag must comply with DNS naming conventions'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid request body',
+                          details: [
+                            { field: 'tag', message: 'Tag must comply with DNS naming conventions' }
+                          ]
+                        }
                       }
                     }
                   }
@@ -1385,13 +1429,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Not Found - The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: ReleaseDevboxErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     not_found: {
                       summary: 'Devbox not found',
                       value: {
-                        code: 404,
-                        message: 'Devbox not found'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Devbox not found'
+                        }
                       }
                     }
                   }
@@ -1403,14 +1450,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Conflict - A release with the specified tag already exists for this Devbox.',
               content: {
                 'application/json': {
-                  schema: ReleaseDevboxErrorResponseSchema,
+                  schema: Error409Schema,
                   examples: {
                     tag_conflict: {
                       summary: 'Tag already exists',
                       value: {
-                        code: 409,
-                        message: 'Devbox release with this tag already exists',
-                        error: 'Release v1.0.0 already exists'
+                        error: {
+                          type: 'resource_error',
+                          code: 'ALREADY_EXISTS',
+                          message: 'Devbox release already exists'
+                        }
                       }
                     }
                   }
@@ -1422,14 +1471,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Failed to create release or build container image.',
               content: {
                 'application/json': {
-                  schema: ReleaseDevboxErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     creation_failed: {
                       summary: 'Release creation failed',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to create DevboxRelease resource'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Internal server error'
+                        }
                       }
                     }
                   }
@@ -1493,13 +1544,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid devbox name format.',
               content: {
                 'application/json': {
-                  schema: GetDeployListErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid devbox name',
                       value: {
-                        code: 400,
-                        message: 'Invalid devbox name format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name format'
+                        }
                       }
                     }
                   }
@@ -1510,14 +1564,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Internal Server Error - Failed to query Kubernetes resources.',
               content: {
                 'application/json': {
-                  schema: GetDeployListErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     query_failed: {
                       summary: 'Failed to query deployments',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        error: 'Failed to list Kubernetes resources'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Internal server error'
+                        }
                       }
                     }
                   }
@@ -1567,13 +1623,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid devbox name or release tag format.',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_format: {
                       summary: 'Invalid parameter format',
                       value: {
-                        code: 400,
-                        message: 'Invalid devbox name or release name format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name or release tag format'
+                        }
                       }
                     }
                   }
@@ -1584,14 +1643,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Not Found - The specified release does not exist.',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     not_found: {
                       summary: 'Release not found',
                       value: {
-                        code: 404,
-                        message: 'Release not found',
-                        data: 'Release v1.0.0 does not exist for devbox my-devbox'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Release not found'
+                        }
                       }
                     }
                   }
@@ -1602,14 +1663,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Internal Server Error - Failed to delete release or container image.',
               content: {
                 'application/json': {
-                  schema: ErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     deletion_failed: {
                       summary: 'Deletion failed',
                       value: {
-                        code: 500,
-                        message: 'Internal server error',
-                        data: 'Failed to delete container image from registry'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Internal server error'
+                        }
                       }
                     }
                   }
@@ -1672,13 +1735,16 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid request body or path parameters.',
               content: {
                 'application/json': {
-                  schema: DeployDevboxErrorResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_params: {
                       summary: 'Invalid parameters',
                       value: {
-                        code: 400,
-                        error: 'Invalid devbox name or tag format'
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name or tag format'
+                        }
                       }
                     }
                   }
@@ -1690,20 +1756,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Not Found - Devbox or release tag does not exist, or release is not in Success status.',
               content: {
                 'application/json': {
-                  schema: DeployDevboxErrorResponseSchema,
+                  schema: Error404Schema,
                   examples: {
                     release_not_found: {
                       summary: 'Release not found',
                       value: {
-                        code: 404,
-                        error: 'Release tag v1.0.0 not found for devbox my-devbox'
-                      }
-                    },
-                    release_not_ready: {
-                      summary: 'Release not ready',
-                      value: {
-                        code: 404,
-                        error: 'Release is not in Success status. Current status: Building'
+                        error: {
+                          type: 'resource_error',
+                          code: 'NOT_FOUND',
+                          message: 'Devbox release tag is not found or not successful'
+                        }
                       }
                     }
                   }
@@ -1715,13 +1777,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Deployment failed or AppLaunchpad service error.',
               content: {
                 'application/json': {
-                  schema: DeployDevboxErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     deployment_failed: {
                       summary: 'Deployment failed',
                       value: {
-                        code: 500,
-                        error: 'Failed to create application in AppLaunchpad'
+                        error: {
+                          type: 'operation_error',
+                          code: 'OPERATION_FAILED',
+                          message: 'Failed to deploy to AppLaunchpad'
+                        }
                       }
                     }
                   }
@@ -1821,11 +1886,17 @@ All endpoints require authentication via kubeconfig or JWT token.
               description: 'Bad Request - Invalid devbox name or missing required parameters.',
               content: {
                 'application/json': {
-                  schema: MonitorSuccessResponseSchema,
+                  schema: Error400Schema,
                   examples: {
                     invalid_name: {
                       summary: 'Invalid or missing devbox name',
-                      value: []
+                      value: {
+                        error: {
+                          type: 'validation_error',
+                          code: 'INVALID_PARAMETER',
+                          message: 'Invalid devbox name format'
+                        }
+                      }
                     }
                   }
                 }
@@ -1836,11 +1907,17 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Failed to fetch monitoring data from monitoring service.',
               content: {
                 'application/json': {
-                  schema: MonitorSuccessResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     fetch_failed: {
                       summary: 'Failed to fetch monitor data',
-                      value: []
+                      value: {
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to fetch devbox monitor data'
+                        }
+                      }
                     }
                   }
                 }
@@ -1923,13 +2000,16 @@ All endpoints require authentication via kubeconfig or JWT token.
                 'Internal Server Error - Failed to retrieve templates from database or process configurations.',
               content: {
                 'application/json': {
-                  schema: GetDevboxTemplatesErrorResponseSchema,
+                  schema: Error500Schema,
                   examples: {
                     retrieval_failed: {
                       summary: 'Failed to get templates',
                       value: {
-                        code: 500,
-                        error: 'Failed to query template repositories from database'
+                        error: {
+                          type: 'internal_error',
+                          code: 'INTERNAL_ERROR',
+                          message: 'Failed to query template repositories from database'
+                        }
                       }
                     }
                   }

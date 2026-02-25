@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
 import { devboxIdKey } from '@/constants/devbox';
 import { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
+import { sendError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,8 +20,10 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
 
     const devboxNamePattern = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
     if (!devboxNamePattern.test(devboxName) || devboxName.length > 63) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
         message: 'Invalid devbox name format'
       });
     }
@@ -42,15 +44,19 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
 
       devboxUid = devboxBody.metadata?.uid;
       if (!devboxUid) {
-        return jsonRes({
-          code: 500,
+        return sendError({
+          status: 500,
+          type: ErrorType.INTERNAL_ERROR,
+          code: ErrorCode.INTERNAL_ERROR,
           message: 'Devbox UID not found'
         });
       }
     } catch (err: any) {
       if (err.statusCode === 404 || err.response?.statusCode === 404) {
-        return jsonRes({
-          code: 404,
+        return sendError({
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
           message: 'Devbox not found'
         });
       }
@@ -109,10 +115,11 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
 
     return NextResponse.json(allItems);
   } catch (err: any) {
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error',
-      error: err
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
     });
   }
 }

@@ -4,13 +4,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from '@/utils/tools';
 import { devboxIdKey, devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
 import { DeployDevboxPathParamsSchema } from './schema';
-import { jsonRes } from '@/services/backend/response';
 import { getK8s } from '@/services/backend/kubernetes';
 import { authSession } from '@/services/backend/auth';
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import { devboxDB } from '@/services/db/init';
 import { ProtocolType } from '@/types/devbox';
 import { adaptDevboxVersionListItem } from '@/utils/adapt';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,16 +33,20 @@ export async function POST(
     });
 
     if (!process.env.SEALOS_DOMAIN) {
-      return jsonRes({
-        code: 500,
-        error: 'SEALOS_DOMAIN environment variable is not configured'
+      return sendError({
+        status: 500,
+        type: ErrorType.INTERNAL_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'SEALOS_DOMAIN environment variable is not configured'
       });
     }
 
     if (!process.env.REGISTRY_ADDR) {
-      return jsonRes({
-        code: 500,
-        error: 'REGISTRY_ADDR environment variable is not configured'
+      return sendError({
+        status: 500,
+        type: ErrorType.INTERNAL_ERROR,
+        code: ErrorCode.INTERNAL_ERROR,
+        message: 'REGISTRY_ADDR environment variable is not configured'
       });
     }
 
@@ -62,9 +66,11 @@ export async function POST(
     });
 
     if (!adaptedVersions.some((item) => item.tag === tag && item.status.value === 'Success')) {
-      return jsonRes({
-        code: 500,
-        error: `devbox release tag ${tag} is not found or not success`
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: `Devbox release tag ${tag} is not found or not successful`
       });
     }
 
@@ -100,9 +106,11 @@ export async function POST(
     });
 
     if (!template) {
-      return jsonRes({
-        code: 500,
-        error: 'template not found'
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: 'Template not found'
       });
     }
 
@@ -202,9 +210,11 @@ export async function POST(
         errorData = { error: errorText };
       }
 
-      return jsonRes({
-        code: fetchResponse.status,
-        error: errorData.error || `Failed to deploy to applaunchpad: ${fetchResponse.statusText}`
+      return sendError({
+        status: 500,
+        type: ErrorType.OPERATION_ERROR,
+        code: ErrorCode.OPERATION_FAILED,
+        message: errorData.error || `Failed to deploy to applaunchpad: ${fetchResponse.statusText}`
       });
     }
 
@@ -215,14 +225,13 @@ export async function POST(
     console.error('Deploy devbox error:', err);
 
     if (err instanceof z.ZodError) {
-      return jsonRes({
-        code: 400,
-        error: err.errors
-      });
+      return sendValidationError(err, 'Invalid request parameters');
     }
-    return jsonRes({
-      code: 500,
-      error: err?.message || err
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
     });
   }
 }

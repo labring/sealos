@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
+import { sendError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +11,10 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const { name: devboxName } = params;
 
     if (!devboxName) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
         message: 'Devbox name is required'
       });
     }
@@ -29,8 +31,10 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const base64PrivateKey = secret?.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string | undefined;
 
     if (!base64PrivateKey) {
-      return jsonRes({
-        code: 404,
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
         message: 'Private key not found for this devbox'
       });
     }
@@ -44,19 +48,19 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     console.error('Get devbox private key error:', err);
 
     if (err.statusCode === 404 || err.response?.statusCode === 404) {
-      return jsonRes({
-        code: 404,
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
         message: 'Devbox or secret not found'
       });
     }
 
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error occurred while retrieving private key',
-      error: {
-        type: 'INTERNAL_ERROR',
-        details: process.env.NODE_ENV === 'development' ? err : undefined
-      }
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
     });
   }
 }

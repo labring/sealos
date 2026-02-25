@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
 import { KBDevboxReleaseType } from '@/types/k8s';
+import { sendError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
 
 export const dynamic = 'force-dynamic';
 
-export async function DELETE(req: NextRequest, { params }: { params: { name: string; tag: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { name: string; tag: string } }
+) {
   try {
     const devboxName = params.name;
     const tag = params.tag;
@@ -15,16 +18,19 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
 
     const devboxNamePattern = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
     if (!devboxNamePattern.test(devboxName) || devboxName.length > 63) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
         message: 'Invalid devbox name format'
       });
     }
 
-
     if (!tag || tag.length === 0) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
         message: 'Tag is required'
       });
     }
@@ -41,16 +47,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
     )) as { body: { items: KBDevboxReleaseType[] } };
 
     const targetRelease = releaseBody.items.find((item: any) => {
-      return (
-        item.spec &&
-        item.spec.devboxName === devboxName &&
-        item.spec.version === tag
-      );
+      return item.spec && item.spec.devboxName === devboxName && item.spec.version === tag;
     });
 
     if (!targetRelease) {
-      return jsonRes({
-        code: 404,
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
         message: 'Release not found'
       });
     }
@@ -65,10 +69,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
 
     return new NextResponse(null, { status: 204 });
   } catch (err: any) {
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error',
-      error: err
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
     });
   }
 }

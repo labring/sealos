@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PatchUtils } from '@kubernetes/client-node';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
 import { devboxKey } from '@/constants/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 import { json2Devbox, json2Service, json2Ingress } from '@/utils/json2Yaml';
@@ -467,11 +467,7 @@ export async function POST(req: NextRequest) {
     const validationResult = RequestSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return jsonRes({
-        code: 400,
-        message: 'Invalid request body',
-        error: validationResult.error.errors
-      });
+      return sendValidationError(validationResult.error, 'Invalid request body');
     }
 
     const devboxForm = validationResult.data;
@@ -487,8 +483,10 @@ export async function POST(req: NextRequest) {
     )) as { body: { items: KBDevboxTypeV2[] } };
 
     if (devboxListBody?.items?.find((item) => item.metadata.name === devboxForm.name)) {
-      return jsonRes({
-        code: 409,
+      return sendError({
+        status: 409,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.ALREADY_EXISTS,
         message: 'Devbox already exists'
       });
     }
@@ -530,8 +528,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (!template) {
-      return jsonRes({
-        code: 404,
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
         message: `Runtime '${devboxForm.runtime}' not found or not available`
       });
     }
@@ -613,8 +613,10 @@ export async function POST(req: NextRequest) {
     const base64PrivateKey = response.body.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string;
 
     if (!base64PrivateKey) {
-      return jsonRes({
-        code: 404,
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
         message: 'SSH keys not found'
       });
     }
@@ -636,20 +638,22 @@ export async function POST(req: NextRequest) {
 
     if (hasFailedPorts) {
       const failedCount = createdPorts.filter((p) => 'error' in p && p.error).length;
-      return jsonRes({
-        code: 500,
-        message: `DevBox created, but ${failedCount} port(s) had issues${devboxForm.autostart ? (autostartSuccess ? ', autostart succeeded' : ', autostart failed') : ''}`,
-        data: responseData
+      return sendError({
+        status: 500,
+        type: ErrorType.OPERATION_ERROR,
+        code: ErrorCode.OPERATION_FAILED,
+        message: `Devbox created, but ${failedCount} port(s) had issues${devboxForm.autostart ? (autostartSuccess ? ', autostart succeeded' : ', autostart failed') : ''}`
       });
     }
 
     // Success: return 204 No Content
     return new NextResponse(null, { status: 204 });
   } catch (err: any) {
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? err : undefined
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
     });
   }
 }
@@ -712,10 +716,11 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (err: any) {
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? err : undefined
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
     });
   }
 }

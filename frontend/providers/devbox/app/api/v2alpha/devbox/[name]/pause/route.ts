@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { devboxKey } from '@/constants/devbox';
 import { RequestSchema } from './schema';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,11 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     const validationResult = RequestSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return jsonRes({
-        code: 400,
-        message: 'Invalid request body',
-        error: validationResult.error.errors
-      });
+      return sendValidationError(validationResult.error, 'Invalid request body');
     }
 
     const devboxName = params.name;
@@ -139,11 +135,11 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     return new NextResponse(null, { status: 204 });
   } catch (err: any) {
     console.error('Pause devbox error:', err);
-
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? err : undefined
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Failed to pause devbox'
     });
   }
 }

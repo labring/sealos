@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { devboxDB } from '@/services/db/init';
-import { jsonRes } from '@/services/backend/response';
 import { getRegionUid } from '@/utils/env';
 import { parseTemplateConfig } from '@/utils/tools';
+import { sendError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,9 +60,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(uniqueConfigArray);
   } catch (err: any) {
     console.error('Error in getconfig:', err);
-    return jsonRes({
-      code: 500,
-      error: err?.message || err
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
     });
   }
 }

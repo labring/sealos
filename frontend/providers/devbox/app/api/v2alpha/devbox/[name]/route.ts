@@ -4,8 +4,8 @@ import { V1Ingress, V1Service } from '@kubernetes/client-node';
 
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
 import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
 import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
@@ -603,7 +603,12 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const { name: devboxName } = params;
 
     if (!devboxName) {
-      return NextResponse.json({ error: 'Devbox name is required' }, { status: 400 });
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
+        message: 'Devbox name is required'
+      });
     }
 
     const { k8sCustomObjects, namespace, k8sCore, k8sNetworkingApp } = await getK8s({
@@ -642,7 +647,12 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     });
 
     if (!template) {
-      return NextResponse.json({ error: 'Template not found' }, { status: 500 });
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: 'Template not found'
+      });
     }
 
     const label = `${devboxKey}=${devboxName}`;
@@ -761,16 +771,20 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     console.error('Get devbox detail error:', err);
 
     if (err.statusCode === 404 || err.response?.statusCode === 404) {
-      return NextResponse.json({ error: 'Devbox not found' }, { status: 404 });
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
+        message: 'Devbox not found'
+      });
     }
 
-    return NextResponse.json(
-      {
-        error: err?.message || 'Internal server error occurred while retrieving devbox details',
-        ...(process.env.NODE_ENV === 'development' && { details: err })
-      },
-      { status: 500 }
-    );
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
+    });
   }
 }
 
@@ -779,14 +793,19 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
     const { name: devboxName } = params;
 
     if (!devboxName) {
-      return new NextResponse(null, { status: 400 });
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
+        message: 'Devbox name is required'
+      });
     }
 
     const body = await req.json();
     const validationResult = UpdateDevboxRequestSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return new NextResponse(null, { status: 400 });
+      return sendValidationError(validationResult.error, 'Invalid request body');
     }
 
     const { quota, ports } = validationResult.data;
@@ -804,11 +823,21 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
         resourceResult = await updateDevboxResource(devboxName, quota, k8sCustomObjects, namespace);
       } catch (error: any) {
         if (error.message === 'Devbox not found') {
-          return new NextResponse(null, { status: 404 });
+          return sendError({
+            status: 404,
+            type: ErrorType.RESOURCE_ERROR,
+            code: ErrorCode.NOT_FOUND,
+            message: 'Devbox not found'
+          });
         }
 
         if (error.statusCode === 422 || error.statusCode === 400) {
-          return new NextResponse(null, { status: error.statusCode });
+          return sendError({
+            status: 422,
+            type: ErrorType.OPERATION_ERROR,
+            code: ErrorCode.INVALID_RESOURCE_SPEC,
+            message: error.message || 'Invalid resource specification'
+          });
         }
 
         throw error;
@@ -837,15 +866,30 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
         console.error('Ports update failed:', error);
 
         if (error instanceof PortConflictError) {
-          return new NextResponse(null, { status: error.code });
+          return sendError({
+            status: 409,
+            type: ErrorType.RESOURCE_ERROR,
+            code: ErrorCode.ALREADY_EXISTS,
+            message: error.message
+          });
         }
 
         if (error instanceof PortNotFoundError) {
-          return new NextResponse(null, { status: error.code });
+          return sendError({
+            status: 404,
+            type: ErrorType.RESOURCE_ERROR,
+            code: ErrorCode.NOT_FOUND,
+            message: error.message
+          });
         }
 
         if (error instanceof PortError) {
-          return new NextResponse(null, { status: error.code });
+          return sendError({
+            status: 500,
+            type: ErrorType.OPERATION_ERROR,
+            code: ErrorCode.OPERATION_FAILED,
+            message: error.message
+          });
         }
 
         throw error;
@@ -869,8 +913,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { name: stri
     return new NextResponse(null, { status: 204 });
   } catch (err: any) {
     console.error('Devbox update error:', err);
-
-    return new NextResponse(null, { status: 500 });
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
+    });
   }
 }
 
@@ -879,8 +927,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
     const { name: devboxName } = params;
 
     if (!devboxName) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
         message: 'Devbox name is required'
       });
     }
@@ -888,11 +938,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
     const validationResult = DeleteDevboxRequestSchema.safeParse({ devboxName });
 
     if (!validationResult.success) {
-      return jsonRes({
-        code: 400,
-        message: 'Invalid request parameters',
-        error: validationResult.error.errors
-      });
+      return sendValidationError(validationResult.error, 'Invalid request parameters');
     }
 
     const headerList = req.headers;
@@ -962,10 +1008,11 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
     // Success: return 204 No Content
     return new NextResponse(null, { status: 204 });
   } catch (err: any) {
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error',
-      error: err
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
     });
   }
 }
