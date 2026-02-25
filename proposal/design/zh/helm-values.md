@@ -7,6 +7,8 @@
 
 主要核心思路就是拆分values，目前以desktop为例。主要是依赖使用helm的覆盖values的方案
 
+### 原始配置
+
 当前的values.yaml是
 
 ```yaml
@@ -229,9 +231,11 @@ affinity: {}
 
 ```
 
+### 调整配置
+
 拆分后可以变成
 
-values.yaml
+values.yaml 主要是一些不可变的参数
 ```yaml
 image: ghcr.io/labring/sealos-desktop-frontend:latest
 imagePullPolicy: IfNotPresent
@@ -299,7 +303,7 @@ ingress:
   tls: []
 
 ```
-desktop-values.yaml
+desktop-values.yaml 主要是一些可变参数
 ```yaml
 replicaCount: 1
 
@@ -460,10 +464,11 @@ affinity: {}
 
 ## 脚本调整
 
-在 desktop-frontend-entrypoint.sh
+在 desktop-frontend-entrypoint.sh 把可变的values进行持久化到/root/.sealos/cloud/values/core 目录
 
 ```shell
 if [ ! -f "/root/.sealos/cloud/values/core/desktop-values.yaml" ]; then
+  mkdir -p "/root/.sealos/cloud/values/core"
   cp "./charts/desktop-frontend/desktop-values.yaml" "/root/.sealos/cloud/values/core/desktop-values.yaml"
 fi
 HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
