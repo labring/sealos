@@ -1,0 +1,54 @@
+# Default values for license frontend helm chart.
+
+image: ghcr.io/labring/sealos-license-frontend:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+fullnameOverride: "license-frontend"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "license-frontend"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - 'ALL'
+
+service:
+  type: ClusterIP
+  port: 3000
+
+# License frontend configuration
+# Note: cloudDomain and mongodbURI are auto-configured by entrypoint.sh from sealos-config ConfigMap
+# For business configuration (licensePurchaseDomain), see license-frontend-values.yaml
+licenseConfig:
+  cloudDomain: ""  # Auto-injected by entrypoint script
+  mongodbURI: ""   # Auto-injected by entrypoint script
+
+# Affinity for pod anti-affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - license-frontend
+          topologyKey: "kubernetes.io/hostname"

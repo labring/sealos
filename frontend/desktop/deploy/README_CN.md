@@ -22,6 +22,39 @@ sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.googleEnabled=true --set desktopConfig.googleClientId=xxx --set desktopConfig.googleClientSecret=yyy --set desktopConfig.gtmId=GTM-XXX"
 ```
 
+## Values 文件说明
+
+Helm Chart 使用两个 values 文件来管理配置：
+
+### 1. values-default.yaml
+
+包含 Helm Chart 的默认配置，不应修改。
+
+**内容**:
+- **基础设施配置**: 镜像、服务账号、探针、Ingress、调度等
+- **自动配置参考值**: cloudDomain、jwtInternal、databaseMongodbURI 等（从 ConfigMap 自动获取，此处的值仅作为参考）
+
+**是否修改**: ❌ 不建议修改
+
+### 2. values-custom.yaml
+
+包含需要用户手动配置的自定义选项。
+
+**内容**:
+- 资源限制和请求
+- 功能开关
+- OAuth 提供商（GitHub、Google、微信等）
+- 短信和邮件配置
+- 计费设置
+- 自定义 URL
+- 布局定制
+
+**是否修改**: ✅ 根据需要修改
+
+**注意**: values-default.yaml 中的自动配置项（如 cloudDomain、jwtInternal 等）会被 entrypoint 脚本从 `sealos-system/sealos-config` ConfigMap 自动获取并覆盖。如需修改这些值，请修改 ConfigMap 或使用 HELM_OPTIONS。
+
+详细文档请参考 [VALUES_FILES_GUIDE.md](./VALUES_FILES_GUIDE.md)。
+
 ## 环境变量
 
 ### Google Tag Manager
@@ -264,6 +297,62 @@ realNameOSS:
   realNameBucket: ""
   enterpriseRealNameBucket: ""
 ```
+
+## AllowedOrigins 扩展配置
+
+Desktop Frontend 支持在 `allowedOrigins` 列表中添加自定义的子域名。系统会自动将子域名格式化为 `https://{子域名}.{cloudDomain}` 并添加到现有的 `allowedOrigins` 中。
+
+### 配置方式
+
+在 `values-custom.yaml` 中添加 `additionalAllowedOriginsPrefixes`：
+
+```yaml
+desktopConfig:
+  cloudDomain: "cloud.example.com"
+
+  # 添加额外的 allowedOrigins 子域名
+  # 只需传入子域名部分，系统会自动添加 https:// 和 .{cloudDomain}
+  additionalAllowedOriginsPrefixes:
+    - "my-custom-app"
+    - "another-service"
+```
+
+### 生成的结果
+
+生成的 `allowedOrigins` 将包含：
+
+```yaml
+allowedOrigins:
+  # 默认的 origins...
+  - "https://sealaf.cloud.example.com"
+  # 额外的自定义 origins
+  - "https://my-custom-app.cloud.example.com"
+  - "https://another-service.cloud.example.com"
+```
+
+### 使用示例
+
+**通过 values 文件：**
+```yaml
+additionalAllowedOriginsPrefixes:
+  - "custom-app"
+  - "analytics-service"
+```
+
+**通过 Helm --set 参数：**
+```bash
+helm upgrade -i desktop-frontend ./charts/desktop-frontend \
+  --set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app" \
+  --set desktopConfig.additionalAllowedOriginsPrefixes[1]="another-app"
+```
+
+**通过环境变量：**
+```bash
+export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app"'
+./desktop-frontend-entrypoint.sh
+```
+
+更多详情请参考 [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md)。
 
 ## Helm Chart 参数
 

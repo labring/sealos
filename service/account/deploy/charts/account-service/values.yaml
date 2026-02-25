@@ -78,3 +78,40 @@ paymentSecretName: payment-secret
 
 # ConfigMap for region info
 regionInfoConfigMapName: region-info
+
+# RBAC configuration
+rbac:
+  # Whether to create ClusterRole and ClusterRoleBinding for node viewing
+  create: true
+
+# ============================================================================
+# Auto-configured Ingress values (from sealos-system/sealos-config ConfigMap)
+# ============================================================================
+# The following ingress values are automatically fetched from the
+# sealos-system/sealos-config ConfigMap by the entrypoint script and will
+# override any values set here. These are provided as reference defaults.
+#
+# To override these auto-configured values, use HELM_OPTIONS or modify the
+# sealos-config ConfigMap directly.
+# ============================================================================
+
+# Ingress configuration
+ingress:
+  enabled: true
+  # Ingress class (nginx, higress, etc.)
+  class: nginx
+  # Cloud domain (will be used to generate ingress hostname)
+  # Auto-fetched from sealos-config.cloudDomain
+  cloudDomain: ""
+  # Cloud port (optional, will be included in CORS and CSP headers if set)
+  # Auto-fetched from sealos-config.cloudPort
+  cloudPort: ""
+  # Custom ingress hostname (default: account-api.<cloudDomain>)
+  hostname: ""
+  # TLS configuration
+  tls:
+    enabled: true
+    secretName: "wildcard-cert"
+
+# End of auto-configured ingress values
+# ============================================================================

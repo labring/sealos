@@ -1,10 +1,9 @@
-replicaCount: 1
+# Default values for desktop frontend helm chart.
 
 image: ghcr.io/labring/sealos-desktop-frontend:latest
 imagePullPolicy: IfNotPresent
 
 imagePullSecrets: []
-nameOverride: ""
 fullnameOverride: "sealos-desktop"
 
 serviceAccount:
@@ -27,170 +26,40 @@ securityContext:
 service:
   port: 3000
 
-resources:
-  limits:
-    cpu: 2000m
-    memory: 2048Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
-
-# Desktop frontend configuration
-desktopConfig:
-  # Basic cloud configuration
-  cloudDomain: "127.0.0.1.nip.io"
-  cloudPort: ""
-  regionUID: "randomRegionUID"
-  certSecretName: "wildcard-cert"
-
-  # Database connections
-  databaseMongodbURI: ""
-  databaseGlobalCockroachdbURI: ""
-  databaseLocalCockroachdbURI: ""
-
-  # Authentication secrets
-  passwordSalt: "randomSalt"
-  jwtInternal: ""
-  jwtRegional: ""
-  jwtGlobal: ""
-
-  # Billing configuration
-  billingUrl: "http://account-service.account-system.svc:2333"
-  billingToken: ""
-
-  allowedOrigins:
-    - "costcenter"
-    - "license"
-
-  # Currency and language configuration
-  # Options: "cn" (Chinese) or "en" (English)
-  # forcedLanguage and currencySymbol will be auto-configured based on version:
-  # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
-  # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
-  version: "en"
-
-  # Google Tag Manager
-  gtmId: ""
-
-  # Discord invite link (USD version only)
-  discordInviteLink: ""
-
-  # Feature flags
-  guideEnabled: false
-  apiEnabled: false
-  rechargeEnabled: false
-  enterpriseRealNameAuthEnabled: false
-  trackingEnabled: false
-  realNameAuthEnabled: false
-
-  # Common URLs (default values)
-  realNameReward: 0
-  realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
-  cfSiteKey: ""
-
-  # Desktop layout configuration
-  layoutTitle: "Sealos Cloud"
-  layoutLogo: "/logo.svg"
-  layoutBackgroundImage: "/images/bg-light.svg"
-  customerServiceURL: ""
-  layoutDocsUrl: "https://sealos.run/docs/Intro/"
-  authTitle:
-    zh: "欢迎来到 Sealos"
-    en: "Welcome to Sealos"
-  authBackgroundImage:
-    zh: "/images/bg-light.svg"
-    en: "/images/bg-light.svg"
-  protocol:
-    serviceProtocol:
-      zh: https://sealos.io/zh-Hans/docs/msa/terms-of-service
-      en: https://sealos.io/docs/msa/terms-of-service
-    privateProtocol:
-      zh: https://sealos.io/zh-Hans/docs/msa/privacy-policy
-      en: https://sealos.io/docs/msa/privacy-policy
-  # Meta tags
-  metaTitle: "Sealos Cloud"
-  metaDescription: "Sealos Cloud"
-  metaKeywords: "Sealos Cloud"
-
-  passwordEnabled: true
-  # OAuth providers
-  githubEnabled: false
-  githubClientId: ""
-  githubClientSecret: ""
-  githubProxyAddress: ""
-
-  wechatEnabled: false
-  wechatClientId: ""
-  wechatClientSecret: ""
-  wechatProxyAddress: ""
-
-  googleEnabled: false
-  googleClientId: ""
-  googleClientSecret: ""
-  googleProxyAddress: ""
-
-  oauth2Enabled: false
-  oauth2CallbackUrl: ""
-  oauth2ClientId: ""
-  oauth2ClientSecret: ""
-  oauth2AuthUrl: ""
-  oauth2TokenUrl: ""
-  oauth2UserInfoUrl: ""
-  oauth2ProxyAddress: ""
-
-  # Captcha configuration
-  turnstileEnabled: false
-  turnstileSiteKey: ""
-  turnstileSecretKey: ""
-
-  # SMS configuration (Aliyun)
-  smsEnabled: false
-  smsAliEnabled: false
-  smsAliEndpoint: ""
-  smsAliTemplateCode: ""
-  smsAliSignName: ""
-  smsAliAccessKeyID: ""
-  smsAliAccessKeySecret: ""
-
-  # Email configuration
-  emailEnabled: false
-  emailHost: ""
-  emailPort: 0
-  emailUser: ""
-  emailPassword: ""
-  emailLanguage: ""
-
-  # Ali captcha configuration
-  aliCaptchaEnabled: false
-  aliCaptchaEndpoint: ""
-  aliCaptchaSceneId: ""
-  aliCaptchaPrefix: ""
-  aliCaptchaAccessKeyID: ""
-  aliCaptchaAccessKeySecret: ""
-
-  # Tracking configuration
-  trackingWebsiteId: ""
-  trackingHostUrl: ""
-  trackingScriptUrl: ""
-
-  # RealName OSS configuration
-  realNameOSSAccessKey: ""
-  realNameOSSAccessKeySecret: ""
-  realNameOSSEndpoint: ""
-  realNameOSSSSL: false
-  realNameOSSPort: 0
-  realNameOSSRealNameBucket: ""
-  realNameOSSEnterpriseRealNameBucket: ""
-
-  # Workorder and cloud virtual machine URLs
-  workorderUrl: ""
-
-  # Team management
-  maxTeamCount: 0
-  maxTeamMemberCount: 0
-
 # Auto configure from sealos-system configmap
 autoConfigEnabled: true
+
+# ============================================================================
+# Auto-configured values (from sealos-system/sealos-config ConfigMap)
+# ============================================================================
+# The following desktopConfig values are automatically fetched from the
+# sealos-system/sealos-config ConfigMap by the entrypoint script and will
+# override any values set here. These are provided as reference defaults.
+#
+# To override these auto-configured values, use HELM_OPTIONS or modify the
+# sealos-config ConfigMap directly.
+# ============================================================================
+
+desktopConfig:
+  # Basic cloud configuration (auto-configured from sealos-config)
+  cloudDomain: "127.0.0.1.nip.io"  # Auto-fetched from sealos-config.cloudDomain
+  cloudPort: ""                     # Auto-fetched from sealos-config.cloudPort
+  regionUID: "randomRegionUID"      # Auto-fetched from sealos-config.regionUID
+  certSecretName: "wildcard-cert"   # Fixed value
+
+  # Database connections (auto-configured from sealos-config)
+  databaseMongodbURI: ""               # Auto-fetched from sealos-config.databaseMongodbURI
+  databaseGlobalCockroachdbURI: ""     # Auto-fetched from sealos-config.databaseGlobalCockroachdbURI
+  databaseLocalCockroachdbURI: ""      # Auto-fetched from sealos-config.databaseLocalCockroachdbURI
+
+  # Authentication secrets (auto-configured from sealos-config)
+  passwordSalt: "randomSalt"       # Auto-fetched from sealos-config.passwordSalt
+  jwtInternal: ""                  # Auto-fetched from sealos-config.jwtInternal
+  jwtRegional: ""                  # Auto-fetched from sealos-config.jwtRegional
+  jwtGlobal: ""                    # Auto-fetched from sealos-config.jwtGlobal
+
+# End of auto-configured values
+# ============================================================================
 
 livenessProbe:
   httpGet:

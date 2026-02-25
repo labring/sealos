@@ -1,0 +1,20 @@
+# Custom values for resources controller helm chart.
+# This file contains user-customizable configurations.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1280Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+configmap:
+  # User custom configurations
+  # Note: These values can be overridden by auto-configured values from sealos-config ConfigMap
+  enableAutoResourceQuota: "false"
+  concurrentLimit: "1000"
+  ephemeralStorageChargeThreshold: "10Gi"
+  limitQuotaExpansionCycle: "24h"
