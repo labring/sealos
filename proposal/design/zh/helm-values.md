@@ -473,3 +473,7 @@ if [ ! -f "/root/.sealos/cloud/values/core/desktop-values.yaml" ]; then
 fi
 HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 ```
+
+## 结论
+
+用户在sealos run sealos:v5.2.0 自动读取/root/.sealos/cloud/values/core/desktop-values.yaml 的配置。
