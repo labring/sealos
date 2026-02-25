@@ -89,6 +89,16 @@ if [ -n "${JOB_INIT_SERVICE_ACCOUNT:-}" ]; then
   add_set_string serviceAccount.name "${JOB_INIT_SERVICE_ACCOUNT}"
 fi
 
+SEALOS_CLOUD_DOMAIN=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
+varDatabaseGlobalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseGlobalCockroachdbURI}')
+varDatabaseLocalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseLocalCockroachdbURI}')
+varRegionUID=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.regionUID}')
+
+add_set_string env.domain "${SEALOS_CLOUD_DOMAIN}"
+add_set_string env.globalCockroachUri "${varDatabaseGlobalCockroachdbURI}"
+add_set_string env.localCockroachUri "${varDatabaseLocalCockroachdbURI}"
+add_set_string env.localRegion "${varRegionUID}"
+
 if kubectl -n "${RELEASE_NAMESPACE}" get job "${JOB_NAME}" >/dev/null 2>&1; then
   kubectl -n "${RELEASE_NAMESPACE}" delete job "${JOB_NAME}" --ignore-not-found --wait=true
 fi
