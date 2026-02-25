@@ -6,10 +6,10 @@ nameOverride: ""
 fullnameOverride: "init-job"
 
 serviceAccount:
-  create: false
+  create: true
   automount: true
   annotations: {}
-  name: "account-controller-manager"
+  name: ""
 
 podAnnotations: {}
 podLabels: {}
