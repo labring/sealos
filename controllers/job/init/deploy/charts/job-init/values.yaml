@@ -32,7 +32,10 @@ env:
   adminPassword: "sealos2023"
   adminUserName: "admin"
   workspacePrefix: "ns-"
-  envFromConfigMap: "account-manager-env"
+  domain: ""
+  globalCockroachUri: ""
+  localCockroachUri: ""
+  localRegion: ""
 
 resources:
   limits:
