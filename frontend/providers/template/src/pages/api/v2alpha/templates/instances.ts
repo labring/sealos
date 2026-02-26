@@ -129,7 +129,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status: 400,
         type: ErrorType.VALIDATION_ERROR,
         code: ErrorCode.INVALID_PARAMETER,
-        message: 'Instance name is required.'
+        message: 'Instance name is required.',
+        details: [{ field: 'name', message: 'Required' }]
       });
     }
 
@@ -159,7 +160,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status: 400,
         type: ErrorType.VALIDATION_ERROR,
         code: ErrorCode.INVALID_PARAMETER,
-        message: 'Template name is required.'
+        message: 'Template name is required.',
+        details: [{ field: 'template', message: 'Required' }]
       });
     }
 

@@ -1,3 +1,9 @@
+/**
+ * v2alpha error handling — follow docs/v2alpha-api-error-design.md
+ * - INVALID_PARAMETER: details must be Array<{ field, message }>
+ * - INVALID_VALUE: details is optional string
+ * - Use sendError / sendValidationError for Pages Router
+ */
 import { z } from 'zod';
 import { NextApiResponse } from 'next';
 import {

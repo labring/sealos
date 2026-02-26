@@ -10,13 +10,13 @@ export const CreateInstanceRequestSchema = z.object({
   template: z
     .string()
     .describe(
-      'Template name from the catalog. Use GET /template to list available templates. e.g. "perplexica"'
+      'Template name from the catalog. Use GET /templates to list available templates. e.g. "perplexica"'
     ),
   args: z
     .object({})
     .catchall(z.string().describe('Template variable value'))
     .describe(
-      'Template variable key-value pairs. Only args without a default value are required. Use GET /template/{name} to see which args are required and their defaults.'
+      'Template variable key-value pairs. Only args without a default value are required. Use GET /templates/{name} to see which args are required and their defaults.'
     )
     .optional()
 });

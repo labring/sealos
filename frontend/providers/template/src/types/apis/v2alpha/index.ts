@@ -2,7 +2,6 @@ import { createDocument } from 'zod-openapi';
 
 import * as listTemplateSchemas from './list-template';
 import * as getTemplateSchemas from './get-template';
-import * as createTemplateSchemas from './create-template';
 import * as createInstanceSchemas from './create-instance';
 import {
   Error400Schema,
@@ -21,7 +20,6 @@ import {
 
 export * as listTemplateSchemas from './list-template';
 export * as getTemplateSchemas from './get-template';
-export * as createTemplateSchemas from './create-template';
 export * as createInstanceSchemas from './create-instance';
 
 export const document = createDocument({
@@ -30,48 +28,31 @@ export const document = createDocument({
     title: 'Sealos Template API v2alpha',
     version: '2.0.0-alpha',
     description: `
-# Sealos Template API Documentation
 
 This API provides endpoints for managing application templates and instances in the Sealos platform.
 
-## API Groups
+## Authentication
 
-### Query Operations
-Read-only operations for retrieving template and instance information.
+Browsing templates is public. Deploying instances requires a kubeconfig in the \`Authorization\` header — URL-encode it first: \`encodeURIComponent(kubeconfigYaml)\`.
 
-### Mutation Operations
-Operations that modify data, such as creating or deleting instances.
+## Errors
 
-## Response Format
+When something goes wrong, you'll get a JSON body like this:
 
-- **Query APIs** return JSON payloads with data and metadata.
-- **Mutation APIs** return HTTP 204 (No Content) on success and no response body.
-
-**Error Response:**
 \`\`\`json
 {
   "error": {
     "type": "validation_error",
     "code": "INVALID_PARAMETER",
-    "message": "Human-readable description.",
+    "message": "Instance name is required.",
     "details": [{ "field": "name", "message": "Required" }]
   }
 }
 \`\`\`
 
-## Error Status Codes
-
-- \`200\` - Query success
-- \`204\` - Mutation success (No Content)
-- \`400\` - Bad Request (validation or client error)
-- \`401\` - Unauthorized (missing or invalid credentials)
-- \`403\` - Forbidden (insufficient permissions)
-- \`404\` - Not Found (resource doesn't exist)
-- \`405\` - Method Not Allowed
-- \`409\` - Conflict (resource already exists)
-- \`422\` - Unprocessable Entity (K8s rejected the resource spec)
-- \`500\` - Internal Server Error
-- \`503\` - Service Unavailable (K8s cluster temporarily unreachable)
+- \`message\` is a human-readable explanation of what went wrong.
+- \`code\` is a stable identifier for programmatic error handling.
+- \`details\` is optional and only present when there's more context (e.g. which field failed validation).
     `
   },
   servers: [
@@ -86,6 +67,16 @@ Operations that modify data, such as creating or deleting instances.
     {
       url: 'https://template.192.168.12.53.nip.io/api/v2alpha',
       description: 'Testing server'
+    },
+    {
+      url: '{baseUrl}/api/v2alpha',
+      description: 'Custom — manually enter base URL',
+      variables: {
+        baseUrl: {
+          default: 'https://template.example.com',
+          description: 'Base URL of your API server (e.g. https://template.192.168.x.x.nip.io)'
+        }
+      }
     }
   ],
   components: {
@@ -110,12 +101,12 @@ Operations that modify data, such as creating or deleting instances.
     }
   ],
   paths: {
-    '/template': {
+    '/templates': {
       get: {
         tags: ['Query'],
         summary: 'List All Templates',
         description:
-          'Returns metadata only (no resource calculation). Available categories are returned in the `X-Menu-Keys` response header. For full details including resource requirements, use `/template/{name}`.',
+          'Returns metadata only (no resource calculation). Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`. When categories exist, top category keys are returned in `X-Menu-Keys` (comma-separated). For full details including resource requirements, use `/templates/{name}`.',
         operationId: 'listTemplates',
         requestParams: {
           query: listTemplateSchemas.queryParams
@@ -123,30 +114,68 @@ Operations that modify data, such as creating or deleting instances.
         responses: {
           '200': {
             description: 'Successfully retrieved template list',
+            headers: {
+              'Cache-Control': {
+                description: 'Caching directive: public, max-age=300, s-maxage=600',
+                schema: { type: 'string', example: 'public, max-age=300, s-maxage=600' }
+              },
+              ETag: {
+                description: 'Entity tag for caching, format: "template-list-{language}"',
+                schema: { type: 'string', example: '"template-list-en"' }
+              },
+              'X-Menu-Keys': {
+                description:
+                  'Top category keys (comma-separated). Present only when categories exist.',
+                schema: { type: 'string', example: 'ai,database' }
+              }
+            },
             content: {
               'application/json': {
                 schema: listTemplateSchemas.response,
-                example: [
-                  {
-                    name: 'perplexica',
-                    resourceType: 'template',
-                    readme:
-                      'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
-                    icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
-                    description: 'AI-powered search engine',
-                    gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
-                    category: ['ai'],
-                    args: {
-                      OPENAI_API_KEY: {
-                        description: 'OpenAI API Key',
-                        type: 'string',
-                        default: '',
-                        required: true
+                examples: {
+                  templateList: {
+                    summary: 'Sample template list',
+                    value: [
+                      {
+                        name: 'perplexica',
+                        resourceType: 'template',
+                        readme:
+                          'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
+                        icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
+                        description: 'AI-powered search engine',
+                        gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
+                        category: ['ai'],
+                        args: {
+                          OPENAI_API_KEY: {
+                            description: 'OpenAI API Key',
+                            type: 'string',
+                            default: '',
+                            required: true
+                          }
+                        },
+                        deployCount: 156
                       }
-                    },
-                    deployCount: 156
+                    ]
                   }
-                ]
+                }
+              }
+            }
+          },
+          '405': {
+            description: 'Method not allowed',
+            content: {
+              'application/json': {
+                schema: Error405Schema,
+                examples: {
+                  methodNotAllowed: {
+                    summary: 'Method not allowed',
+                    value: createErrorExample(
+                      ErrorType.CLIENT_ERROR,
+                      ErrorCode.METHOD_NOT_ALLOWED,
+                      'Method not allowed. Use GET.'
+                    )
+                  }
+                }
               }
             }
           },
@@ -155,24 +184,29 @@ Operations that modify data, such as creating or deleting instances.
             content: {
               'application/json': {
                 schema: Error500Schema,
-                example: createErrorExample(
-                  ErrorType.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR,
-                  'Failed to load templates.',
-                  'File read error'
-                )
+                examples: {
+                  internalError: {
+                    summary: 'Failed to load templates',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.INTERNAL_ERROR,
+                      'Failed to load templates.',
+                      'File read error'
+                    )
+                  }
+                }
               }
             }
           }
         }
       }
     },
-    '/template/{name}': {
+    '/templates/{name}': {
       get: {
         tags: ['Query'],
         summary: 'Get Template Details',
         description:
-          'Returns complete template metadata with dynamically calculated resource requirements (CPU, memory, storage, NodePort count) derived from the template YAML. Falls back to static configuration if calculation fails.',
+          'Returns complete template metadata with dynamically calculated resource requirements (CPU, memory, storage, NodePort count) derived from the template YAML. Falls back to static configuration if calculation fails. Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`. Note: when path is `instances`, request is delegated to the instances endpoint (POST only).',
         operationId: 'getTemplateDetail',
         requestParams: {
           path: getTemplateSchemas.pathParams,
@@ -181,33 +215,67 @@ Operations that modify data, such as creating or deleting instances.
         responses: {
           '200': {
             description: 'Successfully retrieved template details',
+            headers: {
+              'Cache-Control': {
+                description: 'Caching directive: public, max-age=300, s-maxage=600',
+                schema: { type: 'string', example: 'public, max-age=300, s-maxage=600' }
+              },
+              ETag: {
+                description: 'Entity tag for caching, format: "{name}-{language}"',
+                schema: { type: 'string', example: '"perplexica-en"' }
+              }
+            },
             content: {
               'application/json': {
                 schema: getTemplateSchemas.response,
-                example: {
-                  name: 'perplexica',
-                  resourceType: 'template',
-                  quota: {
-                    cpu: 1,
-                    memory: 2.25,
-                    storage: 2,
-                    nodeport: 0
-                  },
-                  readme:
-                    'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
-                  icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
-                  description: 'AI-powered search engine',
-                  gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
-                  category: ['ai'],
-                  args: {
-                    OPENAI_API_KEY: {
-                      description: 'The API Key of the OpenAI-compatible service',
-                      type: 'string',
-                      default: '',
-                      required: true
+                examples: {
+                  templateDetail: {
+                    summary: 'Sample template with resource calculation',
+                    value: {
+                      name: 'perplexica',
+                      resourceType: 'template',
+                      quota: {
+                        cpu: 1,
+                        memory: 2.25,
+                        storage: 2,
+                        nodeport: 0
+                      },
+                      readme:
+                        'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
+                      icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
+                      description: 'AI-powered search engine',
+                      gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
+                      category: ['ai'],
+                      args: {
+                        OPENAI_API_KEY: {
+                          description: 'The API Key of the OpenAI-compatible service',
+                          type: 'string',
+                          default: '',
+                          required: true
+                        }
+                      },
+                      deployCount: 156
                     }
-                  },
-                  deployCount: 156
+                  }
+                }
+              }
+            }
+          },
+          '400': {
+            description: 'Bad request - template name is required',
+            content: {
+              'application/json': {
+                schema: Error400Schema,
+                examples: {
+                  nameRequired: {
+                    summary: 'Template name is required',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Template name is required.',
+                      [{ field: 'name', message: 'Required' }]
+                    )
+                  }
                 }
               }
             }
@@ -238,106 +306,18 @@ Operations that modify data, such as creating or deleting instances.
               }
             }
           },
-          '500': {
-            description: 'Internal server error',
+          '405': {
+            description: 'Method not allowed',
             content: {
               'application/json': {
-                schema: Error500Schema,
-                example: createErrorExample(
-                  ErrorType.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR,
-                  'Failed to get template details.',
-                  'YAML parsing error'
-                )
-              }
-            }
-          }
-        }
-      },
-      post: {
-        tags: ['Mutation'],
-        summary: 'Deploy Template',
-        description:
-          "Deploy a template to the user's namespace. Namespace is automatically resolved from the kubeconfig — no need to specify it. Template variables are provided as a flat key-value object directly in the request body (not wrapped in an `args` field).",
-        operationId: 'deployTemplate',
-        security: [{ kubeconfigAuth: [] }],
-        requestParams: {
-          path: createTemplateSchemas.pathParams
-        },
-        requestBody: {
-          description: 'Template deployment configuration',
-          content: {
-            'application/json': {
-              schema: createTemplateSchemas.requestBody,
-              example: {
-                OPENAI_API_KEY: 'your-api-key-here',
-                APP_NAME: 'my-app-instance',
-                MEMORY_LIMIT: '2Gi'
-              }
-            }
-          }
-        },
-        responses: {
-          '204': {
-            description: 'Template deployment started successfully'
-          },
-          '400': {
-            description: 'Bad request',
-            content: {
-              'application/json': {
-                schema: Error400Schema,
+                schema: Error405Schema,
                 examples: {
-                  missingParameters: {
-                    summary: 'Missing template parameters',
+                  methodNotAllowed: {
+                    summary: 'Method not allowed',
                     value: createErrorExample(
-                      ErrorType.VALIDATION_ERROR,
-                      ErrorCode.INVALID_PARAMETER,
-                      'Template parameters are required.'
-                    )
-                  }
-                }
-              }
-            }
-          },
-          '401': {
-            description: 'Authentication failed',
-            content: {
-              'application/json': {
-                schema: Error401Schema,
-                examples: {
-                  missingKubeconfig: {
-                    summary: 'Missing or invalid kubeconfig',
-                    value: createErrorExample(
-                      ErrorType.AUTHENTICATION_ERROR,
-                      ErrorCode.AUTHENTICATION_REQUIRED,
-                      'Invalid or missing kubeconfig.'
-                    )
-                  },
-                  clusterAuthFailed: {
-                    summary: 'Cannot authenticate with Kubernetes cluster',
-                    value: createErrorExample(
-                      ErrorType.AUTHENTICATION_ERROR,
-                      ErrorCode.AUTHENTICATION_REQUIRED,
-                      'Invalid kubeconfig or insufficient permissions.',
-                      'Failed to authenticate with Kubernetes cluster'
-                    )
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Template not found or invalid',
-            content: {
-              'application/json': {
-                schema: Error404Schema,
-                examples: {
-                  templateNotFound: {
-                    summary: 'Template does not exist',
-                    value: createErrorExample(
-                      ErrorType.RESOURCE_ERROR,
-                      ErrorCode.NOT_FOUND,
-                      "Template 'nonexistent' not found."
+                      ErrorType.CLIENT_ERROR,
+                      ErrorCode.METHOD_NOT_ALLOWED,
+                      'Method not allowed. Use GET.'
                     )
                   }
                 }
@@ -349,19 +329,24 @@ Operations that modify data, such as creating or deleting instances.
             content: {
               'application/json': {
                 schema: Error500Schema,
-                example: createErrorExample(
-                  ErrorType.INTERNAL_ERROR,
-                  ErrorCode.INTERNAL_ERROR,
-                  'Failed to deploy template.',
-                  'Kubernetes API error'
-                )
+                examples: {
+                  internalError: {
+                    summary: 'Failed to get template details',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.INTERNAL_ERROR,
+                      'Failed to get template details.',
+                      'YAML parsing error'
+                    )
+                  }
+                }
               }
             }
           }
         }
       }
     },
-    '/template/instance': {
+    '/templates/instances': {
       post: {
         tags: ['Mutation'],
         summary: 'Create Template Instance',
@@ -369,15 +354,15 @@ Operations that modify data, such as creating or deleting instances.
 
 **Example:**
 \`\`\`http
-POST /api/v2alpha/template/instance HTTP/1.1
+POST /api/v2alpha/templates/instances HTTP/1.1
 Host: template.cloud.sealos.io
 Content-Type: application/json
 Authorization: <URL-encoded kubeconfig>
 
 {
-  "name": "my-perplexica",
+  "name": "my-app-instance",
   "template": "perplexica",
-  "args": { "OPENAI_API_KEY": "sk-xxx", "OPENAI_MODEL_NAME": "gpt-4o" }
+  "args": { "OPENAI_API_KEY": "<your-api-key>", "OPENAI_MODEL_NAME": "gpt-4o" }
 }
 \`\`\``,
         operationId: 'createInstance',
@@ -387,12 +372,17 @@ Authorization: <URL-encoded kubeconfig>
           content: {
             'application/json': {
               schema: createInstanceSchemas.requestBody,
-              example: {
-                name: 'my-perplexica-instance',
-                template: 'perplexica',
-                args: {
-                  OPENAI_API_KEY: 'your-api-key-here',
-                  OPENAI_MODEL_NAME: 'gpt-4o'
+              examples: {
+                createInstance: {
+                  summary: 'Create Perplexica instance',
+                  value: {
+                    name: 'my-perplexica-instance',
+                    template: 'perplexica',
+                    args: {
+                      OPENAI_API_KEY: 'your-api-key-here',
+                      OPENAI_MODEL_NAME: 'gpt-4o'
+                    }
+                  }
                 }
               }
             }
@@ -404,31 +394,36 @@ Authorization: <URL-encoded kubeconfig>
             content: {
               'application/json': {
                 schema: createInstanceSchemas.response,
-                example: {
-                  name: 'my-perplexica-instance',
-                  uid: '778bf3c6-b412-4a02-908b-cf1470867c93',
-                  resourceType: 'instance',
-                  displayName: '',
-                  createdAt: '2026-01-28T03:31:01Z',
-                  args: {
-                    OPENAI_API_KEY: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
-                    OPENAI_API_URL: 'https://api.openai.com/v1',
-                    OPENAI_MODEL_NAME: 'gpt-4o'
-                  },
-                  resources: [
-                    {
-                      name: 'my-perplexica-instance-searxng',
-                      uid: '5bd2c77d-b8f4-4aa4-97ee-c205f2d10aa9',
-                      resourceType: 'deployment',
-                      quota: { cpu: 0.1, memory: 0.25, storage: 0, replicas: 1 }
-                    },
-                    {
+                examples: {
+                  instanceCreated: {
+                    summary: 'Instance created successfully',
+                    value: {
                       name: 'my-perplexica-instance',
-                      uid: '256e2577-fa3a-4471-a94c-8cbd5410187c',
-                      resourceType: 'statefulset',
-                      quota: { cpu: 0.2, memory: 0.5, storage: 1, replicas: 1 }
+                      uid: '778bf3c6-b412-4a02-908b-cf1470867c93',
+                      resourceType: 'instance',
+                      displayName: '',
+                      createdAt: '2026-01-28T03:31:01Z',
+                      args: {
+                        OPENAI_API_KEY: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
+                        OPENAI_API_URL: 'https://api.openai.com/v1',
+                        OPENAI_MODEL_NAME: 'gpt-4o'
+                      },
+                      resources: [
+                        {
+                          name: 'my-perplexica-instance-searxng',
+                          uid: '5bd2c77d-b8f4-4aa4-97ee-c205f2d10aa9',
+                          resourceType: 'deployment',
+                          quota: { cpu: 0.1, memory: 0.25, storage: 0, replicas: 1 }
+                        },
+                        {
+                          name: 'my-perplexica-instance',
+                          uid: '256e2577-fa3a-4471-a94c-8cbd5410187c',
+                          resourceType: 'statefulset',
+                          quota: { cpu: 0.2, memory: 0.5, storage: 1, replicas: 1 }
+                        }
+                      ]
                     }
-                  ]
+                  }
                 }
               }
             }
@@ -444,7 +439,8 @@ Authorization: <URL-encoded kubeconfig>
                     value: createErrorExample(
                       ErrorType.VALIDATION_ERROR,
                       ErrorCode.INVALID_PARAMETER,
-                      'Instance name is required.'
+                      'Instance name is required.',
+                      [{ field: 'name', message: 'Required' }]
                     )
                   },
                   invalidInstanceNameFormat: {
@@ -468,7 +464,8 @@ Authorization: <URL-encoded kubeconfig>
                     value: createErrorExample(
                       ErrorType.VALIDATION_ERROR,
                       ErrorCode.INVALID_PARAMETER,
-                      'Template name is required.'
+                      'Template name is required.',
+                      [{ field: 'template', message: 'Required' }]
                     )
                   },
                   missingRequiredArgs: {
@@ -542,6 +539,14 @@ Authorization: <URL-encoded kubeconfig>
                       ErrorCode.NOT_FOUND,
                       "Template 'nonexistent-template' not found."
                     )
+                  },
+                  templateNotFoundOrInvalid: {
+                    summary: 'Template not found or invalid (missing data)',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Template 'invalid-template' not found or invalid."
+                    )
                   }
                 }
               }
@@ -552,11 +557,16 @@ Authorization: <URL-encoded kubeconfig>
             content: {
               'application/json': {
                 schema: Error405Schema,
-                example: createErrorExample(
-                  ErrorType.CLIENT_ERROR,
-                  ErrorCode.METHOD_NOT_ALLOWED,
-                  'Method not allowed. Use POST.'
-                )
+                examples: {
+                  methodNotAllowed: {
+                    summary: 'Method not allowed',
+                    value: createErrorExample(
+                      ErrorType.CLIENT_ERROR,
+                      ErrorCode.METHOD_NOT_ALLOWED,
+                      'Method not allowed. Use POST.'
+                    )
+                  }
+                }
               }
             }
           },
@@ -620,6 +630,15 @@ Authorization: <URL-encoded kubeconfig>
                       ErrorCode.KUBERNETES_ERROR,
                       'Failed to create instance in Kubernetes.',
                       'Unexpected error from Kubernetes API'
+                    )
+                  },
+                  instanceNotCreated: {
+                    summary: 'Instance resource was not created successfully',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.INTERNAL_ERROR,
+                      'Instance resource was not created successfully.',
+                      'Instance not found in Kubernetes response'
                     )
                   },
                   internalError: {

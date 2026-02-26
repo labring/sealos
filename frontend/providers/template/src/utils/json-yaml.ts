@@ -17,11 +17,43 @@ function base64(str: string) {
   return Buffer.from(str).toString('base64');
 }
 
+/**
+ * RFC 1123 subdomain must start and end with alphanumeric.
+ * Sanitize Ingress hosts: remove trailing dots caused by empty SEALOS_CLOUD_DOMAIN.
+ */
+function sanitizeIngressHost(host: string | undefined): string {
+  if (!host || typeof host !== 'string') return host ?? '';
+  return host.replace(/\.+$/, '').trim();
+}
+
+function sanitizeIngressHosts(doc: any): any {
+  if (!doc || doc.kind !== 'Ingress') return doc;
+  const ingress = { ...doc };
+  if (ingress.spec?.rules) {
+    ingress.spec = { ...ingress.spec };
+    ingress.spec.rules = ingress.spec.rules.map((rule: any) =>
+      rule.host !== undefined ? { ...rule, host: sanitizeIngressHost(rule.host) } : rule
+    );
+  }
+  if (ingress.spec?.tls) {
+    ingress.spec.tls = ingress.spec.tls.map((tls: any) =>
+      tls.hosts
+        ? { ...tls, hosts: tls.hosts.map((h: string) => sanitizeIngressHost(h)).filter(Boolean) }
+        : tls
+    );
+  }
+  return ingress;
+}
+
 export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
   try {
     let _value = JsYaml.loadAll(value)
       .filter((i) => i)
-      .map((item: any) => JsYaml.dump(processEnvValue(item, labelName)));
+      .map((item: any) => {
+        const processed = processEnvValue(item, labelName);
+        const sanitized = sanitizeIngressHosts(processed);
+        return JsYaml.dump(sanitized);
+      });
 
     return [
       {

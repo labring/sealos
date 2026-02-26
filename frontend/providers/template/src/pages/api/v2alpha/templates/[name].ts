@@ -4,11 +4,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { GetTemplateByName } from '../../getTemplateSource';
-import { authSession } from '@/services/backend/auth';
-import { getK8s } from '@/services/backend/kubernetes';
-import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
-import { mapValues, reduce } from 'lodash';
-import { applyWithInstanceOwnerReferences } from '@/services/backend/instanceOwnerReferencesApply';
 import {
   getCachedTemplates,
   getTemplateFromCache,
@@ -82,11 +77,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { name: templateName } = req.query as { name: string };
   const language = (req.query.language as string) || 'en';
 
-  // Skip dynamic route for 'instance' - let instance.ts handle it
-  if (templateName === 'instance') {
+  // Skip dynamic route for 'instances' - let instances.ts handle it
+  if (templateName === 'instances') {
     // This should not happen as static routes have priority, but just in case
-    const instanceHandler = await import('./instance');
-    return instanceHandler.default(req, res);
+    const instancesHandler = await import('./instances');
+    return instancesHandler.default(req, res);
   }
 
   if (!templateName) {
@@ -94,7 +89,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       status: 400,
       type: ErrorType.VALIDATION_ERROR,
       code: ErrorCode.INVALID_PARAMETER,
-      message: 'Template name is required.'
+      message: 'Template name is required.',
+      details: [{ field: 'name', message: 'Required' }]
     });
   }
 
@@ -102,13 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600');
     res.setHeader('ETag', `"${templateName}-${language}"`);
-  }
-
-  if (req.method === 'POST') {
-    return handleTemplateDeployment(req, res, templateName);
-  }
-
-  if (req.method === 'GET') {
     return handleTemplateDetails(req, res, templateName, language);
   }
 
@@ -116,113 +105,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     status: 405,
     type: ErrorType.CLIENT_ERROR,
     code: ErrorCode.METHOD_NOT_ALLOWED,
-    message: 'Method not allowed. Use GET or POST.'
+    message: 'Method not allowed. Use GET.'
   });
-}
-
-//post template
-async function handleTemplateDeployment(
-  req: NextApiRequest,
-  res: NextApiResponse,
-  templateName: string
-) {
-  try {
-    // Directly receive parameters object without 'args' key
-    const args = req.body as Record<string, string>;
-
-    if (!args || typeof args !== 'object' || Object.keys(args).length === 0) {
-      return sendError(res, {
-        status: 400,
-        type: ErrorType.VALIDATION_ERROR,
-        code: ErrorCode.INVALID_PARAMETER,
-        message: 'Template parameters are required.'
-      });
-    }
-
-    // Validate kubeconfig
-    let kubeconfig: string;
-    try {
-      kubeconfig = await authSession(req.headers);
-    } catch (err) {
-      return sendError(res, {
-        status: 401,
-        type: ErrorType.AUTHENTICATION_ERROR,
-        code: ErrorCode.AUTHENTICATION_REQUIRED,
-        message: 'Invalid or missing kubeconfig.'
-      });
-    }
-
-    // Validate kubeconfig and get K8s client
-    let namespace: string;
-    let applyYamlList: (yamlList: string[], type: 'create' | 'replace' | 'dryrun') => Promise<any>;
-    let k8sCustomObjects: Awaited<ReturnType<typeof getK8s>>['k8sCustomObjects'];
-    try {
-      const k8sResult = await getK8s({ kubeconfig });
-      namespace = k8sResult.namespace;
-      applyYamlList = k8sResult.applyYamlList;
-      k8sCustomObjects = k8sResult.k8sCustomObjects;
-    } catch (err: any) {
-      return sendError(res, {
-        status: 401,
-        type: ErrorType.AUTHENTICATION_ERROR,
-        code: ErrorCode.AUTHENTICATION_REQUIRED,
-        message: 'Invalid kubeconfig or insufficient permissions.',
-        details: err?.message || 'Failed to authenticate with Kubernetes cluster'
-      });
-    }
-
-    const { code, message, dataSource, templateYaml, TemplateEnvs, appYaml } =
-      await GetTemplateByName({
-        namespace,
-        templateName
-      });
-
-    if (code !== 20000) {
-      return sendError(res, {
-        status: 404,
-        type: ErrorType.RESOURCE_ERROR,
-        code: ErrorCode.NOT_FOUND,
-        message: message || `Template '${templateName}' not found.`
-      });
-    }
-
-    const app_name = dataSource?.defaults?.app_name?.value || templateName;
-    const _defaults = mapValues(dataSource?.defaults, (value) => value.value);
-    const _inputs = reduce(
-      dataSource?.inputs,
-      (acc, item) => {
-        acc[item.key] = item.default;
-        return acc;
-      },
-      {} as Record<string, string>
-    );
-
-    const generateStr = parseTemplateString(appYaml || '', {
-      ...TemplateEnvs,
-      defaults: _defaults,
-      inputs: { ..._inputs, ...args }
-    });
-    const correctYaml = generateYamlList(generateStr, app_name);
-
-    const yamls = correctYaml.map((item) => item.value);
-
-    await applyWithInstanceOwnerReferences(
-      { applyYamlList, k8sCustomObjects, namespace },
-      yamls,
-      'create'
-    );
-
-    return res.status(204).end();
-  } catch (err: any) {
-    console.error('Error deploying template:', err);
-    return sendError(res, {
-      status: 500,
-      type: ErrorType.INTERNAL_ERROR,
-      code: ErrorCode.INTERNAL_ERROR,
-      message: 'Failed to deploy template.',
-      details: err?.message || String(err)
-    });
-  }
 }
 
 //get template details
