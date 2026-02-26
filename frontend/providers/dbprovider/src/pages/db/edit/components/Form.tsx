@@ -257,9 +257,9 @@ const Form = ({
   };
 
   const supportBackup = useMemo(
-    () => BackupSupportedDBTypeList.includes(getValues('dbType')),
+    () => BackupSupportedDBTypeList.includes(getValues('dbType')) && SystemEnv.BACKUP_ENABLED,
     //eslint-disable-next-line react-hooks/exhaustive-deps
-    [getValues('dbType')]
+    [getValues('dbType'), SystemEnv.BACKUP_ENABLED]
   );
 
   const [dbType, dbVersion] = watch(['dbType', 'dbVersion']);
