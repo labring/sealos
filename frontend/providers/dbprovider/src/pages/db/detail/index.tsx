@@ -1,16 +1,15 @@
-import { useLoading } from '@/hooks/useLoading';
 import { useDBStore } from '@/store/db';
 import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
 import { DBType } from '@/types/db';
 import { serviceSideProps } from '@/utils/i18n';
-import { Box, Flex, Text, useMediaQuery, useTheme } from '@chakra-ui/react';
+import { Box, Flex, Skeleton, SkeletonText, Text, useMediaQuery } from '@chakra-ui/react';
 import { MyTooltip, useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import AppBaseInfo, { ConnectionInfo } from './components/AppBaseInfo';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import Header from './components/Header';
@@ -38,6 +37,56 @@ enum TabEnum {
   OperationLog = 'operationLog',
   chat2db = 'chat2db'
 }
+
+const OverviewSkeleton = () => {
+  return (
+    <Flex boxSize={'full'} flex={1} flexDirection={'column'} overflow={'hidden'}>
+      <Flex mb={'6px'} borderRadius={'lg'} flexShrink={0} minH={'257px'} gap={'8px'}>
+        <Box flexShrink={0} flex={'0 1 37%'} bg={'white'} borderRadius={'8px'} px="32px" py="28px">
+          <Skeleton h="18px" w="160px" mb="14px" />
+          <SkeletonText noOfLines={10} spacing="10px" skeletonHeight="12px" />
+        </Box>
+        <Box flex={'0 1 63%'} bg={'white'} borderRadius={'8px'} px="24px" py="16px">
+          <Skeleton h="18px" w="220px" mb="14px" />
+          <SkeletonText noOfLines={10} spacing="10px" skeletonHeight="12px" />
+        </Box>
+      </Flex>
+
+      <Box
+        flex={'1 0 200px'}
+        bg={'white'}
+        borderRadius={'8px'}
+        px={'20px'}
+        py={'24px'}
+        mt="6px"
+        overflow={'hidden'}
+      >
+        <Flex alignItems={'center'} mb={'16px'} gap="10px">
+          <Skeleton h="16px" w="160px" />
+          <Skeleton h="22px" w="36px" borderRadius="999px" />
+        </Flex>
+        <Skeleton h="14px" w="220px" mb="14px" />
+        <Skeleton h="14px" w="180px" mb="12px" />
+        <Skeleton h="14px" w="260px" mb="12px" />
+        <Skeleton h="14px" w="200px" />
+      </Box>
+    </Flex>
+  );
+};
+
+const PanelSkeleton = () => {
+  return (
+    <Box flex={1} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'} overflow={'hidden'}>
+      <Skeleton h="20px" w="240px" mb="20px" />
+      <SkeletonText noOfLines={12} spacing="10px" skeletonHeight="12px" />
+    </Box>
+  );
+};
+
+const DetailContentSkeleton = ({ listType }: { listType: `${TabEnum}` }) => {
+  if (listType === TabEnum.Overview) return <OverviewSkeleton />;
+  return <PanelSkeleton />;
+};
 
 const AppDetail = ({
   dbName,
@@ -125,9 +174,7 @@ const AppDetail = ({
     };
   }, [SystemEnv.BACKUP_ENABLED, dbType, t]);
 
-  const theme = useTheme();
   const { message: toast } = useMessage();
-  const { Loading } = useLoading();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
   const { dbDetail, loadDBDetail, alerts, loadAlerts } = useDBStore();
@@ -141,7 +188,7 @@ const AppDetail = ({
     cacheTime: 5 * 60 * 1000
   });
 
-  useQuery(
+  const { isInitialLoading: dbDetailInitialLoading } = useQuery(
     ['loadDBDetail', 'intervalLoadPods', dbName],
     () => loadDBDetail(dbName, router?.query?.guide === 'true'),
     {
@@ -182,6 +229,7 @@ const AppDetail = ({
           setShowSlider={setShowSlider}
           isLargeScreen={isLargeScreen}
           alerts={alerts}
+          isLoading={dbDetailInitialLoading}
         />
       </Box>
       <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'8px'} minH={'600px'}>
@@ -243,7 +291,9 @@ const AppDetail = ({
             </Flex>
           ))}
         </Flex>
-        {listType === TabEnum.Overview ? (
+        {dbDetailInitialLoading ? (
+          <DetailContentSkeleton listType={listType} />
+        ) : listType === TabEnum.Overview ? (
           <Flex boxSize={'full'} flex={1} flexDirection={'column'}>
             <AppBaseInfo db={dbDetail} />
             <Box
