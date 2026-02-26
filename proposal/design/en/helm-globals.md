@@ -128,6 +128,39 @@ globals:
 2. If `false`, ignore `feature_configs.<feature>` and module-local same-name switches.
 3. If `true`, merge feature config into module values.
 
+### 5.4 Script Examples
+
+Example A: `entrypoint.sh` reads base variables from `sealos-config`
+
+```bash
+varCloudDomain=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
+varCloudPort=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudPort}')
+varRegionUID=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.regionUID}')
+varDatabaseGlobalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseGlobalCockroachdbURI}')
+varDatabaseLocalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseLocalCockroachdbURI}')
+varDatabaseMongodbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseMongodbURI}')
+varPasswordSalt=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.passwordSalt}')
+varJwtInternal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtInternal}')
+varJwtRegional=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtRegional}')
+varJwtGlobal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtGlobal}')
+```
+
+Example B: read `globals` using `yq` (`yq` path: `~/.sealos/cloud/bin/yq`)
+
+```bash
+YQ_BIN="${HOME}/.sealos/cloud/bin/yq"
+GLOBALS_FILE="/root/.sealos/cloud/values/globals.yaml"
+
+# Read switch: globals.feature_gates.gpu_hami
+gpuHamiEnabled=$("${YQ_BIN}" e -r '.globals.feature_gates.gpu_hami // false' "${GLOBALS_FILE}")
+
+# Read parameter: globals.feature_configs.nfs.storage_class
+nfsStorageClass=$("${YQ_BIN}" e -r '.globals.feature_configs.nfs.storage_class // "nfs-client"' "${GLOBALS_FILE}")
+
+# Read parameter: globals.feature_configs.online_ide.startup_config_map
+onlineIDEStartupCM=$("${YQ_BIN}" e -r '.globals.feature_configs.online_ide.startup_config_map // "devbox-startup"' "${GLOBALS_FILE}")
+```
+
 ## 6. Chart Naming Convention (Recommendation)
 
 Multiple styles currently coexist:

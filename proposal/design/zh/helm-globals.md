@@ -128,6 +128,39 @@ globals:
 2. 当值为 `false` 时，忽略该 feature 的 `feature_configs` 与模块私有同名开关。
 3. 当值为 `true` 时，再读取该 feature 配置并合并到模块 values。
 
+### 5.4 脚本示例
+
+示例 A：`entrypoint.sh` 从 `sealos-config` 读取基础变量
+
+```bash
+varCloudDomain=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
+varCloudPort=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudPort}')
+varRegionUID=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.regionUID}')
+varDatabaseGlobalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseGlobalCockroachdbURI}')
+varDatabaseLocalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseLocalCockroachdbURI}')
+varDatabaseMongodbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseMongodbURI}')
+varPasswordSalt=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.passwordSalt}')
+varJwtInternal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtInternal}')
+varJwtRegional=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtRegional}')
+varJwtGlobal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtGlobal}')
+```
+
+示例 B：使用 `yq` 读取 `globals` 参数（`yq` 路径：`~/.sealos/cloud/bin/yq`）
+
+```bash
+YQ_BIN="${HOME}/.sealos/cloud/bin/yq"
+GLOBALS_FILE="/root/.sealos/cloud/values/globals.yaml"
+
+# 读取开关：globals.feature_gates.gpu_hami
+gpuHamiEnabled=$("${YQ_BIN}" e -r '.globals.feature_gates.gpu_hami // false' "${GLOBALS_FILE}")
+
+# 读取参数：globals.feature_configs.nfs.storage_class
+nfsStorageClass=$("${YQ_BIN}" e -r '.globals.feature_configs.nfs.storage_class // "nfs-client"' "${GLOBALS_FILE}")
+
+# 读取参数：globals.feature_configs.online_ide.startup_config_map
+onlineIDEStartupCM=$("${YQ_BIN}" e -r '.globals.feature_configs.online_ide.startup_config_map // "devbox-startup"' "${GLOBALS_FILE}")
+```
+
 ## 6. Chart 命名规范（建议）
 
 当前存在多种风格并存：
