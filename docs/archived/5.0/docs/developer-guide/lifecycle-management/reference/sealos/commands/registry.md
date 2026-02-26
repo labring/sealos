@@ -149,6 +149,64 @@ use the new password for authentication. Otherwise, they will not be able to pul
 If you are unsure about how to update the configuration of nodes and services, it is recommended to consult related
 documentation or seek professional technical support before changing the registry password.
 
+## Sealos: Detailed Explanation and User Guide of the `sealos registry proxy` Command
+
+To simplify the management of the `image-cri-shim` proxy capability, Sealos introduces the `sealos registry proxy`
+command group. It currently ships with four subcommands: `upgrade`, `info`, `add`, and `delete`. With them you can
+upgrade the shim binary, inspect existing proxy entries, add a new mirror configuration, or remove an obsolete entry.
+
+> 💡 Make sure `sealos registry proxy init` has been executed before using these commands so that the
+> `kube-system/image-cri-shim` resources already exist in your cluster.
+
+### Command Overview
+
+| Subcommand | Purpose | Example |
+| --- | --- | --- |
+| `sealos registry proxy upgrade <version>` | Update the `image-cri-shim` DaemonSet image to the specified version | `sealos registry proxy upgrade v5.1.0` |
+| `sealos registry proxy info` | Print the current proxy configuration (hub and registry entries) | `sealos registry proxy info` |
+| `sealos registry proxy add --address <address> [--auth user:password]` | Add or update a proxy entry | `sealos registry proxy add --address https://mirror.example.com --auth admin:passw0rd` |
+| `sealos registry proxy delete --address <address>` | Delete the proxy entry of the given address | `sealos registry proxy delete --address https://mirror.example.com` |
+
+### Usage Examples
+
+1. **Upgrade image-cri-shim**
+
+   ```bash
+   sealos registry proxy upgrade v5.1.0
+   ```
+
+   The command aborts with a friendly hint if the proxy has not been initialized yet.
+
+2. **Inspect the current proxy configuration**
+
+   ```bash
+   sealos registry proxy info
+   ```
+
+   All configured registries, together with the hub endpoint, are listed in a tabular view.
+
+3. **Add or update a proxy entry**
+
+   ```bash
+   sealos registry proxy add --address https://quay.example.com --auth user:password
+   ```
+
+   When the address already exists it will be updated in place.
+
+4. **Delete a proxy entry**
+
+   ```bash
+   sealos registry proxy delete --address https://quay.example.com
+   ```
+
+   A helpful error is returned when the address does not exist in the configuration.
+
+### Frequently Asked Questions
+
+- **Missing configuration error**: Run `sealos registry proxy init` first so the ConfigMap and DaemonSet are created.
+- **Invalid YAML message**: Validate the ConfigMap content stored under `kube-system/image-cri-shim`.
+- **Upgrade failed**: Verify the `image-cri-shim` DaemonSet exists and defines at least one container.
+
 ## Sealos: Detailed Explanation and User Guide of the `sealos registry sync` Command
 
 Sealos' `registry sync` command can help you synchronize all images between two registries. This can be used not only
