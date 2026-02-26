@@ -58,6 +58,7 @@ get_or_generate_admin_password() {
 
 HELM_SET_ARGS=()
 
+PASSWORD_SALT=$(kubectl get cm -n sealos-system sealos-config -o "jsonpath={.data.passwordSalt}" 2>/dev/null || true)
 # 处理密码盐值
 if [ -n "${PASSWORD_SALT:-}" ]; then
   add_set_string env.passwordSalt "${PASSWORD_SALT}"
@@ -68,13 +69,11 @@ ADMIN_PASSWORD=$(get_or_generate_admin_password)
 add_set_string env.adminPassword "${ADMIN_PASSWORD}"
 
 # 打印密码信息（如果是从 ConfigMap 读取或自动生成的）
-if [ -z "${ADMIN_PASSWORD:-}" ]; then
-  echo "=========================================="
-  echo "Admin Password: ${ADMIN_PASSWORD}"
-  echo "Password saved to ConfigMap: ${ADMIN_PASSWORD_CM_NAME} in namespace ${ADMIN_PASSWORD_CM_NAMESPACE}"
-  echo "Retrieve with: kubectl get cm ${ADMIN_PASSWORD_CM_NAME} -n ${ADMIN_PASSWORD_CM_NAMESPACE} -o jsonpath='{.data.${ADMIN_PASSWORD_CM_KEY}}'"
-  echo "=========================================="
-fi
+echo "=========================================="
+echo "Admin Password: ${ADMIN_PASSWORD}"
+echo "Password saved to ConfigMap: ${ADMIN_PASSWORD_CM_NAME} in namespace ${ADMIN_PASSWORD_CM_NAMESPACE}"
+echo "Retrieve with: kubectl get cm ${ADMIN_PASSWORD_CM_NAME} -n ${ADMIN_PASSWORD_CM_NAMESPACE} -o jsonpath='{.data.${ADMIN_PASSWORD_CM_KEY}}'"
+echo "=========================================="
 
 if [ -n "${ADMIN_USER_NAME:-}" ]; then
   add_set_string env.adminUserName "${ADMIN_USER_NAME}"
@@ -89,6 +88,16 @@ fi
 if [ -n "${JOB_INIT_SERVICE_ACCOUNT:-}" ]; then
   add_set_string serviceAccount.name "${JOB_INIT_SERVICE_ACCOUNT}"
 fi
+
+SEALOS_CLOUD_DOMAIN=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
+varDatabaseGlobalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseGlobalCockroachdbURI}')
+varDatabaseLocalCockroachdbURI=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.databaseLocalCockroachdbURI}')
+varRegionUID=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.regionUID}')
+
+add_set_string env.domain "${SEALOS_CLOUD_DOMAIN}"
+add_set_string env.globalCockroachUri "${varDatabaseGlobalCockroachdbURI}"
+add_set_string env.localCockroachUri "${varDatabaseLocalCockroachdbURI}"
+add_set_string env.localRegion "${varRegionUID}"
 
 if kubectl -n "${RELEASE_NAMESPACE}" get job "${JOB_NAME}" >/dev/null 2>&1; then
   kubectl -n "${RELEASE_NAMESPACE}" delete job "${JOB_NAME}" --ignore-not-found --wait=true
