@@ -1,16 +1,15 @@
-import { useLoading } from '@/hooks/useLoading';
 import { useDBStore } from '@/store/db';
 import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
 import { DBType } from '@/types/db';
 import { serviceSideProps } from '@/utils/i18n';
-import { Box, Flex, Text, useMediaQuery, useTheme } from '@chakra-ui/react';
+import { Box, Flex, Text, useMediaQuery } from '@chakra-ui/react';
 import { MyTooltip, useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import AppBaseInfo, { ConnectionInfo } from './components/AppBaseInfo';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import Header from './components/Header';
@@ -23,7 +22,6 @@ import MyIcon from '@/components/Icon';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import DataImport from './components/DataImport';
 import OperationLog from './components/OperationLog';
-import { type DatabaseAlertItem } from '@/api/db';
 
 enum TabEnum {
   pod = 'pod',
@@ -123,9 +121,7 @@ const AppDetail = ({
     };
   }, [SystemEnv.BACKUP_ENABLED, dbType, t]);
 
-  const theme = useTheme();
   const { message: toast } = useMessage();
-  const { Loading } = useLoading();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
   const { dbDetail, loadDBDetail, alerts, loadAlerts } = useDBStore();
