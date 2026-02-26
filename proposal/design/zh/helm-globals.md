@@ -111,14 +111,14 @@ globals:
 
 1. `charts/<module>/values.yaml`
 2. `/root/.sealos/cloud/values/globals.yaml`
-3. `/root/.sealos/cloud/values/apps/<module>/*.yaml`（可选）
+3. `/root/.sealos/cloud/values/apps/<module>/*-values.yaml`（可选）
 4. `/root/.sealos/cloud/values/core/<module>-values.yaml`
 
 ### 5.2 生效优先级（高到低）
 
 1. `HELM_OPTIONS/--set/--set-string`
 2. `/root/.sealos/cloud/values/core/<module>-values.yaml`
-3. `/root/.sealos/cloud/values/apps/<module>/*.yaml`
+3. `/root/.sealos/cloud/values/apps/<module>/*-values.yaml`
 4. `/root/.sealos/cloud/values/globals.yaml`
 5. `charts/<module>/values.yaml`
 
