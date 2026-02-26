@@ -22,7 +22,6 @@ import MyIcon from '@/components/Icon';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import DataImport from './components/DataImport';
 import OperationLog from './components/OperationLog';
-import { type DatabaseAlertItem } from '@/api/db';
 
 enum TabEnum {
   pod = 'pod',
