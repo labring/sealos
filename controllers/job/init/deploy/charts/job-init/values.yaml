@@ -43,11 +43,6 @@ env:
   localCockroachUri: ""
   localRegion: ""
 
-metrics:
-  enabled: false
-  certPath: /tmp/k8s-metrics-server/metrics-certs
-  secretName: metrics-server-cert
-
 nodeSelector: {}
 
 tolerations: []

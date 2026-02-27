@@ -53,15 +53,10 @@ desktopConfig:
   enterpriseRealNameAuthEnabled: false
   trackingEnabled: false
   realNameAuthEnabled: false
-  licenseCheckEnabled: false
 
   # Common URLs (default values)
   realNameReward: 0
   realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
-  templateUrl: "https://template.example.org"
-  applaunchpadUrl: "https://applaunchpad.example.org"
-  dbproviderUrl: "https://dbprovider.example.org"
-  objectstorageUrl: "https://objectstorage.example.org"
   cfSiteKey: ""
 
   # Desktop layout configuration
@@ -71,11 +66,25 @@ desktopConfig:
   customerServiceURL: ""
   layoutDocsUrl: "https://sealos.run/docs/Intro/"
 
+  authTitle:
+    zh: "欢迎来到 Sealos"
+    en: "Welcome to Sealos"
+  authBackgroundImage:
+    zh: "/images/bg-light.svg"
+    en: "/images/bg-light.svg"
+  protocol:
+    serviceProtocol:
+      zh: https://sealos.io/zh-Hans/docs/msa/terms-of-service
+      en: https://sealos.io/docs/msa/terms-of-service
+    privateProtocol:
+      zh: https://sealos.io/zh-Hans/docs/msa/privacy-policy
+      en: https://sealos.io/docs/msa/privacy-policy
   # Meta tags
   metaTitle: "Sealos Cloud"
   metaDescription: "Sealos Cloud"
   metaKeywords: "Sealos Cloud"
 
+  passwordEnabled: true
   # OAuth providers
   githubEnabled: false
   githubClientId: ""
@@ -147,7 +156,6 @@ desktopConfig:
 
   # Workorder and cloud virtual machine URLs
   workorderUrl: ""
-  cloudVirtualMachineUrl: "https://cloudvirtualmachine.example.org"
 
   # Team management
   maxTeamCount: 0

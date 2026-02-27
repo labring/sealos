@@ -188,7 +188,7 @@ common:
   enterpriseRealNameAuthEnabled: false
   trackingEnabled: false
   realNameAuthEnabled: false
-  licenseCheckEnabled: false
+  passwordEnabled: true
   realNameReward: 0
   realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
   templateUrl: "https://template.example.org"
