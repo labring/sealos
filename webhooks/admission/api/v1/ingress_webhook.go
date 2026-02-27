@@ -220,7 +220,7 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 
 	checks := []func(*netv1.Ingress, *netv1.IngressRule) error{
 		v.checkDeny,
-		v.checkCname,
+		// v.checkCname,
 		v.checkOwner,
 		v.checkIcp,
 	}
