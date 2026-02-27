@@ -7,5 +7,8 @@ COPY manifests manifests
 
 ENV cloudDomain=${cloudDomain:-"127.0.0.1.nip.io"}
 ENV cloudPort=${cloudPort:-"443"}
+ENV metricsUrl=${metricsUrl:-"http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus"}
+ENV objectStorageInstance=${objectStorageInstance:-"object-storage.objectstorage-system.svc.cluster.local:80"}
+ENV whitelistKubernetesHosts=${whitelistKubernetesHosts:-""}
 
 CMD ["kubectl apply -f manifests/deploy.yaml"]
