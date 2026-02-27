@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
+	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/helper"
@@ -401,6 +402,219 @@ func AdminFlushSubscriptionQuota(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func AdminFlushSubscriptionQuotaAll(c *gin.Context) {
+	err := authenticateAdminRequest(c)
+	if err != nil {
+		c.JSON(
+			http.StatusUnauthorized,
+			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+		)
+		return
+	}
+	req, err := helper.ParseAdminFlushSubscriptionQuotaAllReq(c)
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)},
+		)
+		return
+	}
+	if req.PlanName != "" {
+		if _, ok := dao.WorkspacePlanResQuota[req.PlanName]; !ok {
+			c.JSON(
+				http.StatusBadRequest,
+				helper.ErrorMessage{
+					Error: fmt.Sprintf("plan name is not in plan resource quota: %v", req.PlanName),
+				},
+			)
+			return
+		}
+	}
+
+	clt := dao.K8sManager.GetClient()
+	subNamespaces, err := listSubscriptionNamespaces(clt)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("list subscription namespaces failed: %v", err)},
+		)
+		return
+	}
+	if len(subNamespaces) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"success":   true,
+			"dryRun":    req.DryRun,
+			"updated":   0,
+			"skipped":   0,
+			"unchanged": 0,
+		})
+		return
+	}
+
+	subscriptions, err := dao.DBClient.ListWorkspaceSubscriptionWorkspacePlan(req.PlanName)
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("list workspace subscription failed: %v", err)},
+		)
+		return
+	}
+	subscriptionPlans := make(map[string]string, len(subscriptions))
+	for i := range subscriptions {
+		if subscriptions[i].Workspace == "" {
+			continue
+		}
+		subscriptionPlans[subscriptions[i].Workspace] = subscriptions[i].PlanName
+	}
+
+	quotaList := &corev1.ResourceQuotaList{}
+	if err := clt.List(context.Background(), quotaList); err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			helper.ErrorMessage{Error: fmt.Sprintf("list resource quota failed: %v", err)},
+		)
+		return
+	}
+	quotaByNamespace := make(map[string]*corev1.ResourceQuota, len(quotaList.Items))
+	for i := range quotaList.Items {
+		quota := &quotaList.Items[i]
+		if quota.Name != "quota-"+quota.Namespace {
+			continue
+		}
+		quotaByNamespace[quota.Namespace] = quota
+	}
+
+	defaultQuota := resources.GetDefaultResourceQuota("default", "quota-default")
+	defaultHard := cloneResourceList(defaultQuota.Spec.Hard)
+	planQuotaCache := make(map[string]corev1.ResourceList)
+
+	updated := 0
+	skipped := 0
+	unchanged := 0
+
+	for namespace := range subNamespaces {
+		planName, ok := subscriptionPlans[namespace]
+		if !ok || planName == "" {
+			skipped++
+			continue
+		}
+		desiredQuota, ok := getWorkspacePlanResourceQuota(planName, defaultHard, planQuotaCache)
+		if !ok {
+			skipped++
+			continue
+		}
+		desiredHard := cloneResourceList(desiredQuota)
+		if currentQuota, ok := quotaByNamespace[namespace]; ok {
+			if resourceListEqual(currentQuota.Spec.Hard, desiredHard) {
+				unchanged++
+				continue
+			}
+		}
+		if req.DryRun {
+			updated++
+			continue
+		}
+		quota := resources.GetDefaultResourceQuota(namespace, "quota-"+namespace)
+		_, err := controllerutil.CreateOrUpdate(
+			context.Background(),
+			clt,
+			quota,
+			func() error {
+				quota.Spec.Hard = desiredHard
+				return nil
+			},
+		)
+		if err != nil {
+			c.JSON(
+				http.StatusInternalServerError,
+				helper.ErrorMessage{Error: fmt.Sprintf("update resource quota failed: %v", err)},
+			)
+			return
+		}
+		updated++
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success":   true,
+		"dryRun":    req.DryRun,
+		"updated":   updated,
+		"skipped":   skipped,
+		"unchanged": unchanged,
+	})
+}
+
+func listSubscriptionNamespaces(clt client.Client) (map[string]struct{}, error) {
+	nsList := &corev1.NamespaceList{}
+	if err := clt.List(context.Background(), nsList); err != nil {
+		return nil, err
+	}
+	subscriptionNamespaces := make(map[string]struct{})
+	for i := range nsList.Items {
+		namespace := &nsList.Items[i]
+		if namespace.Status.Phase == corev1.NamespaceTerminating {
+			continue
+		}
+		if namespace.Annotations == nil {
+			continue
+		}
+		if namespace.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] == "" {
+			continue
+		}
+		subscriptionNamespaces[namespace.Name] = struct{}{}
+	}
+	return subscriptionNamespaces, nil
+}
+
+func cloneResourceList(src corev1.ResourceList) corev1.ResourceList {
+	if src == nil {
+		return nil
+	}
+	dst := make(corev1.ResourceList, len(src))
+	for key, quantity := range src {
+		dst[key] = quantity.DeepCopy()
+	}
+	return dst
+}
+
+func resourceListEqual(left, right corev1.ResourceList) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for key, leftQty := range left {
+		rightQty, ok := right[key]
+		if !ok {
+			return false
+		}
+		if leftQty.Cmp(rightQty) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func getWorkspacePlanResourceQuota(
+	planName string,
+	defaultHard corev1.ResourceList,
+	cache map[string]corev1.ResourceList,
+) (corev1.ResourceList, bool) {
+	if cached, ok := cache[planName]; ok {
+		return cached, true
+	}
+	planHard, ok := dao.WorkspacePlanResQuota[planName]
+	if !ok {
+		return nil, false
+	}
+	merged := planHard.DeepCopy()
+	for key, quantity := range defaultHard {
+		if _, exists := merged[key]; exists {
+			continue
+		}
+		merged[key] = quantity.DeepCopy()
+	}
+	cache[planName] = merged
+	return merged, true
 }
 
 // FlushSubscriptionQuota

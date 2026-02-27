@@ -73,6 +73,22 @@ func (g *Cockroach) ListWorkspaceSubscription(
 	return g.ck.ListWorkspaceSubscription(userUID)
 }
 
+func (g *Cockroach) ListWorkspaceSubscriptionWorkspacePlan(
+	planName string,
+) ([]types.WorkspaceSubscription, error) {
+	db := g.ck.GetGlobalDB().
+		Model(&types.WorkspaceSubscription{}).
+		Select("workspace", "plan_name")
+	if planName != "" {
+		db = db.Where("plan_name = ? AND subscription_status = ?", planName, types.SubscriptionStatusNormal)
+	}
+	var subscriptions []types.WorkspaceSubscription
+	if err := db.Find(&subscriptions).Error; err != nil {
+		return nil, fmt.Errorf("failed to list workspace subscriptions: %w", err)
+	}
+	return subscriptions, nil
+}
+
 func (g *Cockroach) GetWorkspaceSubscriptionPlanList() ([]types.WorkspaceSubscriptionPlan, error) {
 	return g.ck.GetWorkspaceSubscriptionPlanList()
 }
