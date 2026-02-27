@@ -871,7 +871,7 @@ const Form = ({
                   step={1}
                 />
               </Flex>
-              <Flex mb={8} pr={3} alignItems={'center'}>
+              {/* <Flex mb={8} pr={3} alignItems={'center'}>
                 <Label mr={'7px'}>{t('ephemeral-storage')}</Label>
                 <MySlider
                   markList={SliderList.ephemeralStorage}
@@ -886,7 +886,7 @@ const Form = ({
                 <Box ml={5} transform={'translateY(10px)'} color={'grayModern.500'}>
                   Gi
                 </Box>
-              </Flex>
+              </Flex> */}
             </Box>
           </Box>
 
