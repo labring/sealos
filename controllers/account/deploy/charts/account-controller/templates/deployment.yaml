@@ -67,6 +67,9 @@ spec:
             - containerPort: 9443
               name: webhook-server
               protocol: TCP
+            - containerPort: 9444  
+              name: account
+              protocol: TCP
             {{- if .Values.metrics.enabled }}
             - containerPort: 8443
               name: https
