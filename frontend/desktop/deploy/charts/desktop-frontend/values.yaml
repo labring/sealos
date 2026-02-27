@@ -58,6 +58,10 @@ desktopConfig:
   billingUrl: "http://account-service.account-system.svc:2333"
   billingToken: ""
 
+  allowedOrigins:
+    - "costcenter"
+    - "license"
+
   # Currency and language configuration
   # Options: "cn" (Chinese) or "en" (English)
   # forcedLanguage and currencySymbol will be auto-configured based on version:
