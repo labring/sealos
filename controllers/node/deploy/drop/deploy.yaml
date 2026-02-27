@@ -286,14 +286,6 @@ subjects:
   namespace: node-system
 ---
 apiVersion: v1
-data:
-  gpu: ""
-kind: ConfigMap
-metadata:
-  name: node-gpu-info
-  namespace: node-system
----
-apiVersion: v1
 kind: Service
 metadata:
   labels:

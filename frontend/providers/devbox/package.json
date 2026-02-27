@@ -68,6 +68,7 @@
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
     "sealos-mcp-sdk": "workspace:^",
+    "sealos-metrics-sdk": "workspace:^",
     "sonner": "^2.0.5",
     "zod": "^3.23.8",
     "zod-openapi": "^4.2.4",

@@ -10,9 +10,15 @@ import type { CustomAccessModalParams } from './CustomAccessModal';
 import dynamic from 'next/dynamic';
 import { WorkspaceQuotaItem } from '@sealos/shared';
 import { Plus, Trash2, Copy, Check } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Button } from '@sealos/shadcn-ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Button
+} from '@sealos/shadcn-ui';
 import { Switch } from '@sealos/shadcn-ui/switch';
 import { Label } from '@sealos/shadcn-ui/label';
 import {
@@ -58,7 +64,8 @@ interface NetworkSectionProps {
 export function NetworkSection({
   formHook,
   exceededQuotas,
-  onDomainVerified
+  onDomainVerified,
+  handleOpenCostcenter
 }: NetworkSectionProps) {
   const { t } = useTranslation();
 
@@ -201,17 +208,20 @@ export function NetworkSection({
     [getValues, appendNetworks, removeNetworks, updateNetworks]
   );
 
-  const getDomainDisplay = (network: AppEditType['networks'][0]) => {
-    if (network.customDomain) {
-      return network.customDomain;
-    }
-    if (network.openNodePort) {
-      return network?.nodePort
-        ? `${network.protocol.toLowerCase()}.${network.domain}:${network.nodePort}`
-        : `${network.protocol.toLowerCase()}.${network.domain}:${t('pending_to_allocated')}`;
-    }
-    return `${network.publicDomain}.${network.domain}`;
-  };
+  const getDomainDisplay = useCallback(
+    (network: AppEditType['networks'][0]) => {
+      if (network.customDomain) {
+        return network.customDomain;
+      }
+      if (network.openNodePort) {
+        return network?.nodePort
+          ? `${network.protocol.toLowerCase()}.${network.domain}:${network.nodePort}`
+          : `${network.protocol.toLowerCase()}.${network.domain}:${t('pending_to_allocated')}`;
+      }
+      return `${network.publicDomain}.${network.domain}`;
+    },
+    [t]
+  );
 
   return (
     <>
@@ -257,7 +267,7 @@ export function NetworkSection({
                   <div className="flex items-center gap-4 flex-1">
                     {/* Enable Public Access */}
                     <div className="shrink-0 mr-1">
-                      <Label className="text-sm font-medium leading-none text-zinc-900 mb-3 block">
+                      <Label className="text-sm font-medium text-zinc-900 mb-2 block">
                         {t('Open Public Access')}
                       </Label>
                       <div className="flex items-center gap-2 h-10">
@@ -299,7 +309,7 @@ export function NetworkSection({
 
                     {/* Protocol and Domain */}
                     <div className="flex-1 min-w-0">
-                      <Label className="text-sm font-medium text-zinc-900 mb-3 leading-none block invisible">
+                      <Label className="text-sm font-medium text-zinc-900 mb-2 block invisible">
                         {t('Protocol')}
                       </Label>
                       <div className="flex items-center h-10">
@@ -385,7 +395,7 @@ export function NetworkSection({
                     {/* Delete Button */}
                     {networks.length > 1 && (
                       <div className="shrink-0">
-                        <Label className="text-sm font-medium text-zinc-900 mb-3 block invisible">
+                        <Label className="text-sm font-medium text-zinc-900 mb-2 block invisible">
                           {t('Delete')}
                         </Label>
                         <Button
@@ -440,13 +450,27 @@ export function NetworkSection({
             )}
 
             {exceededQuotas.some(({ type }) => type === 'nodeport') && (
-              <p className="text-sm text-red-500">
-                {t('nodeport_exceeds_quota', {
-                  requested: getValues('networks').filter((item) => item.openNodePort)?.length || 0,
-                  limit: exceededQuotas.find(({ type }) => type === 'nodeport')?.limit ?? 0,
-                  used: exceededQuotas.find(({ type }) => type === 'nodeport')?.used ?? 0
-                })}
-              </p>
+              <div className="pt-4">
+                <p className="text-sm text-red-500 mb-1">
+                  {t('nodeport_exceeds_quota', {
+                    requested:
+                      getValues('networks').filter((item) => item.openNodePort)?.length || 0,
+                    limit: exceededQuotas.find(({ type }) => type === 'nodeport')?.limit ?? 0,
+                    used: exceededQuotas.find(({ type }) => type === 'nodeport')?.used ?? 0
+                  })}
+                </p>
+                {/* [TODO] Let's wait for the Client SDK upgrade */}
+                {/* <p className="text-sm text-red-500">
+                  {t('please_upgrade_plan.0')}
+                  <span
+                    className="cursor-pointer font-semibold text-blue-600 underline"
+                    onClick={handleOpenCostcenter}
+                  >
+                    {t('please_upgrade_plan.1')}
+                  </span>
+                  {t('please_upgrade_plan.2')}
+                </p> */}
+              </div>
             )}
           </div>
         </CardContent>

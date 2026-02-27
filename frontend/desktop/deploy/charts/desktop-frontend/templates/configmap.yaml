@@ -1,0 +1,176 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "desktop.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "desktop.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    cloud:
+      domain: "{{ .Values.desktopConfig.cloudDomain }}"
+      port: "{{ .Values.desktopConfig.cloudPort }}"
+      regionUID: "{{ .Values.desktopConfig.regionUID }}"
+      certSecretName: "{{ .Values.desktopConfig.certSecretName }}"
+      proxyDomain: "{{ .Values.desktopConfig.cloudDomain }}"
+      allowedOrigins:
+{{- $defaultAllowedOrigins := list "costcenter" "license" -}}
+{{- $allowedOrigins := .Values.desktopConfig.allowedOrigins | default $defaultAllowedOrigins -}}
+{{- range $origin := $allowedOrigins }}
+        - "https://{{ $origin }}.{{ $.Values.desktopConfig.cloudDomain }}"
+{{- end }}
+
+    common:
+      guideEnabled: {{ .Values.desktopConfig.guideEnabled }}
+      apiEnabled: {{ .Values.desktopConfig.apiEnabled }}
+      rechargeEnabled: {{ .Values.desktopConfig.rechargeEnabled }}
+      enterpriseRealNameAuthEnabled: {{ .Values.desktopConfig.enterpriseRealNameAuthEnabled }}
+      trackingEnabled: {{ .Values.desktopConfig.trackingEnabled }}
+      realNameAuthEnabled: {{ .Values.desktopConfig.realNameAuthEnabled }}
+      realNameReward: {{ .Values.desktopConfig.realNameReward }}
+      realNameCallbackUrl: "{{ .Values.desktopConfig.realNameCallbackUrl }}"
+      templateUrl: "https://template.{{ .Values.desktopConfig.cloudDomain }}"
+      cfSiteKey: "{{ .Values.desktopConfig.cfSiteKey }}"
+
+    database:
+      mongodbURI: "{{ .Values.desktopConfig.databaseMongodbURI }}"
+      globalCockroachdbURI: "{{ .Values.desktopConfig.databaseGlobalCockroachdbURI }}"
+      regionalCockroachdbURI: "{{ .Values.desktopConfig.databaseLocalCockroachdbURI }}"
+
+    desktop:
+      layout:
+        version: "{{ .Values.desktopConfig.version }}"
+        title: "{{ .Values.desktopConfig.layoutTitle }}"
+        logo: "{{ .Values.desktopConfig.layoutLogo }}"
+        backgroundImage: "{{ .Values.desktopConfig.layoutBackgroundImage }}"
+        forcedLanguage: {{ if eq .Values.desktopConfig.version "cn" }}"zh"{{ else }}"en"{{ end }}
+        customerServiceURL: "{{ .Values.desktopConfig.customerServiceURL }}"
+        discordInviteLink: {{ if eq .Values.desktopConfig.version "en" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}
+        gtmId: {{ if .Values.desktopConfig.gtmId }}"{{ .Values.desktopConfig.gtmId }}"{{ else }}null{{ end }}
+        currencySymbol: {{ if eq .Values.desktopConfig.version "cn" }}"shellCoin"{{ else }}"usd"{{ end }}
+        authTitle:
+          zh: "{{.Values.desktopConfig.authTitle.zh}}"
+          en: "{{.Values.desktopConfig.authTitle.en}}"
+        authBackgroundImage:
+          zh: "{{.Values.desktopConfig.authBackgroundImage.zh}}"
+          en: "{{.Values.desktopConfig.authBackgroundImage.en}}"
+        protocol:
+          serviceProtocol:
+            zh: "{{.Values.desktopConfig.protocol.serviceProtocol.zh}}"
+            en: "{{.Values.desktopConfig.protocol.serviceProtocol.en}}"
+          privateProtocol:
+            zh: "{{.Values.desktopConfig.protocol.privateProtocol.zh}}"
+            en: "{{.Values.desktopConfig.protocol.privateProtocol.en}}"
+        meta:
+          title: "{{ .Values.desktopConfig.metaTitle }}"
+          description: "{{ .Values.desktopConfig.metaDescription }}"
+          keywords: "{{ .Values.desktopConfig.metaKeywords }}"
+          scripts: []
+          noscripts: []
+        common:
+          githubStarEnabled: true
+          accountSettingEnabled: true
+          docsUrl: "{{ .Values.desktopConfig.layoutDocsUrl }}"
+          aiAssistantEnabled: false
+          bannerEnabled: false
+          subscriptionEnabled: false
+          guestModeEnabled: false
+          emailAlertEnabled: false
+          phoneAlertEnabled: false
+          announcementEnabled: false
+      auth:
+        proxyAddress: ""
+        callbackURL: "https://{{ .Values.desktopConfig.cloudDomain }}{{ if .Values.desktopConfig.cloudPort }}:{{ .Values.desktopConfig.cloudPort }}{{ end }}/callback"
+        signUpEnabled: true
+        baiduToken: ""
+        hasBaiduToken: false
+        bingAd:
+          tenant: ""
+          clientId: ""
+          clientSecret: ""
+          refreshToken: ""
+          developerToken: ""
+          customerId: 0
+          customerAccountId: 0
+          conversionName: ""
+        jwt:
+          internal: "{{ .Values.desktopConfig.jwtInternal }}"
+          regional: "{{ .Values.desktopConfig.jwtRegional }}"
+          global: "{{ .Values.desktopConfig.jwtGlobal }}"
+        idp:
+          password:
+            enabled: {{.Values.desktopConfig.passwordEnabled }}
+            salt: "{{ .Values.desktopConfig.passwordSalt }}"
+          github:
+            enabled: {{ .Values.desktopConfig.githubEnabled }}
+            proxyAddress: "{{ .Values.desktopConfig.githubProxyAddress }}"
+            clientID: "{{ .Values.desktopConfig.githubClientId }}"
+            clientSecret: "{{ .Values.desktopConfig.githubClientSecret }}"
+          wechat:
+            enabled: {{ .Values.desktopConfig.wechatEnabled }}
+            proxyAddress: "{{ .Values.desktopConfig.wechatProxyAddress }}"
+            clientID: "{{ .Values.desktopConfig.wechatClientId }}"
+            clientSecret: "{{ .Values.desktopConfig.wechatClientSecret }}"
+          google:
+            enabled: {{ .Values.desktopConfig.googleEnabled }}
+            proxyAddress: "{{ .Values.desktopConfig.googleProxyAddress }}"
+            clientID: "{{ .Values.desktopConfig.googleClientId }}"
+            clientSecret: "{{ .Values.desktopConfig.googleClientSecret }}"
+          oauth2:
+            enabled: {{ .Values.desktopConfig.oauth2Enabled }}
+            callbackURL: "{{ .Values.desktopConfig.oauth2CallbackUrl }}"
+            clientID: "{{ .Values.desktopConfig.oauth2ClientId }}"
+            proxyAddress: "{{ .Values.desktopConfig.oauth2ProxyAddress }}"
+            clientSecret: "{{ .Values.desktopConfig.oauth2ClientSecret }}"
+            authURL: "{{ .Values.desktopConfig.oauth2AuthUrl }}"
+            tokenURL: "{{ .Values.desktopConfig.oauth2TokenUrl }}"
+            userInfoURL: "{{ .Values.desktopConfig.oauth2UserInfoUrl }}"
+          sms:
+            enabled: {{ .Values.desktopConfig.smsEnabled }}
+            ali:
+              enabled: {{ .Values.desktopConfig.smsAliEnabled }}
+              endpoint: "{{ .Values.desktopConfig.smsAliEndpoint }}"
+              templateCode: "{{ .Values.desktopConfig.smsAliTemplateCode }}"
+              signName: "{{ .Values.desktopConfig.smsAliSignName }}"
+              accessKeyID: "{{ .Values.desktopConfig.smsAliAccessKeyID }}"
+              accessKeySecret: "{{ .Values.desktopConfig.smsAliAccessKeySecret }}"
+          email:
+            enabled: {{ .Values.desktopConfig.emailEnabled }}
+            host: "{{ .Values.desktopConfig.emailHost }}"
+            port: {{ .Values.desktopConfig.emailPort }}
+            user: "{{ .Values.desktopConfig.emailUser }}"
+            password: "{{ .Values.desktopConfig.emailPassword }}"
+            language: "{{ .Values.desktopConfig.emailLanguage }}"
+        captcha:
+          turnstile:
+            enabled: {{ .Values.desktopConfig.turnstileEnabled }}
+            siteKey: "{{ .Values.desktopConfig.turnstileSiteKey }}"
+            secretKey: "{{ .Values.desktopConfig.turnstileSecretKey }}"
+          ali:
+            enabled: {{ .Values.desktopConfig.aliCaptchaEnabled }}
+            endpoint: "{{ .Values.desktopConfig.aliCaptchaEndpoint }}"
+            sceneId: "{{ .Values.desktopConfig.aliCaptchaSceneId }}"
+            prefix: "{{ .Values.desktopConfig.aliCaptchaPrefix }}"
+            accessKeyID: "{{ .Values.desktopConfig.aliCaptchaAccessKeyID }}"
+            accessKeySecret: "{{ .Values.desktopConfig.aliCaptchaAccessKeySecret }}"
+        billingUrl: "{{ .Values.desktopConfig.billingUrl }}"
+        billingToken: "{{ .Values.desktopConfig.billingToken }}"
+        workorderUrl: "{{ .Values.desktopConfig.workorderUrl }}"
+
+      teamManagement:
+        maxTeamCount: {{ .Values.desktopConfig.maxTeamCount }}
+        maxTeamMemberCount: {{ .Values.desktopConfig.maxTeamMemberCount }}
+
+    tracking:
+      websiteId: "{{ .Values.desktopConfig.trackingWebsiteId }}"
+      hostUrl: {{ if .Values.desktopConfig.trackingHostUrl }}"{{ .Values.desktopConfig.trackingHostUrl }}"{{ else if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run"{{ else }}""{{ end }}
+      scriptUrl: {{ if .Values.desktopConfig.trackingScriptUrl }}"{{ .Values.desktopConfig.trackingScriptUrl }}"{{ else if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run/sealos"{{ else }}""{{ end }}
+
+    realNameOSS:
+      accessKey: "{{ .Values.desktopConfig.realNameOSSAccessKey }}"
+      accessKeySecret: "{{ .Values.desktopConfig.realNameOSSAccessKeySecret }}"
+      endpoint: "{{ .Values.desktopConfig.realNameOSSEndpoint }}"
+      ssl: {{ .Values.desktopConfig.realNameOSSSSL }}
+      port: {{ .Values.desktopConfig.realNameOSSPort }}
+      realNameBucket: "{{ .Values.desktopConfig.realNameOSSRealNameBucket }}"
+      enterpriseRealNameBucket: "{{ .Values.desktopConfig.realNameOSSEnterpriseRealNameBucket }}"

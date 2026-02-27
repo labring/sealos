@@ -1,43 +1,16 @@
-# Copyright © 2022 sealos.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: desktop-frontend
-  namespace: sealos
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: desktop-frontend
-  namespace: sealos
-spec:
-  ports:
-    - port: 3000
-  selector:
-    app: desktop-frontend
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: desktop-frontend
-  namespace: sealos
+  name: {{ include "desktop.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "desktop.name" . }}
+    {{- include "desktop.labels" . | nindent 4 }}
 spec:
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: desktop-frontend
+      app: {{ include "desktop.name" . }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -46,12 +19,24 @@ spec:
   template:
     metadata:
       labels:
-        app: desktop-frontend
+        app: {{ include "desktop.name" . }}
+        {{- include "desktop.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
-      serviceAccountName: desktop-frontend
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "desktop.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
         - name: init-database
-          image: ghcr.io/labring/sealos-desktop-frontend:latest
+          image: "{{ .Values.image }}"
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -64,14 +49,9 @@ spec:
               name: desktop-frontend-volume
               subPath: config.yaml
       containers:
-        - name: desktop-frontend
+        - name: {{ include "desktop.name" . }}
           securityContext:
-            runAsNonRoot: true
-            runAsUser: 1001
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - "ALL"
+            {{- toYaml .Values.securityContext | nindent 12 }}
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -79,28 +59,21 @@ spec:
               GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"') \
               node /app/desktop/server.js
           readinessProbe:
-            httpGet:
-              path: /api/platform/getAppConfig
-              port: 3000
-            initialDelaySeconds: 5
-            periodSeconds: 3
-            timeoutSeconds: 2
-            successThreshold: 3
-            failureThreshold: 3
-          image: ghcr.io/labring/sealos-desktop-frontend:latest
-          imagePullPolicy: IfNotPresent
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          image: "{{ .Values.image }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:
             - mountPath: /app/data/config.yaml
               name: desktop-frontend-volume
               subPath: config.yaml
           resources:
-            limits:
-              cpu: 2000m
-              memory: 2048Mi
-            requests:
-              cpu: 100m
-              memory: 128Mi
+            {{- toYaml .Values.resources | nindent 12 }}
       affinity:
+        {{- if .Values.affinity }}
+        {{- toYaml .Values.affinity | nindent 8 }}
+        {{- else }}
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
             - weight: 100
@@ -110,9 +83,18 @@ spec:
                     - key: "app"
                       operator: In
                       values:
-                        - desktop-frontend
+                        - {{ include "desktop.name" . }}
                 topologyKey: "kubernetes.io/hostname"
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       volumes:
         - name: desktop-frontend-volume
           configMap:
-            name: desktop-frontend-config
+            name: {{ include "desktop.fullname" . }}-config

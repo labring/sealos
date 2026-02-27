@@ -100,10 +100,16 @@ const EditTemplateRepositoryDrawer = ({
       setValue('name', templateRepository.name);
       setValue('description', templateRepository.description || '');
       setValue('isPublic', templateRepository.isPublic);
+      setPublicIsDisabled(!!templateRepository.isPublic);
       if (templateRepository.isPublic) {
-        setPublicIsDisabled(true);
         setValue('agreeTerms', true);
       }
+      if (!templateRepository.isPublic) {
+        setValue('agreeTerms', false);
+      }
+    }
+    if (!open) {
+      setPublicIsDisabled(false);
     }
   }, [templateRepository, open, setValue, templateRepositoryQuery.isSuccess]);
 
@@ -147,8 +153,8 @@ const EditTemplateRepositoryDrawer = ({
               <DescriptionField form={form} />
               <Separator />
               <div className="flex flex-col items-center gap-3">
-                <IsPublicField form={form} />
-                <AgreeTermsField form={form} />
+                <IsPublicField form={form} disabled={publicIsDisabled} />
+                <AgreeTermsField form={form} disabled={publicIsDisabled} />
               </div>
             </div>
           </form>

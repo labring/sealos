@@ -542,7 +542,7 @@ export async function deleteCertificate(
   namespace: string,
   resourceName: string
 ) {
-  api.deleteNamespacedCustomObject(
+  await api.deleteNamespacedCustomObject(
     'cert-manager.io',
     'v1',
     namespace,

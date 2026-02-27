@@ -4,7 +4,6 @@ import { IEmailCheckParams } from '@/schema/email';
 import { SmsType } from '@/services/backend/db/verifyCode';
 import { RegionResourceType } from '@/services/backend/svc/checkResource';
 import request from '@/services/request';
-import useSessionStore from '@/stores/session';
 import { ApiResp, Region } from '@/types';
 import { AdClickData } from '@/types/adClick';
 import { BIND_STATUS } from '@/types/response/bind';
@@ -15,7 +14,6 @@ import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { SemData } from '@/types/sem';
 import { ValueOf } from '@/types/tools';
-import { TUserExist } from '@/types/user';
 import { type AxiosInstance } from 'axios';
 import { ProviderType } from 'prisma/global/generated/client';
 import { SubscriptionInfoResponse, WorkspacesPlansResponse } from '@/types/plan';
@@ -284,3 +282,8 @@ export const getWorkspacesPlans = (workspaces: string[]) =>
       workspaces
     }
   });
+
+export const _rotateKubeconfig = (request: AxiosInstance) => () =>
+  request.post<never, ApiResp<{ kubeconfig: string }>>('/api/auth/rotateKubeconfig');
+
+export const rotateKubeconfig = _rotateKubeconfig(request);

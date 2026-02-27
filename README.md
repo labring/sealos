@@ -1,19 +1,5 @@
 <div align="center">
 
-  <a href="https://memu.pro/hackathon/rules/sealos" target="_blank" rel="noopener">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="./docs/img/hackathon2026-dark.svg" />
-      <source media="(prefers-color-scheme: light)" srcset="./docs/img/hackathon2026-light.svg" />
-      <img src="./docs/img/hackathon2026-light.svg" />
-    </picture>
-  </a>
-
-  <br/>
-
-</div>
-
-<div align="center">
-
   <a href="https://sealos.io" target="_blank" rel="noopener">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="./docs/img/sealos-left-dark.png" />
@@ -120,19 +106,19 @@ https://github.com/user-attachments/assets/cc8599da-6c3e-4503-bb53-55e13bf61ef6
 
 ## 💡 Core features
 
--   Integrated Cloud IDEs: Zero-setup, collaborative development in the cloud. Eliminate local environment inconsistencies with DevBox.
--   Managed Databases & Storage: Production-ready PostgreSQL, MySQL, MongoDB, Redis, and built-in S3-compatible Object Storage.
--   Extensive App Store: Deploy complex applications with a single click. No YAML configuration, no container orchestration complexity - just point, click, and deploy.
--   Full Kubernetes Power: Access the full power of Kubernetes without the complexity. K8s-native from day one.
--   Enterprise Multi-Tenancy: Workspace-based isolation with granular RBAC and per-workspace resource quotas for secure collaboration.
--   AI-Native Infrastructure: Build and scale anything with AI simply by describing them.
+- Integrated Cloud IDEs: Zero-setup, collaborative development in the cloud. Eliminate local environment inconsistencies with DevBox.
+- Managed Databases & Storage: Production-ready PostgreSQL, MySQL, MongoDB, Redis, and built-in S3-compatible Object Storage.
+- Extensive App Store: Deploy complex applications with a single click. No YAML configuration, no container orchestration complexity - just point, click, and deploy.
+- Full Kubernetes Power: Access the full power of Kubernetes without the complexity. K8s-native from day one.
+- Enterprise Multi-Tenancy: Workspace-based isolation with granular RBAC and per-workspace resource quotas for secure collaboration.
+- AI-Native Infrastructure: Build and scale anything with AI simply by describing them.
 
 ## 🏘️ Community & support
 
--   🌐 Visit the [Sealos Website](https://sealos.io/) for full documentation and useful links.
--   💬 Join our [Discord Server](https://discord.gg/wdUn538zVP) to chat with the Sealos team and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
--   🐦 Tweet at @Sealos_io on [X/Twitter](https://twitter.com/Sealos_io) and follow us.
--   🐞 Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
+- 🌐 Visit the [Sealos Website](https://sealos.io/) for full documentation and useful links.
+- 💬 Join our [Discord Server](https://discord.gg/wdUn538zVP) to chat with the Sealos team and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
+- 🐦 Tweet at @Sealos_io on [X/Twitter](https://twitter.com/Sealos_io) and follow us.
+- 🐞 Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
 
 ## 🚧 Roadmap
 
@@ -148,8 +134,8 @@ Have a look through [existing issues](https://github.com/labring/sealos/issues?q
 
 ## Links
 
--   [FastGPT](https://github.com/labring/FastGPT) is a free, open-source, and powerful AI knowledge base platform, offers out-of-the-box data processing, model invocation, RAG retrieval, and visual AI workflows. Easily build complex LLM applications.
--   [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
+- [FastGPT](https://github.com/labring/FastGPT) is a free, open-source, and powerful AI knowledge base platform, offers out-of-the-box data processing, model invocation, RAG retrieval, and visual AI workflows. Easily build complex LLM applications.
+- [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
 
 [deploy-badge]: https://sealos.io/Deploy-on-Sealos.svg
 [deploy-link]: https://os.sealos.io
@@ -158,8 +144,8 @@ Have a look through [existing issues](https://github.com/labring/sealos/issues?q
 
 Sealos is licensed under the [Sealos Sustainable Use License](./LICENSE.md), a custom license that allows:
 
--   ✅ Internal business use and personal non-commercial use
--   ❌ Providing cloud services to third parties
+- ✅ Internal business use and personal non-commercial use
+- ❌ Providing cloud services to third parties
 
 **Not a standard open source license** - please review the [full license terms](./LICENSE.md) before use.
 

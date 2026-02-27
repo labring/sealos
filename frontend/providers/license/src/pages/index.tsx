@@ -310,6 +310,14 @@ export default function LicenseApp() {
               </GridItem>
               <GridItem>
                 <Text fontSize="12px" opacity="0.6" mb="4px">
+                  WORKSPACES
+                </Text>
+                <Text fontSize="16px" fontWeight="600">
+                  {systemInfo?.totalWorkspaces || '0'}
+                </Text>
+              </GridItem>
+              <GridItem>
+                <Text fontSize="12px" opacity="0.6" mb="4px">
                   CPU
                 </Text>
                 <Text fontSize="16px" fontWeight="600">

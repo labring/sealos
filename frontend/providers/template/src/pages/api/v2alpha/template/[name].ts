@@ -8,6 +8,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { mapValues, reduce } from 'lodash';
+import { applyWithInstanceOwnerReferences } from '@/services/backend/instanceOwnerReferencesApply';
 import {
   getCachedTemplates,
   getTemplateFromCache,
@@ -80,6 +81,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { name: templateName } = req.query as { name: string };
   const language = (req.query.language as string) || 'en';
 
+  // Skip dynamic route for 'instance' - let instance.ts handle it
+  if (templateName === 'instance') {
+    // This should not happen as static routes have priority, but just in case
+    const instanceHandler = await import('./instance');
+    return instanceHandler.default(req, res);
+  }
+
   if (!templateName) {
     return res.status(400).json({
       message: 'Template name is required'
@@ -135,10 +143,12 @@ async function handleTemplateDeployment(
     // Validate kubeconfig and get K8s client
     let namespace: string;
     let applyYamlList: (yamlList: string[], type: 'create' | 'replace' | 'dryrun') => Promise<any>;
+    let k8sCustomObjects: Awaited<ReturnType<typeof getK8s>>['k8sCustomObjects'];
     try {
       const k8sResult = await getK8s({ kubeconfig });
       namespace = k8sResult.namespace;
       applyYamlList = k8sResult.applyYamlList;
+      k8sCustomObjects = k8sResult.k8sCustomObjects;
     } catch (err: any) {
       return res.status(401).json({
         message: 'Invalid kubeconfig or insufficient permissions',
@@ -153,8 +163,8 @@ async function handleTemplateDeployment(
       });
 
     if (code !== 20000) {
-      return res.status(400).json({
-        message: message || 'Failed to load template'
+      return res.status(404).json({
+        message: message || `Template '${templateName}' not found`
       });
     }
 
@@ -178,7 +188,11 @@ async function handleTemplateDeployment(
 
     const yamls = correctYaml.map((item) => item.value);
 
-    await applyYamlList(yamls, 'create');
+    await applyWithInstanceOwnerReferences(
+      { applyYamlList, k8sCustomObjects, namespace },
+      yamls,
+      'create'
+    );
 
     return res.status(204).end();
   } catch (err: any) {
