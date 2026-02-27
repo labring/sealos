@@ -27,7 +27,9 @@ desktopConfig:
   # Example: ["myapp", "analytics"] will generate:
   # - "https://myapp.{cloudDomain}"
   # - "https://analytics.{cloudDomain}"
-  additionalAllowedOriginsPrefixes: []
+  allowedOrigins:
+    - "costcenter"
+    - "license"
 
   # Billing configuration
   billingUrl: "http://account-service.account-system.svc:2333"
