@@ -554,6 +554,7 @@
   "configmaps": "ConfigMaps",
   "add": "Add",
   "network_storage": "Network Storage",
+  "network_storage_nfs_tooltip": "This storage uses network storage (NFS), mainly for scenarios such as model training that require large-capacity storage.",
   "no_environment_variables": "No environment variables",
   "no_configmaps": "No ConfigMaps",
   "no_network_storage": "No network storage",

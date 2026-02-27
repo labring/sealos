@@ -101,7 +101,7 @@ const ResourceConfig = z.object({
   memory: MemoryOptions.openapi({
     description: 'Memory allocation in GB'
   }),
-  storage: z.number().min(1).default(4096).openapi({
+  storage: z.number().min(1).default(20).openapi({
     description: 'Storage in Gi, e.g. 10, 20, 30'
   })
 });

@@ -31,7 +31,7 @@ export const RequestSchema = z.object({
     description:
       'Memory in MB, it is recommended to use options like 2048, 4096, 8192, 16384, 32768, representing 2G, 4G, 8G, 16G, 32G'
   }),
-  storage: z.number().min(1).default(4096).openapi({
+  storage: z.number().min(1).default(20).openapi({
     description: 'Storage in Gi, e.g. 10, 20, 30'
   })
 });

@@ -33,6 +33,7 @@ const NetworkStorageDrawer = ({
   originalValue,
   existingPaths = []
 }: NetworkStorageDrawerProps) => {
+  const maxCapacity = 30;
   const t = useTranslations();
   const pathRef = useRef<HTMLInputElement>(null);
   const [capacity, setCapacity] = useState(initialValue?.size || 1);
@@ -42,7 +43,7 @@ const NetworkStorageDrawer = ({
   const minCapacity = isEdit && originalValue ? originalValue.size : 1;
 
   const handleCapacityChange = (delta: number) => {
-    const newValue = Math.min(20, Math.max(minCapacity, capacity + delta));
+    const newValue = Math.min(maxCapacity, Math.max(minCapacity, capacity + delta));
     setCapacity(newValue);
     setCapacityInput(newValue.toString());
   };
@@ -51,7 +52,7 @@ const NetworkStorageDrawer = ({
     setCapacityInput(value);
     const num = parseInt(value);
     if (!isNaN(num)) {
-      setCapacity(Math.min(20, Math.max(minCapacity, num)));
+      setCapacity(Math.min(maxCapacity, Math.max(minCapacity, num)));
     }
   };
 
@@ -59,7 +60,7 @@ const NetworkStorageDrawer = ({
     if (capacityInput === '' || isNaN(parseInt(capacityInput))) {
       setCapacityInput(capacity.toString());
     } else {
-      const num = Math.min(20, Math.max(minCapacity, parseInt(capacityInput)));
+      const num = Math.min(maxCapacity, Math.max(minCapacity, parseInt(capacityInput)));
       setCapacity(num);
       setCapacityInput(num.toString());
     }
@@ -72,6 +73,10 @@ const NetworkStorageDrawer = ({
 
     if (!path.startsWith('/')) {
       return t('path_must_be_absolute');
+    }
+
+    if (path === '/') {
+      return '';
     }
 
     const pathPattern = /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/;
@@ -127,7 +132,7 @@ const NetworkStorageDrawer = ({
                 <Input
                   type="number"
                   min={minCapacity}
-                  max={20}
+                  max={maxCapacity}
                   value={capacityInput}
                   onChange={(e) => handleCapacityInput(e.target.value)}
                   onBlur={handleCapacityBlur}

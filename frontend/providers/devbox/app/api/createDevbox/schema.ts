@@ -75,7 +75,7 @@ export const RequestSchema = z
       description:
         'Memory in MB, it is recommended to use options like 2048, 4096, 8192, 16384, 32768, representing 2G, 4G, 8G, 16G, 32G'
     }),
-    storage: z.number().min(1).default(4096).openapi({
+    storage: z.number().min(1).default(20).openapi({
       description: 'Storage in Gi, e.g. 10, 20, 30'
     }),
     gpu: GpuSchema.optional().openapi({
@@ -121,7 +121,7 @@ export const RequestSchema = z
           path: z.string().refine((path) => path.startsWith('/'), {
             message: 'Volume path must be an absolute path starting with "/"'
           }),
-          size: z.number().min(1).max(20)
+          size: z.number().min(1).max(30)
         })
       )
       .optional()

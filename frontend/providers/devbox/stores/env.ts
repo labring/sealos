@@ -27,7 +27,7 @@ export const defaultEnv: Env = {
   cpuSlideMarkList: '1,2,4,8,16',
   memorySlideMarkList: '2,4,8,16,32',
   enableAdvancedStorage: 'false',
-  storageDefault: 10,
+  storageDefault: 20,
   storageSlideMarkList: '10,20,30,40,50',
   nfsStorageClassName: 'nfs-csi',
   webIdePort: 9999

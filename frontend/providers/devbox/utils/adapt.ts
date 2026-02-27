@@ -203,7 +203,7 @@ export const adaptDevboxDetailV2 = (
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
-    storage: storageFormatToNum(devbox.spec.resource['ephemeral-storage'] || '10Gi'),
+    storage: storageFormatToNum(devbox.spec.resource['ephemeral-storage'] || '20Gi'),
     gpu: (() => {
       const gpuType = devbox.spec.config.annotations?.[gpuTypeAnnotationKey];
       const { amount: gpuAmount, resource: gpuResource } = getGpuResourceInfo(

@@ -556,6 +556,7 @@
   "configmaps": "配置文件",
   "add": "添加",
   "network_storage": "网络存储",
+  "network_storage_nfs_tooltip": "该存储为网络存储（NFS），主要用于模型训练等存在大容量存储需求的场景。",
   "no_environment_variables": "暂无环境变量",
   "no_configmaps": "暂无配置文件",
   "no_network_storage": "暂无网络存储",
