@@ -23,6 +23,7 @@ Sealos['siːləs] is an AI-native Cloud Operating System built on Kubernetes tha
 [![codecov](https://codecov.io/gh/labring/sealos/branch/main/graph/badge.svg?token=e41ZDcj06N)](https://codecov.io/gh/labring/sealos)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealos.io)
 [![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/repo/labring/sealos?ref=badge_small)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Sealos%20Guru-006BFF)](https://gurubase.io/g/sealos)
 
 <a href="https://runacap.com/ross-index/annual-2023/" target="_blank" rel="noopener">
     <img
