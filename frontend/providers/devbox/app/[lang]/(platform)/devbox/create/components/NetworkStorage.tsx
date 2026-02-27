@@ -63,7 +63,7 @@ export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStora
                 <CircleHelp className="h-4 w-4 text-zinc-400" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top" align="start" className="max-w-[320px]">
+            <TooltipContent side="top" align="start" className="max-w-[250px]">
               <span className="text-xs">{t('network_storage_nfs_tooltip')}</span>
             </TooltipContent>
           </Tooltip>
