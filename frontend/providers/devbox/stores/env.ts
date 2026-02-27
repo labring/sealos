@@ -30,6 +30,7 @@ export const defaultEnv: Env = {
   storageDefault: 10,
   storageSlideMarkList: '10,20,30,40,50',
   nfsStorageClassName: 'nfs-csi',
+  nfsMaxSize: 20,
   webIdePort: 9999
 };
 

@@ -43,6 +43,7 @@ export interface Env {
   storageDefault: number;
   storageSlideMarkList: string;
   nfsStorageClassName: string;
+  nfsMaxSize: number;
   webIdePort: number;
 }
 
