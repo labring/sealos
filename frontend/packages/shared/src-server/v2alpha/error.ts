@@ -60,12 +60,23 @@ export type ErrorCodeType = (typeof ErrorCode)[keyof typeof ErrorCode];
 // regardless of whether they use zod v3 or v4.
 // ============================================================================
 
+/**
+ * The shape of `details` depends on `code`:
+ * - `INVALID_PARAMETER`: always `Array<{ field, message }>` — structured field-level errors
+ * - `KUBERNETES_ERROR` / `STORAGE_UPDATE_FAILED` / `INTERNAL_ERROR` / `SERVICE_UNAVAILABLE`: `string` — raw error from the underlying system
+ * - All others: ad-hoc `object` or `string` — supplemental context for the agent; shape is defined per error site
+ */
+export type ApiErrorDetails =
+  | Array<{ field: string; message: string }>
+  | Record<string, unknown>
+  | string;
+
 export type ApiErrorResponse = {
   error: {
     type: ErrorTypeValue;
     code: ErrorCodeType;
     message: string;
-    details?: Array<{ field: string; message: string }> | string;
+    details?: ApiErrorDetails;
   };
 };
 
@@ -88,16 +99,14 @@ export function buildErrorBody(config: {
   type: ErrorTypeValue;
   code: ErrorCodeType;
   message: string;
-  details?: unknown;
+  details?: ApiErrorDetails;
 }): ApiErrorResponse {
   return {
     error: {
       type: config.type,
       code: config.code,
       message: config.message,
-      ...(config.details !== undefined && {
-        details: config.details as ApiErrorResponse['error']['details']
-      })
+      ...(config.details !== undefined && { details: config.details })
     }
   };
 }

@@ -4,15 +4,15 @@ import * as listTemplateSchemas from './list-template';
 import * as getTemplateSchemas from './get-template';
 import * as createInstanceSchemas from './create-instance';
 import {
-  Error400Schema,
-  Error401Schema,
-  Error403Schema,
-  Error404Schema,
-  Error405Schema,
-  Error409Schema,
-  Error422Schema,
-  Error500Schema,
-  Error503Schema,
+  createError400Schema,
+  createError401Schema,
+  createError403Schema,
+  createError404Schema,
+  createError405Schema,
+  createError409Schema,
+  createError422Schema,
+  createError500Schema,
+  createError503Schema,
   ErrorType,
   ErrorCode,
   createErrorExample
@@ -165,7 +165,7 @@ When something goes wrong, you'll get a JSON body like this:
             description: 'Method not allowed',
             content: {
               'application/json': {
-                schema: Error405Schema,
+                schema: createError405Schema(),
                 examples: {
                   methodNotAllowed: {
                     summary: 'Method not allowed',
@@ -183,7 +183,7 @@ When something goes wrong, you'll get a JSON body like this:
             description: 'Internal server error',
             content: {
               'application/json': {
-                schema: Error500Schema,
+                schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                 examples: {
                   internalError: {
                     summary: 'Failed to load templates',
@@ -265,7 +265,7 @@ When something goes wrong, you'll get a JSON body like this:
             description: 'Bad request - template name is required',
             content: {
               'application/json': {
-                schema: Error400Schema,
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                 examples: {
                   nameRequired: {
                     summary: 'Template name is required',
@@ -284,18 +284,10 @@ When something goes wrong, you'll get a JSON body like this:
             description: 'Template not found',
             content: {
               'application/json': {
-                schema: Error404Schema,
+                schema: createError404Schema(),
                 examples: {
-                  templatesNotFound: {
-                    summary: 'Templates catalog not found',
-                    value: createErrorExample(
-                      ErrorType.RESOURCE_ERROR,
-                      ErrorCode.NOT_FOUND,
-                      'Templates catalog not found.'
-                    )
-                  },
                   templateNotFound: {
-                    summary: 'Specific template does not exist',
+                    summary: 'Template not found',
                     value: createErrorExample(
                       ErrorType.RESOURCE_ERROR,
                       ErrorCode.NOT_FOUND,
@@ -310,7 +302,7 @@ When something goes wrong, you'll get a JSON body like this:
             description: 'Method not allowed',
             content: {
               'application/json': {
-                schema: Error405Schema,
+                schema: createError405Schema(),
                 examples: {
                   methodNotAllowed: {
                     summary: 'Method not allowed',
@@ -328,7 +320,7 @@ When something goes wrong, you'll get a JSON body like this:
             description: 'Internal server error',
             content: {
               'application/json': {
-                schema: Error500Schema,
+                schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                 examples: {
                   internalError: {
                     summary: 'Failed to get template details',
@@ -432,10 +424,13 @@ Authorization: <URL-encoded kubeconfig>
             description: 'Bad request - missing or invalid parameters',
             content: {
               'application/json': {
-                schema: Error400Schema,
+                schema: createError400Schema([
+                  ErrorCode.INVALID_PARAMETER,
+                  ErrorCode.INVALID_VALUE
+                ]),
                 examples: {
-                  missingInstanceName: {
-                    summary: 'Instance name is required',
+                  invalidParameter: {
+                    summary: 'Instance or template name required',
                     value: createErrorExample(
                       ErrorType.VALIDATION_ERROR,
                       ErrorCode.INVALID_PARAMETER,
@@ -443,37 +438,12 @@ Authorization: <URL-encoded kubeconfig>
                       [{ field: 'name', message: 'Required' }]
                     )
                   },
-                  invalidInstanceNameFormat: {
+                  invalidValue: {
                     summary: 'Invalid instance name format',
                     value: createErrorExample(
                       ErrorType.VALIDATION_ERROR,
                       ErrorCode.INVALID_VALUE,
                       'Instance name must start and end with a lowercase letter or number, and can only contain lowercase letters, numbers, and hyphens.'
-                    )
-                  },
-                  instanceNameTooLong: {
-                    summary: 'Instance name exceeds 63 characters',
-                    value: createErrorExample(
-                      ErrorType.VALIDATION_ERROR,
-                      ErrorCode.INVALID_VALUE,
-                      'Instance name must be 63 characters or less.'
-                    )
-                  },
-                  missingTemplateName: {
-                    summary: 'Template name is required',
-                    value: createErrorExample(
-                      ErrorType.VALIDATION_ERROR,
-                      ErrorCode.INVALID_PARAMETER,
-                      'Template name is required.',
-                      [{ field: 'template', message: 'Required' }]
-                    )
-                  },
-                  missingRequiredArgs: {
-                    summary: 'Missing required template parameters',
-                    value: createErrorExample(
-                      ErrorType.VALIDATION_ERROR,
-                      ErrorCode.INVALID_VALUE,
-                      'Missing required parameters: OPENAI_API_KEY, OPENAI_MODEL_NAME.'
                     )
                   }
                 }
@@ -481,26 +451,17 @@ Authorization: <URL-encoded kubeconfig>
             }
           },
           '401': {
-            description: 'Authentication failed',
+            description: 'Unauthorized - Missing or invalid kubeconfig',
             content: {
               'application/json': {
-                schema: Error401Schema,
+                schema: createError401Schema(),
                 examples: {
-                  missingKubeconfig: {
-                    summary: 'Missing or invalid kubeconfig',
+                  missingAuth: {
+                    summary: 'Missing authentication',
                     value: createErrorExample(
                       ErrorType.AUTHENTICATION_ERROR,
                       ErrorCode.AUTHENTICATION_REQUIRED,
                       'Invalid or missing kubeconfig.'
-                    )
-                  },
-                  cannotConnectCluster: {
-                    summary: 'Cannot authenticate with Kubernetes cluster',
-                    value: createErrorExample(
-                      ErrorType.AUTHENTICATION_ERROR,
-                      ErrorCode.AUTHENTICATION_REQUIRED,
-                      'Invalid kubeconfig or insufficient permissions.',
-                      'Failed to authenticate with Kubernetes cluster'
                     )
                   }
                 }
@@ -508,12 +469,12 @@ Authorization: <URL-encoded kubeconfig>
             }
           },
           '403': {
-            description: 'Permission denied',
+            description: 'Forbidden - Insufficient permissions',
             content: {
               'application/json': {
-                schema: Error403Schema,
+                schema: createError403Schema([ErrorCode.PERMISSION_DENIED]),
                 examples: {
-                  insufficientPrivileges: {
+                  insufficientPermissions: {
                     summary: 'Insufficient privileges to create resources',
                     value: createErrorExample(
                       ErrorType.AUTHORIZATION_ERROR,
@@ -527,10 +488,10 @@ Authorization: <URL-encoded kubeconfig>
             }
           },
           '404': {
-            description: 'Template not found or invalid',
+            description: 'Not Found - Template not found',
             content: {
               'application/json': {
-                schema: Error404Schema,
+                schema: createError404Schema(),
                 examples: {
                   templateNotFound: {
                     summary: 'Template does not exist',
@@ -538,14 +499,6 @@ Authorization: <URL-encoded kubeconfig>
                       ErrorType.RESOURCE_ERROR,
                       ErrorCode.NOT_FOUND,
                       "Template 'nonexistent-template' not found."
-                    )
-                  },
-                  templateNotFoundOrInvalid: {
-                    summary: 'Template not found or invalid (missing data)',
-                    value: createErrorExample(
-                      ErrorType.RESOURCE_ERROR,
-                      ErrorCode.NOT_FOUND,
-                      "Template 'invalid-template' not found or invalid."
                     )
                   }
                 }
@@ -556,7 +509,7 @@ Authorization: <URL-encoded kubeconfig>
             description: 'Method not allowed',
             content: {
               'application/json': {
-                schema: Error405Schema,
+                schema: createError405Schema(),
                 examples: {
                   methodNotAllowed: {
                     summary: 'Method not allowed',
@@ -571,12 +524,12 @@ Authorization: <URL-encoded kubeconfig>
             }
           },
           '409': {
-            description: 'Resource conflict - instance already exists',
+            description: 'Conflict - Instance already exists',
             content: {
               'application/json': {
-                schema: Error409Schema,
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS]),
                 examples: {
-                  instanceExists: {
+                  alreadyExists: {
                     summary: 'Instance with this name already exists',
                     value: createErrorExample(
                       ErrorType.RESOURCE_ERROR,
@@ -590,27 +543,19 @@ Authorization: <URL-encoded kubeconfig>
             }
           },
           '422': {
-            description: 'Unprocessable entity - K8s rejected the resource specification',
+            description:
+              'Unprocessable Entity - K8s rejected the resource (admission webhook, invalid field, quota exceeded)',
             content: {
               'application/json': {
-                schema: Error422Schema,
+                schema: createError422Schema(),
                 examples: {
-                  admissionWebhookDenied: {
-                    summary: 'Admission webhook rejected the request',
+                  invalidResourceSpec: {
+                    summary: 'Resource spec rejected by cluster',
                     value: createErrorExample(
                       ErrorType.OPERATION_ERROR,
                       ErrorCode.INVALID_RESOURCE_SPEC,
                       'Failed to create instance: invalid resource specification.',
                       'admission webhook "vingress.sealos.io" denied the request: cannot verify ingress host'
-                    )
-                  },
-                  resourceQuotaExceeded: {
-                    summary: 'Resource quota exceeded',
-                    value: createErrorExample(
-                      ErrorType.OPERATION_ERROR,
-                      ErrorCode.INVALID_RESOURCE_SPEC,
-                      'Failed to create instance: invalid resource specification.',
-                      'exceeded quota: default, requested: cpu=4, used: cpu=8, limited: cpu=10'
                     )
                   }
                 }
@@ -618,12 +563,16 @@ Authorization: <URL-encoded kubeconfig>
             }
           },
           '500': {
-            description: 'Internal server error',
+            description: 'Internal Server Error - Kubernetes API error or unexpected failure',
             content: {
               'application/json': {
-                schema: Error500Schema,
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
                 examples: {
-                  k8sApiError: {
+                  kubernetesError: {
                     summary: 'Kubernetes API error',
                     value: createErrorExample(
                       ErrorType.OPERATION_ERROR,
@@ -632,17 +581,8 @@ Authorization: <URL-encoded kubeconfig>
                       'Unexpected error from Kubernetes API'
                     )
                   },
-                  instanceNotCreated: {
-                    summary: 'Instance resource was not created successfully',
-                    value: createErrorExample(
-                      ErrorType.INTERNAL_ERROR,
-                      ErrorCode.INTERNAL_ERROR,
-                      'Instance resource was not created successfully.',
-                      'Instance not found in Kubernetes response'
-                    )
-                  },
                   internalError: {
-                    summary: 'Internal YAML generation or processing error',
+                    summary: 'Unexpected server error',
                     value: createErrorExample(
                       ErrorType.INTERNAL_ERROR,
                       ErrorCode.INTERNAL_ERROR,
@@ -655,27 +595,18 @@ Authorization: <URL-encoded kubeconfig>
             }
           },
           '503': {
-            description: 'Service unavailable - Kubernetes cluster temporarily unreachable',
+            description: 'Service Unavailable - Kubernetes cluster temporarily unreachable',
             content: {
               'application/json': {
-                schema: Error503Schema,
+                schema: createError503Schema(),
                 examples: {
                   clusterUnavailable: {
-                    summary: 'Kubernetes cluster is temporarily unavailable',
+                    summary: 'Cluster unreachable',
                     value: createErrorExample(
                       ErrorType.INTERNAL_ERROR,
                       ErrorCode.SERVICE_UNAVAILABLE,
                       'Kubernetes cluster is temporarily unavailable.',
                       'connect ECONNREFUSED 10.0.0.1:6443'
-                    )
-                  },
-                  connectionTimeout: {
-                    summary: 'Connection to cluster timed out',
-                    value: createErrorExample(
-                      ErrorType.INTERNAL_ERROR,
-                      ErrorCode.SERVICE_UNAVAILABLE,
-                      'Kubernetes cluster is temporarily unavailable.',
-                      'ETIMEDOUT: connection timed out'
                     )
                   }
                 }

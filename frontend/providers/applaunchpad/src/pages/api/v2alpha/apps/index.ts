@@ -6,13 +6,18 @@ import {
   transformToLegacySchema,
   transformFromLegacySchema
 } from '@/types/v2alpha/request_schema';
-import { createApp, createK8sContext, getAppByName } from '@/services/backend';
+import { createApp, getAppByName } from '@/services/backend';
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
 import { LaunchpadApplicationSchema } from '@/types/v2alpha/schema';
 
 import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import {
+  getK8sContextOrSendError,
+  sendK8sOperationError,
+  sendInternalError
+} from '@/pages/api/v2alpha/k8sContext';
 
 async function processAppResponse(
   response: PromiseSettledResult<any>[]
@@ -53,20 +58,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const standardRequest = parseResult.data;
       const legacyRequest = transformToLegacySchema(standardRequest);
 
+      const k8s = await getK8sContextOrSendError(req, res);
+      if (!k8s) return;
+
       try {
-        const k8s = await createK8sContext(req);
         await createApp(legacyRequest, k8s);
         return res.status(204).end();
-      } catch (err: any) {
+      } catch (err) {
         console.error('Kubernetes create application error:', err);
-        return sendError(res, {
-          status: 500,
-          type: ErrorType.OPERATION_ERROR,
-          code: ErrorCode.KUBERNETES_ERROR,
-          message:
-            'Failed to create application in Kubernetes cluster. Please check cluster status and permissions.',
-          details: err.message
-        });
+        return sendK8sOperationError(
+          res,
+          err,
+          'Failed to create application in Kubernetes cluster. Please check cluster status and permissions.'
+        );
       }
     } else {
       res.setHeader('Allow', ['POST']);
@@ -77,15 +81,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: `HTTP method ${method} is not supported for this endpoint. Use POST to create an application.`
       });
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Internal error:', err);
-    return sendError(res, {
-      status: 500,
-      type: ErrorType.INTERNAL_ERROR,
-      code: ErrorCode.INTERNAL_ERROR,
-      message:
-        'An unexpected internal error occurred while processing your request. Please try again or contact support if the issue persists.',
-      details: err.message
-    });
+    return sendInternalError(
+      res,
+      err,
+      'An unexpected internal error occurred while processing your request. Please try again or contact support if the issue persists.'
+    );
   }
 }

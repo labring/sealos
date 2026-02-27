@@ -56,12 +56,21 @@ function formatUptimeFromCreateTime(createTime?: string): string {
   return `${seconds}s`;
 }
 
+export const k8sAppNameSchema = z
+  .string()
+  .min(1, { message: 'name cannot be empty' })
+  .max(63, { message: 'name must be 63 characters or less' })
+  .regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, {
+    message:
+      'name must consist of lowercase alphanumeric characters or hyphens, and must start and end with an alphanumeric character'
+  });
+
 export const GetAppByAppNameQuerySchema = z.object({
-  name: z.string().min(1, { message: 'name cannot be empty' })
+  name: k8sAppNameSchema
 });
 
 export const DeleteAppByNameQuerySchema = z.object({
-  name: z.string().min(1, { message: 'name cannot be empty' })
+  name: k8sAppNameSchema
 });
 
 export const SimpleStorageSchema = z
@@ -368,7 +377,7 @@ export function transformToLegacySchema(
             appProtocol: (isApplicationProtocol
               ? protocolUpper
               : 'HTTP') as ApplicationProtocolType,
-            openPublicDomain: isApplicationProtocol ? (port.isPublic ?? true) : false,
+            openPublicDomain: isApplicationProtocol ? port.isPublic ?? true : false,
             publicDomain: isApplicationProtocol ? nanoid() : '',
             customDomain: '',
             domain: '',
@@ -540,20 +549,20 @@ export function transformFromLegacySchema(
               protocolLower === 'grpc'
                 ? 'grpcs'
                 : protocolLower === 'ws'
-                  ? 'wss'
-                  : protocolLower === 'udp'
-                    ? 'udp'
-                    : 'https';
+                ? 'wss'
+                : protocolLower === 'udp'
+                ? 'udp'
+                : 'https';
             publicAddress = `${publicScheme}://${network.customDomain}`;
           } else if (network.publicDomain && network.domain) {
             const publicScheme =
               protocolLower === 'grpc'
                 ? 'grpcs'
                 : protocolLower === 'ws'
-                  ? 'wss'
-                  : protocolLower === 'udp'
-                    ? 'udp'
-                    : 'https';
+                ? 'wss'
+                : protocolLower === 'udp'
+                ? 'udp'
+                : 'https';
             if (network.openNodePort && network.nodePort) {
               publicAddress = `${publicScheme}://${network.publicDomain}.${network.domain}:${network.nodePort}`;
             } else {

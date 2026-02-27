@@ -1,12 +1,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { restartApp, createK8sContext } from '@/services/backend';
+import { restartApp } from '@/services/backend';
 
 import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import {
+  getK8sContextOrSendError,
+  sendK8sOperationError,
+  sendInternalError
+} from '@/pages/api/v2alpha/k8sContext';
+import { k8sAppNameSchema } from '@/types/v2alpha/request_schema';
 import { z } from 'zod';
 
-const AppNameParamSchema = z.object({
-  name: z.string().min(1, { message: 'Application name is required' })
-});
+const AppNameParamSchema = z.object({ name: k8sAppNameSchema });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -30,11 +34,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { name } = parseResult.data;
-    const k8s = await createK8sContext(req);
+    const k8s = await getK8sContextOrSendError(req, res);
+    if (!k8s) return;
 
     try {
       await k8s.getDeployApp(name);
-    } catch (error: any) {
+    } catch {
       return sendError(res, {
         status: 404,
         type: ErrorType.RESOURCE_ERROR,
@@ -46,25 +51,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       await restartApp(name, k8s);
       return res.status(204).end();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Kubernetes restart application error:', err);
-      return sendError(res, {
-        status: 500,
-        type: ErrorType.OPERATION_ERROR,
-        code: ErrorCode.KUBERNETES_ERROR,
-        message: `Failed to restart application "${name}". The Kubernetes operation encountered an error.`,
-        details: err.message
-      });
+      return sendK8sOperationError(
+        res,
+        err,
+        `Failed to restart application "${name}". The Kubernetes operation encountered an error.`
+      );
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Unexpected error in restart handler:', err);
-    return sendError(res, {
-      status: 500,
-      type: ErrorType.INTERNAL_ERROR,
-      code: ErrorCode.INTERNAL_ERROR,
-      message:
-        'An unexpected error occurred while restarting the application. Please try again or contact support.',
-      details: err.message
-    });
+    return sendInternalError(
+      res,
+      err,
+      'An unexpected error occurred while restarting the application. Please try again or contact support.'
+    );
   }
 }

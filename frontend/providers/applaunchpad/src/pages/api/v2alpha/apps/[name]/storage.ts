@@ -1,17 +1,20 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createK8sContext, getAppByName, processAppResponse } from '@/services/backend';
+import { getAppByName, processAppResponse } from '@/services/backend';
 import { PatchUtils, V1PersistentVolumeClaim } from '@kubernetes/client-node';
-import { UpdateStorageSchema } from '@/types/v2alpha/request_schema';
+import { UpdateStorageSchema, k8sAppNameSchema } from '@/types/v2alpha/request_schema';
 import { json2DeployCr } from '@/utils/deployYaml2Json';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import type { AppEditType } from '@/types/app';
 
 import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import {
+  getK8sContextOrSendError,
+  sendK8sOperationError,
+  sendInternalError
+} from '@/pages/api/v2alpha/k8sContext';
 import { z } from 'zod';
 
-const AppNameParamSchema = z.object({
-  name: z.string().min(1, { message: 'Application name is required' })
-});
+const AppNameParamSchema = z.object({ name: k8sAppNameSchema });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -47,9 +50,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { storage } = parseResult.data;
 
-    const k8s = await createK8sContext(req);
-    const currentAppResponse = await getAppByName(appName, k8s);
-    const currentAppData = await processAppResponse(currentAppResponse, false);
+    const k8s = await getK8sContextOrSendError(req, res);
+    if (!k8s) return;
+
+    let currentAppData;
+    try {
+      const currentAppResponse = await getAppByName(appName, k8s);
+      currentAppData = await processAppResponse(currentAppResponse, false);
+    } catch (err) {
+      console.error('Get application error:', err);
+      return sendK8sOperationError(
+        res,
+        err,
+        `Failed to retrieve application "${appName}". The Kubernetes operation encountered an error.`
+      );
+    }
 
     if (!currentAppData) {
       return sendError(res, {
@@ -134,26 +149,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       return res.status(204).end();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Kubernetes update storage error:', error);
-      return sendError(res, {
-        status: 500,
-        type: ErrorType.OPERATION_ERROR,
-        code: ErrorCode.STORAGE_UPDATE_FAILED,
-        message: `Failed to update storage for application "${appName}". The StatefulSet recreation or PVC update failed.`,
-        details: error.message
-      });
+      return sendK8sOperationError(
+        res,
+        error,
+        `Failed to update storage for application "${appName}". The StatefulSet recreation or PVC update failed.`,
+        'STORAGE_UPDATE_FAILED'
+      );
     }
-  } catch (error: any) {
-    console.error('Unexpected error in storage handler:', error);
-    return sendError(res, {
-      status: 500,
-      type: ErrorType.INTERNAL_ERROR,
-      code: ErrorCode.INTERNAL_ERROR,
-      message:
-        'An unexpected error occurred while processing the storage update. Please try again or contact support.',
-      details: error.message
-    });
+  } catch (err) {
+    console.error('Unexpected error in storage handler:', err);
+    return sendInternalError(
+      res,
+      err,
+      'An unexpected error occurred while processing the storage update. Please try again or contact support.'
+    );
   }
 }
 
@@ -181,9 +192,6 @@ async function updateExistingPVCs(
 
     const boundPVCs = allPvc.filter(
       (pvc: V1PersistentVolumeClaim) => pvc.status?.phase === 'Bound'
-    );
-    const pendingPVCs = allPvc.filter(
-      (pvc: V1PersistentVolumeClaim) => pvc.status?.phase === 'Pending'
     );
 
     if (boundPVCs.length === 0) {
@@ -213,14 +221,22 @@ async function updateExistingPVCs(
         return;
       }
 
-      let newSizeValue = 1;
-      if (newStorageItem.size) {
-        const match = newStorageItem.size.match(/^(\d+)/);
-        if (match) {
-          newSizeValue = parseInt(match[1]);
-        } else {
-          throw new Error(`Invalid storage size format: ${newStorageItem.size}`);
-        }
+      // Parse size with unit conversion: Mi -> /1024, Gi -> x1, Ti -> x1024
+      const sizeMatch = newStorageItem.size.match(/^(\d+(?:\.\d+)?)(Gi|Mi|Ti)$/i);
+      if (!sizeMatch) {
+        throw new Error(
+          `Invalid storage size format: ${newStorageItem.size}. Use format like "10Gi", "1Ti", etc.`
+        );
+      }
+      const [, sizeVal, unit] = sizeMatch;
+      let newSizeValue: number;
+      const numericValue = parseFloat(sizeVal);
+      if (unit.toLowerCase() === 'mi') {
+        newSizeValue = Math.ceil(numericValue / 1024);
+      } else if (unit.toLowerCase() === 'ti') {
+        newSizeValue = Math.ceil(numericValue * 1024);
+      } else {
+        newSizeValue = Math.ceil(numericValue);
       }
 
       const currentSizeValue = parseInt(pvc.metadata?.annotations?.value || '1');

@@ -1,16 +1,23 @@
 import { createDocument } from 'zod-openapi';
 import { LaunchpadApplicationSchema } from '@/types/v2alpha/schema';
-import { CreateLaunchpadRequestSchema, UpdateAppResourcesSchema } from './request_schema';
+import {
+  CreateLaunchpadRequestSchema,
+  UpdateAppResourcesSchema,
+  UpdateStorageSchema
+} from './request_schema';
 import {
   ErrorType,
   ErrorCode,
   createErrorExample,
-  Error400Schema,
-  Error401Schema,
-  Error403Schema,
-  Error404Schema,
-  Error409Schema,
-  Error500Schema
+  createError400Schema,
+  createError401Schema,
+  createError403Schema,
+  createError404Schema,
+  createError405Schema,
+  createError409Schema,
+  createError422Schema,
+  createError500Schema,
+  createError503Schema
 } from './error';
 
 // Re-export for backward compatibility
@@ -18,12 +25,15 @@ export {
   ErrorType,
   ErrorCode,
   createErrorExample,
-  Error400Schema,
-  Error401Schema,
-  Error403Schema,
-  Error404Schema,
-  Error409Schema,
-  Error500Schema
+  createError400Schema,
+  createError401Schema,
+  createError403Schema,
+  createError404Schema,
+  createError405Schema,
+  createError409Schema,
+  createError422Schema,
+  createError500Schema,
+  createError503Schema
 } from './error';
 export { ErrorResponseSchema } from './error';
 export type { ErrorTypeValue, ErrorCodeType } from './error';
@@ -96,7 +106,7 @@ export const createOpenApiDocument = () => {
       }
     ],
     paths: {
-      '/app': {
+      '/apps': {
         post: {
           tags: ['Mutation'],
           summary: 'Create a new application',
@@ -123,14 +133,15 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid request body or parameters',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER], 'create app'),
                   examples: {
-                    invalidSchema: {
-                      summary: 'Invalid schema validation',
+                    invalidParameter: {
+                      summary: 'Request body validation failed',
                       value: createErrorExample(
                         ErrorType.VALIDATION_ERROR,
-                        ErrorCode.INVALID_VALUE,
-                        'Invalid request body. Please check the application configuration format.'
+                        ErrorCode.INVALID_PARAMETER,
+                        'Request body validation failed. Please check the application configuration format.',
+                        [{ field: 'image.imageName', message: 'Required' }]
                       )
                     }
                   }
@@ -141,7 +152,7 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: Error401Schema,
+                  schema: createError401Schema(),
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
@@ -159,7 +170,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: Error403Schema,
+                  schema: createError403Schema([ErrorCode.PERMISSION_DENIED], 'create app'),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -177,14 +188,34 @@ export const createOpenApiDocument = () => {
               description: 'Conflict - Application already exists',
               content: {
                 'application/json': {
-                  schema: Error409Schema,
+                  schema: createError409Schema([ErrorCode.ALREADY_EXISTS]),
                   examples: {
                     alreadyExists: {
                       summary: 'Application already exists',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.ALREADY_EXISTS,
-                        'An application with this name already exists in the current namespace.'
+                        'An application with this name already exists in the current namespace. Use a different name.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '422': {
+              description:
+                'Unprocessable Entity - Resource spec rejected by cluster (admission webhook, invalid field, quota exceeded)',
+              content: {
+                'application/json': {
+                  schema: createError422Schema('create app'),
+                  examples: {
+                    invalidResourceSpec: {
+                      summary: 'Resource spec rejected',
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.INVALID_RESOURCE_SPEC,
+                        'The resource specification was rejected by the cluster. Check admission webhooks, field constraints, and quota limits.',
+                        'admission webhook "vingress.sealos.io" denied the request: cannot verify host'
                       )
                     }
                   }
@@ -195,15 +226,56 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([
+                    ErrorCode.KUBERNETES_ERROR,
+                    ErrorCode.OPERATION_FAILED,
+                    ErrorCode.INTERNAL_ERROR
+                  ]),
                   examples: {
                     kubernetesError: {
                       summary: 'Kubernetes API error',
                       value: createErrorExample(
                         ErrorType.OPERATION_ERROR,
                         ErrorCode.KUBERNETES_ERROR,
-                        'Failed to create application. The Kubernetes operation encountered an error.',
+                        'Failed to create application in Kubernetes cluster. Please check cluster status and permissions.',
                         'namespaces "ns-xxx" not found'
+                      )
+                    },
+                    initFailure: {
+                      summary: 'Kubernetes context initialization failed',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to initialize Kubernetes context. Please check your configuration and try again.',
+                        'invalid kubeconfig format'
+                      )
+                    },
+                    unexpectedError: {
+                      summary: 'Unexpected server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'An unexpected internal error occurred while processing your request. Please try again or contact support if the issue persists.',
+                        'TypeError: Cannot read properties of undefined'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '503': {
+              description: 'Service Unavailable - Kubernetes cluster temporarily unreachable',
+              content: {
+                'application/json': {
+                  schema: createError503Schema('create app'),
+                  examples: {
+                    serviceUnavailable: {
+                      summary: 'Cluster unreachable',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.SERVICE_UNAVAILABLE,
+                        'Kubernetes cluster is temporarily unavailable. Please try again later.',
+                        'connect ECONNREFUSED 10.0.0.1:6443'
                       )
                     }
                   }
@@ -213,7 +285,7 @@ export const createOpenApiDocument = () => {
           }
         }
       },
-      '/app/{name}': {
+      '/apps/{name}': {
         get: {
           tags: ['Query'],
           summary: 'Get application details by name',
@@ -224,10 +296,13 @@ export const createOpenApiDocument = () => {
             {
               name: 'name',
               in: 'path',
-              description: 'Unique application name identifier',
+              description:
+                'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
               schema: {
-                type: 'string'
+                type: 'string',
+                minLength: 1,
+                example: 'web-api'
               }
             }
           ],
@@ -277,14 +352,15 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid path parameters',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER], 'get app'),
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name format',
                       value: createErrorExample(
                         ErrorType.VALIDATION_ERROR,
                         ErrorCode.INVALID_PARAMETER,
-                        'Application name path parameter is invalid or missing.'
+                        'Application name path parameter is invalid or missing.',
+                        [{ field: 'name', message: 'name cannot be empty' }]
                       )
                     }
                   }
@@ -295,7 +371,7 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: Error401Schema,
+                  schema: createError401Schema(),
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
@@ -313,7 +389,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: Error403Schema,
+                  schema: createError403Schema([ErrorCode.PERMISSION_DENIED], 'get app'),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -328,17 +404,35 @@ export const createOpenApiDocument = () => {
               }
             },
             '404': {
-              description: 'Not Found - Application not found',
+              description: 'Not Found - Application not found in the current namespace',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
                     notFound: {
                       summary: 'Application not found',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
-                        'Application not found in the current namespace. Please verify the application name.'
+                        'Application "web-api" not found in the current namespace. Please verify the application name.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '405': {
+              description: 'Method Not Allowed - HTTP method not supported for this endpoint',
+              content: {
+                'application/json': {
+                  schema: createError405Schema(),
+                  examples: {
+                    methodNotAllowed: {
+                      summary: 'Wrong HTTP method',
+                      value: createErrorExample(
+                        ErrorType.CLIENT_ERROR,
+                        ErrorCode.METHOD_NOT_ALLOWED,
+                        'HTTP method POST is not supported for this endpoint. Allowed methods: GET, DELETE, PATCH.'
                       )
                     }
                   }
@@ -346,18 +440,59 @@ export const createOpenApiDocument = () => {
               }
             },
             '500': {
-              description: 'Internal Server Error',
+              description: 'Internal Server Error - Kubernetes API error or unexpected failure',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([
+                    ErrorCode.KUBERNETES_ERROR,
+                    ErrorCode.OPERATION_FAILED,
+                    ErrorCode.INTERNAL_ERROR
+                  ]),
                   examples: {
                     kubernetesError: {
                       summary: 'Kubernetes API error',
                       value: createErrorExample(
                         ErrorType.OPERATION_ERROR,
                         ErrorCode.KUBERNETES_ERROR,
-                        'Failed to retrieve application. The Kubernetes operation encountered an error.',
+                        'Failed to retrieve application "web-api". The Kubernetes operation encountered an error.',
                         'deployments.apps "web-api" not found'
+                      )
+                    },
+                    initFailure: {
+                      summary: 'Kubernetes context initialization failed',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to initialize Kubernetes context. Please check your configuration and try again.',
+                        'invalid kubeconfig format'
+                      )
+                    },
+                    unexpectedError: {
+                      summary: 'Unexpected server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'An unexpected error occurred while processing your request. Please try again or contact support.',
+                        'TypeError: Cannot read properties of undefined'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '503': {
+              description: 'Service Unavailable - Kubernetes cluster temporarily unreachable',
+              content: {
+                'application/json': {
+                  schema: createError503Schema(),
+                  examples: {
+                    clusterUnavailable: {
+                      summary: 'Cluster unreachable',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.SERVICE_UNAVAILABLE,
+                        'Kubernetes cluster is temporarily unavailable. Please try again later.',
+                        'connect ECONNREFUSED 10.0.0.1:6443'
                       )
                     }
                   }
@@ -403,34 +538,46 @@ export const createOpenApiDocument = () => {
               description: 'Application updated successfully'
             },
             '400': {
-              description:
-                'Bad Request - Invalid request body, unsupported operation, or port conflicts',
+              description: 'Bad Request - Invalid request body or port validation error',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER], 'patch app'),
                   examples: {
-                    invalidSchema: {
-                      summary: 'Schema validation failed',
+                    validationFailed: {
+                      summary: 'Request body validation failed',
                       value: createErrorExample(
                         ErrorType.VALIDATION_ERROR,
-                        ErrorCode.INVALID_VALUE,
-                        'Invalid request body. Please check the application configuration format.'
+                        ErrorCode.INVALID_PARAMETER,
+                        'Request body validation failed. Please check the update configuration format.',
+                        [
+                          {
+                            field: 'quota',
+                            message:
+                              'Must specify either replicas (for fixed instances) or hpa (for elastic scaling), but not both.'
+                          }
+                        ]
                       )
                     },
-                    unsupportedOperation: {
-                      summary: 'Unsupported operation',
-                      value: createErrorExample(
-                        ErrorType.CLIENT_ERROR,
-                        ErrorCode.UNSUPPORTED_OPERATION,
-                        'This operation is not supported for the current application state.'
-                      )
-                    },
-                    emptyUpdate: {
-                      summary: 'No fields provided',
+                    portNumberRequired: {
+                      summary: 'Port number required for creating new ports',
                       value: createErrorExample(
                         ErrorType.VALIDATION_ERROR,
-                        ErrorCode.INVALID_VALUE,
-                        'Request body validation failed. Please check the update configuration format.'
+                        ErrorCode.INVALID_PARAMETER,
+                        'Port number is required for creating new ports',
+                        { portConfig: {}, operation: 'CREATE_PORT_VALIDATION' }
+                      )
+                    },
+                    isPublicNonAppProtocol: {
+                      summary: 'Cannot set isPublic for non-application protocol',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Cannot set isPublic for non-application protocol. Current protocol: TCP',
+                        {
+                          currentProtocol: 'TCP',
+                          supportedProtocols: ['HTTP', 'GRPC', 'WS'],
+                          operation: 'UPDATE_PUBLIC_DOMAIN'
+                        }
                       )
                     }
                   }
@@ -441,7 +588,7 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: Error401Schema,
+                  schema: createError401Schema(),
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
@@ -459,7 +606,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: Error403Schema,
+                  schema: createError403Schema([ErrorCode.PERMISSION_DENIED], 'patch app'),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -474,25 +621,26 @@ export const createOpenApiDocument = () => {
               }
             },
             '404': {
-              description: 'Not Found - Application or port not found',
+              description: 'Not Found - Application not found or port not found',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
                     appNotFound: {
                       summary: 'Application not found',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
-                        'Application not found in the current namespace. Please verify the application name.'
+                        'Application "web-api" not found in the current namespace. Please verify the application name.'
                       )
                     },
                     portNotFound: {
-                      summary: 'Port not found for update',
+                      summary: 'Port not found by portName',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
-                        'Port not found in the application configuration.'
+                        'Port "nonexistent-port-id" not found in application "web-api". Verify the portName or omit it to create a new port.',
+                        { portName: 'nonexistent-port-id', operation: 'UPDATE_PORT_NOT_FOUND' }
                       )
                     }
                   }
@@ -500,25 +648,71 @@ export const createOpenApiDocument = () => {
               }
             },
             '409': {
-              description: 'Conflict - Update conflicts with current state or port conflict',
+              description: 'Conflict - Port conflict',
               content: {
                 'application/json': {
-                  schema: Error409Schema,
+                  schema: createError409Schema([ErrorCode.CONFLICT]),
                   examples: {
-                    resourceConflict: {
-                      summary: 'Resource conflict',
+                    portUpdateConflict: {
+                      summary: 'Port update conflicts with existing port',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.CONFLICT,
-                        'A resource with this configuration already exists and conflicts with the request.'
+                        'Cannot update to port 8080: already in use by another port',
+                        {
+                          conflictingPortDetails: {
+                            port: 8080,
+                            portName: 'abcdef123456',
+                            serviceName: 'web-api-8080-xyz-service'
+                          },
+                          requestedPort: 8080,
+                          operation: 'UPDATE_PORT_CONFLICT'
+                        }
                       )
                     },
-                    portConflict: {
-                      summary: 'Duplicate port numbers',
+                    portCreateConflict: {
+                      summary: 'New port conflicts with existing port',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.CONFLICT,
-                        'Port conflict detected. Duplicate port numbers are not allowed.'
+                        'Cannot create port 80: already exists',
+                        {
+                          existingPortDetails: {
+                            port: 80,
+                            portName: 'abcdef123456',
+                            serviceName: 'web-api-80-xyz-service'
+                          },
+                          operation: 'CREATE_PORT_CONFLICT'
+                        }
+                      )
+                    },
+                    portCreateDuplicate: {
+                      summary: 'Duplicate port in same request',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.CONFLICT,
+                        'Cannot create duplicate port 80',
+                        { operation: 'CREATE_PORT_DUPLICATE' }
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '422': {
+              description:
+                'Unprocessable Entity - Resource spec rejected by cluster (admission webhook, invalid field, quota exceeded)',
+              content: {
+                'application/json': {
+                  schema: createError422Schema('patch app'),
+                  examples: {
+                    invalidResourceSpec: {
+                      summary: 'Resource spec rejected',
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.INVALID_RESOURCE_SPEC,
+                        'The resource specification was rejected by the cluster. Check admission webhooks, field constraints, and quota limits.',
+                        'admission webhook "vingress.sealos.io" denied the request: cannot verify host'
                       )
                     }
                   }
@@ -526,18 +720,60 @@ export const createOpenApiDocument = () => {
               }
             },
             '500': {
-              description: 'Internal Server Error - Unexpected error during update',
+              description:
+                'Internal Server Error - Kubernetes operation error or unexpected failure',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([
+                    ErrorCode.KUBERNETES_ERROR,
+                    ErrorCode.OPERATION_FAILED,
+                    ErrorCode.INTERNAL_ERROR
+                  ]),
                   examples: {
-                    updateFailed: {
-                      summary: 'Update operation failed',
+                    kubernetesError: {
+                      summary: 'Kubernetes operation failed',
                       value: createErrorExample(
                         ErrorType.OPERATION_ERROR,
                         ErrorCode.KUBERNETES_ERROR,
-                        'Failed to update application. The Kubernetes operation encountered an error.',
+                        'Failed to update application "web-api". The Kubernetes operation encountered an error.',
                         'Operation cannot be fulfilled on deployments.apps "web-api": the object has been modified'
+                      )
+                    },
+                    initFailure: {
+                      summary: 'Kubernetes context initialization failed',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to initialize Kubernetes context. Please check your configuration and try again.',
+                        'invalid kubeconfig format'
+                      )
+                    },
+                    unexpectedError: {
+                      summary: 'Unexpected server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'An unexpected error occurred while processing your request. Please try again or contact support.',
+                        'TypeError: Cannot read properties of undefined'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '503': {
+              description: 'Service Unavailable - Kubernetes cluster temporarily unreachable',
+              content: {
+                'application/json': {
+                  schema: createError503Schema('patch app'),
+                  examples: {
+                    clusterUnavailable: {
+                      summary: 'Cluster unreachable',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.SERVICE_UNAVAILABLE,
+                        'Kubernetes cluster is temporarily unavailable. Please try again later.',
+                        'connect ECONNREFUSED 10.0.0.1:6443'
                       )
                     }
                   }
@@ -571,14 +807,15 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid parameters',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER], 'delete'),
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
                       value: createErrorExample(
                         ErrorType.VALIDATION_ERROR,
                         ErrorCode.INVALID_PARAMETER,
-                        'Application name path parameter is invalid or missing.'
+                        'Application name path parameter is invalid or missing.',
+                        [{ field: 'name', message: 'name cannot be empty' }]
                       )
                     }
                   }
@@ -589,7 +826,7 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: Error401Schema,
+                  schema: createError401Schema(),
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
@@ -607,7 +844,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: Error403Schema,
+                  schema: createError403Schema([ErrorCode.PERMISSION_DENIED], 'delete'),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -622,36 +859,36 @@ export const createOpenApiDocument = () => {
               }
             },
             '404': {
-              description: 'Not Found - Application not found',
+              description: 'Not Found - Application not found in the current namespace',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
                     notFound: {
                       summary: 'Application not found',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
-                        'Application not found in the current namespace. Please verify the application name.'
+                        'Application "web-api" not found in the current namespace. Please verify the application name.'
                       )
                     }
                   }
                 }
               }
             },
-            '409': {
-              description: 'Conflict - Cannot delete in current state',
+            '422': {
+              description: 'Unprocessable Entity - Resource spec rejected by cluster',
               content: {
                 'application/json': {
-                  schema: Error409Schema,
+                  schema: createError422Schema('delete'),
                   examples: {
-                    deletionInProgress: {
-                      summary: 'Deletion already in progress',
+                    invalidResourceSpec: {
+                      summary: 'Resource spec rejected',
                       value: createErrorExample(
-                        ErrorType.RESOURCE_ERROR,
-                        ErrorCode.CONFLICT,
-                        'Application is already being deleted.',
-                        'Application is already being deleted'
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.INVALID_RESOURCE_SPEC,
+                        'The resource specification was rejected by the cluster. Check admission webhooks, field constraints, and quota limits.',
+                        'admission webhook denied the request'
                       )
                     }
                   }
@@ -659,18 +896,60 @@ export const createOpenApiDocument = () => {
               }
             },
             '500': {
-              description: 'Internal Server Error',
+              description:
+                'Internal Server Error - Kubernetes operation error or unexpected failure',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([
+                    ErrorCode.KUBERNETES_ERROR,
+                    ErrorCode.OPERATION_FAILED,
+                    ErrorCode.INTERNAL_ERROR
+                  ]),
                   examples: {
-                    deletionFailed: {
-                      summary: 'Deletion failed',
+                    kubernetesError: {
+                      summary: 'Kubernetes delete failed',
                       value: createErrorExample(
                         ErrorType.OPERATION_ERROR,
                         ErrorCode.KUBERNETES_ERROR,
-                        'Failed to delete application. The Kubernetes operation encountered an error.',
-                        'deployments.apps "web-api" not found'
+                        'Failed to delete application "web-api". The Kubernetes operation encountered an error.',
+                        'Failed to delete some resources for application "web-api". Errors in: [Deployment, StatefulSet]. First error: deployments.apps "web-api" not found'
+                      )
+                    },
+                    initFailure: {
+                      summary: 'Kubernetes context initialization failed',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to initialize Kubernetes context. Please check your configuration and try again.',
+                        'invalid kubeconfig format'
+                      )
+                    },
+                    unexpectedError: {
+                      summary: 'Unexpected server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'An unexpected error occurred while processing your request. Please try again or contact support.',
+                        'TypeError: Cannot read properties of undefined'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '503': {
+              description: 'Service Unavailable - Kubernetes cluster temporarily unreachable',
+              content: {
+                'application/json': {
+                  schema: createError503Schema('delete'),
+                  examples: {
+                    clusterUnavailable: {
+                      summary: 'Cluster unreachable',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.SERVICE_UNAVAILABLE,
+                        'Kubernetes cluster is temporarily unavailable. Please try again later.',
+                        'connect ECONNREFUSED 10.0.0.1:6443'
                       )
                     }
                   }
@@ -680,7 +959,7 @@ export const createOpenApiDocument = () => {
           }
         }
       },
-      '/app/{name}/start': {
+      '/apps/{name}/start': {
         post: {
           tags: ['Mutation'],
           summary: 'Start paused application',
@@ -703,34 +982,18 @@ export const createOpenApiDocument = () => {
               description: 'Application started successfully'
             },
             '400': {
-              description: 'Bad Request - Invalid parameters or application state',
+              description: 'Bad Request - Invalid parameters',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER], 'start'),
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
                       value: createErrorExample(
                         ErrorType.VALIDATION_ERROR,
                         ErrorCode.INVALID_PARAMETER,
-                        'Application name path parameter is invalid or missing.'
-                      )
-                    },
-                    alreadyRunning: {
-                      summary: 'Application already running',
-                      value: createErrorExample(
-                        ErrorType.CLIENT_ERROR,
-                        ErrorCode.UNSUPPORTED_OPERATION,
-                        'The application is already running. Start is only allowed on paused applications.'
-                      )
-                    },
-                    missingMetadata: {
-                      summary: 'Missing pause metadata',
-                      value: createErrorExample(
-                        ErrorType.CLIENT_ERROR,
-                        ErrorCode.UNSUPPORTED_OPERATION,
-                        'Cannot start application: no stored configuration found. The application may not have been properly paused.',
-                        'No stored configuration found. Application may not have been properly paused.'
+                        'Application name path parameter is invalid or missing.',
+                        [{ field: 'name', message: 'name cannot be empty' }]
                       )
                     }
                   }
@@ -741,7 +1004,7 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: Error401Schema,
+                  schema: createError401Schema(),
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
@@ -759,7 +1022,10 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: Error403Schema,
+                  schema: createError403Schema([
+                    ErrorCode.PERMISSION_DENIED,
+                    ErrorCode.INSUFFICIENT_BALANCE
+                  ]),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -777,14 +1043,32 @@ export const createOpenApiDocument = () => {
               description: 'Not Found - Application not found',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
                     notFound: {
                       summary: 'Application not found',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
-                        'Application not found in the current namespace. Please verify the application name.'
+                        'Application "web-api" not found in the current namespace. Please verify the application name.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '409': {
+              description: 'Conflict - Application already running',
+              content: {
+                'application/json': {
+                  schema: createError409Schema([ErrorCode.CONFLICT], 'start'),
+                  examples: {
+                    alreadyRunning: {
+                      summary: 'Application already running',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.CONFLICT,
+                        'Application "web-api" is already running and does not need to be started.'
                       )
                     }
                   }
@@ -795,14 +1079,18 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([
+                    ErrorCode.KUBERNETES_ERROR,
+                    ErrorCode.OPERATION_FAILED,
+                    ErrorCode.INTERNAL_ERROR
+                  ]),
                   examples: {
                     startFailed: {
                       summary: 'Start operation failed',
                       value: createErrorExample(
                         ErrorType.OPERATION_ERROR,
                         ErrorCode.KUBERNETES_ERROR,
-                        'Failed to start application. The Kubernetes operation encountered an error.',
+                        'Failed to start application "web-api". The Kubernetes operation encountered an error.',
                         'deployments.apps "web-api" not found'
                       )
                     }
@@ -813,7 +1101,7 @@ export const createOpenApiDocument = () => {
           }
         }
       },
-      '/app/{name}/pause': {
+      '/apps/{name}/pause': {
         post: {
           tags: ['Mutation'],
           summary: 'Pause application',
@@ -836,25 +1124,18 @@ export const createOpenApiDocument = () => {
               description: 'Application paused successfully'
             },
             '400': {
-              description: 'Bad Request - Invalid parameters or application state',
+              description: 'Bad Request - Invalid parameters',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER], 'pause'),
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
                       value: createErrorExample(
                         ErrorType.VALIDATION_ERROR,
                         ErrorCode.INVALID_PARAMETER,
-                        'Application name path parameter is invalid or missing.'
-                      )
-                    },
-                    alreadyPaused: {
-                      summary: 'Application already paused',
-                      value: createErrorExample(
-                        ErrorType.CLIENT_ERROR,
-                        ErrorCode.UNSUPPORTED_OPERATION,
-                        'The application is already paused. Pause is only allowed on running applications.'
+                        'Application name path parameter is invalid or missing.',
+                        [{ field: 'name', message: 'name cannot be empty' }]
                       )
                     }
                   }
@@ -865,7 +1146,7 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: Error401Schema,
+                  schema: createError401Schema(),
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
@@ -883,7 +1164,10 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: Error403Schema,
+                  schema: createError403Schema([
+                    ErrorCode.PERMISSION_DENIED,
+                    ErrorCode.INSUFFICIENT_BALANCE
+                  ]),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -901,14 +1185,32 @@ export const createOpenApiDocument = () => {
               description: 'Not Found - Application not found',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
                     notFound: {
                       summary: 'Application not found',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
-                        'Application not found in the current namespace. Please verify the application name.'
+                        'Application "web-api" not found in the current namespace. Please verify the application name.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '409': {
+              description: 'Conflict - Application already paused',
+              content: {
+                'application/json': {
+                  schema: createError409Schema([ErrorCode.CONFLICT], 'pause'),
+                  examples: {
+                    alreadyPaused: {
+                      summary: 'Application already paused',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.CONFLICT,
+                        'Application "web-api" is already paused and does not need to be paused again.'
                       )
                     }
                   }
@@ -919,14 +1221,18 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([
+                    ErrorCode.KUBERNETES_ERROR,
+                    ErrorCode.OPERATION_FAILED,
+                    ErrorCode.INTERNAL_ERROR
+                  ]),
                   examples: {
                     pauseFailed: {
                       summary: 'Pause operation failed',
                       value: createErrorExample(
                         ErrorType.OPERATION_ERROR,
                         ErrorCode.KUBERNETES_ERROR,
-                        'Failed to pause application. The Kubernetes operation encountered an error.',
+                        'Failed to pause application "web-api". The Kubernetes operation encountered an error.',
                         'deployments.apps "web-api" not found'
                       )
                     }
@@ -937,7 +1243,173 @@ export const createOpenApiDocument = () => {
           }
         }
       },
-      '/app/{name}/restart': {
+      '/apps/{name}/storage': {
+        patch: {
+          tags: ['Mutation'],
+          summary: 'Update application storage (incremental)',
+          description:
+            'Incrementally updates storage configuration for a StatefulSet application.\n\n' +
+            'Key points:\n' +
+            '- Only StatefulSet applications are supported (Deployment returns 400)\n' +
+            '- Incremental merge: only pass the volumes you want to add or resize — existing volumes not listed are preserved\n' +
+            '- To remove a volume, use `PATCH /apps/{name}` with a complete storage replacement\n' +
+            '- Storage can only be expanded, not shrunk (PVC limitation)\n' +
+            '- Triggers StatefulSet recreation to apply changes',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              description: 'Name of the application',
+              required: true,
+              schema: {
+                type: 'string'
+              }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: UpdateStorageSchema,
+                examples: {
+                  expandVolume: {
+                    summary: 'Expand an existing volume',
+                    value: {
+                      storage: [{ path: '/data', size: '20Gi' }]
+                    }
+                  },
+                  addVolume: {
+                    summary: 'Add a new volume',
+                    value: {
+                      storage: [{ path: '/logs', size: '5Gi' }]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '204': {
+              description: 'Storage updated successfully'
+            },
+            '400': {
+              description: 'Bad Request - Invalid parameters or unsupported application type',
+              content: {
+                'application/json': {
+                  schema: createError400Schema(
+                    [ErrorCode.INVALID_PARAMETER, ErrorCode.STORAGE_REQUIRES_STATEFULSET],
+                    'storage'
+                  ),
+                  examples: {
+                    invalidName: {
+                      summary: 'Invalid application name',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Application name path parameter is invalid or missing.'
+                      )
+                    },
+                    notStatefulSet: {
+                      summary: 'Application is not a StatefulSet',
+                      value: createErrorExample(
+                        ErrorType.CLIENT_ERROR,
+                        ErrorCode.STORAGE_REQUIRES_STATEFULSET,
+                        'Storage updates are only supported for StatefulSet applications. Application "web-api" is currently a deployment.',
+                        'Convert your application to StatefulSet to enable storage management.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '401': {
+              description: 'Unauthorized - Missing or invalid kubeconfig',
+              content: {
+                'application/json': {
+                  schema: createError401Schema(),
+                  examples: {
+                    missingAuth: {
+                      summary: 'Missing authentication',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Authentication required. Please provide valid credentials in the Authorization header.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '403': {
+              description: 'Forbidden - Insufficient permissions',
+              content: {
+                'application/json': {
+                  schema: createError403Schema([
+                    ErrorCode.PERMISSION_DENIED,
+                    ErrorCode.INSUFFICIENT_BALANCE
+                  ]),
+                  examples: {
+                    insufficientPermissions: {
+                      summary: 'Insufficient permissions',
+                      value: createErrorExample(
+                        ErrorType.AUTHORIZATION_ERROR,
+                        ErrorCode.PERMISSION_DENIED,
+                        'Insufficient permissions to perform this operation. Please check your access rights.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '404': {
+              description: 'Not Found - Application not found',
+              content: {
+                'application/json': {
+                  schema: createError404Schema(),
+                  examples: {
+                    notFound: {
+                      summary: 'Application not found',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Application "web-api" not found in the current namespace. Please verify the application name.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '500': {
+              description: 'Internal Server Error - StatefulSet recreation or PVC update failed',
+              content: {
+                'application/json': {
+                  schema: createError500Schema(
+                    [
+                      ErrorCode.KUBERNETES_ERROR,
+                      ErrorCode.STORAGE_UPDATE_FAILED,
+                      ErrorCode.OPERATION_FAILED,
+                      ErrorCode.INTERNAL_ERROR
+                    ],
+                    'storage'
+                  ),
+                  examples: {
+                    storageFailed: {
+                      summary: 'Storage update failed',
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.STORAGE_UPDATE_FAILED,
+                        'Failed to update storage for application "web-api". The StatefulSet recreation or PVC update failed.',
+                        'cannot shrink PVC from 10Gi to 5Gi'
+                      )
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/apps/{name}/restart': {
         post: {
           tags: ['Mutation'],
           summary: 'Restart application',
@@ -963,14 +1435,15 @@ export const createOpenApiDocument = () => {
               description: 'Bad Request - Invalid parameters',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER], 'restart'),
                   examples: {
                     invalidName: {
                       summary: 'Invalid application name',
                       value: createErrorExample(
                         ErrorType.VALIDATION_ERROR,
                         ErrorCode.INVALID_PARAMETER,
-                        'Application name path parameter is invalid or missing.'
+                        'Application name path parameter is invalid or missing.',
+                        [{ field: 'name', message: 'name cannot be empty' }]
                       )
                     }
                   }
@@ -981,7 +1454,7 @@ export const createOpenApiDocument = () => {
               description: 'Unauthorized - Missing or invalid kubeconfig',
               content: {
                 'application/json': {
-                  schema: Error401Schema,
+                  schema: createError401Schema(),
                   examples: {
                     missingAuth: {
                       summary: 'Missing authentication',
@@ -999,7 +1472,10 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: Error403Schema,
+                  schema: createError403Schema([
+                    ErrorCode.PERMISSION_DENIED,
+                    ErrorCode.INSUFFICIENT_BALANCE
+                  ]),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -1017,14 +1493,14 @@ export const createOpenApiDocument = () => {
               description: 'Not Found - Application not found',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
                     notFound: {
                       summary: 'Application not found',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
-                        'Application not found in the current namespace. Please verify the application name.'
+                        'Application "web-api" not found in the current namespace. Please verify the application name.'
                       )
                     }
                   }
@@ -1035,14 +1511,18 @@ export const createOpenApiDocument = () => {
               description: 'Internal Server Error',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([
+                    ErrorCode.KUBERNETES_ERROR,
+                    ErrorCode.OPERATION_FAILED,
+                    ErrorCode.INTERNAL_ERROR
+                  ]),
                   examples: {
                     restartFailed: {
                       summary: 'Restart operation failed',
                       value: createErrorExample(
                         ErrorType.OPERATION_ERROR,
                         ErrorCode.KUBERNETES_ERROR,
-                        'Failed to restart application. The Kubernetes operation encountered an error.',
+                        'Failed to restart application "web-api". The Kubernetes operation encountered an error.',
                         'deployments.apps "web-api" not found'
                       )
                     }

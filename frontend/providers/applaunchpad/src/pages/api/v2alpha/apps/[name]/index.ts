@@ -9,7 +9,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   getAppByName,
   deleteAppByName,
-  createK8sContext,
   updateAppResources,
   processAppResponse
 } from '@/services/backend';
@@ -27,7 +26,18 @@ import { mountPathToConfigMapKey } from '@/utils/tools';
 import { json2DeployCr, json2Service, json2Ingress } from '@/utils/deployYaml2Json';
 import { appDeployKey } from '@/constants/app';
 
-import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import {
+  sendError,
+  sendValidationError,
+  ErrorType,
+  ErrorCode,
+  type ApiErrorDetails
+} from '@/types/v2alpha/error';
+import {
+  getK8sContextOrSendError,
+  sendK8sOperationError,
+  sendInternalError
+} from '@/pages/api/v2alpha/k8sContext';
 
 // Constants
 const DELAY_SHORT = 2000;
@@ -41,7 +51,7 @@ const SIZE_UNITS = {
 
 // Custom Error Classes
 class PortError extends Error {
-  constructor(message: string, public code: number = 500, public details?: any) {
+  constructor(message: string, public code: number = 500, public details?: ApiErrorDetails) {
     super(message);
     this.name = 'PortError';
   }
@@ -198,7 +208,16 @@ async function deleteServiceAndIngress(k8s: any, appName: string): Promise<void>
 
     await new Promise((resolve) => setTimeout(resolve, DELAY_SHORT));
   } catch (error: any) {
-    // Ignore deletion errors
+    // 404 means the resource was already gone — safe to ignore.
+    // Other errors (e.g. 403 Forbidden) are logged as warnings: if ignored silently they can
+    // cause the subsequent 'create' call to fail with a confusing "AlreadyExists" 409 error.
+    if (error?.response?.statusCode !== 404) {
+      console.warn(
+        `[deleteServiceAndIngress] Non-404 error while deleting Service/Ingress for "${appName}":`,
+        error?.response?.statusCode,
+        error?.message || error
+      );
+    }
   }
 }
 
@@ -244,6 +263,9 @@ async function validateAppExists(name: string, k8s: any, res: NextApiResponse): 
   }
 }
 
+// NOTE: All JSONPatch paths below target containers[0]. This is safe because the LaunchPad
+// application model places the user container at index 0. Sidecar containers injected by
+// admission webhooks are appended after index 0 and do not affect this invariant.
 async function updateConfigMap(
   appName: string,
   configMapData: Array<{ path: string; value?: string }>,
@@ -624,6 +646,9 @@ async function updateAppPorts(
   }
 }
 
+// Each field uses an independent nanoid: serviceName/networkName must be globally unique K8s
+// resource names, portName is an internal lookup key, and publicDomain is the subdomain prefix.
+// Using the same ID for any two fields would cause K8s naming conflicts or broken domain routing.
 function createNetworkConfig(appName: string, portConfig: any): any {
   const protocol = (portConfig.protocol || 'http').toUpperCase();
   const isAppProtocol = isApplicationProtocol(protocol);
@@ -713,12 +738,7 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
   return updatedNetwork;
 }
 
-async function manageAppPorts(
-  appName: string,
-  requestPorts: any[],
-  currentAppData: AppEditType,
-  k8s: any
-): Promise<AppEditType> {
+async function manageAppPorts(appName: string, requestPorts: any[], k8s: any): Promise<void> {
   const { k8sApp, namespace, applyYamlList } = k8s;
 
   const latestAppResponse = await getAppByName(appName, k8s);
@@ -804,6 +824,13 @@ async function manageAppPorts(
 
         const newNetwork = createNetworkConfig(appName, portConfig);
         newNetworks.push(newNetwork);
+      } else {
+        // portConfig.portName was provided but no matching port was found: fail explicitly
+        // instead of silently dropping it (which would also delete the port under replace semantics)
+        throw new PortNotFoundError(
+          `Port "${portConfig.portName}" not found in application "${appName}". Verify the portName or omit it to create a new port.`,
+          { portName: portConfig.portName, operation: 'UPDATE_PORT_NOT_FOUND' }
+        );
       }
     }
 
@@ -826,8 +853,6 @@ async function manageAppPorts(
   };
 
   await updateServiceAndIngress(updatedAppData, applyYamlList, k8s);
-
-  return updatedAppData;
 }
 
 function handlePortError(error: any, res: NextApiResponse): void {
@@ -863,6 +888,16 @@ function handlePortError(error: any, res: NextApiResponse): void {
       message: error.message,
       details: error.details
     });
+  } else {
+    // Safeguard: handlePortError should only be called with PortError instances.
+    // This branch guards against accidental misuse (e.g. passing a plain Error).
+    sendError(res, {
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: 'An unexpected port error occurred.',
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 }
 
@@ -871,7 +906,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { method } = req;
     const { name } = req.query as { name: string };
 
-    const k8s = await createK8sContext(req);
+    const k8s = await getK8sContextOrSendError(req, res);
+    if (!k8s) return;
 
     if (method === 'GET') {
       const parseResult = GetAppByAppNameQuerySchema.safeParse(req.query);
@@ -888,10 +924,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return;
       }
 
-      const response = await getAppByName(name, k8s);
-      const filteredData = await processAppResponseV2Alpha(response, name, k8s.namespace);
-
-      return res.status(200).json(filteredData);
+      try {
+        const response = await getAppByName(name, k8s);
+        const filteredData = await processAppResponseV2Alpha(response, name, k8s.namespace);
+        return res.status(200).json(filteredData);
+      } catch (err) {
+        console.error('Get application error:', err);
+        return sendK8sOperationError(
+          res,
+          err,
+          `Failed to retrieve application "${name}". The Kubernetes operation encountered an error.`
+        );
+      }
     } else if (method === 'DELETE') {
       const parseResult = DeleteAppByNameQuerySchema.safeParse(req.query);
 
@@ -903,18 +947,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
       }
 
+      if (!(await validateAppExists(name, k8s, res))) {
+        return;
+      }
+
       try {
         await deleteAppByName(name, k8s);
         return res.status(204).end();
-      } catch (err: any) {
+      } catch (err) {
         console.error('Kubernetes delete application error:', err);
-        return sendError(res, {
-          status: 500,
-          type: ErrorType.OPERATION_ERROR,
-          code: ErrorCode.KUBERNETES_ERROR,
-          message: `Failed to delete application "${name}". The Kubernetes operation encountered an error.`,
-          details: err.message
-        });
+        return sendK8sOperationError(
+          res,
+          err,
+          `Failed to delete application "${name}". The Kubernetes operation encountered an error.`
+        );
       }
     } else if (method === 'PATCH') {
       const parseResult = UpdateAppResourcesSchema.safeParse(req.body);
@@ -934,20 +980,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const updateData = parseResult.data;
 
       try {
-        let currentAppData: AppEditType | null = null;
-        if (updateData.ports !== undefined) {
-          const currentAppResponse = await getAppByName(name, k8s);
-          currentAppData = await processAppResponse(currentAppResponse, false);
-          if (!currentAppData) {
-            return sendError(res, {
-              status: 404,
-              type: ErrorType.RESOURCE_ERROR,
-              code: ErrorCode.NOT_FOUND,
-              message: `Application "${name}" not found in the current namespace. Please verify the application name.`
-            });
-          }
-        }
-
         if (
           updateData.quota ||
           updateData.launchCommand !== undefined ||
@@ -990,7 +1022,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         if (updateData.ports !== undefined) {
           try {
-            currentAppData = await manageAppPorts(name, updateData.ports, currentAppData!, k8s);
+            await manageAppPorts(name, updateData.ports, k8s);
           } catch (error: any) {
             if (error instanceof PortError) {
               handlePortError(error, res);
@@ -1001,15 +1033,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         return res.status(204).end();
-      } catch (error: any) {
+      } catch (error) {
         console.error('Kubernetes update application error:', error);
-        return sendError(res, {
-          status: 500,
-          type: ErrorType.OPERATION_ERROR,
-          code: ErrorCode.KUBERNETES_ERROR,
-          message: `Failed to update application "${name}". The Kubernetes operation encountered an error.`,
-          details: error.message
-        });
+        return sendK8sOperationError(
+          res,
+          error,
+          `Failed to update application "${name}". The Kubernetes operation encountered an error.`
+        );
       }
     } else {
       res.setHeader('Allow', ['GET', 'DELETE', 'PATCH']);
@@ -1020,15 +1050,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: `HTTP method ${method} is not supported for this endpoint. Allowed methods: GET, DELETE, PATCH.`
       });
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Unexpected error in app handler:', err);
-    return sendError(res, {
-      status: 500,
-      type: ErrorType.INTERNAL_ERROR,
-      code: ErrorCode.INTERNAL_ERROR,
-      message:
-        'An unexpected error occurred while processing your request. Please try again or contact support.',
-      details: err.message
-    });
+    return sendInternalError(
+      res,
+      err,
+      'An unexpected error occurred while processing your request. Please try again or contact support.'
+    );
   }
 }

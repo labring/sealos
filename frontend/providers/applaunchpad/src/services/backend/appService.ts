@@ -418,7 +418,6 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
       undefined,
       `${appDeployKey}=${name}`
     ),
-
     k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
       namespace,
       undefined,

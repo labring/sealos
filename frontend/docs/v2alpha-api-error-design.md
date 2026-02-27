@@ -36,7 +36,9 @@ All error responses use a unified format, wrapped in an `error` object:
 | 404    | Not Found             | The specified resource does not exist. Verify the identifier and try again.                                                                                                                            |
 | 405    | Method Not Allowed    | The HTTP method used is not supported on this endpoint. Check the `Allow` response header for the correct method.                                                                                      |
 | 409    | Conflict              | The request conflicts with current state — the resource already exists, or a concurrent modification was detected.                                                                                     |
-| 500    | Internal Server Error | The server failed to complete the request. This may be a transient issue (retry later) or a persistent failure (check `details` and report to support).                                                |
+| 422    | Unprocessable Entity  | The request was well-formed but was rejected by the server because the resource specification is invalid (e.g. Kubernetes admission webhook denied, invalid field value, quota exceeded).              |
+| 500    | Internal Server Error | The server failed to complete the request due to an unexpected error or failed operation. Check `details` and report to support if it persists.                                                        |
+| 503    | Service Unavailable   | A required dependency (e.g. Kubernetes cluster) is temporarily unreachable. Retry later.                                                                                                               |
 
 ### Status Code → type / code Constraints
 
@@ -47,12 +49,14 @@ Each HTTP status code has a fixed set of permitted `type` and `code` values. Usi
 | 400    | `validation_error`     | `INVALID_PARAMETER`, `INVALID_VALUE`                            |
 | 400    | `client_error`         | `UNSUPPORTED_OPERATION`, `STORAGE_REQUIRES_STATEFULSET`         |
 | 401    | `authentication_error` | `AUTHENTICATION_REQUIRED`                                       |
-| 403    | `authorization_error`  | `PERMISSION_DENIED`                                             |
+| 403    | `authorization_error`  | `PERMISSION_DENIED`, `INSUFFICIENT_BALANCE`                     |
 | 404    | `resource_error`       | `NOT_FOUND`                                                     |
 | 405    | `client_error`         | `METHOD_NOT_ALLOWED`                                            |
 | 409    | `resource_error`       | `ALREADY_EXISTS`, `CONFLICT`                                    |
+| 422    | `operation_error`      | `INVALID_RESOURCE_SPEC`                                         |
 | 500    | `operation_error`      | `KUBERNETES_ERROR`, `STORAGE_UPDATE_FAILED`, `OPERATION_FAILED` |
-| 500    | `internal_error`       | `INTERNAL_ERROR`, `SERVICE_UNAVAILABLE`                         |
+| 500    | `internal_error`       | `INTERNAL_ERROR`                                                |
+| 503    | `internal_error`       | `SERVICE_UNAVAILABLE`                                           |
 
 > **Rules:**
 >
@@ -111,11 +115,12 @@ Update this table when adding new codes.
 
 ### operation_error
 
-| code                    | Description                                                                                                |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `KUBERNETES_ERROR`      | A Kubernetes API call returned an error. `details` contains the raw K8s error message for troubleshooting. |
-| `STORAGE_UPDATE_FAILED` | StatefulSet recreation or PVC update failed. `details` contains the underlying error.                      |
-| `OPERATION_FAILED`      | Generic operation failure. Use when no more specific code applies.                                         |
+| code                    | Description                                                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `KUBERNETES_ERROR`      | A Kubernetes API call returned an error. `details` contains the raw K8s error message for troubleshooting.                               |
+| `INVALID_RESOURCE_SPEC` | The generated Kubernetes resource specification was rejected by the cluster (admission webhook, invalid field, quota exceeded). Use 422. |
+| `STORAGE_UPDATE_FAILED` | StatefulSet recreation or PVC update failed. `details` contains the underlying error.                                                    |
+| `OPERATION_FAILED`      | Generic operation failure. Use when no more specific code applies.                                                                       |
 
 ### authentication_error
 
@@ -125,16 +130,17 @@ Update this table when adding new codes.
 
 ### authorization_error
 
-| code                | Description                                                                    |
-| ------------------- | ------------------------------------------------------------------------------ |
-| `PERMISSION_DENIED` | The authenticated identity does not have permission to perform this operation. |
+| code                   | Description                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| `PERMISSION_DENIED`    | The authenticated identity does not have permission to perform this operation. |
+| `INSUFFICIENT_BALANCE` | The account balance is too low to perform this operation. Top up and retry.    |
 
 ### internal_error
 
-| code                  | Description                                                                    |
-| --------------------- | ------------------------------------------------------------------------------ |
-| `INTERNAL_ERROR`      | Unexpected server-side exception. Retry later; contact support if it persists. |
-| `SERVICE_UNAVAILABLE` | A required dependency is temporarily unavailable. Retry later.                 |
+| code                  | Description                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `INTERNAL_ERROR`      | Unexpected server-side exception. Retry later; contact support if it persists.                                          |
+| `SERVICE_UNAVAILABLE` | A required dependency (e.g. Kubernetes cluster) is temporarily unreachable. Always returned with HTTP 503. Retry later. |
 
 ---
 
@@ -142,14 +148,39 @@ Update this table when adding new codes.
 
 The shape of `details` depends on `code` — always check `code` before consuming `details`.
 
-| code                    | details shape                                                | Example                                                   |
-| ----------------------- | ------------------------------------------------------------ | --------------------------------------------------------- |
-| `INVALID_PARAMETER`     | `Array<{ field: string, message: string }>` — always present | `[{ "field": "ports[0].number", "message": "Required" }]` |
-| `INVALID_VALUE`         | `string` — optional; omitted if `message` is sufficient      | `"cpu and memory must both be specified"`                 |
-| `KUBERNETES_ERROR`      | `string` — raw error from the underlying system              | `"deployments.apps \"web-api\" not found"`                |
-| `STORAGE_UPDATE_FAILED` | `string` — raw error from the underlying system              | `"cannot shrink PVC from 10Gi to 5Gi"`                    |
-| `INTERNAL_ERROR`        | `string` — raw error, for support/debugging only             | `"TypeError: Cannot read properties of undefined"`        |
-| All others              | `string` — optional; omit if nothing useful to add           | —                                                         |
+The TypeScript type is `ApiErrorDetails`:
+
+```ts
+type ApiErrorDetails = Array<{ field: string; message: string }> | Record<string, unknown> | string;
+```
+
+### Strictly structured (agent must parse by field)
+
+| code                | details shape                                                | Example                                                   |
+| ------------------- | ------------------------------------------------------------ | --------------------------------------------------------- |
+| `INVALID_PARAMETER` | `Array<{ field: string, message: string }>` — always present | `[{ "field": "ports[0].number", "message": "Required" }]` |
+
+### Always string (raw system output, structure not controllable)
+
+| code                    | details shape                                                    | Example                                                                             |
+| ----------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `KUBERNETES_ERROR`      | `string` — raw error from the underlying system                  | `"deployments.apps \"web-api\" not found"`                                          |
+| `INVALID_RESOURCE_SPEC` | `string` — raw K8s rejection reason from the cluster             | `"admission webhook \"vingress.sealos.io\" denied the request: cannot verify host"` |
+| `STORAGE_UPDATE_FAILED` | `string` — raw error from the underlying system                  | `"cannot shrink PVC from 10Gi to 5Gi"`                                              |
+| `INTERNAL_ERROR`        | `string` — raw error, for support/debugging only                 | `"TypeError: Cannot read properties of undefined"`                                  |
+| `SERVICE_UNAVAILABLE`   | `string` — optional; connection error from the underlying system | `"connect ECONNREFUSED 10.0.0.1:6443"`                                              |
+
+### Ad-hoc object or string (supplemental context for agent)
+
+All other codes may include an ad-hoc `object` or `string` as `details`. The shape is defined per error site and is not enforced by a shared schema. Agents should check `code` first, then consume whatever fields are present.
+
+| code            | details shape                                           | Example                                                                                     |
+| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `INVALID_VALUE` | `string` — optional; omitted if `message` is sufficient | `"cpu and memory must both be specified"`                                                   |
+| `CONFLICT`      | `object` — optional; ad-hoc context about the conflict  | `{ "conflictingPortDetails": { "port": 8080, "portName": "http" }, "requestedPort": 8080 }` |
+| All others      | `object \| string` — optional; omit if nothing useful   | —                                                                                           |
+
+> **Rule:** `details` is part of the API contract and is consumed by agents. Do not include server-internal metadata (e.g. stack traces, internal operation names) unless they are genuinely useful for the agent to understand the failure or take corrective action.
 
 ---
 
@@ -273,20 +304,20 @@ export function sendValidationError(error: ZodError, message = 'Validation faile
 
 ## OpenAPI Documentation
 
-Use the per-status-code schemas from `@sealos/shared/server/v2alpha` in your OpenAPI document. These schemas narrow `type` and `code` to only the values permitted for each HTTP status, producing clear documentation.
+Use the `create*Schema` functions from your provider's `types/v2alpha/error` in the OpenAPI document. Each endpoint passes the codes it can return; schemas narrow `type` and `code` accordingly for clear documentation.
 
 ```ts
 import {
-  Error400Schema, Error401Schema, Error403Schema,
-  Error404Schema, Error409Schema, Error500Schema,
+  createError400Schema, createError401Schema, createError403Schema, createError404Schema,
+  createError405Schema, createError409Schema, createError500Schema, createError503Schema,
   ErrorType, ErrorCode, createErrorExample
-} from '@sealos/shared/server/v2alpha';
+} from './<provider>/types/v2alpha/error';
 
-// In your createDocument() responses:
+// Use create*Schema for all status codes (consistent pattern)
 '400': {
   content: {
     'application/json': {
-      schema: Error400Schema,
+      schema: createError400Schema([ErrorCode.INVALID_PARAMETER, ErrorCode.INVALID_VALUE], 'create app'),
       examples: {
         invalidParam: {
           summary: 'Invalid parameter',
