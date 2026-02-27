@@ -3,6 +3,13 @@ import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
+const defaultNfsMaxSize = 20;
+const parsedNfsMaxSize = Number(process.env.NFS_MAX_SIZE);
+const nfsMaxSize =
+  Number.isFinite(parsedNfsMaxSize) && parsedNfsMaxSize >= 1
+    ? Math.floor(parsedNfsMaxSize)
+    : defaultNfsMaxSize;
+
 const GpuSchema = z
   .object({
     manufacturers: z.string().default('nvidia').openapi({
@@ -121,7 +128,7 @@ export const RequestSchema = z
           path: z.string().refine((path) => path.startsWith('/'), {
             message: 'Volume path must be an absolute path starting with "/"'
           }),
-          size: z.number().min(1).max(20)
+          size: z.number().min(1).max(nfsMaxSize)
         })
       )
       .optional()

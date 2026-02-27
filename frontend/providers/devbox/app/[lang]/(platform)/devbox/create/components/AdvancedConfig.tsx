@@ -12,6 +12,7 @@ import EnvVariablesDrawer from '@/components/drawers/EnvVariablesDrawer';
 import ConfigMapDrawer from '@/components/drawers/ConfigMapDrawer';
 import NetworkStorageDrawer from '@/components/drawers/NetworkStorageDrawer';
 import type { DevboxEditTypeV2 } from '@/types/devbox';
+import { useEnvStore } from '@/stores/env';
 
 interface AdvancedConfigProps {
   isEdit: boolean;
@@ -29,6 +30,7 @@ export default function AdvancedConfig({
   originalVolumes
 }: AdvancedConfigProps) {
   const t = useTranslations();
+  const { env } = useEnvStore();
   const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
 
   const envs = watch('envs') || [];
@@ -324,6 +326,7 @@ export default function AdvancedConfig({
       {isNetworkStorageDrawerOpen && (
         <NetworkStorageDrawer
           isEdit={isEdit}
+          maxCapacity={env.nfsMaxSize}
           initialValue={editingStorageIndex !== null ? volumes[editingStorageIndex] : undefined}
           originalValue={
             isEdit && editingStorageIndex !== null && originalVolumes
