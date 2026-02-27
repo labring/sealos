@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 # Default values
 RELEASE_NAME=${RELEASE_NAME:-"desktop-frontend"}
@@ -135,6 +135,19 @@ if kubectl -n "${RELEASE_NAMESPACE}" get ingress sealos-desktop >/dev/null 2>&1;
   fi
 fi
 
+# Prepare values files
+SERVICE_NAME="desktop-frontend"
+USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+
+# Copy user values template if not exists
+if [ ! -f "${USER_VALUES_PATH}" ]; then
+  mkdir -p "$(dirname "${USER_VALUES_PATH}")"
+  cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-values.yaml" "${USER_VALUES_PATH}"
+fi
+
 # Deploy Helm chart
 echo "Deploying Helm chart..."
-helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" ${HELM_ARGS}
+helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" \
+  -f "./charts/${SERVICE_NAME}/values.yaml" \
+  -f "${USER_VALUES_PATH}" \
+  ${HELM_ARGS}

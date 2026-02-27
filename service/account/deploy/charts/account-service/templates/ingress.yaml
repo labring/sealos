@@ -1,0 +1,41 @@
+{{- if and .Values.ingress.enabled .Values.ingress.cloudDomain }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "account-service.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "account-service.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.class | quote }}
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, PATCH, OPTIONS"
+    {{- with .Values.ingress.cloudflareDomain }}
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://{{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }}, https://*.{{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }}"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-max-age: "600"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }} {{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }}; img-src * data: blob: resource: *.{{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }} {{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }} {{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }} {{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }} resource: *.baidu.com *.bdstatic.com https://js.stripe.com; frame-src 'self' *.{{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }} {{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }} mailto: tel: weixin: mtt: *.baidu.com https://js.stripe.com; frame-ancestors 'self' https://{{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }} https://*.{{ . }}{{ $.Values.ingress.cloudPort | default "" | ternary (print ":" $.Values.ingress.cloudPort) "" }}";
+      more_set_headers "X-Xss-Protection: 1; mode=block";
+    {{- end }}
+spec:
+  rules:
+    - host: {{ .Values.ingress.hostname | default (printf "account-api.%s" .Values.ingress.cloudDomain) }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: {{ include "account-service.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.hostname | default (printf "account-api.%s" .Values.ingress.cloudDomain) | quote }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+{{- end }}

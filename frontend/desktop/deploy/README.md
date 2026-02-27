@@ -22,6 +22,39 @@ sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.githubEnabled=false --set desktopConfig.googleEnabled=true --set desktopConfig.googleClientId=xxx --set desktopConfig.googleClientSecret=yyy --set desktopConfig.gtmId=GTM-XXX"
 ```
 
+## Values Files
+
+The Helm Chart uses two values files to manage configuration:
+
+### 1. values-default.yaml
+
+Contains default Helm Chart configurations that should not be modified.
+
+**Content**:
+- **Infrastructure configurations**: Image, service account, probes, ingress, scheduling, etc.
+- **Auto-configured reference values**: cloudDomain, jwtInternal, databaseMongodbURI, etc. (automatically fetched from ConfigMap, values here are for reference only)
+
+**Modification**: ❌ Do not modify
+
+### 2. values-custom.yaml
+
+Contains user-customizable configurations.
+
+**Content**:
+- Resource limits and requests
+- Feature flags
+- OAuth providers (GitHub, Google, WeChat, etc.)
+- SMS and email configuration
+- Billing settings
+- Custom URLs
+- Layout customization
+
+**Modification**: ✅ Modify as needed
+
+**Note**: Auto-configured items in values-default.yaml (such as cloudDomain, jwtInternal, etc.) are automatically fetched by the entrypoint script from the `sealos-system/sealos-config` ConfigMap and will be overridden. To modify these values, edit the ConfigMap or use HELM_OPTIONS.
+
+For detailed documentation, see [VALUES_FILES_GUIDE.md](./VALUES_FILES_GUIDE.md).
+
 ## Environment Variables
 
 ### Google Tag Manager
@@ -155,7 +188,7 @@ common:
   enterpriseRealNameAuthEnabled: false
   trackingEnabled: false
   realNameAuthEnabled: false
-  licenseCheckEnabled: false
+  passwordEnabled: true
   realNameReward: 0
   realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
   templateUrl: "https://template.example.org"
@@ -264,6 +297,62 @@ realNameOSS:
   realNameBucket: ""
   enterpriseRealNameBucket: ""
 ```
+
+## AllowedOrigins Extension
+
+Desktop Frontend supports adding custom subdomains to the `allowedOrigins` list. The system automatically formats subdomains as `https://{subdomain}.{cloudDomain}` and adds them to the existing `allowedOrigins`.
+
+### Configuration
+
+Add `additionalAllowedOriginsPrefixes` in `values-custom.yaml`:
+
+```yaml
+desktopConfig:
+  cloudDomain: "cloud.example.com"
+
+  # Add additional allowedOrigins subdomains
+  # Only provide the subdomain part, system will add https:// and .{cloudDomain}
+  additionalAllowedOriginsPrefixes:
+    - "my-custom-app"
+    - "another-service"
+```
+
+### Result
+
+The generated `allowedOrigins` will include:
+
+```yaml
+allowedOrigins:
+  # Default origins...
+  - "https://sealaf.cloud.example.com"
+  # Additional custom origins
+  - "https://my-custom-app.cloud.example.com"
+  - "https://another-service.cloud.example.com"
+```
+
+### Usage Examples
+
+**Via values file:**
+```yaml
+additionalAllowedOriginsPrefixes:
+  - "custom-app"
+  - "analytics-service"
+```
+
+**Via Helm --set:**
+```bash
+helm upgrade -i desktop-frontend ./charts/desktop-frontend \
+  --set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app" \
+  --set desktopConfig.additionalAllowedOriginsPrefixes[1]="another-app"
+```
+
+**Via environment variable:**
+```bash
+export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app"'
+./desktop-frontend-entrypoint.sh
+```
+
+For more details, see [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md).
 
 ## Helm Chart Values
 

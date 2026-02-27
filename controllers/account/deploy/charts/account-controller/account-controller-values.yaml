@@ -1,0 +1,32 @@
+# Custom values for account controller helm chart.
+# This file contains user-customizable configurations.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+accountEnv:
+  approachingDeletionPeriod: "345600"
+  imminentDeletionPeriod: "259200"
+  finalDeletionPeriod: "604800"
+  debtDetectionCycleSeconds: "1800"
+  osAdminSecret: ""
+  osInternalEndpoint: ""
+  osNamespace: "objectstorage-system"
+  baseBalance: "5000000"
+  quotaLimitsCpu: "16"
+  quotaLimitsMemory: "64Gi"
+  quotaLimitsStorage: "200Gi"
+  quotaLimitsGpu: "8"
+  quotaLimitsPods: "20"
+  quotaLimitsNodePorts: "10"
+  quotaObjectStorageSize: "20Gi"
+  quotaObjectStorageBucket: "20"
+  limitRangeEphemeralStorage: "0"
+  rewardProcessing: "false"

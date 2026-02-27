@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 HELM_OPTS=${HELM_OPTS:-""}
 RELEASE_NAME=${RELEASE_NAME:-"account-controller"}
@@ -150,11 +150,23 @@ if [ -n "${ACCOUNT_ENV_MERGE_STRATEGY}" ]; then
   HELM_SET_ARGS+=(--set-string "accountEnvMergeStrategy=${ACCOUNT_ENV_MERGE_STRATEGY}")
 fi
 
+# Prepare values files
+SERVICE_NAME="account-controller"
+USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+
+# Copy user values template if not exists
+if [ ! -f "${USER_VALUES_PATH}" ]; then
+  mkdir -p "$(dirname "${USER_VALUES_PATH}")"
+  cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-values.yaml" "${USER_VALUES_PATH}"
+fi
+
 # merge all helm_opts
 # 1. AUTO_CONFIG_HELM_OPTS (Configuration automatically obtained from ConfigMap)
 # 2. HELM_SET_ARGS (parameters set internally in the script)
 # 3. HELM_OPTS (the parameter passed by the user via --env, with the highest priority, can override the previous configuration)
 helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" \
+  -f "./charts/${SERVICE_NAME}/values.yaml" \
+  -f "${USER_VALUES_PATH}" \
   ${AUTO_CONFIG_HELM_OPTS} \
   "${HELM_SET_ARGS[@]}" \
   ${HELM_OPTS}

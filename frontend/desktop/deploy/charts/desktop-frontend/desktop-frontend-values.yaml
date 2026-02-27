@@ -1,0 +1,164 @@
+# Custom values for desktop frontend helm chart.
+# This file contains user-customizable configurations.
+#
+# Note: The following configurations are automatically fetched from sealos-system/sealos-config ConfigMap
+# and do NOT need to be manually configured:
+#   - cloudDomain, cloudPort, regionUID
+#   - jwtInternal, jwtRegional, jwtGlobal
+#   - passwordSalt
+#   - databaseMongodbURI, databaseGlobalCockroachdbURI, databaseLocalCockroachdbURI
+#
+# See values-auto.yaml for reference values and documentation.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Desktop frontend configuration (user-customizable)
+desktopConfig:
+  # Additional allowedOrigins subdomains
+  # Only provide the subdomain part, system will add https:// and .{cloudDomain}
+  # Example: ["myapp", "analytics"] will generate:
+  # - "https://myapp.{cloudDomain}"
+  # - "https://analytics.{cloudDomain}"
+  allowedOrigins:
+    - "costcenter"
+    - "license"
+
+  # Billing configuration
+  billingUrl: "http://account-service.account-system.svc:2333"
+  billingToken: ""
+
+  # Currency and language configuration
+  # Options: "cn" (Chinese) or "en" (English)
+  # forcedLanguage and currencySymbol will be auto-configured based on version:
+  # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
+  # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
+  version: "en"
+
+  # Google Tag Manager
+  gtmId: ""
+
+  # Discord invite link (USD version only)
+  discordInviteLink: ""
+
+  # Feature flags
+  guideEnabled: false
+  apiEnabled: false
+  rechargeEnabled: false
+  enterpriseRealNameAuthEnabled: false
+  trackingEnabled: false
+  realNameAuthEnabled: false
+
+  # Common URLs (default values)
+  realNameReward: 0
+  realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
+  cfSiteKey: ""
+
+  # Desktop layout configuration
+  layoutTitle: "Sealos Cloud"
+  layoutLogo: "/logo.svg"
+  layoutBackgroundImage: "/images/bg-light.svg"
+  customerServiceURL: ""
+  layoutDocsUrl: "https://sealos.run/docs/Intro/"
+
+  authTitle:
+    zh: "欢迎来到 Sealos"
+    en: "Welcome to Sealos"
+  authBackgroundImage:
+    zh: "/images/bg-light.svg"
+    en: "/images/bg-light.svg"
+  protocol:
+    serviceProtocol:
+      zh: https://sealos.io/zh-Hans/docs/msa/terms-of-service
+      en: https://sealos.io/docs/msa/terms-of-service
+    privateProtocol:
+      zh: https://sealos.io/zh-Hans/docs/msa/privacy-policy
+      en: https://sealos.io/docs/msa/privacy-policy
+  # Meta tags
+  metaTitle: "Sealos Cloud"
+  metaDescription: "Sealos Cloud"
+  metaKeywords: "Sealos Cloud"
+
+  passwordEnabled: true
+  # OAuth providers
+  githubEnabled: false
+  githubClientId: ""
+  githubClientSecret: ""
+  githubProxyAddress: ""
+
+  wechatEnabled: false
+  wechatClientId: ""
+  wechatClientSecret: ""
+  wechatProxyAddress: ""
+
+  googleEnabled: false
+  googleClientId: ""
+  googleClientSecret: ""
+  googleProxyAddress: ""
+
+  oauth2Enabled: false
+  oauth2CallbackUrl: ""
+  oauth2ClientId: ""
+  oauth2ClientSecret: ""
+  oauth2AuthUrl: ""
+  oauth2TokenUrl: ""
+  oauth2UserInfoUrl: ""
+  oauth2ProxyAddress: ""
+
+  # Captcha configuration
+  turnstileEnabled: false
+  turnstileSiteKey: ""
+  turnstileSecretKey: ""
+
+  # SMS configuration (Aliyun)
+  smsEnabled: false
+  smsAliEnabled: false
+  smsAliEndpoint: ""
+  smsAliTemplateCode: ""
+  smsAliSignName: ""
+  smsAliAccessKeyID: ""
+  smsAliAccessKeySecret: ""
+
+  # Email configuration
+  emailEnabled: false
+  emailHost: ""
+  emailPort: 0
+  emailUser: ""
+  emailPassword: ""
+  emailLanguage: ""
+
+  # Ali captcha configuration
+  aliCaptchaEnabled: false
+  aliCaptchaEndpoint: ""
+  aliCaptchaSceneId: ""
+  aliCaptchaPrefix: ""
+  aliCaptchaAccessKeyID: ""
+  aliCaptchaAccessKeySecret: ""
+
+  # Tracking configuration
+  trackingWebsiteId: ""
+  trackingHostUrl: ""
+  trackingScriptUrl: ""
+
+  # RealName OSS configuration
+  realNameOSSAccessKey: ""
+  realNameOSSAccessKeySecret: ""
+  realNameOSSEndpoint: ""
+  realNameOSSSSL: false
+  realNameOSSPort: 0
+  realNameOSSRealNameBucket: ""
+  realNameOSSEnterpriseRealNameBucket: ""
+
+  # Workorder and cloud virtual machine URLs
+  workorderUrl: ""
+
+  # Team management
+  maxTeamCount: 0
+  maxTeamMemberCount: 0

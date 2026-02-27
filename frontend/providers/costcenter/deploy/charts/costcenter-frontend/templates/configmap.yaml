@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "costcenter-frontend.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  config.yaml: |-
+    costCenter:
+      transferEnabled: {{ .Values.costcenterConfig.transferEnabled }}
+      currencyType: {{ .Values.costcenterConfig.currencyType | quote }}
+      auth:
+        jwt:
+          internal: {{ .Values.costcenterConfig.jwtInternal | quote }}
+          billing: {{ .Values.costcenterConfig.jwtInternal | quote }}
+      invoice:
+        enabled: {{ .Values.costcenterConfig.invoice.enabled }}
+        feiShuBotURL: {{ .Values.costcenterConfig.invoice.feiShuBotURL | quote }}
+        aliSms:
+          endpoint: {{ .Values.costcenterConfig.invoice.aliSms.endpoint | quote }}
+          accessKeyID: {{ .Values.costcenterConfig.invoice.aliSms.accessKeyID | quote }}
+          accessKeySecret: {{ .Values.costcenterConfig.invoice.aliSms.accessKeySecret | quote }}
+          templateCode: {{ .Values.costcenterConfig.invoice.aliSms.templateCode | quote }}
+          signName: {{ .Values.costcenterConfig.invoice.aliSms.signName | quote }}
+          invoiceCompletedTemplateCode: {{ .Values.costcenterConfig.invoice.aliSms.invoiceCompletedTemplateCode | quote }}
+        mongo:
+          uri: {{ .Values.costcenterConfig.invoice.mongo.uri | quote }}
+      recharge:
+        enabled: {{ .Values.costcenterConfig.recharge.enabled }}
+        payMethods:
+          wechat:
+            enabled: {{ .Values.costcenterConfig.recharge.payMethods.wechat.enabled }}
+          alipay:
+            enabled: {{ .Values.costcenterConfig.recharge.payMethods.alipay.enabled }}
+          stripe:
+            enabled: {{ .Values.costcenterConfig.recharge.payMethods.stripe.enabled }}
+            publicKey: {{ .Values.costcenterConfig.recharge.payMethods.stripe.publicKey | quote }}
+      components:
+        accountService:
+          url: {{ .Values.costcenterConfig.components.accountService.url | quote }}

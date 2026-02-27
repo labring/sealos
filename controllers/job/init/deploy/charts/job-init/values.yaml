@@ -2,7 +2,6 @@ image: ghcr.io/labring/sealos-job-init-controller:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []
-nameOverride: ""
 fullnameOverride: "init-job"
 
 serviceAccount:
@@ -27,6 +26,13 @@ ttlSecondsAfterFinished: 86400
 backoffLimit: 10
 restartPolicy: OnFailure
 
+# Environment variables (auto-configured by entrypoint.sh)
+# These values are set dynamically via --set-string flags:
+# - PASSWORD_SALT: from env.passwordSalt (or env var PASSWORD_SALT)
+# - ADMIN_PASSWORD: from env.adminPassword (from ConfigMap or generated)
+# - ADMIN_USER_NAME: from env.adminUserName (or env var ADMIN_USER_NAME)
+# - WORKSPACE_PREFIX: from env.workspacePrefix (or env var WORKSPACE_PREFIX)
+# - envFromConfigMap: from env.envFromConfigMap (or env var ENV_FROM_CONFIGMAP)
 env:
   passwordSalt: ""
   adminPassword: "sealos2023"
@@ -36,19 +42,6 @@ env:
   globalCockroachUri: ""
   localCockroachUri: ""
   localRegion: ""
-
-resources:
-  limits:
-    cpu: 200m
-    memory: 256Mi
-  requests:
-    cpu: 50m
-    memory: 64Mi
-
-metrics:
-  enabled: false
-  certPath: /tmp/k8s-metrics-server/metrics-certs
-  secretName: metrics-server-cert
 
 nodeSelector: {}
 

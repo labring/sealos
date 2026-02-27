@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "license-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "license-frontend.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "license-frontend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "license-frontend.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "license-frontend.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: SEALOS_DOMAIN
+              value: {{ .Values.licenseConfig.cloudDomain | quote }}
+            - name: LICENSE_DOMAIN
+              value: {{ .Values.licenseConfig.licensePurchaseDomain | quote }}
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "license-frontend.fullname" . }}-secret
+                  key: mongodb_uri
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - 'ALL'
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          image: "{{ .Values.image }}"
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          readinessProbe:
+            httpGet:
+              path: /api/cronjob/init
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: license-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: license-frontend-volume
+          configMap:
+            name: {{ include "license-frontend.fullname" . }}-config

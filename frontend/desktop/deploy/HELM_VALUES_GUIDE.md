@@ -102,7 +102,7 @@ desktopConfig:
   enterpriseRealNameAuthEnabled: false        # 启用企业实名认证
   trackingEnabled: false                      # 启用追踪/统计
   realNameAuthEnabled: false                  # 启用实名认证
-  licenseCheckEnabled: false                  # 启用 License 检查
+  passwordEnabled: true                       # 启用密码登录
 ```
 
 ### 9. Common URLs 配置
