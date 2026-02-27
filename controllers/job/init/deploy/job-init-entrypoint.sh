@@ -1,6 +1,6 @@
 #!/bin/bash
 # job-init Helm 部署入口，负责安装/升级初始化 Job 资源。
-set -ex
+set -e
 
 HELM_OPTS=${HELM_OPTS:-""}
 RELEASE_NAME=${RELEASE_NAME:-"job-init"}

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 HELM_OPTS=${HELM_OPTS:-""}
 RELEASE_NAME=${RELEASE_NAME:-"account-controller"}

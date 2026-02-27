@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 # Default values
 RELEASE_NAME=${RELEASE_NAME:-"license-frontend"}
