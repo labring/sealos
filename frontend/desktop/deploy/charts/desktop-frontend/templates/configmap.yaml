@@ -14,20 +14,11 @@ data:
       certSecretName: "{{ .Values.desktopConfig.certSecretName }}"
       proxyDomain: "{{ .Values.desktopConfig.cloudDomain }}"
       allowedOrigins:
-        - "https://applaunchpad.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://dbprovider.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://costcenter.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://cronjob.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://objectstorage.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://template.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://terminal.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://kubepanel.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://license.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://devbox.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://aiproxy-web.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://aiproxy.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://sealaf-api.{{ .Values.desktopConfig.cloudDomain }}"
-        - "https://sealaf.{{ .Values.desktopConfig.cloudDomain }}"
+{{- $defaultAllowedOrigins := list "costcenter" "license" -}}
+{{- $allowedOrigins := .Values.desktopConfig.allowedOrigins | default $defaultAllowedOrigins -}}
+{{- range $origin := $allowedOrigins }}
+        - "https://{{ $origin }}.{{ $.Values.desktopConfig.cloudDomain }}"
+{{- end }}
 
     common:
       guideEnabled: {{ .Values.desktopConfig.guideEnabled }}
