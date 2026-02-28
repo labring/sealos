@@ -129,86 +129,10 @@ function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
   };
 }
 
-export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
-  const labels = db?.metadata?.labels || {};
-  const kbDatabase = labels['kb.io/database'];
-  let dbType = '';
-  let dbVersion = '';
-
-  // All databases now use kb.io/database for version information
-  if (kbDatabase) {
-    // Parse database type and version from kb.io/database
-    if (kbDatabase.startsWith('ac-mysql')) {
-      dbType = 'apecloud-mysql';
-      dbVersion = kbDatabase;
-    } else {
-      const [type] = kbDatabase.split('-');
-      dbType = type;
-      dbVersion = kbDatabase; // Use full kb.io/database value as version
-    }
-  } else {
-    // Fallback: if kb.io/database is not available, try other sources
-    if (labels['clusterdefinition.kubeblocks.io/name']) {
-      dbType = labels['clusterdefinition.kubeblocks.io/name'];
-      dbVersion = labels['clusterversion.kubeblocks.io/name'] || '';
-    } else {
-      // ComponentVersion approach - infer from componentSpecs or helm chart
-      const helmChart = labels['helm.sh/chart'];
-
-      if (helmChart) {
-        if (helmChart.includes('mongodb')) {
-          dbType = 'mongodb';
-        } else if (helmChart.includes('redis')) {
-          dbType = 'redis';
-        } else if (helmChart.includes('apecloud-mysql')) {
-          dbType = 'apecloud-mysql';
-        } else if (helmChart.includes('mysql')) {
-          dbType = 'mysql';
-        } else if (helmChart.includes('postgresql')) {
-          dbType = 'postgresql';
-        }
-      }
-
-      dbVersion =
-        labels['app.kubernetes.io/version'] ||
-        (db.spec?.componentSpecs?.[0] as any)?.serviceVersion ||
-        '';
-
-      if (!dbType) {
-        dbType = 'postgresql';
-      }
-    }
-  }
-  // compute store amount
-  return {
-    id: db.metadata?.uid || ``,
-    name: db.metadata?.name || 'db name',
-    dbType: dbType as DBType,
-    status:
-      db?.status?.phase && dbStatusMap[db?.status?.phase]
-        ? dbStatusMap[db?.status?.phase]
-        : dbStatusMap.UnKnow,
-    createTime: dayjs(db.metadata?.creationTimestamp)
-      .tz('Asia/Shanghai')
-      .format('YYYY/MM/DD HH:mm'),
-    ...calcTotalResource(db.spec.componentSpecs),
-    replicas: (() => {
-      // Find component by matching with DBComponentNameMap
-      const componentNames = DBComponentNameMap[dbType as DBType] || [];
-      const matchingComponent = db.spec?.componentSpecs.find(
-        (comp) => componentNames.includes(comp.name as any) || comp.name === dbType
-      );
-      return matchingComponent?.replicas || 1;
-    })(),
-    conditions: db?.status?.conditions || [],
-    isDiskSpaceOverflow: false,
-    labels: db.metadata.labels || {},
-    source: getDBSource(db),
-    remark: db.metadata?.annotations?.[DB_REMARK_KEY] || ''
-  };
-};
-
-export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
+export function resolveDbTypeVersion(db: KbPgClusterType): {
+  dbType: string;
+  dbVersion: string;
+} {
   const labels = db?.metadata?.labels || {};
   const kbDatabase = labels['kb.io/database'];
   let dbType = '';
@@ -226,18 +150,22 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
       dbVersion = kbDatabase; // Use full kb.io/database value as version
     }
   } else {
-    // Fallback: if kb.io/database is not available, try other sources
-    // First try clusterdefinition label
+    // Fallback: if kb.io/database is not available, try other sources (DBs restored from backups does not have the label)
     dbType = labels['clusterdefinition.kubeblocks.io/name'] || '';
 
-    // If still no dbType, try to infer from componentSpecs or helm chart
+    // If still no dbType, try to infer from componentSpecs
     if (!dbType) {
-      const componentDefRef = db.spec?.componentSpecs?.[0]?.componentDefRef;
-      const helmChart = labels['helm.sh/chart'];
+      const componentDefRef = db.spec?.componentSpecs?.[0]?.componentDef;
 
       if (componentDefRef) {
         dbType = componentDefRef;
-      } else if (helmChart) {
+      }
+    }
+
+    // Continue trying chart
+    if (!dbType) {
+      const helmChart = labels['helm.sh/chart'];
+      if (helmChart) {
         // Infer from helm chart name
         if (helmChart.includes('mongodb')) {
           dbType = 'mongodb';
@@ -269,6 +197,49 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
       dbType = 'postgresql'; // Default fallback
     }
   }
+
+  return {
+    dbType,
+    dbVersion
+  };
+}
+
+export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
+  const { dbType } = resolveDbTypeVersion(db);
+
+  // compute store amount
+  return {
+    id: db.metadata?.uid || ``,
+    name: db.metadata?.name || 'db name',
+    dbType: dbType as DBType,
+    status:
+      db?.status?.phase && dbStatusMap[db?.status?.phase]
+        ? dbStatusMap[db?.status?.phase]
+        : dbStatusMap.UnKnow,
+    createTime: dayjs(db.metadata?.creationTimestamp)
+      .tz('Asia/Shanghai')
+      .format('YYYY/MM/DD HH:mm'),
+    ...calcTotalResource(db.spec.componentSpecs),
+    replicas: (() => {
+      // Find component by matching with DBComponentNameMap
+      const componentNames = DBComponentNameMap[dbType as DBType] || [];
+      const matchingComponent = db.spec?.componentSpecs.find(
+        (comp) => componentNames.includes(comp.name as any) || comp.name === dbType
+      );
+      return matchingComponent?.replicas || 1;
+    })(),
+    conditions: db?.status?.conditions || [],
+    isDiskSpaceOverflow: false,
+    labels: db.metadata.labels || {},
+    source: getDBSource(db),
+    remark: db.metadata?.annotations?.[DB_REMARK_KEY] || ''
+  };
+};
+
+export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
+  const labels = db?.metadata?.labels || {};
+
+  const { dbType, dbVersion } = resolveDbTypeVersion(db);
 
   const newLabels = { ...labels };
   if (!newLabels['clusterversion.kubeblocks.io/name']) {
