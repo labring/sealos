@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 import { CircleHelp, HardDrive, PencilLine, Plus, Trash2 } from 'lucide-react';
+import { customAlphabet } from 'nanoid';
 
 import { Button } from '@sealos/shadcn-ui/button';
 import { Separator } from '@sealos/shadcn-ui/separator';
@@ -17,39 +18,49 @@ interface NetworkStorageProps {
 }
 
 const DEFAULT_GPU_VOLUME: NonNullable<DevboxEditTypeV2['volumes']>[number] = {
-  id: 'default-gpu-storage',
-  path: '/',
+  path: '/home/devbox/project/model',
   size: 30
 };
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 8);
+const createDefaultGpuVolume = (): NonNullable<DevboxEditTypeV2['volumes']>[number] => ({
+  id: `gpu-model-${nanoid()}`,
+  path: DEFAULT_GPU_VOLUME.path,
+  size: DEFAULT_GPU_VOLUME.size
+});
 
 export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStorageProps) {
   const t = useTranslations();
   const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
 
-  const volumes = watch('volumes') || [];
+  const watchedVolumes = watch('volumes');
+  const volumes = useMemo(() => watchedVolumes ?? [], [watchedVolumes]);
   const hasGpu = !!watch('gpu.type');
 
   const [isNetworkStorageDrawerOpen, setIsNetworkStorageDrawerOpen] = useState(false);
   const [editingStorageIndex, setEditingStorageIndex] = useState<number | null>(null);
   const previousHasGpuRef = useRef<boolean | null>(null);
 
+  const hasDefaultGpuVolume = volumes.some(
+    (item) => item.path?.toLowerCase() === DEFAULT_GPU_VOLUME.path.toLowerCase()
+  );
+
   useEffect(() => {
     const previousHasGpu = previousHasGpuRef.current;
 
     if (previousHasGpu === null) {
-      if (!isEdit && hasGpu && volumes.length === 0) {
-        setValue('volumes', [DEFAULT_GPU_VOLUME]);
+      if (!isEdit && hasGpu && !hasDefaultGpuVolume) {
+        setValue('volumes', [...volumes, createDefaultGpuVolume()]);
       }
       previousHasGpuRef.current = hasGpu;
       return;
     }
 
-    if (!previousHasGpu && hasGpu && volumes.length === 0) {
-      setValue('volumes', [DEFAULT_GPU_VOLUME]);
+    if (!previousHasGpu && hasGpu && !hasDefaultGpuVolume) {
+      setValue('volumes', [...volumes, createDefaultGpuVolume()]);
     }
 
     previousHasGpuRef.current = hasGpu;
-  }, [hasGpu, isEdit, setValue, volumes.length]);
+  }, [hasDefaultGpuVolume, hasGpu, isEdit, setValue, volumes]);
 
   return (
     <div id="storage" className="flex flex-col gap-3">
