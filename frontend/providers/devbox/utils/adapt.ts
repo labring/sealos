@@ -96,6 +96,16 @@ export const adaptDevboxListItemV2 = (
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
+    usedGpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedGpuMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
     lastTerminatedReason: devbox.status
       ? devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
         ? devbox.status.state.waiting

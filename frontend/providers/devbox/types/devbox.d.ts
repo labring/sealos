@@ -120,6 +120,8 @@ export interface DevboxDetailType extends DevboxEditType {
   status: DevboxStatusMapType;
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult;
+  usedGpu?: MonitorDataResult;
+  usedGpuMemory?: MonitorDataResult;
   sshConfig?: {
     sshUser: string;
     sshDomain: string;
@@ -142,6 +144,8 @@ export interface DevboxDetailTypeV2 extends json2DevboxV2Data {
   status: DevboxStatusMapType;
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult;
+  usedGpu?: MonitorDataResult;
+  usedGpuMemory?: MonitorDataResult;
   sshConfig?: {
     sshUser: string;
     sshDomain: string;

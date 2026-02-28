@@ -74,6 +74,34 @@ const AdapterChartData: Record<
       };
     });
     return newDataArray;
+  },
+  gpu: (data: MonitorServiceResult) => {
+    const newDataArray = data.data.result.map((item) => {
+      const name = item.metric.podname || item.metric.pod;
+      const xData = item.values.map((value) => value[0]);
+      const yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
+      return {
+        name,
+        xData,
+        yData
+      };
+    });
+    return newDataArray;
+  },
+  gpu_memory: (data: MonitorServiceResult) => {
+    const newDataArray = data.data.result.map((item) => {
+      const name = item.metric.podname || item.metric.pod;
+      const xData = item.values.map((value) => value[0]);
+      const yData = item.values.map((value) =>
+        (parseFloat(value[1]) / (1024 * 1024 * 1024)).toFixed(2)
+      );
+      return {
+        name,
+        xData,
+        yData
+      };
+    });
+    return newDataArray;
   }
 };
 
