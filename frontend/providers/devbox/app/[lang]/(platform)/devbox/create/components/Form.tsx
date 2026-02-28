@@ -12,7 +12,7 @@ import type { DevboxEditTypeV2 } from '@/types/devbox';
 import Gpu from './Gpu';
 import Cpu from './Cpu';
 import Memory from './Memory';
-import Storage from './Storage';
+import NetworkStorage from './NetworkStorage';
 import Network from './Network';
 import Runtime from './Runtime';
 import PriceBox from './PriceBox';
@@ -39,8 +39,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const showEnvAndConfigmap = env.enableAdvancedEnvAndConfigmap === 'true';
   const showNfs = env.enableAdvancedNfs === 'true';
   const showSharedMemory = env.enableAdvancedSharedMemory === 'true';
-  const showAdvancedConfig = showEnvAndConfigmap || showNfs || showSharedMemory;
-  const showStorage = env.enableAdvancedStorage === 'true';
+  const showAdvancedConfig = showEnvAndConfigmap || showSharedMemory;
 
   const originalVolumesRef = useRef<DevboxEditTypeV2['volumes']>();
 
@@ -106,7 +105,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
           <Gpu countGpuInventory={countGpuInventory} />
           <Cpu />
           <Memory />
-          {showStorage && <Storage />}
+          {showNfs && <NetworkStorage isEdit={isEdit} originalVolumes={originalVolumesRef.current} />}
         </div>
         {/* Network */}
         <div id="network">
@@ -116,11 +115,8 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         {/* Advanced Configurations */}
         {showAdvancedConfig && (
           <AdvancedConfig
-            isEdit={isEdit}
             showEnvAndConfigmap={showEnvAndConfigmap}
-            showNfs={showNfs}
             showSharedMemory={showSharedMemory}
-            originalVolumes={originalVolumesRef.current}
           />
         )}
       </div>

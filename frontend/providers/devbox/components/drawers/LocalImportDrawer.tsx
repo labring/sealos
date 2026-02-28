@@ -23,7 +23,9 @@ import { getTemplate } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import RuntimeSelector from '@/components/RuntimeSelector';
 import { useGlobalStore } from '@/stores/global';
+import { useEnvStore } from '@/stores/env';
 import { convertZipToTar } from '@/utils/archiveConverter';
+import { normalizeStorageDefaultGi } from '@/utils/storage';
 
 interface LocalImportDrawerProps {
   open: boolean;
@@ -36,6 +38,7 @@ const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps) => {
   const t = useTranslations();
   const { getErrorMessage } = useErrorMessage();
+  const { env } = useEnvStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { setIsImporting } = useGlobalStore();
 
@@ -230,6 +233,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       setImportLogs('Creating devbox...');
 
       const devboxName = generateDevboxName();
+      const defaultStorageGi = normalizeStorageDefaultGi(env.storageDefault);
 
       const templateData = await getTemplate(formData.templateUid);
 
@@ -241,7 +245,7 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
         image: templateData.template.image,
         cpu: 4000,
         memory: 8192,
-        storage: 1024 * 10, // 10Gi
+        storage: defaultStorageGi,
         networks: [
           {
             port: formData.containerPort,

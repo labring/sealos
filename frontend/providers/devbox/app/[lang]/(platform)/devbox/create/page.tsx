@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from '@/i18n';
 import type { YamlItemType } from '@/types';
 import { patchYamlList } from '@/utils/tools';
+import { normalizeStorageDefaultGi } from '@/utils/storage';
 import { useConfirm } from '@/hooks/useConfirm';
 import { generateYamlList } from '@/utils/json2Yaml';
 import { createDevbox, updateDevbox } from '@/api/devbox';
@@ -59,8 +60,15 @@ const DevboxCreatePage = () => {
   const [captureFrom, setCaptureFrom] = useState('');
   const [captureScrollTo, setCaptureScrollTo] = useState('');
   const [captureDevboxName, setCaptureDevboxName] = useState('');
+  const normalizedStorageDefault = normalizeStorageDefaultGi(
+    env.storageDefault,
+    defaultDevboxEditValueV2.storage
+  );
   const formHook = useForm<DevboxEditTypeV2>({
-    defaultValues: defaultDevboxEditValueV2
+    defaultValues: {
+      ...defaultDevboxEditValueV2,
+      storage: normalizedStorageDefault
+    }
   });
 
   useEffect(() => {
@@ -93,6 +101,20 @@ const DevboxCreatePage = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);
+
+  useEffect(() => {
+    if (isEdit) return;
+
+    const currentStorage = formHook.getValues('storage');
+
+    if (currentStorage !== normalizedStorageDefault) {
+      formHook.setValue('storage', normalizedStorageDefault, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false
+      });
+    }
+  }, [formHook, isEdit, normalizedStorageDefault]);
 
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(isEdit);
 

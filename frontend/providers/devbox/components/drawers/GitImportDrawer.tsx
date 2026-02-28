@@ -28,7 +28,9 @@ import {
 import { getTemplate } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
 import { generateGitImportCommand } from '@/utils/importCommandGenerator';
+import { normalizeStorageDefaultGi } from '@/utils/storage';
 import RuntimeSelector from '@/components/RuntimeSelector';
+import { useEnvStore } from '@/stores/env';
 
 interface GitImportDrawerProps {
   open: boolean;
@@ -39,6 +41,7 @@ interface GitImportDrawerProps {
 const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => {
   const t = useTranslations();
   const { getErrorMessage } = useErrorMessage();
+  const { env } = useEnvStore();
 
   const controllerRef = useRef<AbortController | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -165,6 +168,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
       setImportLogs('Creating devbox...');
 
       const devboxName = generateDevboxName();
+      const defaultStorageGi = normalizeStorageDefaultGi(env.storageDefault);
 
       const templateData = await getTemplate(formData.templateUid);
 
@@ -176,7 +180,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
         image: templateData.template.image,
         cpu: 4000,
         memory: 8192,
-        storage: 1024 * 10, // 10Gi
+        storage: defaultStorageGi,
         networks: [
           {
             port: formData.containerPort,
