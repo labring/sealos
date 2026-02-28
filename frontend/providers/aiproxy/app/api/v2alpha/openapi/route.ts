@@ -1,5 +1,17 @@
 import { NextResponse } from 'next/server'
 
+import {
+  createError400Schema,
+  createError401Schema,
+  createError404Schema,
+  createError409Schema,
+  createError500Schema,
+  createErrorExample,
+  ErrorCode,
+  ErrorType,
+} from '@/lib/v2alpha/error'
+import { zodToJsonSchema } from 'zod-to-json-schema'
+
 export const dynamic = 'force-dynamic'
 
 /**
@@ -119,19 +131,24 @@ Create a new API token for accessing AI services.
               description: 'Bad request - validation failed',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
-                  },
+                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
                   examples: {
+                    invalid_json: {
+                      summary: 'Invalid JSON body',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Request body must be valid JSON.'
+                      ),
+                    },
                     validation_error: {
-                      summary: 'Validation error',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Token name is required.',
-                        },
-                      },
+                      summary: 'Validation error (name required/format)',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid request body.',
+                        [{ field: 'name', message: 'Token name is required' }]
+                      ),
                     },
                   },
                 },
@@ -141,20 +158,34 @@ Create a new API token for accessing AI services.
               description: 'Unauthorized - invalid or missing authentication',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
-                  },
+                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
                   examples: {
                     unauthorized: {
                       summary: 'Authentication failed',
-                      value: {
-                        error: {
-                          type: 'authentication_error',
-                          code: 'AUTHENTICATION_REQUIRED',
-                          message: 'Unauthorized, please login again.',
-                          details: 'Auth: Token is missing',
-                        },
-                      },
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Unauthorized, please login again.',
+                        'Auth: Token is missing'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '409': {
+              description: 'Conflict - token with this name already exists',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError409Schema(), { target: 'openApi3' }),
+                  examples: {
+                    already_exists: {
+                      summary: 'Token already exists',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.ALREADY_EXISTS,
+                        'A token with this name already exists.'
+                      ),
                     },
                   },
                 },
@@ -164,19 +195,16 @@ Create a new API token for accessing AI services.
               description: 'Internal server error',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
-                  },
+                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
                   examples: {
                     server_error: {
                       summary: 'Server error',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to create token.',
-                        },
-                      },
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to create token.',
+                        'Backend service URL is not configured'
+                      ),
                     },
                   },
                 },
@@ -230,20 +258,16 @@ Delete a specific token by its name.
               description: 'Bad request - invalid token name',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
-                  },
+                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
                   examples: {
                     validation_error: {
                       summary: 'Invalid token name',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid token name.',
-                          details: [{ field: 'name', message: 'Token name is required' }],
-                        },
-                      },
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid token name.',
+                        [{ field: 'name', message: 'Token name is required' }]
+                      ),
                     },
                   },
                 },
@@ -253,8 +277,17 @@ Delete a specific token by its name.
               description: 'Unauthorized - invalid or missing authentication',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
+                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
+                  examples: {
+                    unauthorized: {
+                      summary: 'Authentication failed',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Unauthorized, please login again.',
+                        'Auth: Token is missing'
+                      ),
+                    },
                   },
                 },
               },
@@ -263,19 +296,15 @@ Delete a specific token by its name.
               description: 'Token not found',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
-                  },
+                  schema: zodToJsonSchema(createError404Schema(), { target: 'openApi3' }),
                   examples: {
                     not_found: {
                       summary: 'Token does not exist',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'The specified token does not exist.',
-                        },
-                      },
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'The specified token does not exist.'
+                      ),
                     },
                   },
                 },
@@ -285,8 +314,17 @@ Delete a specific token by its name.
               description: 'Internal server error',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
+                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
+                  examples: {
+                    server_error: {
+                      summary: 'Server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to delete token.',
+                        'HTTP error! status: 502'
+                      ),
+                    },
                   },
                 },
               },
@@ -400,8 +438,17 @@ Search and retrieve tokens.
               description: 'Bad request - invalid query parameters',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
+                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
+                  examples: {
+                    validation_error: {
+                      summary: 'Invalid query parameters (page, perPage)',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid query parameters.',
+                        [{ field: 'page', message: 'Page must be at least 1' }]
+                      ),
+                    },
                   },
                 },
               },
@@ -410,8 +457,17 @@ Search and retrieve tokens.
               description: 'Unauthorized - invalid or missing authentication',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
+                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
+                  examples: {
+                    unauthorized: {
+                      summary: 'Authentication failed',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Unauthorized, please login again.',
+                        'Auth: Token is missing'
+                      ),
+                    },
                   },
                 },
               },
@@ -420,19 +476,15 @@ Search and retrieve tokens.
               description: 'Token not found (when searching by name)',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
-                  },
+                  schema: zodToJsonSchema(createError404Schema(), { target: 'openApi3' }),
                   examples: {
                     not_found: {
                       summary: 'Token not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'The specified token does not exist.',
-                        },
-                      },
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'The specified token does not exist.'
+                      ),
                     },
                   },
                 },
@@ -442,8 +494,17 @@ Search and retrieve tokens.
               description: 'Internal server error',
               content: {
                 'application/json': {
-                  schema: {
-                    $ref: '#/components/schemas/ErrorResponse',
+                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
+                  examples: {
+                    server_error: {
+                      summary: 'Server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to search tokens.',
+                        'Backend auth key is not configured'
+                      ),
+                    },
                   },
                 },
               },
@@ -580,61 +641,6 @@ Search and retrieve tokens.
             },
           },
           required: ['tokens', 'total'],
-        },
-        ErrorResponse: {
-          type: 'object',
-          description: 'Standardized v2alpha error response',
-          required: ['error'],
-          properties: {
-            error: {
-              type: 'object',
-              required: ['type', 'code', 'message'],
-              properties: {
-                type: {
-                  type: 'string',
-                  description: 'High-level error category',
-                  enum: [
-                    'validation_error',
-                    'authentication_error',
-                    'authorization_error',
-                    'resource_error',
-                    'operation_error',
-                    'client_error',
-                    'internal_error',
-                  ],
-                  example: 'validation_error',
-                },
-                code: {
-                  type: 'string',
-                  description: 'Specific error code for programmatic handling and i18n',
-                  example: 'INVALID_PARAMETER',
-                },
-                message: {
-                  type: 'string',
-                  description: 'Human-readable error message',
-                  example: 'Token name is required.',
-                },
-                details: {
-                  description:
-                    'Extra context. For INVALID_PARAMETER: Array<{ field, message }>. For other codes: raw error string.',
-                  oneOf: [
-                    {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        required: ['field', 'message'],
-                        properties: {
-                          field: { type: 'string', example: 'name' },
-                          message: { type: 'string', example: 'Token name is required' },
-                        },
-                      },
-                    },
-                    { type: 'string' },
-                  ],
-                },
-              },
-            },
-          },
         },
       },
     },

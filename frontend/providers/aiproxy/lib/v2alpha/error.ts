@@ -17,45 +17,65 @@ import type { ErrorCodeType, ErrorTypeValue } from '@sealos/shared/server/v2alph
 // OpenAPI schemas — local, built with this provider's zod (v3)
 // ============================================================================
 
-export const Error400Schema = z.object({
-  error: z.object({
-    type: z.enum([ErrorType.VALIDATION_ERROR, ErrorType.CLIENT_ERROR]),
-    code: z.enum([
-      ErrorCode.INVALID_PARAMETER,
-      ErrorCode.INVALID_VALUE,
-      ErrorCode.METHOD_NOT_ALLOWED,
-    ]),
-    message: z.string(),
-    details: z
-      .union([z.array(z.object({ field: z.string(), message: z.string() })), z.string()])
-      .optional(),
-  }),
-})
+/** 400 — aiproxy 只触发 INVALID_PARAMETER */
+export function createError400Schema() {
+  return z.object({
+    error: z.object({
+      type: z.literal(ErrorType.VALIDATION_ERROR),
+      code: z.literal(ErrorCode.INVALID_PARAMETER),
+      message: z.string(),
+      details: z
+        .union([z.array(z.object({ field: z.string(), message: z.string() })), z.string()])
+        .optional(),
+    }),
+  })
+}
 
-export const Error401Schema = z.object({
-  error: z.object({
-    type: z.literal(ErrorType.AUTHENTICATION_ERROR),
-    code: z.literal(ErrorCode.AUTHENTICATION_REQUIRED),
-    message: z.string(),
-  }),
-})
+/** 401 */
+export function createError401Schema() {
+  return z.object({
+    error: z.object({
+      type: z.literal(ErrorType.AUTHENTICATION_ERROR),
+      code: z.literal(ErrorCode.AUTHENTICATION_REQUIRED),
+      message: z.string(),
+      details: z.string().optional(),
+    }),
+  })
+}
 
-export const Error404Schema = z.object({
-  error: z.object({
-    type: z.literal(ErrorType.RESOURCE_ERROR),
-    code: z.literal(ErrorCode.NOT_FOUND),
-    message: z.string(),
-  }),
-})
+/** 404 */
+export function createError404Schema() {
+  return z.object({
+    error: z.object({
+      type: z.literal(ErrorType.RESOURCE_ERROR),
+      code: z.literal(ErrorCode.NOT_FOUND),
+      message: z.string(),
+    }),
+  })
+}
 
-export const Error500Schema = z.object({
-  error: z.object({
-    type: z.enum([ErrorType.OPERATION_ERROR, ErrorType.INTERNAL_ERROR]),
-    code: z.enum([ErrorCode.OPERATION_FAILED, ErrorCode.INTERNAL_ERROR]),
-    message: z.string(),
-    details: z.string().optional(),
-  }),
-})
+/** 409 — aiproxy 只触发 ALREADY_EXISTS */
+export function createError409Schema() {
+  return z.object({
+    error: z.object({
+      type: z.literal(ErrorType.RESOURCE_ERROR),
+      code: z.literal(ErrorCode.ALREADY_EXISTS),
+      message: z.string(),
+    }),
+  })
+}
+
+/** 500 — aiproxy 只触发 INTERNAL_ERROR */
+export function createError500Schema() {
+  return z.object({
+    error: z.object({
+      type: z.literal(ErrorType.INTERNAL_ERROR),
+      code: z.literal(ErrorCode.INTERNAL_ERROR),
+      message: z.string(),
+      details: z.string().optional(),
+    }),
+  })
+}
 
 // ============================================================================
 // App Router helpers — return NextResponse (not void)
@@ -81,6 +101,24 @@ export function sendError(config: {
 }): NextResponse {
   return NextResponse.json(buildErrorBody(config), { status: config.status })
 }
+
+function createErrorExample(
+  type: ErrorTypeValue,
+  code: ErrorCodeType,
+  message: string,
+  details?: unknown
+) {
+  return {
+    error: {
+      type,
+      code,
+      message,
+      ...(details !== undefined && { details }),
+    },
+  }
+}
+
+export { createErrorExample }
 
 /**
  * Returns a validation error NextResponse (App Router).

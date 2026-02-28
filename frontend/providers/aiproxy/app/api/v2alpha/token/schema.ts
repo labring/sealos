@@ -1,13 +1,13 @@
 import { z } from 'zod'
 
 /**
- * Token name parameter schema
+ * Request body schema for POST /token
  */
-export const tokenNameParamSchema = z.object({
+export const createTokenBodySchema = z.object({
   name: z
     .string()
     .min(1, 'Token name is required')
     .max(100, 'Token name must not exceed 100 characters'),
 })
 
-export type TokenNameParam = z.infer<typeof tokenNameParamSchema>
+export type CreateTokenBody = z.infer<typeof createTokenBodySchema>

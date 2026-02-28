@@ -15,20 +15,28 @@ type TokenSearchResponse = {
 }
 
 async function findTokenByName(name: string, group: string): Promise<TokenInfo | null> {
-  try {
-    const url = new URL(
-      `/api/token/${group}/search`,
-      global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
-    )
-    url.searchParams.append('name', name)
+  const baseUrl = global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
+  if (!baseUrl) {
+    throw new Error('Backend service URL is not configured')
+  }
 
-    const token = global.AppConfig?.auth.aiProxyBackendKey
+  const authKey = global.AppConfig?.auth.aiProxyBackendKey
+  if (!authKey) {
+    throw new Error('Backend auth key is not configured')
+  }
+
+  try {
+    const url = new URL(`/api/token/${group}/search`, baseUrl)
+    url.searchParams.append('name', name)
+    // Use a large per_page to ensure all tokens matching the (potentially fuzzy)
+    // name query are returned so that client-side exact filtering can find the target.
+    url.searchParams.append('per_page', '100')
 
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`,
+        Authorization: authKey,
       },
       cache: 'no-store',
     })
@@ -49,11 +57,7 @@ async function findTokenByName(name: string, group: string): Promise<TokenInfo |
 
     const foundToken = result.data?.tokens?.find((tokenInfo) => tokenInfo.name === name)
 
-    if (!foundToken) {
-      return null
-    }
-
-    return foundToken
+    return foundToken ?? null
   } catch (error) {
     console.error('Error searching token:', error)
     throw error
@@ -61,6 +65,16 @@ async function findTokenByName(name: string, group: string): Promise<TokenInfo |
 }
 
 async function deleteTokenInBackend(name: string, group: string): Promise<void> {
+  const baseUrl = global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
+  if (!baseUrl) {
+    throw new Error('Backend service URL is not configured')
+  }
+
+  const authKey = global.AppConfig?.auth.aiProxyBackendKey
+  if (!authKey) {
+    throw new Error('Backend auth key is not configured')
+  }
+
   try {
     const tokenInfo = await findTokenByName(name, group)
 
@@ -68,17 +82,13 @@ async function deleteTokenInBackend(name: string, group: string): Promise<void> 
       throw new Error('Token not found')
     }
 
-    const url = new URL(
-      `/api/token/${group}/${tokenInfo.id}`,
-      global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
-    )
-    const token = global.AppConfig?.auth.aiProxyBackendKey
+    const url = new URL(`/api/token/${group}/${tokenInfo.id}`, baseUrl)
 
     const response = await fetch(url.toString(), {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`,
+        Authorization: authKey,
       },
       cache: 'no-store',
     })

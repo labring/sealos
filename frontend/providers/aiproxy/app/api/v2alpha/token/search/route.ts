@@ -13,26 +13,37 @@ type TokenSearchResponse = {
 }
 export const dynamic = 'force-dynamic'
 
-async function searchTokensInBackend(group: string, name?: string): Promise<TokenSearchResponse> {
+async function searchTokensInBackend(
+  group: string,
+  name?: string,
+  page: number = 1,
+  perPage: number = 10
+): Promise<TokenSearchResponse> {
+  const baseUrl = global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
+  if (!baseUrl) {
+    throw new Error('Backend service URL is not configured')
+  }
+
+  const authKey = global.AppConfig?.auth.aiProxyBackendKey
+  if (!authKey) {
+    throw new Error('Backend auth key is not configured')
+  }
+
   try {
-    const url = new URL(
-      `/api/token/${group}/search`,
-      global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
-    )
+    const url = new URL(`/api/token/${group}/search`, baseUrl)
 
     if (name) {
       url.searchParams.append('name', name)
     } else {
-      url.searchParams.append('p', '1')
-      url.searchParams.append('per_page', '10')
+      url.searchParams.append('p', String(page))
+      url.searchParams.append('per_page', String(perPage))
     }
-    const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `${token}`,
+        Authorization: authKey,
       },
       cache: 'no-store',
     })
@@ -71,6 +82,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const searchParams = request.nextUrl.searchParams
     const queryParams = {
       name: searchParams.get('name') || undefined,
+      page: searchParams.get('page') ?? undefined,
+      perPage: searchParams.get('perPage') ?? undefined,
     }
 
     const validationResult = tokenSearchQuerySchema.safeParse(queryParams)
@@ -79,12 +92,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return sendValidationError(validationResult.error, 'Invalid query parameters.')
     }
 
-    const { name } = validationResult.data
+    const { name, page, perPage } = validationResult.data
 
     try {
-      const result = await searchTokensInBackend(group, name)
+      const result = await searchTokensInBackend(group, name, page, perPage)
 
-      return NextResponse.json(result.tokens, { status: 200 })
+      return NextResponse.json(result, { status: 200 })
     } catch (error) {
       if (error instanceof Error && error.message === 'Token not found') {
         return sendError({
