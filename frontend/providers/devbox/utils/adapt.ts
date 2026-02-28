@@ -28,7 +28,9 @@ import {
   memoryFormatToMi,
   storageFormatToNum
 } from '@/utils/tools';
+import { normalizeStorageDefaultGi } from '@/utils/storage';
 import { devboxRemarkKey, gpuTypeAnnotationKey } from '../constants/devbox';
+const DEFAULT_STORAGE_GI = normalizeStorageDefaultGi(process.env.STORAGE_DEFAULT);
 
 const getGpuResourceInfo = (
   resource: Record<string, any> | undefined,
@@ -203,7 +205,9 @@ export const adaptDevboxDetailV2 = (
     createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
-    storage: storageFormatToNum(devbox.spec.resource['ephemeral-storage'] || '20Gi'),
+    storage: storageFormatToNum(
+      devbox.spec.resource['ephemeral-storage'] || `${DEFAULT_STORAGE_GI}Gi`
+    ),
     gpu: (() => {
       const gpuType = devbox.spec.config.annotations?.[gpuTypeAnnotationKey];
       const { amount: gpuAmount, resource: gpuResource } = getGpuResourceInfo(

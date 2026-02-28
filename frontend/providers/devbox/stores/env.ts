@@ -3,6 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 import { getAppEnv } from '@/api/platform';
+import { STORAGE_DEFAULT_FALLBACK_GI } from '@/utils/storage';
 import { Env } from '@/types/static';
 
 export const defaultEnv: Env = {
@@ -26,9 +27,7 @@ export const defaultEnv: Env = {
   enableAdvancedSharedMemory: 'false',
   cpuSlideMarkList: '1,2,4,8,16',
   memorySlideMarkList: '2,4,8,16,32',
-  enableAdvancedStorage: 'false',
-  storageDefault: 20,
-  storageSlideMarkList: '10,20,30,40,50',
+  storageDefault: STORAGE_DEFAULT_FALLBACK_GI,
   nfsStorageClassName: 'nfs-csi',
   webIdePort: 9999
 };

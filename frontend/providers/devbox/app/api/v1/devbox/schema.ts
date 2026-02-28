@@ -1,7 +1,9 @@
 import 'zod-openapi/extend';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
+import { normalizeStorageDefaultGi } from '@/utils/storage';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+const DEFAULT_STORAGE_GI = normalizeStorageDefaultGi(process.env.STORAGE_DEFAULT);
 
 const CpuOptions = z
   .union([
@@ -101,7 +103,7 @@ const ResourceConfig = z.object({
   memory: MemoryOptions.openapi({
     description: 'Memory allocation in GB'
   }),
-  storage: z.number().min(1).default(20).openapi({
+  storage: z.number().min(1).default(DEFAULT_STORAGE_GI).openapi({
     description: 'Storage in Gi, e.g. 10, 20, 30'
   })
 });

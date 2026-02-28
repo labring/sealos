@@ -39,9 +39,7 @@ export interface Env {
   enableAdvancedSharedMemory: string;
   cpuSlideMarkList: string;
   memorySlideMarkList: string;
-  enableAdvancedStorage: string;
   storageDefault: number;
-  storageSlideMarkList: string;
   nfsStorageClassName: string;
   webIdePort: number;
 }

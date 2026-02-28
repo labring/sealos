@@ -5,6 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { defaultEnv } from '@/stores/env';
 import type { Env } from '@/types/static';
+import { normalizeStorageDefaultGi } from '@/utils/storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,11 +52,10 @@ export async function GET(req: NextRequest) {
             : process.env.ENABLE_ADVANCED_SHARED_MEMORY || defaultEnv.enableAdvancedSharedMemory,
         cpuSlideMarkList: process.env.CPU_SLIDE_MARK_LIST || defaultEnv.cpuSlideMarkList,
         memorySlideMarkList: process.env.MEMORY_SLIDE_MARK_LIST || defaultEnv.memorySlideMarkList,
-        enableAdvancedStorage:
-          process.env.ENABLE_ADVANCED_STORAGE || defaultEnv.enableAdvancedStorage,
-        storageDefault: Number(process.env.STORAGE_DEFAULT) || defaultEnv.storageDefault,
-        storageSlideMarkList:
-          process.env.STORAGE_SLIDE_MARK_LIST || defaultEnv.storageSlideMarkList,
+        storageDefault: normalizeStorageDefaultGi(
+          process.env.STORAGE_DEFAULT,
+          defaultEnv.storageDefault
+        ),
         nfsStorageClassName: process.env.NFS_STORAGE_CLASS_NAME || defaultEnv.nfsStorageClassName,
         webIdePort: Number(process.env.WEBIDE_PORT) || defaultEnv.webIdePort
       }
