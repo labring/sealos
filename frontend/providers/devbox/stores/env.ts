@@ -29,6 +29,7 @@ export const defaultEnv: Env = {
   memorySlideMarkList: '2,4,8,16,32',
   storageDefault: STORAGE_DEFAULT_FALLBACK_GI,
   nfsStorageClassName: 'nfs-csi',
+  nfsMaxSize: 20,
   webIdePort: 9999
 };
 

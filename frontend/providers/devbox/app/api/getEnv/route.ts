@@ -11,6 +11,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const parsedNfsMaxSize = Number(process.env.NFS_MAX_SIZE);
+    const nfsMaxSize =
+      Number.isFinite(parsedNfsMaxSize) && parsedNfsMaxSize >= 1
+        ? Math.floor(parsedNfsMaxSize)
+        : defaultEnv.nfsMaxSize;
+
     const headerList = req.headers;
 
     const { namespace } = await getK8s({
@@ -57,6 +63,7 @@ export async function GET(req: NextRequest) {
           defaultEnv.storageDefault
         ),
         nfsStorageClassName: process.env.NFS_STORAGE_CLASS_NAME || defaultEnv.nfsStorageClassName,
+        nfsMaxSize,
         webIdePort: Number(process.env.WEBIDE_PORT) || defaultEnv.webIdePort
       }
     });

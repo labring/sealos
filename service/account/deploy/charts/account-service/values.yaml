@@ -78,3 +78,13 @@ paymentSecretName: payment-secret
 
 # ConfigMap for region info
 regionInfoConfigMapName: region-info
+
+# Ingress configuration
+ingress:
+  enabled: true
+  hostname: "" # Default: account-api.{cloudDomain}
+  certSecretName: "wildcard-cert" # TLS certificate secret name
+
+# Cloud configuration
+cloudDomain: "cloud.sealos.io"
+cloudPort: ""
