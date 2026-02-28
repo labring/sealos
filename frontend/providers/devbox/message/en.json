@@ -14,6 +14,7 @@
   "Gpu under inventory Tip": "{gputype} is out of stock. Please select a different type or reduce the quantity",
   "Input your custom domain": "Enter your custom domain",
   "Inventory": "Stock",
+  "gpu_node": "Node",
   "Network Settings": "Network Settings",
   "No GPU": "No GPU",
   "No changes detected": "No change detected",

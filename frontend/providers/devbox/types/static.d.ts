@@ -15,6 +15,7 @@ export interface SourcePrice {
       en?: string;
     };
     resource?: Record<string, string>;
+    nodes?: string[];
   }[];
 }
 
