@@ -14,6 +14,7 @@
   "Gpu under inventory Tip": "{gputype} 库存不足，请更换型号或减少数量",
   "Input your custom domain": "输入您的自定义域名",
   "Inventory": "库存",
+  "gpu_node": "节点",
   "Network Settings": "网络配置",
   "No GPU": "不使用GPU",
   "No changes detected": "并没有变更任何项",

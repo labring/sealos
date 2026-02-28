@@ -54,6 +54,17 @@ type GpuNodeType = {
   'gpu.icon'?: string;
   'gpu.name'?: GpuAliasName;
   'gpu.resource'?: Record<string, string>;
+  'gpu.nodes'?: string[];
+};
+
+type GpuConfigMapItem = {
+  'gpu.count': string;
+  'gpu.available': string;
+  'gpu.used': string;
+  'gpu.memory': string;
+  'gpu.product': string;
+  'gpu.devbox': string;
+  'gpu.ref'?: string;
 };
 
 const PRICE_SCALE = 1000000;
@@ -151,26 +162,15 @@ async function getGpuNode() {
       ? (JSON.parse(aliasBackupRaw) as Record<string, string>)
       : undefined;
 
-    const parseGpuMap = JSON.parse(gpuMap) as Record<
-      string,
-      {
-        'gpu.count': string;
-        'gpu.available': string;
-        'gpu.used': string;
-        'gpu.memory': string;
-        'gpu.product': string;
-        'gpu.devbox': string;
-        'gpu.ref'?: string;
-      }
-    >;
-    const gpuValues = Object.values(parseGpuMap).filter(
-      (item) => item['gpu.product'] && item['gpu.devbox'] === 'true'
+    const parseGpuMap = JSON.parse(gpuMap) as Record<string, GpuConfigMapItem>;
+    const gpuEntries = Object.entries(parseGpuMap).filter(
+      ([, item]) => item['gpu.product'] && item['gpu.devbox'] === 'true'
     );
 
     const gpuList: GpuNodeType[] = [];
 
     // merge same type gpu
-    gpuValues.forEach((item) => {
+    gpuEntries.forEach(([nodeName, item]) => {
       const fallbackRef =
         item['gpu.product'] && aliasBackup
           ? aliasBackup[item['gpu.product']] ||
@@ -185,6 +185,9 @@ async function getGpuNode() {
         gpuList[index]['gpu.count'] += Number(item['gpu.count']);
         gpuList[index]['gpu.available'] += Number(item['gpu.available']);
         gpuList[index]['gpu.used'] += Number(item['gpu.used']);
+        if (!gpuList[index]['gpu.nodes']?.includes(nodeName)) {
+          gpuList[index]['gpu.nodes'] = [...(gpuList[index]['gpu.nodes'] || []), nodeName];
+        }
       } else {
         gpuList.push({
           ['gpu.count']: +item['gpu.count'],
@@ -196,7 +199,8 @@ async function getGpuNode() {
           ['gpu.annotationType']: annotationType, // transform to yaml annotation type
           ['gpu.icon']: aliasItem?.icon,
           ['gpu.name']: aliasItem?.name,
-          ['gpu.resource']: aliasItem?.resource
+          ['gpu.resource']: aliasItem?.resource,
+          ['gpu.nodes']: [nodeName]
         });
       }
     });
@@ -233,7 +237,8 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
       vm: +gpuNode['gpu.memory'] / 1024,
       icon: gpuNode['gpu.icon'],
       name: gpuNode['gpu.name'],
-      resource: gpuNode['gpu.resource']
+      resource: gpuNode['gpu.resource'],
+      nodes: gpuNode['gpu.nodes']
     });
   });
 

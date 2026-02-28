@@ -41,13 +41,16 @@ export default function Gpu({
     const localizedName = locale.includes('zh') ? name?.zh : name?.en;
     return localizedName || gpu.annotationType || '';
   };
+  const getGpuNodeDisplayName = (gpu?: GpuPriceItem) => {
+    if (!gpu?.nodes?.length) return '-';
+    return gpu.nodes.join(', ');
+  };
 
   const selectedGpu = useMemo(() => {
     const selected = sourcePrice?.gpu?.find((item) => item.annotationType === selectedGpuType);
     if (!selected) return undefined;
     return selected;
   }, [sourcePrice?.gpu, selectedGpuType]);
-
   const handleGpuIconError = (event: SyntheticEvent<HTMLImageElement>) => {
     const target = event.currentTarget;
     if (!target.src.endsWith(defaultGpuIcon)) {
@@ -98,6 +101,10 @@ export default function Gpu({
                       {getGpuDisplayName(selectedGpu)}
                     </span>
                   </div>
+                  <span className="max-w-[120px] truncate text-sm text-zinc-900">
+                    {t('gpu_node')} {getGpuNodeDisplayName(selectedGpu)}
+                  </span>
+                  <div className="h-[15px] w-px bg-zinc-200" />
                   <span className="text-sm text-zinc-900">
                     {t('video_memory')}: {Math.round(selectedGpu.vm)}GB
                   </span>
@@ -137,6 +144,10 @@ export default function Gpu({
                         {getGpuDisplayName(item)}
                       </span>
                     </div>
+                    <span className="max-w-[120px] truncate text-sm text-zinc-900">
+                      {t('gpu_node')} {getGpuNodeDisplayName(item)}
+                    </span>
+                    <div className="h-[15px] w-px bg-zinc-200" />
                     <span className="text-sm text-zinc-900">
                       {t('video_memory')}: {Math.round(item.vm)}GB
                     </span>

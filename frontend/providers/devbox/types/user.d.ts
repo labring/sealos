@@ -38,6 +38,7 @@ export type userPriceType = {
       en?: string;
     };
     resource?: Record<string, string>;
+    nodes?: string[];
   }[];
 };
 
