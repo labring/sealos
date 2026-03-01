@@ -319,6 +319,24 @@ fi
 HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 ```
 
+## Example Dir Structure
+
+```text
+/root/.sealos/cloud/values/core/
+								desktop-values.yaml
+								costcenter-values.yaml
+								license-values.yaml
+								account-controller-values.yaml
+								app-controller-values.yaml
+								heartbeat-values.yaml
+								initjob-values.yaml
+								license-controller-values.yaml
+								resources-controller-values.yaml
+								user-controller-values.yaml
+```
+
+Only the front end uses <name>-values.yaml, and the variable configurations of other modules can be placed in the same directory for easy management and maintenance.
+
 ## Result
 
 When users run `sealos run sealos:v5.2.0`, Sealos automatically reads `/root/.sealos/cloud/values/core/desktop-values.yaml`.

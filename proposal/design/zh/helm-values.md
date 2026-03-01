@@ -318,6 +318,25 @@ fi
 HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 ```
 
+## 目录示例
+
+```text
+/root/.sealos/cloud/values/core/
+								desktop-values.yaml
+								costcenter-values.yaml
+								license-values.yaml
+								account-controller-values.yaml
+								app-controller-values.yaml
+								heartbeat-values.yaml
+								initjob-values.yaml
+								license-controller-values.yaml
+								resources-controller-values.yaml
+								user-controller-values.yaml
+```
+
+只有前端使用 <name>-values.yaml, 其他模块的可变配置可以放在同一目录下，便于管理和维护。
+
+
 ## 结论
 
 用户执行 `sealos run sealos:v5.2.0` 时，Sealos 会自动读取 `/root/.sealos/cloud/values/core/desktop-values.yaml`。  
