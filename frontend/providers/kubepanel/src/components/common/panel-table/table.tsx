@@ -4,7 +4,7 @@ import { useWatcher } from '@/hooks/useWatcher';
 import { KubeObject } from '@/k8slens/kube-object';
 import { KubeStoreAction } from '@/types/state';
 import { Table, TableProps } from 'antd';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PanelPagination } from './pagination';
 import { useSearchNameFilterProps } from './search-filter';
 
@@ -40,7 +40,7 @@ export const PanelTable = <RecordType extends DefaultRecordType, Item extends Ku
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const PAGE_SIZE = 15;
 
   const cxtHolder = useWatcher({ initializers });
   const searchNameFilterProps = useSearchNameFilterProps<RecordType>((_, record) =>
@@ -48,28 +48,39 @@ export const PanelTable = <RecordType extends DefaultRecordType, Item extends Ku
   );
 
   const dataSource = useMemo(() => tableProps.dataSource || [], [tableProps.dataSource]);
-  const total = dataSource.length;
 
-  // Calculate current page data
+  // Apply filter based on searchText
+  const filteredData = useMemo(() => {
+    return dataSource.filter(searchNameFilterProps.filterFn);
+  }, [dataSource, searchNameFilterProps.filterFn]);
+
+  const total = filteredData.length;
+
+  // Reset to page 1 when search text changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchNameFilterProps.searchText]);
+
+  // Calculate current page data after filtering
   const currentData = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    const end = start + pageSize;
-    return dataSource.slice(start, end);
-  }, [dataSource, currentPage, pageSize]);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    return filteredData.slice(start, end);
+  }, [filteredData, currentPage]);
 
-  const modifiedCols = useMemo(
-    () => [
+  const modifiedCols = useMemo(() => {
+    const { searchText, filterFn, ...filterProps } = searchNameFilterProps;
+    return [
       {
         title: 'Name',
         key: 'name',
         className: 'min-w-[150px]',
         ellipsis: true,
-        ...searchNameFilterProps
+        ...filterProps
       },
       ...columns
-    ],
-    [columns, searchNameFilterProps]
-  );
+    ];
+  }, [columns, searchNameFilterProps]);
 
   return (
     <Section>
@@ -96,7 +107,7 @@ export const PanelTable = <RecordType extends DefaultRecordType, Item extends Ku
         <PanelPagination
           total={total}
           current={currentPage}
-          pageSize={pageSize}
+          pageSize={PAGE_SIZE}
           onChange={(page) => setCurrentPage(page)}
         />
       )}

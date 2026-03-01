@@ -5,11 +5,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface SearchFilterPanelProps {
   onSearched: (value: string) => void;
-  onReset: () => void;
   visible: boolean;
 }
 
-function SearchFilterPanel({ onSearched, onReset, visible }: SearchFilterPanelProps) {
+function SearchFilterPanel({ onSearched, visible }: SearchFilterPanelProps) {
   const searchInput = useRef<InputRef>(null);
   const [searchText, setSearchText] = useState('');
 
@@ -66,21 +65,21 @@ function HighlightName({ name, highlight, enable = true }: HighlightNameProps) {
   );
 }
 
-type onFilter<DataType> = Required<ColumnType<DataType>>['onFilter'];
-
 export function useSearchNameFilterProps<DataType>(
   getName: (value: any, data: DataType) => string
-): ColumnType<DataType> {
+): ColumnType<DataType> & { searchText: string; filterFn: (record: DataType) => boolean } {
   const [searchText, setSearchText] = useState('');
   const [searched, setSearched] = useState(false);
   const [visible, setVisible] = useState(false);
 
-  const onFilter = useCallback<onFilter<DataType>>(
-    (value, record) =>
-      getName(null, record)
+  const filterFn = useCallback(
+    (record: DataType) => {
+      if (!searchText) return true;
+      return getName(null, record)
         .toLocaleLowerCase()
-        .includes((value as String).toLocaleLowerCase()),
-    [getName]
+        .includes(searchText.toLocaleLowerCase());
+    },
+    [searchText, getName]
   );
 
   return {
@@ -93,20 +92,15 @@ export function useSearchNameFilterProps<DataType>(
             setSearched(true);
             confirm({ closeDropdown: false });
           }}
-          onReset={() => {
-            setSelectedKeys([]);
-            setSearchText('');
-            setSearched(false);
-            confirm({ closeDropdown: false });
-          }}
           visible={visible}
         />
       );
     },
-    onFilter,
     onFilterDropdownOpenChange: (visible) => setVisible(visible),
     render: (value, data) => (
       <HighlightName name={getName(value, data)} highlight={searchText} enable={searched} />
-    )
+    ),
+    searchText,
+    filterFn
   };
 }
