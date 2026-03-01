@@ -76,6 +76,7 @@ export const PanelTable = <RecordType extends DefaultRecordType, Item extends Ku
         key: 'name',
         className: 'min-w-[150px]',
         ellipsis: true,
+        filteredValue: searchText ? [searchText] : [],
         ...filterProps
       },
       ...columns
