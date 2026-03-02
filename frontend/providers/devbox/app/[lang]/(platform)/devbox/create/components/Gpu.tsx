@@ -39,6 +39,7 @@ export default function Gpu({
 
   const selectedGpuType = watch('gpu.type');
   const selectedGpuAmount = watch('gpu.amount');
+  const maxGpuAmount = GpuAmountMarkList[GpuAmountMarkList.length - 1]?.value ?? 4;
 
   const getGpuDisplayName = (gpu?: GpuPriceItem) => {
     if (!gpu) return '';
@@ -89,6 +90,24 @@ export default function Gpu({
   const selectedGpuTotalCount = selectedGpuType
     ? gpuTotalCountMap[selectedGpuType] || selectedGpu?.count || 0
     : 0;
+  const gpuAmountOptions = useMemo(() => {
+    const options = [...GpuAmountMarkList];
+
+    if (
+      typeof selectedGpuAmount === 'number' &&
+      selectedGpuAmount > maxGpuAmount &&
+      !options.some((item) => item.value === selectedGpuAmount)
+    ) {
+      options.push({
+        label: String(selectedGpuAmount),
+        value: selectedGpuAmount
+      });
+    }
+
+    return options.sort((a, b) => a.value - b.value);
+  }, [maxGpuAmount, selectedGpuAmount]);
+  const isLegacyGpuAmount =
+    typeof selectedGpuAmount === 'number' && selectedGpuAmount > maxGpuAmount;
 
   useEffect(() => {
     if (!selectedGpuType || selectedGpuType === 'none') {
@@ -139,7 +158,11 @@ export default function Gpu({
               // NOTE: maybe this should be set.
               setValue('gpu.manufacturers', 'nvidia');
               setValue('gpu.resource', selected.resource);
-              if (!selectedGpuAmount || selectedGpuAmount > available) {
+              if (
+                !selectedGpuAmount ||
+                selectedGpuAmount > available ||
+                selectedGpuAmount > maxGpuAmount
+              ) {
                 setValue('gpu.amount', 1);
               }
             }
@@ -232,9 +255,10 @@ export default function Gpu({
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-medium text-gray-900">{t('count')}</Label>
             <div className="flex gap-2">
-              {GpuAmountMarkList.map((item) => {
+              {gpuAmountOptions.map((item) => {
                 const available = selectedGpuType ? countGpuInventory(selectedGpuType) : 0;
-                const hasInventory = item.value <= available;
+                const isLegacyOption = item.value > maxGpuAmount;
+                const isSelectable = item.value <= available && !isLegacyOption;
                 const isSelected = selectedGpuAmount === item.value;
 
                 return (
@@ -245,11 +269,12 @@ export default function Gpu({
                       isSelected
                         ? 'border-zinc-900 text-zinc-900'
                         : 'border-zinc-200 text-zinc-900',
-                      !hasInventory && 'cursor-not-allowed opacity-40'
+                      isLegacyOption && 'border-amber-300 bg-amber-50 text-amber-700',
+                      !isSelectable && 'cursor-not-allowed opacity-40'
                     )}
-                    disabled={!hasInventory}
+                    disabled={!isSelectable}
                     onClick={() => {
-                      if (hasInventory) {
+                      if (isSelectable) {
                         setValue('gpu.amount', item.value);
                       }
                     }}
@@ -259,6 +284,11 @@ export default function Gpu({
                 );
               })}
             </div>
+            {isLegacyGpuAmount && (
+              <span className="text-xs text-amber-600">
+                {t('Gpu amount over max Tip', { max: maxGpuAmount })}
+              </span>
+            )}
           </div>
         )}
       </div>
