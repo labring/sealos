@@ -161,12 +161,11 @@ export default function Gpu({
                       {getGpuDisplayName(selectedGpu)}
                     </span>
                   </div>
-                  <div className="h-[15px] w-px shrink-0 bg-zinc-200" />
                   <span
                     className="max-w-[180px] truncate text-sm text-zinc-900"
                     title={getGpuNodeDisplayName(selectedGpu)}
                   >
-                    {t('gpu_node')}: {getGpuNodeDisplayName(selectedGpu)}
+                    {getGpuNodeDisplayName(selectedGpu)}
                   </span>
                   <div className="h-[15px] w-px shrink-0 bg-zinc-200" />
                   <span className="text-sm text-zinc-900">
@@ -204,12 +203,11 @@ export default function Gpu({
                         {getGpuDisplayName(item)}
                       </span>
                     </div>
-                    <div className="h-[15px] w-px shrink-0 bg-zinc-200" />
                     <span
                       className="max-w-[180px] truncate text-sm text-zinc-900"
                       title={getGpuNodeDisplayName(item)}
                     >
-                      {t('gpu_node')}: {getGpuNodeDisplayName(item)}
+                      {getGpuNodeDisplayName(item)}
                     </span>
                     <div className="h-[15px] w-px shrink-0 bg-zinc-200" />
                     <span className="text-sm text-zinc-900">
