@@ -111,33 +111,35 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
         setLoading(true);
 
         const isRunning = devbox.status.value === 'Running';
+        const isPaused = devbox.status.value === 'Paused';
 
-        // Step 1: Shutdown devbox if it's running (required before release)
-        if (isRunning) {
+        // Step 1: Shutdown devbox if it's running or paused (required before release)
+        if (isRunning || isPaused) {
           toast.info(t('auto_shutting_down'));
 
+          // NOTE: Use shutdown mode for release to save changes. Using this mode, the backend will recycle LV.
           await shutdownDevbox({
             devboxName: devbox.name,
-            shutdownMode: 'Stopped'
+            shutdownMode: 'Shutdown'
           });
 
-          // Poll devbox status for 2 minutes to ensure it's stopped
+          // Poll devbox status for 2 minutes to ensure it's shutdown
           const timeout = 2 * 60 * 1000; // 2 minutes
           const pollInterval = 3000; // 3 seconds
           const startTime = Date.now();
-          let isStopped = false;
+          let isShutdown = false;
 
           while (Date.now() - startTime < timeout) {
             const devboxDetail = await getDevboxByName(devbox.name);
             //NOTE: Here we use state not status.value to check if stopped
-            if (devboxDetail.state === DevboxStatusEnum.Stopped) {
-              isStopped = true;
+            if (devboxDetail.state === DevboxStatusEnum.Shutdown) {
+              isShutdown = true;
               break;
             }
             await new Promise((resolve) => setTimeout(resolve, pollInterval));
           }
 
-          if (!isStopped) {
+          if (!isShutdown) {
             throw new Error(t('devbox_shutdown_timeout'));
           }
         }
@@ -237,7 +239,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
               </div>
             </div>
             <Separator />
-            <span>{t('devbox_pause_save_change')}</span>
+            <p className="text-sm">{t('release_process_pause_notice')}</p>
             <div className="flex items-center gap-3">
               <Checkbox
                 id="confirm-checkbox"
