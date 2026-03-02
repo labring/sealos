@@ -1,17 +1,15 @@
-import {
-  HTMLChakraProps,
-  Spinner,
-  Table,
-  TableContainer,
-  TableContainerProps,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr
-} from '@chakra-ui/react';
-import { Column, Table as ReactTable, flexRender } from '@tanstack/react-table';
+import { Column, Row, Table as ReactTable, flexRender } from '@tanstack/react-table';
 import { CSSProperties } from 'react';
+import { Loading } from '@sealos/shadcn-ui/loading';
+import { cn } from '@sealos/shadcn-ui';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell
+} from '@sealos/shadcn-ui/table';
 
 const getCommonPinningStyles = <T,>(column: Column<T, unknown>): CSSProperties => {
   const isPinned = column.getIsPinned();
@@ -27,95 +25,80 @@ const getCommonPinningStyles = <T,>(column: Column<T, unknown>): CSSProperties =
 export function BaseTable<T extends unknown>({
   table,
   isLoading,
-  tdStyle,
   isHeaderFixed = false,
+  className,
+  rowClassName,
   ...props
 }: {
   table: ReactTable<T>;
   isLoading: boolean;
-  tdStyle?: HTMLChakraProps<'td'>;
   isHeaderFixed?: boolean;
-} & TableContainerProps) {
+  className?: string;
+  rowClassName?: (row: Row<T>, rowIndex: number) => string;
+} & React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <TableContainer {...props} position={'relative'}>
-      <Table variant="unstyled" width={'full'}>
-        <Thead
-          position={isHeaderFixed ? 'sticky' : 'relative'}
-          top={0}
-          zIndex={isHeaderFixed ? 2 : 0}
-        >
-          {table.getHeaderGroups().map((headers) => {
-            return (
-              <Tr key={headers.id}>
-                {headers.headers.map((header, i) => {
+    <div
+      className={cn('relative w-full h-full overflow-auto scrollbar-default', className)}
+      {...props}
+    >
+      <Table>
+        <TableHeader className={cn('z-10', isHeaderFixed && 'sticky top-0')}>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id} className="bg-zinc-50 hover:bg-zinc-50">
+              {headerGroup.headers.map((header, i) => (
+                <TableHead
+                  key={header.id}
+                  className={cn(
+                    'h-10 text-sm font-normal text-zinc-500 px-4 py-2 border-none',
+                    i === 0 && 'rounded-l-lg',
+                    i === headerGroup.headers.length - 1 && 'rounded-r-lg'
+                  )}
+                  style={getCommonPinningStyles(header.column)}
+                >
+                  {header.isPlaceholder
+                    ? null
+                    : flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
+              ))}
+            </TableRow>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {isLoading ? (
+            <TableRow className="hover:bg-transparent">
+              <TableCell
+                colSpan={table.getAllColumns().length}
+                className="relative h-[300px] text-center py-4"
+              >
+                <Loading fixed={false} />
+              </TableCell>
+            </TableRow>
+          ) : (
+            table.getRowModel().rows.map((row, rowIndex) => (
+              <TableRow
+                key={row.id}
+                className={cn('text-sm !border-b border-zinc-100', rowClassName?.(row, rowIndex))}
+              >
+                {row.getVisibleCells().map((cell) => {
+                  const isPinned = cell.column.getIsPinned();
                   return (
-                    <Th
-                      fontSize={'12px'}
-                      py="13px"
-                      px={'24px'}
-                      key={header.id}
-                      bg={'grayModern.100'}
-                      color={'grayModern.600'}
-                      border={'none'}
-                      textTransform={'none'}
-                      _first={{
-                        borderLeftRadius: '6px'
+                    <TableCell
+                      key={cell.id}
+                      className="px-4 py-2 text-zinc-900"
+                      style={{
+                        ...getCommonPinningStyles(cell.column),
+                        backgroundColor: isPinned ? 'inherit' : undefined
                       }}
-                      _last={{
-                        borderRightRadius: '6px'
-                      }}
-                      {...(getCommonPinningStyles(header.column) as HTMLChakraProps<'th'>)}
                     >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </Th>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
                   );
                 })}
-              </Tr>
-            );
-          })}
-        </Thead>
-        <Tbody>
-          {isLoading ? (
-            <Tr>
-              <Td h={'300px'} colSpan={table.getAllColumns().length} textAlign="center" py={4}>
-                <Spinner size="xl" />
-              </Td>
-            </Tr>
-          ) : (
-            table.getRowModel().rows.map((item, index) => {
-              return (
-                <Tr key={item.id} fontSize={'12px'}>
-                  {item.getAllCells().map((cell, i) => {
-                    const isPinned = cell.column.getIsPinned();
-                    return (
-                      <Td
-                        key={cell.id}
-                        p={'10px 24px'}
-                        bg={
-                          // @ts-ignore
-                          cell.column.columnDef.meta?.isError?.(item.original)
-                            ? '#FFFAEB'
-                            : isPinned
-                              ? 'white'
-                              : ''
-                        }
-                        borderBottom={'1px solid'}
-                        borderBottomColor={
-                          index !== table.getRowModel().rows.length - 1 ? '#F0F1F6' : 'transparent'
-                        }
-                        {...(getCommonPinningStyles(cell.column) as HTMLChakraProps<'td'>)}
-                        {...tdStyle}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </Td>
-                    );
-                  })}
-                </Tr>
-              );
-            })
+              </TableRow>
+            ))
           )}
-        </Tbody>
+        </TableBody>
       </Table>
-    </TableContainer>
+    </div>
   );
 }

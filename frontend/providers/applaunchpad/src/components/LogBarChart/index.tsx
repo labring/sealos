@@ -16,16 +16,16 @@ const map = {
       colorStops: [
         {
           offset: 0,
-          color: 'rgba(3, 190, 232, 0.42)' // 0% 处的颜色
+          color: 'rgba(147, 197, 253, 0.42)' // Tailwind blue-300
         },
         {
           offset: 1,
-          color: 'rgba(0, 182, 240, 0)'
+          color: 'rgba(147, 197, 253, 0)'
         }
       ],
-      global: false // 缺省为 false
+      global: false
     },
-    lineColor: '#85CCFF'
+    lineColor: '#93C5FD' // Tailwind blue-300
   },
   deepBlue: {
     backgroundColor: {
@@ -37,16 +37,16 @@ const map = {
       colorStops: [
         {
           offset: 0,
-          color: 'rgba(47, 112, 237, 0.42)' // 0% 处的颜色
+          color: 'rgba(59, 130, 246, 0.42)' // Tailwind blue-500
         },
         {
           offset: 1,
-          color: 'rgba(94, 159, 235, 0)'
+          color: 'rgba(59, 130, 246, 0)'
         }
       ],
       global: false
     },
-    lineColor: '#3293EC'
+    lineColor: '#3B82F6' // Tailwind blue-500
   },
   purple: {
     backgroundColor: {
@@ -58,16 +58,16 @@ const map = {
       colorStops: [
         {
           offset: 0,
-          color: 'rgba(211, 190, 255, 0.42)' // 0% 处的颜色
+          color: 'rgba(192, 132, 252, 0.42)' // Tailwind purple-400
         },
         {
           offset: 1,
-          color: 'rgba(52, 60, 255, 0)'
+          color: 'rgba(192, 132, 252, 0)'
         }
       ],
-      global: false // 缺省为 false
+      global: false
     },
-    lineColor: '#8172D8'
+    lineColor: '#C084FC' // Tailwind purple-400
   },
   green: {
     backgroundColor: {
@@ -79,16 +79,16 @@ const map = {
       colorStops: [
         {
           offset: 0,
-          color: 'rgba(4, 209, 148, 0.42)' // 0% 处的颜色
+          color: 'rgba(16, 185, 129, 0.42)' // Tailwind emerald-500
         },
         {
           offset: 1,
-          color: 'rgba(19, 217, 181, 0)'
+          color: 'rgba(16, 185, 129, 0)'
         }
       ],
-      global: false // 缺省为 false
+      global: false
     },
-    lineColor: '#00A9A6',
+    lineColor: '#10B981', // Tailwind emerald-500
     max: 100
   }
 };
@@ -110,7 +110,7 @@ const LogBarChart = ({
       data?.xData?.map((time) => dayjs(time * 1000).format('MM-DD HH:mm')) || new Array(30).fill(0),
     [data?.xData]
   );
-  const yData = data?.yData || new Array(30).fill('');
+  const yData = data?.yData || new Array(30).fill(null);
 
   const Dom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
@@ -180,7 +180,10 @@ const LogBarChart = ({
       },
       formatter: (params: any[]) => {
         const axisValue = params[0]?.axisValue;
-        return `${axisValue} ${params[0]?.value || 0}`;
+        const value = params[0]?.value;
+        const displayValue =
+          value === null || value === undefined || Number.isNaN(value) ? '-' : value;
+        return `${axisValue} ${displayValue}`;
       }
     }
   });

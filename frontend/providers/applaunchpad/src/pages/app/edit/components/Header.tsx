@@ -1,4 +1,3 @@
-import MyIcon from '@/components/Icon';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useGlobalStore } from '@/store/global';
@@ -6,10 +5,10 @@ import { useGuideStore } from '@/store/guide';
 import type { YamlItemType } from '@/types/index';
 import type { AppEditType } from '@/types/app';
 import { downLoadBold } from '@/utils/tools';
-import { Box, Button, Center, Flex, Text } from '@chakra-ui/react';
+import { Button } from '@sealos/shadcn-ui/button';
 import { track } from '@sealos/gtm';
 import dayjs from 'dayjs';
-import { Info, X } from 'lucide-react';
+import { ArrowLeft, Info, X } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback } from 'react';
@@ -56,93 +55,48 @@ const Header = ({
   const { createCompleted, startTimeMs } = useGuideStore();
 
   return (
-    <Flex
-      flexDirection={'column'}
-      w={'100%'}
-      position={'sticky'}
-      top={0}
-      zIndex={10}
-      bg={'grayModern.100'}
-      flexShrink={0}
-    >
+    <div className="fixed top-0 left-0 right-0 z-10 flex w-full flex-col bg-zinc-50">
       {isClientSide && !createCompleted && (
-        <Center
-          borderTop={'1px solid #BFDBFE'}
-          borderBottom={'1px solid #BFDBFE'}
-          bg={'#EFF6FF'}
-          h={'56px'}
-          w={'100%'}
-          fontSize={'16px'}
-          fontWeight={500}
-          color={'#2563EB'}
-          gap={'12px'}
-        >
+        <div className="flex h-14 w-full items-center justify-center gap-3 border-y border-blue-200 bg-blue-50 text-base font-medium text-blue-600">
           <Info size={16} />
           {t('driver.create_launchpad_header')}
-        </Center>
+        </div>
       )}
-      <Flex
-        w={'100%'}
-        px={10}
-        h={'86px'}
-        alignItems={'center'}
-        borderBottom={'1px solid'}
-        borderColor={'grayModern.200'}
-      >
-        <Flex
-          alignItems={'center'}
-          cursor={'pointer'}
-          gap={'6px'}
+      <div className="flex h-24 w-full items-center border-b-1 border-zinc-200 px-10">
+        <div
+          className="flex cursor-pointer items-center gap-1.5"
           onClick={() => {
             router.replace(lastRoute);
           }}
         >
-          <MyIcon name="arrowLeft" w={'24px'} />
-          <Box fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
-            {t(title)}
-          </Box>
-        </Flex>
-        <Box flex={1}></Box>
+          <ArrowLeft className="h-6 w-6" />
+          <span className="text-2xl font-semibold text-zinc-900">{t(title)}</span>
+        </div>
+        <div className="flex-1"></div>
         <Button
-          h={'40px'}
-          mr={'14px'}
-          minW={'140px'}
-          variant={'outline'}
+          variant="outline"
+          className="mr-3.5 h-10 min-w-[120px] rounded-lg shadow-none hover:bg-zinc-50"
           onClick={handleExportYaml}
         >
           {t('Export')} Yaml
         </Button>
-        <Box position={'relative'}>
+        <div className="relative">
           <Button
-            className="driver-deploy-button"
-            minW={'140px'}
-            h={'40px'}
+            className={`driver-deploy-button h-10 min-w-[120px] rounded-lg shadow-none ${
+              isClientSide && !createCompleted
+                ? 'outline outline-2 outline-offset-2 outline-blue-600'
+                : ''
+            }`}
             onClick={applyCb}
-            _focusVisible={{ boxShadow: '' }}
-            outline={isClientSide && !createCompleted ? '2px solid #1C4EF5' : 'none'}
-            outlineOffset={isClientSide && !createCompleted ? '2px' : '0'}
           >
             {t(applyBtnText)}
           </Button>
           {isClientSide && !createCompleted && (
-            <Box
-              zIndex={1000}
-              position={'absolute'}
-              left={'-180px'}
-              bottom={'-170px'}
-              width={'250px'}
-              bg={'#2563EB'}
-              p={'16px'}
-              borderRadius={'12px'}
-              color={'#fff'}
-            >
-              <Flex alignItems={'center'} justifyContent={'space-between'}>
-                <Text fontSize={'14px'} fontWeight={600}>
-                  {t('driver.configure_launchpad')}
-                </Text>
-                <Box
-                  cursor={'pointer'}
-                  ml={'auto'}
+            <div className="absolute -left-[180px] -bottom-[170px] z-[1000] w-[250px] rounded-xl bg-blue-600 p-4 text-white">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold">{t('driver.configure_launchpad')}</span>
+                <div
+                  className="ml-auto cursor-pointer"
                   onClick={() => {
                     track('guide_exit', {
                       module: 'guide',
@@ -154,56 +108,37 @@ const Header = ({
                     startDriver(quitGuideDriverObj(t));
                   }}
                 >
-                  <X width={'16px'} height={'16px'} />
-                </Box>
-              </Flex>
-              <Text
-                textAlign={'start'}
-                whiteSpace={'wrap'}
-                mt={'8px'}
-                color={'#FFFFFFCC'}
-                fontSize={'14px'}
-                fontWeight={400}
-              >
+                  <X width={16} height={16} />
+                </div>
+              </div>
+              <p className="mt-2 whitespace-normal text-start text-sm font-normal text-white/80">
                 {t('driver.define_image_settings')}
-              </Text>
-              <Flex mt={'16px'} justifyContent={'space-between'} alignItems={'center'}>
-                <Text fontSize={'13px'} fontWeight={500}>
-                  3/4
-                </Text>
-                <Center
-                  w={'86px'}
-                  color={'#fff'}
-                  fontSize={'14px'}
-                  fontWeight={500}
-                  cursor={'pointer'}
-                  borderRadius={'8px'}
-                  background={'rgba(255, 255, 255, 0.20)'}
-                  h={'32px'}
-                  p={'px'}
+              </p>
+              <div className="mt-4 flex items-center justify-between">
+                <span className="text-[13px] font-medium">3/4</span>
+                <div
+                  className="flex h-8 w-[86px] cursor-pointer items-center justify-center rounded-lg bg-white/20 text-sm font-medium text-white"
                   onClick={() => {
                     applyCb();
                   }}
                 >
                   {t('driver.next')}
-                </Center>
-              </Flex>
-              <Box
-                position={'absolute'}
-                top={'-10px'}
-                right={'16px'}
-                width={0}
-                height={0}
-                borderLeft={'8px solid transparent'}
-                borderRight={'8px solid transparent'}
-                borderTop={'10px solid #2563EB'}
-                transform={'rotate(180deg)'}
+                </div>
+              </div>
+              {/* Triangle pointer */}
+              <div
+                className="absolute -top-2.5 right-4 h-0 w-0 rotate-180"
+                style={{
+                  borderLeft: '8px solid transparent',
+                  borderRight: '8px solid transparent',
+                  borderTop: '10px solid #2563EB'
+                }}
               />
-            </Box>
+            </div>
           )}
-        </Box>
-      </Flex>
-    </Flex>
+        </div>
+      </div>
+    </div>
   );
 };
 

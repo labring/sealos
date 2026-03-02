@@ -1,4 +1,3 @@
-import { Box, Flex } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 import MyIcon from '../Icon';
 import { GpuType } from '@/types/app';
@@ -16,22 +15,19 @@ const GPUItem = ({ gpu }: { gpu?: GpuType }) => {
   }, [gpu?.type, userSourcePrice?.gpu]);
 
   return (
-    <Flex whiteSpace={'nowrap'}>
-      <MyIcon name={'nvidia'} w={'16px'} mr={2} />
+    <div className="flex whitespace-nowrap">
+      <MyIcon name={'nvidia'} w={'16px'} className="mr-2" />
       {gpuAlias && (
         <>
-          <Box>{gpuAlias}</Box>
-          <Box mx={1} color={'grayModern.500'}>
-            /
-          </Box>
+          <span>{gpuAlias}</span>
+          <span className="mx-1 text-zinc-500">/</span>
         </>
       )}
-      <Box color={!!gpu?.amount ? 'myGray.600' : 'grayModern.500'}>
-        {!!gpuAlias ? gpu?.amount : 0}
-
+      <span className={gpu?.amount ? 'text-zinc-600' : 'text-zinc-500'}>
+        {gpuAlias ? gpu?.amount : 0}
         {t('Card')}
-      </Box>
-    </Flex>
+      </span>
+    </div>
   );
 };
 

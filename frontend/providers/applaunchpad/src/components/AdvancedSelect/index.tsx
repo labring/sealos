@@ -1,30 +1,24 @@
 'use client';
 
-import {
-  Menu,
-  Box,
-  MenuList,
-  MenuItem,
-  Button,
-  useDisclosure,
-  useOutsideClick,
-  MenuButton,
-  Flex,
-  Checkbox
-} from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { ChevronDownIcon } from '@chakra-ui/icons';
-import React, { useRef, forwardRef, useMemo } from 'react';
-import type { BoxProps, ButtonProps } from '@chakra-ui/react';
+import { ChevronDown } from 'lucide-react';
+import React, { useRef, forwardRef, useMemo, useState } from 'react';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
+import { Checkbox } from '@sealos/shadcn-ui/checkbox';
+import { Separator } from '@sealos/shadcn-ui/separator';
+import { cn } from '@sealos/shadcn-ui';
 
 export interface ListItem {
   label: string | React.ReactNode;
   value: string;
   checked: boolean;
+  isActive?: boolean; // Whether the item is active (e.g., active pod vs historical pod)
 }
 
-interface Props extends ButtonProps {
+interface Props {
   width?: string;
+  minW?: string;
   height?: string;
   value?: string;
   placeholder?: string;
@@ -32,8 +26,10 @@ interface Props extends ButtonProps {
   onchange?: (val: string) => void;
   onCheckboxChange?: (list: ListItem[]) => void;
   isInvalid?: boolean;
-  boxStyle?: BoxProps;
   checkBoxMode?: boolean;
+  leftIcon?: React.ReactNode;
+  title?: string;
+  className?: string;
 }
 
 const AdvancedSelect = (
@@ -42,29 +38,20 @@ const AdvancedSelect = (
     leftIcon,
     value,
     width = 'auto',
-    height = '30px',
+    minW = 'auto',
+    height = '32px',
     list,
     onchange,
     onCheckboxChange,
     isInvalid,
-    boxStyle,
     checkBoxMode = false,
-    ...props
+    title,
+    className
   }: Props,
   selectRef: any
 ) => {
   const { t } = useTranslation();
-
-  const ref = useRef<HTMLButtonElement>(null);
-  const SelectRef = useRef<HTMLDivElement>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
-  useOutsideClick({
-    ref: SelectRef,
-    handler: () => {
-      onClose();
-    }
-  });
+  const [isOpen, setIsOpen] = useState(false);
 
   const displayText = useMemo(() => {
     const selectedCount = checkBoxMode ? list.filter((item) => item.checked).length : 0;
@@ -79,101 +66,79 @@ const AdvancedSelect = (
     if (selectedCount === list.length) {
       return t('all');
     }
-    return `${t('selected')} ${selectedCount}`;
+    return `${selectedCount} ${t('selected')}`;
   }, [checkBoxMode, list, t, value, placeholder]);
 
-  return (
-    <Menu
-      autoSelect={false}
-      isOpen={isOpen}
-      onOpen={onOpen}
-      onClose={onClose}
-      closeOnSelect={false}
-    >
-      <Box ref={SelectRef} position={'relative'} {...boxStyle}>
-        <MenuButton
-          as={Button}
-          leftIcon={leftIcon}
-          rightIcon={<ChevronDownIcon />}
-          width={width}
-          height={height}
-          ref={ref}
-          display={'flex'}
-          alignItems={'center'}
-          justifyContent={'center'}
-          border={'1px solid #E8EBF0'}
-          borderRadius={'md'}
-          fontSize={'12px'}
-          fontWeight={'400'}
-          color={'grayModern.900'}
-          variant={'outline'}
-          _hover={{
-            borderColor: 'brightBlue.300',
-            bg: 'grayModern.50'
-          }}
-          _active={{
-            transform: ''
-          }}
-          boxShadow={'none'}
-          {...(isOpen
-            ? {
-                // boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                borderColor: 'brightBlue.500',
-                bg: '#FFF'
-              }
-            : {
-                bg: '#F7F8FA',
-                borderColor: isInvalid ? 'red' : ''
-              })}
-          onClick={() => {
-            isOpen ? onClose() : onOpen();
-          }}
-          {...props}
-        >
-          <Flex
-            justifyContent={'flex-start'}
-            width="100%"
-            alignItems={'center'}
-            {...(placeholder ? { color: 'grayModern.500' } : {})}
-          >
-            {displayText}
-          </Flex>
-        </MenuButton>
+  const isPlaceholder = useMemo(() => {
+    if (!checkBoxMode) {
+      return !list.find((item) => item.value === value);
+    }
+    return list.filter((item) => item.checked).length === 0;
+  }, [checkBoxMode, list, value]);
 
-        <MenuList
-          minW={(() => {
-            const w = ref.current?.clientWidth;
-            if (w) {
-              return `${w}px !important`;
-            }
-            return Array.isArray(width)
-              ? width.map((item) => `${item} !important`)
-              : `${width} !important`;
-          })()}
-          p={'6px'}
-          borderRadius={'base'}
-          border={'1px solid #E8EBF0'}
-          boxShadow={
-            '0px 4px 10px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)'
-          }
-          zIndex={99}
-          overflow={'overlay'}
-          maxH={'300px'}
+  // Sort list: active items first, inactive items last
+  const sortedList = useMemo(() => {
+    return [...list].sort((a, b) => {
+      const aActive = a.isActive !== false ? 1 : 0;
+      const bActive = b.isActive !== false ? 1 : 0;
+      return bActive - aActive;
+    });
+  }, [list]);
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          ref={selectRef}
+          variant="outline"
+          role="combobox"
+          aria-expanded={isOpen}
+          className={cn(
+            'justify-start rounded-lg text-sm font-normal shadow-none hover:bg-zinc-50',
+            isInvalid && 'border-red-500',
+            className
+          )}
+          style={{
+            width: width,
+            minWidth: minW,
+            height: height
+          }}
         >
-          {checkBoxMode && (
-            <MenuItem
-              borderRadius={'4px'}
-              _hover={{
-                bg: 'rgba(17, 24, 36, 0.05)',
-                color: 'brightBlue.600'
-              }}
-              p={'6px'}
-              w={'100%'}
+          <div className="flex items-center gap-2 w-full">
+            {leftIcon && (
+              <>
+                {leftIcon}
+                <Separator orientation="vertical" className="!h-3 bg-zinc-300" />
+              </>
+            )}
+            <span
+              className={cn(
+                'flex-1 text-left truncate',
+                isPlaceholder ? 'text-zinc-500' : 'text-zinc-900'
+              )}
             >
+              {displayText}
+            </span>
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
+          </div>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[220px] p-2 border-[0.5px] border-zinc-200 rounded-xl"
+        align="start"
+      >
+        {title && (
+          <div className="px-2 py-0.5">
+            <span className="text-xs font-medium text-muted-foreground">{title}</span>
+          </div>
+        )}
+
+        <div className="max-h-[300px] overflow-y-auto scrollbar-default">
+          {checkBoxMode && (
+            <label className="h-10 flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">
               <Checkbox
-                w={'100%'}
-                isChecked={list.every((item) => item.checked)}
-                onChange={() => {
+                checked={list.every((item) => item.checked)}
+                onCheckedChange={() => {
                   if (onCheckboxChange) {
                     const newList = list.map((item) => ({
                       ...item,
@@ -182,85 +147,61 @@ const AdvancedSelect = (
                     onCheckboxChange(newList);
                   }
                 }}
-                sx={{
-                  'span.chakra-checkbox__control[data-checked]': {
-                    background: '#f0f4ff',
-                    border: '1px solid #219bf4 ',
-                    boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                    color: '#219bf4',
-                    borderRadius: '4px'
-                  },
-                  'span.chakra-checkbox__control': {
-                    background: 'white',
-                    border: '1px solid #E8EBF0',
-                    borderRadius: '4px'
-                  }
-                }}
-              >
-                {t('all')}
-              </Checkbox>
-            </MenuItem>
+              />
+              <span className="text-sm text-zinc-900 flex-1">{t('all')}</span>
+            </label>
           )}
 
-          {list.map((item, index) => (
-            <MenuItem
-              key={item.value + index}
-              {...(!checkBoxMode && value === item.value
-                ? {
-                    color: 'brightBlue.600'
-                  }
-                : {})}
-              borderRadius={'4px'}
-              _hover={{
-                bg: 'rgba(17, 24, 36, 0.05)',
-                color: 'brightBlue.600'
-              }}
-              p={'6px'}
-              onClick={() => {
-                if (onchange && value !== item.value) {
-                  onchange(item.value);
-                }
-              }}
-            >
+          {sortedList.map((item, index) => (
+            <div key={item.value + index}>
               {checkBoxMode ? (
-                <Checkbox
-                  isChecked={item.checked}
-                  key={item.value}
-                  onChange={() => {
-                    if (onCheckboxChange) {
-                      const newList = list.map((listItem) =>
-                        listItem.value === item.value
-                          ? { ...listItem, checked: !listItem.checked }
-                          : listItem
-                      );
-                      onCheckboxChange(newList);
-                    }
-                  }}
-                  sx={{
-                    'span.chakra-checkbox__control[data-checked]': {
-                      background: '#f0f4ff ',
-                      border: '1px solid #219bf4 ',
-                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                      color: '#219bf4',
-                      borderRadius: '4px'
-                    },
-                    'span.chakra-checkbox__control': {
-                      background: 'white',
-                      border: '1px solid #E8EBF0',
-                      borderRadius: '4px'
+                <label className="min-h-10 flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">
+                  <Checkbox
+                    checked={item.checked}
+                    onCheckedChange={() => {
+                      if (onCheckboxChange) {
+                        const newList = list.map((listItem) =>
+                          listItem.value === item.value
+                            ? { ...listItem, checked: !listItem.checked }
+                            : listItem
+                        );
+                        onCheckboxChange(newList);
+                      }
+                    }}
+                  />
+                  <span
+                    className={cn(
+                      'text-sm flex-1',
+                      item.isActive === false ? 'text-zinc-500' : 'text-zinc-900'
+                    )}
+                  >
+                    {item.label}
+                    {item.isActive === false && (
+                      <span className="ml-1 text-sm text-zinc-500">({t('terminated')})</span>
+                    )}
+                  </span>
+                </label>
+              ) : (
+                <div
+                  className={cn(
+                    'h-10 flex items-center px-2 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer text-sm',
+                    value === item.value && 'text-blue-600'
+                  )}
+                  onClick={() => {
+                    if (onchange && value !== item.value) {
+                      onchange(item.value);
+                      setIsOpen(false);
                     }
                   }}
                 >
                   {item.label}
-                </Checkbox>
-              ) : (
-                <Box>{item.label}</Box>
+                </div>
               )}
-            </MenuItem>
+            </div>
           ))}
-        </MenuList>
-      </Box>
-    </Menu>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 

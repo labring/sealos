@@ -1,9 +1,7 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
-import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
 import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
-import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { PVC_STORAGE_MAX } from '@/store/static';
 import { useUserStore } from '@/store/user';
@@ -12,25 +10,37 @@ import { type AppEditType } from '@/types/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
 import { resourcePropertyMap, useUserQuota, type WorkspaceQuotaItem } from '@sealos/shared';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
+import { Trash2, Plus, Minus } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Separator } from '@sealos/shadcn-ui/separator';
+import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
+import { Slider } from '@sealos/shadcn-ui/slider';
 import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
-  Box,
-  Button,
-  Center,
-  Divider,
-  Flex,
-  FormControl,
-  Grid,
-  IconButton,
-  Input,
-  useDisclosure,
-  useTheme
-} from '@chakra-ui/react';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@sealos/shadcn-ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@sealos/shadcn-ui/tooltip';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@sealos/shadcn-ui/table';
+import { Button } from '@sealos/shadcn-ui/button';
+import { toast } from 'sonner';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -41,7 +51,6 @@ import type { ConfigMapType } from './ConfigmapModal';
 import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
 import type { StoreType } from './StoreModal';
-import styles from './index.module.scss';
 import { NetworkSection } from './NetworkSection';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 
@@ -49,16 +58,12 @@ const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
 const EditEnvs = dynamic(() => import('./EditEnvs'));
 
-const labelWidth = 120;
-
 const Form = ({
   formHook,
   already,
   existingStores,
   countGpuInventory,
-  pxVal,
   refresh,
-  isAdvancedOpen,
   onDomainVerified,
   exceededQuotas
 }: {
@@ -66,9 +71,7 @@ const Form = ({
   already: boolean;
   existingStores: AppEditType['storeList'];
   countGpuInventory: (type?: string) => number;
-  pxVal: number;
   refresh: boolean;
-  isAdvancedOpen: boolean;
   onDomainVerified?: (params: { index: number; customDomain: string }) => void;
   exceededQuotas: WorkspaceQuotaItem[];
 }) => {
@@ -77,9 +80,7 @@ const Form = ({
   const { formSliderListConfig } = useGlobalStore();
   const { userSourcePrice } = useUserStore();
   const router = useRouter();
-  const { toast } = useToast();
   const { name } = router.query as QueryType;
-  const theme = useTheme();
   const isEdit = useMemo(() => !!name, [name]);
 
   const {
@@ -144,13 +145,15 @@ const Form = ({
           getValues('storeList').length > 0
       }
     ],
-    [getValues, refresh]
+    [getValues]
   );
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
   const [storeEdit, setStoreEdit] = useState<StoreType>();
-  const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
+  const [isEditEnvs, setIsEditEnvs] = useState(false);
+  const onOpenEditEnvs = () => setIsEditEnvs(true);
+  const onCloseEditEnvs = () => setIsEditEnvs(false);
 
   // For quota calculation in fields
   const { userQuota } = useUserQuota();
@@ -171,15 +174,13 @@ const Form = ({
 
   // listen scroll and set activeNav
   useEffect(() => {
-    const scrollFn = throttle((e: Event) => {
-      if (!e.target) return;
+    const scrollFn = throttle(() => {
       const doms = navList.map((item) => ({
         dom: document.getElementById(item.id),
         id: item.id
       }));
 
-      const dom = e.target as HTMLDivElement;
-      const scrollTop = dom.scrollTop;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
 
       for (let i = doms.length - 1; i >= 0; i--) {
         const offsetTop = doms[i].dom?.offsetTop || 0;
@@ -189,87 +190,54 @@ const Form = ({
         }
       }
     }, 200);
-    document.getElementById('form-container')?.addEventListener('scroll', scrollFn);
+    window.addEventListener('scroll', scrollFn);
     return () => {
-      document.getElementById('form-container')?.removeEventListener('scroll', scrollFn);
+      window.removeEventListener('scroll', scrollFn);
     };
     // eslint-disable-next-line
   }, []);
 
-  // common form label
-  const Label = ({
-    children,
-    w = labelWidth,
-    ...props
-  }: {
-    children: string;
-    w?: number | 'auto';
-    [key: string]: any;
-  }) => (
-    <Box
-      flex={`0 0 ${w === 'auto' ? 'auto' : `${w}px`}`}
-      color={'grayModern.900'}
-      fontWeight={'bold'}
-      userSelect={'none'}
-      {...props}
-    >
-      {children}
-    </Box>
-  );
+  // Handle scrollTo query parameter
+  useEffect(() => {
+    const rawScrollTo = router.query.scrollTo;
+    const scrollTo = Array.isArray(rawScrollTo) ? rawScrollTo[0] : rawScrollTo;
+    if (!scrollTo) return;
 
-  const boxStyles = {
-    border: theme.borders.base,
-    borderRadius: 'lg',
-    mb: 4,
-    bg: 'white'
-  };
+    let attempts = 0;
+    const maxAttempts = 8;
+    const scrollToTarget = () => {
+      const el = document.getElementById(scrollTo);
+      if (!el) {
+        if (attempts < maxAttempts) {
+          attempts += 1;
+          setTimeout(scrollToTarget, 120);
+        }
+        return;
+      }
+      const yOffset = -120;
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    };
 
-  const headerStyles = {
-    py: 4,
-    pl: '42px',
-    borderTopRadius: 'lg',
-    fontSize: 'xl',
-    color: 'grayModern.900',
-    fontWeight: 'bold',
-    display: 'flex',
-    alignItems: 'center',
-    backgroundColor: 'grayModern.50'
-  };
+    scrollToTarget();
+  }, [router.query.scrollTo]);
 
-  // add NoGPU select item
+  // GPU select list for shadcn Select
   const gpuSelectList = useMemo(
     () =>
       userSourcePrice?.gpu
         ? [
-            {
-              label: t('No GPU'),
-              value: ''
-            },
+            { label: t('No GPU'), value: '', alias: '', vm: 0, inventory: 0 },
             ...userSourcePrice.gpu.map((item) => ({
-              icon: 'nvidia',
-              label: (
-                <Flex>
-                  <Box color={'myGray.900'}>{item.alias}</Box>
-                  <Box mx={3} color={'grayModern.900'}>
-                    |
-                  </Box>
-                  <Box color={'grayModern.900'}>
-                    {t('vm')} : {Math.round(item.vm)}G
-                  </Box>
-                  <Box mx={3} color={'grayModern.900'}>
-                    |
-                  </Box>
-                  <Flex pr={3}>
-                    <Box color={'grayModern.900'}>{t('Inventory')}&ensp;:&ensp;</Box>
-                    <Box color={'#FB7C3C'}>{countGpuInventory(item.type)}</Box>
-                  </Flex>
-                </Flex>
-              ),
-              value: item.type
+              label: item.alias,
+              value: item.type,
+              alias: item.alias,
+              vm: Math.round(item.vm),
+              inventory: countGpuInventory(item.type)
             }))
           ]
         : [],
-    [countGpuInventory, t, userSourcePrice?.gpu, refresh]
+    [countGpuInventory, t, userSourcePrice?.gpu]
   );
   const selectedGpu = useMemo(() => {
     const selected = userSourcePrice?.gpu?.find((item) => item.type === getValues('gpu.type'));
@@ -278,7 +246,7 @@ const Form = ({
       ...selected,
       inventory: countGpuInventory(selected.type)
     };
-  }, [userSourcePrice?.gpu, countGpuInventory, getValues, refresh]);
+  }, [userSourcePrice?.gpu, countGpuInventory, getValues]);
 
   // cpu, memory have different sliderValue
   const countSliderList = useCallback(() => {
@@ -302,14 +270,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-        : cpuList;
+      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+      : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-        : memoryList;
+      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+      : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -350,7 +318,7 @@ const Form = ({
         },
         []
       );
-  }, [getValues, refresh]);
+  }, [getValues]);
 
   const handleOpenCostcenter = () => {
     sealosApp.runEvents('openDesktopApp', {
@@ -368,286 +336,342 @@ const Form = ({
 
   return (
     <>
-      <Grid
-        height={'100%'}
-        templateColumns={'220px 1fr'}
-        gridGap={5}
-        alignItems={'start'}
-        pl={`${pxVal}px`}
+      <div
+        className="grid gap-5 max-w-[1200px] w-full"
+        style={{
+          gridTemplateColumns: '266px 1fr'
+        }}
       >
-        <Box>
-          <Tabs
-            list={[
-              { id: 'form', label: t('Config Form') },
-              { id: 'yaml', label: t('YAML File') }
-            ]}
-            activeId={'form'}
-            onChange={() =>
-              router.replace(
-                `/app/edit?${obj2Query({
-                  name,
-                  type: 'yaml'
-                })}`
-              )
-            }
-          />
-          <Box
-            mt={3}
-            borderRadius={'md'}
-            overflow={'hidden'}
-            backgroundColor={'white'}
-            border={theme.borders.base}
-            p={'4px'}
-          >
-            {navList.map((item) => (
-              <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
-                <Flex
-                  borderRadius={'base'}
-                  cursor={'pointer'}
-                  gap={'8px'}
-                  alignItems={'center'}
-                  h={'40px'}
-                  _hover={{
-                    backgroundColor: 'grayModern.100'
-                  }}
-                  color="grayModern.900"
-                  backgroundColor={activeNav === item.id ? 'grayModern.100' : 'transparent'}
+        {/* Left Sidebar */}
+        <div className="h-full relative">
+          <div className="flex flex-col w-[266px] gap-4">
+            <Tabs defaultValue="form" className="w-full">
+              <TabsList className="w-full h-auto bg-zinc-100 rounded-xl">
+                <TabsTrigger
+                  value="form"
+                  className="flex-1 h-9 text-sm rounded-lg font-medium shadow-sm"
                 >
-                  <Box
-                    w={'2px'}
-                    h={'24px'}
-                    justifySelf={'start'}
-                    bg={'grayModern.900'}
-                    borderRadius={'12px'}
-                    opacity={activeNav === item.id ? 1 : 0}
-                  ></Box>
-                  <MyIcon
-                    name={item.icon as any}
-                    w={'20px'}
-                    h={'20px'}
-                    color={activeNav === item.id ? 'grayModern.900' : 'grayModern.500'}
-                  />
-                  <Box>{t(item.label)}</Box>
-                </Flex>
-              </Box>
-            ))}
-          </Box>
-          {userSourcePrice && (
-            <Box mt={3} overflow={'hidden'}>
-              <QuotaBox />
-            </Box>
-          )}
-          {userSourcePrice && (
-            <Box mt={3} overflow={'hidden'}>
-              <PriceBox
-                pods={
-                  getValues('hpa.use')
-                    ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
-                    : [getValues('replicas') || 1, getValues('replicas') || 1]
-                }
-                cpu={getValues('cpu')}
-                memory={getValues('memory')}
-                storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
-                gpu={
-                  !!getValues('gpu.type')
-                    ? {
-                        type: getValues('gpu.type'),
-                        amount: getValues('gpu.amount')
-                      }
-                    : undefined
-                }
-                nodeports={getValues('networks').filter((item) => item.openNodePort)?.length || 0}
-              />
-            </Box>
-          )}
-        </Box>
+                  {t('Config Form')}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="yaml"
+                  className="flex-1 h-9 text-sm font-normal"
+                  onClick={() =>
+                    router.replace(
+                      `/app/edit?${obj2Query({
+                        name,
+                        type: 'yaml'
+                      })}`
+                    )
+                  }
+                >
+                  {t('YAML File')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
 
-        <Box
-          id={'form-container'}
-          pr={`${pxVal}px`}
-          height={'100%'}
-          position={'relative'}
-          // overflowY={'scroll'}
-        >
-          {/* base info */}
-          <Box id={'baseInfo'} {...boxStyles}>
-            <Box {...headerStyles}>
-              <MyIcon name={'formInfo'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
-              {t('Basic Config')}
-            </Box>
-            <Box px={'42px'} py={'24px'}>
-              {/* app name */}
-              <FormControl mb={7} isInvalid={!!errors.appName} w={'500px'}>
-                <Flex alignItems={'center'}>
-                  <Label>{t('App Name')}</Label>
-                  <Input
-                    width={'350px'}
-                    disabled={isEdit}
-                    title={isEdit ? t('Not allowed to change app name') || '' : ''}
-                    autoFocus={true}
-                    maxLength={60}
-                    placeholder={
-                      t(
-                        'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
-                      ) || ''
+            {/* <div className="mt-3 overflow-hidden rounded-lg border border-zinc-200 bg-white p-1">
+            {navList.map((item) => {
+              const IconComponent = item.icon === 'formInfo' ? FileText : item.icon === 'network' ? Globe : Settings;
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => {
+                    const element = document.getElementById(item.id);
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth' });
                     }
-                    {...register('appName', {
-                      required: t('Not allowed to change app name') || '',
-                      maxLength: 60,
-                      pattern: {
-                        value: /[a-z]([-a-z0-9]*[a-z0-9])?/g,
-                        message: t(
-                          'The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter'
-                        )
+                  }}
+                  className={`flex h-10 cursor-pointer items-center gap-2 rounded px-2 text-zinc-900 hover:bg-zinc-100 ${
+                    activeNav === item.id ? 'bg-zinc-100' : 'bg-transparent'
+                  }`}
+                >
+                  <div
+                    className={`h-6 w-0.5 rounded-full bg-zinc-900 transition-opacity ${
+                      activeNav === item.id ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  />
+                  <IconComponent
+                    className={`h-5 w-5 ${activeNav === item.id ? 'text-zinc-900' : 'text-zinc-500'}`}
+                  />
+                  <span className="text-sm">{t(item.label)}</span>
+                </div>
+              );
+            })}
+          </div> */}
+
+            {/* Price Box */}
+            {userSourcePrice && (
+              <div className="overflow-hidden">
+                <PriceBox
+                  pods={
+                    getValues('hpa.use')
+                      ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
+                      : [getValues('replicas') || 1, getValues('replicas') || 1]
+                  }
+                  cpu={getValues('cpu')}
+                  memory={getValues('memory')}
+                  storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
+                  gpu={
+                    !!getValues('gpu.type')
+                      ? {
+                          type: getValues('gpu.type'),
+                          amount: getValues('gpu.amount')
+                        }
+                      : undefined
+                  }
+                  nodeports={getValues('networks').filter((item) => item.openNodePort)?.length || 0}
+                />
+              </div>
+            )}
+
+            {/* Quota Box */}
+            {userSourcePrice && (
+              <div className="overflow-hidden">
+                <QuotaBox />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Content */}
+        <div id="form-container" className="relative w-full min-w-0 space-y-4 mb-10">
+          {/* Name Card */}
+          <Card className="">
+            <CardHeader className="pt-8 px-8 pb-5 bg-transparent gap-0">
+              <CardTitle className="text-xl font-medium text-zinc-900">{t('App Name')}</CardTitle>
+            </CardHeader>
+            <CardContent className="px-8 pb-8">
+              <div className="flex flex-col gap-2">
+                <Input
+                  aria-label={t('App Name')}
+                  className={`max-w-[400px] h-10 placeholder:text-zinc-500 ${
+                    errors.appName ? 'border-red-500' : ''
+                  }`}
+                  disabled={isEdit}
+                  title={isEdit ? t('Not allowed to change app name') || '' : ''}
+                  autoFocus={true}
+                  maxLength={60}
+                  placeholder={
+                    t(
+                      'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
+                    ) || ''
+                  }
+                  {...register('appName', {
+                    required: t('App Name is required') || '',
+                    maxLength: 60,
+                    pattern: {
+                      value: /^[a-z]([-a-z0-9]*[a-z0-9])?$/,
+                      message: 'invalid'
+                    }
+                  })}
+                />
+                {errors.appName && (
+                  <div className="text-sm text-red-500">
+                    {errors.appName.type === 'pattern' ? (
+                      <>
+                        <p>{t('Invalid name')}</p>
+                        <ul className="list-disc list-inside ml-1 mt-1">
+                          <li>{t('Use only lowercase letters, numbers, or hyphens (-)')}</li>
+                          <li>{t('Must start/end with a letter or number')}</li>
+                        </ul>
+                      </>
+                    ) : (
+                      <p>{errors.appName.message}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Image Card */}
+          <Card className="driver-deploy-image">
+            <CardHeader className="pt-8 px-8 pb-5 bg-transparent gap-0">
+              <CardTitle className="text-xl font-medium text-zinc-900">{t('Image')}</CardTitle>
+            </CardHeader>
+            <CardContent className="px-8 pb-8 space-y-3">
+              {/* Public/Private Toggle */}
+              <RadioGroup
+                value={getValues('secret.use') ? 'private' : 'public'}
+                onValueChange={(val) => setValue('secret.use', val === 'private')}
+                className="flex gap-3 mb-4"
+              >
+                <label
+                  className={`min-w-[150px] h-10 flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                    !getValues('secret.use')
+                      ? 'border-zinc-900 bg-white'
+                      : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                  }`}
+                >
+                  <RadioGroupItem value="public" />
+                  <span className="text-sm font-medium">{t('Public')}</span>
+                </label>
+                <label
+                  className={`min-w-[150px] h-10 flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                    getValues('secret.use')
+                      ? 'border-zinc-900 bg-white'
+                      : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                  }`}
+                >
+                  <RadioGroupItem value="private" />
+                  <span className="text-sm font-medium">{t('Private')}</span>
+                </label>
+              </RadioGroup>
+
+              {/* Image Name */}
+              <div className="grid grid-cols-[100px_1fr] items-start gap-3">
+                <Label className="text-sm font-medium text-zinc-900 h-10 flex items-center">
+                  {t('Image Name')}
+                </Label>
+                <div className="flex flex-col gap-1">
+                  <Input
+                    className={`max-w-[360px] h-10 placeholder:text-zinc-500 ${
+                      errors.imageName ? 'border-red-500' : ''
+                    }`}
+                    placeholder={`${t('Image Name')}`}
+                    {...register('imageName', {
+                      required: t('Image name cannot be empty') || '',
+                      maxLength: {
+                        value: 255,
+                        message: t('Image name cannot exceed 255 characters') || ''
+                      },
+                      setValueAs(e) {
+                        return e.replace(/\s*/g, '');
                       }
                     })}
                   />
-                </Flex>
-              </FormControl>
-              {/* image */}
-              <Box mb={7} className="driver-deploy-image">
-                <Flex alignItems={'center'}>
-                  <Label>{t('Image')}</Label>
-                  <Tabs
-                    w={'126px'}
-                    size={'sm'}
-                    list={[
-                      {
-                        label: t('public'),
-                        id: `public`
-                      },
-                      {
-                        label: t('private'),
-                        id: `private`
-                      }
-                    ]}
-                    activeId={getValues('secret.use') ? 'private' : 'public'}
-                    onChange={(val) => {
-                      if (val === 'public') {
-                        setValue('secret.use', false);
-                      } else {
-                        setValue('secret.use', true);
-                      }
-                    }}
-                  />
-                </Flex>
-                <Box mt={4} pl={`${labelWidth}px`}>
-                  <FormControl isInvalid={!!errors.imageName} w={'420px'}>
-                    <Box mb={1} fontSize={'sm'}>
-                      {t('Image Name')}
-                    </Box>
-                    <Input
-                      width={'350px'}
-                      value={getValues('imageName')}
-                      backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
-                      placeholder={`${t('Image Name')}`}
-                      {...register('imageName', {
-                        required: 'Image name cannot be empty',
-                        setValueAs(e) {
-                          return e.replace(/\s*/g, '');
-                        }
-                      })}
-                    />
-                  </FormControl>
-                  {getValues('secret.use') ? (
-                    <>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.username} w={'420px'}>
-                        <Box mb={1} fontSize={'sm'}>
-                          {t('Username')}
-                        </Box>
+                  {errors.imageName && (
+                    <p className="text-sm text-red-500">{errors.imageName.message}</p>
+                  )}
+                </div>
+              </div>
+
+              {getValues('secret.use') && (
+                <>
+                  <div className="grid grid-cols-[100px_1fr] items-start gap-3">
+                    <Label className="text-sm font-medium text-zinc-900 h-10 flex items-center">
+                      {t('Username')}
+                    </Label>
+                    <div className="flex flex-col gap-1">
+                      <Input
+                        className={`max-w-[360px] h-10 placeholder:text-zinc-500 ${
+                          errors.secret?.username ? 'border-red-500' : ''
+                        }`}
+                        placeholder={`${t('Username for the image registry')}`}
+                        {...register('secret.username', {
+                          required: t('The user name cannot be empty') || ''
+                        })}
+                      />
+                      {errors.secret?.username && (
+                        <p className="text-sm text-red-500">{errors.secret.username.message}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-[100px_1fr] items-start gap-3">
+                    <Label className="text-sm font-medium text-zinc-900 h-10 flex items-center">
+                      {t('Password')}
+                    </Label>
+                    <div className="flex flex-col gap-1">
+                      <Input
+                        type="password"
+                        className={`max-w-[360px] h-10 placeholder:text-zinc-500 ${
+                          errors.secret?.password ? 'border-red-500' : ''
+                        }`}
+                        placeholder={`${t('Password for the image registry')}`}
+                        {...register('secret.password', {
+                          required: t('The password cannot be empty') || ''
+                        })}
+                      />
+                      {errors.secret?.password && (
+                        <p className="text-sm text-red-500">{errors.secret.password.message}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-[100px_1fr] items-start gap-3">
+                    <Label className="text-sm font-medium text-zinc-900 h-10 flex items-center">
+                      {t('Image Address')}
+                    </Label>
+                    <div className="flex flex-col gap-1">
+                      <Input
+                        className={`max-w-[360px] h-10 placeholder:text-zinc-500 ${
+                          errors.secret?.serverAddress ? 'border-red-500' : ''
+                        }`}
+                        placeholder={`${t('Image Address')}`}
+                        {...register('secret.serverAddress', {
+                          required: t('The image cannot be empty') || ''
+                        })}
+                      />
+                      {errors.secret?.serverAddress && (
+                        <p className="text-sm text-red-500">
+                          {errors.secret.serverAddress.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Usage Card */}
+          <Card className="driver-deploy-instance">
+            <CardHeader className="pt-8 px-8 pb-5 bg-transparent gap-0">
+              <CardTitle className="text-xl font-medium text-zinc-900">{t('Usage')}</CardTitle>
+            </CardHeader>
+            <CardContent className="px-8 pb-8 space-y-4">
+              {/* Fixed/Scaling Toggle */}
+              <RadioGroup
+                value={getValues('hpa.use') ? 'hpa' : 'static'}
+                onValueChange={(val) => setValue('hpa.use', val === 'hpa')}
+                className="flex gap-3"
+              >
+                <label
+                  className={`min-w-[150px] h-10 flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                    !getValues('hpa.use')
+                      ? 'border-zinc-900 bg-white'
+                      : 'border-zinc-200 bg-white hover:bg-zinc-50 '
+                  }`}
+                >
+                  <RadioGroupItem value="static" />
+                  <span className="text-sm font-medium">{t('Fixed instance')}</span>
+                </label>
+                <label
+                  className={`min-w-[150px] h-10 flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
+                    getValues('hpa.use')
+                      ? 'border-zinc-900 bg-white'
+                      : 'border-zinc-200 bg-white hover:bg-zinc-50'
+                  }`}
+                >
+                  <RadioGroupItem value="hpa" />
+                  <span className="text-sm font-medium">{t('Auto scaling')}</span>
+                </label>
+              </RadioGroup>
+
+              {getValues('hpa.use') ? (
+                <>
+                  {/* HPA Mode */}
+                  <div className="grid grid-cols-[100px_1fr] items-center gap-3">
+                    <Label className="text-sm font-medium text-zinc-900">{t('Target')}</Label>
+                    <div className="flex items-center gap-3">
+                      <Select
+                        value={getValues('hpa.target')}
+                        onValueChange={(val) => setValue('hpa.target', val as 'cpu' | 'memory')}
+                      >
+                        <SelectTrigger className="min-w-[150px] h-10 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cpu">{t('CPU')}</SelectItem>
+                          <SelectItem value="memory">{t('Memory')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="relative w-[100px]">
                         <Input
-                          backgroundColor={
-                            getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
-                          }
-                          placeholder={`${t('Username for the image registry')}`}
-                          {...register('secret.username', {
-                            required: t('The user name cannot be empty') || ''
-                          })}
-                        />
-                      </FormControl>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.password} w={'420px'}>
-                        <Box mb={1} fontSize={'sm'}>
-                          {t('Password')}
-                        </Box>
-                        <Input
-                          type={'password'}
-                          placeholder={`${t('Password for the image registry')}`}
-                          backgroundColor={
-                            getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
-                          }
-                          {...register('secret.password', {
-                            required: t('The password cannot be empty') || ''
-                          })}
-                        />
-                      </FormControl>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.serverAddress} w={'420px'}>
-                        <Box mb={1} fontSize={'sm'}>
-                          {t('Image Address')}
-                        </Box>
-                        <Input
-                          backgroundColor={
-                            getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
-                          }
-                          placeholder={`${t('Image Address')}`}
-                          {...register('secret.serverAddress', {
-                            required: t('The image cannot be empty') || ''
-                          })}
-                        />
-                      </FormControl>
-                    </>
-                  ) : null}
-                </Box>
-              </Box>
-              {/* replicas */}
-              <Box mb={7}>
-                <Flex alignItems={'center'}>
-                  <Label>{t('Deployment Mode')}</Label>
-                  <Tabs
-                    className="driver-deploy-instance"
-                    w={'195px'}
-                    size={'sm'}
-                    list={[
-                      {
-                        label: t('Fixed instance'),
-                        id: `static`
-                      },
-                      {
-                        label: t('Auto scaling'),
-                        id: `hpa`
-                      }
-                    ]}
-                    activeId={getValues('hpa.use') ? 'hpa' : 'static'}
-                    onChange={(val) => {
-                      if (val === 'static') {
-                        setValue('hpa.use', false);
-                      } else {
-                        setValue('hpa.use', true);
-                      }
-                    }}
-                  />
-                </Flex>
-                <Box mt={4} pl={`${labelWidth}px`}>
-                  {getValues('hpa.use') ? (
-                    <>
-                      <Flex alignItems={'center'}>
-                        <MySelect
-                          width={'120px'}
-                          height="32px"
-                          value={getValues('hpa.target')}
-                          list={[
-                            { value: 'cpu', label: t('CPU') },
-                            { value: 'memory', label: t('Memory') }
-                            // ...(userSourcePrice?.gpu ? [{ label: 'GPU', value: 'gpu' }] : [])
-                          ]}
-                          onchange={(val: any) => setValue('hpa.target', val)}
-                        />
-                        <Input
-                          width={'80px'}
-                          type={'number'}
-                          backgroundColor={
-                            getValues('hpa.value') ? 'myWhite.500' : 'grayModern.100'
-                          }
-                          mx={2}
+                          type="number"
+                          className={`h-10 pr-8 ${
+                            getValues('hpa.target') === 'gpu' ? 'pr-0' : 'pr-8'
+                          }`}
                           {...register('hpa.value', {
                             required: t('The Cpu target is empty') || '',
                             valueAsNumber: true,
@@ -661,264 +685,351 @@ const Form = ({
                             }
                           })}
                         />
-                        <Box>{getValues('hpa.target') === 'gpu' ? '' : '%'}</Box>
-                        <Tip
-                          ml={4}
-                          icon={<InfoOutlineIcon />}
-                          text={t('CPU target is the CPU utilization rate of any container')}
-                          size="sm"
-                        />
-                      </Flex>
+                        {getValues('hpa.target') !== 'gpu' && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500 pointer-events-none">
+                            %
+                          </span>
+                        )}
+                      </div>
+                      <p className="ml-1 text-sm text-zinc-500">
+                        {t('CPU target is the CPU utilization rate of any container')}
+                      </p>
+                    </div>
+                  </div>
 
-                      <Box mt={5} pb={5} pr={3}>
-                        <Label mb={1} fontSize={'sm'}>
-                          {t('Replicas')}
-                        </Label>
-                        <Box w={'410px'} ml={'7px'}>
-                          <MyRangeSlider
-                            min={1}
-                            max={20}
-                            step={1}
-                            value={[getValues('hpa.minReplicas'), getValues('hpa.maxReplicas')]}
-                            setVal={(e) => {
-                              setValue('hpa.minReplicas', e[0]);
-                              setValue('hpa.maxReplicas', e[1]);
+                  <div className="grid grid-cols-[100px_1fr] items-center gap-3">
+                    <Label className="text-sm font-medium text-zinc-900">{t('Replicas')}</Label>
+                    <div className="flex items-center gap-3">
+                      {/* Min Replicas */}
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = getValues('hpa.minReplicas') || 1;
+                            if (current > 1) setValue('hpa.minReplicas', current - 1);
+                          }}
+                          disabled={(getValues('hpa.minReplicas') || 1) <= 1}
+                          className="w-10 h-10 flex items-center justify-center border rounded-l-lg bg-white hover:bg-zinc-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Minus className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <div className="w-12 h-10 flex items-center justify-center border-t border-b border-zinc-200 bg-white text-sm font-medium">
+                          {getValues('hpa.minReplicas') || 1}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = getValues('hpa.minReplicas') || 1;
+                            const max = getValues('hpa.maxReplicas') || 2;
+                            if (current < max) setValue('hpa.minReplicas', current + 1);
+                          }}
+                          disabled={
+                            (getValues('hpa.minReplicas') || 1) >=
+                            (getValues('hpa.maxReplicas') || 2)
+                          }
+                          className="w-10 h-10 flex items-center justify-center border rounded-r-lg bg-white hover:bg-zinc-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Plus className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+                      <span className="text-zinc-500">~</span>
+                      {/* Max Replicas */}
+                      <div className="flex items-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = getValues('hpa.maxReplicas') || 2;
+                            const min = getValues('hpa.minReplicas') || 1;
+                            if (current > min) setValue('hpa.maxReplicas', current - 1);
+                          }}
+                          disabled={
+                            (getValues('hpa.maxReplicas') || 2) <=
+                            (getValues('hpa.minReplicas') || 1)
+                          }
+                          className="w-10 h-10 flex items-center justify-center border rounded-l-lg bg-white hover:bg-zinc-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Minus className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <div className="w-12 h-10 flex items-center justify-center border-t border-b border-zinc-200 bg-white text-sm font-medium">
+                          {getValues('hpa.maxReplicas') || 2}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = getValues('hpa.maxReplicas') || 2;
+                            if (current < 20) setValue('hpa.maxReplicas', current + 1);
+                          }}
+                          disabled={(getValues('hpa.maxReplicas') || 2) >= 20}
+                          className="w-10 h-10 flex items-center justify-center border rounded-r-lg bg-white hover:bg-zinc-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Plus className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Fixed Mode - Replicas with +/- buttons */
+                <div className="grid grid-cols-[100px_1fr] items-center gap-3">
+                  <Label className="text-sm font-medium text-zinc-900">{t('Replicas')}</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center w-min">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = getValues('replicas') || 1;
+                              if (current > 1) setValue('replicas', current - 1);
                             }}
-                          />
-                        </Box>
-                      </Box>
-                    </>
-                  ) : (
-                    <Flex alignItems={'center'}>
-                      <Label w={'auto'} mr={3} fontSize={'12px'}>
-                        {t('Replicas')}
-                      </Label>
-                      <RangeInput
-                        value={getValues('replicas')}
-                        min={1}
-                        max={20}
-                        hoverText={
-                          t('Number of instances: 1 to 20') || 'Number of instances: 1 to 20'
-                        }
-                        setVal={(val) => {
-                          register('replicas', {
-                            required:
-                              t('The number of instances cannot be empty') ||
-                              'The number of instances cannot be empty',
-                            min: {
-                              value: 1,
-                              message: t('The minimum number of instances is 1')
-                            },
-                            max: {
-                              value: 20,
-                              message: t('The maximum number of instances is 20')
-                            }
-                          });
-                          setValue('replicas', val || '');
-                        }}
-                      />
-                    </Flex>
-                  )}
-                </Box>
-              </Box>
+                            disabled={(getValues('replicas') || 1) <= 1}
+                            className="w-10 h-10 flex items-center justify-center border rounded-l-lg bg-white hover:bg-zinc-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Minus className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                          <div className="w-20 h-10 flex items-center justify-center border-t border-b border-zinc-200 bg-white text-sm font-medium">
+                            {getValues('replicas') || 1}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = getValues('replicas') || 1;
+                              if (current < 20) setValue('replicas', current + 1);
+                            }}
+                            disabled={(getValues('replicas') || 1) >= 20}
+                            className="w-10 h-10 flex items-center justify-center border rounded-r-lg bg-white hover:bg-zinc-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Plus className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="rounded-xl">
+                        <p className="text-sm text-zinc-900 font-normal p-2">
+                          {`${t('Replicas Range')}: 1~20`}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              )}
 
+              {/* GPU (if available) */}
               {userSourcePrice?.gpu && (
-                <Box mb={7}>
-                  <Flex alignItems={'center'}>
-                    <Label>GPU</Label>
-                    <MySelect
-                      width={'300px'}
-                      placeholder={t('No GPU') || ''}
-                      value={getValues('gpu.type')}
-                      list={gpuSelectList}
-                      onchange={(type: any) => {
-                        const selected = userSourcePrice?.gpu?.find((item) => item.type === type);
-                        const inventory = countGpuInventory(type);
-                        if (type === '' || (selected && inventory > 0)) {
-                          setValue('gpu.type', type);
+                <>
+                  <div className="grid grid-cols-[100px_1fr] items-center gap-3">
+                    <Label className="text-sm font-medium text-zinc-900">GPU</Label>
+                    <Select
+                      value={getValues('gpu.type') || 'none'}
+                      onValueChange={(type) => {
+                        const actualType = type === 'none' ? '' : type;
+                        const selected = userSourcePrice?.gpu?.find(
+                          (item) => item.type === actualType
+                        );
+                        const inventory = countGpuInventory(actualType);
+                        if (actualType === '' || (selected && inventory > 0)) {
+                          setValue('gpu.type', actualType);
                           const sliderList = countSliderList();
                           setValue('cpu', sliderList.cpu[1].value);
                           setValue('memory', sliderList.memory[1].value);
                         }
                       }}
-                    />
-                  </Flex>
-                  {!!getValues('gpu.type') && (
-                    <Box mt={4} pl={`${labelWidth}px`}>
-                      <Box mb={1}>{t('Amount')}</Box>
-                      <Flex alignItems={'center'}>
-                        {GpuAmountMarkList.map((item) => {
-                          const inventory = selectedGpu?.inventory || 0;
-                          const hasInventory = item.value <= inventory;
+                    >
+                      <SelectTrigger className="w-[400px] h-10 rounded-lg pl-2">
+                        <SelectValue placeholder={t('No GPU') || ''} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {gpuSelectList.map((item) => (
+                          <SelectItem key={item.value || 'none'} value={item.value || 'none'}>
+                            {item.value === '' ? (
+                              <span>{t('No GPU')}</span>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-[6px] rounded-md bg-zinc-100 px-2 py-1">
+                                  {item.alias.toLowerCase().startsWith('nvidia') && (
+                                    <MyIcon name="nvidiaGreen" w="16px" h="16px" color="#10B981" />
+                                  )}
+                                  <span className="text-zinc-900 font-medium">{item.alias}</span>
+                                </div>
+                                <span className="text-zinc-900">
+                                  {t('vm')}: {item.vm}G
+                                </span>
+                                <span className="text-zinc-200">|</span>
+                                <span className="text-zinc-900">
+                                  {t('Inventory')}:{' '}
+                                  <span className="text-yellow-600">{item.inventory}</span>
+                                </span>
+                              </div>
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
 
-                          return (
-                            <MyTooltip
-                              key={item.value}
-                              label={hasInventory ? '' : t('Under Stock')}
-                            >
-                              <Center
-                                mr={2}
-                                w={'32px'}
-                                h={'32px'}
-                                borderRadius={'md'}
-                                border={'1px solid'}
-                                bg={'white'}
-                                {...(getValues('gpu.amount') === item.value
-                                  ? {
-                                      borderColor: 'brightBlue.500',
-                                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
-                                    }
-                                  : {
-                                      borderColor: 'grayModern.200',
-                                      bgColor: 'grayModern.100'
-                                    })}
-                                {...(hasInventory
-                                  ? {
-                                      cursor: 'pointer',
-                                      onClick: () => {
-                                        setValue('gpu.amount', item.value);
-                                        const sliderList = countSliderList();
-                                        setValue('cpu', sliderList.cpu[1].value);
-                                        setValue('memory', sliderList.memory[1].value);
-                                      }
-                                    }
-                                  : {
-                                      cursor: 'default',
-                                      opacity: 0.5
-                                    })}
-                              >
-                                {item.label}
-                              </Center>
-                            </MyTooltip>
-                          );
+                    {!!getValues('gpu.type') && (
+                      <>
+                        <div></div>
+                        <div className="flex flex-col gap-2">
+                          <Label className="text-sm font-medium text-zinc-900">{t('Amount')}</Label>
+                          <div className="flex items-center gap-2">
+                            {GpuAmountMarkList.map((item) => {
+                              const inventory = selectedGpu?.inventory || 0;
+                              const hasInventory = item.value <= inventory;
+
+                              return (
+                                <TooltipProvider key={item.value}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        type="button"
+                                        disabled={!hasInventory}
+                                        onClick={() => {
+                                          setValue('gpu.amount', item.value);
+                                          const sliderList = countSliderList();
+                                          setValue('cpu', sliderList.cpu[1].value);
+                                          setValue('memory', sliderList.memory[1].value);
+                                        }}
+                                        className={`w-10 h-10 rounded-lg border text-sm font-normal transition-all ${
+                                          getValues('gpu.amount') === item.value
+                                            ? 'border-zinc-900 bg-white'
+                                            : 'border-zinc-200 bg-white'
+                                        } ${
+                                          !hasInventory
+                                            ? 'opacity-50 cursor-not-allowed'
+                                            : 'cursor-pointer hover:bg-zinc-50'
+                                        }`}
+                                      >
+                                        {item.label}
+                                      </button>
+                                    </TooltipTrigger>
+                                    {!hasInventory && (
+                                      <TooltipContent>
+                                        <p>{t('Under Stock')}</p>
+                                      </TooltipContent>
+                                    )}
+                                  </Tooltip>
+                                </TooltipProvider>
+                              );
+                            })}
+                            {/* <span className="ml-2 text-zinc-500">/ {t('Card')}</span> */}
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {exceededQuotas.some(({ type }) => type === 'gpu') && (
+                      <p className="ml-[112px] text-sm text-red-500 col-span-full">
+                        {t('gpu_exceeds_quota', {
+                          requested: getValues('gpu.amount') || 0,
+                          limit: exceededQuotas.find(({ type }) => type === 'gpu')?.limit ?? 0,
+                          used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
                         })}
-                        <Box ml={3} color={'MyGray.500'}>
-                          / {t('Card')}
-                        </Box>
-                      </Flex>
-                    </Box>
-                  )}
-                </Box>
-              )}
-              {userSourcePrice?.gpu && exceededQuotas.some(({ type }) => type === 'gpu') && (
-                <Box mb={4} pl={`${labelWidth}px`}>
-                  <Box fontSize={'md'} color={'red.500'} mb={1}>
-                    {t('gpu_exceeds_quota', {
-                      requested: getValues('gpu.amount') || 0,
-                      limit: exceededQuotas.find(({ type }) => type === 'gpu')?.limit ?? 0,
-                      used: exceededQuotas.find(({ type }) => type === 'gpu')?.used ?? 0
-                    })}
-                  </Box>
-                  {/* [TODO] Let's wait for the Client SDK upgrade */}
-                  {/* <Box fontSize={'md'} color={'red.500'}>
-                    {t('please_upgrade_plan.0')}
-                    <Box
-                      as="span"
-                      cursor="pointer"
-                      fontWeight="semibold"
-                      color="blue.600"
-                      textDecoration="underline"
-                      onClick={handleOpenCostcenter}
-                    >
-                      {t('please_upgrade_plan.1')}
-                    </Box>
-                    {t('please_upgrade_plan.2')}
-                  </Box> */}
-                </Box>
+                      </p>
+                    )}
+                  </div>
+                </>
               )}
 
-              {/* cpu && memory */}
-              <Flex mb={10} pr={3} alignItems={'flex-start'}>
-                <Label mr={'7px'}>{t('CPU')}</Label>
-                <MySlider
-                  markList={SliderList.cpu}
-                  activeVal={getValues('cpu')}
-                  setVal={(e) => {
-                    setValue('cpu', SliderList.cpu[e].value);
-                  }}
-                  max={SliderList.cpu.length - 1}
-                  min={0}
-                  step={1}
-                />
-                <Box ml={5} transform={'translateY(10px)'} color={'grayModern.900'}>
-                  (Core)
-                </Box>
-              </Flex>
-              {exceededQuotas.some(({ type }) => type === 'cpu') && (
-                <Box mb={4} pl={`${labelWidth}px`}>
-                  <Box fontSize={'md'} color={'red.500'} mb={1}>
-                    {t('cpu_exceeds_quota', {
-                      requested: getValues('cpu') / resourcePropertyMap.cpu.scale,
-                      limit:
-                        (exceededQuotas.find(({ type }) => type === 'cpu')?.limit ?? 0) /
-                        resourcePropertyMap.cpu.scale,
-                      used:
-                        (exceededQuotas.find(({ type }) => type === 'cpu')?.used ?? 0) /
-                        resourcePropertyMap.cpu.scale
-                    })}
-                  </Box>
-                  {/* [TODO] Let's wait for the Client SDK upgrade */}
-                  {/* <Box fontSize={'md'} color={'red.500'}>
-                    {t('please_upgrade_plan.0')}
-                    <Box
-                      as="span"
-                      cursor="pointer"
-                      fontWeight="semibold"
-                      color="blue.600"
-                      textDecoration="underline"
-                      onClick={handleOpenCostcenter}
-                    >
-                      {t('please_upgrade_plan.1')}
-                    </Box>
-                    {t('please_upgrade_plan.2')}
-                  </Box> */}
-                </Box>
-              )}
-              <Flex mb={8} pr={3} alignItems={'center'}>
-                <Label mr={'7px'}>{t('Memory')}</Label>
-                <MySlider
-                  markList={SliderList.memory}
-                  activeVal={getValues('memory')}
-                  setVal={(e) => {
-                    setValue('memory', SliderList.memory[e].value);
-                  }}
-                  max={SliderList.memory.length - 1}
-                  min={0}
-                  step={1}
-                />
-              </Flex>
-              {exceededQuotas.some(({ type }) => type === 'memory') && (
-                <Box mb={4} pl={`${labelWidth}px`}>
-                  <Box fontSize={'md'} color={'red.500'} mb={1}>
-                    {t('memory_exceeds_quota', {
-                      requested: getValues('memory') / resourcePropertyMap.memory.scale,
-                      limit:
-                        (exceededQuotas.find(({ type }) => type === 'memory')?.limit ?? 0) /
-                        resourcePropertyMap.memory.scale,
-                      used:
-                        (exceededQuotas.find(({ type }) => type === 'memory')?.used ?? 0) /
-                        resourcePropertyMap.memory.scale
-                    })}
-                  </Box>
-                  {/* [TODO] Let's wait for the Client SDK upgrade */}
-                  {/* <Box fontSize={'md'} color={'red.500'}>
-                    {t('please_upgrade_plan.0')}
-                    <Box
-                      as="span"
-                      cursor="pointer"
-                      fontWeight="semibold"
-                      color="blue.600"
-                      textDecoration="underline"
-                      onClick={handleOpenCostcenter}
-                    >
-                      {t('please_upgrade_plan.1')}
-                    </Box>
-                    {t('please_upgrade_plan.2')}
-                  </Box> */}
-                </Box>
-              )}
-            </Box>
-          </Box>
+              {/* CPU */}
+              <div className="grid grid-cols-[100px_1fr] items-start gap-3 pt-3">
+                <Label className="text-sm font-medium text-zinc-900">{t('CPU')}</Label>
+                <div className="flex-1 flex flex-col gap-3 px-1">
+                  <Slider
+                    value={[
+                      SliderList.cpu.findIndex((item) => item.value === getValues('cpu')) ?? 0
+                    ]}
+                    onValueChange={([val]) => setValue('cpu', SliderList.cpu[val].value)}
+                    max={SliderList.cpu.length - 1}
+                    min={0}
+                    step={1}
+                  />
+                  <div className="relative h-4 text-xs text-zinc-500 mx-2">
+                    {SliderList.cpu.map((item, i) => (
+                      <span
+                        key={i}
+                        onClick={() => setValue('cpu', item.value)}
+                        className={`absolute w-10 text-center -translate-x-1/2 cursor-pointer hover:text-zinc-700 ${
+                          getValues('cpu') === item.value ? 'text-zinc-900 font-medium' : ''
+                        }`}
+                        style={{
+                          left:
+                            i === 0
+                              ? '1%'
+                              : i === SliderList.cpu.length - 1
+                              ? '99%'
+                              : `${(i / (SliderList.cpu.length - 1)) * 100}%`
+                        }}
+                      >
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
+                  {exceededQuotas.some(({ type }) => type === 'cpu') && (
+                    <p className="text-sm text-red-500">
+                      {t('cpu_exceeds_quota', {
+                        requested: getValues('cpu') / resourcePropertyMap.cpu.scale,
+                        limit:
+                          (exceededQuotas.find(({ type }) => type === 'cpu')?.limit ?? 0) /
+                          resourcePropertyMap.cpu.scale,
+                        used:
+                          (exceededQuotas.find(({ type }) => type === 'cpu')?.used ?? 0) /
+                          resourcePropertyMap.cpu.scale
+                      })}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Memory */}
+              <div className="grid grid-cols-[100px_1fr] items-start gap-3 pt-2">
+                <Label className="text-sm font-medium text-zinc-900">{t('Memory')}</Label>
+                <div className="flex-1 flex flex-col gap-3 px-1">
+                  <Slider
+                    value={[
+                      SliderList.memory.findIndex((item) => item.value === getValues('memory')) ?? 0
+                    ]}
+                    onValueChange={([val]) => setValue('memory', SliderList.memory[val].value)}
+                    max={SliderList.memory.length - 1}
+                    min={0}
+                    step={1}
+                  />
+                  <div className="relative h-4 text-xs text-zinc-500 mx-2">
+                    {SliderList.memory.map((item, i) => (
+                      <span
+                        key={i}
+                        onClick={() => setValue('memory', item.value)}
+                        className={`absolute w-10 text-center -translate-x-1/2 cursor-pointer hover:text-zinc-700 ${
+                          getValues('memory') === item.value ? 'text-zinc-900 font-medium' : ''
+                        }`}
+                        style={{
+                          left:
+                            i === 0
+                              ? '1%'
+                              : i === SliderList.memory.length - 1
+                              ? '99%'
+                              : `${(i / (SliderList.memory.length - 1)) * 100}%`
+                        }}
+                      >
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
+                  {exceededQuotas.some(({ type }) => type === 'memory') && (
+                    <p className="text-sm text-red-500">
+                      {t('memory_exceeds_quota', {
+                        requested: getValues('memory') / resourcePropertyMap.memory.scale,
+                        limit:
+                          (exceededQuotas.find(({ type }) => type === 'memory')?.limit ?? 0) /
+                          resourcePropertyMap.memory.scale,
+                        used:
+                          (exceededQuotas.find(({ type }) => type === 'memory')?.used ?? 0) /
+                          resourcePropertyMap.memory.scale
+                      })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* network */}
           <NetworkSection
@@ -926,301 +1037,288 @@ const Form = ({
             exceededQuotas={exceededQuotas}
             onDomainVerified={onDomainVerified}
             handleOpenCostcenter={handleOpenCostcenter}
-            boxStyles={boxStyles}
-            headerStyles={headerStyles}
           />
 
           {/* settings */}
           {already && (
-            <Accordion
-              pb={'100px'}
-              id={'settings'}
-              allowToggle
-              index={isAdvancedOpen || navList[2].isSetting ? 0 : undefined}
-            >
-              <AccordionItem {...boxStyles}>
-                <AccordionButton
-                  {...headerStyles}
-                  justifyContent={'space-between'}
-                  _hover={{ bg: '' }}
-                >
-                  <Flex alignItems={'center'}>
-                    <MyIcon name={'settings'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
-                    <Box>{t('Advanced Configuration')}</Box>
-                    <Center
-                      bg={'grayModern.200'}
-                      minW={'48px'}
-                      px={'8px'}
-                      height={'28px'}
-                      ml={'14px'}
-                      fontSize={'11px'}
-                      borderRadius={'33px'}
-                      color={'grayModern.700'}
-                    >
-                      {t('Option')}
-                    </Center>
-                  </Flex>
-                  <AccordionIcon w={'20px'} h={'20px'} color={'#485264'} />
-                </AccordionButton>
-
-                <AccordionPanel px={'42px'} py={'24px'}>
-                  <Flex mb={'16px'}>
-                    <Label className={styles.formSecondTitle}>{t('Command')}</Label>
-                    <Tip
-                      icon={<InfoOutlineIcon />}
-                      size="sm"
-                      text={t('If no, the default command is used')}
-                    />
-                  </Flex>
-                  {/* command && param */}
-                  <FormControl mb={7}>
-                    <Flex alignItems={'center'} className="driver-deploy-command">
-                      <Label>{t('Run command')}</Label>
+            <Card id="settings" className="w-full min-w-0">
+              <CardHeader className="pt-8 px-8 pb-6 bg-transparent gap-0">
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-xl font-medium text-zinc-900">
+                    {t('Advanced Configuration')}
+                  </CardTitle>
+                  <span className="px-3 py-1 text-xs font-medium text-zinc-600 bg-zinc-50 border border-zinc-200 rounded-full">
+                    {t('Option')}
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="px-8 pb-8 min-w-0">
+                {/* Command Section */}
+                <div id="settings-command" className="min-w-0">
+                  <div className="flex flex-col gap-1 mb-3">
+                    <h3 className="text-base font-medium leading-none text-zinc-900">
+                      {t('Command')}
+                    </h3>
+                    <p className="text-sm font-normal text-zinc-500">
+                      {t('If no, the default command is used')}
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-[100px_1fr] items-center gap-3 driver-deploy-command">
+                      <Label className="text-sm font-medium leading-none text-zinc-900">
+                        {t('Command')}
+                      </Label>
                       <Input
-                        w={'350px'}
-                        bg={getValues('runCMD') ? 'myWhite.500' : 'grayModern.100'}
+                        className="max-w-[400px] h-10"
                         placeholder={`${t('Such as')} /bin/bash -c`}
                         {...register('runCMD')}
                       />
-                    </Flex>
-                  </FormControl>
-                  <FormControl>
-                    <Flex alignItems={'center'}>
-                      <Label>{t('Command parameters')}</Label>
+                    </div>
+                    <div className="grid grid-cols-[100px_1fr] items-center gap-3">
+                      <Label className="text-sm font-medium leading-none text-zinc-900">
+                        {t('Arguments')}
+                      </Label>
                       <Input
-                        w={'350px'}
-                        bg={getValues('cmdParam') ? 'myWhite.500' : 'grayModern.100'}
+                        className="max-w-[400px] h-10"
                         placeholder={`${t('Such as')} sleep 10 && /entrypoint.sh db createdb`}
                         {...register('cmdParam')}
                       />
-                    </Flex>
-                  </FormControl>
+                    </div>
+                  </div>
+                </div>
 
-                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
+                <Separator className="bg-transparent border-t border-dashed border-zinc-200 my-4" />
 
-                  {/* env */}
-                  <Box w={'100%'} maxW={'600px'}>
-                    <Flex alignItems={'center'}>
-                      <Label className={styles.formSecondTitle}>{t('Environment Variables')}</Label>
-                      <Button
-                        w={'100%'}
-                        height={'32px'}
-                        variant={'outline'}
-                        fontSize={'base'}
-                        leftIcon={<MyIcon name="edit" width={'16px'} fill={'#485264'} />}
-                        onClick={onOpenEditEnvs}
-                      >
-                        {t('Edit Environment Variables')}
-                      </Button>
-                    </Flex>
-                    <Box pl={`${labelWidth}px`} mt={3}>
-                      <table className={'table-cross'}>
-                        <tbody>
+                {/* Environment Variables Section */}
+                <div id="settings-envs" className="flex flex-col gap-3 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-medium leading-none text-zinc-900">
+                      {t('Environment Variables')}
+                    </h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 min-w-[86px] shadow-none hover:bg-zinc-50"
+                      onClick={onOpenEditEnvs}
+                    >
+                      <Plus className="w-4 h-4" />
+                      {t('Add')}
+                    </Button>
+                  </div>
+                  {envs.length > 0 && (
+                    <div className="border border-zinc-200 rounded-lg overflow-hidden">
+                      <Table className="table-fixed w-full [&_th]:border-b [&_th]:border-r [&_th:last-child]:border-r-0 [&_td]:border-b [&_td]:border-r [&_td:last-child]:border-r-0 [&_tr:last-child_td]:border-b-0 [&_tbody_tr:nth-child(even)]:bg-zinc-50">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[200px] max-w-[200px] h-auto py-2 font-semibold text-zinc-500 bg-zinc-50">
+                              {t('Key')}
+                            </TableHead>
+                            <TableHead className="h-auto py-2 font-semibold text-zinc-500 bg-zinc-50">
+                              {t('Value')}
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {envs.map((env) => {
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                                ? 'value from | ***'
-                                : '';
+                              ? 'value from | ***'
+                              : '';
                             return (
-                              <tr key={env.id}>
-                                <th>{env.key}</th>
-                                <th>
-                                  <MyTooltip label={valText}>
-                                    <Box
-                                      className={styles.textEllipsis}
-                                      style={{
-                                        userSelect: 'auto'
-                                      }}
-                                    >
-                                      {valText}
-                                    </Box>
-                                  </MyTooltip>
-                                </th>
-                              </tr>
+                              <TableRow key={env.id}>
+                                <TableCell className="w-[200px] max-w-[200px] text-sm font-normal text-zinc-900">
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-sm text-zinc-900 font-normal truncate block cursor-default">
+                                          {env.key}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="bottom" className="rounded-xl">
+                                        <p className="max-w-xs break-all">{env.key}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </TableCell>
+                                <TableCell>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-sm text-zinc-900 font-normal truncate block cursor-default truncate">
+                                          {valText}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="bottom" className="rounded-xl">
+                                        <p className="max-w-xs break-all">{valText}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </TableCell>
+                              </TableRow>
                             );
                           })}
-                        </tbody>
-                      </table>
-                    </Box>
-                  </Box>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
 
-                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
+                <Separator className="bg-transparent border-t border-dashed border-zinc-200 my-4" />
 
-                  <Box>
-                    <Flex alignItems={'center'} maxW={'600px'}>
-                      <Label className={styles.formSecondTitle}>{t('Configuration File')}</Label>
-                      <Button
-                        w={'100%'}
-                        height={'32px'}
-                        variant={'outline'}
-                        onClick={() =>
-                          setConfigEdit({ mountPath: '', value: '', key: '', volumeName: '' })
-                        }
-                        leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
-                      >
-                        {t('form.add_configmap')}
-                      </Button>
-                    </Flex>
-                    <Box mt={4} pl={`${labelWidth}px`}>
+                {/* Configmaps Section */}
+                <div id="settings-configmaps" className="flex flex-col gap-3 w-full min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-medium text-zinc-900">{t('Configmaps')}</h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 min-w-[86px] shadow-none hover:bg-zinc-50"
+                      onClick={() =>
+                        setConfigEdit({ mountPath: '', value: '', key: '', volumeName: '' })
+                      }
+                    >
+                      <Plus className="w-4 h-4" />
+                      {t('Add')}
+                    </Button>
+                  </div>
+                  {configMaps.length > 0 && (
+                    <div className="space-y-1 w-full min-w-0">
                       {configMaps.map((item, index) => (
-                        <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
-                          <Flex
-                            alignItems={'center'}
-                            px={4}
-                            py={1}
-                            border={theme.borders.base}
-                            flex={'0 0 320px'}
-                            w={0}
-                            borderRadius={'md'}
-                            cursor={'pointer'}
-                            onClick={() => setConfigEdit(item)}
-                            bg={'grayModern.25'}
-                          >
-                            <MyIcon name={'configMap'} w={'20px'} />
-                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
-                              <Box color={'myGray.900'} fontWeight={'bold'}>
-                                {item.mountPath}
-                              </Box>
-                              <Box
-                                className={styles.textEllipsis}
-                                color={'grayModern.900'}
-                                fontSize={'sm'}
-                              >
-                                {item.value}
-                              </Box>
-                            </Box>
-                          </Flex>
-                          <IconButton
-                            height={'32px'}
-                            width={'32px'}
-                            variant={'outline'}
-                            aria-label={'button'}
-                            bg={'#FFF'}
-                            ml={3}
-                            _hover={{
-                              color: 'red.600',
-                              bg: 'rgba(17, 24, 36, 0.05)'
-                            }}
-                            icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
-                            onClick={() => removeConfigMaps(index)}
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg cursor-pointer hover:bg-zinc-100 transition-colors w-full min-w-0 overflow-hidden"
+                          onClick={() => setConfigEdit(item)}
+                        >
+                          <MyIcon
+                            name="configMapColor"
+                            w="24px"
+                            h="24px"
+                            color="#a1a1aa"
+                            className="shrink-0"
                           />
-                        </Flex>
-                      ))}
-                    </Box>
-                  </Box>
-
-                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
-
-                  <Box className="driver-deploy-storage">
-                    <Flex alignItems={'center'} mb={'10px'}>
-                      <Label className={styles.formSecondTitle} m={0}>
-                        {t('Local Storage')}
-                      </Label>
-
-                      <Button
-                        w={'320px'}
-                        height={'32px'}
-                        variant={'outline'}
-                        onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
-                        leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
-                      >
-                        {t('Add volume')}
-                      </Button>
-                      <Tip
-                        ml={4}
-                        icon={<InfoOutlineIcon />}
-                        size="sm"
-                        text={t('Data cannot be communicated between multiple instances')}
-                      />
-                    </Flex>
-                    <Box mt={4} pl={`${labelWidth}px`}>
-                      {storeList.map((item, index) => (
-                        <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
-                          <Flex
-                            alignItems={'center'}
-                            px={4}
-                            py={1}
-                            border={theme.borders.base}
-                            flex={'0 0 320px'}
-                            w={0}
-                            borderRadius={'md'}
-                            cursor={'pointer'}
-                            bg={'grayModern.25'}
-                            onClick={() => setStoreEdit(item)}
-                          >
-                            <MyIcon name={'store'} w={'20px'} />
-                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
-                              <Box color={'myGray.900'} fontWeight={'bold'}>
-                                {item.path}
-                              </Box>
-                              <Box
-                                className={styles.textEllipsis}
-                                color={'grayModern.900'}
-                                fontSize={'sm'}
-                              >
-                                {item.value} Gi
-                              </Box>
-                            </Box>
-                          </Flex>
-                          <IconButton
-                            height={'32px'}
-                            width={'32px'}
-                            aria-label={'button'}
-                            variant={'outline'}
-                            bg={'#FFF'}
-                            ml={3}
-                            icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
-                            _hover={{
-                              color: 'red.600',
-                              bg: 'rgba(17, 24, 36, 0.05)'
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="text-sm font-medium text-zinc-900 truncate block w-full">
+                              {item.mountPath}
+                            </p>
+                            <p className="text-xs text-neutral-500 truncate block w-full">
+                              {item.value}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-neutral-500 hover:text-red-600 hover:bg-transparent"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeConfigMaps(index);
                             }}
-                            onClick={() => {
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <Separator className="bg-transparent border-t border-dashed border-zinc-200 my-4" />
+
+                {/* Local Storage Section */}
+                <div id="settings-storage" className="driver-deploy-storage min-w-0">
+                  <div
+                    className={`flex items-center justify-between ${
+                      storeList.length > 0 || persistentVolumes.length > 0 ? 'mb-4' : 'mb-2'
+                    }`}
+                  >
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-base font-medium leading-none text-zinc-900">
+                        {t('Local Storage')}
+                      </h3>
+                      <p className="text-sm font-normal text-zinc-500">
+                        {t('Data cannot be communicated between multiple instances')}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-10 min-w-[86px] shadow-none hover:bg-zinc-50"
+                      onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
+                    >
+                      <Plus className="w-4 h-4" />
+                      {t('Add')}
+                    </Button>
+                  </div>
+                  {(storeList.length > 0 || persistentVolumes.length > 0) && (
+                    <div className="space-y-1 min-w-0">
+                      {storeList.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg cursor-pointer hover:bg-zinc-100 transition-colors w-full min-w-0 overflow-hidden"
+                          onClick={() => setStoreEdit(item)}
+                        >
+                          <MyIcon
+                            name="storeColor"
+                            w="24px"
+                            h="24px"
+                            color="#a1a1aa"
+                            className="shrink-0"
+                          />
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="text-sm font-medium text-zinc-900 truncate block w-full">
+                              {item.path}
+                            </p>
+                            <p className="text-xs text-neutral-500 truncate block w-full">
+                              {item.value} Gi
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 text-neutral-500 hover:text-red-600 hover:bg-transparent"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (storeList.length === 1) {
-                                toast({
-                                  title: t('Store At Least One'),
-                                  status: 'error'
-                                });
+                                toast.error(t('Store At Least One'));
                               } else {
                                 removeStoreList(index);
                               }
                             }}
-                          />
-                        </Flex>
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       ))}
                       {persistentVolumes.map((item) => (
-                        <Flex key={item.path} _notLast={{ mb: 5 }} alignItems={'center'}>
-                          <Flex
-                            alignItems={'center'}
-                            px={4}
-                            py={1}
-                            border={theme.borders.base}
-                            flex={'0 0 320px'}
-                            w={0}
-                            borderRadius={'md'}
-                            cursor={'not-allowed'}
-                            bg={'grayModern.25'}
-                          >
-                            <MyIcon name={'store'} w={'20px'} />
-                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
-                              <Box color={'myGray.900'} fontWeight={'bold'}>
-                                {item.path}
-                              </Box>
-                            </Box>
-                            <Box fontSize={'12px'} color={'grayModern.600'}>
-                              {t('shared')}
-                            </Box>
-                          </Flex>
-                        </Flex>
+                        <div
+                          key={item.path}
+                          className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg cursor-not-allowed opacity-70 w-full min-w-0 overflow-hidden"
+                        >
+                          <MyIcon
+                            name="storeColor"
+                            w="24px"
+                            h="24px"
+                            color="#a1a1aa"
+                            className="shrink-0"
+                          />
+                          <div className="flex-1 min-w-0 overflow-hidden">
+                            <p className="text-sm font-medium text-zinc-900 truncate block w-full">
+                              {item.path}
+                            </p>
+                          </div>
+                          <span className="text-xs text-neutral-500">{t('shared')}</span>
+                        </div>
                       ))}
-                    </Box>
-                  </Box>
-                </AccordionPanel>
-              </AccordionItem>
-            </Accordion>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           )}
-        </Box>
-      </Grid>
+        </div>
+      </div>
 
       {isEditEnvs && (
         <EditEnvs defaultEnv={envs} onClose={onCloseEditEnvs} successCb={(e) => replaceEnvs(e)} />

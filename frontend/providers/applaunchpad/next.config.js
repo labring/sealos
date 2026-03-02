@@ -22,7 +22,7 @@ const nextConfig = {
     }
     return config;
   },
-  transpilePackages: ['@sealos/driver', '@sealos/ui'],
+  transpilePackages: ['@sealos/driver', '@sealos/ui', '@sealos/shadcn-ui', 'geist'],
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../../'),
     instrumentationHook: true

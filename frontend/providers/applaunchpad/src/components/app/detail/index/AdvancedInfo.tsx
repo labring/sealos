@@ -1,313 +1,324 @@
 import MyIcon from '@/components/Icon';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import type { AppDetailType } from '@/types/app';
-import { useCopyData } from '@/utils/tools';
+import { Separator } from '@sealos/shadcn-ui/separator';
+import { Button } from '@sealos/shadcn-ui/button';
 import {
-  Accordion,
-  AccordionButton,
-  AccordionIcon,
-  AccordionItem,
-  AccordionPanel,
-  Box,
-  Center,
-  Divider,
-  Flex,
-  Text,
-  useTheme
-} from '@chakra-ui/react';
-import { MyTooltip } from '@sealos/ui';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@sealos/shadcn-ui/table';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useState } from 'react';
-import styles from '@/components/app/detail/index/index.module.scss';
+import TruncateTooltip from '@/components/TruncateTooltip';
+import { useRouter } from 'next/router';
+import { FileCog, HardDrive, Variable } from 'lucide-react';
 
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 
-const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
+interface AdvancedInfoProps {
+  app?: AppDetailType;
+  containerClassName?: string;
+  contentClassName?: string;
+}
+
+const AdvancedInfo = ({
+  app = MOCK_APP_DETAIL,
+  containerClassName,
+  contentClassName
+}: AdvancedInfoProps) => {
   const { t } = useTranslation();
-  const theme = useTheme();
-  const { copyData } = useCopyData();
+  const router = useRouter();
   const [detailConfigMap, setDetailConfigMap] = useState<{
     mountPath: string;
     value: string;
   }>();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const handleManage = (scrollTo: string) => {
+    router.push(`/app/edit?name=${app.appName}&scrollTo=${scrollTo}`);
+  };
+  const rootClassName = containerClassName?.length ? containerClassName : '';
 
   return (
-    <Box px={'32px'}>
-      <Accordion allowToggle onChange={(expandedIndex) => setIsExpanded(expandedIndex === 0)}>
-        <AccordionItem border={'none'}>
-          <AccordionButton
-            display={'flex'}
-            height={'52px'}
-            textAlign={'left'}
-            py={4}
-            px={'0px'}
-            _hover={{ backgroundColor: 'transparent' }}
+    <div className={`grid grid-cols-2 w-full gap-2 overflow-y-auto ${rootClassName}`}>
+      <div className="col-span-2 h-fit bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-0.5">
+            <div className="text-base font-medium text-zinc-900">{t('Command')}</div>
+            <div className="text-sm font-normal text-zinc-500">
+              {t('If no, the default command is used')}
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-command')}
           >
-            <Box color={'grayModern.900'} fontSize={'14px'} fontWeight={'bold'}>
-              {t('Advanced Configuration')}
-            </Box>
+            {t('Manage')}
+          </Button>
+        </div>
 
-            <Flex
-              ml={'20px'}
-              alignItems={'center'}
-              fontSize={'12px'}
-              fontWeight={400}
-              color={'grayModern.600'}
+        <div className="grid gap-4 md:grid-cols-2 md:gap-3">
+          <div className="flex flex-col gap-3">
+            <div className="text-sm font-medium leading-none text-neutral-500">{t('Command')}</div>
+            <div
+              className={`h-10 flex items-center rounded-lg bg-zinc-50 border border-zinc-200 px-3 py-2 text-sm cursor-default ${
+                app.runCMD ? 'text-zinc-900' : 'text-zinc-500'
+              }`}
             >
-              <Text>
-                {t('Command')}: {app.runCMD || 'Not Configured'}
-              </Text>
-              <Divider
-                orientation="vertical"
-                h={'12px'}
-                mx={'16px'}
-                borderColor={'grayModern.300'}
-              />
-              <Text>
-                {t('Environment Variables')}: {app.envs?.length}
-              </Text>
-              <Divider
-                orientation="vertical"
-                h={'12px'}
-                mx={'16px'}
-                borderColor={'grayModern.300'}
-              />
-              <Text>ConfigMaps: {app.configMapList?.length}</Text>
-              <Divider
-                orientation="vertical"
-                h={'12px'}
-                mx={'16px'}
-                borderColor={'grayModern.300'}
-              />
-              <Text>
-                {t('Storage')}: {app.storeList?.length}
-              </Text>
-            </Flex>
+              <TruncateTooltip
+                content={app.runCMD || ''}
+                className="truncate block w-full"
+                contentClassName="w-2xl"
+              >
+                {app.runCMD || t('Not Configured')}
+              </TruncateTooltip>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className="text-sm font-medium leading-none text-neutral-500">
+              {t('Arguments')}
+            </div>
+            <div
+              className={`h-10 flex items-center rounded-lg bg-zinc-50 border border-zinc-200 px-3 py-2 text-sm cursor-default ${
+                app.cmdParam ? 'text-zinc-900' : 'text-zinc-500'
+              }`}
+            >
+              <TruncateTooltip
+                content={app.cmdParam || ''}
+                className="truncate block w-full"
+                contentClassName="w-2xl"
+              >
+                {app.cmdParam || t('Not Configured')}
+              </TruncateTooltip>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            <Box ml={'auto'}>
-              <AccordionIcon />
-            </Box>
-          </AccordionButton>
-          <AccordionPanel>
-            <Flex mt={'8px'} gap={'16px'}>
-              <Box flex={'1 0 0'} width={'0px'}>
-                <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                  <Text>{t('Command')}</Text>
-                  <Box
-                    borderRadius={'4px'}
-                    border={'1px solid #F4F4F7'}
-                    bg={'grayModern.25'}
-                    p={'12px'}
-                    mt={'8px'}
-                  >
-                    {[
-                      { label: 'Command', value: app.runCMD || 'Not Configured' },
-                      { label: 'Parameters', value: app.cmdParam || 'Not Configured' }
-                    ].map((item) => (
-                      <Flex
-                        key={item.label}
-                        _notFirst={{
-                          mt: '12px'
-                        }}
-                      >
-                        <Box flex={'0 0 80px'} w={0}>
-                          {t(item.label)}
-                        </Box>
-                        <Box color={'grayModern.900'}>{item.value}</Box>
-                      </Flex>
-                    ))}
-                  </Box>
-                </Box>
-                <Box mt={'16px'} fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                  <Text>{t('Environment Variables')}</Text>
-                  <Box
-                    borderRadius={'4px'}
-                    border={'1px solid #F4F4F7'}
-                    bg={'grayModern.25'}
-                    p={'12px'}
-                    mt={'8px'}
-                  >
-                    {app.envs?.length > 0 ? (
-                      <Flex
-                        flexDirection={'column'}
-                        border={theme.borders.base}
-                        bg={'#fff'}
-                        borderRadius={'md'}
-                      >
-                        {app.envs.map((env, index) => {
-                          const valText = env.value
-                            ? env.value
-                            : env.valueFrom
-                            ? 'value from | ***'
-                            : '';
-                          return (
-                            <Flex
-                              key={env.key}
-                              gap={'24px'}
-                              px="10px"
-                              py="8px"
-                              borderBottom={'1px solid'}
-                              borderBottomColor={
-                                index !== app.envs.length - 1 ? 'grayModern.150' : 'transparent'
-                              }
-                            >
-                              <Box flex={1} maxW={'40%'} overflowWrap={'break-word'}>
-                                {env.key}
-                              </Box>
-                              <MyTooltip label={valText}>
-                                <Box
-                                  flex={1}
-                                  className={styles.textEllipsis}
-                                  style={{
-                                    userSelect: 'auto',
-                                    cursor: 'pointer'
-                                  }}
-                                  onClick={() => copyData(valText)}
-                                >
-                                  {valText}
-                                </Box>
-                              </MyTooltip>
-                            </Flex>
-                          );
-                        })}
-                      </Flex>
-                    ) : (
-                      <Center
-                        w={'100%'}
-                        h={'32px'}
-                        color={'grayModern.600'}
-                        fontSize={'12px'}
-                        borderRadius={'4px'}
-                      >
-                        <Box>{t('no_data_available')}</Box>
-                      </Center>
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-              <Box flex={'1 0 0'}>
-                <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                  <Text>{t('Configuration File')}</Text>
-                  <Box
-                    borderRadius={'4px'}
-                    border={'1px solid #F4F4F7'}
-                    bg={'grayModern.25'}
-                    p={'12px'}
-                    mt={'8px'}
-                  >
-                    {app.configMapList?.length > 0 ? (
-                      <Box
-                        borderRadius={'md'}
-                        overflow={'hidden'}
-                        bg={'#FFF'}
-                        border={theme.borders.base}
-                      >
-                        {app.configMapList.map((item) => (
-                          <Flex
-                            key={item.mountPath}
-                            alignItems={'center'}
-                            px={'14px'}
-                            py={'8px'}
-                            cursor={'pointer'}
-                            _notLast={{
-                              borderBottom: theme.borders.base
-                            }}
-                          >
-                            <MyIcon name={'configMap'} width={'24px'} height={'24px'} />
-                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
-                              <Box fontWeight={'bold'} color={'grayModern.900'}>
-                                {item.mountPath}
-                              </Box>
-                              <Box
-                                className={styles.textEllipsis}
-                                color={'grayModern.600'}
-                                fontSize={'sm'}
-                              >
-                                {item.value}
-                              </Box>
-                            </Box>
-                          </Flex>
-                        ))}
-                      </Box>
-                    ) : (
-                      <Center
-                        w={'100%'}
-                        h={'32px'}
-                        color={'grayModern.600'}
-                        fontSize={'12px'}
-                        borderRadius={'4px'}
-                      >
-                        <Box>{t('no_data_available')}</Box>
-                      </Center>
-                    )}
-                  </Box>
-                </Box>
-                <Box mt={'16px'} fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                  <Text>{t('Storage')}</Text>
-                  <Box
-                    borderRadius={'4px'}
-                    border={'1px solid #F4F4F7'}
-                    bg={'grayModern.25'}
-                    p={'12px'}
-                    mt={'8px'}
-                  >
-                    {app.storeList?.length > 0 ? (
-                      <Box
-                        borderRadius={'md'}
-                        overflow={'hidden'}
-                        bg={'#FFF'}
-                        border={theme.borders.base}
-                      >
-                        {app.storeList.map((item) => (
-                          <Flex
-                            key={item.path}
-                            alignItems={'center'}
-                            px={'14px'}
-                            py={'8px'}
-                            _notLast={{
-                              borderBottom: theme.borders.base
-                            }}
-                          >
-                            <MyIcon name={'store'} width={'24px'} height={'24px'} />
-                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
-                              <Box color={'grayModern.900'} fontWeight={'bold'}>
-                                {item.path}
-                              </Box>
-                              <Box
-                                className={styles.textEllipsis}
-                                color={'grayModern.600'}
-                                fontSize={'sm'}
-                              >
-                                {item.value} Gi
-                              </Box>
-                            </Box>
-                          </Flex>
-                        ))}
-                      </Box>
-                    ) : (
-                      <Center
-                        w={'100%'}
-                        h={'32px'}
-                        color={'grayModern.600'}
-                        fontSize={'12px'}
-                        borderRadius={'4px'}
-                      >
-                        <Box>{t('no_data_available')}</Box>
-                      </Center>
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-            </Flex>
-          </AccordionPanel>
-        </AccordionItem>
-      </Accordion>
+      <div className="col-span-2 bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="text-base font-medium text-zinc-900">{t('Environment Variables')}</div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-envs')}
+          >
+            {t('Manage')}
+          </Button>
+        </div>
+        {app.envs?.length > 0 ? (
+          <div className="border border-zinc-200 rounded-xl overflow-hidden">
+            <Table className="table-fixed w-full [&_th]:border-b [&_th]:border-r [&_th:last-child]:border-r-0 [&_td]:border-b [&_td]:border-r [&_td:last-child]:border-r-0 [&_tr:last-child_td]:border-b-0 [&_tbody_tr:nth-child(even)]:bg-zinc-50">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-1/2 h-auto py-2 font-medium text-zinc-500 bg-zinc-50 !rounded-bl-none">
+                    {t('Key')}
+                  </TableHead>
+                  <TableHead className="w-1/2 h-auto py-2 font-medium text-zinc-500 bg-zinc-50 !rounded-br-none">
+                    {t('Value')}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {app.envs.map((env) => {
+                  const valText = env.value ? env.value : env.valueFrom ? 'value from | ***' : '';
+                  return (
+                    <TableRow key={env.key}>
+                      <TableCell className="w-1/2 max-w-0 text-sm font-normal text-zinc-900">
+                        <TruncateTooltip
+                          content={env.key}
+                          className="w-full truncate cursor-default"
+                          contentClassName="w-2xl"
+                        >
+                          {env.key}
+                        </TruncateTooltip>
+                      </TableCell>
+                      <TableCell className="w-1/2 max-w-0 text-sm font-normal text-zinc-900">
+                        <TruncateTooltip
+                          content={valText}
+                          className="w-full truncate cursor-default"
+                          contentClassName="w-2xl"
+                        >
+                          {valText}
+                        </TruncateTooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center w-full flex-1 p-4">
+            <button type="button" className="w-full" onClick={() => handleManage('settings-envs')}>
+              <div className="flex items-center justify-center w-full h-24">
+                <div className="flex items-center justify-center flex-col gap-3">
+                  <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                    <Variable className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                  </div>
+                  <div className="text-zinc-900 text-sm font-semibold flex flex-col gap-1">
+                    {t('no_data_available')}
+                    <div className="text-xs font-normal text-zinc-500">
+                      {t('Click Manage to add environment variable')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-base font-medium text-zinc-900">{t('Configmaps')}</div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-configmaps')}
+          >
+            {t('Manage')}
+          </Button>
+        </div>
+        {app.configMapList?.length > 0 ? (
+          <div className="space-y-1">
+            {app.configMapList.map((item) => (
+              <div
+                key={item.mountPath}
+                className="flex items-center gap-3 px-3 py-[10px] bg-zinc-50 rounded-lg cursor-pointer hover:bg-zinc-100 transition-colors"
+                onClick={() => setDetailConfigMap({ mountPath: item.mountPath, value: item.value })}
+              >
+                <MyIcon
+                  name="configMapColor"
+                  w="24px"
+                  h="24px"
+                  color="#a1a1aa"
+                  className="shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-zinc-900 truncate">{item.mountPath}</p>
+                  <p className="text-xs text-neutral-500 truncate">{item.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center w-full flex-1 p-4">
+            <button
+              type="button"
+              className="w-full"
+              onClick={() => handleManage('settings-configmaps')}
+            >
+              <div className="flex items-center justify-center w-full h-24">
+                <div className="flex items-center justify-center flex-col gap-3">
+                  <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                    <FileCog className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                  </div>
+                  <div className="text-zinc-900 text-sm font-semibold flex flex-col gap-1">
+                    {t('no_data_available')}
+                    <div className="text-xs font-normal text-zinc-500">
+                      {t('Click Manage to add configmap')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-base font-medium text-zinc-900">{t('Local Storage')}</div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-storage')}
+          >
+            {t('Manage')}
+          </Button>
+        </div>
+        {app.storeList?.length > 0 ? (
+          <div className="space-y-1">
+            {app.storeList.map((item) => (
+              <div
+                key={item.path}
+                className="flex items-center gap-3 px-3 py-[10px] bg-zinc-50 rounded-lg"
+              >
+                <MyIcon name="storeColor" w="24px" h="24px" color="#a1a1aa" className="shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-zinc-900 truncate">{item.path}</p>
+                  <p className="text-xs text-neutral-500">{item.value} Gi</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center w-full flex-1 p-4">
+            <button
+              type="button"
+              className="w-full"
+              onClick={() => handleManage('settings-storage')}
+            >
+              <div className="flex items-center justify-center w-full h-24">
+                <div className="flex items-center justify-center flex-col gap-3">
+                  <div className="h-10 w-10 flex items-center justify-center border border-dashed border-zinc-200 rounded-xl">
+                    <HardDrive className="w-6 h-6 text-zinc-400 stroke-[1.5px]" />
+                  </div>
+                  <div className="text-zinc-900 text-sm font-semibold flex flex-col gap-1">
+                    {t('no_data_available')}
+                    <div className="text-xs font-normal text-zinc-500">
+                      {t('Click Manage to add storage')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* TODO: Add probe management */}
+      {/* <div className="col-span-2 bg-white border-[0.5px] border-zinc-200 rounded-xl shadow-xs p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-base font-medium text-zinc-900">{t('Probe')}</div>
+          <Button
+            variant="outline"
+            className="h-9 !px-4 rounded-lg hover:bg-zinc-50 flex items-center shadow-none"
+            onClick={() => handleManage('settings-probe')}
+          >
+            {t('Manage')}
+          </Button>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {[
+            { title: 'Startup', empty: 'No startup added yet' },
+            { title: 'Liveness', empty: 'No liveness added yet' },
+            { title: 'Readiness', empty: 'No readiness added yet' }
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="border border-zinc-200 rounded-xl p-4 bg-white flex flex-col gap-2"
+            >
+              <div className="text-sm font-medium text-zinc-500 border-b border-dashed border-zinc-200 pb-2 ">
+                {t(item.title)}
+              </div>
+              <div className="text-sm font-medium text-zinc-900 text-center py-6">
+                {t(item.empty)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div> */}
+
       {detailConfigMap && (
         <ConfigMapDetailModal {...detailConfigMap} onClose={() => setDetailConfigMap(undefined)} />
       )}
-    </Box>
+    </div>
   );
 };
 

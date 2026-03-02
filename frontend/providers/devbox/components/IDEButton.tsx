@@ -274,7 +274,7 @@ const IDEButton = memo(
                               className={cn(
                                 index === 0 ? 'w-[140px]' : 'w-[80px]',
                                 'text-zinc-600',
-                                index === 0 && 'pl-2 pr-1',
+                                index === 0 && 'pr-1 pl-2',
                                 index === 1 && 'pr-2 text-zinc-600',
                                 currentIDE === option.value && 'text-zinc-900'
                               )}
@@ -290,7 +290,7 @@ const IDEButton = memo(
                                   alt={option.value}
                                   src={`/images/ide/${option.value}.svg`}
                                 />
-                                <span className="whitespace-nowrap text-sm">
+                                <span className="text-sm whitespace-nowrap">
                                   {option.menuLabel}
                                 </span>
                                 {currentIDE === option.value && (
@@ -340,7 +340,7 @@ const IDEButton = memo(
                             <DropdownMenuItem
                               className={cn(
                                 'w-[110px] text-zinc-600',
-                                index === 0 && 'pl-2 pr-1',
+                                index === 0 && 'pr-1 pl-2',
                                 index === 1 && 'pr-2 text-zinc-600',
                                 currentIDE === option.value && 'text-zinc-900'
                               )}

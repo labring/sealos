@@ -92,7 +92,7 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
   return (
     <div className="flex justify-center gap-6">
       {/* left grid */}
-      <div className="min-w-65 flex flex-col gap-4 text-sm">
+      <div className="flex min-w-65 flex-col gap-4 text-sm">
         <Tabs defaultValue="form" onValueChange={handleTabChange}>
           <TabsList className="h-11 w-full">
             <TabsTrigger value="form">{t('config_form')}</TabsTrigger>

@@ -5,6 +5,7 @@ import type { AppDetailType, AppPatchPropsType, PodDetailType } from '@/types/ap
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { LogQueryPayload } from '@/pages/api/log/queryLogs';
 import { PodListQueryPayload } from '@/pages/api/log/queryPodList';
+import { NetworkMonitorDataResult } from '@/services/networkMonitorFetch';
 import { track } from '@sealos/gtm';
 
 export const postDeployApp = (yamlList: string[], mode: 'create' | 'replace' = 'create') =>
@@ -83,14 +84,84 @@ export const startAppByName = (appName: string) => {
 
 export const restartPodByName = (podName: string) => GET(`/api/restartPod?podName=${podName}`);
 
-export const getAppMonitorData = (payload: {
+interface MonitorApiResponseV2 {
+  result: MonitorDataResult[];
+  debug?: {
+    requestParams?: any;
+    rawResponse?: any;
+    adaptedData?: any;
+    finalResult?: any;
+  };
+}
+
+export const getAppMonitorData = async (payload: {
   queryName: string;
   queryKey: keyof MonitorQueryKey;
   step: string;
   start?: number;
   end?: number;
   pvcName?: string;
-}) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);
+}): Promise<MonitorDataResult[]> => {
+  try {
+    const response = await GET<MonitorApiResponseV2>(`/api/monitor/getMonitorDataV2`, payload);
+
+    if (response && typeof response === 'object' && 'result' in response) {
+      const { debug, result } = response as MonitorApiResponseV2;
+      if (debug) {
+      }
+      return result || [];
+    }
+
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    return [];
+  } catch (error) {
+    return [];
+  }
+};
+
+interface NetworkMonitorApiResponse {
+  result: NetworkMonitorDataResult[];
+  debug?: {
+    requestParams?: any;
+    rawResponse?: any;
+    adaptedData?: any;
+    finalResult?: any;
+  };
+}
+
+export const getNetworkMonitorData = async (payload: {
+  serviceName: string;
+  port: number;
+  type: 'network_service_request_count' | 'network_service_request_percent';
+  step: string;
+  start?: number;
+  end?: number;
+}): Promise<NetworkMonitorDataResult[]> => {
+  try {
+    const response = await GET<NetworkMonitorApiResponse>(
+      `/api/monitor/getNetworkMonitorData`,
+      payload
+    );
+
+    if (response && typeof response === 'object' && 'result' in response) {
+      const { debug, result } = response as NetworkMonitorApiResponse;
+      if (debug) {
+      }
+      return result || [];
+    }
+
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    return [];
+  } catch (error) {
+    return [];
+  }
+};
 
 export const getAppLogs = (payload: LogQueryPayload) => POST<string>('/api/log/queryLogs', payload);
 
