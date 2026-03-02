@@ -332,6 +332,7 @@ HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 								license-controller-values.yaml
 								resources-controller-values.yaml
 								user-controller-values.yaml
+								account-service-values.yaml
 ```
 
 只有前端使用 <name>-values.yaml, 其他模块的可变配置可以放在同一目录下，便于管理和维护。

@@ -333,6 +333,7 @@ HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 								license-controller-values.yaml
 								resources-controller-values.yaml
 								user-controller-values.yaml
+								account-service-values.yaml
 ```
 
 Only the front end uses <name>-values.yaml, and the variable configurations of other modules can be placed in the same directory for easy management and maintenance.
