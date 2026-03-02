@@ -614,7 +614,7 @@ func (r *MonitorReconciler) getResourceUsed(podResource map[corev1.ResourceName]
 			used[pType.Enum] = int64(math.Ceil(float64(podResource[i].MilliValue()) / float64(pType.Unit.MilliValue())))
 			continue
 		}
-		r.Logger.Error(fmt.Errorf("not found resource type"), "resource", i.String())
+		r.Logger.Error(fmt.Errorf("not found resource type"), "", "resource", i.String())
 	}
 	return isEmpty, used
 }
