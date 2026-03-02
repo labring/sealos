@@ -136,7 +136,7 @@ export type PaymentRecord = z.infer<typeof PaymentRecordSchema>;
 
 // 请求类型
 export const WorkspaceSubscriptionRequestSchema = z.object({
-  workspace: z.string(),
+  workspace: z.string().optional(),
   regionDomain: z.string()
 });
 export type WorkspaceSubscriptionRequest = z.infer<typeof WorkspaceSubscriptionRequestSchema>;
