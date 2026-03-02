@@ -60,6 +60,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
   const [selectedRuntime, setSelectedRuntime] = useState<{
     name: string;
     iconId: string;
+    icon?: string | null;
     templateRepositoryUid: string;
     templateUid: string;
     version: string;
@@ -75,6 +76,7 @@ const GitImportDrawer = ({ open, onClose, onSuccess }: GitImportDrawerProps) => 
   const handleRuntimeSelect = (runtime: {
     name: string;
     iconId: string;
+    icon?: string | null;
     templateRepositoryUid: string;
     templateUid: string;
     version: string;

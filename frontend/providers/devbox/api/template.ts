@@ -20,6 +20,7 @@ type BaseTemplateRepository = {
   name: string;
   description: string | null;
   iconId: string | null;
+  icon?: string | null;
   templateRepositoryTags: TemplateRepositoryTagItem[];
 };
 

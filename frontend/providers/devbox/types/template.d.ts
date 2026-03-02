@@ -5,6 +5,7 @@ export type TemplateRepository = {
   name: string;
   kind: TemplateRepositoryKind;
   iconId: string;
+  icon?: string | null;
   description: string | null;
   usageCount?: number;
 };

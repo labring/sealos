@@ -15,6 +15,9 @@ export const TemplateRepositorySchema = z.object({
   iconId: z.string().openapi({
     description: 'Runtime Icon'
   }),
+  icon: z.string().nullable().openapi({
+    description: 'Runtime icon (svg content or https url)'
+  }),
   name: z.string().openapi({
     description: 'Runtime Name'
   }),

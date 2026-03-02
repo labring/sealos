@@ -17,6 +17,9 @@ const TemplateRepositorySchema = z.object({
   iconId: z.string().openapi({
     description: 'Template repository icon Id'
   }),
+  icon: z.string().nullable().openapi({
+    description: 'Template repository icon (svg content or https url)'
+  }),
   templateRepositoryTags: z
     .array(
       z.object({

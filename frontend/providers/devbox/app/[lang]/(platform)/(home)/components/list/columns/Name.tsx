@@ -22,18 +22,24 @@ export const Name = memo<NameProps>(
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex h-8 min-w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-              <RuntimeIcon iconId={item.template.templateRepository.iconId} alt={item.id} />
+              <RuntimeIcon
+                iconId={item.template.templateRepository.iconId}
+                icon={item.template.templateRepository.icon}
+                alt={item.id}
+              />
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" align="start" sideOffset={1}>
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-                <RuntimeIcon iconId={item.template.templateRepository.iconId} alt={item.id} />
+                <RuntimeIcon
+                  iconId={item.template.templateRepository.iconId}
+                  icon={item.template.templateRepository.icon}
+                  alt={item.id}
+                />
               </div>
               <div className="flex flex-col">
-                <p className="text-sm/5 font-medium">
-                  {item.template.templateRepository.iconId}
-                </p>
+                <p className="text-sm/5 font-medium">{item.template.templateRepository.iconId}</p>
                 <p className="text-xs/5 text-zinc-500">{item.template.name}</p>
               </div>
             </div>
@@ -57,9 +63,7 @@ export const Name = memo<NameProps>(
               </div>
               {item.remark && (
                 <div className="group flex w-[80%] items-center gap-1">
-                  <span className="truncate text-xs font-normal text-zinc-500">
-                    {item.remark}
-                  </span>
+                  <span className="truncate text-xs font-normal text-zinc-500">{item.remark}</span>
                   <PencilLine
                     className="h-4 min-h-4 w-4 min-w-4 cursor-pointer text-neutral-500 opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={() => onEditRemark(item)}

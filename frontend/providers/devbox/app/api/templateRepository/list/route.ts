@@ -94,6 +94,7 @@ export async function GET(req: NextRequest) {
             uid: true,
             description: true,
             iconId: true,
+            icon: true,
             createdAt: true,
             usageCount: true
           }

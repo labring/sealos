@@ -62,6 +62,7 @@ model TemplateRepository {
   isPublic               Boolean                 @default(false)
   templates              Template[]
   iconId                 String?
+  icon                   String?
   organization           Organization            @relation(fields: [organizationUid], references: [uid])
   isDeleted              Boolean?                @default(false)
   regionUid              String

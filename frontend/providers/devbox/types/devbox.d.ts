@@ -140,6 +140,7 @@ export interface DevboxDetailTypeV2 extends json2DevboxData {
   createTime: string;
   isPause?: boolean;
   iconId: string;
+  icon?: string | null;
   templateName: string;
   templateRepositoryName: string;
   templateRepositoryDescription: string | null;
@@ -173,6 +174,7 @@ export interface DevboxListItemTypeV2 {
   template: {
     templateRepository: {
       iconId: string | null;
+      icon?: string | null;
     };
     uid: string;
     name: string;
