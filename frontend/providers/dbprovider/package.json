@@ -63,6 +63,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
+    "sealos-metrics-sdk": "workspace:^",
     "sharp": "^0.32.6",
     "typescript": "^5.2.2",
     "zod": "^4.0.8",
