@@ -2,6 +2,7 @@ import request from '@/service/request';
 import { ApiResp } from '@/types/api';
 import {
   PlanListResponse,
+  PlanListResponseSchema,
   SubscriptionInfoResponse,
   LastTransactionResponse,
   UpgradeAmountRequest,
@@ -21,11 +22,15 @@ import {
   InvoiceCancelResponse
 } from '@/types/plan';
 
-// Get all subscription plans
-export const getPlanList = () =>
-  request<any, ApiResp<PlanListResponse>>('/api/plan/list', {
+/** Fetches plan list and deserializes with Zod so MaxResources is Record<string, Quantity>. */
+export const getPlanList = async () => {
+  const res = await request<any, ApiResp<unknown>>('/api/plan/list', {
     method: 'POST'
   });
+  const parsed = PlanListResponseSchema.safeParse(res?.data);
+  if (!parsed.success) throw parsed.error;
+  return { ...res, data: parsed.data } as ApiResp<PlanListResponse>;
+};
 
 /**
  * Get subscription payment records list.

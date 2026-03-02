@@ -8,7 +8,7 @@ module.exports = {
       jsx: true
     }
   },
-  plugins: ['@typescript-eslint', 'import'],
+  plugins: ['@typescript-eslint', 'import', 'jsdoc'],
   extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended'],
   rules: {
     // Enforce lucide-react icons to use XxxIcon naming convention
@@ -30,7 +30,9 @@ module.exports = {
       }
     ],
     '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    // `@typescript-eslint` does not handle JSDocs, so we need this rule to mark variables as used.
+    'jsdoc/no-undefined-types': 1
   },
   settings: {
     react: {

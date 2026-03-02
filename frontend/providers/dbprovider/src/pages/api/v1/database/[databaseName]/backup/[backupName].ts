@@ -6,9 +6,10 @@ import { ResponseCode, ResponseMessages } from '@/types/response';
 import { json2CreateCluster, json2Account } from '@/utils/json2Yaml';
 import { DBTypeEnum, defaultDBEditValue, templateDeployKey } from '@/constants/db';
 import type { DBEditType } from '@/types/db';
-import { cpuFormatToM, memoryFormatToMi, storageFormatToGi } from '@/utils/tools';
+import { storageFormatToGi } from '@/utils/tools';
 import { customAlphabet } from 'nanoid';
 import z from 'zod';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 8);
 const restoreBodySchema = z.object({
   replicas: z.number().min(1).optional()

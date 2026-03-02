@@ -4,16 +4,12 @@ import congratsHeaderImage from '@/assets/congrats_header.svg';
 import { Button } from '@sealos/shadcn-ui';
 import { formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
+import type { MaxResourcesRecord } from '@/types/plan';
 
 interface CongratulationsModalProps {
   mode?: 'upgrade' | 'renew';
   planName?: string;
-  maxResources?: {
-    cpu: string;
-    memory: string;
-    storage: string;
-    nodeports: string;
-  };
+  maxResources?: MaxResourcesRecord;
   traffic?: number;
   onClose: () => void;
   isOpen: boolean;
@@ -24,26 +20,13 @@ export default function CongratulationsModal(props: CongratulationsModalProps) {
   const { t } = useTranslation();
   const mode = props.mode || 'upgrade';
 
-  // Format plan resources
-  const formatCpu = (cpu: string) => {
-    const cpuNum = parseFloat(cpu);
-    return `${cpuNum} vCPU`;
-  };
-
-  const formatMemory = (memory: string) => {
-    return memory.replace('Gi', 'GB RAM');
-  };
-
-  const formatStorage = (storage: string) => {
-    return storage.replace('Gi', 'GB Disk');
-  };
-
+  const r = props.maxResources;
   const benefits = {
-    cpu: props.maxResources?.cpu ? formatCpu(props.maxResources.cpu) : '2 vCPU',
-    memory: props.maxResources?.memory ? formatMemory(props.maxResources.memory) : '2GB RAM',
-    storage: props.maxResources?.storage ? formatStorage(props.maxResources.storage) : '5GB Disk',
+    cpu: r?.cpu ? `${r.cpu.toString()} vCPU` : '2 vCPU',
+    memory: r?.memory ? `${r.memory.toString()} RAM` : '2GB RAM',
+    storage: r?.storage ? `${r.storage.toString()} Disk` : '5GB Disk',
     traffic: props.traffic ? formatTrafficAuto(props.traffic) : '1GB Traffic',
-    nodeports: props.maxResources?.nodeports ? props.maxResources.nodeports : '1 Nodeport'
+    nodeports: r?.nodeports ? r.nodeports.toString() : '1 Nodeport'
   };
 
   return (

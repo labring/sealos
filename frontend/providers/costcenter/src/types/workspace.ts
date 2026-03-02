@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { QuantitySchema } from '@sealos/shared';
 
 export const WorkspaceQuotaRequestSchema = z.object({
   regionUid: z.string(),
@@ -8,8 +9,8 @@ export type WorkspaceQuotaRequest = z.infer<typeof WorkspaceQuotaRequestSchema>;
 
 export const UserQuotaItemSchema = z.object({
   type: z.enum(['cpu', 'memory', 'storage', 'gpu', 'traffic', 'nodeport']),
-  used: z.number(),
-  limit: z.number()
+  used: QuantitySchema,
+  limit: QuantitySchema
 });
 export type UserQuotaItem = z.infer<typeof UserQuotaItemSchema>;
 

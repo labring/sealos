@@ -8,7 +8,7 @@ import {
   JobList,
   JobStatus
 } from '@/types/job';
-import { cpuFormatToM, cron2Time, formatPodTime, memoryFormatToMi } from '@/utils/tools';
+import { formatPodTime } from '@/utils/tools';
 import {
   CoreV1EventList,
   V1CronJob,
@@ -25,6 +25,7 @@ import 'cronstrue/locales/en';
 import cronParser from 'cron-parser';
 import { getLangStore } from './cookieUtils';
 import { getJobEvents, getJobPodList } from '@/api/job';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 export const adaptCronJobList = (job: V1CronJob): CronJobListItemType => {
   const LANG_KEY = getLangStore() === 'en' ? 'en' : 'zh_CN';

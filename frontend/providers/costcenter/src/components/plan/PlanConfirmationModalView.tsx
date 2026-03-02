@@ -42,25 +42,7 @@ interface PlanDisplayProps {
 function PlanDisplay({ plan, monthlyPrice }: PlanDisplayProps) {
   const { t } = useTranslation();
 
-  const formatCpu = (cpu: string) => {
-    const cpuNum = parseFloat(cpu);
-    return `${cpuNum} vCPU`;
-  };
-
-  const formatMemory = (memory: string) => {
-    return memory.replace('Gi', 'GB RAM');
-  };
-
-  const formatStorage = (storage: string) => {
-    return storage.replace('Gi', 'GB Disk');
-  };
-
-  let planResources: any = {};
-  try {
-    planResources = JSON.parse(plan.MaxResources || '{}');
-  } catch (e) {
-    planResources = {};
-  }
+  const planResources = plan.MaxResources;
 
   return (
     <>
@@ -80,19 +62,25 @@ function PlanDisplay({ plan, monthlyPrice }: PlanDisplayProps) {
         {planResources.cpu && (
           <div className="flex items-center gap-2">
             <CheckCircle size={16} className="text-blue-600 shrink-0" />
-            <span className="text-sm text-zinc-500">{formatCpu(planResources.cpu)}</span>
+            <span className="text-sm text-zinc-500">
+              {planResources.cpu.formatForDisplay({ format: 'DecimalSI' })} vCPU
+            </span>
           </div>
         )}
         {planResources.memory && (
           <div className="flex items-center gap-2">
             <CheckCircle size={16} className="text-blue-600 shrink-0" />
-            <span className="text-sm text-zinc-500">{formatMemory(planResources.memory)}</span>
+            <span className="text-sm text-zinc-500">
+              {planResources.memory.formatForDisplay({ format: 'BinarySI' })} RAM
+            </span>
           </div>
         )}
         {planResources.storage && (
           <div className="flex items-center gap-2">
             <CheckCircle size={16} className="text-blue-600 shrink-0" />
-            <span className="text-sm text-zinc-500">{formatStorage(planResources.storage)}</span>
+            <span className="text-sm text-zinc-500">
+              {planResources.storage.formatForDisplay({ format: 'BinarySI' })} Disk
+            </span>
           </div>
         )}
         {plan.Traffic && (
@@ -104,7 +92,9 @@ function PlanDisplay({ plan, monthlyPrice }: PlanDisplayProps) {
         {planResources.nodeports && (
           <div className="flex items-center gap-2">
             <CheckCircle size={16} className="text-blue-600 shrink-0" />
-            <span className="text-sm text-zinc-500">{planResources.nodeports} Nodeport</span>
+            <span className="text-sm text-zinc-500">
+              {planResources.nodeports.formatForDisplay({ format: 'DecimalSI' })} Nodeport
+            </span>
           </div>
         )}
       </div>

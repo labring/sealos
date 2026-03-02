@@ -163,13 +163,7 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
   const currentPlan = plans?.find((plan) => plan.Name === subscription?.PlanName);
   const monthlyPrice = currentPlan?.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
 
-  // Parse plan resources
-  let planResources: any = {};
-  try {
-    planResources = JSON.parse(currentPlan?.MaxResources || '{}');
-  } catch (e) {
-    planResources = {};
-  }
+  const planResources = currentPlan?.MaxResources ?? {};
 
   // Check if there's a downgrade and show next plan info
   const isDowngrade =

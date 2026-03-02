@@ -48,22 +48,7 @@ export function UpgradePlanCard({
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
   const originalPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.OriginalPrice || 0;
 
-  let resources: { cpu: string; memory: string; storage: string; nodeports: string } = {
-    cpu: '',
-    memory: '',
-    storage: '',
-    nodeports: ''
-  };
-  try {
-    resources = JSON.parse(plan.MaxResources);
-  } catch (e) {
-    resources = {
-      cpu: '',
-      memory: '',
-      storage: '',
-      nodeports: ''
-    };
-  }
+  const resources = plan.MaxResources;
 
   // Determine action type based on plan relationships
   const getActionType = () => {
@@ -213,19 +198,25 @@ export function UpgradePlanCard({
           {resources.cpu && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{resources.cpu} vCPU</span>
+              <span className="text-sm text-gray-700">
+                {resources.cpu.formatForDisplay({ format: 'DecimalSI' })} vCPU
+              </span>
             </li>
           )}
           {resources.memory && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{resources.memory} RAM</span>
+              <span className="text-sm text-gray-700">
+                {resources.memory.formatForDisplay({ format: 'BinarySI' })} RAM
+              </span>
             </li>
           )}
           {resources.storage && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{resources.storage} Disk</span>
+              <span className="text-sm text-gray-700">
+                {resources.storage.formatForDisplay({ format: 'BinarySI' })} Disk
+              </span>
             </li>
           )}
           <li className="flex items-center gap-3">
@@ -235,7 +226,9 @@ export function UpgradePlanCard({
           {resources.nodeports && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
-              <span className="text-sm text-gray-700">{resources.nodeports} Nodeport</span>
+              <span className="text-sm text-gray-700">
+                {resources.nodeports.toString()} Nodeport
+              </span>
             </li>
           )}
           {plan.AIQuota && (

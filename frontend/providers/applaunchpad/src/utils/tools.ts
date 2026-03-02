@@ -90,14 +90,6 @@ export const str2Num = (str?: string | number) => {
   return !!str ? +str : '';
 };
 
-/**
- * add ./ in path
- */
-export const pathFormat = (str: string) => {
-  if (str.startsWith('/')) return `.${str}`;
-  return `./${str}`;
-};
-
 export const mountPathToConfigMapKey = (str: string) => {
   const endsWithSlash = str.endsWith('/');
   const withoutTrailingSlash = endsWithSlash ? str.slice(0, -1) : str;
@@ -109,22 +101,6 @@ export const mountPathToConfigMapKey = (str: string) => {
   }
 
   return result;
-};
-
-/**
- * read a file text content
- */
-export const reactLocalFileContent = (file: File) => {
-  return new Promise((resolve: (_: string) => void, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result as string);
-    };
-    reader.onerror = (err) => {
-      reject(err);
-    };
-    reader.readAsText(file);
-  });
 };
 
 /**
@@ -159,54 +135,6 @@ export const atobSecretYaml = (secret?: string): AppEditType['secret'] => {
     console.log(error);
   }
   return defaultEditVal.secret;
-};
-
-/**
- * cpu format
- */
-export const cpuFormatToM = (cpu: string) => {
-  if (!cpu || cpu === '0') {
-    return 0;
-  }
-  let value = parseFloat(cpu);
-
-  if (/n/gi.test(cpu)) {
-    value = value / 1000 / 1000;
-  } else if (/u/gi.test(cpu)) {
-    value = value / 1000;
-  } else if (/m/gi.test(cpu)) {
-    value = value;
-  } else {
-    value = value * 1000;
-  }
-  if (value < 0.1) return 0;
-  return Number(value.toFixed(4));
-};
-
-/**
- * memory format
- */
-export const memoryFormatToMi = (memory: string) => {
-  if (!memory || memory === '0') {
-    return 0;
-  }
-
-  let value = parseFloat(memory);
-
-  if (/Ki/gi.test(memory)) {
-    value = value / 1024;
-  } else if (/Mi/gi.test(memory)) {
-    value = value;
-  } else if (/Gi/gi.test(memory)) {
-    value = value * 1024;
-  } else if (/Ti/gi.test(memory)) {
-    value = value * 1024 * 1024;
-  } else {
-    console.log('Invalid memory value');
-    value = 0;
-  }
-
-  return Number(value.toFixed(2));
 };
 
 /**
@@ -555,41 +483,6 @@ export const getErrText = (err: any, def = '') => {
   const msg: string = typeof err === 'string' ? err : err?.message || def || '';
   msg && console.log('error =>', msg);
   return msg;
-};
-
-export const formatMoney = (mone: number) => {
-  return mone / 1000000;
-};
-
-// convertBytes 1024
-export const convertBytes = (bytes: number, unit: 'kb' | 'mb' | 'gb' | 'tb') => {
-  switch (unit.toLowerCase()) {
-    case 'kb':
-      return bytes / 1024;
-    case 'mb':
-      return bytes / Math.pow(1024, 2);
-    case 'gb':
-      return bytes / Math.pow(1024, 3);
-    case 'tb':
-      return bytes / Math.pow(1024, 4);
-    default:
-      return bytes;
-  }
-};
-
-export const filterUnusedKeys = <T extends object>(
-  data: T,
-  keysToFilter: string[] = ['crYamlList', 'usedCpu', 'usedMemory']
-): Partial<T> => {
-  const filteredData = { ...data };
-
-  keysToFilter.forEach((key) => {
-    if (key in filteredData) {
-      delete filteredData[key as keyof T];
-    }
-  });
-
-  return filteredData;
 };
 
 export const generatePvcNameRegex = (appDetail?: AppDetailType): string => {

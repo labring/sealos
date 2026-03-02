@@ -53,12 +53,7 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
           <div className="text-lg font-medium mb-4 text-black">{t('common:more_plans')}</div>
           <div className="flex w-full gap-3 justify-start">
             {additionalPlans.slice(0, 2).map((plan) => {
-              let resources: any = {};
-              try {
-                resources = JSON.parse(plan.MaxResources);
-              } catch (e) {
-                resources = {};
-              }
+              const resources = plan.MaxResources;
               const monthlyPrice = formatMoney(plan.Prices?.[0]?.Price || 0);
               const planName = plan.Name.toLowerCase();
               const matchedKey = Array.from(PlanAdditionalFeaturesOverride.keys()).find((key) =>
@@ -70,11 +65,17 @@ export function SubscriptionPlansPanel({ plansData }: SubscriptionPlansPanelProp
               const featuresText = features.map((key) => t(key)).join(' + ');
 
               const parts: string[] = [];
-              if (resources.cpu) parts.push(`${resources.cpu} vCPU`);
-              if (resources.memory) parts.push(`${resources.memory} RAM`);
-              if (resources.storage) parts.push(`${resources.storage} Disk`);
+              if (resources.cpu)
+                parts.push(resources.cpu.formatForDisplay({ format: 'DecimalSI' }) + 'vCPU');
+              if (resources.memory)
+                parts.push(resources.memory.formatForDisplay({ format: 'BinarySI' }) + 'RAM');
+              if (resources.storage)
+                parts.push(resources.storage.formatForDisplay({ format: 'BinarySI' }) + 'Disk');
               parts.push(formatTrafficAuto(plan.Traffic));
-              if (resources.nodeports) parts.push(`${resources.nodeports} Nodeport`);
+              if (resources.nodeports)
+                parts.push(
+                  resources.nodeports.formatForDisplay({ format: 'BinarySI' }) + 'Nodeport'
+                );
               if (plan.AIQuota) parts.push(`${formatMoney(plan.AIQuota * 100)} AI Credits`);
               if (featuresText) parts.push(featuresText);
 

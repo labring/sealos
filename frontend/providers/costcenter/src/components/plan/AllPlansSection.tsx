@@ -33,18 +33,14 @@ import CancelPlanModal from './CancelPlanModal';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import useSessionStore from '@/stores/session';
 import { UpgradePlanDialog } from './UpgradePlanDialog';
+import { MaxResourcesRecord } from '@/types/plan';
 
 export function AllPlansSection({
   onRenewSuccess
 }: {
   onRenewSuccess?: (payload: {
     planName: string;
-    maxResources?: {
-      cpu: string;
-      memory: string;
-      storage: string;
-      nodeports: string;
-    };
+    maxResources?: MaxResourcesRecord;
     traffic?: number;
   }) => void;
 }) {
@@ -164,19 +160,13 @@ export function AllPlansSection({
           });
 
           // Show congratulations modal for renewed subscription (best-effort: local data)
-          try {
-            const planName = variables.planName;
-            const plan = plansData?.plans?.find((p) => p.Name === planName);
-            const maxResources = plan?.MaxResources ? JSON.parse(plan.MaxResources) : undefined;
-            onRenewSuccess?.({
-              planName,
-              maxResources,
-              traffic: plan?.Traffic
-            });
-          } catch {
-            // Ignore parsing errors, still consider renew successful
-            onRenewSuccess?.({ planName: variables.planName });
-          }
+          const planName = variables.planName;
+          const plan = plansData?.plans?.find((p) => p.Name === planName);
+          onRenewSuccess?.({
+            planName,
+            maxResources: plan?.MaxResources,
+            traffic: plan?.Traffic
+          });
         } else {
           toast({ title: t('common:close'), variant: 'success' });
         }

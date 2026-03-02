@@ -39,12 +39,13 @@ import {
   gpuResourceKey,
   AppSourceConfigs
 } from '@/constants/app';
-import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
+import { formatPodTime, atobSecretYaml } from '@/utils/tools';
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
 import { lauchpadRemarkKey } from '@/constants/account';
 import { getInitData } from '@/api/platform';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -214,7 +215,7 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
     nodeName: pod.spec?.nodeName || 'node name',
     ip: pod.status?.podIP || 'pod ip',
     restarts: pod.status?.containerStatuses
-      ? (pod.status?.containerStatuses[0]?.restartCount ?? 0)
+      ? pod.status?.containerStatuses[0]?.restartCount ?? 0
       : 0,
     age: formatPodTime(pod.metadata?.creationTimestamp),
     usedCpu: {
@@ -510,8 +511,8 @@ export const adaptAppDetail = async (
           domain: isCustomDomain
             ? SEALOS_DOMAIN
             : item?.nodePort
-              ? domain
-              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
+            ? domain
+            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
         };
         return result;
       }) || [],
