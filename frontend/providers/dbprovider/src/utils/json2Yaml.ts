@@ -1124,6 +1124,8 @@ export const json2ParameterConfig = (
 
     const maxConnections = parameterConfig?.isMaxConnectionsCustomized
       ? parameterConfig?.maxConnections
+      : dbVersion === 'mysql-5.7.42'
+      ? undefined
       : dynamicMaxConnections?.toString();
 
     if (maxConnections) {
