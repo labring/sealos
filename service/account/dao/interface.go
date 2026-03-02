@@ -2163,6 +2163,8 @@ func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, 
 		primitive.E{Key: "$gte", Value: startTime},
 		primitive.E{Key: "$lte", Value: endTime},
 	}
+
+	// Build base match conditions for app_costs (sub-consumption type)
 	matchValue := bson.D{
 		primitive.E{Key: "time", Value: timeMatchValue},
 		primitive.E{Key: "status", Value: resources.Settled},
@@ -2190,13 +2192,55 @@ func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, 
 			unwindMatchValue = append(unwindMatchValue, primitive.E{Key: "app_name", Value: appName})
 		}
 	}
+
+	// Build match conditions for direct consumption (AppStore and LLMToken)
+	directMatchValue := bson.D{
+		primitive.E{Key: "time", Value: timeMatchValue},
+		primitive.E{Key: "status", Value: resources.Settled},
+		primitive.E{Key: "owner", Value: owner},
+	}
+	if namespace != "" {
+		directMatchValue = append(directMatchValue, primitive.E{Key: "namespace", Value: namespace})
+	}
+	// For direct consumption, match app_type to AppStore or LLMToken if not specified
+	if appType != "" {
+		directMatchValue = append(
+			directMatchValue,
+			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]},
+		)
+	} else {
+		// If no appType specified, match both AppStore and LLMToken
+		directMatchValue = append(
+			directMatchValue,
+			primitive.E{Key: "app_type", Value: bson.D{{Key: "$in", Value: bson.A{
+				resources.AppType[resources.AppStore],
+				resources.AppType[resources.LLMToken],
+			}}}},
+		)
+	}
+	if appName != "" {
+		directMatchValue = append(directMatchValue, primitive.E{Key: "app_name", Value: appName})
+	}
+
+	// Use $facet to query both types in parallel
 	pipeline := bson.A{
-		bson.D{{Key: "$match", Value: matchValue}},
-		bson.D{{Key: "$unwind", Value: "$app_costs"}},
-		bson.D{{Key: "$match", Value: unwindMatchValue}},
-		bson.D{{Key: "$group", Value: bson.M{
-			"_id":   nil,
-			"total": bson.M{"$sum": "$app_costs.amount"},
+		bson.D{{Key: "$facet", Value: bson.M{
+			"appCosts": bson.A{
+				bson.D{{Key: "$match", Value: matchValue}},
+				bson.D{{Key: "$unwind", Value: "$app_costs"}},
+				bson.D{{Key: "$match", Value: unwindMatchValue}},
+				bson.D{{Key: "$group", Value: bson.M{
+					"_id":   nil,
+					"total": bson.M{"$sum": "$app_costs.amount"},
+				}}},
+			},
+			"directAmount": bson.A{
+				bson.D{{Key: "$match", Value: directMatchValue}},
+				bson.D{{Key: "$group", Value: bson.M{
+					"_id":   nil,
+					"total": bson.M{"$sum": "$amount"},
+				}}},
+			},
 		}}},
 	}
 
@@ -2207,7 +2251,12 @@ func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, 
 	defer cursor.Close(context.Background())
 
 	var result struct {
-		Total int64 `bson:"total"`
+		AppCosts []struct {
+			Total int64 `bson:"total"`
+		} `bson:"appCosts"`
+		DirectAmount []struct {
+			Total int64 `bson:"total"`
+		} `bson:"directAmount"`
 	}
 
 	if cursor.Next(context.Background()) {
@@ -2215,7 +2264,16 @@ func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, 
 			return 0, fmt.Errorf("failed to decode result: %w", err)
 		}
 	}
-	return result.Total, nil
+
+	totalAmount := int64(0)
+	if len(result.AppCosts) > 0 {
+		totalAmount += result.AppCosts[0].Total
+	}
+	if len(result.DirectAmount) > 0 {
+		totalAmount += result.DirectAmount[0].Total
+	}
+
+	return totalAmount, nil
 }
 
 func (m *MongoDB) GetWorkspaceConsumptionAmount(
@@ -2227,6 +2285,8 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 		primitive.E{Key: "$gte", Value: startTime},
 		primitive.E{Key: "$lte", Value: endTime},
 	}
+
+	// Build base match conditions for app_costs (sub-consumption type)
 	matchValue := bson.D{
 		primitive.E{Key: "time", Value: timeMatchValue},
 		primitive.E{Key: "owner", Value: owner},
@@ -2256,16 +2316,54 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 		}
 	}
 
-	// 构建聚合管道：按namespace分组统计amount
+	// Build match conditions for direct consumption (AppStore and LLMToken)
+	directMatchValue := bson.D{
+		primitive.E{Key: "time", Value: timeMatchValue},
+		primitive.E{Key: "owner", Value: owner},
+		primitive.E{Key: "status", Value: resources.Settled},
+	}
+	// For direct consumption, match app_type to AppStore or LLMToken if not specified
+	if appType != "" {
+		directMatchValue = append(
+			directMatchValue,
+			primitive.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(appType)]},
+		)
+	} else {
+		// If no appType specified, match both AppStore and LLMToken
+		directMatchValue = append(
+			directMatchValue,
+			primitive.E{Key: "app_type", Value: bson.D{{Key: "$in", Value: bson.A{
+				resources.AppType[resources.AppStore],
+				resources.AppType[resources.LLMToken],
+			}}}},
+		)
+	}
+	if appName != "" {
+		directMatchValue = append(directMatchValue, primitive.E{Key: "app_name", Value: appName})
+	}
+
+	// Use $facet to query both types in parallel
 	pipeline := bson.A{
-		bson.D{{Key: "$match", Value: matchValue}},
-		bson.D{{Key: "$unwind", Value: "$app_costs"}},
-		bson.D{{Key: "$match", Value: unwindMatchValue}},
-		bson.D{{Key: "$group", Value: bson.M{
-			"_id":   "$namespace", // 按namespace分组
-			"total": bson.M{"$sum": "$app_costs.amount"},
+		bson.D{{Key: "$facet", Value: bson.M{
+			"appCosts": bson.A{
+				bson.D{{Key: "$match", Value: matchValue}},
+				bson.D{{Key: "$unwind", Value: "$app_costs"}},
+				bson.D{{Key: "$match", Value: unwindMatchValue}},
+				bson.D{{Key: "$group", Value: bson.M{
+					"_id":   "$namespace", // group by namespace
+					"total": bson.M{"$sum": "$app_costs.amount"},
+				}}},
+				bson.D{{Key: "$sort", Value: bson.M{"_id": 1}}},
+			},
+			"directAmount": bson.A{
+				bson.D{{Key: "$match", Value: directMatchValue}},
+				bson.D{{Key: "$group", Value: bson.M{
+					"_id":   "$namespace",
+					"total": bson.M{"$sum": "$amount"},
+				}}},
+				bson.D{{Key: "$sort", Value: bson.M{"_id": 1}}},
+			},
 		}}},
-		bson.D{{Key: "$sort", Value: bson.M{"_id": 1}}}, // 按namespace排序
 	}
 
 	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
@@ -2274,24 +2372,37 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 	}
 	defer cursor.Close(context.Background())
 
-	// 构建结果map
-	result := make(map[string]int64)
-	for cursor.Next(context.Background()) {
-		var doc struct {
+	var result struct {
+		AppCosts []struct {
 			Namespace string `bson:"_id"`
 			Total     int64  `bson:"total"`
-		}
-		if err := cursor.Decode(&doc); err != nil {
+		} `bson:"appCosts"`
+		DirectAmount []struct {
+			Namespace string `bson:"_id"`
+			Total     int64  `bson:"total"`
+		} `bson:"directAmount"`
+	}
+
+	if cursor.Next(context.Background()) {
+		if err := cursor.Decode(&result); err != nil {
 			return nil, fmt.Errorf("failed to decode result: %w", err)
 		}
-		result[doc.Namespace] = doc.Total
 	}
 
-	if err := cursor.Err(); err != nil {
-		return nil, fmt.Errorf("cursor error: %w", err)
+	// Merge results from both queries
+	resultMap := make(map[string]int64)
+
+	// Add app_costs totals
+	for _, item := range result.AppCosts {
+		resultMap[item.Namespace] += item.Total
 	}
 
-	return result, nil
+	// Add direct amount totals (AppStore and LLMToken)
+	for _, item := range result.DirectAmount {
+		resultMap[item.Namespace] += item.Total
+	}
+
+	return resultMap, nil
 }
 
 func (m *MongoDB) GetPropertiesUsedAmount(
