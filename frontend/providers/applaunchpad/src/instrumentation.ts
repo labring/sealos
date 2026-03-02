@@ -49,6 +49,10 @@ export async function register() {
             monitor: {
               url: 'http://launchpad-monitor.sealos.svc.cluster.local:8428'
             },
+            metrics: {
+              url: 'http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus',
+              whitelistKubernetesHosts: []
+            },
             billing: {
               url: 'http://account-service.account-system.svc:2333'
             },

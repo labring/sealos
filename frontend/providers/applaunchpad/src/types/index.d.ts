@@ -63,8 +63,9 @@ export type AppConfigType = {
       fastGPTKey?: string;
     };
     components: {
-      monitor: {
+      metrics: {
         url: string;
+        whitelistKubernetesHosts: string[];
       };
       billing: {
         url: string;
