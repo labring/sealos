@@ -58,6 +58,7 @@ type Account interface {
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category, property string) (time.Time, error)
 	GetAllPayment() ([]resources.Billing, error)
 	InitDefaultPropertyTypeLS() error
+	InitDefaultPropertyTypeLSWithDefaults() error
 	ReloadPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(

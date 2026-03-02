@@ -65,6 +65,17 @@ type GpuConfigMapItem = {
   'gpu.product': string;
   'gpu.devbox': string;
   'gpu.ref'?: string;
+  'gpu.nodes'?: string[];
+};
+
+type GpuConfigMapItem = {
+  'gpu.count': string;
+  'gpu.available': string;
+  'gpu.used': string;
+  'gpu.memory': string;
+  'gpu.product': string;
+  'gpu.devbox': string;
+  'gpu.ref'?: string;
 };
 
 const PRICE_SCALE = 1000000;
@@ -162,6 +173,9 @@ async function getGpuNode() {
       ? (JSON.parse(aliasBackupRaw) as Record<string, string>)
       : undefined;
 
+    const parseGpuMap = JSON.parse(gpuMap) as Record<string, GpuConfigMapItem>;
+    const gpuEntries = Object.entries(parseGpuMap).filter(
+      ([, item]) => item['gpu.product'] && item['gpu.devbox'] === 'true'
     const parseGpuMap = JSON.parse(gpuMap) as Record<string, GpuConfigMapItem>;
     const gpuEntries = Object.entries(parseGpuMap).filter(
       ([, item]) => item['gpu.product'] && item['gpu.devbox'] === 'true'
