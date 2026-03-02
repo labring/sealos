@@ -30,6 +30,8 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
 import { track } from '@sealos/gtm';
+import { getUserSession } from '@/utils/user';
+import { useUserStore } from '@/store/user';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
@@ -41,6 +43,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
   const [detailFilePodIndex, setDetailFilePodIndex] = useState<number>();
+  const nsid = useUserStore().session?.user.nsid;
 
   const closeFn = useCallback(() => setLogsPodIndex(undefined), [setLogsPodIndex]);
 
@@ -236,13 +239,20 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
                   event_type: 'terminal_open',
                   module: 'applaunchpad'
                 });
-                const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
                 sealosApp.runEvents('openDesktopApp', {
                   appKey: 'system-terminal',
+                  pathname: '/exec',
                   query: {
-                    defaultCommand
+                    ns: nsid,
+                    pod: item.podName,
+                    container: appName
                   },
-                  messageData: { type: 'new terminal', command: defaultCommand }
+                  messageData: {
+                    type: 'InternalAppCall',
+                    ns: nsid,
+                    pod: item.podName,
+                    container: appName
+                  }
                 });
               }}
             >
@@ -329,8 +339,8 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
-                        ? `${app[col.dataIndex]}`
-                        : '-'}
+                      ? `${app[col.dataIndex]}`
+                      : '-'}
                   </Td>
                 ))}
               </Tr>
