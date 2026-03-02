@@ -134,9 +134,9 @@ const DevboxCreatePage = () => {
   const countGpuInventory = useCallback(
     (type?: string) => {
       if (!type) return 0;
-      const gpuItem = sourcePrice?.gpu?.find((item) => item.annotationType === type);
-      const available = gpuItem?.available || 0;
-      const total = gpuItem?.count || 0;
+      const gpuItems = sourcePrice?.gpu?.filter((item) => item.annotationType === type) || [];
+      const available = gpuItems.reduce((sum, item) => sum + (item.available || 0), 0);
+      const total = gpuItems.reduce((sum, item) => sum + (item.count || 0), 0);
 
       if (!isEdit) {
         return available;
