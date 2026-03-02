@@ -187,7 +187,8 @@ export default function Gpu({
           <SelectContent>
             <SelectItem value="none">{t('No GPU')}</SelectItem>
             {gpuOptions.map((item) => {
-              const available = item.available;
+              const available = countGpuInventory(item.annotationType);
+              const total = gpuTotalCountMap[item.annotationType] || item.count;
               return (
                 <SelectItem key={item.optionKey} value={item.optionKey} disabled={available <= 0}>
                   <div className="flex min-w-0 items-center gap-2">
@@ -217,7 +218,7 @@ export default function Gpu({
                     <span className="text-sm text-zinc-900">
                       {t('Inventory')}:{' '}
                       <span className="text-yellow-600">
-                        {available}/{item.count}
+                        {available}/{total}
                       </span>
                     </span>
                   </div>
