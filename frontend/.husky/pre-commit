@@ -1,15 +1,1 @@
-#!/usr/bin/env sh
-
-# 加载用户的 shell 配置以获取完整的 PATH
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-
-# 如果使用 Homebrew 安装的 Node.js
-if [ -d "/opt/homebrew/bin" ]; then
-  export PATH="/opt/homebrew/bin:$PATH"
-fi
-if [ -d "/usr/local/bin" ]; then
-  export PATH="/usr/local/bin:$PATH"
-fi
-
 npx lint-staged
