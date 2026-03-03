@@ -495,7 +495,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     console.log('instanceResponse', instanceResponse);
-    return res.status(200).json(instanceResponse);
+    return res.status(201).json(instanceResponse);
   } catch (err: any) {
     console.error('Error creating instance:', err);
     return sendError(res, {

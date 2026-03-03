@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
-import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 import { json2DevboxRelease } from '@/utils/json2Yaml';
 import { adaptDevboxVersionListItem } from '@/utils/adapt';
 import { RequestSchema } from './schema';
@@ -230,7 +230,7 @@ interface ReleaseTaskParams extends AutostartJobParams {
   k8sCustomObjects: any;
   k8sNetworkingApp: any;
   tag: string;
-  releaseDes: string;
+  releaseDescription: string;
   wasRunning: boolean;
   shouldRestart: boolean;
 }
@@ -248,7 +248,7 @@ async function executeReleaseTask(params: ReleaseTaskParams) {
     devboxName,
     devboxUid,
     tag,
-    releaseDes,
+    releaseDescription,
     wasRunning,
     shouldRestart,
     execCommand
@@ -260,7 +260,7 @@ async function executeReleaseTask(params: ReleaseTaskParams) {
     const devboxYaml = json2DevboxRelease({
       devboxName,
       tag,
-      releaseDes,
+      releaseDes: releaseDescription,
       devboxUid,
       startDevboxAfterRelease: false
     });
@@ -376,7 +376,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       });
     }
 
-    const { tag, releaseDes, execCommand } = validationResult.data;
+    const { tag, releaseDescription, execCommand, startDevboxAfterRelease } = validationResult.data;
 
     const {
       applyYamlList,
@@ -428,13 +428,13 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
       devboxName,
       devboxUid: devbox?.metadata?.uid || '',
       tag,
-      releaseDes,
+      releaseDescription,
       wasRunning: devbox?.spec?.state === 'Running',
-      shouldRestart: true,
+      shouldRestart: startDevboxAfterRelease,
       execCommand
     }).catch((err) => console.error('[ReleaseTask Unhandled]', err));
 
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ name: devboxName, status: 'creating' }, { status: 202 });
   } catch (err: any) {
     return sendError({
       status: 500,

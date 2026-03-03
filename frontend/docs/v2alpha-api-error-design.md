@@ -70,15 +70,15 @@ Each HTTP status code has a fixed set of permitted `type` and `code` values. Usi
 
 Update this table when adding new types.
 
-| type                   | When to use                                                                                                                                                                                                                  |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `validation_error`     | Request body or path params **fail schema/type validation**. Structurally invalid — wrong type, format, or missing required field. Always include `details`.                                                                 |
-| `client_error`         | Request passes schema validation but is **semantically disallowed**: wrong HTTP method, operation not supported for current workload type or state.                                                                          |
-| `resource_error`       | Resource does not exist, already exists, or is in conflict.                                                                                                                                                                  |
-| `operation_error`      | Request was valid and the resource exists, but the **server-side operation failed** during execution. `details` usually explains the cause; retrying with the same request may not help without fixing the underlying issue. |
-| `authentication_error` | No valid credentials provided or credentials are expired.                                                                                                                                                                    |
-| `authorization_error`  | Authenticated but lacks permission to perform the operation.                                                                                                                                                                 |
-| `internal_error`       | Unexpected server exception or dependency failure. Not caused by the request itself — retrying later may succeed. Report to support if it persists.                                                                          |
+| type                   | When to use                                                                                                                                                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `validation_error`     | Request body or path params**fail schema/type validation**. Structurally invalid — wrong type, format, or missing required field. Always include `details`.                                                                 |
+| `client_error`         | Request passes schema validation but is**semantically disallowed**: wrong HTTP method, operation not supported for current workload type or state.                                                                          |
+| `resource_error`       | Resource does not exist, already exists, or is in conflict.                                                                                                                                                                 |
+| `operation_error`      | Request was valid and the resource exists, but the**server-side operation failed** during execution. `details` usually explains the cause; retrying with the same request may not help without fixing the underlying issue. |
+| `authentication_error` | No valid credentials provided or credentials are expired.                                                                                                                                                                   |
+| `authorization_error`  | Authenticated but lacks permission to perform the operation.                                                                                                                                                                |
+| `internal_error`       | Unexpected server exception or dependency failure. Not caused by the request itself — retrying later may succeed. Report to support if it persists.                                                                         |
 
 > **Boundary rule — `validation_error` vs `client_error`:**
 > Use `validation_error` when the request itself is structurally invalid (wrong type, format, missing field).
@@ -99,11 +99,11 @@ Update this table when adding new codes.
 
 ### client_error
 
-| code                           | Description                                                                                                              |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `METHOD_NOT_ALLOWED`           | The HTTP method is not supported on this endpoint. Check the API docs for the correct method.                            |
-| `UNSUPPORTED_OPERATION`        | The operation is not allowed in the current context (e.g. the resource state does not permit this action).               |
-| `STORAGE_REQUIRES_STATEFULSET` | Storage management is only supported for StatefulSet workloads. _(Internal API — uses Kubernetes workload terminology.)_ |
+| code                           | Description                                                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `METHOD_NOT_ALLOWED`           | The HTTP method is not supported on this endpoint. Check the API docs for the correct method.                           |
+| `UNSUPPORTED_OPERATION`        | The operation is not allowed in the current context (e.g. the resource state does not permit this action).              |
+| `STORAGE_REQUIRES_STATEFULSET` | Storage management is only supported for StatefulSet workloads._(Internal API — uses Kubernetes workload terminology.)_ |
 
 ### resource_error
 
@@ -117,9 +117,9 @@ Update this table when adding new codes.
 
 | code                    | Description                                                                                                                              |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `KUBERNETES_ERROR`      | A Kubernetes API call returned an error. `details` contains the raw K8s error message for troubleshooting.                               |
+| `KUBERNETES_ERROR`      | A Kubernetes API call returned an error.`details` contains the raw K8s error message for troubleshooting.                                |
 | `INVALID_RESOURCE_SPEC` | The generated Kubernetes resource specification was rejected by the cluster (admission webhook, invalid field, quota exceeded). Use 422. |
-| `STORAGE_UPDATE_FAILED` | StatefulSet recreation or PVC update failed. `details` contains the underlying error.                                                    |
+| `STORAGE_UPDATE_FAILED` | StatefulSet recreation or PVC update failed.`details` contains the underlying error.                                                     |
 | `OPERATION_FAILED`      | Generic operation failure. Use when no more specific code applies.                                                                       |
 
 ### authentication_error

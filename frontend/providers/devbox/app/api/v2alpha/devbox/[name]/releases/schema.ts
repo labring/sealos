@@ -6,15 +6,16 @@ export const RequestSchema = z.object({
   tag: z.string().min(1).openapi({
     description: 'Release tag'
   }),
-  releaseDes: z.string().optional().default('').openapi({
+  releaseDescription: z.string().optional().default('').openapi({
     description: 'Release description'
   }),
   execCommand: z.string().optional().openapi({
     description: 'Command to execute in the devbox after release restart (autostart)',
     example: 'nohup /home/devbox/project/entrypoint.sh > /dev/null 2>&1 &'
   }),
-  startDevboxAfterRelease: z.boolean().optional().default(false).openapi({
-    description: 'Start devbox automatically after release'
+  startDevboxAfterRelease: z.boolean().optional().default(true).openapi({
+    description:
+      'Restart devbox automatically after the release build completes. Defaults to `true`.'
   })
 });
 
@@ -26,7 +27,7 @@ export const SuccessResponseSchema = z.object({
     tag: z.string().openapi({
       description: 'Release tag'
     }),
-    releaseDes: z.string().openapi({
+    releaseDescription: z.string().openapi({
       description: 'Release description'
     }),
     image: z.string().optional().openapi({

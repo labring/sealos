@@ -3,7 +3,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
 import { AutostartRequestSchema } from './schema';
-import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
 

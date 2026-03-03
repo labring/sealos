@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 /**
- * Token name parameter schema
+ * Token name path parameter schema
  */
 export const tokenNameParamSchema = z.object({
   name: z

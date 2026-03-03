@@ -4,7 +4,6 @@ import {
   createError400Schema,
   createError401Schema,
   createError404Schema,
-  createError409Schema,
   createError500Schema,
   createErrorExample,
   ErrorCode,
@@ -20,358 +19,126 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET() {
   const spec = {
-    openapi: '3.0.3',
+    openapi: '3.1.0',
     info: {
       title: 'AIProxy Token Management API',
       version: '2.0.0-alpha',
-      description: `
-# AIProxy Token Management API
+      description: `AIProxy is the Sealos AI gateway. This API lets you manage API tokens that authenticate calls to AI models.
 
-This API provides endpoints for managing AI service tokens.
+## Authentication
 
-## API Design Principles
+All endpoints require one of two credential types in the \`Authorization\` header:
 
-### Query vs Mutation
+- **Sealos App Token** (a Sealos-issued signed token): \`Authorization: Bearer <appToken>\`
+- **Kubeconfig** (URL-encoded YAML): \`Authorization: <encodeURIComponent(kubeconfigYaml)>\`
 
-- **Query**: Read-only operations that retrieve data
-  - Success: Returns \`200 OK\` with data in response body
-  - Failure: Returns \`4XX\` or \`5XX\` with error details
+Obtain your App Token or kubeconfig from the Sealos console.
 
-- **Mutation**: Operations that modify data (create, update, delete)
-  - Success: Returns \`204 No Content\` with empty response body
-  - Failure: Returns \`4XX\` or \`5XX\` with error details
+## Errors
 
-### Error Response Format
+All error responses follow a unified format:
 
-All error responses use the standardized v2alpha format:
 \`\`\`json
-{ "error": { "type": "...", "code": "...", "message": "...", "details": "..." } }
+{
+  "error": {
+    "type": "validation_error",
+    "code": "INVALID_PARAMETER",
+    "message": "Token name is required.",
+    "details": [{ "field": "name", "message": "Required" }]
+  }
+}
 \`\`\`
 
-### Authentication
+- \`type\` — high-level category (e.g. \`validation_error\`, \`resource_error\`, \`internal_error\`)
+- \`code\` — stable identifier for programmatic handling
+- \`message\` — human-readable explanation
+- \`details\` — optional extra context; shape varies by \`code\` (field list, string, or object)
 
-All endpoints require authentication via Bearer token or Kubernetes config in the Authorization header.
-      `,
-      contact: {
-        name: 'API Support',
-      },
+## Operations
+
+**Query** (read-only): returns \`200 OK\` with data in the response body.
+
+**Mutation** (write): Create → \`201 Created\` with the created resource. Update/Delete → \`204 No Content\`.`,
     },
     servers: [
       {
+        url: 'http://localhost:3000/api/v2alpha',
+        description: 'Local development',
+      },
+      {
         url: '/api/v2alpha',
-        description: 'V2 Alpha API Server',
+        description: 'Production (same origin)',
+      },
+      {
+        url: '{baseUrl}/api/v2alpha',
+        description: 'Custom',
+        variables: {
+          baseUrl: {
+            default: 'https://aiproxy.example.com',
+            description: 'Base URL of your instance (e.g. https://aiproxy.192.168.x.x.nip.io)',
+          },
+        },
       },
     ],
     tags: [
       {
         name: 'Query',
-        description: 'Query operations - retrieve data (returns 200 OK with data)',
+        description: 'Read-only operations. Success: `200 OK` with data in the response body.',
       },
       {
         name: 'Mutation',
-        description: 'Mutation operations - modify data (returns 204 No Content)',
+        description:
+          'Write operations. Create: `201 Created` with the new resource. Update/Delete: `204 No Content`.',
       },
     ],
     paths: {
-      '/token': {
-        post: {
-          tags: ['Mutation'],
-          summary: 'Create a new token',
-          description: `
-Create a new API token for accessing AI services.
-
-**Operation Type**: Mutation
-
-**Success Response**: \`204 No Content\` - Token created successfully (no response body)
-
-**Authentication Required**: Yes
-          `,
-          operationId: 'createToken',
-          security: [
-            {
-              BearerAuth: [],
-            },
-            {
-              KubeConfigAuth: [],
-            },
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['name'],
-                  properties: {
-                    name: {
-                      type: 'string',
-                      description: 'Token name (must be unique within the group)',
-                      minLength: 1,
-                      maxLength: 100,
-                      example: 'my-api-token',
-                    },
-                  },
-                },
-                examples: {
-                  basic: {
-                    summary: 'Basic token creation',
-                    value: {
-                      name: 'production-token',
-                    },
-                  },
-                },
-              },
-            },
-          },
-          responses: {
-            '204': {
-              description: 'Token created successfully (no content)',
-            },
-            '400': {
-              description: 'Bad request - validation failed',
-              content: {
-                'application/json': {
-                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
-                  examples: {
-                    invalid_json: {
-                      summary: 'Invalid JSON body',
-                      value: createErrorExample(
-                        ErrorType.VALIDATION_ERROR,
-                        ErrorCode.INVALID_PARAMETER,
-                        'Request body must be valid JSON.'
-                      ),
-                    },
-                    validation_error: {
-                      summary: 'Validation error (name required/format)',
-                      value: createErrorExample(
-                        ErrorType.VALIDATION_ERROR,
-                        ErrorCode.INVALID_PARAMETER,
-                        'Invalid request body.',
-                        [{ field: 'name', message: 'Token name is required' }]
-                      ),
-                    },
-                  },
-                },
-              },
-            },
-            '401': {
-              description: 'Unauthorized - invalid or missing authentication',
-              content: {
-                'application/json': {
-                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
-                  examples: {
-                    unauthorized: {
-                      summary: 'Authentication failed',
-                      value: createErrorExample(
-                        ErrorType.AUTHENTICATION_ERROR,
-                        ErrorCode.AUTHENTICATION_REQUIRED,
-                        'Unauthorized, please login again.',
-                        'Auth: Token is missing'
-                      ),
-                    },
-                  },
-                },
-              },
-            },
-            '409': {
-              description: 'Conflict - token with this name already exists',
-              content: {
-                'application/json': {
-                  schema: zodToJsonSchema(createError409Schema(), { target: 'openApi3' }),
-                  examples: {
-                    already_exists: {
-                      summary: 'Token already exists',
-                      value: createErrorExample(
-                        ErrorType.RESOURCE_ERROR,
-                        ErrorCode.ALREADY_EXISTS,
-                        'A token with this name already exists.'
-                      ),
-                    },
-                  },
-                },
-              },
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
-                  examples: {
-                    server_error: {
-                      summary: 'Server error',
-                      value: createErrorExample(
-                        ErrorType.INTERNAL_ERROR,
-                        ErrorCode.INTERNAL_ERROR,
-                        'Failed to create token.',
-                        'Backend service URL is not configured'
-                      ),
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      '/token/{name}': {
-        delete: {
-          tags: ['Mutation'],
-          summary: 'Delete a token by name',
-          description: `
-Delete a specific token by its name.
-
-**Operation Type**: Mutation
-
-**Success Response**: \`204 No Content\` - Token deleted successfully (no response body)
-
-**Authentication Required**: Yes
-
-**Note**: This operation is irreversible. The deleted token cannot be recovered.
-          `,
-          operationId: 'deleteToken',
-          security: [
-            {
-              BearerAuth: [],
-            },
-            {
-              KubeConfigAuth: [],
-            },
-          ],
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Token name to delete',
-              schema: {
-                type: 'string',
-                minLength: 1,
-              },
-              example: 'my-api-token',
-            },
-          ],
-          responses: {
-            '204': {
-              description: 'Token deleted successfully (no content)',
-            },
-            '400': {
-              description: 'Bad request - invalid token name',
-              content: {
-                'application/json': {
-                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
-                  examples: {
-                    validation_error: {
-                      summary: 'Invalid token name',
-                      value: createErrorExample(
-                        ErrorType.VALIDATION_ERROR,
-                        ErrorCode.INVALID_PARAMETER,
-                        'Invalid token name.',
-                        [{ field: 'name', message: 'Token name is required' }]
-                      ),
-                    },
-                  },
-                },
-              },
-            },
-            '401': {
-              description: 'Unauthorized - invalid or missing authentication',
-              content: {
-                'application/json': {
-                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
-                  examples: {
-                    unauthorized: {
-                      summary: 'Authentication failed',
-                      value: createErrorExample(
-                        ErrorType.AUTHENTICATION_ERROR,
-                        ErrorCode.AUTHENTICATION_REQUIRED,
-                        'Unauthorized, please login again.',
-                        'Auth: Token is missing'
-                      ),
-                    },
-                  },
-                },
-              },
-            },
-            '404': {
-              description: 'Token not found',
-              content: {
-                'application/json': {
-                  schema: zodToJsonSchema(createError404Schema(), { target: 'openApi3' }),
-                  examples: {
-                    not_found: {
-                      summary: 'Token does not exist',
-                      value: createErrorExample(
-                        ErrorType.RESOURCE_ERROR,
-                        ErrorCode.NOT_FOUND,
-                        'The specified token does not exist.'
-                      ),
-                    },
-                  },
-                },
-              },
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
-                  examples: {
-                    server_error: {
-                      summary: 'Server error',
-                      value: createErrorExample(
-                        ErrorType.INTERNAL_ERROR,
-                        ErrorCode.INTERNAL_ERROR,
-                        'Failed to delete token.',
-                        'HTTP error! status: 502'
-                      ),
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      '/token/search': {
+      '/tokens': {
         get: {
           tags: ['Query'],
-          summary: 'Search tokens',
-          description: `
-Search and retrieve tokens.
+          summary: 'List tokens',
+          description: `Lists tokens with optional partial-name filtering and pagination.
 
-**Operation Type**: Query
-
-**Success Response**: \`200 OK\` with token data in response body
-
-**Default Behavior** (no parameters):
-- Returns first 10 tokens
-- Sorted by creation time (newest first)
-
-**With name parameter**:
-- Returns specific token matching the name
-- Returns 404 if token not found
-
-**Authentication Required**: Yes
-          `,
-          operationId: 'searchTokens',
-          security: [
-            {
-              BearerAuth: [],
-            },
-            {
-              KubeConfigAuth: [],
-            },
-          ],
+Key points:
+- Default: returns the first 10 tokens (page 1)
+- \`name\` parameter performs a **partial (fuzzy) match**; may return multiple results
+- For an exact name lookup, use \`GET /tokens/{name}\``,
+          operationId: 'listTokens',
           parameters: [
             {
               name: 'name',
               in: 'query',
               required: false,
-              description: 'Token name to search for (exact match)',
+              description:
+                'Filter tokens by name (partial/fuzzy match). Returns all tokens whose name contains this string. For an exact lookup, use `GET /tokens/{name}`.',
               schema: {
                 type: 'string',
               },
-              example: 'my-api-token',
+              example: 'my-api',
+            },
+            {
+              name: 'page',
+              in: 'query',
+              required: false,
+              description: 'Page number (default: 1)',
+              schema: {
+                type: 'integer',
+                minimum: 1,
+                default: 1,
+              },
+              example: 1,
+            },
+            {
+              name: 'perPage',
+              in: 'query',
+              required: false,
+              description: 'Number of items per page (default: 10, max: 100)',
+              schema: {
+                type: 'integer',
+                minimum: 1,
+                maximum: 100,
+                default: 10,
+              },
+              example: 10,
             },
           ],
           responses: {
@@ -380,48 +147,54 @@ Search and retrieve tokens.
               content: {
                 'application/json': {
                   schema: {
-                    $ref: '#/components/schemas/TokenSearchResponse',
+                    $ref: '#/components/schemas/TokenListResponse',
                   },
                   examples: {
                     default_list: {
                       summary: 'Default list (first 10 tokens)',
-                      value: [
-                        {
-                          id: 123,
-                          name: 'production-token',
-                          key: 'sk-****abc123',
-                          group: 'ns-admin',
-                          subnet: '0.0.0.0/0',
-                          models: ['gpt-4', 'gpt-3.5-turbo'],
-                          status: 1,
-                          quota: 1000.0,
-                          used_amount: 250.5,
-                          request_count: 500,
-                          created_at: 1697001600,
-                          accessed_at: 1697088000,
-                          expired_at: -1,
-                        },
-                      ],
+                      value: {
+                        tokens: [
+                          {
+                            id: 123,
+                            name: 'production-token',
+                            key: 'sk-****abc123',
+                            group: 'ns-admin',
+                            subnet: '0.0.0.0/0',
+                            models: ['gpt-4', 'gpt-3.5-turbo'],
+                            status: 1,
+                            quota: 1000.0,
+                            used_amount: 250.5,
+                            request_count: 500,
+                            created_at: 1697001600,
+                            accessed_at: 1697088000,
+                            expired_at: -1,
+                          },
+                        ],
+                        total: 1,
+                      },
                     },
-                    specific_token: {
-                      summary: 'Search by name',
-                      value: [
-                        {
-                          id: 123,
-                          name: 'my-api-token',
-                          key: 'sk-****abc123',
-                          group: 'ns-admin',
-                          subnet: '0.0.0.0/0',
-                          models: null,
-                          status: 1,
-                          quota: 500.0,
-                          used_amount: 100.0,
-                          request_count: 200,
-                          created_at: 1697001600,
-                          accessed_at: 1697088000,
-                          expired_at: -1,
-                        },
-                      ],
+                    filtered_by_name: {
+                      summary: 'Filter by name',
+                      value: {
+                        tokens: [
+                          {
+                            id: 123,
+                            name: 'my-api-token',
+                            key: 'sk-****abc123',
+                            group: 'ns-admin',
+                            subnet: '0.0.0.0/0',
+                            models: null,
+                            status: 1,
+                            quota: 500.0,
+                            used_amount: 100.0,
+                            request_count: 200,
+                            created_at: 1697001600,
+                            accessed_at: 1697088000,
+                            expired_at: -1,
+                          },
+                        ],
+                        total: 1,
+                      },
                     },
                     empty_list: {
                       summary: 'No tokens found',
@@ -472,14 +245,260 @@ Search and retrieve tokens.
                 },
               },
             },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
+                  examples: {
+                    server_error: {
+                      summary: 'Server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to list tokens.',
+                        'Backend auth key is not configured'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        post: {
+          tags: ['Mutation'],
+          summary: 'Create a new token',
+          description: `Creates a new API token for accessing AI services.
+
+Always returns \`201\`. If a token with the given name already exists it is returned as-is rather than producing an error.`,
+          operationId: 'createToken',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['name'],
+                  properties: {
+                    name: {
+                      type: 'string',
+                      description: 'Token name (must be unique within the group)',
+                      minLength: 1,
+                      maxLength: 100,
+                      example: 'my-api-token',
+                    },
+                  },
+                },
+                examples: {
+                  basic: {
+                    summary: 'Basic token creation',
+                    value: {
+                      name: 'production-token',
+                    },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            '201': {
+              description: 'Token created or returned as-is if it already existed.',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/TokenInfo',
+                  },
+                  examples: {
+                    created: {
+                      summary: 'Token created',
+                      value: {
+                        id: 124,
+                        name: 'production-token',
+                        key: 'sk-abcdefgh1234567890',
+                        group: 'ns-admin',
+                        subnet: '0.0.0.0/0',
+                        models: null,
+                        status: 1,
+                        quota: 0,
+                        used_amount: 0,
+                        request_count: 0,
+                        created_at: 1697001600,
+                        accessed_at: 1697001600,
+                        expired_at: -1,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            '400': {
+              description: 'Bad request - validation failed',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
+                  examples: {
+                    invalid_json: {
+                      summary: 'Invalid JSON body',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Request body must be valid JSON.'
+                      ),
+                    },
+                    validation_error: {
+                      summary: 'Validation error (name required/format)',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid request body.',
+                        [{ field: 'name', message: 'Token name is required' }]
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '401': {
+              description: 'Unauthorized - invalid or missing authentication',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
+                  examples: {
+                    unauthorized: {
+                      summary: 'Authentication failed',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Unauthorized, please login again.',
+                        'Auth: Token is missing'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
+                  examples: {
+                    server_error: {
+                      summary: 'Server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to create token.',
+                        'Backend service URL is not configured'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/tokens/{name}': {
+        get: {
+          tags: ['Query'],
+          summary: 'Get a token by name',
+          description: `Retrieves a single token by its exact name.
+
+Key points:
+- Matching is **exact and case-sensitive**
+- For a partial-name search, use \`GET /tokens?name=...\``,
+          operationId: 'getToken',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Exact token name to retrieve (case-sensitive, 1–100 characters).',
+              schema: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 100,
+                example: 'my-api-token',
+              },
+            },
+          ],
+          responses: {
+            '200': {
+              description: 'Token retrieved successfully',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/TokenInfo' },
+                  examples: {
+                    token: {
+                      summary: 'Token details',
+                      value: {
+                        id: 123,
+                        name: 'my-api-token',
+                        key: 'sk-****abc123',
+                        group: 'ns-admin',
+                        subnet: '0.0.0.0/0',
+                        models: ['gpt-4', 'gpt-3.5-turbo'],
+                        status: 1,
+                        quota: 1000.0,
+                        used_amount: 250.5,
+                        request_count: 500,
+                        created_at: 1697001600,
+                        accessed_at: 1697088000,
+                        expired_at: -1,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            '400': {
+              description: 'Bad request - invalid token name',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
+                  examples: {
+                    validation_error: {
+                      summary: 'Token name fails validation',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid token name.',
+                        [{ field: 'name', message: 'Token name is required' }]
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '401': {
+              description: 'Unauthorized - invalid or missing authentication',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
+                  examples: {
+                    unauthorized: {
+                      summary: 'Authentication failed',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Unauthorized, please login again.',
+                        'Auth: Token is missing'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
             '404': {
-              description: 'Token not found (when searching by name)',
+              description: 'Token not found',
               content: {
                 'application/json': {
                   schema: zodToJsonSchema(createError404Schema(), { target: 'openApi3' }),
                   examples: {
                     not_found: {
-                      summary: 'Token not found',
+                      summary: 'No token with this exact name exists',
                       value: createErrorExample(
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
@@ -501,8 +520,95 @@ Search and retrieve tokens.
                       value: createErrorExample(
                         ErrorType.INTERNAL_ERROR,
                         ErrorCode.INTERNAL_ERROR,
-                        'Failed to search tokens.',
-                        'Backend auth key is not configured'
+                        'Failed to get token.',
+                        'HTTP error! status: 502'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        delete: {
+          tags: ['Mutation'],
+          summary: 'Delete a token by name',
+          description: `Permanently deletes a token by its exact name.
+
+Key points:
+- Matching is **exact and case-sensitive**
+- Returns \`204\` even if the token does not exist (idempotent)
+- **Irreversible**`,
+          operationId: 'deleteToken',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Exact token name to delete (case-sensitive, 1–100 characters).',
+              schema: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 100,
+                example: 'my-api-token',
+              },
+            },
+          ],
+          responses: {
+            '204': {
+              description: 'Token deleted successfully (no content)',
+            },
+            '400': {
+              description: 'Bad request - invalid token name',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
+                  examples: {
+                    validation_error: {
+                      summary: 'Invalid token name',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid token name.',
+                        [{ field: 'name', message: 'Token name is required' }]
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '401': {
+              description: 'Unauthorized - invalid or missing authentication',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
+                  examples: {
+                    unauthorized: {
+                      summary: 'Authentication failed',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Unauthorized, please login again.',
+                        'Auth: Token is missing'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
+                  examples: {
+                    server_error: {
+                      summary: 'Server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to delete token.',
+                        'HTTP error! status: 502'
                       ),
                     },
                   },
@@ -513,18 +619,25 @@ Search and retrieve tokens.
         },
       },
     },
+    // Root-level security: either credential type is accepted (OR semantics)
+    security: [{ sealosAppToken: [] }, { kubeconfigAuth: [] }],
     components: {
       securitySchemes: {
-        BearerAuth: {
+        sealosAppToken: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'JWT token for authentication',
+          description:
+            'Sealos-issued App Token (a signed token specific to the Sealos platform). ' +
+            'Obtain from the Sealos console. ' +
+            'Header: `Authorization: Bearer <appToken>`',
         },
-        KubeConfigAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          description: 'Kubernetes config string for authentication',
+        kubeconfigAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'Authorization',
+          description:
+            'URL-encoded kubeconfig YAML. ' +
+            'Header: `Authorization: <encodeURIComponent(kubeconfigYaml)>`',
         },
       },
       schemas: {
@@ -544,7 +657,7 @@ Search and retrieve tokens.
             },
             key: {
               type: 'string',
-              description: 'Token key (partially masked for security)',
+              description: 'API key.',
               example: 'sk-****abc123',
             },
             group: {
@@ -558,8 +671,7 @@ Search and retrieve tokens.
               example: '0.0.0.0/0',
             },
             models: {
-              type: 'array',
-              nullable: true,
+              type: ['array', 'null'],
               description: 'List of allowed AI models (null means all models are allowed)',
               items: {
                 type: 'string',
@@ -623,9 +735,9 @@ Search and retrieve tokens.
             'expired_at',
           ],
         },
-        TokenSearchResponse: {
+        TokenListResponse: {
           type: 'object',
-          description: 'Token search response',
+          description: 'Token list response',
           properties: {
             tokens: {
               type: 'array',

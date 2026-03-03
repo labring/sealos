@@ -18,6 +18,12 @@ export async function startDatabase(
   // Get cluster information
   const body = await getCluster(req, request.params.databaseName);
 
+  // Idempotent: if already running, return immediately without creating an OpsRequest
+  const dbDetail = adaptDBDetail(body);
+  if (dbDetail.status.value === 'Running') {
+    return { data: raw2schema(dbDetail) };
+  }
+
   // Enable backup if it's disabled
   if (body.spec.backup?.enabled === false) {
     const patch = [

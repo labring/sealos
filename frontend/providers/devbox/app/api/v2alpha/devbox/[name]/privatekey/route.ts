@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { sendError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
+import { sendError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
 

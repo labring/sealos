@@ -48,7 +48,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       return res.status(204).end();
-    } catch (error) {
+    } catch (error: any) {
+      const body = error?.body ?? error;
+      if (body?.code === 404) {
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: `Database '${req.query.databaseName}' not found.`,
+          details: body.message
+        });
+      }
       return sendK8sError(res, error);
     }
   }

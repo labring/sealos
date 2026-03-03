@@ -13,7 +13,6 @@ import {
   createError401Schema,
   createError403Schema,
   createError404Schema,
-  createError405Schema,
   createError409Schema,
   createError422Schema,
   createError500Schema,
@@ -58,36 +57,70 @@ const getProductionServerUrl = () => {
 // Factory function to create openapi document with dynamic URL
 export const createOpenApiDocument = () => {
   return createDocument({
-    openapi: '3.0.0',
+    openapi: '3.1.0',
     info: {
-      title: 'Application Launch Pad API v2alpha',
+      title: 'Application Launchpad API',
       version: '2.0.0-alpha',
-      description: 'API documentation for Application Launch Pad service v2alpha'
+      description:
+        'Application Launchpad is a Sealos service for deploying and managing containerized applications on Kubernetes. ' +
+        'This API allows you to create, query, update, delete, start, pause, and restart applications programmatically.\n\n' +
+        '## Authentication\n\n' +
+        'All requests require a valid kubeconfig passed in the `Authorization` header.\n\n' +
+        'Encode the kubeconfig YAML string with `encodeURIComponent()` before setting the header:\n\n' +
+        '```\n' +
+        'Authorization: <encodeURIComponent(kubeconfigYaml)>\n' +
+        '```\n\n' +
+        'Obtain your kubeconfig from the Sealos console user menu. ' +
+        'A missing or invalid kubeconfig results in a `401 Unauthorized` response.\n\n' +
+        '## Errors\n\n' +
+        'All error responses use a unified format:\n\n' +
+        '```json\n' +
+        '{\n' +
+        '  "error": {\n' +
+        '    "type": "validation_error",\n' +
+        '    "code": "INVALID_PARAMETER",\n' +
+        '    "message": "Request body validation failed.",\n' +
+        '    "details": [{ "field": "image.imageName", "message": "Required" }]\n' +
+        '  }\n' +
+        '}\n' +
+        '```\n\n' +
+        '- `type` — high-level category (e.g. `validation_error`, `resource_error`, `internal_error`)\n' +
+        '- `code` — stable identifier for programmatic handling\n' +
+        '- `message` — human-readable explanation\n' +
+        '- `details` — optional extra context; shape varies by `code` (field list, string, or object)\n\n' +
+        '## Operations\n\n' +
+        '**Query** (read-only): returns `200 OK` with data in the response body.\n\n' +
+        '**Mutation** (write): Create → `201 Created` with the created resource. Update/Delete → `204 No Content`.'
     },
     servers: [
       {
         url: `http://localhost:3000/api/v2alpha`,
-        description: 'Development'
+        description: 'Local development'
       },
       {
         url: getProductionServerUrl(),
         description: 'Production'
       },
       {
-        url: `https://applaunchpad.192.168.12.53.nip.io/api/v2alpha`,
-        description: 'Development'
+        url: `{baseUrl}/api/v2alpha`,
+        description: 'Custom',
+        variables: {
+          baseUrl: {
+            default: 'https://applaunchpad.example.com',
+            description: 'Base URL of your instance (e.g. https://applaunchpad.192.168.x.x.nip.io)'
+          }
+        }
       }
     ],
     tags: [
       {
         name: 'Query',
-        description:
-          'Query operations for retrieving data. All query endpoints return 200 OK on success with data in the response body, and appropriate error codes (4xx, 5xx) on failure.'
+        description: 'Read-only operations. Success: `200 OK` with data in the response body.'
       },
       {
         name: 'Mutation',
         description:
-          'Mutation operations for creating, updating, or deleting data. All mutation endpoints return 204 No Content on success with no response body, and appropriate error codes (4xx, 5xx) with error details on failure.'
+          'Write operations. Create: `201 Created` with the new resource. Update/Delete: `204 No Content`.'
       }
     ],
     components: {
@@ -96,7 +129,9 @@ export const createOpenApiDocument = () => {
           type: 'apiKey',
           in: 'header',
           name: 'Authorization',
-          description: 'Kubeconfig for authentication'
+          description:
+            'Kubeconfig encoded with `encodeURIComponent()`. Example: `Authorization: <encodeURIComponent(kubeconfigYaml)>`. ' +
+            'Obtain your kubeconfig from the Sealos console user menu.'
         }
       }
     },
@@ -109,14 +144,84 @@ export const createOpenApiDocument = () => {
       '/apps': {
         post: {
           tags: ['Mutation'],
+          operationId: 'createApp',
           summary: 'Create a new application',
           description:
             'Creates a new containerized application with specified quota, networking, storage, and environment configurations.\n\n' +
             'Key points:\n' +
-            '- Quota: Use quota.replicas (1-20) for fixed replicas, or quota.hpa for auto-scaling (cannot use both). CPU and memory must be in range [0.1, 32]\n' +
-            '- Image: Set image.imageRegistry to null for public images, or provide credentials for private images\n' +
-            '- Ports: http/grpc/ws protocols support public domain, tcp/udp/sctp use NodePort\n' +
-            '- Storage: Providing storage creates a StatefulSet instead of Deployment',
+            '- Quota: Use `quota.replicas` (1–20) for fixed replicas, or `quota.hpa` for auto-scaling (cannot use both). CPU and memory must be in range [0.1, 32]\n' +
+            '- Image: Set `image.imageRegistry` to `null` for public images, or provide credentials for private images\n' +
+            '- Ports: `http`/`grpc`/`ws` protocols support a public domain; `tcp`/`udp`/`sctp` use NodePort\n' +
+            '- Storage: Providing storage creates a StatefulSet instead of a Deployment\n\n' +
+            '**Example — minimal deployment (public image, fixed replicas):**\n' +
+            '```json\n' +
+            '{\n' +
+            '  "name": "web-api",\n' +
+            '  "image": {\n' +
+            '    "imageName": "nginx:1.21",\n' +
+            '    "imageRegistry": null\n' +
+            '  },\n' +
+            '  "quota": {\n' +
+            '    "cpu": 0.5,\n' +
+            '    "memory": 1,\n' +
+            '    "replicas": 1\n' +
+            '  },\n' +
+            '  "ports": [\n' +
+            '    { "number": 80, "protocol": "http", "isPublic": true }\n' +
+            '  ]\n' +
+            '}\n' +
+            '```\n\n' +
+            '**Example — StatefulSet with persistent storage:**\n' +
+            '```json\n' +
+            '{\n' +
+            '  "name": "db-service",\n' +
+            '  "image": {\n' +
+            '    "imageName": "postgres:15",\n' +
+            '    "imageRegistry": null\n' +
+            '  },\n' +
+            '  "quota": {\n' +
+            '    "cpu": 1,\n' +
+            '    "memory": 2,\n' +
+            '    "replicas": 1\n' +
+            '  },\n' +
+            '  "ports": [\n' +
+            '    { "number": 5432, "protocol": "tcp" }\n' +
+            '  ],\n' +
+            '  "storage": [\n' +
+            '    { "path": "/var/lib/postgresql/data", "size": "20Gi" }\n' +
+            '  ],\n' +
+            '  "env": [\n' +
+            '    { "key": "POSTGRES_PASSWORD", "value": "secret" }\n' +
+            '  ]\n' +
+            '}\n' +
+            '```\n\n' +
+            '**Example — HPA auto-scaling with private registry:**\n' +
+            '```json\n' +
+            '{\n' +
+            '  "name": "api-service",\n' +
+            '  "image": {\n' +
+            '    "imageName": "registry.example.com/myapp:v2",\n' +
+            '    "imageRegistry": {\n' +
+            '      "username": "robot$myproject",\n' +
+            '      "password": "token",\n' +
+            '      "apiUrl": "registry.example.com"\n' +
+            '    }\n' +
+            '  },\n' +
+            '  "quota": {\n' +
+            '    "cpu": 1,\n' +
+            '    "memory": 2,\n' +
+            '    "hpa": {\n' +
+            '      "target": "cpu",\n' +
+            '      "value": 60,\n' +
+            '      "minReplicas": 1,\n' +
+            '      "maxReplicas": 5\n' +
+            '    }\n' +
+            '  },\n' +
+            '  "ports": [\n' +
+            '    { "number": 8080, "protocol": "http", "isPublic": true }\n' +
+            '  ]\n' +
+            '}\n' +
+            '```',
           requestBody: {
             required: true,
             content: {
@@ -126,8 +231,39 @@ export const createOpenApiDocument = () => {
             }
           },
           responses: {
-            '204': {
-              description: 'Application created successfully'
+            '201': {
+              description: 'Application created successfully',
+              content: {
+                'application/json': {
+                  schema: LaunchpadApplicationSchema,
+                  examples: {
+                    created: {
+                      summary: 'Newly created application',
+                      value: {
+                        name: 'web-api',
+                        resourceType: 'launchpad',
+                        kind: 'deployment',
+                        image: { imageName: 'nginx:1.21', imageRegistry: null },
+                        quota: { cpu: 0.5, memory: 1, replicas: 1 },
+                        ports: [
+                          {
+                            number: 80,
+                            portName: 'abcdef123456',
+                            protocol: 'http',
+                            privateAddress: 'http://web-api-80-xyz-service.ns-user123:80',
+                            publicAddress: 'https://xyz789abc123.cloud.sealos.io',
+                            customDomain: ''
+                          }
+                        ],
+                        uid: 'app-12345',
+                        createdAt: '2024-01-01T00:00:00Z',
+                        upTime: '0s',
+                        status: 'creating'
+                      }
+                    }
+                  }
+                }
+              }
             },
             '400': {
               description: 'Bad Request - Invalid request body or parameters',
@@ -288,10 +424,11 @@ export const createOpenApiDocument = () => {
       '/apps/{name}': {
         get: {
           tags: ['Query'],
+          operationId: 'getApp',
           summary: 'Get application details by name',
           description:
-            'Retrieves complete application configuration and status including quota, networking, environment, storage, and runtime status.\n\n' +
-            "Returns: metadata (name, uid, createdAt, upTime, resourceType='launchpad', kind), image config, quota (CPU/memory/replicas/HPA), ports (with privateAddress/publicAddress), env vars, ConfigMap, storage, and status enum (running/creating/waiting/error/pause).",
+            'Retrieves complete application configuration and current runtime status.\n\n' +
+            'The response includes all fields needed to inspect or reproduce the application: image, resource quota, ports (with private and public addresses), environment variables, ConfigMap, storage, and current status.',
           parameters: [
             {
               name: 'name',
@@ -421,24 +558,6 @@ export const createOpenApiDocument = () => {
                 }
               }
             },
-            '405': {
-              description: 'Method Not Allowed - HTTP method not supported for this endpoint',
-              content: {
-                'application/json': {
-                  schema: createError405Schema(),
-                  examples: {
-                    methodNotAllowed: {
-                      summary: 'Wrong HTTP method',
-                      value: createErrorExample(
-                        ErrorType.CLIENT_ERROR,
-                        ErrorCode.METHOD_NOT_ALLOWED,
-                        'HTTP method POST is not supported for this endpoint. Allowed methods: GET, DELETE, PATCH.'
-                      )
-                    }
-                  }
-                }
-              }
-            },
             '500': {
               description: 'Internal Server Error - Kubernetes API error or unexpected failure',
               content: {
@@ -503,25 +622,72 @@ export const createOpenApiDocument = () => {
         },
         patch: {
           tags: ['Mutation'],
+          operationId: 'updateApp',
           summary: 'Update application configuration',
           description:
             'Partially updates application configuration. Supports quota, image, ports, env, storage, and ConfigMap.\n\n' +
             'Key points:\n' +
-            '- Quota: Switch between fixed replicas and HPA by providing one and omitting the other. CPU and memory must be in range [0.1, 32]\n' +
-            '- Image: Change image or switch public/private (set imageRegistry to null for public)\n' +
-            '- Ports: Complete replacement - include portName to update, omit to create, missing ports are deleted, use [] to remove all\n' +
-            '- ConfigMap: Complete replacement - provide all entries to keep, use [] to remove all, omit to keep unchanged. ConfigMap updates are handled through this unified endpoint (no separate /configmap endpoint)\n' +
-            '- Storage: Complete replacement - provide all entries to keep, use [] to remove all, omit to keep unchanged\n' +
-            '- Storage updates only supported for StatefulSet, trigger rolling restart\n' +
-            '- All changes applied atomically',
+            '- Quota: Switch between fixed replicas and HPA by providing one and omitting the other. CPU must be one of: 0.1, 0.2, 0.5, 1, 2, 3, 4, 8 (cores); Memory must be one of: 0.1, 0.5, 1, 2, 4, 8, 16 (GB)\n' +
+            '- Image: Change image or switch public/private (set `imageRegistry` to `null` for public)\n' +
+            '- Ports: Complete replacement — include `portName` to update an existing port, omit to create, unlisted ports are deleted, use `[]` to remove all\n' +
+            '- ConfigMap: Complete replacement — provide all entries to keep, use `[]` to remove all, omit to keep unchanged\n' +
+            '- Storage: Complete replacement — provide all entries to keep, use `[]` to remove all, omit to keep unchanged\n' +
+            '- Storage: If the application is a Deployment, adding storage automatically converts it to a StatefulSet (brief downtime)\n' +
+            '- All changes are applied atomically\n\n' +
+            '**Example — scale up quota:**\n' +
+            '```json\n' +
+            '{\n' +
+            '  "quota": {\n' +
+            '    "cpu": 2,\n' +
+            '    "memory": 4,\n' +
+            '    "replicas": 3\n' +
+            '  }\n' +
+            '}\n' +
+            '```\n\n' +
+            '**Example — switch from fixed replicas to HPA:**\n' +
+            '```json\n' +
+            '{\n' +
+            '  "quota": {\n' +
+            '    "cpu": 1,\n' +
+            '    "memory": 2,\n' +
+            '    "hpa": {\n' +
+            '      "target": "cpu",\n' +
+            '      "value": 70,\n' +
+            '      "minReplicas": 1,\n' +
+            '      "maxReplicas": 10\n' +
+            '    }\n' +
+            '  }\n' +
+            '}\n' +
+            '```\n\n' +
+            '**Example — update image:**\n' +
+            '```json\n' +
+            '{\n' +
+            '  "image": {\n' +
+            '    "imageName": "nginx:1.25",\n' +
+            '    "imageRegistry": null\n' +
+            '  }\n' +
+            '}\n' +
+            '```\n\n' +
+            '**Example — full port list replacement (update existing port + add new port):**\n' +
+            '```json\n' +
+            '{\n' +
+            '  "ports": [\n' +
+            '    { "portName": "abcdef123456", "number": 80, "protocol": "http", "isPublic": true },\n' +
+            '    { "number": 9090, "protocol": "http", "isPublic": false }\n' +
+            '  ]\n' +
+            '}\n' +
+            '```',
           parameters: [
             {
               name: 'name',
               in: 'path',
-              description: 'Application name identifier',
+              description:
+                'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
               schema: {
-                type: 'string'
+                type: 'string',
+                minLength: 1,
+                example: 'web-api'
               }
             }
           ],
@@ -784,18 +950,26 @@ export const createOpenApiDocument = () => {
         },
         delete: {
           tags: ['Mutation'],
+          operationId: 'deleteApp',
           summary: 'Delete application',
           description:
-            'Permanently deletes the application and all associated Kubernetes resources (deployments/statefulsets, services, ingresses, ConfigMaps, Secrets).\n\n' +
-            'Pods terminated gracefully (30s grace period). For StatefulSet, PVCs are preserved by default. Operation is irreversible.',
+            'Permanently deletes the application and all associated Kubernetes resources (Deployments/StatefulSets, Services, Ingresses, ConfigMaps, Secrets).\n\n' +
+            'Key points:\n' +
+            '- Pods are terminated gracefully (30s grace period)\n' +
+            '- For StatefulSet applications, PVCs are preserved by default\n' +
+            '- Idempotent: returns `204` even if the application does not exist\n' +
+            '- **Irreversible**',
           parameters: [
             {
               name: 'name',
               in: 'path',
-              description: 'Name of the application to delete',
+              description:
+                'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
               schema: {
-                type: 'string'
+                type: 'string',
+                minLength: 1,
+                example: 'web-api'
               }
             }
           ],
@@ -852,24 +1026,6 @@ export const createOpenApiDocument = () => {
                         ErrorType.AUTHORIZATION_ERROR,
                         ErrorCode.PERMISSION_DENIED,
                         'Insufficient permissions to perform this operation. Please check your access rights.'
-                      )
-                    }
-                  }
-                }
-              }
-            },
-            '404': {
-              description: 'Not Found - Application not found in the current namespace',
-              content: {
-                'application/json': {
-                  schema: createError404Schema(),
-                  examples: {
-                    notFound: {
-                      summary: 'Application not found',
-                      value: createErrorExample(
-                        ErrorType.RESOURCE_ERROR,
-                        ErrorCode.NOT_FOUND,
-                        'Application "web-api" not found in the current namespace. Please verify the application name.'
                       )
                     }
                   }
@@ -962,24 +1118,30 @@ export const createOpenApiDocument = () => {
       '/apps/{name}/start': {
         post: {
           tags: ['Mutation'],
+          operationId: 'startApp',
           summary: 'Start paused application',
           description:
-            'Resumes a paused application by restoring replica count or HPA configuration from stored metadata.\n\n' +
-            'Restores pods to handle traffic. Services/ingresses remain active. Typically takes 1-3 minutes to full availability. Idempotent operation.',
+            'Resumes a paused application by restoring replica count or HPA configuration.\n\n' +
+            'Pods are restored to handle traffic. Services and ingresses remain active throughout. ' +
+            'Typically takes 1–3 minutes to reach full availability. ' +
+            'If the application is already running, returns `204` immediately (idempotent).',
           parameters: [
             {
               name: 'name',
               in: 'path',
-              description: 'Name of the application to start',
+              description:
+                'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
               schema: {
-                type: 'string'
+                type: 'string',
+                minLength: 1,
+                example: 'web-api'
               }
             }
           ],
           responses: {
             '204': {
-              description: 'Application started successfully'
+              description: 'Application started successfully (or was already running)'
             },
             '400': {
               description: 'Bad Request - Invalid parameters',
@@ -1022,10 +1184,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: createError403Schema([
-                    ErrorCode.PERMISSION_DENIED,
-                    ErrorCode.INSUFFICIENT_BALANCE
-                  ]),
+                  schema: createError403Schema([ErrorCode.PERMISSION_DENIED], 'start'),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -1051,24 +1210,6 @@ export const createOpenApiDocument = () => {
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
                         'Application "web-api" not found in the current namespace. Please verify the application name.'
-                      )
-                    }
-                  }
-                }
-              }
-            },
-            '409': {
-              description: 'Conflict - Application already running',
-              content: {
-                'application/json': {
-                  schema: createError409Schema([ErrorCode.CONFLICT], 'start'),
-                  examples: {
-                    alreadyRunning: {
-                      summary: 'Application already running',
-                      value: createErrorExample(
-                        ErrorType.RESOURCE_ERROR,
-                        ErrorCode.CONFLICT,
-                        'Application "web-api" is already running and does not need to be started.'
                       )
                     }
                   }
@@ -1104,18 +1245,28 @@ export const createOpenApiDocument = () => {
       '/apps/{name}/pause': {
         post: {
           tags: ['Mutation'],
+          operationId: 'pauseApp',
           summary: 'Pause application',
           description:
-            'Temporarily stops an application by scaling replicas to zero while preserving configuration.\n\n' +
-            'Stores replica/HPA state in metadata, terminates pods gracefully (30s grace period). Services/ingresses remain but route no traffic. Storage preserved. Typical cost reduction: 60-80% (compute only). Idempotent operation.',
+            'Temporarily stops an application by scaling replicas to zero while preserving its configuration.\n\n' +
+            'Key points:\n' +
+            '- Replica/HPA state is stored and restored on next start\n' +
+            '- Pods are terminated gracefully (30s grace period)\n' +
+            '- Services and ingresses remain but route no traffic\n' +
+            '- Storage is preserved\n' +
+            '- Typical compute cost reduction: 60–80%\n' +
+            '- Returns `409` if the application is already paused (to prevent overwriting stored HPA configuration)',
           parameters: [
             {
               name: 'name',
               in: 'path',
-              description: 'Name of the application to pause',
+              description:
+                'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
               schema: {
-                type: 'string'
+                type: 'string',
+                minLength: 1,
+                example: 'web-api'
               }
             }
           ],
@@ -1164,10 +1315,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: createError403Schema([
-                    ErrorCode.PERMISSION_DENIED,
-                    ErrorCode.INSUFFICIENT_BALANCE
-                  ]),
+                  schema: createError403Schema([ErrorCode.PERMISSION_DENIED], 'pause'),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -1200,10 +1348,10 @@ export const createOpenApiDocument = () => {
               }
             },
             '409': {
-              description: 'Conflict - Application already paused',
+              description: 'Conflict - Application is already paused',
               content: {
                 'application/json': {
-                  schema: createError409Schema([ErrorCode.CONFLICT], 'pause'),
+                  schema: createError409Schema([ErrorCode.CONFLICT]),
                   examples: {
                     alreadyPaused: {
                       summary: 'Application already paused',
@@ -1246,23 +1394,27 @@ export const createOpenApiDocument = () => {
       '/apps/{name}/storage': {
         patch: {
           tags: ['Mutation'],
+          operationId: 'updateAppStorage',
           summary: 'Update application storage (incremental)',
           description:
-            'Incrementally updates storage configuration for a StatefulSet application.\n\n' +
+            'Incrementally updates storage volumes for a StatefulSet application.\n\n' +
             'Key points:\n' +
-            '- Only StatefulSet applications are supported (Deployment returns 400)\n' +
-            '- Incremental merge: only pass the volumes you want to add or resize — existing volumes not listed are preserved\n' +
+            '- Only StatefulSet applications are supported (Deployment returns `400`)\n' +
+            '- Incremental merge: pass only the volumes you want to add or resize — unlisted volumes are preserved\n' +
             '- To remove a volume, use `PATCH /apps/{name}` with a complete storage replacement\n' +
             '- Storage can only be expanded, not shrunk (PVC limitation)\n' +
-            '- Triggers StatefulSet recreation to apply changes',
+            '- Changes are applied by deleting and recreating the StatefulSet — brief downtime is expected',
           parameters: [
             {
               name: 'name',
               in: 'path',
-              description: 'Name of the application',
+              description:
+                'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
               schema: {
-                type: 'string'
+                type: 'string',
+                minLength: 1,
+                example: 'web-api'
               }
             }
           ],
@@ -1344,10 +1496,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: createError403Schema([
-                    ErrorCode.PERMISSION_DENIED,
-                    ErrorCode.INSUFFICIENT_BALANCE
-                  ]),
+                  schema: createError403Schema([ErrorCode.PERMISSION_DENIED], 'storage'),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',
@@ -1412,18 +1561,25 @@ export const createOpenApiDocument = () => {
       '/apps/{name}/restart': {
         post: {
           tags: ['Mutation'],
+          operationId: 'restartApp',
           summary: 'Restart application',
           description:
             'Performs a rolling restart of all application pods while maintaining service availability.\n\n' +
-            'Updates pod template annotation to trigger rolling update. Zero-downtime for multiple replicas, 30-90s downtime for single replica. Duration: 30-90s (single) to 2-5min (multiple). Does NOT update configuration (use PATCH for config changes).',
+            'Key points:\n' +
+            '- Zero-downtime for applications with multiple replicas; 30–90s downtime for single-replica applications\n' +
+            '- Typical duration: 30–90s (single replica) to 2–5 min (multiple replicas)\n' +
+            '- Does **not** update configuration — use `PATCH /apps/{name}` for config changes',
           parameters: [
             {
               name: 'name',
               in: 'path',
-              description: 'Name of the application to restart',
+              description:
+                'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
               schema: {
-                type: 'string'
+                type: 'string',
+                minLength: 1,
+                example: 'web-api'
               }
             }
           ],
@@ -1472,10 +1628,7 @@ export const createOpenApiDocument = () => {
               description: 'Forbidden - Insufficient permissions',
               content: {
                 'application/json': {
-                  schema: createError403Schema([
-                    ErrorCode.PERMISSION_DENIED,
-                    ErrorCode.INSUFFICIENT_BALANCE
-                  ]),
+                  schema: createError403Schema([ErrorCode.PERMISSION_DENIED], 'restart'),
                   examples: {
                     insufficientPermissions: {
                       summary: 'Insufficient permissions',

@@ -5,7 +5,7 @@ import { V1Ingress, V1Service } from '@kubernetes/client-node';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
-import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
@@ -947,13 +947,20 @@ export async function DELETE(req: NextRequest, { params }: { params: { name: str
       kubeconfig: await authSession(headerList)
     });
 
-    await k8sCustomObjects.deleteNamespacedCustomObject(
-      'devbox.sealos.io',
-      'v1alpha2',
-      namespace,
-      'devboxes',
-      devboxName
-    );
+    try {
+      await k8sCustomObjects.deleteNamespacedCustomObject(
+        'devbox.sealos.io',
+        'v1alpha2',
+        namespace,
+        'devboxes',
+        devboxName
+      );
+    } catch (err: any) {
+      if (err.statusCode === 404 || err.response?.statusCode === 404) {
+        return new NextResponse(null, { status: 204 });
+      }
+      throw err;
+    }
 
     const ingressResponse = (await k8sCustomObjects.listNamespacedCustomObject(
       'networking.k8s.io',

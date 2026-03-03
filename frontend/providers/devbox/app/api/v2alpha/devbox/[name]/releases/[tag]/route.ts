@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { KBDevboxReleaseType } from '@/types/k8s';
-import { sendError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
+import { sendError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,12 +51,7 @@ export async function DELETE(
     });
 
     if (!targetRelease) {
-      return sendError({
-        status: 404,
-        type: ErrorType.RESOURCE_ERROR,
-        code: ErrorCode.NOT_FOUND,
-        message: 'Release not found'
-      });
+      return new NextResponse(null, { status: 204 });
     }
 
     await k8sCustomObjects.deleteNamespacedCustomObject(

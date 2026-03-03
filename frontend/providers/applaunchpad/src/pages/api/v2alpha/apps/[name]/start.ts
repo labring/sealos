@@ -51,12 +51,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (!app.metadata?.annotations?.[pauseKey]) {
-      return sendError(res, {
-        status: 409,
-        type: ErrorType.RESOURCE_ERROR,
-        code: ErrorCode.CONFLICT,
-        message: `Application "${name}" is already running and does not need to be started.`
-      });
+      // Already running — nothing to do (idempotent)
+      return res.status(204).end();
     }
 
     try {

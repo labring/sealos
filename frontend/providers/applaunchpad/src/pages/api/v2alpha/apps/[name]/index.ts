@@ -947,14 +947,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
       }
 
-      if (!(await validateAppExists(name, k8s, res))) {
-        return;
-      }
-
       try {
         await deleteAppByName(name, k8s);
         return res.status(204).end();
-      } catch (err) {
+      } catch (err: any) {
+        // Resource already gone — deletion is still logically successful (idempotent)
+        if (err?.response?.statusCode === 404 || err?.body?.code === 404) {
+          return res.status(204).end();
+        }
         console.error('Kubernetes delete application error:', err);
         return sendK8sOperationError(
           res,

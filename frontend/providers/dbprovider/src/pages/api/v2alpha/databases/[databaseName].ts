@@ -40,6 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return sendValidationError(res, pathParamsParseResult.error, 'Invalid request parameters.');
   }
 
+  const databaseName = pathParamsParseResult.data.databaseName;
+
   if (req.method === 'PATCH') {
     try {
       const bodyParseResult = updateDatabaseSchemas.body.safeParse(req.body);
@@ -93,6 +95,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(204).end();
     } catch (err: any) {
+      const body = err?.body ?? err;
+      if (body?.code === 404) {
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: `Database '${databaseName}' not found.`,
+          details: body.message
+        });
+      }
       return sendK8sError(res, err);
     }
   } else if (req.method === 'GET') {
@@ -111,6 +123,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.json(result);
     } catch (err: any) {
+      const body = err?.body ?? err;
+      if (body?.code === 404) {
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: `Database '${databaseName}' not found.`,
+          details: body.message
+        });
+      }
       return sendK8sError(res, err);
     }
   } else if (req.method === 'DELETE') {
@@ -121,6 +143,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(204).end();
     } catch (err: any) {
+      const body = err?.body ?? err;
+      if (body?.code === 404) {
+        return res.status(204).end();
+      }
       return sendK8sError(res, err);
     }
   } else {

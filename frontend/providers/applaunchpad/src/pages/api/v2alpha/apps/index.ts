@@ -20,7 +20,8 @@ import {
 } from '@/pages/api/v2alpha/k8sContext';
 
 async function processAppResponse(
-  response: PromiseSettledResult<any>[]
+  response: PromiseSettledResult<any>[],
+  namespace: string
 ): Promise<z.infer<typeof LaunchpadApplicationSchema>> {
   const responseData = response
     .map((item: any) => {
@@ -35,7 +36,7 @@ async function processAppResponse(
     SEALOS_DOMAIN: global.AppConfig.cloud.domain,
     SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
   });
-  const standardizedData = transformFromLegacySchema(appDetailData);
+  const standardizedData = transformFromLegacySchema(appDetailData, undefined, namespace);
   const validatedData = LaunchpadApplicationSchema.parse(standardizedData);
   return validatedData;
 }
@@ -63,7 +64,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       try {
         await createApp(legacyRequest, k8s);
-        return res.status(204).end();
+        const response = await getAppByName(standardRequest.name, k8s);
+        const appData = await processAppResponse(response, k8s.namespace);
+        return res.status(201).json(appData);
       } catch (err) {
         console.error('Kubernetes create application error:', err);
         return sendK8sOperationError(

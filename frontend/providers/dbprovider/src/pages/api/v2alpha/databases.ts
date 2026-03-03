@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         body: bodyParseResult.data
       });
 
-      return res.status(204).end();
+      return res.status(201).json({ name: bodyParseResult.data.name, status: 'creating' });
     } catch (err: any) {
       if (err.response || err.body) {
         return sendK8sError(res, err);

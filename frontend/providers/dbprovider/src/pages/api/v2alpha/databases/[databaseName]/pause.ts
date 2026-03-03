@@ -1,8 +1,8 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { restartDatabaseSchemas } from '@/types/apis/v2alpha';
+import { pauseDatabaseSchemas } from '@/types/apis/v2alpha';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { restartDatabase } from '@/services/backend/v2alpha/restart-database';
+import { pauseDatabase } from '@/services/backend/v2alpha/pause-database';
 import {
   sendError,
   sendK8sError,
@@ -34,12 +34,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     try {
-      const pathParamsParseResult = restartDatabaseSchemas.pathParams.safeParse(req.query);
+      const pathParamsParseResult = pauseDatabaseSchemas.pathParams.safeParse(req.query);
       if (!pathParamsParseResult.success) {
         return sendValidationError(res, pathParamsParseResult.error, 'Invalid request parameters.');
       }
 
-      await restartDatabase(
+      await pauseDatabase(
         k8s,
         {
           params: pathParamsParseResult.data
@@ -48,7 +48,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       );
 
       return res.status(204).end();
-    } catch (error) {
+    } catch (error: any) {
+      const body = error?.body ?? error;
+      if (body?.code === 404) {
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: `Database '${req.query.databaseName}' not found.`,
+          details: body.message
+        });
+      }
       return sendK8sError(res, error);
     }
   }

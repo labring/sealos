@@ -8,7 +8,6 @@ import {
   createError401Schema,
   createError403Schema,
   createError404Schema,
-  createError405Schema,
   createError409Schema,
   createError422Schema,
   createError500Schema,
@@ -25,56 +24,48 @@ export * as createInstanceSchemas from './create-instance';
 export const document = createDocument({
   openapi: '3.1.0',
   info: {
-    title: 'Sealos Template API v2alpha',
+    title: 'Template API',
     version: '2.0.0-alpha',
-    description: `
-
-This API provides endpoints for managing application templates and instances in the Sealos platform.
-
-## Authentication
-
-Browsing templates is public. Deploying instances requires a kubeconfig in the \`Authorization\` header — URL-encode it first: \`encodeURIComponent(kubeconfigYaml)\`.
-
-## Errors
-
-When something goes wrong, you'll get a JSON body like this:
-
-\`\`\`json
-{
-  "error": {
-    "type": "validation_error",
-    "code": "INVALID_PARAMETER",
-    "message": "Instance name is required.",
-    "details": [{ "field": "name", "message": "Required" }]
-  }
-}
-\`\`\`
-
-- \`message\` is a human-readable explanation of what went wrong.
-- \`code\` is a stable identifier for programmatic error handling.
-- \`details\` is optional and only present when there's more context (e.g. which field failed validation).
-    `
+    description:
+      'This API provides endpoints for managing application templates and instances in the Sealos platform.\n\n' +
+      '## Authentication\n\n' +
+      'Browsing templates is public. Deploying instances requires a URL-encoded kubeconfig in the `Authorization` header. ' +
+      'Encode with `encodeURIComponent(kubeconfigYaml)` before setting the header value. ' +
+      'Obtain your kubeconfig from the Sealos console.\n\n' +
+      '## Errors\n\n' +
+      'All error responses use a unified format:\n\n' +
+      '```json\n' +
+      '{\n' +
+      '  "error": {\n' +
+      '    "type": "validation_error",\n' +
+      '    "code": "INVALID_PARAMETER",\n' +
+      '    "message": "...",\n' +
+      '    "details": [...]\n' +
+      '  }\n' +
+      '}\n' +
+      '```\n\n' +
+      '- `type` — high-level category (e.g. `validation_error`, `resource_error`, `internal_error`)\n' +
+      '- `code` — stable identifier for programmatic handling\n' +
+      '- `message` — human-readable explanation\n' +
+      '- `details` — optional extra context; shape varies by `code` (field list, string, or object)\n\n' +
+      '## Operations\n\n' +
+      '**Query** (read-only): returns `200 OK` with data in the response body.\n\n' +
+      '**Mutation** (write):\n' +
+      '- Create → `201 Created` with the created resource in the response body.\n' +
+      '- Update / Delete → `204 No Content` with no response body.'
   },
   servers: [
     {
       url: 'http://localhost:3000/api/v2alpha',
-      description: 'Local development server'
-    },
-    {
-      url: 'https://template./api/v2alpha',
-      description: 'Production server'
-    },
-    {
-      url: 'https://template.192.168.12.53.nip.io/api/v2alpha',
-      description: 'Testing server'
+      description: 'Local development'
     },
     {
       url: '{baseUrl}/api/v2alpha',
-      description: 'Custom — manually enter base URL',
+      description: 'Custom',
       variables: {
         baseUrl: {
           default: 'https://template.example.com',
-          description: 'Base URL of your API server (e.g. https://template.192.168.x.x.nip.io)'
+          description: 'Base URL of your instance (e.g. https://template.192.168.x.x.nip.io)'
         }
       }
     }
@@ -86,28 +77,32 @@ When something goes wrong, you'll get a JSON body like this:
         in: 'header',
         name: 'Authorization',
         description:
-          'URL-encoded kubeconfig YAML string. Use `encodeURIComponent(kubeconfigYaml)` to encode.'
+          'URL-encoded kubeconfig YAML. Encode with `encodeURIComponent(kubeconfigYaml)` ' +
+          'before setting the header value. Obtain your kubeconfig from the Sealos console.'
       }
     }
   },
+  security: [{ kubeconfigAuth: [] }],
   tags: [
     {
       name: 'Query',
-      description: 'Read-only operations for retrieving data'
+      description: 'Read-only operations. Success: `200 OK` with data in the response body.'
     },
     {
       name: 'Mutation',
-      description: 'Operations that modify data'
+      description:
+        'Write operations. Create: `201 Created` with the new resource. Update/Delete: `204 No Content`.'
     }
   ],
   paths: {
     '/templates': {
       get: {
         tags: ['Query'],
-        summary: 'List All Templates',
+        summary: 'List all templates',
         description:
           'Returns metadata only (no resource calculation). Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`. When categories exist, top category keys are returned in `X-Menu-Keys` (comma-separated). For full details including resource requirements, use `/templates/{name}`.',
         operationId: 'listTemplates',
+        security: [],
         requestParams: {
           query: listTemplateSchemas.queryParams
         },
@@ -161,24 +156,6 @@ When something goes wrong, you'll get a JSON body like this:
               }
             }
           },
-          '405': {
-            description: 'Method not allowed',
-            content: {
-              'application/json': {
-                schema: createError405Schema(),
-                examples: {
-                  methodNotAllowed: {
-                    summary: 'Method not allowed',
-                    value: createErrorExample(
-                      ErrorType.CLIENT_ERROR,
-                      ErrorCode.METHOD_NOT_ALLOWED,
-                      'Method not allowed. Use GET.'
-                    )
-                  }
-                }
-              }
-            }
-          },
           '500': {
             description: 'Internal server error',
             content: {
@@ -204,10 +181,11 @@ When something goes wrong, you'll get a JSON body like this:
     '/templates/{name}': {
       get: {
         tags: ['Query'],
-        summary: 'Get Template Details',
+        summary: 'Get template details',
         description:
-          'Returns complete template metadata with dynamically calculated resource requirements (CPU, memory, storage, NodePort count) derived from the template YAML. Falls back to static configuration if calculation fails. Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`. Note: when path is `instances`, request is delegated to the instances endpoint (POST only).',
-        operationId: 'getTemplateDetail',
+          'Returns complete template metadata with dynamically calculated resource requirements (CPU, memory, storage, NodePort count) derived from the template YAML. Falls back to static configuration if calculation fails. Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`.',
+        operationId: 'getTemplate',
+        security: [],
         requestParams: {
           path: getTemplateSchemas.pathParams,
           query: getTemplateSchemas.queryParams
@@ -298,24 +276,6 @@ When something goes wrong, you'll get a JSON body like this:
               }
             }
           },
-          '405': {
-            description: 'Method not allowed',
-            content: {
-              'application/json': {
-                schema: createError405Schema(),
-                examples: {
-                  methodNotAllowed: {
-                    summary: 'Method not allowed',
-                    value: createErrorExample(
-                      ErrorType.CLIENT_ERROR,
-                      ErrorCode.METHOD_NOT_ALLOWED,
-                      'Method not allowed. Use GET.'
-                    )
-                  }
-                }
-              }
-            }
-          },
           '500': {
             description: 'Internal server error',
             content: {
@@ -341,47 +301,34 @@ When something goes wrong, you'll get a JSON body like this:
     '/templates/instances': {
       post: {
         tags: ['Mutation'],
-        summary: 'Create Template Instance',
-        description: `Deploy a named instance of a template into the user's Kubernetes namespace. User-provided \`args\` are merged with the template's declared defaults — only args with no default value are required. The \`args\` field in the response reflects the fully resolved values after applying defaults.
-
-**Example:**
-\`\`\`http
-POST /api/v2alpha/templates/instances HTTP/1.1
-Host: template.cloud.sealos.io
-Content-Type: application/json
-Authorization: <URL-encoded kubeconfig>
-
-{
-  "name": "my-app-instance",
-  "template": "perplexica",
-  "args": { "OPENAI_API_KEY": "<your-api-key>", "OPENAI_MODEL_NAME": "gpt-4o" }
-}
-\`\`\``,
+        summary: 'Create template instance',
+        description:
+          "Deploy a named instance of a template into the user's Kubernetes namespace. " +
+          "User-provided `args` are merged with the template's declared defaults — only args with no default value are required. " +
+          'The `args` field in the response reflects the fully resolved values after applying defaults.\n\n' +
+          '**Example — create a Perplexica instance:**\n' +
+          '```json\n' +
+          '{\n' +
+          '  "name": "my-app-instance",\n' +
+          '  "template": "perplexica",\n' +
+          '  "args": {\n' +
+          '    "OPENAI_API_KEY": "<your-api-key>",\n' +
+          '    "OPENAI_MODEL_NAME": "gpt-4o"\n' +
+          '  }\n' +
+          '}\n' +
+          '```',
         operationId: 'createInstance',
-        security: [{ kubeconfigAuth: [] }],
         requestBody: {
+          required: true,
           description: 'Instance creation configuration',
           content: {
             'application/json': {
-              schema: createInstanceSchemas.requestBody,
-              examples: {
-                createInstance: {
-                  summary: 'Create Perplexica instance',
-                  value: {
-                    name: 'my-perplexica-instance',
-                    template: 'perplexica',
-                    args: {
-                      OPENAI_API_KEY: 'your-api-key-here',
-                      OPENAI_MODEL_NAME: 'gpt-4o'
-                    }
-                  }
-                }
-              }
+              schema: createInstanceSchemas.requestBody
             }
           }
         },
         responses: {
-          '200': {
+          '201': {
             description: 'Instance created successfully',
             content: {
               'application/json': {
@@ -499,24 +446,6 @@ Authorization: <URL-encoded kubeconfig>
                       ErrorType.RESOURCE_ERROR,
                       ErrorCode.NOT_FOUND,
                       "Template 'nonexistent-template' not found."
-                    )
-                  }
-                }
-              }
-            }
-          },
-          '405': {
-            description: 'Method not allowed',
-            content: {
-              'application/json': {
-                schema: createError405Schema(),
-                examples: {
-                  methodNotAllowed: {
-                    summary: 'Method not allowed',
-                    value: createErrorExample(
-                      ErrorType.CLIENT_ERROR,
-                      ErrorCode.METHOD_NOT_ALLOWED,
-                      'Method not allowed. Use POST.'
                     )
                   }
                 }

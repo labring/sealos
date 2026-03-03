@@ -3,7 +3,7 @@ import { PatchUtils } from '@kubernetes/client-node';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { devboxDB } from '@/services/db/init';
-import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 import { devboxKey } from '@/constants/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 import { json2Devbox, json2Service, json2Ingress } from '@/utils/json2Yaml';
@@ -634,20 +634,9 @@ export async function POST(req: NextRequest) {
       autostartSuccess
     );
 
-    const hasFailedPorts = createdPorts.some((port) => 'error' in port && port.error);
-
-    if (hasFailedPorts) {
-      const failedCount = createdPorts.filter((p) => 'error' in p && p.error).length;
-      return sendError({
-        status: 500,
-        type: ErrorType.OPERATION_ERROR,
-        code: ErrorCode.OPERATION_FAILED,
-        message: `Devbox created, but ${failedCount} port(s) had issues${devboxForm.autostart ? (autostartSuccess ? ', autostart succeeded' : ', autostart failed') : ''}`
-      });
-    }
-
-    // Success: return 204 No Content
-    return new NextResponse(null, { status: 204 });
+    // Success: return 201 Created with the resource body
+    // Note: pod startup is asynchronous — caller should poll GET /devbox/{name} for Running status
+    return NextResponse.json(responseData, { status: 201 });
   } catch (err: any) {
     return sendError({
       status: 500,

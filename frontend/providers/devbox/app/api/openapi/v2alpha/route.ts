@@ -2,16 +2,14 @@ import { createDocument } from 'zod-openapi';
 import { NextResponse } from 'next/server';
 import {
   RequestSchema as CreateDevboxRequestSchema,
+  CreateDevboxResponseSchema,
   DevboxListResponseSchemaV1 as GetDevboxListResponseSchema
 } from '../../v2alpha/devbox/schema';
 
 import {
   UpdateDevboxRequestSchema,
-  DevboxDetailResponseSchema,
-  DeleteDevboxRequestSchema
+  DevboxDetailResponseSchema
 } from '../../v2alpha/devbox/[name]/schema';
-
-import { RequestSchema as StartDevboxRequestSchema } from '../../v2alpha/devbox/[name]/start/schema';
 
 import { RequestSchema as PauseDevboxRequestSchema } from '../../v2alpha/devbox/[name]/pause/schema';
 
@@ -24,82 +22,145 @@ import { AutostartRequestSchema } from '../../v2alpha/devbox/[name]/autostart/sc
 import {
   RequestSchema as ReleaseDevboxRequestSchema,
   GetSuccessResponseSchema as ReleaseDevboxGetSuccessResponseSchema
-} from '../../v2alpha/devbox/[name]/release/schema';
-
-import {
-  DeployDevboxPathParamsSchema,
-  DeployDevboxRequestSchema
-} from '../../v2alpha/devbox/[name]/release/[tag]/deploy/schema';
+} from '../../v2alpha/devbox/[name]/releases/schema';
 
 import { SuccessResponseSchema as GetDevboxTemplatesSuccessResponseSchema } from '../../v2alpha/devbox/templates/schema';
 
 import { MonitorSuccessResponseSchema } from '../../v2alpha/devbox/[name]/monitor/schema';
 
-import { GetSuccessResponseSchema as GetDeployListSuccessResponseSchema } from '../../v2alpha/devbox/[name]/deploy/schema';
+import { GetSuccessResponseSchema as GetDeployListSuccessResponseSchema } from '../../v2alpha/devbox/[name]/deployments/schema';
 
 import {
-  Error400Schema,
-  Error404Schema,
-  Error409Schema,
-  Error422Schema,
-  Error500Schema
-} from '@/lib/v2alpha/error';
+  createError400Schema,
+  createError401Schema,
+  createError404Schema,
+  createError409Schema,
+  createError422Schema,
+  createError500Schema,
+  ErrorType,
+  ErrorCode,
+  createErrorExample
+} from '@/app/api/v2alpha/api-error';
+
+// ---------------------------------------------------------------------------
+// Shared parameter and response helpers (reduce repetition)
+// ---------------------------------------------------------------------------
+
+const devboxNameParam = {
+  name: 'name',
+  in: 'path',
+  required: true,
+  description: 'Devbox name (format: lowercase alphanumeric with hyphens, 1–63 characters)',
+  schema: {
+    type: 'string',
+    pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+    minLength: 1,
+    maxLength: 63,
+    example: 'my-python-api'
+  }
+} as const;
+
+const releaseTagParam = {
+  name: 'tag',
+  in: 'path',
+  required: true,
+  description: 'Release version tag (format: lowercase alphanumeric with hyphens, 1–63 characters)',
+  schema: {
+    type: 'string',
+    pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
+    minLength: 1,
+    maxLength: 63,
+    example: 'v1-0-0'
+  }
+} as const;
+
+const unauthorizedResponse = {
+  description: 'No valid credentials provided, or credentials have expired.',
+  content: {
+    'application/json': {
+      schema: createError401Schema(),
+      examples: {
+        unauthorized: {
+          summary: 'Authentication required',
+          value: createErrorExample(
+            ErrorType.AUTHENTICATION_ERROR,
+            ErrorCode.AUTHENTICATION_REQUIRED,
+            'No valid credentials provided.'
+          )
+        }
+      }
+    }
+  }
+} as const;
+
+// ---------------------------------------------------------------------------
+// Document builder
+// ---------------------------------------------------------------------------
 
 const tmpOpenApiDocument = (sealosDomain: string) =>
   createDocument({
-    openapi: '3.0.0',
+    openapi: '3.1.0',
     info: {
       title: 'Devbox API',
-      version: '1.0.0',
-      description: `# Devbox API Documentation
-
-API for managing Devbox instances with lifecycle operations, releases, and monitoring.
-
-## Authentication
-All endpoints require authentication via kubeconfig or JWT token.
-
-## Base URLs
-      - Development: http://127.0.0.1:3000/api/v2alpha
-      - Production: https://devbox.{sealosDomain}/api/v2alpha
-
-## API Organization
-- Query: Read-only operations (GET requests)
-- Mutation: Write operations (POST/PUT/PATCH/DELETE requests)
-
-## Error Response Format
-
-All error responses use the standardized v2alpha format:
-\`\`\`json
-{ "error": { "type": "...", "code": "...", "message": "...", "details": "..." } }
-\`\`\`
-
-| HTTP Status | type | Example codes |
-|-------------|------|---------------|
-| 400 | \`validation_error\` / \`client_error\` | \`INVALID_PARAMETER\`, \`INVALID_VALUE\` |
-| 401 | \`authentication_error\` | \`AUTHENTICATION_REQUIRED\` |
-| 404 | \`resource_error\` | \`NOT_FOUND\` |
-| 409 | \`resource_error\` | \`ALREADY_EXISTS\` |
-| 422 | \`operation_error\` | \`INVALID_RESOURCE_SPEC\` |
-| 500 | \`internal_error\` / \`operation_error\` | \`INTERNAL_ERROR\`, \`OPERATION_FAILED\` |`
+      version: '2.0.0-alpha',
+      description:
+        'Manage Devbox development environments — create, configure, control lifecycle, and monitor container-based isolated dev environments.\n\n' +
+        '## Authentication\n\n' +
+        'All endpoints require authentication via URL-encoded kubeconfig. Set the `Authorization` header to `encodeURIComponent(kubeconfigYaml)` before sending the request. Obtain your kubeconfig from the Sealos console.\n\n' +
+        '## Errors\n\n' +
+        'All error responses use a unified format:\n\n' +
+        '```json\n' +
+        '{\n' +
+        '  "error": {\n' +
+        '    "type": "validation_error",\n' +
+        '    "code": "INVALID_PARAMETER",\n' +
+        '    "message": "...",\n' +
+        '    "details": [...]\n' +
+        '  }\n' +
+        '}\n' +
+        '```\n\n' +
+        '- `type` — high-level category (e.g. `validation_error`, `resource_error`, `internal_error`)\n' +
+        '- `code` — stable identifier for programmatic handling\n' +
+        '- `message` — human-readable explanation\n' +
+        '- `details` — optional extra context; shape varies by `code`\n\n' +
+        '## Operations\n\n' +
+        '**Query** (read-only): returns `200 OK` with data in the response body.\n\n' +
+        '**Mutation** (write):\n' +
+        '- Create (sync) → `201 Created` with the created resource in the response body.\n' +
+        '- Create (async) → `202 Accepted` with `{ "name": "...", "status": "creating" }`. Poll the corresponding `GET` endpoint to track progress.\n' +
+        '- Update / Delete / Action → `204 No Content` with no response body.'
     },
     tags: [
       {
         name: 'Query',
-        description: 'Read-only operations for retrieving data'
+        description: 'Read-only operations. Success: `200 OK` with data in the response body.'
       },
       {
         name: 'Mutation',
-        description: 'Write operations that modify system state'
+        description:
+          'Write operations. Sync create: `201 Created` with the new resource. ' +
+          'Async create: `202 Accepted` with `{ name, status }` (poll GET to track progress). ' +
+          'Update/Delete/Action: `204 No Content`.'
       }
     ],
     servers: [
       {
-        url: `http://127.0.0.1:3000/api/v2alpha`,
-        description: 'Development'
+        url: 'http://localhost:3000/api/v2alpha',
+        description: 'Local development'
       },
       {
         url: `https://devbox.${sealosDomain}/api/v2alpha`,
         description: 'Production'
+      },
+      {
+        url: '{baseUrl}/api/v2alpha',
+        description: 'Custom',
+        variables: {
+          baseUrl: {
+            default: 'https://devbox.example.com',
+            description: 'Base URL of your instance (e.g. https://devbox.192.168.x.x.nip.io)'
+          }
+        }
       }
     ],
     components: {
@@ -108,88 +169,77 @@ All error responses use the standardized v2alpha format:
           type: 'apiKey',
           in: 'header',
           name: 'Authorization',
-          description: 'Kubeconfig for authentication'
+          description:
+            'URL-encoded kubeconfig YAML. Encode with `encodeURIComponent(kubeconfigYaml)` ' +
+            'before setting the header value. Obtain your kubeconfig from the Sealos console.'
         },
         jwtAuth: {
           type: 'apiKey',
           in: 'header',
           name: 'Authorization-Bearer',
-          description: 'JWT token for authentication'
+          description: 'JWT token for authentication. Header: `Authorization-Bearer: <token>`'
         }
       }
     },
-    security: [
-      {
-        kubeconfigAuth: [],
-        jwtAuth: []
-      }
-    ],
+    security: [{ kubeconfigAuth: [] }, { jwtAuth: [] }],
     paths: {
       '/devbox': {
         get: {
           tags: ['Query'],
-          summary: 'Get all devboxes',
+          operationId: 'listDevboxes',
+          summary: 'List all devboxes',
           description:
-            'Retrieve list of all Devbox instances with resource and runtime information.',
+            'Retrieve all Devbox instances in the current namespace with resource and runtime information.',
           responses: {
             '200': {
-              description:
-                'Successfully retrieved devbox list with resource allocation and runtime information.',
+              description: 'Devbox list retrieved successfully.',
               content: {
                 'application/json': {
                   schema: GetDevboxListResponseSchema,
                   examples: {
                     success: {
-                      summary: 'Devbox list retrieved',
+                      summary: 'Two devboxes',
                       value: [
                         {
-                          name: 'my-nodejs-app',
-                          uid: 'abc123-def456',
-                          resourceType: 'devbox',
-                          runtime: 'node.js',
-                          status: 'running',
-                          quota: {
-                            cpu: 1,
-                            memory: 2
-                          }
-                        },
-                        {
-                          name: 'python-api',
-                          uid: 'ghi789-jkl012',
+                          name: 'my-python-api',
+                          uid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
                           resourceType: 'devbox',
                           runtime: 'python',
+                          status: 'running',
+                          quota: { cpu: 1, memory: 2 }
+                        },
+                        {
+                          name: 'my-go-service',
+                          uid: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
+                          resourceType: 'devbox',
+                          runtime: 'go',
                           status: 'stopped',
-                          quota: {
-                            cpu: 2,
-                            memory: 4
-                          }
+                          quota: { cpu: 2, memory: 4 }
                         }
                       ]
                     },
-                    empty_list: {
-                      summary: 'No devboxes found',
+                    empty: {
+                      summary: 'No devboxes',
                       value: []
                     }
                   }
                 }
               }
             },
+            '401': unauthorizedResponse,
             '500': {
-              description:
-                'Internal Server Error - Failed to retrieve devbox list from Kubernetes or match templates.',
+              description: 'Failed to retrieve the devbox list.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    retrieval_failed: {
-                      summary: 'Failed to get devbox list',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to list devboxes from Kubernetes'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to list devboxes from Kubernetes.'
+                      )
                     }
                   }
                 }
@@ -199,175 +249,160 @@ All error responses use the standardized v2alpha format:
         },
         post: {
           tags: ['Mutation'],
-          summary: 'Create new devbox',
+          operationId: 'createDevbox',
+          summary: 'Create a new devbox',
           description:
-            'Create a new Devbox instance with customizable runtime, resources, and ports. CPU and memory quota must be in range [0.1, 32].',
+            'Create a new Devbox instance with the specified runtime, resources, and network ports. CPU and memory quota must be in the range [0.1, 32].',
           requestBody: {
             description:
-              'Devbox creation configuration including runtime, resources, ports, and environment settings',
+              'Devbox creation parameters.\n\n' +
+              '**Example — Python devbox with a public HTTP port:**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "name": "my-python-api",\n' +
+              '  "runtime": "python",\n' +
+              '  "quota": { "cpu": 1, "memory": 2 },\n' +
+              '  "ports": [{ "number": 8080, "protocol": "http", "isPublic": true }],\n' +
+              '  "env": [],\n' +
+              '  "autostart": false\n' +
+              '}\n' +
+              '```\n\n' +
+              '**Example — Go devbox with environment variables and autostart:**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "name": "my-go-service",\n' +
+              '  "runtime": "go",\n' +
+              '  "quota": { "cpu": 0.5, "memory": 1 },\n' +
+              '  "ports": [],\n' +
+              '  "env": [{ "name": "GO_ENV", "value": "development" }],\n' +
+              '  "autostart": true\n' +
+              '}\n' +
+              '```\n\n' +
+              '**Example — minimal resources (floor values):**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "name": "my-minimal-devbox",\n' +
+              '  "runtime": "node.js",\n' +
+              '  "quota": { "cpu": 0.1, "memory": 0.1 },\n' +
+              '  "ports": [],\n' +
+              '  "env": [],\n' +
+              '  "autostart": false\n' +
+              '}\n' +
+              '```',
             required: true,
             content: {
               'application/json': {
-                schema: CreateDevboxRequestSchema,
-                examples: {
-                  basic: {
-                    summary: 'Basic Devbox with Python runtime',
-                    value: {
-                      name: 'myda22da12da',
-                      runtime: 'python',
-                      quota: { cpu: 2, memory: 4 },
-                      ports: [{ number: 8080, protocol: 'HTTP' }],
-                      env: [{ name: 'ENV_EXAMPLE23', value: 'env_example_value23' }],
-                      autostart: true
-                    }
-                  },
-                  advanced: {
-                    summary:
-                      'Advanced Devbox with ports and environment variables (supports flexible CPU/memory values)',
-                    value: {
-                      name: 'my-python-api',
-                      runtime: 'python',
-                      quota: {
-                        cpu: 1.5,
-                        memory: 3.5
-                      },
-                      ports: [
-                        {
-                          number: 8000,
-                          protocol: 'HTTP',
-                          isPublic: true
-                        }
-                      ],
-                      env: [
-                        {
-                          name: 'DEBUG',
-                          value: 'true'
-                        }
-                      ],
-                      autostart: true
-                    }
-                  },
-                  minimal_resources: {
-                    summary: 'Minimal resources (minimum values)',
-                    value: {
-                      name: 'my-minimal-devbox',
-                      runtime: 'node.js',
-                      quota: {
-                        cpu: 0.1,
-                        memory: 0.1
-                      },
-                      ports: [],
-                      env: [],
-                      autostart: false
-                    }
-                  },
-                  maximum_resources: {
-                    summary: 'Maximum resources (maximum values)',
-                    value: {
-                      name: 'my-max-devbox',
-                      runtime: 'go',
-                      quota: {
-                        cpu: 32,
-                        memory: 32
-                      },
-                      ports: [{ number: 8080, protocol: 'http', isPublic: true }],
-                      env: [],
-                      autostart: false
-                    }
-                  }
-                }
+                schema: CreateDevboxRequestSchema
               }
             }
           },
           responses: {
-            '204': {
-              description: 'Devbox created successfully. No content returned.'
-            },
-            '400': {
+            '201': {
               description:
-                'Bad Request - Invalid request parameters, malformed JSON, or validation errors in the request body.',
+                'Devbox created. SSH connection details (port, private key, domain) are provisioned synchronously and returned in this response. ' +
+                'The container pod starts asynchronously — poll `GET /devbox/{name}` until `status` is `running` before establishing an SSH connection.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: CreateDevboxResponseSchema,
                   examples: {
-                    validation_error: {
-                      summary: 'Validation error example',
+                    success: {
+                      summary: 'Devbox created (pod starting)',
                       value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid request body',
-                          details: [
-                            {
-                              field: 'name',
-                              message: 'String must contain at least 1 character(s)'
-                            }
-                          ]
-                        }
+                        name: 'my-python-api',
+                        sshPort: 40001,
+                        base64PrivateKey: 'LS0tLS1CRUdJTi...',
+                        userName: 'devbox',
+                        workingDir: '/home/devbox/project',
+                        domain: 'cloud.sealos.io',
+                        ports: [
+                          {
+                            portName: 'port-abc123def456',
+                            number: 8080,
+                            protocol: 'http',
+                            networkName: 'my-python-api-xyz789abc123',
+                            isPublic: true,
+                            publicDomain: 'xyz789abc.cloud.sealos.io',
+                            customDomain: '',
+                            serviceName: 'my-python-api',
+                            privateAddress: 'http://my-python-api.ns-user123:8080'
+                          }
+                        ],
+                        summary: { totalPorts: 1, successfulPorts: 1, failedPorts: 0 }
                       }
                     }
                   }
                 }
               }
             },
-            '404': {
-              description:
-                'Not Found - The specified runtime environment does not exist or is not available.',
+            '400': {
+              description: 'Request body failed validation.',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    runtime_not_found: {
-                      summary: 'Runtime not found example',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: "Runtime 'invalid-runtime' not found or not available"
-                        }
-                      }
+                    invalidParam: {
+                      summary: 'Missing required field',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid request body',
+                        [{ field: 'name', message: 'String must contain at least 1 character(s)' }]
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '401': unauthorizedResponse,
+            '404': {
+              description: 'The specified runtime does not exist or is not available.',
+              content: {
+                'application/json': {
+                  schema: createError404Schema(),
+                  examples: {
+                    runtimeNotFound: {
+                      summary: 'Runtime not found',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        "Runtime 'invalid-runtime' not found or not available."
+                      )
                     }
                   }
                 }
               }
             },
             '409': {
-              description:
-                'Conflict - A Devbox with the specified name already exists in the current namespace.',
+              description: 'A Devbox with the specified name already exists.',
               content: {
                 'application/json': {
-                  schema: Error409Schema,
+                  schema: createError409Schema([ErrorCode.ALREADY_EXISTS]),
                   examples: {
-                    name_conflict: {
-                      summary: 'Name conflict example',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'ALREADY_EXISTS',
-                          message: 'Devbox already exists'
-                        }
-                      }
+                    alreadyExists: {
+                      summary: 'Name conflict',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.ALREADY_EXISTS,
+                        'Devbox already exists.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description:
-                'Internal Server Error - Failed to create Devbox due to server-side issues or resource constraints.',
+              description: 'Failed to create the Devbox.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    server_error: {
-                      summary: 'Server error example',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Internal server error'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Internal server error.'
+                      )
                     }
                   }
                 }
@@ -379,44 +414,28 @@ All error responses use the standardized v2alpha format:
       '/devbox/{name}': {
         get: {
           tags: ['Query'],
+          operationId: 'getDevbox',
           summary: 'Get devbox details',
           description:
-            'Retrieve comprehensive details about a specific Devbox including configuration and status.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+            'Retrieve complete configuration, runtime status, SSH connection information, ports, and pod list for a specific Devbox.',
+          parameters: [devboxNameParam],
           responses: {
             '200': {
-              description:
-                'Successfully retrieved devbox details with complete configuration and status information.',
+              description: 'Devbox details retrieved successfully.',
               content: {
                 'application/json': {
                   schema: DevboxDetailResponseSchema,
                   examples: {
                     success: {
-                      summary: 'Devbox details retrieved',
+                      summary: 'Running devbox',
                       value: {
-                        name: 'my-nodejs-app',
-                        uid: 'abc123-def456-ghi789',
+                        name: 'my-python-api',
+                        uid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
                         resourceType: 'devbox',
-                        runtime: 'node.js',
-                        image: 'ghcr.io/labring/sealos-devbox-nodejs:latest',
+                        runtime: 'python',
+                        image: 'ghcr.io/labring/sealos-devbox-python:latest',
                         status: 'running',
-                        quota: {
-                          cpu: 1,
-                          memory: 2
-                        },
+                        quota: { cpu: 1, memory: 2 },
                         ssh: {
                           host: 'devbox.cloud.sealos.io',
                           port: 40001,
@@ -424,37 +443,17 @@ All error responses use the standardized v2alpha format:
                           workingDir: '/home/devbox/project',
                           privateKey: 'LS0tLS1CRUdJTi...'
                         },
-                        env: [
-                          {
-                            name: 'NODE_ENV',
-                            value: 'development'
-                          },
-                          {
-                            name: 'DATABASE_URL',
-                            valueFrom: {
-                              secretKeyRef: {
-                                name: 'my-secrets',
-                                key: 'db-url'
-                              }
-                            }
-                          }
-                        ],
+                        env: [{ name: 'NODE_ENV', value: 'development' }],
                         ports: [
                           {
                             number: 8080,
                             portName: 'port-abc123',
-                            protocol: 'HTTP',
-                            privateAddress: 'http://my-nodejs-app.ns-user123:8080',
-                            publicAddress: 'https://xyz789.cloud.sealos.io',
-                            customDomain: ''
+                            protocol: 'http',
+                            privateAddress: 'http://my-python-api.ns-user123:8080',
+                            publicAddress: 'https://xyz789abc.cloud.sealos.io'
                           }
                         ],
-                        pods: [
-                          {
-                            name: 'my-nodejs-app-7d8f9b6c5d-abc12',
-                            status: 'running'
-                          }
-                        ]
+                        pods: [{ name: 'my-python-api-7d8f9b6c5d-abc12', status: 'running' }]
                       }
                     }
                   }
@@ -462,62 +461,55 @@ All error responses use the standardized v2alpha format:
               }
             },
             '400': {
-              description: 'Bad Request - Invalid devbox name format.',
+              description: 'Invalid devbox name.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_name: {
-                      summary: 'Invalid devbox name',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Devbox name is required'
-                        }
-                      }
+                    invalidName: {
+                      summary: 'Missing name',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Devbox name is required.'
+                      )
                     }
                   }
                 }
               }
             },
+            '401': unauthorizedResponse,
             '404': {
-              description:
-                'Not Found - The specified Devbox does not exist in the current namespace.',
+              description: 'The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
-                    devbox_not_found: {
+                    notFound: {
                       summary: 'Devbox not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Devbox not found'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description:
-                'Internal Server Error - Failed to retrieve devbox information from Kubernetes or database.',
+              description: 'Failed to retrieve devbox details.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    retrieval_failed: {
-                      summary: 'Failed to get devbox details',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Internal server error'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Internal server error.'
+                      )
                     }
                   }
                 }
@@ -527,195 +519,198 @@ All error responses use the standardized v2alpha format:
         },
         patch: {
           tags: ['Mutation'],
+          operationId: 'updateDevbox',
           summary: 'Update devbox configuration',
           description:
-            'Update Devbox resources and port configurations without restart. CPU and memory quota must be in range [0.1, 32].',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+            'Update Devbox resource quota and/or port configuration. CPU and memory quota must be in the range [0.1, 32].\n\n' +
+            'Key points:\n' +
+            '- At least one of `quota` or `ports` must be provided.\n' +
+            '- To update an existing port supply its `portName`. To add a new port omit `portName`.\n' +
+            '- Ports not present in the `ports` array are deleted.',
+          parameters: [devboxNameParam],
           requestBody: {
             description:
-              'Devbox update configuration. Specify quota and/or ports to update. At least one field is required.',
+              'Fields to update. At least one of `quota` or `ports` is required.\n\n' +
+              '**Example — update resources only:**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "quota": { "cpu": 2, "memory": 4 }\n' +
+              '}\n' +
+              '```\n\n' +
+              '**Example — replace all ports with a single new public port:**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "ports": [{ "number": 8080, "protocol": "http", "isPublic": true }]\n' +
+              '}\n' +
+              '```\n\n' +
+              '**Example — update an existing port and add a new one:**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "ports": [\n' +
+              '    { "portName": "port-abc123", "number": 8080, "protocol": "http", "isPublic": true },\n' +
+              '    { "number": 3000, "protocol": "http", "isPublic": false }\n' +
+              '  ]\n' +
+              '}\n' +
+              '```',
             required: true,
             content: {
               'application/json': {
-                schema: UpdateDevboxRequestSchema,
-                examples: {
-                  quota_only: {
-                    summary: 'Update resources only',
-                    value: {
-                      quota: {
-                        cpu: 2,
-                        memory: 4
-                      }
-                    }
-                  },
-                  ports_only: {
-                    summary: 'Update ports only',
-                    value: {
-                      ports: [
-                        {
-                          portName: 'existing-port-name',
-                          number: 8080,
-                          protocol: 'http',
-                          isPublic: true
-                        },
-                        {
-                          number: 3000,
-                          protocol: 'http',
-                          isPublic: false
-                        }
-                      ]
-                    }
-                  },
-                  both: {
-                    summary:
-                      'Update both resources and ports (supports flexible CPU/memory values)',
-                    value: {
-                      quota: {
-                        cpu: 0.5,
-                        memory: 1.0
-                      },
-                      ports: [
-                        {
-                          number: 8000,
-                          protocol: 'http',
-                          isPublic: true,
-                          customDomain: 'api.example.com'
-                        }
-                      ]
-                    }
-                  },
-                  flexible_quota: {
-                    summary: 'Update with flexible quota values (any value in range [0.1, 32])',
-                    value: {
-                      quota: {
-                        cpu: 2.5,
-                        memory: 6.5
-                      }
-                    }
-                  }
-                }
+                schema: UpdateDevboxRequestSchema
               }
             }
           },
           responses: {
             '204': {
-              description: 'Devbox updated successfully. No content returned.'
+              description: 'Devbox updated successfully.'
             },
             '400': {
-              description:
-                'Bad Request - Invalid request parameters, malformed JSON, or validation errors. No content returned.'
+              description: 'Request body failed validation.',
+              content: {
+                'application/json': {
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                  examples: {
+                    invalidParam: {
+                      summary: 'Invalid parameter',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid request body',
+                        [{ field: 'quota.cpu', message: 'Expected number, received string' }]
+                      )
+                    }
+                  }
+                }
+              }
             },
+            '401': unauthorizedResponse,
             '404': {
-              description:
-                'Not Found - The specified Devbox does not exist in the current namespace or the port name is invalid. No content returned.'
+              description: 'Devbox not found, or a referenced `portName` does not exist.',
+              content: {
+                'application/json': {
+                  schema: createError404Schema(),
+                  examples: {
+                    devboxNotFound: {
+                      summary: 'Devbox not found',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
+                    },
+                    portNotFound: {
+                      summary: 'Port name not found',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        "Port with name 'port-abc123' not found."
+                      )
+                    }
+                  }
+                }
+              }
             },
             '409': {
-              description:
-                'Conflict - Port number is already in use by another service or resource. No content returned.'
+              description: 'Port number is already in use by another port.',
+              content: {
+                'application/json': {
+                  schema: createError409Schema([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT]),
+                  examples: {
+                    portConflict: {
+                      summary: 'Port number conflict',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.CONFLICT,
+                        'Port 8080 already exists in service.'
+                      )
+                    }
+                  }
+                }
+              }
             },
             '422': {
-              description:
-                'Unprocessable Entity - Invalid resource configuration that exceeds limits or constraints. No content returned.'
+              description: 'Resource specification rejected by the Kubernetes cluster.',
+              content: {
+                'application/json': {
+                  schema: createError422Schema(),
+                  examples: {
+                    invalidSpec: {
+                      summary: 'Admission webhook rejection',
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.INVALID_RESOURCE_SPEC,
+                        'Invalid resource specification.',
+                        'admission webhook "devbox.sealos.io" denied the request: quota exceeded'
+                      )
+                    }
+                  }
+                }
+              }
             },
             '500': {
-              description:
-                'Internal Server Error - Failed to update Devbox due to server-side issues. No content returned.'
+              description: 'Failed to update the Devbox.',
+              content: {
+                'application/json': {
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
+                  examples: {
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Internal server error.'
+                      )
+                    }
+                  }
+                }
+              }
             }
           }
         },
         delete: {
           tags: ['Mutation'],
-          summary: 'Delete devbox',
+          operationId: 'deleteDevbox',
+          summary: 'Delete a devbox',
           description:
-            'Delete a Devbox and all its associated resources including services, ingress, certificates, and persistent volumes.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name to delete',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+            'Delete a Devbox and all associated resources (services, ingress rules, certificates, persistent volumes).\n\n' +
+            'Key points:\n' +
+            '- **Idempotent** — if the Devbox does not exist the request still returns `204`.',
+          parameters: [devboxNameParam],
           responses: {
             '204': {
-              description:
-                'Devbox deleted successfully. All associated resources have been removed. No content returned.'
+              description: 'Devbox deleted successfully, or did not exist (idempotent).'
             },
             '400': {
-              description: 'Bad Request - Invalid devbox name format or validation error.',
+              description: 'Invalid devbox name.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_name: {
-                      summary: 'Invalid devbox name',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name format'
-                        }
-                      }
+                    invalidName: {
+                      summary: 'Invalid name format',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid devbox name format.'
+                      )
                     }
                   }
                 }
               }
             },
-            '404': {
-              description: 'Not Found - The specified Devbox does not exist.',
-              content: {
-                'application/json': {
-                  schema: Error404Schema,
-                  examples: {
-                    not_found: {
-                      summary: 'Devbox not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Devbox not found'
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            },
+            '401': unauthorizedResponse,
             '500': {
-              description:
-                'Internal Server Error - Failed to delete Devbox or its associated resources.',
+              description: 'Failed to delete the Devbox or its associated resources.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    deletion_failed: {
-                      summary: 'Deletion operation failed',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Internal server error'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Internal server error.'
+                      )
                     }
                   }
                 }
@@ -727,103 +722,81 @@ All error responses use the standardized v2alpha format:
       '/devbox/{name}/autostart': {
         post: {
           tags: ['Mutation'],
+          operationId: 'autostartDevbox',
           summary: 'Configure devbox autostart',
-          description: 'Configure automatic command execution when Devbox starts with RBAC setup.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+          description:
+            'Configure the command that runs automatically when the Devbox starts. If `execCommand` is omitted the default template entrypoint is used.',
+          parameters: [devboxNameParam],
           requestBody: {
-            description: 'Autostart configuration with optional custom execution command',
+            description:
+              'Autostart configuration. The body is optional — send `{}` to use the default entrypoint.\n\n' +
+              '**Example — custom startup script:**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "execCommand": "/bin/bash /home/devbox/project/startup.sh"\n' +
+              '}\n' +
+              '```',
             required: false,
             content: {
               'application/json': {
-                schema: AutostartRequestSchema,
-                examples: {
-                  default: {
-                    summary: 'Use default entrypoint',
-                    value: {}
-                  },
-                  custom_command: {
-                    summary: 'Custom startup command',
-                    value: {
-                      execCommand: '/bin/bash /home/devbox/project/startup.sh'
-                    }
-                  }
-                }
+                schema: AutostartRequestSchema
               }
             }
           },
           responses: {
             '204': {
-              description:
-                'Autostart resources created successfully. RBAC and Job resources have been configured. No content returned.'
+              description: 'Autostart configured successfully.'
             },
             '400': {
-              description: 'Bad Request - Invalid request parameters or devbox name format.',
+              description: 'Invalid request parameters.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_name: {
+                    invalidParam: {
                       summary: 'Invalid devbox name',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name format'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid devbox name format.'
+                      )
                     }
                   }
                 }
               }
             },
+            '401': unauthorizedResponse,
             '404': {
-              description: 'Not Found - The specified Devbox does not exist.',
+              description: 'The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
-                    not_found: {
+                    notFound: {
                       summary: 'Devbox not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Devbox not found'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description: 'Internal Server Error - Failed to create autostart resources.',
+              description: 'Failed to configure autostart.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    creation_failed: {
-                      summary: 'Resource creation failed',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to create autostart resources'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to create autostart resources.'
+                      )
                     }
                   }
                 }
@@ -835,97 +808,67 @@ All error responses use the standardized v2alpha format:
       '/devbox/{name}/start': {
         post: {
           tags: ['Mutation'],
-          summary: 'Start devbox',
-          description: 'Start a paused or stopped Devbox and restore its services to active state.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
-          requestBody: {
-            description: 'Empty request body - no parameters required for starting a Devbox',
-            required: false,
-            content: {
-              'application/json': {
-                schema: StartDevboxRequestSchema,
-                examples: {
-                  default: {
-                    summary: 'Start devbox',
-                    value: {}
-                  }
-                }
-              }
-            }
-          },
+          operationId: 'startDevbox',
+          summary: 'Start a devbox',
+          description:
+            'Start a paused or stopped Devbox and restore its network ingress rules to active state.\n\n' +
+            'Key points:\n' +
+            '- **Idempotent** — calling start on an already-running Devbox returns `204`.',
+          parameters: [devboxNameParam],
           responses: {
             '204': {
-              description:
-                'Devbox started successfully. Pods are starting and ingress has been restored. No content returned.'
+              description: 'Devbox started successfully.'
             },
             '400': {
-              description: 'Bad Request - Invalid request parameters or devbox name format.',
+              description: 'Invalid devbox name.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_name: {
+                    invalidName: {
                       summary: 'Invalid name format',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name format'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid devbox name format.'
+                      )
                     }
                   }
                 }
               }
             },
+            '401': unauthorizedResponse,
             '404': {
-              description: 'Not Found - The specified Devbox does not exist.',
+              description: 'The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
-                    not_found: {
+                    notFound: {
                       summary: 'Devbox not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Devbox not found'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description: 'Internal Server Error - Failed to start Devbox or restore services.',
+              description: 'Failed to start the Devbox.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    start_failed: {
-                      summary: 'Start operation failed',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to start devbox'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to start devbox.'
+                      )
                     }
                   }
                 }
@@ -937,99 +880,75 @@ All error responses use the standardized v2alpha format:
       '/devbox/{name}/pause': {
         post: {
           tags: ['Mutation'],
-          summary: 'Pause devbox',
+          operationId: 'pauseDevbox',
+          summary: 'Pause a devbox',
           description:
-            'Temporarily pause a Devbox while maintaining port allocations to reduce costs.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+            'Pause a Devbox to stop its compute resources while preserving port allocations, reducing costs.\n\n' +
+            'Key points:\n' +
+            '- **Idempotent** — calling pause on an already-paused Devbox returns `204`.',
+          parameters: [devboxNameParam],
           requestBody: {
-            description: 'Empty request body - no parameters required for pausing a Devbox',
             required: false,
             content: {
               'application/json': {
-                schema: PauseDevboxRequestSchema,
-                examples: {
-                  default: {
-                    summary: 'Pause devbox',
-                    value: {}
-                  }
-                }
+                schema: PauseDevboxRequestSchema
               }
             }
           },
           responses: {
             '204': {
-              description:
-                'Devbox paused successfully. Compute resources stopped, ports maintained. No content returned.'
+              description: 'Devbox paused successfully.'
             },
             '400': {
-              description: 'Bad Request - Invalid request parameters or devbox name format.',
+              description: 'Request body failed validation.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_name: {
-                      summary: 'Invalid name format',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name format'
-                        }
-                      }
+                    invalidParam: {
+                      summary: 'Invalid body',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid request body.'
+                      )
                     }
                   }
                 }
               }
             },
+            '401': unauthorizedResponse,
             '404': {
-              description: 'Not Found - The specified Devbox does not exist.',
+              description: 'The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
-                    not_found: {
+                    notFound: {
                       summary: 'Devbox not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Devbox not found'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description:
-                'Internal Server Error - Failed to pause Devbox or update ingress configuration.',
+              description: 'Failed to pause the Devbox.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    pause_failed: {
-                      summary: 'Pause operation failed',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to pause devbox'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to pause devbox.'
+                      )
                     }
                   }
                 }
@@ -1041,98 +960,73 @@ All error responses use the standardized v2alpha format:
       '/devbox/{name}/shutdown': {
         post: {
           tags: ['Mutation'],
-          summary: 'Shutdown devbox',
+          operationId: 'shutdownDevbox',
+          summary: 'Shutdown a devbox',
           description:
-            'Completely shutdown a Devbox and release all port allocations to minimize costs.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+            'Completely shut down a Devbox, releasing all compute resources and port allocations to minimise costs.',
+          parameters: [devboxNameParam],
           requestBody: {
-            description: 'Empty request body - no parameters required for shutting down a Devbox',
             required: false,
             content: {
               'application/json': {
-                schema: ShutdownDevboxRequestSchema,
-                examples: {
-                  default: {
-                    summary: 'Shutdown devbox',
-                    value: {}
-                  }
-                }
+                schema: ShutdownDevboxRequestSchema
               }
             }
           },
           responses: {
             '204': {
-              description:
-                'Devbox shutdown successfully. All compute resources and ports have been released. No content returned.'
+              description: 'Devbox shut down successfully.'
             },
             '400': {
-              description: 'Bad Request - Invalid request parameters or devbox name format.',
+              description: 'Request body failed validation.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_name: {
-                      summary: 'Invalid name format',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name format'
-                        }
-                      }
+                    invalidParam: {
+                      summary: 'Invalid body',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid request body.'
+                      )
                     }
                   }
                 }
               }
             },
+            '401': unauthorizedResponse,
             '404': {
-              description: 'Not Found - The specified Devbox does not exist.',
+              description: 'The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
-                    not_found: {
+                    notFound: {
                       summary: 'Devbox not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Devbox not found'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description: 'Internal Server Error - Failed to shutdown Devbox or release ports.',
+              description: 'Failed to shut down the Devbox.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    shutdown_failed: {
-                      summary: 'Shutdown operation failed',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to shutdown devbox'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to shutdown devbox.'
+                      )
                     }
                   }
                 }
@@ -1144,108 +1038,83 @@ All error responses use the standardized v2alpha format:
       '/devbox/{name}/restart': {
         post: {
           tags: ['Mutation'],
-          summary: 'Restart devbox',
+          operationId: 'restartDevbox',
+          summary: 'Restart a devbox',
           description:
-            'Perform a complete restart cycle of a Devbox for configuration changes or error recovery.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+            'Trigger a complete restart cycle: stop all pods, wait for termination, restore ingress, then start the Devbox.\n\n' +
+            'Key points:\n' +
+            '- **Idempotent** — always triggers a restart regardless of the current state.',
+          parameters: [devboxNameParam],
           requestBody: {
-            description: 'Empty request body - no parameters required for restarting a Devbox',
             required: false,
             content: {
               'application/json': {
-                schema: RestartDevboxRequestSchema,
-                examples: {
-                  default: {
-                    summary: 'Restart devbox',
-                    value: {}
-                  }
-                }
+                schema: RestartDevboxRequestSchema
               }
             }
           },
           responses: {
             '204': {
-              description:
-                'Devbox restarted successfully. Complete restart cycle completed with all services restored. No content returned.'
+              description: 'Devbox restarted successfully.'
             },
             '400': {
-              description: 'Bad Request - Invalid request parameters or devbox name format.',
+              description: 'Request body failed validation.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_name: {
-                      summary: 'Invalid name format',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name format'
-                        }
-                      }
+                    invalidParam: {
+                      summary: 'Invalid body',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid request body.'
+                      )
                     }
                   }
                 }
               }
             },
+            '401': unauthorizedResponse,
             '404': {
-              description: 'Not Found - The specified Devbox does not exist.',
+              description: 'The specified Devbox does not exist.',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
-                    not_found: {
+                    notFound: {
                       summary: 'Devbox not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Devbox not found'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description: 'Internal Server Error - Failed to complete the restart cycle.',
+              description: 'Restart cycle failed.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    restart_failed: {
-                      summary: 'Restart operation failed',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to restart devbox'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to restart devbox.'
+                      )
                     },
-                    restart_timeout: {
+                    timeout: {
                       summary: 'Restart timeout',
-                      value: {
-                        error: {
-                          type: 'operation_error',
-                          code: 'OPERATION_FAILED',
-                          message: 'Timeout waiting for pods to restart'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Max retries reached while waiting for devbox pod to be deleted.'
+                      )
                     }
                   }
                 }
@@ -1254,97 +1123,93 @@ All error responses use the standardized v2alpha format:
           }
         }
       },
-      '/devbox/{name}/release': {
+      '/devbox/{name}/releases': {
         get: {
           tags: ['Query'],
-          summary: 'Get devbox releases',
+          operationId: 'listDevboxReleases',
+          summary: 'List devbox releases',
           description:
-            'Retrieve all release versions for a specific Devbox with version history and status.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+            'Retrieve all release versions for a Devbox, ordered by creation time descending.',
+          parameters: [devboxNameParam],
           responses: {
             '200': {
-              description:
-                'Successfully retrieved devbox release list with version history and status information.',
+              description: 'Release list retrieved successfully.',
               content: {
                 'application/json': {
                   schema: ReleaseDevboxGetSuccessResponseSchema,
                   examples: {
                     success: {
-                      summary: 'Release list retrieved',
+                      summary: 'One release',
                       value: [
                         {
-                          id: 'release-123-abc',
-                          name: 'my-devbox-v1.0.0',
-                          devboxName: 'my-devbox',
+                          id: 'release-a1b2c3',
+                          name: 'my-python-api-v1-0-0',
+                          devboxName: 'my-python-api',
                           createdAt: '2024-01-15 10:30',
-                          tag: 'v1.0.0',
+                          tag: 'v1-0-0',
                           description: 'First stable release',
-                          image: 'registry.cloud.sealos.io/ns-user123/my-devbox:v1.0.0'
-                        },
-                        {
-                          id: 'release-456-def',
-                          name: 'my-devbox-v0.9.0',
-                          devboxName: 'my-devbox',
-                          createdAt: '2024-01-10 09:15',
-                          tag: 'v0.9.0',
-                          description: 'Beta release',
-                          image: 'registry.cloud.sealos.io/ns-user123/my-devbox:v0.9.0'
+                          image: 'registry.cloud.sealos.io/ns-user123/my-python-api:v1-0-0'
                         }
                       ]
+                    },
+                    empty: {
+                      summary: 'No releases yet',
+                      value: []
                     }
                   }
                 }
               }
             },
             '400': {
-              description: 'Bad Request - Invalid devbox name format.',
+              description: 'Invalid devbox name.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_name: {
-                      summary: 'Invalid devbox name',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name format'
-                        }
-                      }
+                    invalidParam: {
+                      summary: 'Invalid name format',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid devbox name format.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '401': unauthorizedResponse,
+            '404': {
+              description: 'The specified Devbox does not exist.',
+              content: {
+                'application/json': {
+                  schema: createError404Schema(),
+                  examples: {
+                    notFound: {
+                      summary: 'Devbox not found',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description:
-                'Internal Server Error - Failed to retrieve release list from Kubernetes.',
+              description: 'Failed to retrieve the release list.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    retrieval_failed: {
-                      summary: 'Failed to get releases',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to list DevboxRelease resources'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to list DevboxRelease resources.'
+                      )
                     }
                   }
                 }
@@ -1354,134 +1219,153 @@ All error responses use the standardized v2alpha format:
         },
         post: {
           tags: ['Mutation'],
-          summary: 'Create devbox release',
+          operationId: 'createDevboxRelease',
+          summary: 'Create a devbox release',
           description:
-            'Create a new release version by snapshotting current Devbox state and building container image.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+            'Snapshot the current Devbox state and trigger a container image build for the given version tag.\n\n' +
+            'Key points:\n' +
+            '- **Asynchronous** — returns `202 Accepted` immediately. The build pipeline (stop devbox → build image → restart devbox) runs in the background; poll `GET /devbox/{name}/releases` to track progress.\n' +
+            '- By default the Devbox is restarted after the build succeeds (`startDevboxAfterRelease: true`). Set to `false` to keep the Devbox stopped after the release.',
+          parameters: [devboxNameParam],
           requestBody: {
-            description: 'Release configuration with version tag and optional description',
+            description:
+              'Release parameters.\n\n' +
+              '**Example — minimal (restart after build, no custom startup command):**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "tag": "v1-2-0",\n' +
+              '  "releaseDescription": "Added API improvements and bug fixes."\n' +
+              '}\n' +
+              '```\n\n' +
+              '**Example — keep Devbox stopped after release:**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "tag": "v1-0-0",\n' +
+              '  "releaseDescription": "Hotfix",\n' +
+              '  "startDevboxAfterRelease": false\n' +
+              '}\n' +
+              '```\n\n' +
+              '**Example — restart with autostart command:**\n' +
+              '```json\n' +
+              '{\n' +
+              '  "tag": "v1-3-0",\n' +
+              '  "releaseDescription": "Adds startup script",\n' +
+              '  "execCommand": "nohup /home/devbox/project/entrypoint.sh > /dev/null 2>&1 &"\n' +
+              '}\n' +
+              '```',
             required: true,
             content: {
               'application/json': {
-                schema: ReleaseDevboxRequestSchema,
-                examples: {
-                  basic: {
-                    summary: 'Basic release',
-                    value: {
-                      tag: 'v1.0.0',
-                      releaseDes: ''
-                    }
-                  },
-                  with_description: {
-                    summary: 'Release with description',
-                    value: {
-                      tag: 'v1.2.0',
-                      releaseDes:
-                        'Added new features: API improvements, bug fixes, performance optimization'
-                    }
-                  }
-                }
+                schema: ReleaseDevboxRequestSchema
               }
             }
           },
           responses: {
-            '204': {
+            '202': {
               description:
-                'Devbox release created successfully. Image building process has started. No content returned.'
-            },
-            '400': {
-              description: 'Bad Request - Invalid request body, tag format, or devbox name.',
+                'Release accepted. The container image build pipeline has started in the background. Poll `GET /devbox/{name}/releases` to track progress.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
-                  examples: {
-                    invalid_tag: {
-                      summary: 'Invalid tag format',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid request body',
-                          details: [
-                            { field: 'tag', message: 'Tag must comply with DNS naming conventions' }
-                          ]
-                        }
+                  schema: {
+                    type: 'object',
+                    required: ['name', 'status'],
+                    properties: {
+                      name: {
+                        type: 'string',
+                        description: 'Devbox name',
+                        example: 'my-python-api'
+                      },
+                      status: {
+                        type: 'string',
+                        enum: ['creating'],
+                        description: 'Always `creating` — the build is running asynchronously.',
+                        example: 'creating'
                       }
+                    }
+                  },
+                  examples: {
+                    accepted: {
+                      summary: 'Release accepted',
+                      value: { name: 'my-python-api', status: 'creating' }
                     }
                   }
                 }
               }
             },
-            '404': {
-              description: 'Not Found - The specified Devbox does not exist.',
+            '400': {
+              description: 'Request body failed validation.',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    not_found: {
+                    invalidTag: {
+                      summary: 'Invalid tag format',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid request body',
+                        [
+                          {
+                            field: 'tag',
+                            message: 'Tag must comply with DNS naming conventions.'
+                          }
+                        ]
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '401': unauthorizedResponse,
+            '404': {
+              description: 'The specified Devbox does not exist.',
+              content: {
+                'application/json': {
+                  schema: createError404Schema(),
+                  examples: {
+                    notFound: {
                       summary: 'Devbox not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Devbox not found'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
                     }
                   }
                 }
               }
             },
             '409': {
-              description:
-                'Conflict - A release with the specified tag already exists for this Devbox.',
+              description: 'A release with this tag already exists for this Devbox.',
               content: {
                 'application/json': {
-                  schema: Error409Schema,
+                  schema: createError409Schema([ErrorCode.ALREADY_EXISTS]),
                   examples: {
-                    tag_conflict: {
+                    alreadyExists: {
                       summary: 'Tag already exists',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'ALREADY_EXISTS',
-                          message: 'Devbox release already exists'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.ALREADY_EXISTS,
+                        'Devbox release already exists.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description:
-                'Internal Server Error - Failed to create release or build container image.',
+              description: 'Failed to create the release.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    creation_failed: {
-                      summary: 'Release creation failed',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Internal server error'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Internal server error.'
+                      )
                     }
                   }
                 }
@@ -1490,50 +1374,38 @@ All error responses use the standardized v2alpha format:
           }
         }
       },
-      '/devbox/{name}/deploy': {
+      '/devbox/{name}/deployments': {
         get: {
           tags: ['Query'],
-          summary: 'Get deployed releases',
+          operationId: 'listDevboxDeployments',
+          summary: 'List deployed applications from a devbox',
           description:
-            'Retrieve all deployed applications from this devbox releases on AppLaunchpad.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+            "Retrieve all AppLaunchpad applications that were deployed from this Devbox's releases.",
+          parameters: [devboxNameParam],
           responses: {
             '200': {
-              description: 'Successfully retrieved list of deployed applications from this devbox.',
+              description: 'Deployment list retrieved successfully.',
               content: {
                 'application/json': {
                   schema: GetDeployListSuccessResponseSchema,
                   examples: {
                     success: {
-                      summary: 'Deployed releases retrieved',
+                      summary: 'Two deployments',
                       value: [
                         {
-                          name: 'my-devbox-v1-0-0',
+                          name: 'my-python-api-release-abc123',
                           resourceType: 'deployment',
-                          tag: 'v1.0.0'
+                          tag: 'v1-0-0'
                         },
                         {
-                          name: 'my-devbox-v0-9-0',
+                          name: 'my-python-api-release-def456',
                           resourceType: 'statefulset',
-                          tag: 'v0.9.0'
+                          tag: 'v0-9-0'
                         }
                       ]
                     },
-                    empty_list: {
-                      summary: 'No deployments found',
+                    empty: {
+                      summary: 'No deployments',
                       value: []
                     }
                   }
@@ -1541,40 +1413,55 @@ All error responses use the standardized v2alpha format:
               }
             },
             '400': {
-              description: 'Bad Request - Invalid devbox name format.',
+              description: 'Invalid devbox name.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_name: {
-                      summary: 'Invalid devbox name',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name format'
-                        }
-                      }
+                    invalidParam: {
+                      summary: 'Invalid name format',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid devbox name format.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '401': unauthorizedResponse,
+            '404': {
+              description: 'The specified Devbox does not exist.',
+              content: {
+                'application/json': {
+                  schema: createError404Schema(),
+                  examples: {
+                    notFound: {
+                      summary: 'Devbox not found',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox not found.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description: 'Internal Server Error - Failed to query Kubernetes resources.',
+              description: 'Failed to query deployments.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    query_failed: {
-                      summary: 'Failed to query deployments',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Internal server error'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Internal server error.'
+                      )
                     }
                   }
                 }
@@ -1583,97 +1470,52 @@ All error responses use the standardized v2alpha format:
           }
         }
       },
-      '/devbox/{name}/release/{tag}': {
+      '/devbox/{name}/releases/{tag}': {
         delete: {
           tags: ['Mutation'],
-          summary: 'Delete devbox release',
-          description: 'Delete a specific release version and its associated container image.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            },
-            {
-              name: 'tag',
-              in: 'path',
-              required: true,
-              description: 'Release name to delete',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            }
-          ],
+          operationId: 'deleteDevboxRelease',
+          summary: 'Delete a devbox release',
+          description:
+            'Delete a specific release version and its associated container image.\n\n' +
+            'Key points:\n' +
+            '- **Idempotent** — if the release does not exist the request still returns `204`.',
+          parameters: [devboxNameParam, releaseTagParam],
           responses: {
             '204': {
-              description:
-                'Release deleted successfully. The release and its container image have been removed. No content returned.'
+              description: 'Release deleted successfully, or did not exist (idempotent).'
             },
             '400': {
-              description: 'Bad Request - Invalid devbox name or release tag format.',
+              description: 'Invalid path parameters.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_format: {
+                    invalidParam: {
                       summary: 'Invalid parameter format',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name or release tag format'
-                        }
-                      }
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid devbox name or release tag format.'
+                      )
                     }
                   }
                 }
               }
             },
-            '404': {
-              description: 'Not Found - The specified release does not exist.',
-              content: {
-                'application/json': {
-                  schema: Error404Schema,
-                  examples: {
-                    not_found: {
-                      summary: 'Release not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Release not found'
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            },
+            '401': unauthorizedResponse,
             '500': {
-              description: 'Internal Server Error - Failed to delete release or container image.',
+              description: 'Failed to delete the release.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    deletion_failed: {
-                      summary: 'Deletion failed',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Internal server error'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Internal server error.'
+                      )
                     }
                   }
                 }
@@ -1682,112 +1524,75 @@ All error responses use the standardized v2alpha format:
           }
         }
       },
-      '/devbox/{name}/release/{tag}/deploy': {
+      '/devbox/{name}/releases/{tag}/deploy': {
         post: {
           tags: ['Mutation'],
-          summary: 'Deploy devbox release',
-          description: 'Deploy a release version to AppLaunchpad as a production application.',
-          parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            },
-            {
-              name: 'tag',
-              in: 'path',
-              required: true,
-              description: 'Devbox release version tag',
-              schema: {
-                type: 'string',
-                minLength: 1
-              }
-            }
-          ],
-          requestBody: {
-            description: 'Empty request body - deployment uses release configuration',
-            required: false,
-            content: {
-              'application/json': {
-                schema: DeployDevboxRequestSchema,
-                examples: {
-                  default: {
-                    summary: 'Deploy release',
-                    value: {}
-                  }
-                }
-              }
-            }
-          },
+          operationId: 'deployDevboxRelease',
+          summary: 'Deploy a release to AppLaunchpad',
+          description:
+            'Deploy a successfully built release version as a production application in AppLaunchpad.\n\n' +
+            'Key points:\n' +
+            '- The release must be in `Success` status before deploying.\n' +
+            '- Each call creates a new AppLaunchpad application; prior deployments are not replaced.',
+          parameters: [devboxNameParam, releaseTagParam],
           responses: {
             '204': {
               description:
-                'Devbox release deployed successfully to AppLaunchpad. Application is now running in production. No content returned.'
+                'Release deployed successfully. Application is now running in AppLaunchpad.'
             },
             '400': {
-              description: 'Bad Request - Invalid request body or path parameters.',
+              description: 'Invalid path parameters.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
                   examples: {
-                    invalid_params: {
-                      summary: 'Invalid parameters',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name or tag format'
-                        }
-                      }
+                    invalidParam: {
+                      summary: 'Invalid parameter format',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid devbox name or release tag format.'
+                      )
                     }
                   }
                 }
               }
             },
+            '401': unauthorizedResponse,
             '404': {
-              description:
-                'Not Found - Devbox or release tag does not exist, or release is not in Success status.',
+              description: 'Devbox or release tag not found, or release is not in Success status.',
               content: {
                 'application/json': {
-                  schema: Error404Schema,
+                  schema: createError404Schema(),
                   examples: {
-                    release_not_found: {
-                      summary: 'Release not found',
-                      value: {
-                        error: {
-                          type: 'resource_error',
-                          code: 'NOT_FOUND',
-                          message: 'Devbox release tag is not found or not successful'
-                        }
-                      }
+                    notFound: {
+                      summary: 'Release not found or not successful',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'Devbox release tag v1-0-0 is not found or not successful.'
+                      )
                     }
                   }
                 }
               }
             },
             '500': {
-              description:
-                'Internal Server Error - Deployment failed or AppLaunchpad service error.',
+              description: 'Deployment failed.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([
+                    ErrorCode.OPERATION_FAILED,
+                    ErrorCode.INTERNAL_ERROR
+                  ]),
                   examples: {
-                    deployment_failed: {
-                      summary: 'Deployment failed',
-                      value: {
-                        error: {
-                          type: 'operation_error',
-                          code: 'OPERATION_FAILED',
-                          message: 'Failed to deploy to AppLaunchpad'
-                        }
-                      }
+                    deployError: {
+                      summary: 'AppLaunchpad error',
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.OPERATION_FAILED,
+                        'Failed to deploy to AppLaunchpad.'
+                      )
                     }
                   }
                 }
@@ -1799,64 +1604,44 @@ All error responses use the standardized v2alpha format:
       '/devbox/{name}/monitor': {
         get: {
           tags: ['Query'],
-          summary: 'Get devbox monitoring',
-          description:
-            'Retrieve time-series monitoring data for CPU and memory usage of a specific Devbox.',
+          operationId: 'getDevboxMonitor',
+          summary: 'Get devbox monitoring data',
+          description: 'Retrieve time-series CPU and memory usage metrics for a specific Devbox.',
           parameters: [
-            {
-              name: 'name',
-              in: 'path',
-              required: true,
-              description: 'Devbox name',
-              schema: {
-                type: 'string',
-                pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
-                minLength: 1,
-                maxLength: 63
-              }
-            },
+            devboxNameParam,
             {
               name: 'start',
               in: 'query',
               required: false,
-              description: 'Start timestamp in milliseconds',
-              schema: {
-                type: 'string',
-                example: '1697356680000'
-              }
+              description:
+                'Start of the monitoring window. Accepts a Unix timestamp in either **seconds** or **milliseconds** (values > 10¹² are automatically divided by 1000). Defaults to `end − 3 h`.',
+              schema: { type: 'string', example: '1760510280' }
             },
             {
               name: 'end',
               in: 'query',
               required: false,
-              description: 'End timestamp in milliseconds',
-              schema: {
-                type: 'string',
-                example: '1697360280000'
-              }
+              description:
+                'End of the monitoring window. Accepts a Unix timestamp in either **seconds** or **milliseconds** (values > 10¹² are automatically divided by 1000). Defaults to the current server time.',
+              schema: { type: 'string', example: '1760513880' }
             },
             {
               name: 'step',
               in: 'query',
               required: false,
-              description: 'Data sampling step interval (e.g., "1m", "5m", "1h")',
-              schema: {
-                type: 'string',
-                default: '2m',
-                example: '2m'
-              }
+              description: 'Sampling interval (e.g. `1m`, `5m`, `1h`).',
+              schema: { type: 'string', default: '2m', example: '2m' }
             }
           ],
           responses: {
             '200': {
-              description:
-                'Successfully retrieved monitoring data with CPU and memory usage metrics.',
+              description: 'Monitoring data retrieved successfully.',
               content: {
                 'application/json': {
                   schema: MonitorSuccessResponseSchema,
                   examples: {
                     success: {
-                      summary: 'Monitor data retrieved',
+                      summary: 'CPU and memory metrics',
                       value: [
                         {
                           timestamp: 1760510280,
@@ -1869,12 +1654,6 @@ All error responses use the standardized v2alpha format:
                           readableTime: '2025/10/15 14:39',
                           cpu: 1.18,
                           memory: 10.37
-                        },
-                        {
-                          timestamp: 1760510400,
-                          readableTime: '2025/10/15 14:40',
-                          cpu: 1.25,
-                          memory: 10.45
                         }
                       ]
                     }
@@ -1883,41 +1662,48 @@ All error responses use the standardized v2alpha format:
               }
             },
             '400': {
-              description: 'Bad Request - Invalid devbox name or missing required parameters.',
+              description: 'Invalid devbox name or query parameters.',
               content: {
                 'application/json': {
-                  schema: Error400Schema,
+                  schema: createError400Schema([
+                    ErrorCode.INVALID_PARAMETER,
+                    ErrorCode.INVALID_VALUE
+                  ]),
                   examples: {
-                    invalid_name: {
-                      summary: 'Invalid or missing devbox name',
-                      value: {
-                        error: {
-                          type: 'validation_error',
-                          code: 'INVALID_PARAMETER',
-                          message: 'Invalid devbox name format'
-                        }
-                      }
+                    invalidParam: {
+                      summary: 'Invalid devbox name',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid devbox name format.'
+                      )
+                    },
+                    invalidTimeRange: {
+                      summary: 'start is not earlier than end',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_VALUE,
+                        'Start timestamp must be earlier than end timestamp.'
+                      )
                     }
                   }
                 }
               }
             },
+            '401': unauthorizedResponse,
             '500': {
-              description:
-                'Internal Server Error - Failed to fetch monitoring data from monitoring service.',
+              description: 'Failed to fetch monitoring data.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    fetch_failed: {
-                      summary: 'Failed to fetch monitor data',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to fetch devbox monitor data'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to fetch devbox monitor data.'
+                      )
                     }
                   }
                 }
@@ -1929,36 +1715,27 @@ All error responses use the standardized v2alpha format:
       '/devbox/templates': {
         get: {
           tags: ['Query'],
-          summary: 'Get devbox templates',
+          operationId: 'listDevboxTemplates',
+          summary: 'List available devbox templates',
           description:
-            'Retrieve available runtime environments and template configurations for creating Devboxes.',
+            'Retrieve available runtime environments and their default port/command configurations for creating Devboxes. This endpoint does not require authentication.',
+          security: [],
           responses: {
             '200': {
-              description:
-                'Successfully retrieved devbox templates. Returns array of { runtime, config }.',
+              description: 'Template list retrieved successfully.',
               content: {
                 'application/json': {
                   schema: GetDevboxTemplatesSuccessResponseSchema,
                   examples: {
                     success: {
-                      summary: 'Templates retrieved',
+                      summary: 'Available runtimes',
                       value: [
                         {
-                          runtime: 'mcp',
+                          runtime: 'python',
                           config: {
-                            appPorts: [
-                              {
-                                name: 'devbox-app-port',
-                                port: 8080,
-                                protocol: 'TCP'
-                              }
-                            ],
+                            appPorts: [{ name: 'devbox-app-port', port: 8080, protocol: 'TCP' }],
                             ports: [
-                              {
-                                containerPort: 22,
-                                name: 'devbox-ssh-port',
-                                protocol: 'TCP'
-                              }
+                              { containerPort: 22, name: 'devbox-ssh-port', protocol: 'TCP' }
                             ],
                             releaseArgs: ['/home/devbox/project/entrypoint.sh prod'],
                             releaseCommand: ['/bin/bash', '-c'],
@@ -1969,19 +1746,9 @@ All error responses use the standardized v2alpha format:
                         {
                           runtime: 'go',
                           config: {
-                            appPorts: [
-                              {
-                                name: 'devbox-app-port',
-                                port: 8080,
-                                protocol: 'TCP'
-                              }
-                            ],
+                            appPorts: [{ name: 'devbox-app-port', port: 8080, protocol: 'TCP' }],
                             ports: [
-                              {
-                                containerPort: 22,
-                                name: 'devbox-ssh-port',
-                                protocol: 'TCP'
-                              }
+                              { containerPort: 22, name: 'devbox-ssh-port', protocol: 'TCP' }
                             ],
                             releaseArgs: ['/home/devbox/project/entrypoint.sh prod'],
                             releaseCommand: ['/bin/bash', '-c'],
@@ -1996,21 +1763,18 @@ All error responses use the standardized v2alpha format:
               }
             },
             '500': {
-              description:
-                'Internal Server Error - Failed to retrieve templates from database or process configurations.',
+              description: 'Failed to retrieve the template list.',
               content: {
                 'application/json': {
-                  schema: Error500Schema,
+                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
                   examples: {
-                    retrieval_failed: {
-                      summary: 'Failed to get templates',
-                      value: {
-                        error: {
-                          type: 'internal_error',
-                          code: 'INTERNAL_ERROR',
-                          message: 'Failed to query template repositories from database'
-                        }
-                      }
+                    serverError: {
+                      summary: 'Internal error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to query template repositories from database.'
+                      )
                     }
                   }
                 }

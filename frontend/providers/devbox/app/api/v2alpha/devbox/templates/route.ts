@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { devboxDB } from '@/services/db/init';
 import { getRegionUid } from '@/utils/env';
 import { parseTemplateConfig } from '@/utils/tools';
-import { sendError, ErrorType, ErrorCode } from '@/lib/v2alpha/error';
+import { sendError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
 
