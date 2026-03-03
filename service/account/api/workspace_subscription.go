@@ -668,12 +668,14 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		)
 		return
 	}
-	if err := authenticateWorkspaceSubscriptionOperatorRequest(c, req); err != nil {
-		c.JSON(
-			http.StatusUnauthorized,
-			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
-		)
-		return
+	if req.Workspace != "" {
+		if err := authenticateWorkspaceSubscriptionOperatorRequest(c, req); err != nil {
+			c.JSON(
+				http.StatusUnauthorized,
+				helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+			)
+			return
+		}
 	}
 
 	// Validate promotion code once at the beginning and reuse the result throughout the method
@@ -739,7 +741,7 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 
 	// Handle subscription creation
 	if req.Operator == types.SubscriptionTransactionTypeCreated ||
-		currentSubscription.PlanName == types.FreeSubscriptionPlanName {
+		currentSubscription.PlanName == types.FreeSubscriptionPlanName || req.Workspace == "" {
 		handleSubscriptionCreation(c, req, validatedPromotionCode)
 		return
 	}

@@ -704,9 +704,9 @@ type WorkspaceSubscriptionOperatorReq struct {
 	AuthBase `json:",inline" bson:",inline"`
 
 	// @Summary Workspace name
-	// @Description Workspace name
-	// @JSONSchema required
-	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+	// @Description Workspace name (optional for price preview, required for actual subscription)
+	// @JSONSchema optional
+	Workspace string `json:"workspace,omitempty" bson:"workspace" example:"my-workspace"`
 
 	// @Summary Region domain
 	// @Description Region domain
@@ -812,9 +812,10 @@ func ParseWorkspaceSubscriptionOperatorReq(
 	if err := c.ShouldBindJSON(req); err != nil {
 		return nil, fmt.Errorf("bind json error: %w", err)
 	}
-	if req.Workspace == "" {
-		return nil, errors.New("workspace cannot be empty")
-	}
+	// Workspace is optional for price preview scenarios
+	// if req.Workspace == "" {
+	// 	return nil, errors.New("workspace cannot be empty")
+	// }
 	if req.RegionDomain == "" {
 		return nil, errors.New("regionDomain cannot be empty")
 	}
