@@ -96,6 +96,7 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 		*types.WorkspaceSubscription
 		Type        string       `json:"type"`
 		InvoiceInfo *InvoiceInfo `json:"InvoiceInfo,omitempty"`
+		Role        string       `json:"role,omitempty"`
 	}{
 		WorkspaceSubscription: subscription,
 		Type:                  WorkspaceTypeSubscription,
@@ -195,6 +196,13 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 				)
 			}
 		}
+		// Get user workspace role
+		userRole, err := dao.DBClient.GetUserWorkspaceRole(req.UserUID, req.Workspace)
+		if err != nil {
+			dao.Logger.Errorf("failed to get user workspace role: %v", err)
+			// Continue processing, role will be empty string
+		}
+		workspaceSubInfo.Role = string(userRole)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
