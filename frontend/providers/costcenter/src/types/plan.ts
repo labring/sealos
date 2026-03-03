@@ -17,6 +17,9 @@ export const OperatorSchema = z.enum([
 ]);
 export type Operator = z.infer<typeof OperatorSchema>;
 
+export const WorkspaceRoleSchema = z.enum(['MANAGER', 'DEVELOPER', 'OWNER']);
+export type WorkspaceRole = z.infer<typeof WorkspaceRoleSchema>;
+
 // Stripe 信息
 export const StripeInfoSchema = z.object({
   subscriptionId: z.string(),
@@ -95,7 +98,8 @@ export const WorkspaceSubscriptionSchema = z.object({
   ExpireAt: z.string().nullable(),
   Traffic: z.array(z.any()).nullable(),
   type: SubscriptionTypeSchema,
-  InvoiceInfo: InvoiceInfoSchema.optional()
+  InvoiceInfo: InvoiceInfoSchema.optional(),
+  role: WorkspaceRoleSchema
 });
 export type WorkspaceSubscription = z.infer<typeof WorkspaceSubscriptionSchema>;
 
