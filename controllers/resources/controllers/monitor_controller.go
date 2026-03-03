@@ -162,7 +162,7 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		fmt.Printf("INFO: refresh gpu config: %v, will retry in next reconcile", err)
 	}
 	r.gpuMutex.RLock()
 	aliasCount := len(r.gpuAliasCard)
