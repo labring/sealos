@@ -11,7 +11,6 @@ import {
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { AxiosProgressEvent } from 'axios';
 import { AppListItemType } from '@/types/app';
-import type { ImportResponse } from '@/types/import';
 
 export const getMyDevboxList = () => GET<DevboxListItemTypeV2[]>('/api/getDevboxList');
 

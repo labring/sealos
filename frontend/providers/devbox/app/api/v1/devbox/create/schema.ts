@@ -1,7 +1,9 @@
 import 'zod-openapi/extend';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
+import { normalizeStorageDefaultGi } from '@/utils/storage';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+const DEFAULT_STORAGE_GI = normalizeStorageDefaultGi(process.env.STORAGE_DEFAULT);
 
 const RuntimeName = z.enum([
   'Debian',
@@ -31,7 +33,7 @@ export const RequestSchema = z.object({
     description:
       'Memory in MB, it is recommended to use options like 2048, 4096, 8192, 16384, 32768, representing 2G, 4G, 8G, 16G, 32G'
   }),
-  storage: z.number().min(1).default(4096).openapi({
+  storage: z.number().min(1).default(DEFAULT_STORAGE_GI).openapi({
     description: 'Storage in Gi, e.g. 10, 20, 30'
   })
 });

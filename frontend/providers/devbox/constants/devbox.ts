@@ -1,4 +1,5 @@
 import { DevboxDetailType, DevboxEditType, DevboxEditTypeV2 } from '@/types/devbox';
+import { STORAGE_DEFAULT_FALLBACK_GI } from '@/utils/storage';
 
 export const defaultSliderKey = 'default';
 export const crLabelKey = 'sealos-devbox-cr';
@@ -81,7 +82,7 @@ export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
   templateUid: '',
   cpu: 2000,
   memory: 4096,
-  storage: 10,
+  storage: STORAGE_DEFAULT_FALLBACK_GI,
   networks: [],
   envs: [],
   configMaps: [],

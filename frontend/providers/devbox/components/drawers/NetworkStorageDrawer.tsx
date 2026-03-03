@@ -28,7 +28,7 @@ interface NetworkStorageDrawerProps {
 
 const NetworkStorageDrawer = ({
   isEdit,
-  maxCapacity = 20,
+  maxCapacity = 30,
   onClose,
   onSuccess,
   initialValue,
@@ -44,7 +44,7 @@ const NetworkStorageDrawer = ({
   const minCapacity = isEdit && originalValue ? originalValue.size : 1;
   const parsedMaxCapacity = Number(maxCapacity);
   const configuredMaxCapacity =
-    Number.isFinite(parsedMaxCapacity) && parsedMaxCapacity >= 1 ? Math.floor(parsedMaxCapacity) : 20;
+    Number.isFinite(parsedMaxCapacity) && parsedMaxCapacity >= 1 ? Math.floor(parsedMaxCapacity) : 30;
   const maxCapacityLimit = Math.max(minCapacity, configuredMaxCapacity);
 
   const handleCapacityChange = (delta: number) => {
@@ -78,6 +78,10 @@ const NetworkStorageDrawer = ({
 
     if (!path.startsWith('/')) {
       return t('path_must_be_absolute');
+    }
+
+    if (path === '/') {
+      return '';
     }
 
     const pathPattern = /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/;

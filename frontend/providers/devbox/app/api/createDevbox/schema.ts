@@ -1,14 +1,9 @@
 import 'zod-openapi/extend';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
+import { normalizeStorageDefaultGi } from '@/utils/storage';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
-
-const defaultNfsMaxSize = 20;
-const parsedNfsMaxSize = Number(process.env.NFS_MAX_SIZE);
-const nfsMaxSize =
-  Number.isFinite(parsedNfsMaxSize) && parsedNfsMaxSize >= 1
-    ? Math.floor(parsedNfsMaxSize)
-    : defaultNfsMaxSize;
+const DEFAULT_STORAGE_GI = normalizeStorageDefaultGi(process.env.STORAGE_DEFAULT);
 
 const GpuSchema = z
   .object({
@@ -82,7 +77,7 @@ export const RequestSchema = z
       description:
         'Memory in MB, it is recommended to use options like 2048, 4096, 8192, 16384, 32768, representing 2G, 4G, 8G, 16G, 32G'
     }),
-    storage: z.number().min(1).default(4096).openapi({
+    storage: z.number().min(1).default(DEFAULT_STORAGE_GI).openapi({
       description: 'Storage in Gi, e.g. 10, 20, 30'
     }),
     gpu: GpuSchema.optional().openapi({
@@ -128,7 +123,7 @@ export const RequestSchema = z
           path: z.string().refine((path) => path.startsWith('/'), {
             message: 'Volume path must be an absolute path starting with "/"'
           }),
-          size: z.number().min(1).max(nfsMaxSize)
+          size: z.number().min(1).max(30)
         })
       )
       .optional()
