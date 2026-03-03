@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SyntheticEvent } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
@@ -25,15 +25,21 @@ export default function Gpu({
   countGpuInventory: (type: string) => number;
 }) {
   type GpuPriceItem = NonNullable<SourcePrice['gpu']>[number];
+  type GpuOption = GpuPriceItem & {
+    optionKey: string;
+    nodeAlias: string;
+  };
   const defaultGpuIcon = '/images/nvidia.svg';
 
   const t = useTranslations();
   const locale = useLocale();
   const { sourcePrice } = usePriceStore();
   const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
+  const [selectedGpuOptionKey, setSelectedGpuOptionKey] = useState('none');
 
   const selectedGpuType = watch('gpu.type');
   const selectedGpuAmount = watch('gpu.amount');
+  const maxGpuAmount = GpuAmountMarkList[GpuAmountMarkList.length - 1]?.value ?? 4;
 
   const getGpuDisplayName = (gpu?: GpuPriceItem) => {
     if (!gpu) return '';
@@ -41,16 +47,83 @@ export default function Gpu({
     const localizedName = locale.includes('zh') ? name?.zh : name?.en;
     return localizedName || gpu.annotationType || '';
   };
-  const getGpuNodeDisplayName = (gpu?: GpuPriceItem) => {
-    if (!gpu?.nodes?.length) return '-';
-    return gpu.nodes.join(', ');
-  };
+  const nodeAliasMap = useMemo(() => {
+    const nodes = Array.from(
+      new Set((sourcePrice?.gpu || []).flatMap((gpu) => gpu.nodes || []))
+    ).sort((a, b) => a.localeCompare(b));
+    return nodes.reduce<Record<string, string>>((acc, nodeName, index) => {
+      acc[nodeName] = `${t('gpu_node')} ${String(index + 1).padStart(2, '0')}`;
+      return acc;
+    }, {});
+  }, [sourcePrice?.gpu, t]);
+  const gpuOptions = useMemo<GpuOption[]>(
+    () =>
+      (sourcePrice?.gpu || []).map((item, index) => {
+        const nodeName = item.nodes?.[0];
+        const optionKey = `${item.annotationType}@@${nodeName || `index-${index}`}`;
 
-  const selectedGpu = useMemo(() => {
-    const selected = sourcePrice?.gpu?.find((item) => item.annotationType === selectedGpuType);
-    if (!selected) return undefined;
-    return selected;
-  }, [sourcePrice?.gpu, selectedGpuType]);
+        return {
+          ...item,
+          optionKey,
+          nodeAlias: nodeName ? nodeAliasMap[nodeName] || '-' : '-'
+        };
+      }),
+    [sourcePrice?.gpu, nodeAliasMap]
+  );
+  const selectedGpu = useMemo(
+    () => gpuOptions.find((item) => item.optionKey === selectedGpuOptionKey),
+    [gpuOptions, selectedGpuOptionKey]
+  );
+  const gpuTotalCountMap = useMemo(
+    () =>
+      (sourcePrice?.gpu || []).reduce<Record<string, number>>((acc, item) => {
+        acc[item.annotationType] = (acc[item.annotationType] || 0) + item.count;
+        return acc;
+      }, {}),
+    [sourcePrice?.gpu]
+  );
+  const getGpuNodeDisplayName = (gpu?: GpuOption) => {
+    if (!gpu) return '-';
+    return gpu.nodeAlias;
+  };
+  const selectedGpuInventory = selectedGpuType ? countGpuInventory(selectedGpuType) : 0;
+  const selectedGpuTotalCount = selectedGpuType
+    ? gpuTotalCountMap[selectedGpuType] || selectedGpu?.count || 0
+    : 0;
+  const gpuAmountOptions = useMemo(() => {
+    const options = [...GpuAmountMarkList];
+
+    if (
+      typeof selectedGpuAmount === 'number' &&
+      selectedGpuAmount > maxGpuAmount &&
+      !options.some((item) => item.value === selectedGpuAmount)
+    ) {
+      options.push({
+        label: String(selectedGpuAmount),
+        value: selectedGpuAmount
+      });
+    }
+
+    return options.sort((a, b) => a.value - b.value);
+  }, [maxGpuAmount, selectedGpuAmount]);
+  const isLegacyGpuAmount =
+    typeof selectedGpuAmount === 'number' && selectedGpuAmount > maxGpuAmount;
+
+  useEffect(() => {
+    if (!selectedGpuType || selectedGpuType === 'none') {
+      setSelectedGpuOptionKey('none');
+      return;
+    }
+
+    const stillValid = gpuOptions.some(
+      (item) => item.optionKey === selectedGpuOptionKey && item.annotationType === selectedGpuType
+    );
+    if (stillValid) return;
+
+    const fallback = gpuOptions.find((item) => item.annotationType === selectedGpuType);
+    setSelectedGpuOptionKey(fallback?.optionKey || 'none');
+  }, [gpuOptions, selectedGpuOptionKey, selectedGpuType]);
+
   const handleGpuIconError = (event: SyntheticEvent<HTMLImageElement>) => {
     const target = event.currentTarget;
     if (!target.src.endsWith(defaultGpuIcon)) {
@@ -67,29 +140,39 @@ export default function Gpu({
       <Label className="w-15 font-medium text-gray-900">{t('gpu')}</Label>
       <div className="flex flex-col gap-4">
         <Select
-          value={selectedGpuType || 'none'}
+          value={selectedGpuOptionKey}
           onValueChange={(value) => {
-            const selected = sourcePrice?.gpu?.find((item) => item.annotationType === value);
-            const available = value !== 'none' ? countGpuInventory(value) : 0;
-
             if (value === 'none') {
+              setSelectedGpuOptionKey('none');
               setValue('gpu', undefined);
-            } else if (selected && available > 0) {
-              setValue('gpu.type', value);
+              return;
+            }
+
+            const selected = gpuOptions.find((item) => item.optionKey === value);
+            if (!selected) return;
+            const available = countGpuInventory(selected.annotationType);
+
+            if (available > 0) {
+              setSelectedGpuOptionKey(value);
+              setValue('gpu.type', selected.annotationType);
               // NOTE: maybe this should be set.
               setValue('gpu.manufacturers', 'nvidia');
               setValue('gpu.resource', selected.resource);
-              if (!selectedGpuAmount || selectedGpuAmount > available) {
+              if (
+                !selectedGpuAmount ||
+                selectedGpuAmount > available ||
+                selectedGpuAmount > maxGpuAmount
+              ) {
                 setValue('gpu.amount', 1);
               }
             }
           }}
         >
-          <SelectTrigger className="h-10 w-[440px] border-zinc-200">
+          <SelectTrigger className="h-10 w-[450px] border-zinc-200">
             <SelectValue placeholder={t('No GPU')}>
               {selectedGpu ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
                     <Image
                       src={selectedGpu.icon ? `/images/${selectedGpu.icon}.svg` : defaultGpuIcon}
                       alt={selectedGpu.annotationType}
@@ -101,18 +184,21 @@ export default function Gpu({
                       {getGpuDisplayName(selectedGpu)}
                     </span>
                   </div>
-                  <span className="max-w-[120px] truncate text-sm text-zinc-900">
-                    {t('gpu_node')} {getGpuNodeDisplayName(selectedGpu)}
+                  <span
+                    className="max-w-[180px] truncate text-sm text-zinc-900"
+                    title={getGpuNodeDisplayName(selectedGpu)}
+                  >
+                    {getGpuNodeDisplayName(selectedGpu)}
                   </span>
-                  <div className="h-[15px] w-px bg-zinc-200" />
+                  <div className="h-[15px] w-px shrink-0 bg-zinc-200" />
                   <span className="text-sm text-zinc-900">
                     {t('video_memory')}: {Math.round(selectedGpu.vm)}GB
                   </span>
-                  <div className="h-[15px] w-px bg-zinc-200" />
+                  <div className="h-[15px] w-px shrink-0 bg-zinc-200" />
                   <span className="text-sm text-zinc-900">
                     {t('Inventory')}:{' '}
                     <span className="text-yellow-600">
-                      {countGpuInventory(selectedGpuType!)}/{selectedGpu.count}
+                      {selectedGpuInventory}/{selectedGpuTotalCount}
                     </span>
                   </span>
                 </div>
@@ -123,16 +209,13 @@ export default function Gpu({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">{t('No GPU')}</SelectItem>
-            {sourcePrice?.gpu.map((item) => {
+            {gpuOptions.map((item) => {
               const available = countGpuInventory(item.annotationType);
+              const total = gpuTotalCountMap[item.annotationType] || item.count;
               return (
-                <SelectItem
-                  key={item.annotationType}
-                  value={item.annotationType}
-                  disabled={available <= 0}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
+                <SelectItem key={item.optionKey} value={item.optionKey} disabled={available <= 0}>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-1.5 rounded-md border border-transparent bg-zinc-100 px-2 py-1">
                       <Image
                         src={item.icon ? `/images/${item.icon}.svg` : defaultGpuIcon}
                         alt={item.annotationType}
@@ -144,18 +227,21 @@ export default function Gpu({
                         {getGpuDisplayName(item)}
                       </span>
                     </div>
-                    <span className="max-w-[120px] truncate text-sm text-zinc-900">
-                      {t('gpu_node')} {getGpuNodeDisplayName(item)}
+                    <span
+                      className="max-w-[180px] truncate text-sm text-zinc-900"
+                      title={getGpuNodeDisplayName(item)}
+                    >
+                      {getGpuNodeDisplayName(item)}
                     </span>
-                    <div className="h-[15px] w-px bg-zinc-200" />
+                    <div className="h-[15px] w-px shrink-0 bg-zinc-200" />
                     <span className="text-sm text-zinc-900">
                       {t('video_memory')}: {Math.round(item.vm)}GB
                     </span>
-                    <div className="h-[15px] w-px bg-zinc-200" />
+                    <div className="h-[15px] w-px shrink-0 bg-zinc-200" />
                     <span className="text-sm text-zinc-900">
                       {t('Inventory')}:{' '}
                       <span className="text-yellow-600">
-                        {available}/{item.count}
+                        {available}/{total}
                       </span>
                     </span>
                   </div>
@@ -169,9 +255,10 @@ export default function Gpu({
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-medium text-gray-900">{t('count')}</Label>
             <div className="flex gap-2">
-              {GpuAmountMarkList.map((item) => {
+              {gpuAmountOptions.map((item) => {
                 const available = selectedGpuType ? countGpuInventory(selectedGpuType) : 0;
-                const hasInventory = item.value <= available;
+                const isLegacyOption = item.value > maxGpuAmount;
+                const isSelectable = item.value <= available && !isLegacyOption;
                 const isSelected = selectedGpuAmount === item.value;
 
                 return (
@@ -182,11 +269,12 @@ export default function Gpu({
                       isSelected
                         ? 'border-zinc-900 text-zinc-900'
                         : 'border-zinc-200 text-zinc-900',
-                      !hasInventory && 'cursor-not-allowed opacity-40'
+                      isLegacyOption && 'border-amber-300 bg-amber-50 text-amber-700',
+                      !isSelectable && 'cursor-not-allowed opacity-40'
                     )}
-                    disabled={!hasInventory}
+                    disabled={!isSelectable}
                     onClick={() => {
-                      if (hasInventory) {
+                      if (isSelectable) {
                         setValue('gpu.amount', item.value);
                       }
                     }}
@@ -196,6 +284,11 @@ export default function Gpu({
                 );
               })}
             </div>
+            {isLegacyGpuAmount && (
+              <span className="text-xs text-amber-600">
+                {t('Gpu amount over max Tip', { max: maxGpuAmount })}
+              </span>
+            )}
           </div>
         )}
       </div>

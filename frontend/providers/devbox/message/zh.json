@@ -12,6 +12,7 @@
   "Failed": "失败",
   "GPU": "GPU",
   "Gpu under inventory Tip": "{gputype} 库存不足，请更换型号或减少数量",
+  "Gpu amount over max Tip": "当前 GPU 数量最多支持 {max}，请调整后再保存",
   "Input your custom domain": "输入您的自定义域名",
   "Inventory": "库存",
   "gpu_node": "节点",

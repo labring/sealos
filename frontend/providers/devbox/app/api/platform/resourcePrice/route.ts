@@ -167,10 +167,7 @@ async function getGpuNode() {
       ([, item]) => item['gpu.product'] && item['gpu.devbox'] === 'true'
     );
 
-    const gpuList: GpuNodeType[] = [];
-
-    // merge same type gpu
-    gpuEntries.forEach(([nodeName, item]) => {
+    const gpuList: GpuNodeType[] = gpuEntries.map(([nodeName, item]) => {
       const fallbackRef =
         item['gpu.product'] && aliasBackup
           ? aliasBackup[item['gpu.product']] ||
@@ -179,30 +176,20 @@ async function getGpuNode() {
       const ref = item['gpu.ref'] || fallbackRef;
       const aliasItem = (ref && alias[ref]) || alias[item['gpu.product']];
       const annotationType = aliasItem?.default || item['gpu.product'] || ref;
-      const mergeKey = ref || item['gpu.product'];
-      const index = gpuList.findIndex((gpu) => (gpu['gpu.ref'] || gpu['gpu.product']) === mergeKey);
-      if (index > -1) {
-        gpuList[index]['gpu.count'] += Number(item['gpu.count']);
-        gpuList[index]['gpu.available'] += Number(item['gpu.available']);
-        gpuList[index]['gpu.used'] += Number(item['gpu.used']);
-        if (!gpuList[index]['gpu.nodes']?.includes(nodeName)) {
-          gpuList[index]['gpu.nodes'] = [...(gpuList[index]['gpu.nodes'] || []), nodeName];
-        }
-      } else {
-        gpuList.push({
-          ['gpu.count']: +item['gpu.count'],
-          ['gpu.available']: +item['gpu.available'],
-          ['gpu.used']: +item['gpu.used'],
-          ['gpu.memory']: +item['gpu.memory'],
-          ['gpu.product']: item['gpu.product'], // use this to get gpu alias info
-          ['gpu.ref']: ref,
-          ['gpu.annotationType']: annotationType, // transform to yaml annotation type
-          ['gpu.icon']: aliasItem?.icon,
-          ['gpu.name']: aliasItem?.name,
-          ['gpu.resource']: aliasItem?.resource,
-          ['gpu.nodes']: [nodeName]
-        });
-      }
+
+      return {
+        ['gpu.count']: +item['gpu.count'],
+        ['gpu.available']: +item['gpu.available'],
+        ['gpu.used']: +item['gpu.used'],
+        ['gpu.memory']: +item['gpu.memory'],
+        ['gpu.product']: item['gpu.product'],
+        ['gpu.ref']: ref,
+        ['gpu.annotationType']: annotationType,
+        ['gpu.icon']: aliasItem?.icon,
+        ['gpu.name']: aliasItem?.name,
+        ['gpu.resource']: aliasItem?.resource,
+        ['gpu.nodes']: [nodeName]
+      };
     });
 
     return gpuList;
@@ -217,21 +204,24 @@ const normalizeGpuKey = (value?: string) =>
 
 function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNodes: GpuNodeType[]) {
   const gpuList: userPriceType['gpu'] = [];
+  const gpuPriceMap = rawData
+    .filter((item) => item.name.startsWith('gpu'))
+    .map((item) => ({
+      ...item,
+      normalizedType: normalizeGpuKey(item.name.replace('gpu-', ''))
+    }));
 
   // count gpu price by gpuNode and accountPriceConfig
-  rawData?.forEach((item) => {
-    if (!item.name.startsWith('gpu')) return;
-    const gpuType = item.name.replace('gpu-', '');
-    const normalizedType = normalizeGpuKey(gpuType);
-    const gpuNode = gpuNodes.find((gpu) => {
-      const keys = [gpu['gpu.ref'], gpu['gpu.product'], gpu['gpu.annotationType']];
-      return keys.some((key) => normalizeGpuKey(key) === normalizedType);
+  gpuNodes.forEach((gpuNode) => {
+    const matchedPrice = gpuPriceMap.find((item) => {
+      const keys = [gpuNode['gpu.ref'], gpuNode['gpu.product'], gpuNode['gpu.annotationType']];
+      return keys.some((key) => normalizeGpuKey(key) === item.normalizedType);
     });
-    if (!gpuNode) return;
+    if (!matchedPrice) return;
 
     gpuList.push({
       annotationType: gpuNode['gpu.annotationType'] || '',
-      price: (item.unit_price * valuationMap.gpu) / PRICE_SCALE,
+      price: (matchedPrice.unit_price * valuationMap.gpu) / PRICE_SCALE,
       available: +gpuNode['gpu.available'],
       count: +gpuNode['gpu.count'],
       vm: +gpuNode['gpu.memory'] / 1024,
