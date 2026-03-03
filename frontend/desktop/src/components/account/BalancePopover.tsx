@@ -13,7 +13,7 @@ import useSessionStore from '@/stores/session';
 import { useSubscriptionStore } from '@/stores/subscription';
 import { useMemo, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
-import { Button, cn, Separator } from '@sealos/shadcn-ui';
+import { Tooltip, Button, cn, Separator, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui';
 import { WorkspaceSubscription } from '@/types/plan';
 import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
@@ -74,6 +74,8 @@ export function BalancePopover({
   const subscription = subscriptionInfo?.subscription;
   const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
   const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
+
+  const canManagePayment = subscription?.role === 'OWNER';
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A';
@@ -255,10 +257,24 @@ export function BalancePopover({
                       </div>
                     )}
 
-                    <Button variant="outline" onClick={openCostCenterApp}>
-                      <Sparkles size={16} />
-                      {t('common:balance_popover.upgrade_button')}
-                    </Button>
+                    <Tooltip open={canManagePayment ? false : undefined}>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <Button
+                            className="w-full"
+                            variant="outline"
+                            onClick={openCostCenterApp}
+                            disabled={!canManagePayment}
+                          >
+                            <Sparkles size={16} />
+                            {t('common:balance_popover.upgrade_button')}
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t('common:balance_popover.can_not_manage_payments')}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </>
                 )}
               </>

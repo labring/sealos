@@ -445,5 +445,6 @@
     "jcb": "JCB",
     "unionpay": "UnionPay"
   },
-  "downgrade_warning_message": "Please ensure resources remain within {{planName}} plan limits by {{date}} to avoid charges."
+  "downgrade_warning_message": "Please ensure resources remain within {{planName}} plan limits by {{date}} to avoid charges.",
+  "can_not_manage_payments": "Please contact the namespace owner to update or cancel the subscription."
 }
