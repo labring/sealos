@@ -1255,7 +1255,7 @@ export const createOpenApiDocument = () => {
             '- Services and ingresses remain but route no traffic\n' +
             '- Storage is preserved\n' +
             '- Typical compute cost reduction: 60–80%\n' +
-            '- Returns `409` if the application is already paused (to prevent overwriting stored HPA configuration)',
+            '- This operation is idempotent: pausing an already-paused application returns `204` with no changes',
           parameters: [
             {
               name: 'name',
@@ -1341,24 +1341,6 @@ export const createOpenApiDocument = () => {
                         ErrorType.RESOURCE_ERROR,
                         ErrorCode.NOT_FOUND,
                         'Application "web-api" not found in the current namespace. Please verify the application name.'
-                      )
-                    }
-                  }
-                }
-              }
-            },
-            '409': {
-              description: 'Conflict - Application is already paused',
-              content: {
-                'application/json': {
-                  schema: createError409Schema([ErrorCode.CONFLICT]),
-                  examples: {
-                    alreadyPaused: {
-                      summary: 'Application already paused',
-                      value: createErrorExample(
-                        ErrorType.RESOURCE_ERROR,
-                        ErrorCode.CONFLICT,
-                        'Application "web-api" is already paused and does not need to be paused again.'
                       )
                     }
                   }

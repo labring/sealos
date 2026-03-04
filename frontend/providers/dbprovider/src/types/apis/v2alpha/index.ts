@@ -256,11 +256,28 @@ export const document = createDocument({
           'Provisions a new database cluster. The database is created asynchronously — the request returns immediately and the cluster becomes available shortly after.\n\n' +
           '**Example — PostgreSQL with daily backup:**\n' +
           '```json\n' +
-          '{ "name": "my-postgres-db", "type": "postgresql", "version": "postgresql-14.8.0", "resource": { "cpu": 1, "memory": 2, "storage": 5, "replicas": 1 }, "autoBackup": { "start": true, "type": "day", "hour": "02", "minute": "00", "saveTime": 7, "saveType": "days" } }\n' +
+          '{\n' +
+          '  "name": "my-postgres-db",\n' +
+          '  "type": "postgresql",\n' +
+          '  "version": "postgresql-14.8.0",\n' +
+          '  "quota": { "cpu": 1, "memory": 2, "storage": 5, "replicas": 1 },\n' +
+          '  "autoBackup": {\n' +
+          '    "start": true,\n' +
+          '    "type": "day",\n' +
+          '    "hour": "02",\n' +
+          '    "minute": "00",\n' +
+          '    "saveTime": 7,\n' +
+          '    "saveType": "days"\n' +
+          '  }\n' +
+          '}\n' +
           '```\n\n' +
           '**Example — Redis (minimal):**\n' +
           '```json\n' +
-          '{ "name": "my-redis", "type": "redis", "resource": { "cpu": 1, "memory": 1, "storage": 3, "replicas": 1 } }\n' +
+          '{\n' +
+          '  "name": "my-redis",\n' +
+          '  "type": "redis",\n' +
+          '  "quota": { "cpu": 1, "memory": 1, "storage": 3, "replicas": 1 }\n' +
+          '}\n' +
           '```',
         operationId: 'createDatabase',
         tags: ['Mutation'],
@@ -272,7 +289,7 @@ export const document = createDocument({
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['name', 'type', 'resource'],
+                required: ['name', 'type', 'quota'],
                 properties: {
                   terminationPolicy: {
                     type: 'string',
@@ -311,7 +328,7 @@ export const document = createDocument({
                     description:
                       'Database version (e.g., "14.8.0" for PostgreSQL). Must match available versions from /databases/versions endpoint. If not provided, the latest version for the specified database type will be automatically selected.'
                   },
-                  resource: {
+                  quota: {
                     type: 'object',
                     required: ['cpu', 'memory', 'storage', 'replicas'],
                     properties: {
@@ -473,7 +490,7 @@ export const document = createDocument({
                       ErrorType.VALIDATION_ERROR,
                       ErrorCode.INVALID_PARAMETER,
                       'Request body validation failed.',
-                      [{ field: 'resource', message: 'Required' }]
+                      [{ field: 'quota', message: 'Required' }]
                     )
                   },
                   invalidValue: {
@@ -781,14 +798,14 @@ export const document = createDocument({
         requestBody: {
           required: true,
           description:
-            'Resource updates to apply. All fields inside `resource` are optional — only provide fields you want to change.',
+            'Resource updates to apply. All fields inside `quota` are optional — only provide fields you want to change.',
           content: {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['resource'],
+                required: ['quota'],
                 properties: {
-                  resource: {
+                  quota: {
                     $ref: '#/components/schemas/UpdateResourceSchema'
                   }
                 }
@@ -810,12 +827,12 @@ export const document = createDocument({
                 ]),
                 examples: {
                   invalidParameter: {
-                    summary: 'Missing resource field',
+                    summary: 'Missing quota field',
                     value: createErrorExample(
                       ErrorType.VALIDATION_ERROR,
                       ErrorCode.INVALID_PARAMETER,
                       'Request body validation failed.',
-                      [{ field: 'resource', message: 'Required' }]
+                      [{ field: 'quota', message: 'Required' }]
                     )
                   },
                   invalidValue: {

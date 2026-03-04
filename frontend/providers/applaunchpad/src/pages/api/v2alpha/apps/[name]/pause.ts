@@ -50,15 +50,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Prevent double-pause: a second pauseApp call on an already-paused app would overwrite
-    // the saved HPA restore config with an empty value, permanently destroying autoscaling settings.
+    // Idempotent: if already paused, skip re-pausing to avoid overwriting the stored HPA restore
+    // config with zero replicas, which would permanently destroy autoscaling settings.
     if (app.metadata?.annotations?.[pauseKey]) {
-      return sendError(res, {
-        status: 409,
-        type: ErrorType.RESOURCE_ERROR,
-        code: ErrorCode.CONFLICT,
-        message: `Application "${name}" is already paused and does not need to be paused again.`
-      });
+      return res.status(204).end();
     }
 
     try {
