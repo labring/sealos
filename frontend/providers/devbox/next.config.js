@@ -35,10 +35,6 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/v2alpha/docs',
-        destination: '/api/v2alpha/doc'
-      },
-      {
         source: '/api/v2alpha/openapi.json',
         destination: '/api/v2alpha/openapi'
       }

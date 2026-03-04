@@ -8,7 +8,7 @@ export default function ApiDocsPage() {
   const [apiData, setApiData] = useState(null);
 
   useEffect(() => {
-    fetch('/api/openapi/v2alpha')
+    fetch('/api/v2alpha/openapi')
       .then((res) => res.json())
       .then(setApiData)
       .catch(console.error);
