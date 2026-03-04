@@ -4,7 +4,9 @@ import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
-    return res.json(document);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="openapi.json"');
+    return res.status(200).json(document);
   }
 
   return sendError(res, {

@@ -761,6 +761,7 @@ Key points:
   return NextResponse.json(spec, {
     headers: {
       'Content-Type': 'application/json',
+      'Content-Disposition': 'attachment; filename="openapi.json"',
       'Cache-Control': 'no-cache, no-store, must-revalidate',
     },
   })

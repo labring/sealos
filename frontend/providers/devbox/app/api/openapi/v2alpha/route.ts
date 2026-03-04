@@ -1790,7 +1790,11 @@ export async function GET(request: Request) {
   const domain = process.env.SEALOS_DOMAIN || '';
   try {
     const openApiDoc = tmpOpenApiDocument(domain);
-    return NextResponse.json(openApiDoc);
+    return NextResponse.json(openApiDoc, {
+      headers: {
+        'Content-Disposition': 'attachment; filename="openapi.json"'
+      }
+    });
   } catch (error) {
     console.error('Error generating OpenAPI document:', error);
     return NextResponse.json({ error: 'Failed to generate API documentation' }, { status: 500 });
