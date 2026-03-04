@@ -1,4 +1,4 @@
-import { Button } from '@sealos/shadcn-ui';
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getCardInfo, createCardManageSession } from '@/api/plan';
 import { useTranslation } from 'next-i18next';
@@ -8,6 +8,7 @@ import useBillingStore from '@/stores/billing';
 import { BankCardIcon } from '../BankCardIcon';
 import { BankCardBrand } from '../BankCardBrand';
 import { openInNewWindow } from '@/utils/windowUtils';
+import usePlanStore from '@/stores/plan';
 
 interface CardInfoSectionProps {
   workspace?: string;
@@ -20,6 +21,9 @@ export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProp
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
   const region = getRegion();
+
+  const subscriptionData = usePlanStore((state) => state.subscriptionData);
+  const canManagePayment = subscriptionData?.subscription.role === 'OWNER';
 
   const effectiveWorkspace = workspace || session?.user?.nsid || '';
   const effectiveRegionDomain = regionDomain || region?.domain || '';
@@ -133,14 +137,25 @@ export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProp
         </div>
 
         {hasCard && (
-          <Button
-            variant="outline"
-            onClick={handleManageCards}
-            disabled={manageCardMutation.isLoading}
-            className="h-10"
-          >
-            {manageCardMutation.isLoading ? t('common:loading') : t('common:manage_card_info')}
-          </Button>
+          <Tooltip open={canManagePayment ? false : undefined}>
+            <TooltipTrigger asChild>
+              <div>
+                <Button
+                  variant="outline"
+                  onClick={handleManageCards}
+                  disabled={manageCardMutation.isLoading || !canManagePayment}
+                  className="h-10"
+                >
+                  {manageCardMutation.isLoading
+                    ? t('common:loading')
+                    : t('common:manage_card_info')}
+                </Button>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t('common:can_not_manage_payments')}</p>
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
     </div>

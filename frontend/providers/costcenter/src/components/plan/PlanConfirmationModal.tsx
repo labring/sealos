@@ -130,7 +130,8 @@ const PlanConfirmationModal = forwardRef<never, PlanConfirmationModalProps>((pro
       const validOperator =
         operator === 'created' || operator === 'upgraded' ? operator : 'upgraded';
       return getUpgradeAmount({
-        workspace,
+        // Only set workspace when upgrading
+        workspace: validOperator === 'created' ? undefined : workspace,
         regionDomain,
         planName: plan.Name,
         period,

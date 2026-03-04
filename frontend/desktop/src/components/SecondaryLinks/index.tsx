@@ -95,6 +95,7 @@ export default function SecondaryLinks() {
   const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
   const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
   const isDebt = subscription?.Status?.toLowerCase() === 'debt';
+  const canManagePayment = subscription?.role === 'OWNER';
 
   useEffect(() => {
     if (workspace) {
@@ -126,7 +127,7 @@ export default function SecondaryLinks() {
       <Flex gap={'4px'} ml={'auto'}>
         <BalancePopover
           openCostCenterApp={() =>
-            layoutConfig?.common.subscriptionEnabled
+            layoutConfig?.common.subscriptionEnabled && canManagePayment
               ? openCostCenterApp('upgrade')
               : openCostCenterApp()
           }
@@ -144,7 +145,7 @@ export default function SecondaryLinks() {
             fontWeight={'500'}
             cursor={'pointer'}
             onClick={() =>
-              layoutConfig?.common.subscriptionEnabled
+              layoutConfig?.common.subscriptionEnabled && canManagePayment
                 ? openCostCenterApp('upgrade')
                 : openCostCenterApp()
             }

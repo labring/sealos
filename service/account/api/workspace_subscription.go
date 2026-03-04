@@ -96,6 +96,7 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 		*types.WorkspaceSubscription
 		Type        string       `json:"type"`
 		InvoiceInfo *InvoiceInfo `json:"InvoiceInfo,omitempty"`
+		Role        string       `json:"role,omitempty"`
 	}{
 		WorkspaceSubscription: subscription,
 		Type:                  WorkspaceTypeSubscription,
@@ -195,6 +196,13 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 				)
 			}
 		}
+		// Get user workspace role
+		userRole, err := dao.DBClient.GetUserWorkspaceRole(req.UserUID, req.Workspace)
+		if err != nil {
+			dao.Logger.Errorf("failed to get user workspace role: %v", err)
+			// Continue processing, role will be empty string
+		}
+		workspaceSubInfo.Role = string(userRole)
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -668,12 +676,14 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 		)
 		return
 	}
-	if err := authenticateWorkspaceSubscriptionOperatorRequest(c, req); err != nil {
-		c.JSON(
-			http.StatusUnauthorized,
-			helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
-		)
-		return
+	if req.Workspace != "" {
+		if err := authenticateWorkspaceSubscriptionOperatorRequest(c, req); err != nil {
+			c.JSON(
+				http.StatusUnauthorized,
+				helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)},
+			)
+			return
+		}
 	}
 
 	// Validate promotion code once at the beginning and reuse the result throughout the method
@@ -739,7 +749,7 @@ func GetWorkspaceSubscriptionUpgradeAmount(c *gin.Context) {
 
 	// Handle subscription creation
 	if req.Operator == types.SubscriptionTransactionTypeCreated ||
-		currentSubscription.PlanName == types.FreeSubscriptionPlanName {
+		currentSubscription.PlanName == types.FreeSubscriptionPlanName || req.Workspace == "" {
 		handleSubscriptionCreation(c, req, validatedPromotionCode)
 		return
 	}

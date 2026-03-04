@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -530,6 +531,114 @@ func (m *mongoDB) InitDefaultPropertyTypeLS() error {
 		resources.DefaultPropertyTypeLS = resources.NewPropertyTypeLS(properties)
 	}
 	return nil
+}
+
+// InitDefaultPropertyTypeLSWithDefaults initializes properties from database,
+// and ensures basic resource types (cpu, memory, storage, ...) exist.
+// If database is empty or missing basic resources, it will merge/write defaults.
+func (m *mongoDB) InitDefaultPropertyTypeLSWithDefaults() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Fetch existing properties from database
+	cursor, err := m.getPropertiesCollection().Find(ctx, bson.M{})
+	if err != nil {
+		return fmt.Errorf("failed to get properties: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var existingProperties []resources.PropertyType
+	if err = cursor.All(ctx, &existingProperties); err != nil {
+		return fmt.Errorf("failed to decode properties: %w", err)
+	}
+
+	// Check if database is empty or missing basic resources
+	needsInit := len(existingProperties) == 0
+	missingBasicResources := m.findMissingBasicResources(existingProperties)
+
+	// Merge with defaults if needed
+	var finalProperties []resources.PropertyType
+	if needsInit {
+		// Database is empty, use all defaults
+		finalProperties = resources.DefaultPropertyTypeList
+		if err := m.SavePropertyTypes(finalProperties); err != nil {
+			return fmt.Errorf("failed to save default properties: %w", err)
+		}
+		logger.Info("initialized properties with defaults", "count", len(finalProperties))
+	} else if len(missingBasicResources) > 0 {
+		// Merge existing properties with missing basic resources
+		finalProperties = m.mergeProperties(existingProperties, missingBasicResources)
+		// Upsert missing resources
+		for _, prop := range missingBasicResources {
+			filter := bson.M{"enum": prop.Enum}
+			update := bson.M{"$set": prop}
+			_, err := m.getPropertiesCollection().UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
+			if err != nil {
+				return fmt.Errorf("failed to upsert property %s: %w", prop.Name, err)
+			}
+		}
+		logger.Info("merged missing basic resources", "count", len(missingBasicResources), "resources", missingBasicResources)
+		//finalProperties = existingProperties
+	} else {
+		// All basic resources exist, use existing properties
+		finalProperties = existingProperties
+	}
+
+	// Update global DefaultPropertyTypeLS
+	if len(finalProperties) != 0 {
+		resources.DefaultPropertyTypeLS = resources.NewPropertyTypeLS(finalProperties)
+	}
+
+	return nil
+}
+
+// findMissingBasicResources checks which properties from DefaultPropertyTypeList are missing
+func (m *mongoDB) findMissingBasicResources(properties []resources.PropertyType) []resources.PropertyType {
+	var missing []resources.PropertyType
+	existingEnums := make(map[uint8]bool)
+
+	// Build map of existing property enums
+	for _, prop := range properties {
+		existingEnums[prop.Enum] = true
+	}
+
+	// Find missing properties from defaults
+	for _, defaultProp := range resources.DefaultPropertyTypeList {
+		if !existingEnums[defaultProp.Enum] {
+			missing = append(missing, defaultProp)
+		}
+	}
+
+	return missing
+}
+
+// mergeProperties merges existing properties with missing basic resources
+func (m *mongoDB) mergeProperties(existing, missing []resources.PropertyType) []resources.PropertyType {
+	// Create map of existing properties by enum
+	propMap := make(map[uint8]resources.PropertyType)
+	for _, prop := range existing {
+		propMap[prop.Enum] = prop
+	}
+
+	// Add missing resources
+	for _, prop := range missing {
+		if _, exists := propMap[prop.Enum]; !exists {
+			propMap[prop.Enum] = prop
+		}
+	}
+
+	// Convert back to slice
+	result := make([]resources.PropertyType, 0, len(propMap))
+	for _, prop := range propMap {
+		result = append(result, prop)
+	}
+
+	// Sort by enum for consistency
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Enum < result[j].Enum
+	})
+
+	return result
 }
 
 func (m *mongoDB) ReloadPropertyTypeLS() error {

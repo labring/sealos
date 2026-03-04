@@ -46,12 +46,9 @@ import StopBackupModal from '../detail/components/StopBackupModal';
 import { resourcePropertyMap, useUserQuota, useQuotaGuarded } from '@sealos/shared';
 import { distributeResources } from '@/utils/database';
 import MyIcon from '@/components/Icon';
+import useEnvStore from '@/store/env';
+import { AutoBackupFormType } from '@/types/backup';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
-
-const defaultEdit = {
-  ...defaultDBEditValue,
-  dbVersion: DBVersionMap.postgresql?.[0]?.id || 'postgresql-14.8.0'
-};
 
 const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yaml' }) => {
   const { t } = useTranslation();
@@ -63,8 +60,19 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [allocatedStorage, setAllocatedStorage] = useState(1);
   const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
-  const { loadDBDetail, dbDetail } = useDBStore();
+  const { loadDBDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
+  const { SystemEnv } = useEnvStore();
+
+  const defaultEdit = {
+    ...defaultDBEditValue,
+    dbVersion: DBVersionMap.postgresql?.[0]?.id || 'postgresql-14.8.0',
+    autoBackup: {
+      ...defaultDBEditValue.autoBackup,
+      // Enable backup only when the flag is set.
+      start: SystemEnv.BACKUP_ENABLED
+    } satisfies Partial<AutoBackupFormType> as AutoBackupFormType | undefined
+  };
 
   // Stop backup modal state
   const {
@@ -102,7 +110,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   // watch form change, compute new yaml
   formHook.watch((data) => {
     if (!data) return;
-    realTimeForm.current = data as DBEditType;
+    realTimeForm.current = data as any;
     setForceUpdate(!forceUpdate);
   });
 
