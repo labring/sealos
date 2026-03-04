@@ -3,6 +3,7 @@ import { createDocument } from 'zod-openapi';
 import * as listTemplateSchemas from './list-template';
 import * as getTemplateSchemas from './get-template';
 import * as createInstanceSchemas from './create-instance';
+import * as deployTemplateSchemas from './deploy-template';
 import {
   createError400Schema,
   createError401Schema,
@@ -20,6 +21,7 @@ import {
 export * as listTemplateSchemas from './list-template';
 export * as getTemplateSchemas from './get-template';
 export * as createInstanceSchemas from './create-instance';
+export * as deployTemplateSchemas from './deploy-template';
 
 export const document = createDocument({
   openapi: '3.1.0',
@@ -289,6 +291,245 @@ export const document = createDocument({
                       ErrorCode.INTERNAL_ERROR,
                       'Failed to get template details.',
                       'YAML parsing error'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/templates/deploy': {
+      post: {
+        tags: ['Mutation'],
+        summary: 'Deploy template from raw YAML',
+        description:
+          'Deploy an arbitrary or custom template by supplying its raw YAML directly in the request body. ' +
+          'The instance name is auto-generated from `${{ random(8) }}` inside `spec.defaults.app_name`. ' +
+          'Use `dryRun: true` to validate the resources against the Kubernetes API without creating anything.\n\n' +
+          '**Example — dry-run a custom template:**\n' +
+          '```json\n' +
+          '{\n' +
+          '  "yaml": "apiVersion: app.sealos.io/v1\\nkind: Template\\n...",\n' +
+          '  "dryRun": true\n' +
+          '}\n' +
+          '```',
+        operationId: 'deployTemplate',
+        requestBody: {
+          required: true,
+          description: 'Template deployment configuration',
+          content: {
+            'application/json': {
+              schema: deployTemplateSchemas.requestBody
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Dry-run preview — resources validated but not created',
+            content: {
+              'application/json': {
+                schema: deployTemplateSchemas.dryRunResponse,
+                examples: {
+                  dryRunPreview: {
+                    summary: 'Dry-run result',
+                    value: {
+                      name: 'myapp-abcdefgh',
+                      resourceType: 'instance',
+                      dryRun: true,
+                      args: {},
+                      resources: [
+                        {
+                          name: 'myapp-abcdefgh',
+                          uid: '',
+                          resourceType: 'deployment',
+                          quota: { cpu: 0.1, memory: 0.25, storage: 0, replicas: 1 }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '201': {
+            description: 'Template deployed successfully',
+            content: {
+              'application/json': {
+                schema: deployTemplateSchemas.response,
+                examples: {
+                  deployed: {
+                    summary: 'Template deployed successfully',
+                    value: {
+                      name: 'myapp-abcdefgh',
+                      uid: '778bf3c6-b412-4a02-908b-cf1470867c93',
+                      resourceType: 'instance',
+                      displayName: '',
+                      createdAt: '2026-01-28T03:31:01Z',
+                      args: {},
+                      resources: [
+                        {
+                          name: 'myapp-abcdefgh',
+                          uid: '5bd2c77d-b8f4-4aa4-97ee-c205f2d10aa9',
+                          resourceType: 'deployment',
+                          quota: { cpu: 0.1, memory: 0.25, storage: 0, replicas: 1 }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '400': {
+            description: 'Bad request — missing or invalid YAML / missing required args',
+            content: {
+              'application/json': {
+                schema: createError400Schema([
+                  ErrorCode.INVALID_PARAMETER,
+                  ErrorCode.INVALID_VALUE
+                ]),
+                examples: {
+                  missingYaml: {
+                    summary: 'YAML is required',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Template YAML is required.',
+                      [{ field: 'yaml', message: 'Required' }]
+                    )
+                  },
+                  invalidYaml: {
+                    summary: 'First document is not kind: Template',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_VALUE,
+                      'The first YAML type is not Template'
+                    )
+                  },
+                  missingArgs: {
+                    summary: 'Required template args missing',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_VALUE,
+                      'Missing required parameters: MY_SECRET.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — missing or invalid kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Invalid or missing kubeconfig.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden — insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([ErrorCode.PERMISSION_DENIED]),
+                examples: {
+                  forbidden: {
+                    summary: 'Insufficient privileges',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Permission denied: insufficient privileges to create resources.',
+                      'deployments.apps is forbidden: User "system:serviceaccount:ns-xxx" cannot create resource "deployments"'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '409': {
+            description: 'Conflict — instance already exists',
+            content: {
+              'application/json': {
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS]),
+                examples: {
+                  alreadyExists: {
+                    summary: 'Instance already exists',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.ALREADY_EXISTS,
+                      "Instance 'myapp-abcdefgh' already exists.",
+                      'deployments.apps "myapp-abcdefgh" already exists'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '422': {
+            description: 'Unprocessable Entity — K8s rejected the resource spec',
+            content: {
+              'application/json': {
+                schema: createError422Schema(),
+                examples: {
+                  invalidSpec: {
+                    summary: 'Resource spec rejected by cluster',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.INVALID_RESOURCE_SPEC,
+                      'Template validation failed: invalid resource specification.',
+                      'admission webhook "vingress.sealos.io" denied the request: cannot verify ingress host'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal Server Error',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  internalError: {
+                    summary: 'Unexpected server error',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.INTERNAL_ERROR,
+                      'Failed to deploy template.',
+                      'Template parsing error'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service Unavailable — Kubernetes cluster temporarily unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'Kubernetes cluster is temporarily unavailable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
                     )
                   }
                 }
