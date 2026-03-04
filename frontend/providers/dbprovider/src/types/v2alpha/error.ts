@@ -70,38 +70,42 @@ export function createError400Schema(codes: readonly [Error400Code, ...Error400C
     ...ErrorTypeValue[]
   ];
   return z.object({
-    error: z.object({
-      type: z.enum(uniqueTypes).describe('High-level error type for categorization'),
-      code: z
-        .enum(codes as [ErrorCodeType, ...ErrorCodeType[]])
-        .describe('Specific error code for programmatic handling and i18n'),
-      message: z.string().describe('Human-readable error message'),
-      details: z
-        .union([z.array(ValidationFieldIssue), z.string()])
-        .optional()
-        .describe(
-          'For INVALID_PARAMETER: Array<{ field, message }>. For INVALID_VALUE: optional string. Omitted for other codes.'
-        )
-    })
+    error: z
+      .object({
+        type: z.enum(uniqueTypes).describe('High-level error type for categorization'),
+        code: z
+          .enum(codes as [ErrorCodeType, ...ErrorCodeType[]])
+          .describe('Specific error code for programmatic handling and i18n'),
+        message: z.string().describe('Human-readable error message'),
+        details: z
+          .union([z.array(ValidationFieldIssue), z.string()])
+          .optional()
+          .describe(
+            'For INVALID_PARAMETER: Array<{ field, message }>. For INVALID_VALUE: optional string. Omitted for other codes.'
+          )
+      })
+      .describe('Structured error object containing type, code, message, and optional details')
   });
 }
 
 /** Create 401 error schema. */
 export function createError401Schema() {
   return z.object({
-    error: z.object({
-      type: z
-        .literal(ErrorType.AUTHENTICATION_ERROR)
-        .describe('High-level error type for categorization'),
-      code: z
-        .literal(ErrorCode.AUTHENTICATION_REQUIRED)
-        .describe('Specific error code for programmatic handling and i18n'),
-      message: z.string().describe('Human-readable error message'),
-      details: z
-        .string()
-        .optional()
-        .describe('Typically omitted. May contain additional context in edge cases.')
-    })
+    error: z
+      .object({
+        type: z
+          .literal(ErrorType.AUTHENTICATION_ERROR)
+          .describe('High-level error type for categorization'),
+        code: z
+          .literal(ErrorCode.AUTHENTICATION_REQUIRED)
+          .describe('Specific error code for programmatic handling and i18n'),
+        message: z.string().describe('Human-readable error message'),
+        details: z
+          .string()
+          .optional()
+          .describe('Typically omitted. May contain additional context in edge cases.')
+      })
+      .describe('Structured error object containing type, code, message, and optional details')
   });
 }
 
@@ -114,38 +118,42 @@ export type Error403Code =
  */
 export function createError403Schema(codes: readonly [Error403Code, ...Error403Code[]]) {
   return z.object({
-    error: z.object({
-      type: z
-        .literal(ErrorType.AUTHORIZATION_ERROR)
-        .describe('High-level error type for categorization'),
-      code: z
-        .enum(codes as [ErrorCodeType, ...ErrorCodeType[]])
-        .describe('Specific error code for programmatic handling and i18n'),
-      message: z.string().describe('Human-readable error message'),
-      details: z
-        .string()
-        .optional()
-        .describe('Typically omitted. May contain additional context in edge cases.')
-    })
+    error: z
+      .object({
+        type: z
+          .literal(ErrorType.AUTHORIZATION_ERROR)
+          .describe('High-level error type for categorization'),
+        code: z
+          .enum(codes as [ErrorCodeType, ...ErrorCodeType[]])
+          .describe('Specific error code for programmatic handling and i18n'),
+        message: z.string().describe('Human-readable error message'),
+        details: z
+          .string()
+          .optional()
+          .describe('Typically omitted. May contain additional context in edge cases.')
+      })
+      .describe('Structured error object containing type, code, message, and optional details')
   });
 }
 
 /** Create 404 error schema. */
 export function createError404Schema() {
   return z.object({
-    error: z.object({
-      type: z
-        .literal(ErrorType.RESOURCE_ERROR)
-        .describe('High-level error type for categorization'),
-      code: z
-        .literal(ErrorCode.NOT_FOUND)
-        .describe('Specific error code for programmatic handling and i18n'),
-      message: z.string().describe('Human-readable error message'),
-      details: z
-        .string()
-        .optional()
-        .describe('Typically omitted. May contain additional context in edge cases.')
-    })
+    error: z
+      .object({
+        type: z
+          .literal(ErrorType.RESOURCE_ERROR)
+          .describe('High-level error type for categorization'),
+        code: z
+          .literal(ErrorCode.NOT_FOUND)
+          .describe('Specific error code for programmatic handling and i18n'),
+        message: z.string().describe('Human-readable error message'),
+        details: z
+          .string()
+          .optional()
+          .describe('Typically omitted. May contain additional context in edge cases.')
+      })
+      .describe('Structured error object containing type, code, message, and optional details')
   });
 }
 
@@ -156,19 +164,21 @@ export type Error409Code = typeof ErrorCode.ALREADY_EXISTS | typeof ErrorCode.CO
  */
 export function createError409Schema(codes: readonly [Error409Code, ...Error409Code[]]) {
   return z.object({
-    error: z.object({
-      type: z
-        .literal(ErrorType.RESOURCE_ERROR)
-        .describe('High-level error type for categorization'),
-      code: z
-        .enum(codes as [ErrorCodeType, ...ErrorCodeType[]])
-        .describe('Specific error code for programmatic handling and i18n'),
-      message: z.string().describe('Human-readable error message'),
-      details: z
-        .string()
-        .optional()
-        .describe('Typically omitted. May contain additional context in edge cases.')
-    })
+    error: z
+      .object({
+        type: z
+          .literal(ErrorType.RESOURCE_ERROR)
+          .describe('High-level error type for categorization'),
+        code: z
+          .enum(codes as [ErrorCodeType, ...ErrorCodeType[]])
+          .describe('Specific error code for programmatic handling and i18n'),
+        message: z.string().describe('Human-readable error message'),
+        details: z
+          .string()
+          .optional()
+          .describe('Typically omitted. May contain additional context in edge cases.')
+      })
+      .describe('Structured error object containing type, code, message, and optional details')
   });
 }
 
@@ -194,10 +204,169 @@ export function createError500Schema(codes: readonly [Error500Code, ...Error500C
     ...ErrorTypeValue[]
   ];
   return z.object({
-    error: z.object({
-      type: z.enum(uniqueTypes).describe('High-level error type for categorization'),
+    error: z
+      .object({
+        type: z.enum(uniqueTypes).describe('High-level error type for categorization'),
+        code: z
+          .enum(codes as [ErrorCodeType, ...ErrorCodeType[]])
+          .describe('Specific error code for programmatic handling and i18n'),
+        message: z.string().describe('Human-readable error message'),
+        details: z
+          .string()
+          .optional()
+          .describe('Raw error string from the underlying system, for troubleshooting.')
+      })
+      .describe('Structured error object containing type, code, message, and optional details')
+  });
+}
+
+/** Create 503 error schema. */
+export function createError503Schema() {
+  return z.object({
+    error: z
+      .object({
+        type: z
+          .literal(ErrorType.INTERNAL_ERROR)
+          .describe('High-level error type for categorization'),
+        code: z
+          .literal(ErrorCode.SERVICE_UNAVAILABLE)
+          .describe('Specific error code for programmatic handling and i18n'),
+        message: z.string().describe('Human-readable error message'),
+        details: z
+          .string()
+          .optional()
+          .describe('Raw connection error from the underlying system (e.g. ECONNREFUSED).')
+      })
+      .describe('Structured error object containing type, code, message, and optional details')
+  });
+}
+
+const ERROR_DESCRIBE =
+  'Structured error object containing type, code, message, and optional details';
+
+export const Error400Schema = z.object({
+  error: z
+    .object({
+      type: z
+        .enum([ErrorType.VALIDATION_ERROR, ErrorType.CLIENT_ERROR])
+        .describe('High-level error type for categorization'),
       code: z
-        .enum(codes as [ErrorCodeType, ...ErrorCodeType[]])
+        .enum([
+          ErrorCode.INVALID_PARAMETER,
+          ErrorCode.INVALID_VALUE,
+          ErrorCode.UNSUPPORTED_OPERATION,
+          ErrorCode.STORAGE_REQUIRES_STATEFULSET
+        ])
+        .describe('Specific error code for programmatic handling and i18n'),
+      message: z.string().describe('Human-readable error message'),
+      details: z
+        .union([z.array(ValidationFieldIssue), z.string()])
+        .optional()
+        .describe(
+          'For INVALID_PARAMETER: Array<{ field, message }>. For INVALID_VALUE: optional string. Omitted for other codes.'
+        )
+    })
+    .describe(ERROR_DESCRIBE)
+});
+
+export const Error401Schema = z.object({
+  error: z
+    .object({
+      type: z
+        .literal(ErrorType.AUTHENTICATION_ERROR)
+        .describe('High-level error type for categorization'),
+      code: z
+        .literal(ErrorCode.AUTHENTICATION_REQUIRED)
+        .describe('Specific error code for programmatic handling and i18n'),
+      message: z.string().describe('Human-readable error message'),
+      details: z
+        .string()
+        .optional()
+        .describe('Typically omitted. May contain additional context in edge cases.')
+    })
+    .describe(ERROR_DESCRIBE)
+});
+
+export const Error403Schema = z.object({
+  error: z
+    .object({
+      type: z
+        .literal(ErrorType.AUTHORIZATION_ERROR)
+        .describe('High-level error type for categorization'),
+      code: z
+        .enum([ErrorCode.PERMISSION_DENIED, ErrorCode.INSUFFICIENT_BALANCE])
+        .describe('Specific error code for programmatic handling and i18n'),
+      message: z.string().describe('Human-readable error message'),
+      details: z
+        .string()
+        .optional()
+        .describe('Typically omitted. May contain additional context in edge cases.')
+    })
+    .describe(ERROR_DESCRIBE)
+});
+
+export const Error404Schema = z.object({
+  error: z
+    .object({
+      type: z
+        .literal(ErrorType.RESOURCE_ERROR)
+        .describe('High-level error type for categorization'),
+      code: z
+        .literal(ErrorCode.NOT_FOUND)
+        .describe('Specific error code for programmatic handling and i18n'),
+      message: z.string().describe('Human-readable error message'),
+      details: z
+        .string()
+        .optional()
+        .describe('Typically omitted. May contain additional context in edge cases.')
+    })
+    .describe(ERROR_DESCRIBE)
+});
+
+export const Error405Schema = z.object({
+  error: z
+    .object({
+      type: z.literal(ErrorType.CLIENT_ERROR).describe('High-level error type for categorization'),
+      code: z
+        .literal(ErrorCode.METHOD_NOT_ALLOWED)
+        .describe('Specific error code for programmatic handling and i18n'),
+      message: z.string().describe('Human-readable error message'),
+      details: z.string().optional().describe('Typically omitted.')
+    })
+    .describe(ERROR_DESCRIBE)
+});
+
+export const Error409Schema = z.object({
+  error: z
+    .object({
+      type: z
+        .literal(ErrorType.RESOURCE_ERROR)
+        .describe('High-level error type for categorization'),
+      code: z
+        .enum([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT])
+        .describe('Specific error code for programmatic handling and i18n'),
+      message: z.string().describe('Human-readable error message'),
+      details: z
+        .string()
+        .optional()
+        .describe('Typically omitted. May contain additional context in edge cases.')
+    })
+    .describe(ERROR_DESCRIBE)
+});
+
+export const Error500Schema = z.object({
+  error: z
+    .object({
+      type: z
+        .enum([ErrorType.OPERATION_ERROR, ErrorType.INTERNAL_ERROR])
+        .describe('High-level error type for categorization'),
+      code: z
+        .enum([
+          ErrorCode.KUBERNETES_ERROR,
+          ErrorCode.STORAGE_UPDATE_FAILED,
+          ErrorCode.OPERATION_FAILED,
+          ErrorCode.INTERNAL_ERROR
+        ])
         .describe('Specific error code for programmatic handling and i18n'),
       message: z.string().describe('Human-readable error message'),
       details: z
@@ -205,13 +374,12 @@ export function createError500Schema(codes: readonly [Error500Code, ...Error500C
         .optional()
         .describe('Raw error string from the underlying system, for troubleshooting.')
     })
-  });
-}
+    .describe(ERROR_DESCRIBE)
+});
 
-/** Create 503 error schema. */
-export function createError503Schema() {
-  return z.object({
-    error: z.object({
+export const Error503Schema = z.object({
+  error: z
+    .object({
       type: z
         .literal(ErrorType.INTERNAL_ERROR)
         .describe('High-level error type for categorization'),
@@ -222,138 +390,9 @@ export function createError503Schema() {
       details: z
         .string()
         .optional()
-        .describe('Raw connection error from the underlying system (e.g. ECONNREFUSED).')
+        .describe('Raw error string from the underlying system, for troubleshooting.')
     })
-  });
-}
-
-export const Error400Schema = z.object({
-  error: z.object({
-    type: z
-      .enum([ErrorType.VALIDATION_ERROR, ErrorType.CLIENT_ERROR])
-      .describe('High-level error type for categorization'),
-    code: z
-      .enum([
-        ErrorCode.INVALID_PARAMETER,
-        ErrorCode.INVALID_VALUE,
-        ErrorCode.UNSUPPORTED_OPERATION,
-        ErrorCode.STORAGE_REQUIRES_STATEFULSET
-      ])
-      .describe('Specific error code for programmatic handling and i18n'),
-    message: z.string().describe('Human-readable error message'),
-    details: z
-      .union([z.array(ValidationFieldIssue), z.string()])
-      .optional()
-      .describe(
-        'For INVALID_PARAMETER: Array<{ field, message }>. For INVALID_VALUE: optional string. Omitted for other codes.'
-      )
-  })
-});
-
-export const Error401Schema = z.object({
-  error: z.object({
-    type: z
-      .literal(ErrorType.AUTHENTICATION_ERROR)
-      .describe('High-level error type for categorization'),
-    code: z
-      .literal(ErrorCode.AUTHENTICATION_REQUIRED)
-      .describe('Specific error code for programmatic handling and i18n'),
-    message: z.string().describe('Human-readable error message'),
-    details: z
-      .string()
-      .optional()
-      .describe('Typically omitted. May contain additional context in edge cases.')
-  })
-});
-
-export const Error403Schema = z.object({
-  error: z.object({
-    type: z
-      .literal(ErrorType.AUTHORIZATION_ERROR)
-      .describe('High-level error type for categorization'),
-    code: z
-      .enum([ErrorCode.PERMISSION_DENIED, ErrorCode.INSUFFICIENT_BALANCE])
-      .describe('Specific error code for programmatic handling and i18n'),
-    message: z.string().describe('Human-readable error message'),
-    details: z
-      .string()
-      .optional()
-      .describe('Typically omitted. May contain additional context in edge cases.')
-  })
-});
-
-export const Error404Schema = z.object({
-  error: z.object({
-    type: z.literal(ErrorType.RESOURCE_ERROR).describe('High-level error type for categorization'),
-    code: z
-      .literal(ErrorCode.NOT_FOUND)
-      .describe('Specific error code for programmatic handling and i18n'),
-    message: z.string().describe('Human-readable error message'),
-    details: z
-      .string()
-      .optional()
-      .describe('Typically omitted. May contain additional context in edge cases.')
-  })
-});
-
-export const Error405Schema = z.object({
-  error: z.object({
-    type: z.literal(ErrorType.CLIENT_ERROR).describe('High-level error type for categorization'),
-    code: z
-      .literal(ErrorCode.METHOD_NOT_ALLOWED)
-      .describe('Specific error code for programmatic handling and i18n'),
-    message: z.string().describe('Human-readable error message'),
-    details: z.string().optional().describe('Typically omitted.')
-  })
-});
-
-export const Error409Schema = z.object({
-  error: z.object({
-    type: z.literal(ErrorType.RESOURCE_ERROR).describe('High-level error type for categorization'),
-    code: z
-      .enum([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT])
-      .describe('Specific error code for programmatic handling and i18n'),
-    message: z.string().describe('Human-readable error message'),
-    details: z
-      .string()
-      .optional()
-      .describe('Typically omitted. May contain additional context in edge cases.')
-  })
-});
-
-export const Error500Schema = z.object({
-  error: z.object({
-    type: z
-      .enum([ErrorType.OPERATION_ERROR, ErrorType.INTERNAL_ERROR])
-      .describe('High-level error type for categorization'),
-    code: z
-      .enum([
-        ErrorCode.KUBERNETES_ERROR,
-        ErrorCode.STORAGE_UPDATE_FAILED,
-        ErrorCode.OPERATION_FAILED,
-        ErrorCode.INTERNAL_ERROR
-      ])
-      .describe('Specific error code for programmatic handling and i18n'),
-    message: z.string().describe('Human-readable error message'),
-    details: z
-      .string()
-      .optional()
-      .describe('Raw error string from the underlying system, for troubleshooting.')
-  })
-});
-
-export const Error503Schema = z.object({
-  error: z.object({
-    type: z.literal(ErrorType.INTERNAL_ERROR).describe('High-level error type for categorization'),
-    code: z
-      .literal(ErrorCode.SERVICE_UNAVAILABLE)
-      .describe('Specific error code for programmatic handling and i18n'),
-    message: z.string().describe('Human-readable error message'),
-    details: z
-      .string()
-      .optional()
-      .describe('Raw error string from the underlying system, for troubleshooting.')
-  })
+    .describe(ERROR_DESCRIBE)
 });
 
 // ============================================================================

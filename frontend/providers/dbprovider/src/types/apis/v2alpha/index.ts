@@ -50,48 +50,246 @@ export * as enablePublicAccessSchemas from './network/enable-public-access';
 import * as disablePublicAccessSchemas from './network/disable-public-access';
 export * as disablePublicAccessSchemas from './network/disable-public-access';
 
-const getDatabaseResponseDocSchema = dbEditSchema.extend({
-  uid: z.string().describe('Unique identifier of the database resource'),
-  status: dbStatusSchema.describe('Current status of the database cluster'),
-  createdAt: z.string().describe('Creation timestamp of the database cluster'),
-  resourceType: z
-    .string()
-    .describe('Resource type identifier — always "cluster"')
-    .default('cluster'),
-  operationalStatus: z
-    .object({})
-    .passthrough()
-    .describe('Operational status flags from KubeBlocks (structure varies by version)'),
-  connection: z
-    .object({
-      privateConnection: z
-        .object({
-          endpoint: z.string().describe('host:port string for internal cluster access'),
-          host: z.string().describe('ClusterIP service hostname (internal only)'),
-          port: z.string().describe('Database port'),
-          username: z.string().describe('Database username'),
-          password: z.string().describe('Database password'),
-          connectionString: z.string().describe('Ready-to-use connection string')
-        })
-        .nullable()
-        .describe('Internal (in-cluster) connection details. null if not yet available.'),
-      publicConnection: z
-        .string()
-        .nullable()
-        .describe(
-          'External connection string via NodePort/LoadBalancer. null if public access is not enabled.'
-        )
-    })
-    .describe('Connection details for the database cluster'),
-  pods: z
-    .array(
-      z.object({
-        name: z.string().describe('Pod name'),
-        status: z.string().describe('Pod phase (e.g. "running", "pending", "failed")')
-      })
-    )
-    .describe('List of database pods and their current phase')
-});
+const getDatabaseResponseJsonSchema = {
+  type: 'object',
+  properties: {
+    terminationPolicy: {
+      type: 'string',
+      enum: ['delete', 'wipeout'],
+      default: 'delete',
+      description:
+        'Cluster termination policy. "delete" removes the cluster but keeps PVCs, "wipeout" removes everything including data.',
+      example: 'delete'
+    },
+    name: {
+      type: 'string',
+      minLength: 1,
+      description: 'Database name (Kubernetes resource name — lowercase alphanumeric and hyphens)',
+      example: 'my-postgres-db'
+    },
+    type: {
+      type: 'string',
+      enum: [
+        'postgresql',
+        'mongodb',
+        'apecloud-mysql',
+        'redis',
+        'kafka',
+        'qdrant',
+        'nebula',
+        'weaviate',
+        'milvus',
+        'pulsar',
+        'clickhouse'
+      ],
+      description: 'Database engine type',
+      example: 'postgresql'
+    },
+    version: {
+      type: 'string',
+      description: 'Database version string (e.g. "postgresql-14.8.0")',
+      example: 'postgresql-14.8.0'
+    },
+    quota: {
+      type: 'object',
+      description: 'Resource allocation for each database replica',
+      properties: {
+        cpu: { type: 'number', description: 'CPU cores per replica', example: 1 },
+        memory: { type: 'number', description: 'Memory in GB per replica', example: 2 },
+        storage: { type: 'number', description: 'Storage in GB per replica', example: 5 },
+        replicas: { type: 'number', description: 'Number of database replicas', example: 1 }
+      }
+    },
+    autoBackup: {
+      type: 'object',
+      description: 'Automatic backup configuration',
+      properties: {
+        start: {
+          type: 'boolean',
+          description: 'Whether automatic backups are enabled',
+          example: true
+        },
+        type: {
+          type: 'string',
+          enum: ['day', 'hour', 'week'],
+          description: 'Backup frequency type',
+          example: 'day'
+        },
+        week: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+          },
+          description: 'Days of the week for weekly backups',
+          example: ['monday']
+        },
+        hour: {
+          type: 'string',
+          description: 'Hour to run backup (24-hour format)',
+          example: '02'
+        },
+        minute: { type: 'string', description: 'Minute to run backup', example: '00' },
+        saveTime: {
+          type: 'number',
+          description: 'Backup retention duration',
+          example: 7
+        },
+        saveType: {
+          type: 'string',
+          enum: ['days', 'hours', 'weeks', 'months'],
+          description: 'Backup retention unit',
+          example: 'days'
+        }
+      }
+    },
+    parameterConfig: {
+      type: 'object',
+      description: 'Database-specific parameter configuration',
+      properties: {
+        maxConnections: {
+          type: 'string',
+          description: 'Maximum number of database connections',
+          example: '100'
+        },
+        timeZone: {
+          type: 'string',
+          description: 'Database timezone',
+          example: 'Asia/Shanghai'
+        },
+        lowerCaseTableNames: {
+          type: 'string',
+          enum: ['0', '1'],
+          description:
+            'MySQL-specific: case sensitivity for table names. 0=case-sensitive, 1=case-insensitive',
+          example: '0'
+        },
+        maxmemory: {
+          type: 'string',
+          description: 'Redis-specific: maximum memory usage',
+          example: '512mb'
+        }
+      }
+    },
+    uid: {
+      type: 'string',
+      description: 'Unique identifier of the database resource',
+      example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+    },
+    status: {
+      type: 'string',
+      enum: [
+        'creating',
+        'starting',
+        'stopping',
+        'stopped',
+        'running',
+        'updating',
+        'specUpdating',
+        'rebooting',
+        'upgrade',
+        'verticalScaling',
+        'volumeExpanding',
+        'failed',
+        'unknown',
+        'deleting'
+      ],
+      description: 'Current status of the database cluster',
+      example: 'running'
+    },
+    createdAt: {
+      type: 'string',
+      description: 'Creation timestamp of the database cluster (ISO 8601)',
+      example: '2024-01-15T10:30:00Z'
+    },
+    resourceType: {
+      type: 'string',
+      description: 'Resource type identifier — always "cluster"',
+      default: 'cluster',
+      example: 'cluster'
+    },
+    operationalStatus: {
+      type: 'object',
+      description: 'Operational status flags from KubeBlocks (structure varies by version)',
+      additionalProperties: true,
+      example: {}
+    },
+    connection: {
+      type: 'object',
+      description: 'Connection details for the database cluster',
+      properties: {
+        privateConnection: {
+          description: 'Internal (in-cluster) connection details. null if not yet available.',
+          oneOf: [
+            {
+              type: 'object',
+              properties: {
+                endpoint: {
+                  type: 'string',
+                  description: 'host:port string for internal cluster access',
+                  example: 'my-postgres-db-postgresql.ns-abc.svc.cluster.local:5432'
+                },
+                host: {
+                  type: 'string',
+                  description: 'ClusterIP service hostname (internal only)',
+                  example: 'my-postgres-db-postgresql.ns-abc.svc.cluster.local'
+                },
+                port: { type: 'string', description: 'Database port', example: '5432' },
+                username: {
+                  type: 'string',
+                  description: 'Database username',
+                  example: 'postgres'
+                },
+                password: {
+                  type: 'string',
+                  description: 'Database password',
+                  example: 's3cr3tpassword'
+                },
+                connectionString: {
+                  type: 'string',
+                  description: 'Ready-to-use connection string',
+                  example:
+                    'postgresql://postgres:s3cr3tpassword@my-postgres-db-postgresql.ns-abc.svc.cluster.local:5432/postgres'
+                }
+              }
+            },
+            { type: 'null' }
+          ]
+        },
+        publicConnection: {
+          description:
+            'External connection string via NodePort/LoadBalancer. null if public access is not enabled.',
+          oneOf: [
+            {
+              type: 'string',
+              example: 'postgresql://postgres:s3cr3tpassword@203.0.113.1:30001/postgres'
+            },
+            { type: 'null' }
+          ]
+        }
+      }
+    },
+    pods: {
+      type: 'array',
+      description: 'List of database pods and their current phase',
+      items: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Pod name',
+            example: 'my-postgres-db-postgresql-0'
+          },
+          status: {
+            type: 'string',
+            description: 'Pod phase (e.g. "running", "pending", "failed")',
+            example: 'running'
+          }
+        }
+      }
+    }
+  }
+};
 
 export const document = createDocument({
   openapi: '3.1.0',
@@ -167,26 +365,30 @@ export const document = createDocument({
             type: 'number',
             enum: [1, 2, 3, 4, 5, 6, 7, 8],
             description:
-              'CPU cores. Allowed values: 1, 2, 3, 4, 5, 6, 7, or 8 (converted to millicores in K8s)'
+              'CPU cores. Allowed values: 1, 2, 3, 4, 5, 6, 7, or 8 (converted to millicores in K8s)',
+            example: 2
           },
           memory: {
             type: 'number',
             enum: [1, 2, 4, 6, 8, 12, 16, 32],
             description:
-              'Memory in GB. Allowed values: 1, 2, 4, 6, 8, 12, 16, or 32 GB (converted to Gi in K8s)'
+              'Memory in GB. Allowed values: 1, 2, 4, 6, 8, 12, 16, or 32 GB (converted to Gi in K8s)',
+            example: 4
           },
           storage: {
             type: 'number',
             minimum: 1,
             maximum: 300,
             description:
-              'Storage in GB (1–300). Storage can only be expanded, not shrunk (converted to Gi in K8s)'
+              'Storage in GB (1–300). Storage can only be expanded, not shrunk (converted to Gi in K8s)',
+            example: 20
           },
           replicas: {
             type: 'integer',
             minimum: 1,
             maximum: 20,
-            description: 'Number of replicas (1–20)'
+            description: 'Number of replicas (1–20)',
+            example: 2
           }
         },
         description: 'Resource configuration for database update. All fields are optional.'
@@ -296,7 +498,8 @@ export const document = createDocument({
                     enum: ['delete', 'wipeout'],
                     default: 'delete',
                     description:
-                      'Cluster termination policy. "delete" removes the cluster but keeps PVCs, "wipeout" removes everything including data. Defaults to "delete" if not provided.'
+                      'Cluster termination policy. "delete" removes the cluster but keeps PVCs, "wipeout" removes everything including data. Defaults to "delete" if not provided.',
+                    example: 'delete'
                   },
                   name: {
                     type: 'string',
@@ -304,7 +507,8 @@ export const document = createDocument({
                     maxLength: 63,
                     pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
                     description:
-                      'Database name. Must be a valid Kubernetes resource name (lowercase alphanumeric and hyphens)'
+                      'Database name. Must be a valid Kubernetes resource name (lowercase alphanumeric and hyphens)',
+                    example: 'my-postgres-db'
                   },
                   type: {
                     type: 'string',
@@ -321,16 +525,20 @@ export const document = createDocument({
                       'pulsar',
                       'clickhouse'
                     ],
-                    description: 'Database type/engine to deploy'
+                    description: 'Database type/engine to deploy',
+                    example: 'postgresql'
                   },
                   version: {
                     type: 'string',
                     description:
-                      'Database version (e.g., "14.8.0" for PostgreSQL). Must match available versions from /databases/versions endpoint. If not provided, the latest version for the specified database type will be automatically selected.'
+                      'Database version (e.g., "14.8.0" for PostgreSQL). Must match available versions from /databases/versions endpoint. If not provided, the latest version for the specified database type will be automatically selected.',
+                    example: 'postgresql-14.8.0'
                   },
                   quota: {
                     type: 'object',
                     required: ['cpu', 'memory', 'storage', 'replicas'],
+                    description:
+                      'Resource allocation for the database cluster. All four fields are required.',
                     properties: {
                       cpu: {
                         type: 'number',
@@ -338,7 +546,8 @@ export const document = createDocument({
                         maximum: 32,
                         description:
                           'CPU cores allocated to each database instance - range [0.1, 32] (automatically converted to millicores in Kubernetes)',
-                        default: 1
+                        default: 1,
+                        example: 1
                       },
                       memory: {
                         type: 'number',
@@ -346,7 +555,8 @@ export const document = createDocument({
                         maximum: 32,
                         description:
                           'Memory in GB allocated to each database instance - range [0.1, 32] (automatically converted to Gi in Kubernetes)',
-                        default: 1
+                        default: 1,
+                        example: 2
                       },
                       storage: {
                         type: 'number',
@@ -354,28 +564,34 @@ export const document = createDocument({
                         maximum: 300,
                         description:
                           'Persistent storage in GB for each database instance (automatically converted to Gi in Kubernetes)',
-                        default: 3
+                        default: 3,
+                        example: 5
                       },
                       replicas: {
                         type: 'integer',
                         minimum: 1,
                         maximum: 20,
                         description: 'Number of database replicas for high availability',
-                        default: 3
+                        default: 3,
+                        example: 1
                       }
                     }
                   },
                   autoBackup: {
                     type: 'object',
+                    description:
+                      'Automatic backup configuration (optional). If not provided, no automatic backups will be configured',
                     properties: {
                       start: {
                         type: 'boolean',
-                        description: 'Enable automatic backups'
+                        description: 'Enable automatic backups',
+                        example: true
                       },
                       type: {
                         type: 'string',
                         enum: ['day', 'hour', 'week'],
-                        description: 'Backup frequency type'
+                        description: 'Backup frequency type',
+                        example: 'day'
                       },
                       week: {
                         type: 'array',
@@ -391,57 +607,64 @@ export const document = createDocument({
                             'sunday'
                           ]
                         },
-                        description: 'Days of the week to run backups (for weekly backups)'
+                        description: 'Days of the week to run backups (for weekly backups)',
+                        example: ['monday']
                       },
                       hour: {
                         type: 'string',
                         pattern: '^([01]?[0-9]|2[0-3])$',
-                        description: 'Hour to run backup (24-hour format, 00-23)'
+                        description: 'Hour to run backup (24-hour format, 00-23)',
+                        example: '02'
                       },
                       minute: {
                         type: 'string',
                         pattern: '^[0-5]?[0-9]$',
-                        description: 'Minute to run backup (00-59)'
+                        description: 'Minute to run backup (00-59)',
+                        example: '00'
                       },
                       saveTime: {
                         type: 'number',
                         minimum: 1,
                         maximum: 365,
-                        description: 'Backup retention duration'
+                        description: 'Backup retention duration',
+                        example: 7
                       },
                       saveType: {
                         type: 'string',
                         enum: ['days', 'hours', 'weeks', 'months'],
-                        description: 'Backup retention unit'
+                        description: 'Backup retention unit',
+                        example: 'days'
                       }
-                    },
-                    description:
-                      'Automatic backup configuration (optional). If not provided, no automatic backups will be configured'
+                    }
                   },
                   parameterConfig: {
                     type: 'object',
+                    description:
+                      'Database-specific parameter configuration (optional). Available parameters vary by database type',
                     properties: {
                       maxConnections: {
                         type: 'string',
-                        description: 'Maximum number of database connections'
+                        description: 'Maximum number of database connections',
+                        example: '100'
                       },
                       timeZone: {
                         type: 'string',
-                        description: 'Database timezone (e.g., "Asia/Shanghai", "UTC")'
+                        description: 'Database timezone (e.g., "Asia/Shanghai", "UTC")',
+                        example: 'Asia/Shanghai'
                       },
                       lowerCaseTableNames: {
                         type: 'string',
                         enum: ['0', '1'],
                         description:
-                          'MySQL-specific: whether table names are case-sensitive. 0=case-sensitive, 1=case-insensitive'
+                          'MySQL-specific: whether table names are case-sensitive. 0=case-sensitive, 1=case-insensitive',
+                        example: '0'
                       },
                       maxmemory: {
                         type: 'string',
-                        description: 'Redis-specific: maximum memory usage in bytes'
+                        description: 'Redis-specific: maximum memory usage in bytes',
+                        example: '512mb'
                       }
-                    },
-                    description:
-                      'Database-specific parameter configuration (optional). Available parameters vary by database type'
+                    }
                   }
                 }
               }
@@ -461,13 +684,15 @@ export const document = createDocument({
                   properties: {
                     name: {
                       type: 'string',
-                      description: 'Name of the created database'
+                      description: 'Name of the created database',
+                      example: 'my-postgres-db'
                     },
                     status: {
                       type: 'string',
                       enum: ['creating'],
                       description:
-                        'Initial provisioning status — always "creating" at creation time'
+                        'Initial provisioning status — always "creating" at creation time',
+                      example: 'creating'
                     }
                   }
                 },
@@ -653,7 +878,11 @@ export const document = createDocument({
                         description: 'Database version',
                         example: 'postgresql-14.8.0'
                       },
-                      resourceType: { type: 'string', example: 'database' },
+                      resourceType: {
+                        type: 'string',
+                        description: 'Resource type identifier — always "cluster"',
+                        example: 'cluster'
+                      },
                       status: {
                         type: 'string',
                         enum: ['Running', 'Stopped', 'Creating', 'Updating', 'Failed', 'Deleting'],
@@ -662,11 +891,28 @@ export const document = createDocument({
                       },
                       quota: {
                         type: 'object',
+                        description: 'Resource allocation for each database replica',
                         properties: {
-                          cpu: { type: 'number', example: 1 },
-                          memory: { type: 'number', example: 2 },
-                          storage: { type: 'number', example: 5 },
-                          replicas: { type: 'integer', example: 1 }
+                          cpu: {
+                            type: 'number',
+                            description: 'CPU cores per replica',
+                            example: 1
+                          },
+                          memory: {
+                            type: 'number',
+                            description: 'Memory in GB per replica',
+                            example: 2
+                          },
+                          storage: {
+                            type: 'number',
+                            description: 'Storage in GB per replica',
+                            example: 5
+                          },
+                          replicas: {
+                            type: 'integer',
+                            description: 'Number of database replicas',
+                            example: 1
+                          }
                         }
                       }
                     }
@@ -1022,7 +1268,8 @@ export const document = createDocument({
             description: 'Database details retrieved successfully',
             content: {
               'application/json': {
-                schema: getDatabaseResponseDocSchema
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                schema: getDatabaseResponseJsonSchema as any
               }
             }
           },
@@ -1818,17 +2065,20 @@ export const document = createDocument({
                     properties: {
                       name: {
                         type: 'string',
-                        description: 'Backup resource name'
+                        description: 'Backup resource name',
+                        example: 'my-postgres-db-backup-20240115'
                       },
                       description: {
                         type: 'string',
                         description:
-                          'Optional description decoded from backup annotations. Empty string if none was provided.'
+                          'Optional description decoded from backup annotations. Empty string if none was provided.',
+                        example: 'weekly backup before schema migration'
                       },
                       createdAt: {
                         type: 'string',
                         format: 'date-time',
-                        description: 'Creation timestamp of the backup resource'
+                        description: 'Creation timestamp of the backup resource',
+                        example: '2024-01-15T02:00:00Z'
                       },
                       status: {
                         type: 'string',
@@ -1840,7 +2090,8 @@ export const document = createDocument({
                           'running',
                           'deleting'
                         ],
-                        description: 'Current backup status as reported by Kubeblocks (lowercase)'
+                        description: 'Current backup status as reported by Kubeblocks (lowercase)',
+                        example: 'completed'
                       }
                     },
                     required: ['name', 'description', 'createdAt', 'status']
