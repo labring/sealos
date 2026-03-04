@@ -59,27 +59,28 @@ function countSourcePrice(rawData: ResourcePriceType['data']['properties'], type
 function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNodes: GpuNodeType[]) {
   const gpuList: userPriceType['gpu'] = [];
 
-  // count gpu price by gpuNode and accountPriceConfig
-  rawData?.forEach((item) => {
-    if (!item.name.startsWith('gpu-')) return;
+  // count gpu price per node
+  gpuNodes.forEach((node) => {
+    const billingItem = rawData?.find((item) => {
+      if (!item.name.startsWith('gpu-')) return false;
+      const refKey = item.name.replace('gpu-', '');
+      return node['gpu.ref'] === refKey;
+    });
+    if (!billingItem) return;
 
-    const refKey = item.name.replace('gpu-', '');
-
-    const gpuNode = gpuNodes.find((node) => node['gpu.ref'] === refKey);
-    if (!gpuNode) return;
-
-    const manufacturers = gpuNode.icon || 'nvidia';
+    const manufacturers = node.icon || 'nvidia';
 
     gpuList.push({
-      alias: gpuNode['gpu.alias'],
-      type: gpuNode['gpu.product'],
-      price: (item.unit_price * valuationMap.gpu) / PRICE_SCALE,
-      inventory: +gpuNode['gpu.available'],
-      vm: +gpuNode['gpu.memory'] / 1024,
-      icon: gpuNode.icon,
+      alias: node['gpu.alias'],
+      type: node['gpu.product'],
+      price: (billingItem.unit_price * valuationMap.gpu) / PRICE_SCALE,
+      inventory: +node['gpu.available'],
+      vm: +node['gpu.memory'] / 1024,
+      icon: node.icon,
       manufacturers: manufacturers,
-      name: gpuNode.name,
-      resource: gpuNode.resource
+      name: node.name,
+      resource: node.resource,
+      nodeName: node.nodeName
     });
   });
 

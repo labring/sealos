@@ -42,6 +42,7 @@ export type userPriceType = {
     resource?: {
       card: string;
     };
+    nodeName?: string;
   }[];
   nodeports: number;
   ephemeralStorage: number;
