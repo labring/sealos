@@ -264,7 +264,7 @@ const Form = ({
               label: t('No GPU'),
               value: ''
             },
-            ...userSourcePrice.gpu.map((item) => {
+            ...userSourcePrice.gpu.map((item, index) => {
               const displayName = item.name
                 ? i18n.language === 'zh'
                   ? item.name.zh
@@ -284,6 +284,9 @@ const Form = ({
                       <MyIcon name={iconValue as any} w={'16px'} h={'16px'} mr={2} />
                     )}
                     <Box color={'myGray.900'}>{displayName}</Box>
+                    <Box ml={2} color={'grayModern.500'}>
+                      {t('Node')} {String(index + 1).padStart(2, '0')}
+                    </Box>
                     <Box mx={3} color={'grayModern.900'}>
                       |
                     </Box>
@@ -760,7 +763,7 @@ const Form = ({
                   <Flex alignItems={'center'}>
                     <Label>GPU</Label>
                     <MySelect
-                      width={'300px'}
+                      width={'350px'}
                       placeholder={t('No GPU') || ''}
                       value={getValues('gpu.type')}
                       list={gpuSelectList}
