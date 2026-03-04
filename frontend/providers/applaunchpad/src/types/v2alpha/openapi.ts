@@ -1,4 +1,5 @@
 import { createDocument } from 'zod-openapi';
+import { z } from 'zod';
 import { LaunchpadApplicationSchema } from '@/types/v2alpha/schema';
 import {
   CreateLaunchpadRequestSchema,
@@ -142,6 +143,133 @@ export const createOpenApiDocument = () => {
     ],
     paths: {
       '/apps': {
+        get: {
+          tags: ['Query'],
+          operationId: 'listApps',
+          summary: 'List all applications',
+          description: 'Returns all applications deployed in the current namespace.',
+          responses: {
+            '200': {
+              description: 'List of applications retrieved successfully',
+              content: {
+                'application/json': {
+                  schema: z.array(LaunchpadApplicationSchema),
+                  examples: {
+                    list: {
+                      summary: 'List of applications',
+                      value: [
+                        {
+                          name: 'web-api',
+                          resourceType: 'launchpad',
+                          kind: 'deployment',
+                          image: { imageName: 'nginx:1.21', imageRegistry: null },
+                          quota: { cpu: 0.5, memory: 1, replicas: 1 },
+                          ports: [
+                            {
+                              number: 80,
+                              portName: 'abcdef123456',
+                              protocol: 'http',
+                              privateAddress: 'http://web-api-80-xyz-service.ns-user123:80',
+                              publicAddress: 'https://xyz789abc123.cloud.sealos.io'
+                            }
+                          ],
+                          env: [],
+                          storage: [],
+                          configMap: [],
+                          uid: 'abc123-def456-789',
+                          createdAt: '2024-01-01T00:00:00Z',
+                          upTime: '2h15m',
+                          status: 'running'
+                        }
+                      ]
+                    },
+                    empty: {
+                      summary: 'No applications deployed',
+                      value: []
+                    }
+                  }
+                }
+              }
+            },
+            '401': {
+              description: 'Unauthorized - Missing or invalid kubeconfig',
+              content: {
+                'application/json': {
+                  schema: createError401Schema(),
+                  examples: {
+                    missingAuth: {
+                      summary: 'Missing authentication',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Authentication required. Please provide valid credentials in the Authorization header.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '403': {
+              description: 'Forbidden - Insufficient permissions',
+              content: {
+                'application/json': {
+                  schema: createError403Schema([ErrorCode.PERMISSION_DENIED], 'list apps'),
+                  examples: {
+                    insufficientPermissions: {
+                      summary: 'Insufficient permissions',
+                      value: createErrorExample(
+                        ErrorType.AUTHORIZATION_ERROR,
+                        ErrorCode.PERMISSION_DENIED,
+                        'Insufficient permissions to perform this operation. Please check your access rights.'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '500': {
+              description: 'Internal Server Error',
+              content: {
+                'application/json': {
+                  schema: createError500Schema([
+                    ErrorCode.KUBERNETES_ERROR,
+                    ErrorCode.INTERNAL_ERROR
+                  ]),
+                  examples: {
+                    kubernetesError: {
+                      summary: 'Kubernetes API error',
+                      value: createErrorExample(
+                        ErrorType.OPERATION_ERROR,
+                        ErrorCode.KUBERNETES_ERROR,
+                        'Failed to list applications.',
+                        'namespaces "ns-xxx" not found'
+                      )
+                    }
+                  }
+                }
+              }
+            },
+            '503': {
+              description: 'Service Unavailable - Kubernetes cluster temporarily unreachable',
+              content: {
+                'application/json': {
+                  schema: createError503Schema('list apps'),
+                  examples: {
+                    serviceUnavailable: {
+                      summary: 'Cluster unreachable',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.SERVICE_UNAVAILABLE,
+                        'Kubernetes cluster is temporarily unavailable. Please try again later.',
+                        'connect ECONNREFUSED 10.0.0.1:6443'
+                      )
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         post: {
           tags: ['Mutation'],
           operationId: 'createApp',
@@ -436,6 +564,7 @@ export const createOpenApiDocument = () => {
               description:
                 'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
+              example: 'web-api',
               schema: {
                 type: 'string',
                 minLength: 1,
@@ -684,6 +813,7 @@ export const createOpenApiDocument = () => {
               description:
                 'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
+              example: 'web-api',
               schema: {
                 type: 'string',
                 minLength: 1,
@@ -966,6 +1096,7 @@ export const createOpenApiDocument = () => {
               description:
                 'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
+              example: 'web-api',
               schema: {
                 type: 'string',
                 minLength: 1,
@@ -1132,6 +1263,7 @@ export const createOpenApiDocument = () => {
               description:
                 'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
+              example: 'web-api',
               schema: {
                 type: 'string',
                 minLength: 1,
@@ -1263,6 +1395,7 @@ export const createOpenApiDocument = () => {
               description:
                 'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
+              example: 'web-api',
               schema: {
                 type: 'string',
                 minLength: 1,
@@ -1393,6 +1526,7 @@ export const createOpenApiDocument = () => {
               description:
                 'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
+              example: 'web-api',
               schema: {
                 type: 'string',
                 minLength: 1,
@@ -1558,6 +1692,7 @@ export const createOpenApiDocument = () => {
               description:
                 'Application name (Kubernetes resource name, must be a valid DNS subdomain: lowercase alphanumeric, hyphens)',
               required: true,
+              example: 'web-api',
               schema: {
                 type: 'string',
                 minLength: 1,

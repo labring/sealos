@@ -6,7 +6,7 @@ import {
   transformToLegacySchema,
   transformFromLegacySchema
 } from '@/types/v2alpha/request_schema';
-import { createApp, getAppByName } from '@/services/backend';
+import { createApp, getAppByName, listApps } from '@/services/backend';
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
@@ -45,7 +45,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { method } = req;
 
-    if (method === 'POST') {
+    if (method === 'GET') {
+      const k8s = await getK8sContextOrSendError(req, res);
+      if (!k8s) return;
+      try {
+        const apps = await listApps(k8s);
+        return res.status(200).json(apps);
+      } catch (err) {
+        return sendK8sOperationError(res, err, 'Failed to list applications.');
+      }
+    } else if (method === 'POST') {
       const parseResult = CreateLaunchpadRequestSchema.safeParse(req.body);
 
       if (!parseResult.success) {
@@ -76,12 +85,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
       }
     } else {
-      res.setHeader('Allow', ['POST']);
+      res.setHeader('Allow', ['GET', 'POST']);
       return sendError(res, {
         status: 405,
         type: ErrorType.CLIENT_ERROR,
         code: ErrorCode.METHOD_NOT_ALLOWED,
-        message: `HTTP method ${method} is not supported for this endpoint. Use POST to create an application.`
+        message: `HTTP method ${method} is not supported for this endpoint. Use GET to list or POST to create an application.`
       });
     }
   } catch (err) {
