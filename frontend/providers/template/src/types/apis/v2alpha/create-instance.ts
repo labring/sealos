@@ -6,18 +6,21 @@ export const CreateInstanceRequestSchema = z.object({
     .string()
     .describe(
       'Instance name. 1–63 lowercase alphanumeric characters or hyphens, must start and end with alphanumeric (Kubernetes DNS subdomain rules). e.g. "my-perplexica-instance"'
-    ),
+    )
+    .meta({ example: 'my-perplexica-instance' }),
   template: z
     .string()
     .describe(
       'Template name from the catalog. Use GET /templates to list available templates. e.g. "perplexica"'
-    ),
+    )
+    .meta({ example: 'perplexica' }),
   args: z
     .object({})
     .catchall(z.string().describe('Template variable value'))
     .describe(
       'Template variable key-value pairs. Only args without a default value are required. Use GET /templates/{name} to see which args are required and their defaults.'
     )
+    .meta({ example: { OPENAI_API_KEY: 'sk-xxxxxxxxxxxxxxxxxxxx', OPENAI_MODEL_NAME: 'gpt-4o' } })
     .optional()
 });
 

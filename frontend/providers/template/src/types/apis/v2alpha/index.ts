@@ -300,7 +300,7 @@ export const document = createDocument({
         }
       }
     },
-    '/templates/deploy': {
+    '/templates/raw': {
       post: {
         tags: ['Mutation'],
         summary: 'Deploy template from raw YAML',
@@ -315,7 +315,7 @@ export const document = createDocument({
           '  "dryRun": true\n' +
           '}\n' +
           '```',
-        operationId: 'deployTemplate',
+        operationId: 'deployRawTemplate',
         requestBody: {
           required: true,
           description: 'Template deployment configuration',

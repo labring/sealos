@@ -19,10 +19,14 @@ export const LanguageQuerySchema = z.object({
     .string()
     .optional()
     .describe('Language code for internationalization (e.g., "en", "zh"). Defaults to "en"')
+    .meta({ example: 'en' })
 });
 
 export const TemplateNamePathSchema = z.object({
-  name: z.string().describe('Template name identifier (e.g., "perplexica", "yourls")')
+  name: z
+    .string()
+    .describe('Template name identifier (e.g., "perplexica", "yourls")')
+    .meta({ example: 'perplexica' })
 });
 
 export const InstanceNamePathSchema = z.object({
