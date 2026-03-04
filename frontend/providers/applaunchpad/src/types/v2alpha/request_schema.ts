@@ -474,7 +474,9 @@ export function transformToLegacySchema(
     appName: standardRequest.name,
     imageName: standardRequest.image.imageName,
     runCMD: standardRequest.launchCommand?.command || '',
-    cmdParam: standardRequest.launchCommand?.args || '',
+    cmdParam: standardRequest.launchCommand?.args?.length
+      ? JSON.stringify(standardRequest.launchCommand.args)
+      : '',
     replicas: standardRequest.quota.replicas || 1,
     cpu: cpuValue,
     memory: memoryValue,
@@ -516,7 +518,15 @@ export function transformFromLegacySchema(
     },
     launchCommand: {
       command: legacyData.runCMD,
-      args: legacyData.cmdParam
+      args: (() => {
+        if (!legacyData.cmdParam) return undefined;
+        try {
+          const p = JSON.parse(legacyData.cmdParam);
+          return Array.isArray(p) ? p : [legacyData.cmdParam];
+        } catch {
+          return [legacyData.cmdParam];
+        }
+      })()
     },
     quota: {
       replicas: legacyData.hpa?.use ? undefined : legacyData.replicas || 1,
