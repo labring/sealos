@@ -1718,8 +1718,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           operationId: 'listDevboxTemplates',
           summary: 'List available devbox templates',
           description:
-            'Retrieve available runtime environments and their default port/command configurations for creating Devboxes. This endpoint does not require authentication.',
-          security: [],
+            'Retrieve available runtime environments and their default port/command configurations for creating Devboxes.',
           responses: {
             '200': {
               description: 'Template list retrieved successfully.',
@@ -1762,6 +1761,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
                 }
               }
             },
+            '401': unauthorizedResponse,
             '500': {
               description: 'Failed to retrieve the template list.',
               content: {

@@ -3,10 +3,21 @@ import { devboxDB } from '@/services/db/init';
 import { getRegionUid } from '@/utils/env';
 import { parseTemplateConfig } from '@/utils/tools';
 import { sendError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
+import { authSession } from '@/services/backend/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  try {
+    await authSession(req.headers);
+  } catch {
+    return sendError({
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Invalid or missing Authorization header'
+    });
+  }
   try {
     const regionUid = getRegionUid();
 
