@@ -447,6 +447,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           sizeLimit: parsedData.sharedMemory.sizeLimit || 1
         });
       }
+
+      // Handle Tolerations
+      if (Array.isArray(parsedData.tolerations)) {
+        formHook.setValue('tolerations', parsedData.tolerations);
+      }
     } catch (error) {}
   }, [router.query, already]);
 

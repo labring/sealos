@@ -472,6 +472,7 @@ export const adaptAppDetail = async (
           '0'
       ) || undefined,
     sharedMemory: getSharedMemory(),
+    tolerations: appDeploy?.spec?.template?.spec?.tolerations || [],
     gpu: {
       type: gpuTypeInDetail,
       amount: gpuResourceKeyInDetail
@@ -625,7 +626,8 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'volumes',
     'volumeMounts',
     'ephemeralStorage',
-    'sharedMemory'
+    'sharedMemory',
+    'tolerations'
   ];
 
   const res: Record<string, any> = {};

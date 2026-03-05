@@ -11,7 +11,8 @@ import type {
   SinglePodMetrics,
   V1StatefulSet,
   V1Volume,
-  V1VolumeMount
+  V1VolumeMount,
+  V1Toleration
 } from '@kubernetes/client-node';
 import { MonitorDataResult } from './monitor';
 
@@ -142,6 +143,7 @@ export interface AppEditType {
   ephemeralStorage?: number;
   // shared memory (tmpfs mounted at /dev/shm)
   sharedMemory?: SharedMemoryType;
+  tolerations?: V1Toleration[];
 }
 
 export type AppEditSyncedFields = Pick<
@@ -161,6 +163,7 @@ export type AppEditSyncedFields = Pick<
   | 'envs'
   | 'ephemeralStorage'
   | 'sharedMemory'
+  | 'tolerations'
 >;
 
 export type TAppSourceType = 'app_store' | 'sealaf';
