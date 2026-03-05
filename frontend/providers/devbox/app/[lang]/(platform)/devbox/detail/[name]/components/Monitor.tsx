@@ -105,7 +105,7 @@ const Monitor = () => {
               <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
                 <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
                   <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
-                    <span>{t('gpu')}</span>
+                    <span>{t('gpu_usage')}</span>
                     <span>
                       {devboxDetail?.usedGpu?.yData[devboxDetail?.usedGpu?.yData?.length - 1]}%
                     </span>
@@ -126,7 +126,7 @@ const Monitor = () => {
               <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
                 <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
                   <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
-                    <span>{t('video_memory')}</span>
+                    <span>{t('gpu_memory')}</span>
                     <span>
                       {devboxDetail?.usedGpuMemory?.yData[
                         devboxDetail?.usedGpuMemory?.yData?.length - 1
