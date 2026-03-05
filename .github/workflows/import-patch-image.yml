@@ -68,7 +68,7 @@ jobs:
         run: bash "./${PROJECT_PATH}/scripts/resolve-patch-modules.sh" "${INPUT_ARCH}"
   build:
     needs: [ resolve-modules ]
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
     strategy:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
     steps:
@@ -143,7 +143,7 @@ jobs:
           path: ${{ env.PROJECT_PATH }}/test/e2e/e2e.test
   docker:
     needs: [ resolve-modules-arch,build ]
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
     if: ${{ (inputs.image == true) }}
     services:
       registry:
