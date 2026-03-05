@@ -200,6 +200,8 @@ export interface DevboxListItemTypeV2 {
   gpu?: GpuType;
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult;
+  usedGpu?: MonitorDataResult;
+  usedGpuMemory?: MonitorDataResult;
   sshPort: number;
   lastTerminatedReason?: string;
 }
