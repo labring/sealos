@@ -14,13 +14,21 @@ output='matrix={"include":['
 
 if [ "$only_arch" == "true" ]; then
   for arch in "${arch_array[@]}"; do
-    output+='{"arch":"'"$arch"'"},'
+    if [ "$arch" == "arm64" ]; then
+      output+="{\"arch\":\"${arch}\",\"runs-on\":\"ubuntu-24.04-arm\"},"
+    else
+      output+="{\"arch\":\"${arch}\"},"
+    fi
   done
 else
   IFS=',' read -ra binary_array <<< "$binary_list"
   for arch in "${arch_array[@]}"; do
     for binary in "${binary_array[@]}"; do
-      output+='{"binary":"'"$binary"'","arch":"'"$arch"'"},'
+      if [ "$arch" == "arm64" ]; then
+        output+="{\"binary\":\"${binary}\",\"arch\":\"${arch}\",\"runs-on\":\"ubuntu-24.04-arm\"},"
+      else
+        output+="{\"binary\":\"${binary}\",\"arch\":\"${arch}\"},"
+      fi
     done
   done
 fi
