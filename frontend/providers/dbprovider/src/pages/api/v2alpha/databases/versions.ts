@@ -1,3 +1,4 @@
+import { authSession } from '@/services/backend/auth';
 import { getK8s, K8sApi } from '@/services/backend/kubernetes';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { versionListSchema } from '@/types/schemas/db';
@@ -6,9 +7,21 @@ import z from 'zod';
 import { sendError, sendK8sError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const kc = K8sApi();
+  const kubeconfig = await authSession(req).catch(() => null);
+  if (!kubeconfig) {
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
+    });
+  }
 
-  const k8s = (await getK8s({ kubeconfig: kc.exportConfig() }))!;
+  // Try user kubeconfig first, fall back to in-cluster service account
+  const k8s = (await getK8s({ kubeconfig }).catch(async () => {
+    const kc = K8sApi();
+    return getK8s({ kubeconfig: kc.exportConfig() });
+  }))!;
 
   if (req.method === 'GET') {
     try {
