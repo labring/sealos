@@ -1,8 +1,7 @@
 import { uploadConvertData } from '@/api/platform';
-import { generateAuthenticationToken } from '@/services/backend/auth';
+import { generateGlobalAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 import { AuthError } from '@/services/backend/errors';
-import { AuthConfigType } from '@/types';
 import { SemData } from '@/types/sem';
 import { hashPassword } from '@/utils/crypto';
 import { nanoid } from 'nanoid';
@@ -479,9 +478,10 @@ export const getGlobalToken = async ({
 
   // user is deleted or banned
   if (user.status !== UserStatus.NORMAL_USER) return null;
-  const token = generateAuthenticationToken({
-    userUid: user.uid,
-    userId: user.name
+  const token = generateGlobalAccessToken({
+    sub: user.uid,
+    user_id: user.id,
+    preferred_username: user.nickname
   });
   const userInfo = await globalPrisma.userInfo.findUnique({
     where: {

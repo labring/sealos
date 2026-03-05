@@ -190,16 +190,18 @@ export const exchangeDeviceCodeForToken = async (
   const accessToken = generateOAuth2AccessToken(
     {
       sub: user.uid,
+      user_id: user.id,
       client_id: client.clientId,
-      preferred_username: user.name
+      preferred_username: user.nickname
     },
     `${ACCESS_TOKEN_EXPIRES_IN_SECONDS}s`
   );
   const refreshToken = generateOAuth2RefreshToken(
     {
       sub: user.uid,
+      user_id: user.id,
       client_id: client.clientId,
-      preferred_username: user.name
+      preferred_username: user.nickname
     },
     `${REFRESH_TOKEN_EXPIRES_IN_SECONDS}s`
   );
@@ -249,6 +251,7 @@ export const exchangeRefreshTokenForToken = async (
   const accessToken = generateOAuth2AccessToken(
     {
       sub: refreshPayload.sub,
+      user_id: refreshPayload.user_id,
       client_id: refreshPayload.client_id,
       preferred_username: refreshPayload.preferred_username,
       scope: refreshPayload.scope
@@ -258,6 +261,7 @@ export const exchangeRefreshTokenForToken = async (
   const refreshToken = generateOAuth2RefreshToken(
     {
       sub: refreshPayload.sub,
+      user_id: refreshPayload.user_id,
       client_id: refreshPayload.client_id,
       preferred_username: refreshPayload.preferred_username,
       scope: refreshPayload.scope
