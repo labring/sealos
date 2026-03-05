@@ -7,7 +7,7 @@ import { createDeviceAuthorizationGrant } from '@/services/backend/oauth2/servic
 import { OAuth2HttpError } from '@/services/backend/oauth2/errors';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ZodError } from 'zod';
-import { formatValidationErrorDescription } from './utils';
+import { applyOAuth2NoStoreHeaders, formatValidationErrorDescription } from './utils';
 
 const normalizeBody = (body: NextApiRequest['body']) => {
   if (!body) return {};
@@ -18,6 +18,7 @@ const normalizeBody = (body: NextApiRequest['body']) => {
 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  applyOAuth2NoStoreHeaders(res);
   if (req.method !== 'POST') {
     return res.status(405).end();
   }

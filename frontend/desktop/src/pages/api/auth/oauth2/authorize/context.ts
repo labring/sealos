@@ -8,7 +8,7 @@ import { resolveOAuth2AuthUser } from '@/services/backend/oauth2/auth';
 import { getAuthorizeContext } from '@/services/backend/oauth2/service';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ZodError } from 'zod';
-import { formatValidationErrorDescription } from '../utils';
+import { applyOAuth2NoStoreHeaders, formatValidationErrorDescription } from '../utils';
 
 const normalizeQuery = (query: NextApiRequest['query']) => ({
   user_code: typeof query.user_code === 'string' ? query.user_code : undefined,
@@ -16,6 +16,7 @@ const normalizeQuery = (query: NextApiRequest['query']) => ({
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  applyOAuth2NoStoreHeaders(res);
   if (req.method !== 'GET') {
     return res.status(405).end();
   }
