@@ -69,7 +69,8 @@ export const defaultEditVal: AppEditType = {
     type: '',
     amount: 1
   },
-  labels: {}
+  labels: {},
+  tolerations: []
 };
 
 export const GpuAmountMarkList = [

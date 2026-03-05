@@ -323,7 +323,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
               }
             ],
             ...gpuMap,
-            volumes: finalVolumes
+            volumes: finalVolumes,
+            ...(data.tolerations && data.tolerations.length > 0
+              ? { tolerations: data.tolerations }
+              : {})
           }
         }
       }
@@ -362,7 +365,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
               }
             ],
             ...gpuMap,
-            volumes: finalVolumes
+            volumes: finalVolumes,
+            ...(data.tolerations && data.tolerations.length > 0
+              ? { tolerations: data.tolerations }
+              : {})
           }
         },
         volumeClaimTemplates: storageTemplates
