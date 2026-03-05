@@ -512,25 +512,6 @@ async function updateDevboxResource(
       }
     }
   );
-
-  const updatedDevbox = await waitForDevboxStatus(
-    k8sCustomObjects,
-    namespace,
-    devboxName,
-    15,
-    2000
-  );
-
-  return {
-    name: devboxName,
-    quota: {
-      ...(typeof quota.cpu === 'number' ? { cpu: quota.cpu } : {}),
-      ...(typeof quota.memory === 'number' ? { memory: quota.memory } : {})
-    },
-    k8sResource: k8sResource,
-    status: updatedDevbox.status?.phase || 'Unknown',
-    updatedAt: new Date().toISOString()
-  };
 }
 
 async function updateDevboxPorts(

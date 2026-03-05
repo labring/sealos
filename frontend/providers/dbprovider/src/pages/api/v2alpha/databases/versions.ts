@@ -1,5 +1,5 @@
 import { authSession } from '@/services/backend/auth';
-import { getK8s, K8sApi } from '@/services/backend/kubernetes';
+import { getK8s } from '@/services/backend/kubernetes';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { versionListSchema } from '@/types/schemas/db';
 import { DBTypeEnum } from '@/constants/db';
@@ -17,11 +17,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  // Try user kubeconfig first, fall back to in-cluster service account
-  const k8s = (await getK8s({ kubeconfig }).catch(async () => {
-    const kc = K8sApi();
-    return getK8s({ kubeconfig: kc.exportConfig() });
-  }))!;
+  const k8s = await getK8s({ kubeconfig }).catch(() => null);
+  if (!k8s) {
+    return sendError(res, {
+      status: 401,
+      type: ErrorType.AUTHENTICATION_ERROR,
+      code: ErrorCode.AUTHENTICATION_REQUIRED,
+      message: 'Unauthorized, please login again.'
+    });
+  }
 
   if (req.method === 'GET') {
     try {
@@ -39,9 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [DBTypeEnum.clickhouse]: []
       };
 
-      const { k8sCustomObjects } = k8s;
-
-      const { body } = (await k8sCustomObjects.listClusterCustomObject(
+      const { body } = (await k8s.k8sCustomObjects.listClusterCustomObject(
         'apps.kubeblocks.io',
         'v1alpha1',
         'clusterversions'

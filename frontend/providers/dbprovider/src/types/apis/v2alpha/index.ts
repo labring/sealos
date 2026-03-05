@@ -3112,7 +3112,9 @@ export const document = createDocument({
       get: {
         summary: 'List available database versions',
         description:
-          'Returns all supported database versions per engine type. Use these version strings when creating a new database.',
+          'Returns all supported database versions per engine type. Use these version strings when creating a new database.\n\n' +
+          '**Required RBAC**: This endpoint queries the cluster-scoped `clusterversions.apps.kubeblocks.io` resource. ' +
+          "The authenticated user's service account must have a `ClusterRoleBinding` granting `list` permission on this resource.",
         operationId: 'listDatabaseVersions',
         tags: ['Query'],
         responses: {

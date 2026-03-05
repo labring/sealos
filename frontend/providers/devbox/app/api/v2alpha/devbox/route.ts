@@ -10,7 +10,6 @@ import { json2Devbox, json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
-import { adaptDevboxDetailV2 } from '@/utils/adapt';
 import { parseTemplateConfig, cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
 
@@ -567,10 +566,8 @@ export async function POST(req: NextRequest) {
       STORAGE_LIMIT
     );
 
-    const [devboxBody, createdPorts] = await Promise.all([
-      applyYamlList([devbox], 'create').then(() =>
-        waitForDevboxStatus(k8sCustomObjects, namespace, devboxForm.name)
-      ),
+    await Promise.all([
+      applyYamlList([devbox], 'create'),
       finalPorts?.length
         ? createPortsAndNetworks(
             finalPorts,
@@ -583,60 +580,8 @@ export async function POST(req: NextRequest) {
         : Promise.resolve([])
     ]);
 
-    let autostartSuccess: boolean | undefined;
-    if (devboxForm.autostart && devboxBody.metadata?.uid) {
-      const execCommand =
-        templateConfig.releaseCommand && templateConfig.releaseArgs
-          ? `${templateConfig.releaseCommand.join(' ')} ${templateConfig.releaseArgs.join(' ')}`
-          : '/bin/bash /home/devbox/project/entrypoint.sh';
-
-      autostartSuccess = await handleAutostart(
-        devboxForm.name,
-        namespace,
-        devboxBody.metadata.uid,
-        applyYamlList,
-        execCommand
-      );
-    }
-
-    const resp = [devboxBody, [], template, [], []] as [
-      KBDevboxTypeV2,
-      [],
-      typeof template,
-      [],
-      []
-    ];
-    const adaptedData = adaptDevboxDetailV2(resp);
-
-    //3.read-ssh-keys！！！！！
-    const response = await k8sCore.readNamespacedSecret(devboxForm.name, namespace);
-    const base64PrivateKey = response.body.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string;
-
-    if (!base64PrivateKey) {
-      return sendError({
-        status: 404,
-        type: ErrorType.RESOURCE_ERROR,
-        code: ErrorCode.NOT_FOUND,
-        message: 'SSH keys not found'
-      });
-    }
-
-    const { user: userName, workingDir } = templateConfig;
-    const { SEALOS_DOMAIN: domain } = process.env;
-
-    const responseData = buildPortResponseData(
-      createdPorts,
-      adaptedData,
-      base64PrivateKey,
-      userName,
-      workingDir,
-      domain,
-      autostartSuccess
-    );
-
-    // Success: return 201 Created with the resource body
-    // Note: pod startup is asynchronous — caller should poll GET /devbox/{name} for Running status
-    return NextResponse.json(responseData, { status: 201 });
+    // Return 202 Accepted immediately — devbox creation is async, poll GET /devbox/{name} for status
+    return NextResponse.json({ name: devboxForm.name, status: 'creating' }, { status: 202 });
   } catch (err: any) {
     return sendError({
       status: 500,
