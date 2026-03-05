@@ -1,32 +1,12 @@
-import { authSession } from '@/services/backend/auth';
-import { getK8s } from '@/services/backend/kubernetes';
+import { K8sApi } from '@/services/backend/kubernetes';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { versionListSchema } from '@/types/schemas/db';
 import { DBTypeEnum } from '@/constants/db';
 import z from 'zod';
+import * as k8s from '@kubernetes/client-node';
 import { sendError, sendK8sError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const kubeconfig = await authSession(req).catch(() => null);
-  if (!kubeconfig) {
-    return sendError(res, {
-      status: 401,
-      type: ErrorType.AUTHENTICATION_ERROR,
-      code: ErrorCode.AUTHENTICATION_REQUIRED,
-      message: 'Unauthorized, please login again.'
-    });
-  }
-
-  const k8s = await getK8s({ kubeconfig }).catch(() => null);
-  if (!k8s) {
-    return sendError(res, {
-      status: 401,
-      type: ErrorType.AUTHENTICATION_ERROR,
-      code: ErrorCode.AUTHENTICATION_REQUIRED,
-      message: 'Unauthorized, please login again.'
-    });
-  }
-
   if (req.method === 'GET') {
     try {
       const DBVersion: z.Infer<typeof versionListSchema> = {
@@ -43,7 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [DBTypeEnum.clickhouse]: []
       };
 
-      const { body } = (await k8s.k8sCustomObjects.listClusterCustomObject(
+      const kc = K8sApi();
+      const k8sCustomObjects = kc.makeApiClient(k8s.CustomObjectsApi);
+
+      const { body } = (await k8sCustomObjects.listClusterCustomObject(
         'apps.kubeblocks.io',
         'v1alpha1',
         'clusterversions'
@@ -58,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.json(DBVersion);
     } catch (err) {
-      console.log('error get db by name', err);
+      console.log('error get db versions', err);
       return sendK8sError(res, err);
     }
   } else {

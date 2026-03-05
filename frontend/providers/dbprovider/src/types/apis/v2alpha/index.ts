@@ -3112,65 +3112,16 @@ export const document = createDocument({
         summary: 'List available database versions',
         description:
           'Returns all supported database versions per engine type. Use these version strings when creating a new database.\n\n' +
-          '**Required RBAC**: This endpoint queries the cluster-scoped `clusterversions.apps.kubeblocks.io` resource. ' +
-          "The authenticated user's service account must have a `ClusterRoleBinding` granting `list` permission on this resource.",
+          'This endpoint does not require authentication — it queries the cluster using the server\u2019s own service account.',
         operationId: 'listDatabaseVersions',
         tags: ['Query'],
+        security: [],
         responses: {
           '200': {
             description: 'Database versions retrieved successfully',
             content: {
               'application/json': {
                 schema: databaseVersionListSchemas.response
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized — invalid or missing kubeconfig',
-            content: {
-              'application/json': {
-                schema: createError401Schema(),
-                examples: {
-                  missingAuth: {
-                    summary: 'Missing authentication',
-                    value: createErrorExample(
-                      ErrorType.AUTHENTICATION_ERROR,
-                      ErrorCode.AUTHENTICATION_REQUIRED,
-                      'Unauthorized, please login again.'
-                    )
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden — insufficient permissions',
-            content: {
-              'application/json': {
-                schema: createError403Schema([
-                  ErrorCode.PERMISSION_DENIED,
-                  ErrorCode.INSUFFICIENT_BALANCE
-                ]),
-                examples: {
-                  permissionDenied: {
-                    summary: 'Insufficient permissions',
-                    value: createErrorExample(
-                      ErrorType.AUTHORIZATION_ERROR,
-                      ErrorCode.PERMISSION_DENIED,
-                      'Insufficient permissions to perform this operation.',
-                      'clusterversions.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot list resource "clusterversions" in API group "apps.kubeblocks.io"'
-                    )
-                  },
-                  insufficientBalance: {
-                    summary: 'Insufficient account balance',
-                    value: createErrorExample(
-                      ErrorType.AUTHORIZATION_ERROR,
-                      ErrorCode.INSUFFICIENT_BALANCE,
-                      'Insufficient balance to perform this operation.',
-                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
-                    )
-                  }
-                }
               }
             }
           },
