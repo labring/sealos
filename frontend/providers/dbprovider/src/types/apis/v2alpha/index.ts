@@ -1267,7 +1267,6 @@ export const document = createDocument({
             description: 'Database details retrieved successfully',
             content: {
               'application/json': {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 schema: getDatabaseResponseJsonSchema as any
               }
             }
