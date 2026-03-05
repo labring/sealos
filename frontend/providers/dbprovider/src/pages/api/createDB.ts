@@ -83,7 +83,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         await applyYamlList(opsRequests, 'create');
       }
 
-      if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
+      if (
+        process.env.BACKUP_ENABLED === 'true' &&
+        BackupSupportedDBTypeList.includes(dbForm.dbType) &&
+        dbForm?.autoBackup
+      ) {
         const autoBackup = convertBackupFormToSpec({
           autoBackup: dbForm?.autoBackup,
           dbType: dbForm.dbType
@@ -153,7 +157,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     await applyYamlList([updateAccountYaml], 'replace');
 
     try {
-      if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
+      if (
+        process.env.BACKUP_ENABLED === 'true' &&
+        BackupSupportedDBTypeList.includes(dbForm.dbType) &&
+        dbForm?.autoBackup
+      ) {
         const autoBackup = convertBackupFormToSpec({
           autoBackup: dbForm?.autoBackup,
           dbType: dbForm.dbType

@@ -3639,6 +3639,9 @@ spec:
         - --request-cpu-rate=20
         - --request-memory-rate=10
         - --enable-pod-ephemeral-storage-matcher={{ .enablePodEphemeralStorageMatcher }}
+        - --enable-pod-expected-annotations-matcher={{ .enablePodAnnotationsMatcher }}
+        - --enable-pod-env-matcher={{ .enablePodEnvMatcher }}
+        - --enable-pod-extra-resource-matcher={{ .enablePodResourceMatcher }}
         - --registry-addr={{ .registryAddr }}
         - --registry-user={{ .registryUser }}
         - --registry-password={{ .registryPassword }}

@@ -1,4 +1,5 @@
 import { DevboxDetailType, DevboxEditType, DevboxEditTypeV2 } from '@/types/devbox';
+import { STORAGE_DEFAULT_FALLBACK_GI } from '@/utils/storage';
 
 export const defaultSliderKey = 'default';
 export const crLabelKey = 'sealos-devbox-cr';
@@ -81,7 +82,7 @@ export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
   templateUid: '',
   cpu: 2000,
   memory: 4096,
-  storage: 10,
+  storage: STORAGE_DEFAULT_FALLBACK_GI,
   networks: [],
   envs: [],
   configMaps: [],
@@ -280,9 +281,5 @@ export const GpuAmountMarkList = [
   { label: '1', value: 1 },
   { label: '2', value: 2 },
   { label: '3', value: 3 },
-  { label: '4', value: 4 },
-  { label: '5', value: 5 },
-  { label: '6', value: 6 },
-  { label: '7', value: 7 },
-  { label: '8', value: 8 }
+  { label: '4', value: 4 }
 ];

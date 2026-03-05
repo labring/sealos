@@ -12,11 +12,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from '@/i18n';
 import type { YamlItemType } from '@/types';
 import { patchYamlList } from '@/utils/tools';
+import { normalizeStorageDefaultGi } from '@/utils/storage';
 import { useConfirm } from '@/hooks/useConfirm';
 import { generateYamlList } from '@/utils/json2Yaml';
 import { createDevbox, updateDevbox } from '@/api/devbox';
 import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
-import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox';
+import { defaultDevboxEditValueV2, editModeMap, GpuAmountMarkList } from '@/constants/devbox';
 
 import { useEnvStore } from '@/stores/env';
 import { useIDEStore } from '@/stores/ide';
@@ -59,8 +60,15 @@ const DevboxCreatePage = () => {
   const [captureFrom, setCaptureFrom] = useState('');
   const [captureScrollTo, setCaptureScrollTo] = useState('');
   const [captureDevboxName, setCaptureDevboxName] = useState('');
+  const normalizedStorageDefault = normalizeStorageDefaultGi(
+    env.storageDefault,
+    defaultDevboxEditValueV2.storage
+  );
   const formHook = useForm<DevboxEditTypeV2>({
-    defaultValues: defaultDevboxEditValueV2
+    defaultValues: {
+      ...defaultDevboxEditValueV2,
+      storage: normalizedStorageDefault
+    }
   });
 
   useEffect(() => {
@@ -93,6 +101,24 @@ const DevboxCreatePage = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);
+  const maxGpuAmount = useMemo(
+    () => GpuAmountMarkList[GpuAmountMarkList.length - 1]?.value ?? 4,
+    []
+  );
+
+  useEffect(() => {
+    if (isEdit) return;
+
+    const currentStorage = formHook.getValues('storage');
+
+    if (currentStorage !== normalizedStorageDefault) {
+      formHook.setValue('storage', normalizedStorageDefault, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false
+      });
+    }
+  }, [formHook, isEdit, normalizedStorageDefault]);
 
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(isEdit);
 
@@ -134,9 +160,9 @@ const DevboxCreatePage = () => {
   const countGpuInventory = useCallback(
     (type?: string) => {
       if (!type) return 0;
-      const gpuItem = sourcePrice?.gpu?.find((item) => item.annotationType === type);
-      const available = gpuItem?.available || 0;
-      const total = gpuItem?.count || 0;
+      const gpuItems = sourcePrice?.gpu?.filter((item) => item.annotationType === type) || [];
+      const available = gpuItems.reduce((sum, item) => sum + (item.available || 0), 0);
+      const total = gpuItems.reduce((sum, item) => sum + (item.count || 0), 0);
 
       if (!isEdit) {
         return available;
@@ -211,6 +237,10 @@ const DevboxCreatePage = () => {
     try {
       // gpu inventory check
       if (formData.gpu?.type) {
+        if (formData.gpu?.amount > maxGpuAmount) {
+          return toast.warning(t('Gpu amount over max Tip', { max: maxGpuAmount }));
+        }
+
         const inventory = countGpuInventory(formData.gpu?.type);
         if (formData.gpu?.amount > inventory) {
           return toast.warning(

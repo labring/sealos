@@ -37,11 +37,22 @@ resources:
     cpu: 10m
     memory: 64Mi
 
-secret:
-  name: "mongo-secret"
+configmap:
+  name: "resources-config"
   mongoURI: "mongodb://mongo:27017/resources"
   trafficMongoURI: "mongodb://mongo:27017/traffic"
   trafficsServiceConnectAddress: ""
+  minioEndpoint: "object-storage.objectstorage-system.svc:80"
+  minioAK: ""
+  minioSK: ""
+  minioMetricsAddr: "object-storage.objectstorage-system.svc:80"
+  minioMetricsSecure: "false"
+  promURL: "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc:8481/select/0/prometheus/"
+  objectStorageInstance: "object-storage.objectstorage-system.svc:80"
+  enableAutoResourceQuota: "false"
+  concurrentLimit: "1000"
+  ephemeralStorageChargeThreshold: "10Gi"
+  limitQuotaExpansionCycle: "24h"
 
 extraEnv: []
 

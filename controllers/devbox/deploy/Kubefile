@@ -10,5 +10,8 @@ ENV registryUser=admin
 ENV registryPassword=passw0rd
 ENV authAddr="sealos.hub:5000"
 ENV enablePodEphemeralStorageMatcher=false
+ENV enablePodAnnotationsMatcher=true
+ENV enablePodEnvMatcher=true
+ENV enablePodResourceMatcher=true
 
 CMD ["kubectl apply -f manifests"]

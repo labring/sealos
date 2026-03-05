@@ -265,4 +265,5 @@ export type GpuNodeType = {
   resource?: {
     card: string;
   };
+  nodeName?: string;
 };

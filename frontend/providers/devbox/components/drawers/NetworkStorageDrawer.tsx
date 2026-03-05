@@ -18,6 +18,7 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
 interface NetworkStorageDrawerProps {
   isEdit: boolean;
+  maxCapacity?: number;
   onClose: () => void;
   onSuccess: (storage: { id?: string; path: string; size: number }) => void;
   initialValue?: { id?: string; path: string; size: number };
@@ -27,6 +28,7 @@ interface NetworkStorageDrawerProps {
 
 const NetworkStorageDrawer = ({
   isEdit,
+  maxCapacity = 30,
   onClose,
   onSuccess,
   initialValue,
@@ -40,26 +42,30 @@ const NetworkStorageDrawer = ({
   const [pathError, setPathError] = useState<string>('');
 
   const minCapacity = isEdit && originalValue ? originalValue.size : 1;
+  const parsedMaxCapacity = Number(maxCapacity);
+  const configuredMaxCapacity =
+    Number.isFinite(parsedMaxCapacity) && parsedMaxCapacity >= 1 ? Math.floor(parsedMaxCapacity) : 30;
+  const maxCapacityLimit = Math.max(minCapacity, configuredMaxCapacity);
 
   const handleCapacityChange = (delta: number) => {
-    const newValue = Math.min(20, Math.max(minCapacity, capacity + delta));
+    const newValue = Math.min(maxCapacityLimit, Math.max(minCapacity, capacity + delta));
     setCapacity(newValue);
     setCapacityInput(newValue.toString());
   };
 
   const handleCapacityInput = (value: string) => {
     setCapacityInput(value);
-    const num = parseInt(value);
+    const num = parseInt(value, 10);
     if (!isNaN(num)) {
-      setCapacity(Math.min(20, Math.max(minCapacity, num)));
+      setCapacity(Math.min(maxCapacityLimit, Math.max(minCapacity, num)));
     }
   };
 
   const handleCapacityBlur = () => {
-    if (capacityInput === '' || isNaN(parseInt(capacityInput))) {
+    if (capacityInput === '' || isNaN(parseInt(capacityInput, 10))) {
       setCapacityInput(capacity.toString());
     } else {
-      const num = Math.min(20, Math.max(minCapacity, parseInt(capacityInput)));
+      const num = Math.min(maxCapacityLimit, Math.max(minCapacity, parseInt(capacityInput, 10)));
       setCapacity(num);
       setCapacityInput(num.toString());
     }
@@ -72,6 +78,10 @@ const NetworkStorageDrawer = ({
 
     if (!path.startsWith('/')) {
       return t('path_must_be_absolute');
+    }
+
+    if (path === '/') {
+      return '';
     }
 
     const pathPattern = /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/;
@@ -127,7 +137,7 @@ const NetworkStorageDrawer = ({
                 <Input
                   type="number"
                   min={minCapacity}
-                  max={20}
+                  max={maxCapacityLimit}
                   value={capacityInput}
                   onChange={(e) => handleCapacityInput(e.target.value)}
                   onBlur={handleCapacityBlur}
