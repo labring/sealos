@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
       'devboxes',
       devboxName
     )) as { body: KBDevboxTypeV2 };
+    const tolerations = devboxBody.spec.tolerations;
     const template = await devboxDB.template.findUnique({
       where: {
         uid: devboxBody.spec.templateID
@@ -138,6 +139,7 @@ export async function POST(req: NextRequest) {
         },
         cpu,
         memory,
+        ...(tolerations?.length ? { tolerations } : {}),
         networks: networks,
         envs: [],
         hpa: {
