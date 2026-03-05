@@ -23,7 +23,7 @@ COPY . /work
 # RUN mv /work/.github/sources.list /etc/apt
 RUN dpkg --add-architecture arm64 &&  \
       apt update &&  \
-      apt install -y gcc-aarch64-linux-gnu && \
+      apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu && \
       apt install -y libbtrfs-dev btrfs-tools && \
       apt install -y libgpgme-dev libdevmapper-dev && \
       apt install -y libbtrfs-dev:arm64 btrfs-tools:arm64 && \
