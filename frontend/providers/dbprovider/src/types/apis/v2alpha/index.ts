@@ -542,10 +542,9 @@ export const document = createDocument({
                     properties: {
                       cpu: {
                         type: 'number',
-                        minimum: 0.1,
-                        maximum: 32,
+                        enum: [1, 2, 3, 4, 5, 6, 7, 8],
                         description:
-                          'CPU cores allocated to each database instance - range [0.1, 32] (automatically converted to millicores in Kubernetes)',
+                          'CPU cores allocated to each database instance. Allowed values: 1, 2, 3, 4, 5, 6, 7, or 8 (converted to millicores in Kubernetes)',
                         default: 1,
                         example: 1
                       },
@@ -3254,9 +3253,11 @@ export const document = createDocument({
             required: true,
             schema: {
               type: 'string',
-              example: 'error'
+              enum: ['runtimeLog', 'slowQuery', 'errorLog'],
+              example: 'errorLog'
             },
-            description: 'Type of log to retrieve (e.g., "error", "slow-query", "general")'
+            description:
+              'Type of log to retrieve. Allowed values: "runtimeLog", "slowQuery", "errorLog"'
           },
           {
             name: 'logPath',
@@ -3470,9 +3471,11 @@ export const document = createDocument({
             required: true,
             schema: {
               type: 'string',
-              example: 'error'
+              enum: ['runtimeLog', 'slowQuery', 'errorLog'],
+              example: 'errorLog'
             },
-            description: 'Type of logs to list (e.g., "error", "slow-query", "general")'
+            description:
+              'Type of logs to list. Allowed values: "runtimeLog", "slowQuery", "errorLog"'
           }
         ],
         responses: {
