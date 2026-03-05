@@ -17,10 +17,11 @@ export { ErrorType, ErrorCode, buildErrorBody, buildValidationErrorBody };
 export type {
   ErrorTypeValue,
   ErrorCodeType,
-  ApiErrorResponse
+  ApiErrorResponse,
+  ApiErrorDetails
 } from '@sealos/shared/server/v2alpha';
 
-import type { ErrorTypeValue, ErrorCodeType } from '@sealos/shared/server/v2alpha';
+import type { ErrorTypeValue, ErrorCodeType, ApiErrorDetails } from '@sealos/shared/server/v2alpha';
 
 // ============================================================================
 // OpenAPI schemas — local, built with this provider's zod (v4 + zod-openapi v5)
@@ -330,7 +331,7 @@ export function createErrorExample(
   type: ErrorTypeValue,
   code: ErrorCodeType,
   message: string,
-  details?: unknown
+  details?: ApiErrorDetails
 ) {
   return {
     error: {
@@ -364,7 +365,7 @@ export function sendError(
     type: ErrorTypeValue;
     code: ErrorCodeType;
     message: string;
-    details?: unknown;
+    details?: ApiErrorDetails;
   }
 ): void {
   res.status(config.status).json(buildErrorBody(config));
