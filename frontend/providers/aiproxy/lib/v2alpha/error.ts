@@ -1,17 +1,15 @@
-import { NextResponse } from 'next/server'
-import { z } from 'zod'
-
+import type { ApiErrorDetails, ErrorCodeType, ErrorTypeValue } from '@sealos/shared/server/v2alpha'
 import {
   buildErrorBody,
   buildValidationErrorBody,
   ErrorCode,
   ErrorType,
 } from '@sealos/shared/server/v2alpha'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
 
 export { buildErrorBody, buildValidationErrorBody, ErrorCode, ErrorType }
 export type { ApiErrorResponse, ErrorCodeType, ErrorTypeValue } from '@sealos/shared/server/v2alpha'
-
-import type { ErrorCodeType, ErrorTypeValue } from '@sealos/shared/server/v2alpha'
 
 // ============================================================================
 // OpenAPI schemas — local, built with this provider's zod (v3)
@@ -97,7 +95,7 @@ export function sendError(config: {
   type: ErrorTypeValue
   code: ErrorCodeType
   message: string
-  details?: unknown
+  details?: ApiErrorDetails
 }): NextResponse {
   return NextResponse.json(buildErrorBody(config), { status: config.status })
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ApiReferenceReact } from '@scalar/api-reference-react';
+
 import { getAppToken } from '@/utils/frontend/user';
 
 import '@scalar/api-reference-react/style.css';

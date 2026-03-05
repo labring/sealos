@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { zodToJsonSchema } from 'zod-to-json-schema'
 
 import {
   createError400Schema,
@@ -9,7 +10,6 @@ import {
   ErrorCode,
   ErrorType,
 } from '@/lib/v2alpha/error'
-import { zodToJsonSchema } from 'zod-to-json-schema'
 
 export const dynamic = 'force-dynamic'
 
