@@ -9,6 +9,7 @@ import { useDateTimeStore } from '@/stores/date';
 import DatePicker from '@/components/DatePicker';
 import MonitorChart from '@/components/MonitorChart';
 import { RefreshButton } from '@/components/RefreshButton';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
 
 const Monitor = () => {
   const params = useParams();
@@ -56,99 +57,101 @@ const Monitor = () => {
           {dayjs().format('HH:mm')}
         </span>
       </div>
-      <div className="flex w-full flex-1 min-h-0 flex-col gap-2 overflow-y-auto">
-        {/* CPU */}
-        <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-          <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
-            <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
-              <span>{t('cpu')}</span>
-              <span>{devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%</span>
-            </div>
-            <div className={chartWrapperClass}>
-              <MonitorChart
-                type="blue"
-                data={devboxDetail?.usedCpu}
-                isShowText={false}
-                splitNumber={4}
-                className="w-full"
-                isShowLabel
-              />
-            </div>
-          </div>
-        </div>
-        {/* Memory */}
-        <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-          <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
-            <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
-              <span>{t('memory')}</span>
-              <span>
-                {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
-              </span>
-            </div>
-            <div className={chartWrapperClass}>
-              <MonitorChart
-                type="green"
-                data={devboxDetail?.usedMemory}
-                isShowText={false}
-                splitNumber={4}
-                className="w-full"
-                isShowLabel
-              />
-            </div>
-          </div>
-        </div>
-        {showGpuMonitor && (
-          <>
-            {/* GPU */}
-            <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-              <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
-                <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
-                  <span>{t('gpu')}</span>
-                  <span>
-                    {devboxDetail?.usedGpu?.yData[devboxDetail?.usedGpu?.yData?.length - 1]}%
-                  </span>
-                </div>
-                <div className={chartWrapperClass}>
-                  <MonitorChart
-                    type="blue"
-                    data={devboxDetail?.usedGpu}
-                    isShowText={false}
-                    splitNumber={4}
-                    className="w-full"
-                    isShowLabel
-                  />
-                </div>
+      <ScrollArea className="w-full flex-1 min-h-0 pr-1">
+        <div className="flex w-full flex-col gap-2 pb-1">
+          {/* CPU */}
+          <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
+            <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+              <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
+                <span>{t('cpu')}</span>
+                <span>{devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%</span>
+              </div>
+              <div className={chartWrapperClass}>
+                <MonitorChart
+                  type="blue"
+                  data={devboxDetail?.usedCpu}
+                  isShowText={false}
+                  splitNumber={4}
+                  className="w-full"
+                  isShowLabel
+                />
               </div>
             </div>
-            {/* GPU Memory */}
-            <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-              <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
-                <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
-                  <span>{t('video_memory')}</span>
-                  <span>
-                    {devboxDetail?.usedGpuMemory?.yData[
-                      devboxDetail?.usedGpuMemory?.yData?.length - 1
-                    ]}{' '}
-                    GB
-                  </span>
-                </div>
-                <div className={chartWrapperClass}>
-                  <MonitorChart
-                    type="green"
-                    data={devboxDetail?.usedGpuMemory}
-                    isShowText={false}
-                    splitNumber={4}
-                    className="w-full"
-                    isShowLabel
-                    maxValue={gpuMemoryMaxValue}
-                    valueUnit=" GB"
-                  />
-                </div>
+          </div>
+          {/* Memory */}
+          <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
+            <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+              <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
+                <span>{t('memory')}</span>
+                <span>
+                  {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
+                </span>
+              </div>
+              <div className={chartWrapperClass}>
+                <MonitorChart
+                  type="green"
+                  data={devboxDetail?.usedMemory}
+                  isShowText={false}
+                  splitNumber={4}
+                  className="w-full"
+                  isShowLabel
+                />
               </div>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+          {showGpuMonitor && (
+            <>
+              {/* GPU */}
+              <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
+                <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+                  <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
+                    <span>{t('gpu')}</span>
+                    <span>
+                      {devboxDetail?.usedGpu?.yData[devboxDetail?.usedGpu?.yData?.length - 1]}%
+                    </span>
+                  </div>
+                  <div className={chartWrapperClass}>
+                    <MonitorChart
+                      type="blue"
+                      data={devboxDetail?.usedGpu}
+                      isShowText={false}
+                      splitNumber={4}
+                      className="w-full"
+                      isShowLabel
+                    />
+                  </div>
+                </div>
+              </div>
+              {/* GPU Memory */}
+              <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
+                <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+                  <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
+                    <span>{t('video_memory')}</span>
+                    <span>
+                      {devboxDetail?.usedGpuMemory?.yData[
+                        devboxDetail?.usedGpuMemory?.yData?.length - 1
+                      ]}{' '}
+                      GB
+                    </span>
+                  </div>
+                  <div className={chartWrapperClass}>
+                    <MonitorChart
+                      type="green"
+                      data={devboxDetail?.usedGpuMemory}
+                      isShowText={false}
+                      splitNumber={4}
+                      className="w-full"
+                      isShowLabel
+                      maxValue={gpuMemoryMaxValue}
+                      valueUnit=" GB"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
