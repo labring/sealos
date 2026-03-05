@@ -16,6 +16,55 @@ import type {
   DevboxListItemTypeV2,
   DevboxVersionListItemType
 } from '@/types/devbox';
+import type { MonitorDataResult } from '@/types/monitor';
+
+const createEmptyMonitorData = (): MonitorDataResult => ({
+  name: '',
+  xData: new Array(30).fill(0),
+  yData: new Array(30).fill('0')
+});
+
+const alignMonitorData = (dataArray: MonitorDataResult[]): MonitorDataResult[] => {
+  if (dataArray.length === 0) return dataArray;
+  const maxLength = Math.max(...dataArray.map((item) => item.xData.length));
+  const baseItem = dataArray.find((item) => item.xData.length === maxLength);
+  if (!baseItem) return dataArray;
+
+  return dataArray.map((item) => {
+    if (item.xData.length === maxLength) {
+      return item;
+    }
+    const paddingLength = maxLength - item.xData.length;
+    const paddedXData = [...baseItem.xData.slice(0, paddingLength), ...item.xData];
+    const paddedYData = [...new Array(paddingLength).fill('0'), ...item.yData];
+
+    return {
+      name: item.name,
+      xData: paddedXData,
+      yData: paddedYData
+    };
+  });
+};
+
+const buildAverageMonitorData = (dataArray: MonitorDataResult[]): MonitorDataResult => {
+  if (dataArray.length === 0) return createEmptyMonitorData();
+  const alignedData = alignMonitorData(dataArray);
+  if (alignedData.length === 0 || alignedData[0].xData.length === 0) {
+    return createEmptyMonitorData();
+  }
+
+  const xData = alignedData[0].xData;
+  const yData = xData.map((_, index) => {
+    const sum = alignedData.reduce((acc, item) => acc + Number(item.yData[index] || 0), 0);
+    return (sum / alignedData.length).toFixed(2);
+  });
+
+  return {
+    name: '',
+    xData,
+    yData
+  };
+};
 
 type State = {
   devboxList: DevboxListItemTypeV2[];
@@ -187,8 +236,9 @@ export const useDevboxStore = create<State>()(
         const pods = await getDevboxPodsByDevboxName(devboxName);
 
         const queryName = pods.length > 0 ? pods[0].podName : devboxName;
+        const hasGpu = !!get().devboxDetail?.gpu && (get().devboxDetail?.gpu?.amount || 0) > 0;
 
-        const [averageCpuData, averageMemoryData] = await Promise.all([
+        const [averageCpuData, averageMemoryData, gpuData, gpuMemoryData] = await Promise.all([
           getDevboxMonitorData({
             queryKey: 'average_cpu',
             queryName: queryName,
@@ -202,25 +252,37 @@ export const useDevboxStore = create<State>()(
             step: '2m',
             start,
             end
-          })
+          }),
+          hasGpu
+            ? getDevboxMonitorData({
+                queryKey: 'gpu',
+                queryName: queryName,
+                step: '2m',
+                start,
+                end
+              })
+            : Promise.resolve([] as MonitorDataResult[]),
+          hasGpu
+            ? getDevboxMonitorData({
+                queryKey: 'gpu_memory',
+                queryName: queryName,
+                step: '2m',
+                start,
+                end
+              })
+            : Promise.resolve([] as MonitorDataResult[])
         ]);
 
         set((state) => {
           if (state?.devboxDetail?.name === devboxName && state.devboxDetail?.isPause !== true) {
             state.devboxDetail.usedCpu = averageCpuData[0]
               ? averageCpuData[0]
-              : {
-                  xData: new Array(30).fill(0),
-                  yData: new Array(30).fill('0'),
-                  name: ''
-                };
+              : createEmptyMonitorData();
             state.devboxDetail.usedMemory = averageMemoryData[0]
               ? averageMemoryData[0]
-              : {
-                  xData: new Array(30).fill(0),
-                  yData: new Array(30).fill('0'),
-                  name: ''
-                };
+              : createEmptyMonitorData();
+            state.devboxDetail.usedGpu = buildAverageMonitorData(gpuData);
+            state.devboxDetail.usedGpuMemory = buildAverageMonitorData(gpuMemoryData);
           }
         });
         return 'success';

@@ -379,7 +379,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
             {GPU_ENABLED && (
               <>
                 <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
-                  GPU: {gpuLatestAvg}%
+                  {t('gpu_usage')}: {gpuLatestAvg}%
                 </Box>
                 <Box mt={'24px'} height={'200px'} position={'relative'}>
                   {gpuChartData?.yData?.length > 0 ? (
@@ -399,7 +399,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
                   )}
                 </Box>
                 <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
-                  GPU Memory: {gpuMemoryLatestAvg} GB
+                  {t('gpu_memory')}: {gpuMemoryLatestAvg} GB
                 </Box>
                 <Box mt={'24px'} height={'200px'} position={'relative'}>
                   {gpuMemoryChartData?.yData?.length > 0 ? (

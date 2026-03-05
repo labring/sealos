@@ -36,6 +36,16 @@ export const MockDevboxDetail = {
     xData: [],
     yData: []
   },
+  usedGpu: {
+    name: '',
+    xData: [],
+    yData: []
+  },
+  usedGpuMemory: {
+    name: '',
+    xData: [],
+    yData: []
+  },
   networks: [
     {
       portName: 'ibhefgehzlzc',

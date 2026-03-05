@@ -306,6 +306,8 @@
   "gift amount tip": "Top up {{amount}} to get {{gift}} bonus",
   "gift time tip": "Within {{time}} hours",
   "gpu": "GPU",
+  "gpu_memory": "GPU Memory",
+  "gpu_usage": "GPU Usage",
   "greater_than": "Greater than",
   "grpcs": "gRPCS",
   "guide_deploy_button": "Complete creation",

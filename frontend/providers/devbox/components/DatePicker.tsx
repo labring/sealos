@@ -52,10 +52,7 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
     () => [
       {
         label: `${t('all_time')}`,
-        value: {
-          from: new Date('1970-01-01T00:00:00Z'),
-          to: new Date()
-        },
+        value: getDateRange('7d'),
         compareValue: 'all'
       },
       {

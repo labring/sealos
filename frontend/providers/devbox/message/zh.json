@@ -200,6 +200,8 @@
   "git_username": "用户名",
   "git_username_placeholder": "输入 Git 用户名",
   "gpu": "GPU",
+  "gpu_memory": "显存",
+  "gpu_usage": "GPU 使用率",
   "gpu_exceeds_quota": "GPU 资源不足：你设置的 {requested} 卡超出工作空间可用 {limit} 卡限制（已使用 {used} 卡）。",
   "guide": {
     "click_shadow_skip": "点击任意阴影跳过",

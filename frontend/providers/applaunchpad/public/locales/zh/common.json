@@ -306,6 +306,8 @@
   "gift amount tip": "充值 {{amount}} 赠送 {{gift}} ",
   "gift time tip": "{{time}} 小时内",
   "gpu": "GPU",
+  "gpu_memory": "显存",
+  "gpu_usage": "GPU 使用率",
   "grpcs": "gRPCS",
   "guide_deploy_button": "完成创建",
   "guide_deploy_command": "丰富的命令集支持，简化服务器管理",

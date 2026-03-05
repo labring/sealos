@@ -199,6 +199,8 @@
   "git_username": "Username",
   "git_username_placeholder": "Enter Git username",
   "gpu": "GPU",
+  "gpu_memory": "GPU Memory",
+  "gpu_usage": "GPU Usage",
   "gpu_exceeds_quota": "GPU Insufficient Resources: Your setting of {requested} cards exceeds the available {limit} cards ({used} cards used).",
   "guide": {
     "click_shadow_skip": "Click on any shadow to skip",
