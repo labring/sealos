@@ -23,6 +23,7 @@ import { useMutation } from '@tanstack/react-query';
 import { passwordLoginRequest, autoInitRegionToken } from '@/api/auth';
 import useSessionStore from '@/stores/session';
 import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { SemData } from '@/types/sem';
 import { AdClickData } from '@/types/adClick';
 import { getRegionToken } from '@/api/auth';
@@ -77,6 +78,8 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
     },
     onSuccess: async (result) => {
       if (result?.data?.token) {
+        const oauth2RedirectPath = consumePendingOauth2RedirectPath();
+        const postLoginRedirect = oauth2RedirectPath || '/';
         const globalToken = result.data.token; // This is the global token from login
         setGlobalToken(globalToken); // Sets global token and cookie
         if (result.data.needInit) {
@@ -87,17 +90,17 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
               await sessionConfig(initResult.data);
               const { setInitGuide } = useGuideModalStore.getState();
               setInitGuide(true);
-              await router.replace('/');
+              await router.replace(postLoginRedirect);
             }
           } catch (error) {
             console.error('Auto init failed, fallback to manual:', error);
-            await router.replace('/workspace');
+            await router.replace(oauth2RedirectPath || '/workspace');
           }
         } else {
           const regionTokenRes = await getRegionToken();
           if (regionTokenRes?.data) {
             await sessionConfig(regionTokenRes.data);
-            await router.replace('/');
+            await router.replace(postLoginRedirect);
           }
         }
 
