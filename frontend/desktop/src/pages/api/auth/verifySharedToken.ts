@@ -2,8 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { verifyJWT } from '@/services/backend/auth';
 import { AuthenticationTokenPayload } from '@/types/token';
-
-const SHARED_AUTH_COOKIE_NAME = 'sealos_auth_token';
+import { SHARED_AUTH_COOKIE_NAME } from '@/utils/cookieUtils';
 
 // Get global JWT secret (for authentication/global token)
 const globalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';

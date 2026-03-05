@@ -4,6 +4,9 @@ import {
   AuthenticationTokenPayload,
   BillingTokenPayload,
   CronJobTokenPayload,
+  OAuth2AccessTokenPayload,
+  OAuth2TokenPayload,
+  OAuth2RefreshTokenPayload,
   OnceTokenPayload
 } from '@/types/token';
 import { IncomingHttpHeaders } from 'http';
@@ -13,6 +16,8 @@ const regionUID = () => global.AppConfig?.cloud.regionUID || '123456789';
 const grobalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';
 const regionalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.regional || '123456789';
 const internalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.internal || '123456789';
+const OAUTH2_ACCESS_TOKEN_TYPE = 'access_token' as const;
+const OAUTH2_REFRESH_TOKEN_TYPE = 'refresh_token' as const;
 const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
   try {
     if (!header?.authorization) {
@@ -26,6 +31,12 @@ const verifyToken = async <T extends Object>(header: IncomingHttpHeaders) => {
   }
 };
 
+/**
+ * Verify **regional token** from HTTP headers
+ *
+ * @param header HTTP headers
+ * @returns Promise for validated token payloads
+ */
 export const verifyAccessToken = async (header: IncomingHttpHeaders) =>
   verifyToken<AccessTokenPayload>(header).then(
     (payload) => {
@@ -38,13 +49,22 @@ export const verifyAccessToken = async (header: IncomingHttpHeaders) =>
     (err) => null
   );
 
-export const verifyAuthenticationToken = async (header: IncomingHttpHeaders) => {
+export const verifyAuthenticationToken = async (
+  header: IncomingHttpHeaders
+): Promise<AuthenticationTokenPayload | null> => {
   try {
     if (!header?.authorization) {
       throw new Error('缺少凭证');
     }
     const token = decodeURIComponent(header.authorization);
-    const payload = await verifyJWT<AuthenticationTokenPayload>(token, grobalJwtSecret());
+    const payload = await verifyJWT<AuthenticationTokenPayload & { token_type?: string }>(
+      token,
+      grobalJwtSecret()
+    );
+    // OAuth2 access/refresh tokens must not be treated as internal global authentication token.
+    if (payload?.token_type) {
+      return null;
+    }
     return payload;
   } catch (err) {
     return null;
@@ -93,6 +113,56 @@ export const generateAuthenticationToken = (
   }
   return sign(props, grobalJwtSecret(), { expiresIn: '7d' });
 };
+
+/**
+ * Generate OAuth2 access token using OAuth2-style claims.
+ */
+export const generateOAuth2AccessToken = (props: OAuth2TokenPayload, expiresIn?: string) =>
+  generateAuthenticationToken(
+    {
+      ...props,
+      token_type: OAUTH2_ACCESS_TOKEN_TYPE
+    } as OAuth2AccessTokenPayload,
+    expiresIn
+  );
+
+/**
+ * Generate OAuth2 refresh token using OAuth2-style claims.
+ */
+export const generateOAuth2RefreshToken = (props: OAuth2TokenPayload, expiresIn?: string) =>
+  generateAuthenticationToken(
+    {
+      ...props,
+      token_type: OAUTH2_REFRESH_TOKEN_TYPE
+    } as OAuth2RefreshTokenPayload,
+    expiresIn
+  );
+
+const verifyOAuth2TokenByType = async (
+  token: string | undefined,
+  tokenType: typeof OAUTH2_ACCESS_TOKEN_TYPE | typeof OAUTH2_REFRESH_TOKEN_TYPE
+) => {
+  const payload = await verifyJWT<OAuth2AccessTokenPayload | OAuth2RefreshTokenPayload>(
+    token,
+    grobalJwtSecret()
+  );
+  if (!payload || payload.token_type !== tokenType) {
+    return null;
+  }
+  return payload;
+};
+
+/**
+ * Verify OAuth2 access token and reject refresh token.
+ */
+export const verifyOAuth2AccessToken = (token?: string) =>
+  verifyOAuth2TokenByType(token, OAUTH2_ACCESS_TOKEN_TYPE);
+
+/**
+ * Verify OAuth2 refresh token and reject access token.
+ */
+export const verifyOAuth2RefreshToken = (token?: string) =>
+  verifyOAuth2TokenByType(token, OAUTH2_REFRESH_TOKEN_TYPE);
 
 export const generateOnceToken = (props: OnceTokenPayload) =>
   sign(props, regionalJwtSecret(), { expiresIn: '1800000' });
