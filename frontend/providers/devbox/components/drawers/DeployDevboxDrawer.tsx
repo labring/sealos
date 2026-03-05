@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { useEnvStore } from '@/stores/env';
 import { AppListItemType } from '@/types/app';
+import { DevboxToleration } from '@/types/devbox';
 import { getAppsByDevboxId } from '@/api/devbox';
 
 import {
@@ -66,6 +67,7 @@ interface DeployData {
     value: string;
     valueFrom?: any;
   }[];
+  tolerations?: DevboxToleration[];
 }
 
 interface DeployDevboxDrawerProps {

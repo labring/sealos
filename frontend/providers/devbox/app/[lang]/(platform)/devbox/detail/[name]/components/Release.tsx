@@ -123,7 +123,7 @@ const Release = () => {
       const config = parseTemplateConfig(result.template.config);
       const releaseArgs = config.releaseArgs.join(' ');
       const releaseCommand = config.releaseCommand.join(' ');
-      const { cpu, memory, sharedMemory, networks, name, gpu, configMaps, volumes, envs } = devbox;
+      const { cpu, memory, sharedMemory, networks, name, gpu, configMaps, volumes, envs, tolerations } = devbox;
       const newNetworks = networks
         .filter((network) => network.port !== env.webIdePort)
         .map((network) => {
@@ -144,6 +144,7 @@ const Release = () => {
         sharedMemory: sharedMemory,
         imageName: imageName,
         gpu: gpu,
+        ...(tolerations?.length ? { tolerations } : {}),
         networks:
           newNetworks.length > 0
             ? newNetworks

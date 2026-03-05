@@ -34,6 +34,14 @@ export type GpuType = {
   amount: number;
   resource?: Record<string, string>;
 };
+export type DevboxToleration = {
+  key?: string;
+  operator?: string;
+  effect?: string;
+  value?: string;
+  tolerationSeconds?: number;
+  [key: string]: any;
+};
 
 export interface DevboxEditType {
   name: string;
@@ -42,6 +50,7 @@ export interface DevboxEditType {
   cpu: number;
   memory: number;
   gpu?: GpuType;
+  tolerations?: DevboxToleration[];
   networks: {
     networkName: string;
     portName: string;
@@ -87,6 +96,7 @@ export interface DevboxEditTypeV2 {
   configMaps?: DevboxConfigMapType[];
   volumes?: DevboxVolumeType[];
   sharedMemory?: SharedMemoryType;
+  tolerations?: DevboxToleration[];
 }
 export interface DevboxStatusMapType {
   label: string;

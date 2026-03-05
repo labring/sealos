@@ -106,11 +106,7 @@ export interface KBDevboxSpec {
     [gpuNodeSelectorKey]: string;
   };
   state: DevboxStatusEnum;
-  tolerations?: {
-    key: string;
-    operator: string;
-    effect: string;
-  }[];
+  tolerations?: KBToleration[];
   affinity?: {
     nodeAffinity: {
       requiredDuringSchedulingIgnoredDuringExecution: {
@@ -161,11 +157,7 @@ export interface KBDevboxSpecV2 {
     [gpuNodeSelectorKey]: string;
   };
   state: DevboxStatusEnum;
-  tolerations?: {
-    key: string;
-    operator: string;
-    effect: string;
-  }[];
+  tolerations?: KBToleration[];
   affinity?: {
     nodeAffinity: {
       requiredDuringSchedulingIgnoredDuringExecution: {
@@ -179,6 +171,14 @@ export interface KBDevboxSpecV2 {
     };
   };
 }
+export type KBToleration = {
+  key?: string;
+  operator?: string;
+  effect?: string;
+  value?: string;
+  tolerationSeconds?: number;
+  [key: string]: any;
+};
 export type KBDevboxReleaseType = {
   apiVersion: 'devbox.sealos.io/v1alpha1';
   kind: 'DevboxRelease';

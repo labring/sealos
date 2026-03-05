@@ -3,7 +3,7 @@ import { nanoid } from '@/utils/tools';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { KBDevboxReleaseType } from '@/types/k8s';
+import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import {
   DevboxReleaseStatusEnum,
   devboxIdKey,
@@ -216,6 +216,14 @@ export async function POST(req: NextRequest) {
     // 6. deploy app
     const appName = `${devboxName}-release-${nanoid()}`;
     const image = `${process.env.REGISTRY_ADDR}/${namespace}/${devboxName}:${tag}`;
+    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxName
+    )) as { body: KBDevboxTypeV2 };
+    const tolerations = devboxBody.spec.tolerations;
 
     const formData = {
       appForm: {
@@ -229,6 +237,7 @@ export async function POST(req: NextRequest) {
         },
         cpu,
         memory,
+        ...(tolerations?.length ? { tolerations } : {}),
         networks:
           portInfos.length > 0
             ? portInfos

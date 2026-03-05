@@ -250,6 +250,10 @@ export const adaptDevboxDetailV2 = (
     configMaps,
     volumes,
     sharedMemory,
+    tolerations:
+      Array.isArray(devbox.spec.tolerations) && devbox.spec.tolerations.length > 0
+        ? devbox.spec.tolerations
+        : undefined,
     lastTerminatedReason: devbox.status
       ? devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
         ? devbox.status.state.waiting
