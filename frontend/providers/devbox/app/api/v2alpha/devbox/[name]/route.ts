@@ -10,13 +10,9 @@ import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 import { devboxDB } from '@/services/db/init';
-import {
-  calculateUptime,
-  parseTemplateConfig,
-  cpuFormatToM,
-  memoryFormatToMi
-} from '@/utils/tools';
+import { calculateUptime, parseTemplateConfig } from '@/utils/tools';
 import { UpdateDevboxRequestSchema, DeleteDevboxRequestSchema, nanoid } from './schema';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 //need really realtime use force-dynamic
 export const dynamic = 'force-dynamic';

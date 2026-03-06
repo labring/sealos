@@ -103,6 +103,7 @@
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.0",
     "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsdoc": "^62.5.4",
     "immer": "^10.2.0",
     "js-yaml": "^4.1.0",
     "lucide-react": "^0.476.0",
