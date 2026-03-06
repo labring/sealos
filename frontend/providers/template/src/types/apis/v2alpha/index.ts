@@ -1,70 +1,75 @@
-import * as z from 'zod';
 import { createDocument } from 'zod-openapi';
 
 import * as listTemplateSchemas from './list-template';
 import * as getTemplateSchemas from './get-template';
-import * as createTemplateSchemas from './create-template';
 import * as createInstanceSchemas from './create-instance';
-import * as commonSchemas from './common/schema';
+import * as deployTemplateSchemas from './deploy-template';
+import {
+  createError400Schema,
+  createError401Schema,
+  createError403Schema,
+  createError404Schema,
+  createError409Schema,
+  createError422Schema,
+  createError500Schema,
+  createError503Schema,
+  ErrorType,
+  ErrorCode,
+  createErrorExample
+} from '../../v2alpha/error';
 
 export * as listTemplateSchemas from './list-template';
 export * as getTemplateSchemas from './get-template';
-export * as createTemplateSchemas from './create-template';
 export * as createInstanceSchemas from './create-instance';
-export * as commonSchemas from './common/schema';
+export * as deployTemplateSchemas from './deploy-template';
 
 export const document = createDocument({
   openapi: '3.1.0',
   info: {
-    title: 'Sealos Template API v2alpha',
+    title: 'Template API',
     version: '2.0.0-alpha',
-    description: `
-# Sealos Template API Documentation
-
-This API provides endpoints for managing application templates and instances in the Sealos platform.
-
-## API Groups
-
-### Query Operations
-Read-only operations for retrieving template and instance information.
-
-### Mutation Operations
-Operations that modify data, such as creating or deleting instances.
-
-## Response Format
-
-- **Query APIs** return JSON payloads with data and metadata.
-- **Mutation APIs** return HTTP 204 (No Content) on success and no response body.
-
-**Error Response:**
-\`\`\`json
-{
-  "message": "Error description",
-  "error": { ... }
-}
-\`\`\`
-
-## Error Codes
-
-- \`200\` - Query success
-- \`204\` - Mutation success (No Content)
-- \`400\` - Bad Request (invalid parameters)
-- \`404\` - Not Found (resource doesn't exist)
-- \`500\` - Internal Server Error
-    `
+    description:
+      'This API provides endpoints for managing application templates and instances in the Sealos platform.\n\n' +
+      '## Authentication\n\n' +
+      'Browsing templates is public. Deploying instances requires a URL-encoded kubeconfig in the `Authorization` header. ' +
+      'Encode with `encodeURIComponent(kubeconfigYaml)` before setting the header value. ' +
+      'Obtain your kubeconfig from the Sealos console.\n\n' +
+      '## Errors\n\n' +
+      'All error responses use a unified format:\n\n' +
+      '```json\n' +
+      '{\n' +
+      '  "error": {\n' +
+      '    "type": "validation_error",\n' +
+      '    "code": "INVALID_PARAMETER",\n' +
+      '    "message": "...",\n' +
+      '    "details": [...]\n' +
+      '  }\n' +
+      '}\n' +
+      '```\n\n' +
+      '- `type` — high-level category (e.g. `validation_error`, `resource_error`, `internal_error`)\n' +
+      '- `code` — stable identifier for programmatic handling\n' +
+      '- `message` — human-readable explanation\n' +
+      '- `details` — optional extra context; shape varies by `code` (field list, string, or object)\n\n' +
+      '## Operations\n\n' +
+      '**Query** (read-only): returns `200 OK` with data in the response body.\n\n' +
+      '**Mutation** (write):\n' +
+      '- Create → `201 Created` with the created resource in the response body.\n' +
+      '- Update / Delete → `204 No Content` with no response body.'
   },
   servers: [
     {
       url: 'http://localhost:3000/api/v2alpha',
-      description: 'Local development server'
+      description: 'Local development'
     },
     {
-      url: 'https://template./api/v2alpha',
-      description: 'Production server'
-    },
-    {
-      url: 'https://template.192.168.12.53.nip.io/api/v2alpha',
-      description: 'Testing server'
+      url: '{baseUrl}/api/v2alpha',
+      description: 'Custom',
+      variables: {
+        baseUrl: {
+          default: 'https://template.example.com',
+          description: 'Base URL of your instance (e.g. https://template.192.168.x.x.nip.io)'
+        }
+      }
     }
   ],
   components: {
@@ -74,75 +79,82 @@ Operations that modify data, such as creating or deleting instances.
         in: 'header',
         name: 'Authorization',
         description:
-          'URL-encoded kubeconfig YAML string. Use `encodeURIComponent(kubeconfigYaml)` to encode.'
+          'URL-encoded kubeconfig YAML. Encode with `encodeURIComponent(kubeconfigYaml)` ' +
+          'before setting the header value. Obtain your kubeconfig from the Sealos console.'
       }
     }
   },
+  security: [{ kubeconfigAuth: [] }],
   tags: [
     {
       name: 'Query',
-      description: 'Read-only operations for retrieving data'
+      description: 'Read-only operations. Success: `200 OK` with data in the response body.'
     },
     {
       name: 'Mutation',
-      description: 'Operations that modify data'
+      description:
+        'Write operations. Create: `201 Created` with the new resource. Update/Delete: `204 No Content`.'
     }
   ],
   paths: {
-    '/template': {
+    '/templates': {
       get: {
         tags: ['Query'],
-        summary: 'List All Templates',
-        description: `
-## Overview
-Get a simplified list of all available templates with basic information.
-
-## Features
-- **High Performance**: Optimized for speed (10-50ms response time)
-- **No Resource Calculation**: Returns metadata only, without computing resource requirements
-- **Multi-language Support**: Supports internationalization via language parameter
-- **Category Menu**: Top categories available in response header X-Menu-Keys
-- **Direct Array Response**: Returns template array directly without wrapper object
-
-## Use Cases
-- Display template list on homepage
-- Show available templates in marketplace
-- Build category navigation menu
-
-## Performance
-This endpoint is optimized for fast response times by skipping resource requirement calculations. For complete template details including resource requirements, use the \`/template/{name}\` endpoint.
-        `,
+        summary: 'List all templates',
+        description:
+          'Returns metadata only (no resource calculation). Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`. When categories exist, top category keys are returned in `X-Menu-Keys` (comma-separated). For full details including resource requirements, use `/templates/{name}`.',
         operationId: 'listTemplates',
+        security: [],
         requestParams: {
           query: listTemplateSchemas.queryParams
         },
         responses: {
           '200': {
             description: 'Successfully retrieved template list',
+            headers: {
+              'Cache-Control': {
+                description: 'Caching directive: public, max-age=300, s-maxage=600',
+                schema: { type: 'string', example: 'public, max-age=300, s-maxage=600' }
+              },
+              ETag: {
+                description: 'Entity tag for caching, format: "template-list-{language}"',
+                schema: { type: 'string', example: '"template-list-en"' }
+              },
+              'X-Menu-Keys': {
+                description:
+                  'Top category keys (comma-separated). Present only when categories exist.',
+                schema: { type: 'string', example: 'ai,database' }
+              }
+            },
             content: {
               'application/json': {
                 schema: listTemplateSchemas.response,
-                example: [
-                  {
-                    name: 'perplexica',
-                    resourceType: 'template',
-                    readme:
-                      'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
-                    icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
-                    description: 'AI-powered search engine',
-                    gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
-                    category: ['ai'],
-                    args: {
-                      OPENAI_API_KEY: {
-                        description: 'OpenAI API Key',
-                        type: 'string',
-                        default: '',
-                        required: true
+                examples: {
+                  templateList: {
+                    summary: 'Sample template list',
+                    value: [
+                      {
+                        name: 'perplexica',
+                        resourceType: 'template',
+                        readme:
+                          'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
+                        icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
+                        description: 'AI-powered search engine',
+                        gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
+                        category: ['ai'],
+                        args: {
+                          OPENAI_API_KEY: {
+                            description: 'OpenAI API Key',
+                            type: 'string',
+                            default: '',
+                            required: true
+                          }
+                        },
+                        deployCount: 156
                       }
-                    },
-                    deployCount: 156
+                    ]
                   }
-                ]
+                }
               }
             }
           },
@@ -150,12 +162,17 @@ This endpoint is optimized for fast response times by skipping resource requirem
             description: 'Internal server error',
             content: {
               'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(500)
-                }),
-                example: {
-                  message: 'Failed to load templates',
-                  error: 'File read error'
+                schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
+                examples: {
+                  internalError: {
+                    summary: 'Failed to load templates',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.INTERNAL_ERROR,
+                      'Failed to load templates.',
+                      'File read error'
+                    )
+                  }
                 }
               }
             }
@@ -163,36 +180,14 @@ This endpoint is optimized for fast response times by skipping resource requirem
         }
       }
     },
-    '/template/{name}': {
+    '/templates/{name}': {
       get: {
         tags: ['Query'],
-        summary: 'Get Template Details',
-        description: `
-## Overview
-Retrieve complete information for a specific template, including dynamically calculated resource requirements.
-
-## Features
-- **Complete Information**: Returns all template metadata and configuration
-- **Resource Calculation**: Dynamically computes CPU, memory, storage, and port requirements
-- **Multi-language Support**: Returns localized content based on language parameter
-- **Fallback Strategy**: Uses static configuration if dynamic calculation fails
-
-## Resource Calculation
-This endpoint analyzes the template's YAML configuration to calculate:
-- **CPU**: Required CPU cores (in cores or {min, max})
-- **Memory**: Required memory (in GiB or {min, max})
-- **Storage**: Required storage (in GiB or {min, max})
-- **NodePort**: Number of NodePort services
-
-## Use Cases
-- Display template detail page
-- Show resource requirements before deployment
-- Validate user's available resources
-
-## Performance
-Response time: 50-200ms (includes YAML parsing and resource calculation)
-        `,
-        operationId: 'getTemplateDetail',
+        summary: 'Get template details',
+        description:
+          'Returns complete template metadata with dynamically calculated resource requirements (CPU, memory, storage, NodePort count) derived from the template YAML. Falls back to static configuration if calculation fails. Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`.',
+        operationId: 'getTemplate',
+        security: [],
         requestParams: {
           path: getTemplateSchemas.pathParams,
           query: getTemplateSchemas.queryParams
@@ -200,33 +195,67 @@ Response time: 50-200ms (includes YAML parsing and resource calculation)
         responses: {
           '200': {
             description: 'Successfully retrieved template details',
+            headers: {
+              'Cache-Control': {
+                description: 'Caching directive: public, max-age=300, s-maxage=600',
+                schema: { type: 'string', example: 'public, max-age=300, s-maxage=600' }
+              },
+              ETag: {
+                description: 'Entity tag for caching, format: "{name}-{language}"',
+                schema: { type: 'string', example: '"perplexica-en"' }
+              }
+            },
             content: {
               'application/json': {
                 schema: getTemplateSchemas.response,
-                example: {
-                  name: 'perplexica',
-                  resourceType: 'template',
-                  quota: {
-                    cpu: 1,
-                    memory: 2.25,
-                    storage: 2,
-                    nodeport: 0
-                  },
-                  readme:
-                    'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
-                  icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
-                  description: 'AI-powered search engine',
-                  gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
-                  category: ['ai'],
-                  args: {
-                    OPENAI_API_KEY: {
-                      description: 'The API Key of the OpenAI-compatible service',
-                      type: 'string',
-                      default: '',
-                      required: true
+                examples: {
+                  templateDetail: {
+                    summary: 'Sample template with resource calculation',
+                    value: {
+                      name: 'perplexica',
+                      resourceType: 'template',
+                      quota: {
+                        cpu: 1,
+                        memory: 2.25,
+                        storage: 2,
+                        nodeport: 0
+                      },
+                      readme:
+                        'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/master/README.md',
+                      icon: 'https://raw.githubusercontent.com/ItzCrazyKns/Perplexica/refs/heads/master/src/app/favicon.ico',
+                      description: 'AI-powered search engine',
+                      gitRepo: 'https://github.com/ItzCrazyKns/Perplexica',
+                      category: ['ai'],
+                      args: {
+                        OPENAI_API_KEY: {
+                          description: 'The API Key of the OpenAI-compatible service',
+                          type: 'string',
+                          default: '',
+                          required: true
+                        }
+                      },
+                      deployCount: 156
                     }
-                  },
-                  deployCount: 156
+                  }
+                }
+              }
+            }
+          },
+          '400': {
+            description: 'Bad request - template name is required',
+            content: {
+              'application/json': {
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  nameRequired: {
+                    summary: 'Template name is required',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Template name is required.',
+                      [{ field: 'name', message: 'Required' }]
+                    )
+                  }
                 }
               }
             }
@@ -235,21 +264,15 @@ Response time: 50-200ms (includes YAML parsing and resource calculation)
             description: 'Template not found',
             content: {
               'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(404)
-                }),
+                schema: createError404Schema(),
                 examples: {
-                  templatesNotFound: {
-                    summary: 'Templates catalog not found',
-                    value: {
-                      message: 'Templates not found'
-                    }
-                  },
                   templateNotFound: {
-                    summary: 'Specific template does not exist',
-                    value: {
-                      message: "Template 'nonexistent' not found"
-                    }
+                    summary: 'Template not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Template 'nonexistent' not found."
+                    )
                   }
                 }
               }
@@ -259,168 +282,256 @@ Response time: 50-200ms (includes YAML parsing and resource calculation)
             description: 'Internal server error',
             content: {
               'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(500)
-                }),
-                example: {
-                  message: 'Failed to get template details',
-                  error: 'YAML parsing error'
+                schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
+                examples: {
+                  internalError: {
+                    summary: 'Failed to get template details',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.INTERNAL_ERROR,
+                      'Failed to get template details.',
+                      'YAML parsing error'
+                    )
+                  }
                 }
               }
             }
           }
         }
-      },
+      }
+    },
+    '/templates/raw': {
       post: {
         tags: ['Mutation'],
-        summary: 'Deploy Template',
-        description: `
-## Overview
-Deploy a template instance with custom parameters and configurations.
-
-## Features
-- **Authentication Required**: Requires valid kubeconfig authentication (validated before deployment)
-- **Custom Parameters**: Accepts template variable values directly in request body (no "args" wrapper)
-- **Automatic Namespace**: Namespace is automatically resolved from kubeconfig
-- **Resource Management**: Automatically creates and manages Kubernetes resources
-- **Error Handling**: Returns appropriate error messages for invalid kubeconfig or insufficient permissions
-
-## Deployment Process
-1. Authenticates user via kubeconfig header (validates kubeconfig)
-2. Extracts namespace from kubeconfig automatically
-3. Retrieves template configuration and YAML definitions
-4. Processes template variables with provided parameter values (sent directly in request body)
-5. Generates Kubernetes manifests based on template
-6. Applies resources to user's namespace
-7. Returns deployment status
-
-## Use Cases
-- Deploy applications from templates
-- Create development environments
-- Launch services with custom configurations
-- Automate application deployment workflows
-
-## Request Parameters
-- **name** (path parameter): Template name identifier from the URL path
-- **request body**: Direct object containing template variable values (key-value pairs, no "args" wrapper needed)
-
-## Important Notes
-- **Resource Creation**: Creates real Kubernetes resources that consume cluster resources
-- **Authentication**: Valid kubeconfig is mandatory
-- **Namespace**: Namespace is automatically extracted from kubeconfig, no need to specify
-        `,
-        operationId: 'deployTemplate',
-        security: [{ kubeconfigAuth: [] }],
-        requestParams: {
-          path: createTemplateSchemas.pathParams
-        },
+        summary: 'Deploy template from raw YAML',
+        description:
+          'Deploy an arbitrary or custom template by supplying its raw YAML directly in the request body. ' +
+          'The instance name is auto-generated from `${{ random(8) }}` inside `spec.defaults.app_name`. ' +
+          'Use `dryRun: true` to validate the resources against the Kubernetes API without creating anything.\n\n' +
+          '**Example — dry-run a custom template:**\n' +
+          '```json\n' +
+          '{\n' +
+          '  "yaml": "apiVersion: app.sealos.io/v1\\nkind: Template\\n...",\n' +
+          '  "dryRun": true\n' +
+          '}\n' +
+          '```',
+        operationId: 'deployRawTemplate',
         requestBody: {
+          required: true,
           description: 'Template deployment configuration',
           content: {
             'application/json': {
-              schema: createTemplateSchemas.requestBody,
-              example: {
-                OPENAI_API_KEY: 'your-api-key-here',
-                APP_NAME: 'my-app-instance',
-                MEMORY_LIMIT: '2Gi'
-              }
+              schema: deployTemplateSchemas.requestBody
             }
           }
         },
         responses: {
-          '204': {
-            description: 'Template deployment started successfully'
-          },
-          '400': {
-            description: 'Bad request',
+          '200': {
+            description: 'Dry-run preview — resources validated but not created',
             content: {
               'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(400)
-                }),
+                schema: deployTemplateSchemas.dryRunResponse,
                 examples: {
-                  missingParameters: {
-                    summary: 'Missing template parameters',
+                  dryRunPreview: {
+                    summary: 'Dry-run result',
                     value: {
-                      message: 'Template parameters are required'
+                      name: 'myapp-abcdefgh',
+                      resourceType: 'instance',
+                      dryRun: true,
+                      args: {},
+                      resources: [
+                        {
+                          name: 'myapp-abcdefgh',
+                          uid: '',
+                          resourceType: 'deployment',
+                          quota: { cpu: 0.1, memory: 0.25, storage: 0, replicas: 1 }
+                        }
+                      ]
                     }
+                  }
+                }
+              }
+            }
+          },
+          '201': {
+            description: 'Template deployed successfully',
+            content: {
+              'application/json': {
+                schema: deployTemplateSchemas.response,
+                examples: {
+                  deployed: {
+                    summary: 'Template deployed successfully',
+                    value: {
+                      name: 'myapp-abcdefgh',
+                      uid: '778bf3c6-b412-4a02-908b-cf1470867c93',
+                      resourceType: 'instance',
+                      displayName: '',
+                      createdAt: '2026-01-28T03:31:01Z',
+                      args: {},
+                      resources: [
+                        {
+                          name: 'myapp-abcdefgh',
+                          uid: '5bd2c77d-b8f4-4aa4-97ee-c205f2d10aa9',
+                          resourceType: 'deployment',
+                          quota: { cpu: 0.1, memory: 0.25, storage: 0, replicas: 1 }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '400': {
+            description: 'Bad request — missing or invalid YAML / missing required args',
+            content: {
+              'application/json': {
+                schema: createError400Schema([
+                  ErrorCode.INVALID_PARAMETER,
+                  ErrorCode.INVALID_VALUE
+                ]),
+                examples: {
+                  missingYaml: {
+                    summary: 'YAML is required',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Template YAML is required.',
+                      [{ field: 'yaml', message: 'Required' }]
+                    )
                   },
-                  invalidTemplate: {
-                    summary: 'Invalid template or failed to load',
-                    value: {
-                      message: 'Failed to load template'
-                    }
+                  invalidYaml: {
+                    summary: 'First document is not kind: Template',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_VALUE,
+                      'The first YAML type is not Template'
+                    )
+                  },
+                  missingArgs: {
+                    summary: 'Required template args missing',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_VALUE,
+                      'Missing required parameters: MY_SECRET.'
+                    )
                   }
                 }
               }
             }
           },
           '401': {
-            description: 'Authentication failed',
+            description: 'Unauthorized — missing or invalid kubeconfig',
             content: {
               'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(401)
-                }),
+                schema: createError401Schema(),
                 examples: {
-                  missingKubeconfig: {
-                    summary: 'Missing kubeconfig',
-                    value: {
-                      message: 'Invalid or missing kubeconfig',
-                      error: 'Authentication failed'
-                    }
-                  },
-                  invalidKubeconfig: {
-                    summary: 'Invalid kubeconfig or insufficient permissions',
-                    value: {
-                      message: 'Invalid kubeconfig or insufficient permissions',
-                      error: 'Failed to authenticate with Kubernetes cluster'
-                    }
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Invalid or missing kubeconfig.'
+                    )
                   }
                 }
               }
             }
           },
-          '404': {
-            description: 'Template not found or invalid',
+          '403': {
+            description: 'Forbidden — insufficient permissions',
             content: {
               'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(404)
-                }),
+                schema: createError403Schema([ErrorCode.PERMISSION_DENIED]),
                 examples: {
-                  templateNotFound: {
-                    summary: 'Template file does not exist',
-                    value: {
-                      message: "Template 'nonexistent' not found"
-                    }
-                  },
-                  lackOfKindTemplate: {
-                    summary: 'Template missing kind: Template definition',
-                    value: {
-                      message: 'Lack of kind template'
-                    }
-                  },
-                  missingDefaultAppName: {
-                    summary: 'Template missing default app_name',
-                    value: {
-                      message: 'default app_name is missing'
-                    }
+                  forbidden: {
+                    summary: 'Insufficient privileges',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Permission denied: insufficient privileges to create resources.',
+                      'deployments.apps is forbidden: User "system:serviceaccount:ns-xxx" cannot create resource "deployments"'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '409': {
+            description: 'Conflict — instance already exists',
+            content: {
+              'application/json': {
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS]),
+                examples: {
+                  alreadyExists: {
+                    summary: 'Instance already exists',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.ALREADY_EXISTS,
+                      "Instance 'myapp-abcdefgh' already exists.",
+                      'deployments.apps "myapp-abcdefgh" already exists'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '422': {
+            description: 'Unprocessable Entity — K8s rejected the resource spec',
+            content: {
+              'application/json': {
+                schema: createError422Schema(),
+                examples: {
+                  invalidSpec: {
+                    summary: 'Resource spec rejected by cluster',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.INVALID_RESOURCE_SPEC,
+                      'Template validation failed: invalid resource specification.',
+                      'admission webhook "vingress.sealos.io" denied the request: cannot verify ingress host'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal server error',
+            description: 'Internal Server Error',
             content: {
               'application/json': {
-                schema: commonSchemas.BaseResponseSchema.extend({
-                  code: z.literal(500)
-                }),
-                example: {
-                  message: 'Failed to deploy template',
-                  error: 'Kubernetes API error'
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  internalError: {
+                    summary: 'Unexpected server error',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.INTERNAL_ERROR,
+                      'Failed to deploy template.',
+                      'Template parsing error'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service Unavailable — Kubernetes cluster temporarily unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'Kubernetes cluster is temporarily unavailable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
                 }
               }
             }
@@ -428,366 +539,71 @@ Deploy a template instance with custom parameters and configurations.
         }
       }
     },
-    '/template/instance': {
+    '/templates/instances': {
       post: {
         tags: ['Mutation'],
-        summary: 'Create Template Instance',
-        description: `
-## Overview
-
-Deploy a template as a named instance in your Kubernetes namespace.
-
-## Deployment Process
-
-1. Validate request body (\`name\`, \`template\`, \`args\`)
-2. Authenticate via kubeconfig header
-3. Fetch template configuration from catalog
-4. Merge user \`args\` with template defaults
-5. Generate Kubernetes manifests from template
-6. Apply resources to user's namespace
-7. Return instance metadata
-
-## Request
-
-### HTTP request
-
-\`\`\`
-POST /api/v2alpha/template/instance
-\`\`\`
-
-### Headers
-
-| Header | Required | Description |
-|--------|----------|-------------|
-| \`Content-Type\` | Yes | Must be \`application/json\` |
-| \`Authorization\` | Yes | URL-encoded kubeconfig YAML string. Use \`encodeURIComponent(kubeconfigYaml)\` to encode. |
-
-### Request body
-
-Provide a JSON object in the request body:
-
-\`\`\`json
-{
-  "name": string,
-  "template": string,
-  "args": {
-    "KEY": "value"
-  }
-}
-\`\`\`
-
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| \`name\` | string | Yes | The instance name. Must be 1-63 characters, start and end with alphanumeric, contain only lowercase letters, numbers, and hyphens. Regex: \`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$\` |
-| \`template\` | string | Yes | The template name from the catalog. Use \`GET /api/v2alpha/template\` to list available templates. |
-| \`args\` | object | No | Template variable key-value pairs. To know which args are required, call \`GET /api/v2alpha/template/{name}\` - the response \`args\` field contains all parameters with their \`required\` flag and \`default\` values. |
-
-## Response
-
-If successful, this method returns a response body with the following structure:
-
-\`\`\`json
-{
-  "name": string,
-  "uid": string,
-  "resourceType": "instance",
-  "displayName": string,
-  "createdAt": string,
-  "args": {
-    "KEY": "value"
-  },
-  "resources": [
-    {
-      "name": string,
-      "uid": string,
-      "resourceType": string,
-      "quota": {
-        "cpu": number,
-        "memory": number,
-        "storage": number,
-        "replicas": number
-      }
-    }
-  ]
-}
-\`\`\`
-
-### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| \`name\` | string | The instance name (matches the \`name\` specified in the request). |
-| \`uid\` | string | Kubernetes UID of the Instance resource. |
-| \`resourceType\` | string | Always \`"instance"\`. |
-| \`displayName\` | string | Display name (currently empty). |
-| \`createdAt\` | string | ISO 8601 timestamp of when the instance was created in Kubernetes. |
-| \`args\` | object | The resolved template arguments (merged from user-provided args and defaults). |
-| \`resources\` | array | List of sub-resources created for this instance. |
-
-### Resource Object Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| \`name\` | string | Kubernetes resource name. |
-| \`uid\` | string | Kubernetes UID of the resource. |
-| \`resourceType\` | string | Lowercase Kubernetes kind (e.g., \`"deployment"\`, \`"statefulset"\`, \`"service"\`, \`"configmap"\`, \`"cluster"\`). |
-| \`quota\` | object | (Optional) Resource quota for Deployment, StatefulSet, or Cluster resources. |
-
-### Quota Object Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| \`cpu\` | number | CPU cores. |
-| \`memory\` | number | Memory in GiB. |
-| \`storage\` | number | Storage in GiB. |
-| \`replicas\` | number | Number of replicas. |
-
-## Errors
-
-The following table identifies error messages that the API could return in response to a call to this method.
-
-| Error type | Error detail | Description |
-|------------|--------------|-------------|
-| badRequest (400) | missingInstanceName | The \`name\` field is missing, empty, or not a string. |
-| badRequest (400) | invalidInstanceNameFormat | The \`name\` does not follow Kubernetes DNS subdomain naming rules (lowercase alphanumeric and hyphens only, must start and end with alphanumeric). |
-| badRequest (400) | instanceNameTooLong | The \`name\` exceeds 63 characters (Kubernetes resource name limit). |
-| badRequest (400) | missingTemplateName | The \`template\` field is missing, empty, or not a string. |
-| badRequest (400) | missingRequiredArgs | Required template arguments are not provided and have no default values. |
-| unauthorized (401) | invalidKubeconfig | The \`Authorization\` header is missing or the kubeconfig is invalid. |
-| unauthorized (401) | clusterAuthFailed | The kubeconfig is valid but cannot establish connection to the Kubernetes cluster. |
-| forbidden (403) | insufficientPrivileges | The authenticated user does not have permission to create resources in the namespace. |
-| notFound (404) | templateNotFound | The specified template does not exist in the catalog. |
-| notFound (404) | lackOfKindTemplate | The template file exists but is missing the required \`kind: Template\` resource definition. |
-| notFound (404) | missingDefaultAppName | The template file exists but is missing the required \`defaults.app_name\` configuration. |
-| methodNotAllowed (405) | methodNotAllowed | The HTTP method is not POST. |
-| conflict (409) | instanceAlreadyExists | An instance with this name already exists in the namespace. |
-| unprocessableEntity (422) | invalidResourceSpec | The generated YAML contains invalid resource specifications or was rejected by admission webhook. |
-| internalServerError (500) | yamlParseError | Failed to parse template YAML: no valid documents found. |
-| internalServerError (500) | instanceNotInTemplate | The template YAML does not contain an Instance resource definition. |
-| internalServerError (500) | yamlGenerationError | Failed to generate YAML from template: empty result or no resources generated. |
-| internalServerError (500) | instanceNotCreated | Instance resource was not created successfully in Kubernetes. |
-| internalServerError (500) | instanceMissingName | Instance resource created but missing required \`metadata.name\` field. |
-| internalServerError (500) | k8sApiError | An unexpected error occurred while communicating with the Kubernetes API. |
-| serviceUnavailable (503) | clusterUnavailable | The Kubernetes cluster cannot be reached due to network issues or cluster downtime. |
-
-## Examples
-
-### Example 1: Create Perplexica Instance
-
-**Request:**
-\`\`\`json
-POST /api/v2alpha/template/instance
-Host: template.cloud.sealos.io
-
-Content-Type: application/json
-Authorization: <URL-encoded kubeconfig>
-
-{
-  "name": "my-perplexica-instance",
-  "template": "perplexica",
-  "args": {
-    "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
-    "OPENAI_MODEL_NAME": "gpt-4o"
-  }
-}
-\`\`\`
-
-**Response (200 OK):**
-\`\`\`json
-{
-  "name": "my-perplexica-instance",
-  "uid": "778bf3c6-b412-4a02-908b-cf1470867c93",
-  "resourceType": "instance",
-  "displayName": "",
-  "createdAt": "2026-01-28T03:31:01Z",
-  "args": {
-    "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
-    "OPENAI_API_URL": "https://api.openai.com/v1",
-    "OPENAI_MODEL_NAME": "gpt-4o"
-  },
-  "resources": [
-    {
-      "name": "my-perplexica-instance-searxng",
-      "uid": "5bd2c77d-b8f4-4aa4-97ee-c205f2d10aa9",
-      "resourceType": "deployment",
-      "quota": {
-        "cpu": 0.1,
-        "memory": 0.25,
-        "storage": 0,
-        "replicas": 1
-      }
-    },
-    {
-      "name": "my-perplexica-instance",
-      "uid": "256e2577-fa3a-4471-a94c-8cbd5410187c",
-      "resourceType": "statefulset",
-      "quota": {
-        "cpu": 0.2,
-        "memory": 0.5,
-        "storage": 1,
-        "replicas": 1
-      }
-    },
-    {
-      "name": "my-perplexica-instance",
-      "uid": "451d165f-0c66-49bc-9bc0-e1dac1c05457",
-      "resourceType": "service"
-    }
-  ]
-}
-\`\`\`
-
-### Example 2: Invalid Instance Name
-
-**Request:**
-\`\`\`json
-POST /api/v2alpha/template/instance
-Host: template.cloud.sealos.io
-Content-Type: application/json
-Authorization: <URL-encoded kubeconfig>
-
-{
-  "name": "My-Invalid-Name",
-  "template": "perplexica",
-  "args": {
-    "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
-    "OPENAI_MODEL_NAME": "gpt-4o"
-  }
-}
-\`\`\`
-
-**Response (400 Bad Request):**
-\`\`\`json
-{
-  "message": "Instance name must start and end with a lowercase letter or number, and can only contain lowercase letters, numbers, and hyphens"
-}
-\`\`\`
-
-### Example 3: Missing Required Args
-
-**Request:**
-\`\`\`json
-POST /api/v2alpha/template/instance
-Host: template.cloud.sealos.io
-Content-Type: application/json
-Authorization: <URL-encoded kubeconfig>
-
-{
-  "name": "my-instance",
-  "template": "perplexica",
-  "args": {}
-}
-\`\`\`
-
-**Response (400 Bad Request):**
-\`\`\`json
-{
-  "message": "Missing required parameters: OPENAI_API_KEY, OPENAI_MODEL_NAME"
-}
-\`\`\`
-
-### Example 4: Authentication Failed 
-
-**Request:**
-\`\`\`json
-POST /api/v2alpha/template/instance
-Host: template.cloud.sealos.io
-Content-Type: application/json
-
-{
-  "name": "test",
-  "template": "perplexica",
-  "args": {
-    "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
-    "OPENAI_MODEL_NAME": "gpt-4o"
-  }
-}
-\`\`\`
-
-**Response (401 Unauthorized):**
-\`\`\`json
-{
-  "message": "Invalid or missing kubeconfig",
-  "error": "Authentication failed"
-}
-\`\`\`
-
-### Example 5: Template Not Found
-
-**Request:**
-\`\`\`json
-POST /api/v2alpha/template/instance
-Host: template.cloud.sealos.io
-Content-Type: application/json
-Authorization: <URL-encoded kubeconfig>
-
-{
-  "name": "my-instance",
-  "template": "nonexistent-template",
-  "args": {
-    "OPENAI_API_KEY": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
-    "OPENAI_MODEL_NAME": "gpt-4o"
-  }
-}
-\`\`\`
-
-**Response (404 Not Found):**
-\`\`\`json
-{
-  "message": "Template 'nonexistent-template' not found"
-}
-\`\`\`
-
-        `,
+        summary: 'Create template instance',
+        description:
+          "Deploy a named instance of a template into the user's Kubernetes namespace. " +
+          "User-provided `args` are merged with the template's declared defaults — only args with no default value are required. " +
+          'The `args` field in the response reflects the fully resolved values after applying defaults.\n\n' +
+          '**Example — create a Perplexica instance:**\n' +
+          '```json\n' +
+          '{\n' +
+          '  "name": "my-app-instance",\n' +
+          '  "template": "perplexica",\n' +
+          '  "args": {\n' +
+          '    "OPENAI_API_KEY": "<your-api-key>",\n' +
+          '    "OPENAI_MODEL_NAME": "gpt-4o"\n' +
+          '  }\n' +
+          '}\n' +
+          '```',
         operationId: 'createInstance',
-        security: [{ kubeconfigAuth: [] }],
         requestBody: {
+          required: true,
           description: 'Instance creation configuration',
           content: {
             'application/json': {
-              schema: createInstanceSchemas.requestBody,
-              example: {
-                name: 'my-perplexica-instance',
-                template: 'perplexica',
-                args: {
-                  OPENAI_API_KEY: 'your-api-key-here',
-                  OPENAI_MODEL_NAME: 'gpt-4o'
-                }
-              }
+              schema: createInstanceSchemas.requestBody
             }
           }
         },
         responses: {
-          '200': {
+          '201': {
             description: 'Instance created successfully',
             content: {
               'application/json': {
                 schema: createInstanceSchemas.response,
-                example: {
-                  name: 'my-perplexica-instance',
-                  uid: '778bf3c6-b412-4a02-908b-cf1470867c93',
-                  resourceType: 'instance',
-                  displayName: '',
-                  createdAt: '2026-01-28T03:31:01Z',
-                  args: {
-                    OPENAI_API_KEY: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
-                    OPENAI_API_URL: 'https://api.openai.com/v1',
-                    OPENAI_MODEL_NAME: 'gpt-4o'
-                  },
-                  resources: [
-                    {
-                      name: 'my-perplexica-instance-searxng',
-                      uid: '5bd2c77d-b8f4-4aa4-97ee-c205f2d10aa9',
-                      resourceType: 'deployment',
-                      quota: { cpu: 0.1, memory: 0.25, storage: 0, replicas: 1 }
-                    },
-                    {
+                examples: {
+                  instanceCreated: {
+                    summary: 'Instance created successfully',
+                    value: {
                       name: 'my-perplexica-instance',
-                      uid: '256e2577-fa3a-4471-a94c-8cbd5410187c',
-                      resourceType: 'statefulset',
-                      quota: { cpu: 0.2, memory: 0.5, storage: 1, replicas: 1 }
+                      uid: '778bf3c6-b412-4a02-908b-cf1470867c93',
+                      resourceType: 'instance',
+                      displayName: '',
+                      createdAt: '2026-01-28T03:31:01Z',
+                      args: {
+                        OPENAI_API_KEY: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
+                        OPENAI_API_URL: 'https://api.openai.com/v1',
+                        OPENAI_MODEL_NAME: 'gpt-4o'
+                      },
+                      resources: [
+                        {
+                          name: 'my-perplexica-instance-searxng',
+                          uid: '5bd2c77d-b8f4-4aa4-97ee-c205f2d10aa9',
+                          resourceType: 'deployment',
+                          quota: { cpu: 0.1, memory: 0.25, storage: 0, replicas: 1 }
+                        },
+                        {
+                          name: 'my-perplexica-instance',
+                          uid: '256e2577-fa3a-4471-a94c-8cbd5410187c',
+                          resourceType: 'statefulset',
+                          quota: { cpu: 0.2, memory: 0.5, storage: 1, replicas: 1 }
+                        }
+                      ]
                     }
-                  ]
+                  }
                 }
               }
             }
@@ -796,269 +612,172 @@ Authorization: <URL-encoded kubeconfig>
             description: 'Bad request - missing or invalid parameters',
             content: {
               'application/json': {
-                schema: createInstanceSchemas.errorResponse,
+                schema: createError400Schema([
+                  ErrorCode.INVALID_PARAMETER,
+                  ErrorCode.INVALID_VALUE
+                ]),
                 examples: {
-                  missingInstanceName: {
-                    summary: 'Instance name is required',
-                    description: 'Returned when name field is missing, empty, or not a string',
-                    value: {
-                      message: 'Instance name is required'
-                    }
+                  invalidParameter: {
+                    summary: 'Instance or template name required',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Instance name is required.',
+                      [{ field: 'name', message: 'Required' }]
+                    )
                   },
-                  invalidInstanceNameFormat: {
+                  invalidValue: {
                     summary: 'Invalid instance name format',
-                    description:
-                      'Returned when instance name does not follow Kubernetes DNS subdomain naming rules (lowercase alphanumeric and hyphens only, must start and end with alphanumeric)',
-                    value: {
-                      message:
-                        'Instance name must start and end with a lowercase letter or number, and can only contain lowercase letters, numbers, and hyphens'
-                    }
-                  },
-                  instanceNameTooLong: {
-                    summary: 'Instance name too long',
-                    description:
-                      'Returned when instance name exceeds 63 characters (Kubernetes resource name limit)',
-                    value: {
-                      message: 'Instance name must be 63 characters or less'
-                    }
-                  },
-                  missingTemplateName: {
-                    summary: 'Template name is required',
-                    description: 'Returned when template field is missing, empty, or not a string',
-                    value: {
-                      message: 'Template name is required'
-                    }
-                  },
-                  missingRequiredArgs: {
-                    summary: 'Missing required template parameters',
-                    description:
-                      'Returned when required template arguments are not provided and have no default values',
-                    value: {
-                      message: 'Missing required parameters: OPENAI_API_KEY, OPENAI_MODEL_NAME'
-                    }
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_VALUE,
+                      'Instance name must start and end with a lowercase letter or number, and can only contain lowercase letters, numbers, and hyphens.'
+                    )
                   }
                 }
               }
             }
           },
           '401': {
-            description: 'Authentication failed',
+            description: 'Unauthorized - Missing or invalid kubeconfig',
             content: {
               'application/json': {
-                schema: createInstanceSchemas.errorResponse,
+                schema: createError401Schema(),
                 examples: {
-                  missingKubeconfig: {
-                    summary: 'Invalid or missing kubeconfig',
-                    description:
-                      'Returned when Authorization header is missing or kubeconfig is invalid',
-                    value: {
-                      message: 'Invalid or missing kubeconfig',
-                      error: 'Authentication failed'
-                    }
-                  },
-                  cannotConnectCluster: {
-                    summary: 'Cannot connect to Kubernetes cluster',
-                    description:
-                      'Returned when kubeconfig is valid but cannot establish connection to the cluster',
-                    value: {
-                      message: 'Invalid kubeconfig or insufficient permissions',
-                      error: 'Failed to authenticate with Kubernetes cluster'
-                    }
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Invalid or missing kubeconfig.'
+                    )
                   }
                 }
               }
             }
           },
           '403': {
-            description: 'Permission denied',
+            description: 'Forbidden - Insufficient permissions',
             content: {
               'application/json': {
-                schema: createInstanceSchemas.errorResponse,
+                schema: createError403Schema([ErrorCode.PERMISSION_DENIED]),
                 examples: {
-                  insufficientPrivileges: {
+                  insufficientPermissions: {
                     summary: 'Insufficient privileges to create resources',
-                    description:
-                      'Returned when the authenticated user does not have permission to create resources in the namespace',
-                    value: {
-                      message: 'Permission denied: insufficient privileges to create resources',
-                      error:
-                        'deployments.apps is forbidden: User "system:serviceaccount:ns-xxx" cannot create resource "deployments" in API group "apps" in the namespace "ns-xxx"'
-                    }
-                  },
-                  rbacDenied: {
-                    summary: 'RBAC policy denied the request',
-                    description:
-                      'Returned when Kubernetes RBAC policy denies the resource creation',
-                    value: {
-                      message: 'Permission denied: insufficient privileges to create resources',
-                      error: 'Forbidden: cannot create resource'
-                    }
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Permission denied: insufficient privileges to create resources.',
+                      'deployments.apps is forbidden: User "system:serviceaccount:ns-xxx" cannot create resource "deployments" in API group "apps" in the namespace "ns-xxx"'
+                    )
                   }
                 }
               }
             }
           },
           '404': {
-            description: 'Template not found or invalid',
+            description: 'Not Found - Template not found',
             content: {
               'application/json': {
-                schema: createInstanceSchemas.errorResponse,
+                schema: createError404Schema(),
                 examples: {
                   templateNotFound: {
-                    summary: 'Template file does not exist',
-                    description:
-                      'Returned when the specified template name does not exist in the system',
-                    value: {
-                      message: "Template 'nonexistent-template' not found"
-                    }
-                  },
-                  lackOfKindTemplate: {
-                    summary: 'Template missing kind: Template definition',
-                    description:
-                      'Returned when template file exists but is missing the required kind: Template resource definition',
-                    value: {
-                      message: 'Lack of kind template'
-                    }
-                  },
-                  missingDefaultAppName: {
-                    summary: 'Template missing default app_name',
-                    description:
-                      'Returned when template file exists but is missing the required default app_name configuration',
-                    value: {
-                      message: 'default app_name is missing'
-                    }
+                    summary: 'Template does not exist',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Template 'nonexistent-template' not found."
+                    )
                   }
                 }
               }
             }
           },
-          '405': {
-            description: 'Method not allowed',
-            content: {
-              'application/json': {
-                schema: createInstanceSchemas.errorResponse,
-                example: {
-                  message: 'Method not allowed'
-                }
-              }
-            }
-          },
           '409': {
-            description: 'Resource conflict - instance already exists',
+            description: 'Conflict - Instance already exists',
             content: {
               'application/json': {
-                schema: createInstanceSchemas.errorResponse,
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS]),
                 examples: {
-                  instanceExists: {
+                  alreadyExists: {
                     summary: 'Instance with this name already exists',
-                    description:
-                      'Returned when attempting to create an instance with a name that already exists in the namespace',
-                    value: {
-                      message: "Instance 'my-perplexica-instance' already exists",
-                      error: 'deployments.apps "my-perplexica-instance" already exists'
-                    }
-                  },
-                  resourceConflict: {
-                    summary: 'Kubernetes resource conflict',
-                    description:
-                      'Returned when one or more Kubernetes resources generated by the template already exist',
-                    value: {
-                      message: "Instance 'my-app' already exists",
-                      error: 'services "my-app" already exists'
-                    }
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.ALREADY_EXISTS,
+                      "Instance 'my-perplexica-instance' already exists.",
+                      'deployments.apps "my-perplexica-instance" already exists'
+                    )
                   }
                 }
               }
             }
           },
           '422': {
-            description: 'Unprocessable entity - invalid resource specification',
+            description:
+              'Unprocessable Entity - K8s rejected the resource (admission webhook, invalid field, quota exceeded)',
             content: {
               'application/json': {
-                schema: createInstanceSchemas.errorResponse,
+                schema: createError422Schema(),
                 examples: {
-                  admissionWebhookDenied: {
-                    summary: 'Admission webhook rejected the request',
-                    description:
-                      'Returned when Kubernetes admission webhook validation fails (e.g., invalid ingress host, resource quota exceeded)',
-                    value: {
-                      message: 'Failed to create instance: invalid resource specification',
-                      error:
-                        'admission webhook "vingress.sealos.io" denied the request: cannot verify ingress host'
-                    }
-                  },
                   invalidResourceSpec: {
-                    summary: 'Invalid Kubernetes resource specification',
-                    description:
-                      'Returned when the generated YAML contains invalid resource specifications',
-                    value: {
-                      message: 'Failed to create instance: invalid resource specification',
-                      error: 'Invalid value: "invalid-port": spec.ports[0].port'
-                    }
-                  },
-                  resourceQuotaExceeded: {
-                    summary: 'Resource quota exceeded',
-                    description: 'Returned when the requested resources exceed the namespace quota',
-                    value: {
-                      message: 'Failed to create instance: invalid resource specification',
-                      error:
-                        'exceeded quota: default, requested: cpu=4, used: cpu=8, limited: cpu=10'
-                    }
+                    summary: 'Resource spec rejected by cluster',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.INVALID_RESOURCE_SPEC,
+                      'Failed to create instance: invalid resource specification.',
+                      'admission webhook "vingress.sealos.io" denied the request: cannot verify ingress host'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal server error',
+            description: 'Internal Server Error - Kubernetes API error or unexpected failure',
             content: {
               'application/json': {
-                schema: createInstanceSchemas.errorResponse,
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
                 examples: {
-                  k8sApiError: {
+                  kubernetesError: {
                     summary: 'Kubernetes API error',
-                    description:
-                      'Returned when an unexpected error occurs while communicating with Kubernetes API',
-                    value: {
-                      message: 'Failed to create instance in Kubernetes',
-                      error: 'Unexpected error from Kubernetes API'
-                    }
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'Failed to create instance in Kubernetes.',
+                      'Unexpected error from Kubernetes API'
+                    )
                   },
-                  yamlGenerationError: {
-                    summary: 'YAML generation failed',
-                    description:
-                      'Returned when template YAML generation fails due to internal error',
-                    value: {
-                      message: 'Failed to create instance',
-                      error: 'Template parsing error'
-                    }
+                  internalError: {
+                    summary: 'Unexpected server error',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.INTERNAL_ERROR,
+                      'Failed to create instance.',
+                      'Template parsing error'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description: 'Service unavailable - Kubernetes cluster unavailable',
+            description: 'Service Unavailable - Kubernetes cluster temporarily unreachable',
             content: {
               'application/json': {
-                schema: createInstanceSchemas.errorResponse,
+                schema: createError503Schema(),
                 examples: {
                   clusterUnavailable: {
-                    summary: 'Kubernetes cluster is temporarily unavailable',
-                    description:
-                      'Returned when the Kubernetes cluster cannot be reached due to network issues or cluster downtime',
-                    value: {
-                      message: 'Kubernetes cluster is temporarily unavailable',
-                      error: 'connect ECONNREFUSED 10.0.0.1:6443'
-                    }
-                  },
-                  connectionTimeout: {
-                    summary: 'Connection to cluster timed out',
-                    description: 'Returned when the connection to Kubernetes cluster times out',
-                    value: {
-                      message: 'Kubernetes cluster is temporarily unavailable',
-                      error: 'ETIMEDOUT: connection timed out'
-                    }
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'Kubernetes cluster is temporarily unavailable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }

@@ -28,19 +28,31 @@ export const ResourceSchema = z
       .optional()
       .openapi({
         description: 'Number of pod replicas (for fixed instances). Cannot be used with hpa.',
-        enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+        enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+        example: 2
       }),
     cpu: z.number().min(0.1).max(32).default(0.2).openapi({
-      description: 'CPU allocation in cores - range [0.1, 32]'
+      description: 'CPU allocation in cores - range [0.1, 32]',
+      example: 0.5
     }),
     memory: z.number().min(0.1).max(32).default(0.5).openapi({
-      description: 'Memory allocation in GB - range [0.1, 32]'
+      description: 'Memory allocation in GB - range [0.1, 32]',
+      example: 1
     }),
     gpu: z
       .object({
-        vendor: z.string().default('nvidia'),
-        type: z.string(),
-        amount: z.number().default(1)
+        vendor: z.string().default('nvidia').openapi({
+          description: 'GPU vendor (e.g., nvidia)',
+          example: 'nvidia'
+        }),
+        type: z.string().openapi({
+          description: 'GPU model (e.g., A100, V100, T4)',
+          example: 'A100'
+        }),
+        amount: z.number().default(1).openapi({
+          description: 'Number of GPUs to allocate',
+          example: 1
+        })
       })
       .optional()
       .openapi({
@@ -82,11 +94,16 @@ export const ResourceSchema = z
 export const LaunchCommandSchema = z
   .object({
     command: z.string().optional().openapi({
-      description: 'Container run command - was: runCMD'
+      description: 'Container run command - was: runCMD',
+      example: 'node'
     }),
-    args: z.string().optional().openapi({
-      description: 'Command arguments - was: cmdParam'
-    })
+    args: z
+      .array(z.string())
+      .optional()
+      .openapi({
+        description: 'Container command arguments (each element is a separate arg)',
+        example: ['--config', '/etc/app/config.yaml']
+      })
   })
   .openapi({
     description: 'Container launch command configuration'
@@ -95,18 +112,22 @@ export const LaunchCommandSchema = z
 export const ImageSchema = z
   .object({
     imageName: z.string().openapi({
-      description: 'Docker image name with tag'
+      description: 'Docker image name with tag',
+      example: 'nginx:1.21'
     }),
     imageRegistry: z
       .object({
         username: z.string().openapi({
-          description: 'Registry username'
+          description: 'Registry username',
+          example: 'robot$myproject'
         }),
         password: z.string().openapi({
-          description: 'Registry password'
+          description: 'Registry password',
+          example: 'token123'
         }),
         serverAddress: z.string().openapi({
-          description: 'Registry server address'
+          description: 'Registry server address',
+          example: 'registry.example.com'
         })
       })
       .nullable()
@@ -123,16 +144,24 @@ export const ImageSchema = z
 export const StandardEnvSchema = z
   .object({
     name: z.string().openapi({
-      description: 'Environment variable name'
+      description: 'Environment variable name',
+      example: 'DATABASE_URL'
     }),
     value: z.string().optional().openapi({
-      description: 'Environment variable value'
+      description: 'Environment variable value',
+      example: 'postgres://user:pass@host:5432/db'
     }),
     valueFrom: z
       .object({
         secretKeyRef: z.object({
-          key: z.string(),
-          name: z.string()
+          key: z.string().openapi({
+            description: 'Key within the secret',
+            example: 'database-url'
+          }),
+          name: z.string().openapi({
+            description: 'Name of the Kubernetes Secret',
+            example: 'my-app-secrets'
+          })
         })
       })
       .optional()
@@ -147,13 +176,16 @@ export const StandardEnvSchema = z
 export const StorageSchema = z
   .object({
     name: z.string().openapi({
-      description: 'Persistent volume name'
+      description: 'Persistent volume name',
+      example: 'data'
     }),
     path: z.string().openapi({
-      description: 'Mount path in the container'
+      description: 'Mount path in the container',
+      example: '/var/data'
     }),
     size: z.string().default('1Gi').openapi({
-      description: 'Storage size (e.g., "10Gi", "1Ti")'
+      description: 'Storage size (e.g., "10Gi", "1Ti")',
+      example: '10Gi'
     })
   })
   .openapi({
@@ -186,7 +218,8 @@ export const PortConfigSchema = z
       example: 8080
     }),
     portName: z.string().optional().openapi({
-      description: 'Port name identifier'
+      description: 'Port name identifier',
+      example: 'abcdef123456'
     }),
     protocol: z.string().optional().openapi({
       description: 'Protocol type (http, grpc, ws)',
@@ -201,7 +234,8 @@ export const PortConfigSchema = z
       example: 'https://xyz789.cloud.sealos.io'
     }),
     customDomain: z.string().optional().openapi({
-      description: 'Custom domain (if configured)'
+      description: 'Custom domain (if configured)',
+      example: 'api.example.com'
     })
   })
   .openapi({
@@ -210,16 +244,24 @@ export const PortConfigSchema = z
 
 export const LaunchpadApplicationSchema = z
   .object({
-    name: z.string().openapi({ description: 'Application name' }),
+    name: z.string().openapi({ description: 'Application name', example: 'web-api' }),
     image: ImageSchema.openapi({ description: 'Container image configuration' }),
     launchCommand: LaunchCommandSchema.optional().openapi({
       description: 'Container launch command configuration'
     }),
-    quota: ResourceSchema,
-    ports: z.array(PortConfigSchema).optional(),
-    env: z.array(StandardEnvSchema).optional(),
-    storage: z.array(StorageSchema).optional(),
-    configMap: z.array(StandardConfigMapSchema).optional(),
+    quota: ResourceSchema.openapi({ description: 'Resource quota and scaling configuration' }),
+    ports: z.array(PortConfigSchema).optional().openapi({
+      description: 'Port/network configurations with runtime addresses'
+    }),
+    env: z.array(StandardEnvSchema).optional().openapi({
+      description: 'Environment variables'
+    }),
+    storage: z.array(StorageSchema).optional().openapi({
+      description: 'Persistent storage volumes'
+    }),
+    configMap: z.array(StandardConfigMapSchema).optional().openapi({
+      description: 'ConfigMap mounts'
+    }),
     resourceType: z.literal('launchpad').openapi({
       description: 'Resource type identifier (fixed for v2alpha)',
       example: 'launchpad'
@@ -227,14 +269,16 @@ export const LaunchpadApplicationSchema = z
     kind: z
       .enum(['deployment', 'statefulset'])
       .optional()
-      .openapi({ description: 'Underlying Kubernetes workload kind' }),
+      .openapi({ description: 'Underlying Kubernetes workload kind', example: 'deployment' }),
 
-    uid: z.string().openapi({ description: 'Application UID' }),
-    createdAt: z.string().openapi({ description: 'Creation time' }),
+    uid: z.string().openapi({ description: 'Application UID', example: 'abc123-def456-789' }),
+    createdAt: z
+      .string()
+      .openapi({ description: 'Creation time', example: '2024-01-01T00:00:00Z' }),
     upTime: z.string().openapi({ description: 'Uptime (running duration)', example: '2h15m' }),
     status: z
       .enum(['running', 'creating', 'waiting', 'error', 'pause'])
-      .openapi({ description: 'Application status' })
+      .openapi({ description: 'Application status', example: 'running' })
   })
   .openapi({
     title: 'Launchpad Application',

@@ -75,9 +75,7 @@ export function useSearchNameFilterProps<DataType>(
   const filterFn = useCallback(
     (record: DataType) => {
       if (!searchText) return true;
-      return getName(null, record)
-        .toLocaleLowerCase()
-        .includes(searchText.toLocaleLowerCase());
+      return getName(null, record).toLocaleLowerCase().includes(searchText.toLocaleLowerCase());
     },
     [searchText, getName]
   );
