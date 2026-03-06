@@ -6,26 +6,19 @@ const UserDomainSchema = z.object({
 });
 
 const CloudSchema = z.object({
-  domain: z.string().default('cloud.sealos.io').describe('Main promoted domain'),
-  port: z.string().optional().default('').describe('Optional port string, e.g. ":443"'),
-  userDomains: z
-    .array(UserDomainSchema)
-    .default([{ name: 'cloud.sealos.io', secretName: 'wildcard-cert' }])
-    .describe('List of domains available for users'),
-  desktopDomain: z
-    .string()
-    .default('cloud.sealos.io')
-    .describe('Domain for the desktop application')
+  domain: z.string().describe('Main promoted domain'),
+  port: z.string().optional().describe('Optional port string, e.g. ":443"'),
+  userDomains: z.array(UserDomainSchema).describe('List of domains available for users'),
+  desktopDomain: z.string().describe('Domain for the desktop application')
 });
 
 const InfrastructureSchema = z.object({
-  provider: z.string().default('alibaba'),
-  requiresDomainReg: z.boolean().default(false),
-  domainRegQueryLink: z.string().default('http://localhost:3000'),
+  provider: z.string(),
+  requiresDomainReg: z.boolean(),
+  domainRegQueryLink: z.string(),
   domainBindingDocumentationLink: z
     .string()
     .nullable()
-    .default(null)
     .describe('Link to domain binding documentation, or null if not applicable')
 });
 
@@ -40,9 +33,9 @@ const MetaScriptSchema = z
   .catchall(z.string());
 
 const MetaSchema = z.object({
-  title: z.string().default('Sealos Desktop App Demo'),
-  description: z.string().default('Sealos Desktop App Demo'),
-  scripts: z.array(MetaScriptSchema).default([])
+  title: z.string(),
+  description: z.string(),
+  scripts: z.array(MetaScriptSchema)
 });
 
 const SliderConfigSchema = z.object({
@@ -51,33 +44,31 @@ const SliderConfigSchema = z.object({
 });
 
 const LaunchpadSchema = z.object({
-  guideEnabled: z.boolean().default(false),
-  apiEnabled: z.boolean().default(false),
+  guideEnabled: z.boolean(),
+  apiEnabled: z.boolean(),
   gpuEnabled: z
     .boolean()
-    .default(false)
     .describe('Set at runtime by instrumentation hook based on GPU node detection'),
   infrastructure: InfrastructureSchema,
-  domainChallengeSecret: z.string().optional().default('default-dev-secret-change-in-production'),
+  domainChallengeSecret: z.string().optional(),
   meta: MetaSchema,
-  gtmId: z.string().nullable().default(null).describe('Google Tag Manager ID, e.g. GTM-XXXXXX'),
+  gtmId: z.string().nullable().describe('Google Tag Manager ID, e.g. GTM-XXXXXX'),
   currencySymbol: z
     .enum(['shellCoin', 'cny', 'usd'])
-    .default('shellCoin')
     .describe('Currency symbol type for pricing display'),
-  pvcStorageMax: z.number().default(20).describe('Maximum PVC storage in GB'),
+  pvcStorageMax: z.number().describe('Maximum PVC storage in GB'),
   eventAnalyze: z.object({
-    enabled: z.boolean().default(false),
-    fastGPTKey: z.string().optional().default('')
+    enabled: z.boolean(),
+    fastGPTKey: z.string().optional()
   }),
   components: z.object({
     monitor: z.object({
-      url: z.string().default('http://launchpad-monitor.sealos.svc.cluster.local:8428')
+      url: z.string()
     }),
     billing: z.object({
-      url: z.string().default('http://account-service.account-system.svc:2333')
+      url: z.string()
     }),
-    log: z.object({ url: z.string().default('http://localhost:8080') })
+    log: z.object({ url: z.string() })
   }),
   appResourceFormSliderConfig: z
     .record(z.string(), SliderConfigSchema)
@@ -93,15 +84,15 @@ const LaunchpadSchema = z.object({
     })
     .describe('Slider configuration per GPU type key; "default" is the base config'),
   fileManger: z.object({
-    uploadLimit: z.number().default(5).describe('Upload limit in MB'),
-    downloadLimit: z.number().default(100).describe('Download limit in MB')
+    uploadLimit: z.number().describe('Upload limit in MB'),
+    downloadLimit: z.number().describe('Download limit in MB')
   }),
   checkIcpReg: z
     .object({
-      enabled: z.boolean().default(false),
-      endpoint: z.string().default(''),
-      accessKeyID: z.string().default(''),
-      accessKeySecret: z.string().default('')
+      enabled: z.boolean(),
+      endpoint: z.string(),
+      accessKeyID: z.string(),
+      accessKeySecret: z.string()
     })
     .describe('ICP registration check configuration (server-side only)')
 });

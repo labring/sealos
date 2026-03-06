@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import Document, { Html, Head, Main, NextScript, DocumentContext } from 'next/document';
 import Script from 'next/script';
 
@@ -8,8 +9,8 @@ interface MyDocumentProps {
 class MyDocument extends Document<MyDocumentProps> {
   static async getInitialProps(ctx: DocumentContext) {
     const initialProps = await Document.getInitialProps(ctx);
-    const noscripts = global?.AppConfig?.costCenter?.layout?.meta?.noscripts;
-    const scripts = global?.AppConfig?.costCenter?.layout?.meta?.scripts;
+    const noscripts = Config().costCenter.layout.meta.noscripts;
+    const scripts = Config().costCenter.layout.meta.scripts;
     return {
       ...initialProps,
       scripts,

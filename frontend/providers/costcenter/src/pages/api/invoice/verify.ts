@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { checkCode } from '@/service/backend/db/verifyCode';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
@@ -20,7 +21,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (!global.AppConfig.costCenter.invoice.enabled) {
+    if (!Config().costCenter.invoice.enabled) {
       throw new Error('invoice is not enabled');
     }
     await updateTenantAccessToken();

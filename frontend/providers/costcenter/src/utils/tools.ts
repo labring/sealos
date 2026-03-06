@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { NextApiRequest } from 'next';
 import { AxiosInstance } from 'axios';
 import crypto from 'crypto';
@@ -67,7 +68,7 @@ type RealNameInfoResponse = {
 
 export const checkSealosUserIsRealName = async (client: AxiosInstance): Promise<boolean> => {
   try {
-    if (!global.AppConfig.costCenter.realNameRechargeLimit) {
+    if (!Config().costCenter.realNameRechargeLimit) {
       return true;
     }
 

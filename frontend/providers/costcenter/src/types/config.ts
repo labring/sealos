@@ -1,182 +1,123 @@
-export type AliSms = {
-  endpoint: string;
-  accessKeyID: string;
-  accessKeySecret: string;
-  templateCode: string;
-  signName: string;
-  invoiceCompletedTemplateCode: string;
-};
+import { z } from 'zod';
 
-export type Mongo = {
-  uri: string;
-};
+const AliSmsSchema = z.object({
+  endpoint: z.string(),
+  accessKeyID: z.string(),
+  accessKeySecret: z.string(),
+  templateCode: z.string(),
+  signName: z.string(),
+  invoiceCompletedTemplateCode: z.string()
+});
 
-export type Invoice = {
-  enabled: boolean;
-  feishApp: {
-    appId: string;
-    appSecret: string;
-    feiShuBotURL: string;
-    chatId: string;
-    token: string;
-    template: {
-      id: string;
-      version: string;
-    };
-  };
-  serviceToken: string;
-  aliSms: AliSms;
-  mongo: Mongo;
-  billingInfo: {
-    companyName: string;
-    addressLines: string[];
-    contactLines: string[];
-  };
-};
+const MongoSchema = z.object({
+  uri: z.string()
+});
 
-export type PayMethods = {
-  wechat: {
-    enabled: boolean;
-  };
-  alipay: {
-    enabled: boolean;
-  };
-  stripe: {
-    enabled: boolean;
-    publicKey: string;
-  };
-};
+const InvoiceSchema = z.object({
+  enabled: z.boolean(),
+  feishApp: z.object({
+    appId: z.string(),
+    appSecret: z.string(),
+    feiShuBotURL: z.string(),
+    chatId: z.string(),
+    token: z.string(),
+    template: z.object({
+      id: z.string(),
+      version: z.string()
+    })
+  }),
+  serviceToken: z.string(),
+  aliSms: AliSmsSchema,
+  mongo: MongoSchema,
+  billingInfo: z.object({
+    companyName: z.string(),
+    addressLines: z.array(z.string()),
+    contactLines: z.array(z.string())
+  })
+});
 
-export type Recharge = {
-  enabled: boolean;
-  payMethods: PayMethods;
-};
+const PayMethodsSchema = z.object({
+  wechat: z.object({ enabled: z.boolean() }),
+  alipay: z.object({ enabled: z.boolean() }),
+  stripe: z.object({
+    enabled: z.boolean(),
+    publicKey: z.string()
+  })
+});
 
-export type AccountService = {
-  url: string;
-};
+const RechargeSchema = z.object({
+  enabled: z.boolean(),
+  payMethods: PayMethodsSchema
+});
 
-export type DesktopService = {
-  url: string;
-};
+const ComponentsSchema = z.object({
+  accountService: z.object({ url: z.string() }),
+  desktopService: z.object({ url: z.string() })
+});
 
-export type Components = {
-  accountService: AccountService;
-  desktopService: DesktopService;
-};
+const MetaSchema = z.object({
+  noscripts: z.array(z.record(z.string(), z.unknown())),
+  scripts: z.array(z.record(z.string(), z.unknown()))
+});
 
-export type AppConfigType = {
-  cloud: {
-    regionUID: string;
-    domain: string;
-  };
-  costCenter: {
-    realNameRechargeLimit: boolean;
-    transferEnabled: boolean;
-    giftCodeEnabled: boolean;
-    currencyType: string;
-    subscriptionEnabled: boolean;
-    layout: {
-      meta: {
-        noscripts: any[];
-        scripts: any[];
-      };
-    };
-    invoice: Invoice;
-    recharge: Recharge;
-    components: Components;
-    gpuEnabled: boolean;
-    auth: {
-      jwt: {
-        internal: string;
-        billing: string;
-      };
-    };
-  };
-};
+const LayoutSchema = z.object({
+  meta: MetaSchema
+});
 
-export var DefaultAppConfig: AppConfigType = {
-  costCenter: {
-    realNameRechargeLimit: false,
-    giftCodeEnabled: true,
-    transferEnabled: true,
-    currencyType: 'shellCoin',
-    subscriptionEnabled: false,
-    invoice: {
-      enabled: false,
-      feishApp: {
-        appId: '',
-        appSecret: '',
-        feiShuBotURL: '',
-        chatId: '',
-        token: '',
-        template: {
-          id: '',
-          version: ''
-        }
-      },
-      serviceToken: '',
-      aliSms: {
-        endpoint: '',
-        accessKeyID: '',
-        accessKeySecret: '',
-        templateCode: '',
-        signName: '',
-        invoiceCompletedTemplateCode: ''
-      },
-      mongo: {
-        uri: ''
-      },
-      billingInfo: {
-        companyName: '',
-        addressLines: [],
-        contactLines: []
-      }
-    },
-    recharge: {
-      enabled: false,
-      payMethods: {
-        wechat: {
-          enabled: false
-        },
-        alipay: {
-          enabled: false
-        },
-        stripe: {
-          enabled: false,
-          publicKey: ''
-        }
-      }
-    },
-    components: {
-      accountService: {
-        url: 'http://account-service.account-system.svc:2333'
-      },
-      desktopService: {
-        url: 'http://desktop-frontend.sealos.svc:3000'
-      }
-    },
-    layout: {
-      meta: {
-        scripts: [],
-        noscripts: []
-      }
-    },
-    gpuEnabled: false,
-    auth: {
-      jwt: {
-        internal: '',
-        billing: ''
-      }
-    }
-  },
-  cloud: {
-    regionUID: '',
-    domain: ''
-  }
-};
+const CostCenterSchema = z.object({
+  realNameRechargeLimit: z.boolean(),
+  transferEnabled: z.boolean(),
+  giftCodeEnabled: z.boolean(),
+  currencyType: z.enum(['shellCoin', 'cny', 'usd']),
+  subscriptionEnabled: z.boolean(),
+  layout: LayoutSchema,
+  invoice: InvoiceSchema,
+  recharge: RechargeSchema,
+  components: ComponentsSchema,
+  gpuEnabled: z.boolean(),
+  auth: z.object({
+    jwt: z.object({
+      internal: z.string(),
+      billing: z.string()
+    })
+  })
+});
 
-declare global {
-  var AppConfig: AppConfigType;
-  var feishuClient: any;
-}
+const CloudSchema = z.object({
+  regionUID: z.string(),
+  domain: z.string(),
+  port: z.string().optional(),
+  certSecretName: z.string().optional(),
+  proxyDomain: z.string().optional()
+});
+
+export const AppConfigSchema = z.object({
+  cloud: CloudSchema,
+  costCenter: CostCenterSchema
+});
+
+export type AppConfig = z.infer<typeof AppConfigSchema>;
+
+export const ClientAppConfigSchema = z.object({
+  realNameRechargeLimit: z.boolean(),
+  rechargeEnabled: z.boolean(),
+  transferEnabled: z.boolean(),
+  giftCodeEnabled: z.boolean(),
+  currency: z.enum(['shellCoin', 'cny', 'usd']),
+  subscriptionEnabled: z.boolean(),
+  stripeEnabled: z.boolean(),
+  stripePublicKey: z.string(),
+  wechatEnabled: z.boolean(),
+  alipayEnabled: z.boolean(),
+  invoiceEnabled: z.boolean(),
+  gpuEnabled: z.boolean(),
+  billingInfo: z.object({
+    companyName: z.string(),
+    addressLines: z.array(z.string()),
+    contactLines: z.array(z.string())
+  }),
+  accountServiceUrl: z.string(),
+  desktopServiceUrl: z.string()
+});
+
+export type ClientAppConfig = z.infer<typeof ClientAppConfigSchema>;

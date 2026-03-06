@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=config.schema.json
+
+cloud:
+  domain: 'example.nip.io'
+  port: '443'
+  regionUID: 'your-region-uid-here'
+  certSecretName: 'wildcard-cert'
+  proxyDomain: 'example.nip.io'
+
+costCenter:
+  gpuEnabled: false
+  transferEnabled: true
+  currencyType: 'shellCoin'
+  subscriptionEnabled: false
+  giftCodeEnabled: true
+  realNameRechargeLimit: false
+  layout:
+    meta:
+      scripts: []
+      noscripts: []
+  auth:
+    jwt:
+      internal: 'your-internal-jwt-secret-here'
+      billing: 'your-billing-jwt-secret-here'
+  invoice:
+    enabled: false
+    serviceToken: 'your-service-token-here'
+    feishApp:
+      appId: 'your-feishu-app-id'
+      appSecret: 'your-feishu-app-secret'
+      feiShuBotURL: 'https://open.feishu.cn/open-apis/bot/v2/hook/your-hook-id'
+      token: 'your-feishu-token'
+      chatId: 'your-feishu-chat-id'
+      template:
+        id: 'your-template-id'
+        version: '1.0.0'
+    aliSms:
+      endpoint: 'dysmsapi.aliyuncs.com'
+      accessKeyID: 'your-aliyun-access-key-id'
+      accessKeySecret: 'your-aliyun-access-key-secret'
+      templateCode: 'SMS_XXXXXXXXX'
+      signName: 'your-sign-name'
+      invoiceCompletedTemplateCode: 'SMS_XXXXXXXXX'
+    billingInfo:
+      companyName: 'Your Company Name'
+      addressLines:
+        - 'Your Address Line 1'
+        - 'Your City, State ZIP'
+      contactLines:
+        - 'contact@example.com'
+    mongo:
+      uri: ''
+  recharge:
+    enabled: false
+    payMethods:
+      wechat:
+        enabled: false
+      stripe:
+        enabled: false
+        publicKey: 'pk_test_your-stripe-public-key'
+      alipay:
+        enabled: false
+  components:
+    accountService:
+      url: 'http://account-service.account-system.svc:2333'
+    desktopService:
+      url: 'http://desktop-frontend.sealos.svc:3000'

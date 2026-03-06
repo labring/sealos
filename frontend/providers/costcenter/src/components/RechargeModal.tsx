@@ -3,7 +3,7 @@ import wechat_icon from '@/assets/payment-methods/wechat.svg';
 import alipay_icon from '@/assets/payment-methods/alipay.svg';
 import CurrencySymbol from '@/components/CurrencySymbol';
 import { useCustomToast } from '@/hooks/useCustomToast';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types/api';
 import { Pay, Payment } from '@/types/payment';
@@ -347,7 +347,7 @@ const RechargeModal = forwardRef(
       return ratio;
     };
     const { isProcess, setRechargeStatus, resetProcess } = useRechargeStore();
-    const { stripeEnabled, wechatEnabled, alipayEnabled } = useEnvStore();
+    const config = useClientAppConfig();
 
     const createPaymentRes = useMutation(
       () =>
@@ -450,7 +450,6 @@ const RechargeModal = forwardRef(
       setComplete(1);
       createPaymentRes.mutate();
     };
-    const currency = useEnvStore((s) => s.currency);
     useEffect(() => {
       resetProcess();
     }, []);
@@ -583,7 +582,7 @@ const RechargeModal = forwardRef(
                   </div>
 
                   <Flex gap={'16px'} width={'full'} mt={'24px'}>
-                    {stripeEnabled && (
+                    {config.stripeEnabled && (
                       <Button
                         variant="solid"
                         w="full"
@@ -602,7 +601,7 @@ const RechargeModal = forwardRef(
                         </Text>
                       </Button>
                     )}
-                    {wechatEnabled && (
+                    {config.wechatEnabled && (
                       <Button
                         variant="solid"
                         w="full"
@@ -619,7 +618,7 @@ const RechargeModal = forwardRef(
                         </Text>
                       </Button>
                     )}
-                    {alipayEnabled && (
+                    {config.alipayEnabled && (
                       <Button
                         variant="solid"
                         w="full"

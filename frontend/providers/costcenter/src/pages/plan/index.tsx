@@ -5,8 +5,9 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { SubscriptionPlan, SubscriptionPayRequest } from '@/types/plan';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import usePlanStore from '@/stores/plan';
+import { loadStripe } from '@stripe/stripe-js';
 import {
   getPlanList,
   getSubscriptionInfo,
@@ -41,10 +42,8 @@ export default function Plan() {
   const { t } = useTranslation();
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
-  const transferEnabled = useEnvStore((state) => state.transferEnabled);
-  const rechargeEnabled = useEnvStore((state) => state.rechargeEnabled);
-  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
-  const stripePromise = useEnvStore((s) => s.stripePromise);
+  const config = useClientAppConfig();
+  const stripePromise = useMemo(() => loadStripe(config.stripePublicKey), [config.stripePublicKey]);
   const region = getRegion();
   const { toast } = useCustomToast();
 
@@ -713,8 +712,8 @@ export default function Plan() {
           <div className="flex-1/3">
             <BalanceSection
               balance={balance}
-              rechargeEnabled={rechargeEnabled}
-              subscriptionEnabled={subscriptionEnabled}
+              rechargeEnabled={config.rechargeEnabled}
+              subscriptionEnabled={config.subscriptionEnabled}
               onTopUpClick={() => rechargeRef?.current?.onOpen()}
             />
           </div>
@@ -783,8 +782,8 @@ export default function Plan() {
 
           <BalanceSection
             balance={balance}
-            rechargeEnabled={rechargeEnabled}
-            subscriptionEnabled={subscriptionEnabled}
+            rechargeEnabled={config.rechargeEnabled}
+            subscriptionEnabled={config.subscriptionEnabled}
             onTopUpClick={() => rechargeRef?.current!.onOpen()}
           />
         </>
@@ -800,7 +799,7 @@ export default function Plan() {
         }}
       />
       {/* Modals */}
-      {rechargeEnabled && (
+      {config.rechargeEnabled && (
         <RechargeModal
           ref={rechargeRef}
           balance={balance}
@@ -814,7 +813,7 @@ export default function Plan() {
         />
       )}
 
-      {transferEnabled && (
+      {config.transferEnabled && (
         <TransferModal
           ref={transferRef}
           balance={balance}
