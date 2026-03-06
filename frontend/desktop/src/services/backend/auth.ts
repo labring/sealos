@@ -36,8 +36,7 @@ const readRawAuthorizationToken = (header: IncomingHttpHeaders) => header?.autho
 const isAccessTokenClaims = (payload: GlobalJwtClaims): payload is OAuth2AccessTokenPayload =>
   payload.token_type === ACCESS_TOKEN_TYPE &&
   isNonEmptyString(payload.sub) &&
-  isNonEmptyString(payload.user_id) &&
-  !('regionUid' in payload);
+  isNonEmptyString(payload.user_id);
 
 const isRefreshTokenClaims = (payload: GlobalJwtClaims): payload is OAuth2RefreshTokenPayload =>
   payload.token_type === REFRESH_TOKEN_TYPE &&
