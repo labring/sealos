@@ -911,6 +911,9 @@ importers:
       '@sealos/gtm':
         specifier: workspace:^
         version: link:../../packages/gtm
+      '@sealos/shadcn-ui':
+        specifier: workspace:^
+        version: link:../../packages/shadcn-ui
       '@sealos/shared':
         specifier: workspace:^
         version: link:../../packages/shared
@@ -1008,8 +1011,8 @@ importers:
         specifier: 18.3.1
         version: 18.3.1
       react-day-picker:
-        specifier: ^8.8.2
-        version: 8.9.1(date-fns@2.30.0)(react@18.3.1)
+        specifier: ^9.11.1
+        version: 9.11.1(react@18.3.1)
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
@@ -1031,6 +1034,9 @@ importers:
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
+      sonner:
+        specifier: ^2.0.0
+        version: 2.0.7(react-dom@18.3.1)(react@18.3.1)
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
@@ -1047,6 +1053,9 @@ importers:
       '@svgr/webpack':
         specifier: ^6.5.1
         version: 6.5.1
+      '@tailwindcss/postcss':
+        specifier: ^4.1.10
+        version: 4.1.18
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
@@ -1098,12 +1107,18 @@ importers:
       eslint-config-next:
         specifier: 13.5.9
         version: 13.5.9(eslint@8.33.0)(typescript@5.2.2)
+      geist:
+        specifier: ^1.4.2
+        version: 1.4.2(next@14.2.35)
       jsdom:
         specifier: ^27.2.0
         version: 27.2.0
       svg-inline-loader:
         specifier: ^0.8.2
         version: 0.8.2
+      tailwindcss:
+        specifier: ^4.1.10
+        version: 4.1.18
       vite-tsconfig-paths:
         specifier: ^5.1.4
         version: 5.1.4(typescript@5.2.2)(vite@7.2.6)
@@ -14199,7 +14214,6 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
-    libc: [glibc]
     requiresBuild: true
     dev: true
     optional: true
@@ -14218,7 +14232,6 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
-    libc: [musl]
     requiresBuild: true
     dev: true
     optional: true
@@ -14237,7 +14250,6 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
     requiresBuild: true
     dev: true
     optional: true
@@ -14256,7 +14268,6 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
-    libc: [musl]
     requiresBuild: true
     dev: true
     optional: true
@@ -21644,7 +21655,7 @@ packages:
     peerDependencies:
       next: '>=13.2.0'
     dependencies:
-      next: 14.2.35(@babel/core@7.23.5)(react-dom@18.3.1)(react@18.3.1)(sass@1.69.5)
+      next: 14.2.35(@babel/core@7.28.5)(react-dom@18.3.1)(react@18.3.1)(sass@1.69.5)
     dev: true
 
   /generic-pool@3.9.0:
@@ -26158,6 +26169,7 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
+    dev: false
 
   /next@14.2.35(@babel/core@7.28.5)(react-dom@18.3.1)(react@18.3.1)(sass@1.69.5):
     resolution: {integrity: sha512-KhYd2Hjt/O1/1aZVX3dCwGXM1QmOV4eNM2UTacK5gipDdPN/oHHK/4oVGy7X8GMfPMsUTUEmGlsy0EY1YGAkig==}
@@ -26200,7 +26212,6 @@ packages:
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
-    dev: false
 
   /next@14.2.35(react-dom@18.3.1)(react@18.3.1)(sass@1.69.5):
     resolution: {integrity: sha512-KhYd2Hjt/O1/1aZVX3dCwGXM1QmOV4eNM2UTacK5gipDdPN/oHHK/4oVGy7X8GMfPMsUTUEmGlsy0EY1YGAkig==}
@@ -29382,6 +29393,7 @@ packages:
       '@babel/core': 7.23.5
       client-only: 0.0.1
       react: 18.3.1
+    dev: false
 
   /styled-jsx@5.1.1(@babel/core@7.28.5)(react@18.3.1):
     resolution: {integrity: sha512-pW7uC1l4mBZ8ugbiZrcIsiIvVx1UmTfw7UkC3Um2tmfUq9Bhk8IiyEIPl6F8agHgjzku6j0xQEZbfA5uSgSaCw==}
@@ -29399,7 +29411,6 @@ packages:
       '@babel/core': 7.28.5
       client-only: 0.0.1
       react: 18.3.1
-    dev: false
 
   /stylis@4.2.0:
     resolution: {integrity: sha512-Orov6g6BB1sDfYgzWfTHDOxamtX1bE/zo104Dh9e6fqJ3PooipYyfJ0pUmrZO2wAvO8YbEyeFrkV91XTsGMSrw==}

@@ -28,7 +28,7 @@ const AdvancedConfig = () => {
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col items-start gap-2 overflow-hidden">
       {/* Environment Variables */}
-      <div className="shadow-xs flex min-h-0 w-full flex-1 flex-col gap-4 overflow-hidden rounded-xl border-[0.5px] border-zinc-200 bg-white p-6">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-4 overflow-hidden rounded-xl border-[0.5px] border-zinc-200 bg-white p-6 shadow-xs">
         <div className="flex flex-shrink-0 items-center justify-between">
           <h3 className="text-lg/7 font-medium text-black">{t('environment_variables')}</h3>
           <Button
@@ -79,7 +79,7 @@ const AdvancedConfig = () => {
       </div>
 
       {/* Configmaps */}
-      <div className="shadow-xs flex min-h-0 w-full flex-1 flex-col gap-4 overflow-hidden rounded-xl border-[0.5px] border-zinc-200 bg-white p-6">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-4 overflow-hidden rounded-xl border-[0.5px] border-zinc-200 bg-white p-6 shadow-xs">
         <div className="flex flex-shrink-0 items-center justify-between">
           <h3 className="text-lg/7 font-medium text-black">{t('configmaps')}</h3>
           <Button
@@ -117,7 +117,7 @@ const AdvancedConfig = () => {
       </div>
 
       {/* Network Storage */}
-      <div className="shadow-xs flex min-h-0 w-full flex-1 flex-col gap-4 overflow-hidden rounded-xl border-[0.5px] border-zinc-200 bg-white p-6">
+      <div className="flex min-h-0 w-full flex-1 flex-col gap-4 overflow-hidden rounded-xl border-[0.5px] border-zinc-200 bg-white p-6 shadow-xs">
         <div className="flex flex-shrink-0 items-center justify-between">
           <h3 className="text-lg/7 font-medium text-black">{t('network_storage')}</h3>
           <Button

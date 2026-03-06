@@ -1,11 +1,19 @@
-import { theme } from '@/constants/theme';
+// import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
 import { DESKTOP_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { ChakraProvider } from '@chakra-ui/react';
+// import { ChakraBaseProvider } from '@chakra-ui/react';
+import { Toaster } from 'sonner';
+import { GeistSans } from 'geist/font/sans';
+import { Fira_Code } from 'next/font/google';
+
+const FiraCode = Fira_Code({
+  subsets: ['latin'],
+  variable: '--font-fira-code'
+});
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
@@ -16,7 +24,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import 'react-day-picker/dist/style.css';
-import '@/styles/reset.scss';
+import '@/styles/tailwind.css';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import Head from 'next/head';
@@ -26,7 +34,7 @@ import * as yaml from 'js-yaml';
 import type { AppConfigType } from '@/types';
 import Script from 'next/script';
 import { GTMScript } from '@sealos/gtm';
-import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
+import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
 import { QuotaGuardProvider } from '@sealos/shared';
 
 //Binding events.
@@ -215,7 +223,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
   }, []);
 
   return (
-    <>
+    <div id="app-root" className={`${GeistSans.variable} ${FiraCode.variable}`}>
       {config?.launchpad?.meta?.title && (
         <Head>
           <title>{config?.launchpad?.meta?.title}</title>
@@ -223,14 +231,13 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
         </Head>
       )}
       <QueryClientProvider client={queryClient}>
-        <ChakraProvider theme={theme}>
-          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
-            <Component {...pageProps} />
-            <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
-            <ConfirmChild />
-            <Loading loading={loading} />
-          </QuotaGuardProvider>
-        </ChakraProvider>
+        <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
+          <Component {...pageProps} />
+          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
+          <ConfirmChild />
+          <Loading loading={loading} />
+          <Toaster position="top-center" richColors />
+        </QuotaGuardProvider>
       </QueryClientProvider>
       {config?.launchpad?.meta?.scripts?.map((script, i) => (
         <Script key={i} {...script} />
@@ -240,7 +247,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
         gtmId={config?.launchpad?.gtmId!}
         debug={process.env.NODE_ENV === 'development'}
       />
-    </>
+    </div>
   );
 };
 

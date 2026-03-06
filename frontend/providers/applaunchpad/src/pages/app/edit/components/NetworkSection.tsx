@@ -1,17 +1,40 @@
-import MyIcon from '@/components/Icon';
-import { MySelect } from '@sealos/ui';
 import { APPLICATION_PROTOCOLS, ProtocolList } from '@/constants/app';
 import { SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { customAlphabet } from 'nanoid';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
-import { Box, Button, Flex, IconButton, Input, Switch, Tooltip, useTheme } from '@chakra-ui/react';
 import { useCopyData } from '@/utils/tools';
 import { useState, useCallback } from 'react';
 import type { AppEditType } from '@/types/app';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import dynamic from 'next/dynamic';
 import { WorkspaceQuotaItem } from '@sealos/shared';
+import { Plus, Trash2, Copy, Check } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Input,
+  Button
+} from '@sealos/shadcn-ui';
+import { Switch } from '@sealos/shadcn-ui/switch';
+import { Label } from '@sealos/shadcn-ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@sealos/shadcn-ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@sealos/shadcn-ui/tooltip';
+import { Separator } from '@sealos/shadcn-ui/separator';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 
@@ -34,22 +57,27 @@ interface NetworkSectionProps {
   exceededQuotas: WorkspaceQuotaItem[];
   onDomainVerified?: (params: { index: number; customDomain: string }) => void;
   handleOpenCostcenter: () => void;
-  boxStyles: any;
-  headerStyles: any;
+  boxStyles?: any;
+  headerStyles?: any;
 }
 
 export function NetworkSection({
   formHook,
   exceededQuotas,
   onDomainVerified,
-  handleOpenCostcenter,
-  boxStyles,
-  headerStyles
+  handleOpenCostcenter
 }: NetworkSectionProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
+
   const { copyData } = useCopyData();
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const handleCopy = (content: string, index: number) => {
+    copyData(content);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
 
   const { register, control, getValues } = formHook;
 
@@ -180,17 +208,16 @@ export function NetworkSection({
     [getValues, appendNetworks, removeNetworks, updateNetworks]
   );
 
-  const getAccessDisplayText = useCallback(
+  const getDomainDisplay = useCallback(
     (network: AppEditType['networks'][0]) => {
-      if (network.customDomain) return network.customDomain;
-
-      if (network.openNodePort) {
-        const prefix = `${network.protocol.toLowerCase()}.${network.domain}`;
-        return network?.nodePort
-          ? `${prefix}:${network.nodePort}`
-          : `${prefix}:${t('pending_to_allocated')}`;
+      if (network.customDomain) {
+        return network.customDomain;
       }
-
+      if (network.openNodePort) {
+        return network?.nodePort
+          ? `${network.protocol.toLowerCase()}.${network.domain}:${network.nodePort}`
+          : `${network.protocol.toLowerCase()}.${network.domain}:${t('pending_to_allocated')}`;
+      }
       return `${network.publicDomain}.${network.domain}`;
     },
     [t]
@@ -198,232 +225,256 @@ export function NetworkSection({
 
   return (
     <>
-      <Box id={'network'} {...boxStyles}>
-        <Box {...headerStyles}>
-          <MyIcon name={'network'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
-          {t('Network Configuration')}
-        </Box>
-        <Box px={'42px'} py={'24px'} userSelect={'none'}>
-          {networks.map((network, i) => (
-            <Flex
-              alignItems={'flex-start'}
-              key={network.id}
-              _notLast={{ pb: 6, borderBottom: theme.borders.base }}
-              _notFirst={{ pt: 6 }}
-            >
-              {/* Container Port Column - Fixed Width */}
-              <Box w={'140px'}>
-                <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
-                  {t('Container Port')}
-                </Box>
-                <Input
-                  h={'32px'}
-                  type={'number'}
-                  w={'110px'}
-                  bg={'grayModern.50'}
-                  {...register(`networks.${i}.port`, {
-                    required:
-                      t('app.The container exposed port cannot be empty') ||
-                      'The container exposed port cannot be empty',
-                    valueAsNumber: true,
-                    min: {
-                      value: 1,
-                      message: t('app.The minimum exposed port is 1')
-                    },
-                    max: {
-                      value: 65535,
-                      message: t('app.The maximum number of exposed ports is 65535')
-                    }
-                  })}
-                />
-                {i === networks.length - 1 && networks.length + 1 <= 15 && (
-                  <Box mt={3}>
-                    <Button
-                      w={'100px'}
-                      variant={'outline'}
-                      leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
-                      onClick={() =>
-                        dispatch({
-                          type: 'ADD_PORT',
-                          payload: {
-                            networkName: '',
-                            portName: nanoid(),
-                            port: 80,
-                            protocol: 'TCP',
-                            appProtocol: 'HTTP',
-                            openPublicDomain: false,
-                            publicDomain: '',
-                            customDomain: '',
-                            domain: SEALOS_DOMAIN,
-                            openNodePort: false,
-                            nodePort: undefined
-                          }
-                        })
-                      }
-                    >
-                      {t('Add Port')}
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-
-              {/* Enable Internet Access Column - Fixed Width */}
-              <Box w={'200px'} mx={7}>
-                <Box mb={'8px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
-                  {t('Open Public Access')}
-                </Box>
-                <Flex alignItems={'center'} h={'35px'}>
-                  <Switch
-                    className="driver-deploy-network-switch"
-                    size={'lg'}
-                    isChecked={!!network.openPublicDomain || !!network.openNodePort}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        dispatch({
-                          type: 'ENABLE_EXTERNAL_ACCESS',
-                          payload: {
-                            index: i,
-                            network
-                          }
-                        });
-                      } else {
-                        dispatch({
-                          type: 'DISABLE_EXTERNAL_ACCESS',
-                          payload: { index: i }
-                        });
-                      }
-                    }}
-                  ></Switch>
-                </Flex>
-              </Box>
-
-              {/* Protocol and Domain Column - Fixed Width */}
-              <Box w={'500px'}>
-                <Box mb={'8px'} h={'20px'}></Box>
-                <Flex alignItems={'center'} h={'35px'}>
-                  {network.openPublicDomain || network.openNodePort ? (
-                    <>
-                      <MySelect
-                        width={'120px'}
-                        height={'32px'}
-                        borderTopRightRadius={0}
-                        borderBottomRightRadius={0}
-                        value={
-                          network.openPublicDomain
-                            ? network.appProtocol
-                            : network.openNodePort
-                            ? network.protocol
-                            : 'HTTP'
+      <Card id="network">
+        <CardHeader className="pt-8 px-8 pb-6 bg-transparent gap-2">
+          <CardTitle className="flex items-center text-xl font-medium text-zinc-900">
+            {t('Network Configuration')}
+          </CardTitle>
+          <CardDescription className="text-sm text-zinc-500">
+            {t('Network Configuration Description')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-8 pb-8">
+          <div className="space-y-5">
+            {networks.map((network, i) => (
+              <div key={network.id}>
+                <div className="flex items-start gap-8">
+                  {/* Container Port */}
+                  <div className="shrink-0">
+                    <Label className="text-sm font-medium text-zinc-900 leading-none mb-3 block">
+                      {t('Container Port')}
+                    </Label>
+                    <Input
+                      type="number"
+                      className="w-[100px] h-10"
+                      {...register(`networks.${i}.port`, {
+                        required:
+                          t('app.The container exposed port cannot be empty') ||
+                          'The container exposed port cannot be empty',
+                        valueAsNumber: true,
+                        min: {
+                          value: 1,
+                          message: t('app.The minimum exposed port is 1')
+                        },
+                        max: {
+                          value: 65535,
+                          message: t('app.The maximum number of exposed ports is 65535')
                         }
-                        list={ProtocolList}
-                        onchange={(val: any) => {
-                          dispatch({
-                            type: 'UPDATE_PROTOCOL',
-                            payload: {
-                              index: i,
-                              protocol: val
-                            }
-                          });
-                        }}
-                      />
-                      <Flex
-                        maxW={'350px'}
-                        flex={'1 0 0'}
-                        alignItems={'center'}
-                        h={'32px'}
-                        bg={'grayModern.50'}
-                        px={4}
-                        border={theme.borders.base}
-                        borderLeft={0}
-                        borderTopRightRadius={'md'}
-                        borderBottomRightRadius={'md'}
-                      >
-                        <Tooltip label={t('click_to_copy_tooltip')}>
-                          <Box
-                            flex={1}
-                            userSelect={'all'}
-                            className="textEllipsis"
-                            onClick={() => {
-                              copyData(getAccessDisplayText(network));
-                            }}
-                          >
-                            {getAccessDisplayText(network)}
-                          </Box>
-                        </Tooltip>
+                      })}
+                    />
+                  </div>
 
-                        {network.openPublicDomain && !network.openNodePort && (
-                          <Box
-                            fontSize={'11px'}
-                            color={'brightBlue.600'}
-                            cursor={'pointer'}
-                            onClick={() =>
-                              setCustomAccessModalData({
-                                publicDomain: network.publicDomain,
-                                currentCustomDomain: network.customDomain,
-                                domain: network.domain
-                              })
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* Enable Public Access */}
+                    <div className="shrink-0 mr-1">
+                      <Label className="text-sm font-medium text-zinc-900 mb-2 block">
+                        {t('Open Public Access')}
+                      </Label>
+                      <div className="flex items-center gap-2 h-10">
+                        <Switch
+                          id={`network-access-${i}`}
+                          className="driver-deploy-network-switch"
+                          checked={!!network.openPublicDomain || !!network.openNodePort}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              dispatch({
+                                type: 'ENABLE_EXTERNAL_ACCESS',
+                                payload: {
+                                  index: i,
+                                  network
+                                }
+                              });
+                            } else {
+                              dispatch({
+                                type: 'DISABLE_EXTERNAL_ACCESS',
+                                payload: { index: i }
+                              });
                             }
-                          >
-                            {t('Custom Domain')}
-                          </Box>
-                        )}
-                      </Flex>
-                    </>
-                  ) : (
-                    <Box w={'470px'} h={'32px'}></Box>
-                  )}
-                </Flex>
-              </Box>
+                          }}
+                        />
+                        <Label
+                          htmlFor={`network-access-${i}`}
+                          className={`text-sm font-normal leading-none ${
+                            network.openPublicDomain || network.openNodePort
+                              ? 'text-zinc-900'
+                              : 'text-zinc-400'
+                          } cursor-pointer`}
+                        >
+                          {network.openPublicDomain || network.openNodePort
+                            ? t('Enabled')
+                            : t('Disabled')}
+                        </Label>
+                      </div>
+                    </div>
 
-              {/* Delete Button Column - Fixed Width */}
-              {networks.length > 1 && (
-                <Box w={'50px'} ml={3}>
-                  <Box mb={'8px'} h={'20px'}></Box>
-                  <IconButton
-                    height={'32px'}
-                    width={'32px'}
-                    aria-label={'button'}
-                    variant={'outline'}
-                    bg={'#FFF'}
-                    _hover={{
-                      color: 'red.600',
-                      bg: 'rgba(17, 24, 36, 0.05)'
-                    }}
-                    icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
-                    onClick={() => dispatch({ type: 'REMOVE_PORT', payload: { index: i } })}
-                  />
-                </Box>
-              )}
-            </Flex>
-          ))}
-          {exceededQuotas.some(({ type }) => type === 'nodeport') && (
-            <Box pt={'16px'}>
-              <Box fontSize={'md'} color={'red.500'} mb={1}>
-                {t('nodeport_exceeds_quota', {
-                  requested: getValues('networks').filter((item) => item.openNodePort)?.length || 0,
-                  limit: exceededQuotas.find(({ type }) => type === 'nodeport')?.limit ?? 0,
-                  used: exceededQuotas.find(({ type }) => type === 'nodeport')?.used ?? 0
-                })}
-              </Box>
-              {/* [TODO] Let's wait for the Client SDK upgrade */}
-              {/* <Box fontSize={'md'} color={'red.500'}>
-                {t('please_upgrade_plan.0')}
-                <Box
-                  as="span"
-                  cursor="pointer"
-                  fontWeight="semibold"
-                  color="blue.600"
-                  textDecoration="underline"
-                  onClick={handleOpenCostcenter}
+                    {/* Protocol and Domain */}
+                    <div className="flex-1 min-w-0">
+                      <Label className="text-sm font-medium text-zinc-900 mb-2 block invisible">
+                        {t('Protocol')}
+                      </Label>
+                      <div className="flex items-center h-10">
+                        {network.openPublicDomain || network.openNodePort ? (
+                          <div className="flex items-center w-full">
+                            <Select
+                              value={
+                                network.openPublicDomain
+                                  ? network.appProtocol
+                                  : network.openNodePort
+                                  ? network.protocol
+                                  : 'HTTP'
+                              }
+                              onValueChange={(val) => {
+                                dispatch({
+                                  type: 'UPDATE_PROTOCOL',
+                                  payload: {
+                                    index: i,
+                                    protocol: val
+                                  }
+                                });
+                              }}
+                            >
+                              <SelectTrigger className="min-w-[100px] h-10 rounded-lg rounded-r-none">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {ProtocolList.map((item) => (
+                                  <SelectItem key={item.value} value={item.value}>
+                                    {item.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="flex-1 h-10 flex items-center px-3 border border-l-0 border-zinc-200  rounded-r-lg overflow-hidden">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      className="flex-1 flex items-center cursor-pointer hover:text-zinc-900 transition-colors overflow-hidden"
+                                      onClick={() => handleCopy(getDomainDisplay(network), i)}
+                                    >
+                                      <span className="truncate text-sm text-muted-foreground">
+                                        {getDomainDisplay(network)}
+                                      </span>
+                                      {copiedIndex === i ? (
+                                        <Check className="w-4 h-4 ml-2 shrink-0 text-muted-foreground" />
+                                      ) : (
+                                        <Copy className="w-4 h-4 ml-2 shrink-0 text-muted-foreground" />
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  {copiedIndex !== i && (
+                                    <TooltipContent>
+                                      <p>{t('click_to_copy_tooltip')}</p>
+                                    </TooltipContent>
+                                  )}
+                                </Tooltip>
+                              </TooltipProvider>
+                              {network.openPublicDomain && !network.openNodePort && (
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  size="sm"
+                                  className="text-blue-600 shrink-0 h-auto px-2 font-normal text-sm"
+                                  onClick={() =>
+                                    setCustomAccessModalData({
+                                      publicDomain: network.publicDomain,
+                                      currentCustomDomain: network.customDomain,
+                                      domain: network.domain
+                                    })
+                                  }
+                                >
+                                  {t('Custom')}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Delete Button */}
+                    {networks.length > 1 && (
+                      <div className="shrink-0">
+                        <Label className="text-sm font-medium text-zinc-900 mb-2 block invisible">
+                          {t('Delete')}
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-10 w-10 hover:text-red-600 hover:border-red-200 shadow-none"
+                          onClick={() => dispatch({ type: 'REMOVE_PORT', payload: { index: i } })}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {i !== networks.length - 1 && (
+                  <Separator className="my-5 bg-transparent border-t border-dashed border-zinc-200" />
+                )}
+              </div>
+            ))}
+
+            {networks.length < 15 && (
+              <>
+                <Separator className="my-4 bg-transparent border-t border-dashed border-zinc-200" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    dispatch({
+                      type: 'ADD_PORT',
+                      payload: {
+                        networkName: '',
+                        portName: nanoid(),
+                        port: 80,
+                        protocol: 'TCP',
+                        appProtocol: 'HTTP',
+                        openPublicDomain: false,
+                        publicDomain: '',
+                        customDomain: '',
+                        domain: SEALOS_DOMAIN,
+                        openNodePort: false,
+                        nodePort: undefined
+                      }
+                    })
+                  }
+                  className="h-10 rounded-lg shadow-none hover:bg-zinc-50"
                 >
-                  {t('please_upgrade_plan.1')}
-                </Box>
-                {t('please_upgrade_plan.2')}
-              </Box> */}
-            </Box>
-          )}
-        </Box>
-      </Box>
+                  <Plus className="w-4 h-4 mr-1" />
+                  {t('Add Port')}
+                </Button>
+              </>
+            )}
+
+            {exceededQuotas.some(({ type }) => type === 'nodeport') && (
+              <div className="pt-4">
+                <p className="text-sm text-red-500 mb-1">
+                  {t('nodeport_exceeds_quota', {
+                    requested:
+                      getValues('networks').filter((item) => item.openNodePort)?.length || 0,
+                    limit: exceededQuotas.find(({ type }) => type === 'nodeport')?.limit ?? 0,
+                    used: exceededQuotas.find(({ type }) => type === 'nodeport')?.used ?? 0
+                  })}
+                </p>
+                {/* [TODO] Let's wait for the Client SDK upgrade */}
+                {/* <p className="text-sm text-red-500">
+                  {t('please_upgrade_plan.0')}
+                  <span
+                    className="cursor-pointer font-semibold text-blue-600 underline"
+                    onClick={handleOpenCostcenter}
+                  >
+                    {t('please_upgrade_plan.1')}
+                  </span>
+                  {t('please_upgrade_plan.2')}
+                </p> */}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {!!customAccessModalData && (
         <CustomAccessModal
