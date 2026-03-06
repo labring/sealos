@@ -121,6 +121,9 @@ export type AuthConfigType = {
   billingUrl?: string;
   workorderUrl?: string;
   cloudVitrualMachineUrl: string;
+  oauth2idp: {
+    enabled: boolean;
+  };
   idp: {
     password?: {
       enabled: boolean;
@@ -207,6 +210,8 @@ export type AuthClientConfigType = {
       'baiduToken',
       'bingAd',
       'signUpEnabled',
+      // OAuth2 IdP
+      'oauth2idp',
       'idp.password.salt',
       'idp.github.clientSecret',
       'idp.wechat.clientSecret',

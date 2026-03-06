@@ -23,6 +23,7 @@ import { gtmLoginSuccess } from '@/utils/gtm';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import useAppStore from '@/stores/app';
+import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 
 export default function Callback() {
   const router = useRouter();
@@ -114,6 +115,11 @@ export default function Callback() {
 
               // Helper function to handle redirect after login
               const handleLoginRedirect = async () => {
+                const oauth2RedirectPath = consumePendingOauth2RedirectPath();
+                if (oauth2RedirectPath) {
+                  await router.replace(oauth2RedirectPath);
+                  return;
+                }
                 const appState = useAppStore.getState();
                 if (appState.autoDeployTemplate && appState.autoDeployTemplateForm) {
                   const params = new URLSearchParams({

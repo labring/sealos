@@ -1,7 +1,7 @@
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { JoinStatus } from 'prisma/region/generated/client';
-import { generateAuthenticationToken } from '../auth';
+import { generateGlobalToken } from '../auth';
 import { globalPrisma, prisma } from '../db/init';
 import { getUserKubeconfigNotPatch } from '../kubernetes/admin';
 import { jsonRes } from '../response';
@@ -134,7 +134,7 @@ export const otherRegionResourceGuard =
           {
             headers: {
               authorization: encodeURI(
-                generateAuthenticationToken({
+                generateGlobalToken({
                   userUid: userUid,
                   userId: userId
                 })
