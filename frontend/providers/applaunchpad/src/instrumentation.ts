@@ -1,98 +1,51 @@
-import type { AppConfigType } from './types';
-
 export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
-    const Coin = (await import('@/constants/app')).Coin;
-    const yaml = (await import('js-yaml')).default;
-    const fs = (await import('node:fs')).default;
-    const getGpuNode = (await import('./services/backend/gpu')).getGpuNode;
+    const { readFileSync } = await import('fs');
+    const { readConfig, mountToGlobalThis, prettyPrintErrors } = await import(
+      '@sealos/shared/server/config'
+    );
+    const { AppConfigSchema } = await import('./types/config');
 
-    async function loadConfig() {
-      const defaultAppConfig: AppConfigType = {
-        cloud: {
-          domain: 'cloud.sealos.io',
-          port: '',
-          userDomains: [
-            {
-              name: 'cloud.sealos.io',
-              secretName: 'wildcard-cert'
-            }
-          ],
-          desktopDomain: 'cloud.sealos.io'
-        },
-        common: {
-          guideEnabled: false,
-          apiEnabled: false,
-          gpuEnabled: false
-        },
-        launchpad: {
-          infrastructure: {
-            provider: 'alibaba',
-            requiresDomainReg: false,
-            domainRegQueryLink: 'http://localhost:3000',
-            domainBindingDocumentationLink: null
-          },
-          domainChallengeSecret: 'default-dev-secret-change-in-production',
-          meta: {
-            title: 'Sealos Desktop App Demo',
-            description: 'Sealos Desktop App Demo',
-            scripts: []
-          },
-          gtmId: null,
-          currencySymbol: Coin.shellCoin,
-          pvcStorageMax: 20,
-          eventAnalyze: {
-            enabled: false,
-            fastGPTKey: ''
-          },
-          components: {
-            monitor: {
-              url: 'http://launchpad-monitor.sealos.svc.cluster.local:8428'
-            },
-            billing: {
-              url: 'http://account-service.account-system.svc:2333'
-            },
-            log: {
-              url: 'http://localhost:8080'
-            }
-          },
-          appResourceFormSliderConfig: {
-            default: {
-              cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
-              memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-            },
-            'default-gpu': {
-              cpu: [8000, 16000, 32000, 48000, 64000, 80000, 108000],
-              memory: [16384, 32768, 65536, 131072, 262144, 524288, 614400]
-            }
-          },
-          fileManger: {
-            uploadLimit: 5,
-            downloadLimit: 100
-          },
-          checkIcpReg: {
-            enabled: false,
-            endpoint: '',
-            accessKeyID: '',
-            accessKeySecret: ''
-          }
+    const configPath =
+      process.env.NODE_ENV === 'development' ? 'data/config.local.yaml' : '/app/data/config.yaml';
+
+    try {
+      const configText = readFileSync(configPath, 'utf-8');
+      const result = await readConfig(configText, AppConfigSchema as any);
+
+      if (result.error) {
+        console.error('[Instrumentation Hook] Configuration validation failed:');
+        console.error(prettyPrintErrors(result.error.details));
+        process.exit(1);
+      }
+
+      mountToGlobalThis('__APP_CONFIG__', result.data);
+      console.log('[Instrumentation Hook] Configuration loaded.');
+
+      // GPU node detection — patches gpuEnabled at runtime
+      try {
+        const { getGpuNode } = await import('./services/backend/gpu');
+        const gpuNodes = await getGpuNode();
+        console.log(gpuNodes, 'gpuNodes');
+
+        // [FIXME] The overriding behavior is weird.
+        if (globalThis.__APP_CONFIG__) {
+          (globalThis.__APP_CONFIG__ as { launchpad: { gpuEnabled: boolean } }).launchpad = {
+            ...globalThis.__APP_CONFIG__.launchpad,
+            gpuEnabled: gpuNodes.length > 0
+          };
+
+          console.log(
+            '[Instrumentation Hook] No GPU nodes retrieved, overriding gpuEnabled to false'
+          );
         }
-      };
-
-      const filename =
-        process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
-      const res: any = yaml.load(fs.readFileSync(filename, 'utf-8'));
-      const config = {
-        ...defaultAppConfig,
-        ...res
-      };
-      global.AppConfig = config;
-      const gpuNodes = await getGpuNode();
-      console.log(gpuNodes, 'gpuNodes');
-      global.AppConfig.common.gpuEnabled = gpuNodes.length > 0;
+      } catch (gpuErr) {
+        console.warn('[Instrumentation Hook] GPU node detection failed (non-fatal):', gpuErr);
+      }
+    } catch (err) {
+      // nosemgrep: unsafe-formatstring
+      console.error(`[Instrumentation Hook] Failed to load config file from ${configPath}:`, err);
+      process.exit(1);
     }
-
-    console.log('[Instrumentation Hook] Loading AppConfig from disk.');
-    await loadConfig();
   }
 }

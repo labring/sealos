@@ -5,9 +5,9 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { appDeployKey } from '@/constants/app';
 import { adaptAppDetail } from '@/utils/adapt';
-import { getServerEnv } from './platform/getInitData';
 import { DeployKindsType } from '@/types/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
+import { Config } from '@/config';
 
 export const config = {
   api: {
@@ -41,10 +41,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       .filter((item) => item)
       .flat();
 
-    const data = await adaptAppDetail(
-      responseData as DeployKindsType[],
-      getServerEnv(global.AppConfig)
-    );
+    const data = await adaptAppDetail(responseData as DeployKindsType[], {
+      domain: Config().cloud.domain,
+      userDomains: Config().cloud.userDomains
+    });
 
     jsonRes(res, {
       data: data

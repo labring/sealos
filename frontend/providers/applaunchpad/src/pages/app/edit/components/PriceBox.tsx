@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Center, Flex, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { Text, Icon } from '@chakra-ui/react';
-import { CURRENCY } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useUserStore } from '@/store/user';
 import MyIcon from '@/components/Icon';
 import { CurrencySymbol, MyTooltip } from '@sealos/ui';
@@ -28,6 +28,7 @@ const PriceBox = ({
   const { t } = useTranslation();
   const { userSourcePrice } = useUserStore();
   const theme = useTheme();
+  const config = useClientAppConfig();
 
   const priceList = useMemo(() => {
     if (!userSourcePrice) return [];
@@ -50,7 +51,7 @@ const PriceBox = ({
       const max = (val * pods[1]).toFixed(2);
       return (
         <Flex alignItems={'center'}>
-          <CurrencySymbol type={CURRENCY} />
+          <CurrencySymbol type={config.currencySymbol} />
           <Text ml="4px">{pods[0] === pods[1] ? `${min}` : `${min} ~ ${max}`}</Text>
         </Flex>
       );

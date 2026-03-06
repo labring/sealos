@@ -295,7 +295,7 @@ const PodDetailTypeSchema = z
     podMessage: z.string().optional(),
     containerStatus: PodStatusMapTypeSchema
   })
-  .and(z.record(z.any()));
+  .and(z.record(z.string(), z.any()));
 
 export const GetAppPodsByAppNameResponseSchema = z.array(PodDetailTypeSchema);
 

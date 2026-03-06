@@ -3,6 +3,7 @@ import { jsonRes } from '@/services/backend/response';
 import type { userPriceType } from '@/types/user';
 import { GpuNodeType, ResourceType } from '@/types/app';
 import { getGpuNode } from '@/services/backend/gpu';
+import { Config } from '@/config';
 
 type ResourcePriceType = {
   data: {
@@ -26,7 +27,7 @@ export const valuationMap: Record<string, number> = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const gpuEnabled = global.AppConfig.common.gpuEnabled;
+    const gpuEnabled = Config().launchpad.gpuEnabled;
     const [priceResponse, gpuNodes] = await Promise.all([
       getResourcePrice(),
       gpuEnabled ? getGpuNode() : Promise.resolve([])
@@ -78,7 +79,7 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
 }
 
 const getResourcePrice = async () => {
-  const url = global.AppConfig.launchpad.components.billing.url;
+  const url = Config().launchpad.components.billing.url;
 
   const res = await fetch(`${url}/account/v1alpha1/properties`, {
     method: 'POST'

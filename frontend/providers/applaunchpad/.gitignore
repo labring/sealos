@@ -39,3 +39,6 @@ platform.json
 .yalc/
 yalc.lock
 data/*.local
+
+data/*
+!data/config.example.yaml

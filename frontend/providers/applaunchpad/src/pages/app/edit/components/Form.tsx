@@ -5,7 +5,7 @@ import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { PVC_STORAGE_MAX } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
@@ -75,6 +75,7 @@ const Form = ({
   if (!formHook) return null;
   const { t } = useTranslation();
   const { formSliderListConfig } = useGlobalStore();
+  const config = useClientAppConfig();
   const { userSourcePrice } = useUserStore();
   const router = useRouter();
   const { toast } = useToast();
@@ -302,14 +303,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-        : cpuList;
+      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+      : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-        : memoryList;
+      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+      : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -1020,8 +1021,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                                ? 'value from | ***'
-                                : '';
+                              ? 'value from | ***'
+                              : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>
@@ -1265,7 +1266,7 @@ const Form = ({
             // left quota - this one
             storageQuotaLeft + (storeList.find((item) => item.id === storeEdit.id)?.value ?? 0),
             // But not exceed the size cap
-            PVC_STORAGE_MAX
+            config.pvcStorageMax
           )}
           listNames={storeList
             .filter((item) => item.id !== storeEdit.id)

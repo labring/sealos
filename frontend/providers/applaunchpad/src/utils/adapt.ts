@@ -44,7 +44,6 @@ import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
 import { lauchpadRemarkKey } from '@/constants/account';
-import { getInitData } from '@/api/platform';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -214,7 +213,7 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
     nodeName: pod.spec?.nodeName || 'node name',
     ip: pod.status?.podIP || 'pod ip',
     restarts: pod.status?.containerStatuses
-      ? (pod.status?.containerStatuses[0]?.restartCount ?? 0)
+      ? pod.status?.containerStatuses[0]?.restartCount ?? 0
       : 0,
     age: formatPodTime(pod.metadata?.creationTimestamp),
     usedCpu: {
@@ -275,16 +274,14 @@ export enum YamlKindEnum {
 
 export const adaptAppDetail = async (
   configs: DeployKindsType[],
-  options?: {
-    SEALOS_DOMAIN: string;
-    SEALOS_USER_DOMAINS: {
+  cloudOptions: {
+    domain: string;
+    userDomains: {
       name: string;
       secretName: string;
     }[];
   }
 ): Promise<AppDetailType> => {
-  const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = options ?? (await getInitData());
-
   const allServices = configs
     .filter((item) => item.kind === YamlKindEnum.Service)
     .map((item) => item as V1Service);
@@ -490,8 +487,8 @@ export const adaptAppDetail = async (
           ] as ApplicationProtocolType) ?? (protocol === 'TCP' ? 'HTTP' : undefined);
 
         const isCustomDomain =
-          !domain.endsWith(SEALOS_DOMAIN) &&
-          !SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
+          !domain.endsWith(cloudOptions.domain) &&
+          !cloudOptions.userDomains.some((item) => domain.endsWith(item.name));
 
         const result = {
           serviceName: service?.metadata?.name || '',
@@ -508,10 +505,10 @@ export const adaptAppDetail = async (
             : domain.split('.')[0],
           customDomain: isCustomDomain ? domain : '',
           domain: isCustomDomain
-            ? SEALOS_DOMAIN
+            ? cloudOptions.domain
             : item?.nodePort
-              ? domain
-              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
+            ? domain
+            : domain.split('.').slice(1).join('.') || cloudOptions.domain
         };
         return result;
       }) || [],

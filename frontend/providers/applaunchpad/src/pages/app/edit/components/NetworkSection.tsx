@@ -1,7 +1,7 @@
 import MyIcon from '@/components/Icon';
 import { MySelect } from '@sealos/ui';
 import { APPLICATION_PROTOCOLS, ProtocolList } from '@/constants/app';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useTranslation } from 'next-i18next';
 import { customAlphabet } from 'nanoid';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
@@ -49,6 +49,7 @@ export function NetworkSection({
   const { t } = useTranslation();
   const theme = useTheme();
   const { copyData } = useCopyData();
+  const config = useClientAppConfig();
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
 
   const { register, control, getValues } = formHook;
@@ -135,7 +136,7 @@ export function NetworkSection({
               openPublicDomain: true,
               openNodePort: false,
               publicDomain: network.publicDomain || nanoid(),
-              domain: network.domain || SEALOS_DOMAIN
+              domain: network.domain || config.domain
             });
           } else {
             updateNetworks(index, {
@@ -254,7 +255,7 @@ export function NetworkSection({
                             openPublicDomain: false,
                             publicDomain: '',
                             customDomain: '',
-                            domain: SEALOS_DOMAIN,
+                            domain: config.domain,
                             openNodePort: false,
                             nodePort: undefined
                           }

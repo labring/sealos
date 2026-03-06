@@ -30,7 +30,7 @@ import { MyTooltip } from '@sealos/ui';
 
 import styles from '@/components/app/detail/index/index.module.scss';
 import { useTranslation } from 'next-i18next';
-import { SHOW_EVENT_ANALYZE } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const Logs = ({
   pod = MOCK_PODS[0],
@@ -50,6 +50,7 @@ const Logs = ({
   const controller = useRef(new AbortController());
   const { Loading } = useLoading();
   const { toast } = useToast();
+  const config = useClientAppConfig();
   const [events, setEvents] = useState<PodEvent[]>([]);
   const [eventAnalysesText, setEventAnalysesText] = useState('');
   const { isOpen: isAnalyzing, onOpen: onStartAnalyses, onClose: onEndAnalyses } = useDisclosure();
@@ -248,7 +249,7 @@ const Logs = ({
           <Flex position={'relative'} flexDirection={'column'} h={'100%'}>
             <Flex mb={4} alignItems={'center'}>
               <Box color={'myGray.600'}>Events</Box>
-              {events.length > 0 && SHOW_EVENT_ANALYZE && (
+              {events.length > 0 && config.eventAnalyze.enabled && (
                 <Button
                   ml={3}
                   size={'sm'}

@@ -1,4 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
+import { Config } from '@/config';
 
 export const logFetch = async (props: AxiosRequestConfig, kubeconfig: string) => {
   const { url, params } = props;
@@ -9,12 +10,10 @@ export const logFetch = async (props: AxiosRequestConfig, kubeconfig: string) =>
       Authorization: encodeURIComponent(kubeconfig)
     }
   };
-  const doMain =
-    global.AppConfig.launchpad.components.monitor.url ||
-    'http://launchpad-monitor.sealos.svc.cluster.local:8428';
+  const domain = Config().launchpad.components.monitor.url;
 
   try {
-    const response = await fetch(`${doMain}${url}?${queryString}`, requestOptions);
+    const response = await fetch(`${domain}${url}?${queryString}`, requestOptions);
 
     if (!response.ok) {
       throw new Error(`Error monitorFetch ${response.status}`);

@@ -1,6 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import * as yaml from 'js-yaml';
 import type { V1Deployment, V1StatefulSet } from '@kubernetes/client-node';
+import { Config } from '@/config';
 
 export function K8sApiDefault(): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
@@ -161,7 +162,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
 
   // rewrite exportConfig to stop transform domain to ip
   kc.exportConfig = () => {
-    const domain = global.AppConfig.cloud.domain;
+    const domain = Config().cloud.domain;
     if (!domain) return kubeconfig;
     const oldKc = yaml.load(kubeconfig);
     const newServer = `https://${domain}:6443`;

@@ -14,6 +14,7 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback } from 'react';
 import { formData2Yamls } from '../index';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const Header = ({
   appName,
@@ -35,11 +36,14 @@ const Header = ({
   const { lastRoute } = useGlobalStore();
   const isClientSide = useClientSideValue(true);
 
+  const config = useClientAppConfig();
+  const { createCompleted, startTimeMs } = useGuideStore();
+
   const handleExportYaml = useCallback(async () => {
     let exportYamlList: YamlItemType[];
     if (getFormData) {
       const formData = getFormData();
-      exportYamlList = formData2Yamls(formData);
+      exportYamlList = formData2Yamls(formData, config.userDomains);
     } else {
       exportYamlList = yamlList;
     }
@@ -52,8 +56,6 @@ const Header = ({
       appName ? `${appName}.yaml` : `yaml${dayjs().format('YYYYMMDDHHmmss')}.yaml`
     );
   }, [appName, yamlList, getFormData]);
-
-  const { createCompleted, startTimeMs } = useGuideStore();
 
   return (
     <Flex
