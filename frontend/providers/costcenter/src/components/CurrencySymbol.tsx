@@ -1,5 +1,5 @@
 import SealosCoinImage from '@/assets/sealos_coin.png';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { cn } from '@sealos/shadcn-ui';
 import { useTranslation } from 'next-i18next';
 import Image from 'next/image';
@@ -15,13 +15,13 @@ export default function CurrencySymbol({
 } & DetailedHTMLProps<HTMLAttributes<HTMLSpanElement>, HTMLSpanElement>) {
   const { t } = useTranslation();
 
-  const defaultCurrencyType = useEnvStore((state) => state.currency);
+  const config = useClientAppConfig();
   const currencyType =
     forcedType === 'shellCoin'
       ? useRealCurrency
         ? 'cny'
         : 'shellCoin'
-      : (forcedType ?? defaultCurrencyType);
+      : forcedType ?? config.currency;
 
   return currencyType === 'shellCoin' ? (
     <span

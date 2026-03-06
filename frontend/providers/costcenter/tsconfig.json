@@ -6,6 +6,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"],
+  "include": ["next-env.d.ts", "global.d.ts", "src/**/*.ts", "src/**/*.tsx"],
   "extends": "../../tsconfig.web.json"
 }

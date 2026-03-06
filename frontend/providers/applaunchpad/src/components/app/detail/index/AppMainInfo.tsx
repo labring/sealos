@@ -3,7 +3,7 @@ import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
-import { DOMAIN_PORT } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
@@ -36,6 +36,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const config = useClientAppConfig();
 
   const { detailCompleted } = useGuideStore();
 
@@ -95,14 +96,14 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             ? `${appProtocol?.label}${
                 network.customDomain
                   ? network.customDomain
-                  : `${network.publicDomain}.${network.domain}${DOMAIN_PORT}`
+                  : `${network.publicDomain}.${network.domain}${config.port}`
               }`
             : '',
           customDomain: network.openPublicDomain ? network.customDomain : null,
           showReadyStatus: true
         };
       }),
-    [app]
+    [app, config.port]
   );
 
   const retryCount = useRef(0);
@@ -132,15 +133,12 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const statusMap = useMemo(
     () =>
       networkStatus
-        ? networkStatus.reduce(
-            (acc, item) => {
-              if (item?.url) {
-                acc[item.url] = item;
-              }
-              return acc;
-            },
-            {} as Record<string, { ready: boolean; url: string }>
-          )
+        ? networkStatus.reduce((acc, item) => {
+            if (item?.url) {
+              acc[item.url] = item;
+            }
+            return acc;
+          }, {} as Record<string, { ready: boolean; url: string }>)
         : {},
     [networkStatus]
   );

@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import crypto from 'crypto';
 import { jsonRes } from '../../../../services/backend/response';
+import { Config } from '@/config';
 
 function detectProxy(req: NextApiRequest): { isProxy: boolean } {
   const headers = req.headers;
@@ -67,9 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const proxyInfo = detectProxy(req);
 
-    const secret =
-      global.AppConfig?.launchpad?.domainChallengeSecret ||
-      'default-dev-secret-change-in-production';
+    const secret = Config().launchpad.domainChallengeSecret;
 
     const timestamp = Math.floor(Date.now() / 1000);
     const service = 'applaunchpad';

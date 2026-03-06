@@ -17,9 +17,9 @@ const getProductionServerUrl = () => {
     if (typeof window !== 'undefined' && window.location?.origin) {
       return `${window.location.origin}/api/v2alpha`;
     }
-    // Server-side: construct from global.AppConfig
-    if (typeof global !== 'undefined' && global.AppConfig?.cloud?.domain) {
-      return `https://applaunchpad.${global.AppConfig.cloud.domain}/api/v2alpha`;
+    // Server-side: construct from global config
+    if (globalThis.__APP_CONFIG__?.cloud?.domain) {
+      return `https://applaunchpad.${globalThis.__APP_CONFIG__.cloud.domain}/api/v2alpha`;
     }
   } catch (error) {
     // Ignore error

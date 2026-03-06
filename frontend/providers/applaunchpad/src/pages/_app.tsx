@@ -1,12 +1,12 @@
 import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useGlobalStore } from '@/store/global';
-import { DESKTOP_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { dehydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppContext, AppInitialProps, AppProps } from 'next/app';
@@ -21,13 +21,17 @@ import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import Head from 'next/head';
 import App from 'next/app';
-const fs = require('fs');
-import * as yaml from 'js-yaml';
-import type { AppConfigType } from '@/types';
 import Script from 'next/script';
 import { GTMScript } from '@sealos/gtm';
 import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
-import { QuotaGuardProvider } from '@sealos/shared';
+import {
+  ClientConfigProvider,
+  prefetchClientAppConfig,
+  setupClientAppConfigDefaults,
+  QuotaGuardProvider
+} from '@sealos/shared';
+import { Config } from '@/config';
+import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -45,9 +49,26 @@ const queryClient = new QueryClient({
   }
 });
 
-type AppOwnProps = { config: Partial<AppConfigType> };
+setupClientAppConfigDefaults(queryClient, ['client-app-config']);
 
-const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
+type MetaScript = { src: string; [key: string]: string };
+
+type AppOwnProps = {
+  title: string;
+  description: string;
+  scripts: MetaScript[];
+  gtmId: string | null;
+  dehydratedState?: unknown;
+};
+
+type AppContentProps = {
+  Component: AppProps['Component'];
+  pageProps: AppProps['pageProps'];
+  title: string;
+  description: string;
+};
+
+const AppContent = ({ Component, pageProps, title, description }: AppContentProps) => {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { setScreenWidth, loading, setLastRoute, initFormSliderList } = useGlobalStore();
@@ -58,6 +79,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
     title: 'jump_prompt',
     content: 'jump_message'
   });
+  const config = useClientAppConfig();
 
   const getSession = useCallback(() => {
     return useUserStore.getState().session ?? null;
@@ -66,8 +88,9 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
   useEffect(() => {
     const response = createSealosApp();
     (async () => {
-      const { FORM_SLIDER_LIST_CONFIG, DESKTOP_DOMAIN } = await (() => loadInitData())();
-      initFormSliderList(FORM_SLIDER_LIST_CONFIG);
+      if (config.appResourceFormSliderConfig) {
+        initFormSliderList(config.appResourceFormSliderConfig);
+      }
       loadUserSourcePrice();
 
       try {
@@ -79,7 +102,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           openConfirm(() => {
-            window.open(`https://${DESKTOP_DOMAIN}`, '_self');
+            window.open(`https://${config.desktopDomain}`, '_self');
           })();
         }
       }
@@ -179,7 +202,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
             action?: string;
           }>
         ) => {
-          const whitelist = [`https://${DESKTOP_DOMAIN}`];
+          const whitelist = [`https://${config.desktopDomain}`];
           if (!whitelist.includes(e.origin)) {
             return;
           }
@@ -216,51 +239,83 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
 
   return (
     <>
-      {config?.launchpad?.meta?.title && (
+      {title && (
         <Head>
-          <title>{config?.launchpad?.meta?.title}</title>
-          <meta name="description" content={config?.launchpad?.meta?.description} />
+          <title>{title}</title>
+          <meta name="description" content={description} />
         </Head>
       )}
-      <QueryClientProvider client={queryClient}>
-        <ChakraProvider theme={theme}>
-          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
-            <Component {...pageProps} />
-            <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
-            <ConfirmChild />
-            <Loading loading={loading} />
-          </QuotaGuardProvider>
-        </ChakraProvider>
-      </QueryClientProvider>
-      {config?.launchpad?.meta?.scripts?.map((script, i) => (
-        <Script key={i} {...script} />
-      ))}
-      <GTMScript
-        enabled={!!config?.launchpad?.gtmId}
-        gtmId={config?.launchpad?.gtmId!}
-        debug={process.env.NODE_ENV === 'development'}
-      />
+      <ChakraProvider theme={theme}>
+        <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
+          <Component {...pageProps} />
+          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
+          <ConfirmChild />
+          <Loading loading={loading} />
+        </QuotaGuardProvider>
+      </ChakraProvider>
     </>
   );
 };
 
+const MyApp = ({
+  Component,
+  pageProps,
+  title,
+  description,
+  scripts,
+  gtmId,
+  dehydratedState
+}: AppProps & AppOwnProps) => (
+  <>
+    <QueryClientProvider client={queryClient}>
+      <ClientConfigProvider dehydratedState={dehydratedState}>
+        <AppContent
+          Component={Component}
+          pageProps={pageProps}
+          title={title}
+          description={description}
+        />
+      </ClientConfigProvider>
+    </QueryClientProvider>
+    {scripts?.map((script, i) => (
+      <Script key={i} {...script} />
+    ))}
+    <GTMScript enabled={!!gtmId} gtmId={gtmId!} debug={process.env.NODE_ENV === 'development'} />
+  </>
+);
+
 MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppInitialProps> => {
   const ctx = await App.getInitialProps(context);
-  const filename =
-    process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
 
-  let config: Partial<AppConfigType> = {};
+  let title = '';
+  let description = '';
+  let scripts: MetaScript[] = [];
+  let gtmId: string | null = null;
 
   try {
     if (typeof window === 'undefined') {
-      const yamlContent = fs.readFileSync(filename, 'utf-8');
-      config = yaml.load(yamlContent) as AppConfigType;
+      const config = Config();
+      title = config.launchpad.meta.title;
+      description = config.launchpad.meta.description;
+      scripts = config.launchpad.meta.scripts as MetaScript[];
+      gtmId = config.launchpad.gtmId;
     }
   } catch (error) {
     console.error('Failed to load config:', error);
   }
 
-  return { ...ctx, config };
+  let dehydratedState: unknown;
+  try {
+    if (typeof window === 'undefined') {
+      const qc = new QueryClient();
+      await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
+      dehydratedState = dehydrate(qc);
+    }
+  } catch (error) {
+    console.error('[Client App Config] Failed to prefetch:', error);
+  }
+
+  return { ...ctx, title, description, scripts, gtmId, dehydratedState };
 };
 
 export default appWithTranslation(MyApp);

@@ -1,5 +1,4 @@
 import { WstLogger } from 'sealos-desktop-sdk/service';
-import { Coin, defaultSliderKey } from '@/constants/app';
 
 export type QueryType = {
   name: string;
@@ -88,28 +87,4 @@ export type AppConfigType = {
     //   memory: number[];
     // };
   };
-};
-
-declare global {
-  var AppConfig: AppConfigType;
-  var logger: WstLogger;
-}
-
-export type EnvResponse = {
-  SEALOS_DOMAIN: string;
-  DOMAIN_PORT: string;
-  INFRASTRUCTURE_PROVIDER: string;
-  REQUIRES_DOMAIN_REG: boolean;
-  DOMAIN_REG_QUERY_LINK: string;
-  DOMAIN_BINDING_DOCUMENTATION_LINK: string | null;
-  SHOW_EVENT_ANALYZE: boolean;
-  FORM_SLIDER_LIST_CONFIG: FormSliderListType;
-  CURRENCY: Coin;
-  guideEnabled: boolean;
-  fileMangerConfig: FileMangerType;
-  SEALOS_USER_DOMAINS: { name: string; secretName: string }[];
-  DESKTOP_DOMAIN: string;
-  PVC_STORAGE_MAX: number;
-  GPU_ENABLED: boolean;
-  LOG_ENABLED: boolean;
 };

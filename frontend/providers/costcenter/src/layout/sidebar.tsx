@@ -1,5 +1,5 @@
 import { Calculator, ChartPie, Dock, ReceiptText, LucideIcon, TicketMinus } from 'lucide-react';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
 import Link from 'next/link';
@@ -16,8 +16,7 @@ type Menu = {
 export default function SideBar() {
   const router = useRouter();
   const { t, ready } = useTranslation();
-  const invoiceEnabled = useEnvStore((state) => state.invoiceEnabled);
-  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
+  const config = useClientAppConfig();
 
   const menus: Menu[] = [
     {
@@ -25,14 +24,14 @@ export default function SideBar() {
       url: '/cost',
       value: 'sidebar.cost',
       icon: Dock,
-      display: !subscriptionEnabled
+      display: !config.subscriptionEnabled
     },
     {
       id: 'Plan',
       url: '/plan',
       value: 'sidebar.plan',
       icon: Dock,
-      display: subscriptionEnabled
+      display: config.subscriptionEnabled
     },
     {
       id: 'Billing',
@@ -46,7 +45,7 @@ export default function SideBar() {
       url: '/create_invoice',
       value: 'sidebar.invoice',
       icon: TicketMinus,
-      display: invoiceEnabled
+      display: config.invoiceEnabled
     },
     {
       id: 'Usage',

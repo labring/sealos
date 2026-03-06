@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
+import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   res.on('error', (err) => {
@@ -98,7 +99,7 @@ function streamFetch(res: NextApiResponse<ApiResp>, events: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${global.AppConfig.launchpad.eventAnalyze.fastGPTKey}`
+          Authorization: `Bearer ${Config().launchpad.eventAnalyze.fastGPTKey}`
         },
         body: JSON.stringify({
           stream: true,

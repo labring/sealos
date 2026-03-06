@@ -33,13 +33,7 @@ import {
 import { useTranslation } from 'next-i18next';
 import { useRequest } from '@/hooks/useRequest';
 import { postAuthCname, postAuthDomainChallenge } from '@/api/platform';
-import {
-  DOMAIN_BINDING_DOCUMENTATION_LINK,
-  DOMAIN_REG_QUERY_LINK,
-  INFRASTRUCTURE_PROVIDER,
-  REQUIRES_DOMAIN_REG,
-  SEALOS_USER_DOMAINS
-} from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import NextLink from 'next/link';
 import { BookOpen, CheckCircle, Copy, AlertTriangle } from 'lucide-react';
 import { DomainNotBoundModal } from './DomainNotBoundModal';
@@ -62,6 +56,7 @@ const CustomAccessModal = ({
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const { toast } = useToast();
+  const config = useClientAppConfig();
 
   const notBoundDisclosure = useDisclosure();
 
@@ -85,7 +80,7 @@ const CustomAccessModal = ({
     const normalizedDomain = domain.toLowerCase().trim();
 
     // Check against all user domains
-    for (const userDomain of SEALOS_USER_DOMAINS) {
+    for (const userDomain of config.userDomains) {
       const userDomainLower = userDomain.name.toLowerCase();
       if (
         normalizedDomain === userDomainLower ||
@@ -220,12 +215,12 @@ const CustomAccessModal = ({
             </Box>
 
             {/* Tips */}
-            {REQUIRES_DOMAIN_REG ? (
+            {config.infrastructure.requiresDomainReg ? (
               <Stack>
                 <Text>
                   {t('domain_requires_registration_tip_1')}
                   <Text as={'b'}>
-                    {t('infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.name')}
+                    {t('infrastructure.providers.' + config.infrastructure.provider + '.name')}
                   </Text>
                   {t('domain_requires_registration_tip_2')}
                 </Text>
@@ -236,7 +231,9 @@ const CustomAccessModal = ({
                     target="_blank"
                     color={'brightBlue.600'}
                     href={t(
-                      'infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.domain_reg_link'
+                      'infrastructure.providers.' +
+                        config.infrastructure.provider +
+                        '.domain_reg_link'
                     )}
                   >
                     {t('domain_registration_provider_link_text')}
@@ -248,7 +245,7 @@ const CustomAccessModal = ({
                     as={NextLink}
                     target="_blank"
                     color={'brightBlue.600'}
-                    href={DOMAIN_REG_QUERY_LINK}
+                    href={config.infrastructure.domainRegQueryLink}
                   >
                     {t('domain_registration_query_link_text')}
                   </Link>
@@ -447,12 +444,12 @@ const CustomAccessModal = ({
                 </TableContainer>
 
                 {/* Refer to docs */}
-                {DOMAIN_BINDING_DOCUMENTATION_LINK && (
+                {config.infrastructure.domainBindingDocumentationLink && (
                   <Stack direction={'row'} mt={4}>
                     <Link
                       as={NextLink}
                       target="_blank"
-                      href={DOMAIN_BINDING_DOCUMENTATION_LINK}
+                      href={config.infrastructure.domainBindingDocumentationLink}
                       color={'brightBlue.600'}
                       display={'flex'}
                       alignItems={'center'}

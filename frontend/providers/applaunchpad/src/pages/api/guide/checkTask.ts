@@ -2,18 +2,17 @@ import { authAppToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    if (!global.AppConfig.common.guideEnabled) return jsonRes(res, { data: null });
+    if (!Config().launchpad.guideEnabled) return jsonRes(res, { data: null });
     const token = await authAppToken(req.headers);
     if (!token) {
       return jsonRes(res, { code: 401, message: 'token is valid' });
     }
 
-    const domain = global.AppConfig.cloud.desktopDomain;
-
-    const response = await fetch(`https://${domain}/api/account/checkTask`, {
+    const response = await fetch(`https://${Config().cloud.desktopDomain}/api/account/checkTask`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
