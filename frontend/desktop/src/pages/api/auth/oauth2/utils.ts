@@ -1,5 +1,26 @@
 import { ZodError } from 'zod';
-import { NextApiResponse } from 'next';
+import { NextApiRequest, NextApiResponse } from 'next';
+
+/**
+ * Normalizes a Next.js query object by keeping only string values (drops arrays).
+ */
+export const normalizeOAuth2Query = (
+  query: NextApiRequest['query']
+): Record<string, string | undefined> =>
+  Object.fromEntries(
+    Object.entries(query).map(([k, v]) => [k, typeof v === 'string' ? v : undefined])
+  );
+
+/**
+ * Normalizes a request body that may arrive as a URL-encoded string or a plain object.
+ */
+export const normalizeOAuth2Body = (body: NextApiRequest['body']): Record<string, unknown> => {
+  if (!body) return {};
+  if (typeof body === 'string') {
+    return Object.fromEntries(new URLSearchParams(body).entries());
+  }
+  return body;
+};
 
 /**
  * Convert zod validation issues into readable OAuth2 error descriptions.

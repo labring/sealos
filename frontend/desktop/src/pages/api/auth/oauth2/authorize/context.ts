@@ -8,12 +8,11 @@ import { resolveOAuth2AuthUser } from '@/services/backend/oauth2/auth';
 import { getAuthorizeContext } from '@/services/backend/oauth2/service';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ZodError } from 'zod';
-import { applyOAuth2NoStoreHeaders, formatValidationErrorDescription } from '../utils';
-
-const normalizeQuery = (query: NextApiRequest['query']) => ({
-  user_code: typeof query.user_code === 'string' ? query.user_code : undefined,
-  request_id: typeof query.request_id === 'string' ? query.request_id : undefined
-});
+import {
+  applyOAuth2NoStoreHeaders,
+  formatValidationErrorDescription,
+  normalizeOAuth2Query
+} from '../utils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   applyOAuth2NoStoreHeaders(res);
@@ -23,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const parsedQueryResult = OAuth2AuthorizeContextQuerySchema.safeParse(
-      normalizeQuery(req.query)
+      normalizeOAuth2Query(req.query)
     );
     if (!parsedQueryResult.success) {
       return res.status(400).json(

@@ -10,15 +10,11 @@ import {
 } from '@/services/backend/oauth2/service';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ZodError } from 'zod';
-import { applyOAuth2NoStoreHeaders, formatValidationErrorDescription } from './utils';
-
-const normalizeBody = (body: NextApiRequest['body']) => {
-  if (!body) return {};
-  if (typeof body === 'string') {
-    return Object.fromEntries(new URLSearchParams(body).entries());
-  }
-  return body;
-};
+import {
+  applyOAuth2NoStoreHeaders,
+  formatValidationErrorDescription,
+  normalizeOAuth2Body
+} from './utils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   applyOAuth2NoStoreHeaders(res);
@@ -27,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const parsedBodyResult = OAuth2TokenRequestSchema.safeParse(normalizeBody(req.body));
+    const parsedBodyResult = OAuth2TokenRequestSchema.safeParse(normalizeOAuth2Body(req.body));
     if (!parsedBodyResult.success) {
       return res.status(400).json(
         OAuth2ErrorResponseSchema.parse({
