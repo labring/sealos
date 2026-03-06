@@ -661,7 +661,10 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const config = parseTemplateConfig(template.config);
 
     // Build SSH information
-    const sshPort = devboxBody.status?.network?.nodePort || 0;
+    const sshPort =
+      devboxBody.spec.network.type === 'SSHGate'
+        ? 2233
+        : devboxBody.status?.network?.nodePort || null;
     const base64PrivateKey = secret?.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string | undefined;
 
     const ssh = {

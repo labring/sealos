@@ -455,6 +455,27 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
                         ],
                         pods: [{ name: 'my-python-api-7d8f9b6c5d-abc12', status: 'running' }]
                       }
+                    },
+                    pending: {
+                      summary: 'Pending devbox (SSH not yet ready)',
+                      value: {
+                        name: 'my-python-api',
+                        uid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                        resourceType: 'devbox',
+                        runtime: 'python',
+                        image: 'ghcr.io/labring/sealos-devbox-python:latest',
+                        status: 'pending',
+                        quota: { cpu: 1, memory: 2 },
+                        ssh: {
+                          host: 'devbox.cloud.sealos.io',
+                          port: null,
+                          user: 'devbox',
+                          workingDir: '/home/devbox/project'
+                        },
+                        env: [],
+                        ports: [],
+                        pods: []
+                      }
                     }
                   }
                 }
