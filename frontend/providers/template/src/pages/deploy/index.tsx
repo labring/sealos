@@ -220,7 +220,9 @@ export default function EditApp({
     return usage;
   }, [yamlList]);
 
-  const handleCreateApp = useQuotaGuarded(
+  const createApp = () => formHook.handleSubmit(openConfirm(submitSuccess), submitError)();
+
+  const handleCreateAppInCloud = useQuotaGuarded(
     {
       requirements: {
         cpu: usage.cpu.max,
@@ -234,7 +236,7 @@ export default function EditApp({
       showRequirements: ['cpu', 'memory', 'nodeport', 'storage']
     },
     () => {
-      formHook.handleSubmit(openConfirm(submitSuccess), submitError)();
+      createApp();
     }
   );
 
@@ -392,7 +394,7 @@ export default function EditApp({
             title={title}
             yamlList={yamlList}
             applyBtnText={insideCloud ? applyBtnText : 'Deploy on sealos'}
-            applyCb={handleCreateApp}
+            applyCb={insideCloud ? handleCreateAppInCloud : createApp}
             isResourcesReady={isResourcesReady}
           />
           <Flex w="100%" mt="32px" flexDirection="column">
