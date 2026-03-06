@@ -1,21 +1,46 @@
-export type AuthenticationTokenPayload = {
+/**
+ * Real legacy **global token** payload type.
+ */
+export type GlobalTokenPayload = {
   userUid: string;
   userId: string;
-  regionUid?: string;
 };
+
+export type OAuth2TokenPayload = {
+  sub: string;
+  user_id: string;
+  client_id: string;
+  preferred_username?: string;
+  scope?: string;
+  regionUid?: never;
+};
+
+export type OAuth2AccessTokenPayload = OAuth2TokenPayload & {
+  token_type: 'access_token';
+};
+
+export type OAuth2RefreshTokenPayload = OAuth2TokenPayload & {
+  token_type: 'refresh_token';
+};
+
+/**
+ * This is **regional token** payload, not for **global token** ("access_token" from OAuth2)
+ */
 export type AccessTokenPayload = {
+  userUid: string;
+  userId: string;
   regionUid: string;
   userCrUid: string;
   userCrName: string;
   workspaceUid: string;
   workspaceId: string;
-} & AuthenticationTokenPayload;
+};
 
 export type CronJobTokenPayload = {
   mergeUserUid: string;
   userUid: string;
 };
-export type BillingTokenPayload = AuthenticationTokenPayload;
+export type BillingTokenPayload = GlobalTokenPayload;
 
 export type OnceTokenPayload = {
   userUid: string;

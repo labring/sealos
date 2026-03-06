@@ -1,7 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { enableEnterpriseRealNameAuth } from '@/services/enable';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { generateAuthenticationToken, verifyAccessToken } from '@/services/backend/auth';
+import { generateGlobalToken, verifyAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 import { z } from 'zod';
 import { PAYMENTSTATUS } from '@/types/response/enterpriseRealName';
@@ -196,10 +196,9 @@ async function handlePost(
 
     const data = validationResult.data;
 
-    const globalToken = generateAuthenticationToken({
+    const globalToken = generateGlobalToken({
       userUid: payload.userUid,
-      userId: payload.userId,
-      regionUid: payload.regionUid
+      userId: payload.userId
     });
 
     const response = await fetch(`${enterpriseRealNameAuthApi}/v1/enterprise-auth`, {
@@ -325,7 +324,11 @@ async function handlePatch(req: NextApiRequest, res: NextApiResponse, userUid: s
   }
 }
 
-async function handleGetBanks(req: NextApiRequest, res: NextApiResponse, payload: AccessTokenPayload) {
+async function handleGetBanks(
+  req: NextApiRequest,
+  res: NextApiResponse,
+  payload: AccessTokenPayload
+) {
   try {
     const realNameAuthProvider: RealNameAuthProvider | null =
       await globalPrisma.realNameAuthProvider.findFirst({
@@ -342,20 +345,18 @@ async function handleGetBanks(req: NextApiRequest, res: NextApiResponse, payload
     const config: UnionPay3060Config = realNameAuthProvider.config as UnionPay3060Config;
     const enterpriseRealNameAuthApi = config.api;
 
-    const globalToken = generateAuthenticationToken({
+    const globalToken = generateGlobalToken({
       userUid: payload.userUid,
-      userId: payload.userId,
-      regionUid: payload.regionUid
+      userId: payload.userId
     });
 
     const fullApiUrl = `${enterpriseRealNameAuthApi}/v1/banks`;
-    
-    
+
     const response = await fetch(fullApiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${globalToken}`
+        Authorization: `Bearer ${globalToken}`
       }
     });
 
@@ -364,7 +365,7 @@ async function handleGetBanks(req: NextApiRequest, res: NextApiResponse, payload
     }
 
     const banksResponse = await response.json();
-    
+
     const banksData = banksResponse?.data || {};
 
     return jsonRes(res, {

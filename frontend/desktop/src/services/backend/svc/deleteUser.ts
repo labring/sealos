@@ -5,7 +5,7 @@ import { OnceTokenPayload } from '@/types/token';
 import { NextApiResponse } from 'next';
 import { TransactionStatus, TransactionType, UserStatus } from 'prisma/global/generated/client';
 import { v4 } from 'uuid';
-import { verifyJWT } from '../auth';
+import { verifyRegionalJwt } from '../auth';
 import { globalPrisma } from '../db/init';
 import { jsonRes } from '../response';
 
@@ -108,7 +108,7 @@ export const forceDeleteUserSvc =
         message: RESOURCE_STATUS.USER_NOT_FOUND,
         code: 404
       });
-    const deleteUserCode = await verifyJWT<OnceTokenPayload>(code);
+    const deleteUserCode = await verifyRegionalJwt<OnceTokenPayload>(code);
     if (
       !deleteUserCode ||
       deleteUserCode.type !== 'deleteUser' ||

@@ -1,3 +1,4 @@
+import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import useSessionStore from '@/stores/session';
@@ -131,7 +132,7 @@ export default function Callback() {
               const regionTokenRes = await getRegionToken();
               if (regionTokenRes?.data) {
                 await sessionConfig(regionTokenRes.data);
-                await router.replace('/');
+                await router.replace(consumePendingOauth2RedirectPath() || '/');
               }
             } else {
               throw new Error();
@@ -141,7 +142,7 @@ export default function Callback() {
               const response = await bindRequest(provider)({ code });
               if (response.message === BIND_STATUS.RESULT_SUCCESS) {
                 setProvider();
-                await router.replace('/');
+                await router.replace(consumePendingOauth2RedirectPath() || '/');
               } else if (response.message === MERGE_USER_READY.MERGE_USER_CONTINUE) {
                 const code = response.data?.code;
                 if (!code) return;
@@ -151,19 +152,19 @@ export default function Callback() {
                 });
                 setMergeUserStatus(MergeUserStatus.CANMERGE);
                 setProvider();
-                await router.replace('/');
+                await router.replace(consumePendingOauth2RedirectPath() || '/');
               } else if (response.message === MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT) {
                 setMergeUserData();
                 setMergeUserStatus(MergeUserStatus.CONFLICT);
                 setProvider();
-                await router.replace('/');
+                await router.replace(consumePendingOauth2RedirectPath() || '/');
               }
             } catch (bindError) {
               if ((bindError as any)?.message === MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT) {
                 setMergeUserData();
                 setMergeUserStatus(MergeUserStatus.CONFLICT);
                 setProvider();
-                await router.replace('/');
+                await router.replace(consumePendingOauth2RedirectPath() || '/');
               } else {
                 console.log('unkownerror', bindError);
                 throw Error();
@@ -172,7 +173,7 @@ export default function Callback() {
           } else if (action === 'UNBIND') {
             await unBindRequest(provider)({ code });
             setProvider();
-            await router.replace('/');
+            await router.replace(consumePendingOauth2RedirectPath() || '/');
           }
         }
       } catch (error: any) {

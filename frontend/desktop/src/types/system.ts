@@ -121,6 +121,9 @@ export type AuthConfigType = {
     lafSecretKey: string;
     lafBaseURL: string;
   };
+  oauth2idp: {
+    enabled: boolean;
+  };
   idp: {
     password?: {
       enabled: boolean;
@@ -214,6 +217,8 @@ export type AuthClientConfigType = {
       'signUpEnabled',
       'invite.lafSecretKey',
       'invite.lafBaseURL',
+      // OAuth2 IdP
+      'oauth2idp',
       'idp.password.salt',
       'idp.github.clientSecret',
       'idp.wechat.clientSecret',
