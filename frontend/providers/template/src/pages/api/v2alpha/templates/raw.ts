@@ -215,7 +215,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Validate inputs and build _inputs
     const templateInputs = dataSource.inputs || [];
-    const missingRequiredArgs: string[] = [];
 
     const _inputs = reduce(
       templateInputs,
@@ -225,8 +224,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           acc[item.key] = providedValue;
         } else if (item.default !== undefined && item.default !== '') {
           acc[item.key] = item.default;
-        } else if (item.required) {
-          missingRequiredArgs.push(item.key);
         } else {
           acc[item.key] = item.default ?? '';
         }
@@ -234,15 +231,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       {} as Record<string, string>
     );
-
-    if (missingRequiredArgs.length > 0) {
-      return sendError(res, {
-        status: 400,
-        type: ErrorType.VALIDATION_ERROR,
-        code: ErrorCode.INVALID_VALUE,
-        message: `Missing required parameters: ${missingRequiredArgs.join(', ')}.`
-      });
-    }
 
     // Create Instance YAML and prepend to appYaml
     const instanceYaml = handleTemplateToInstanceYaml(templateYaml, instanceName);
