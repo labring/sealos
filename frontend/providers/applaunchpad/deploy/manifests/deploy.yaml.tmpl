@@ -16,7 +16,7 @@ data:
       domain: {{ .cloudDomain }}
       port: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
       desktopDomain: {{ .cloudDomain }}
-      userDomains: 
+      userDomains:
         - name: {{ .cloudDomain }}
           secretName: {{ .certSecretName }}
     common:
@@ -32,8 +32,9 @@ data:
         enabled: false
         fastGPTKey: ""
       components:
-        monitor:
-          url: {{ .monitorUrl }}
+        metrics:
+          url: {{ default "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus" .metricsUrl }}
+          whitelistKubernetesHosts: []
         billing:
           url: {{ .billingUrl }}
         log:
