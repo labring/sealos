@@ -120,11 +120,6 @@ export class KubeFileSystem {
         reject(error);
       }
 
-      if (stdin) {
-        stdin.on('end', () => {
-          free();
-        });
-      }
     });
   }
 
