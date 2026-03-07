@@ -8,6 +8,10 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: false,
   compress: true,
+  env: {
+    WS_NO_BUFFER_UTIL: '1',
+    WS_NO_UTF_8_VALIDATE: '1'
+  },
   webpack: (config, { isServer }) => {
     config.module.rules = config.module.rules.concat([
       {
