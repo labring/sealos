@@ -87,6 +87,7 @@ export async function GET() {
           uid: true,
           description: true,
           iconId: true,
+          icon: true,
           createdAt: true,
           usageCount: true
         },

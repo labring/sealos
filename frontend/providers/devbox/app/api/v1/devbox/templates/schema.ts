@@ -9,6 +9,9 @@ const RuntimeSchema = z.object({
   iconId: z.string().nullable().openapi({
     description: 'Runtime icon ID (runtime name)'
   }),
+  icon: z.string().nullable().openapi({
+    description: 'Runtime icon (svg content or https url)'
+  }),
   name: z.string().openapi({
     description: 'Template repository name'
   }),

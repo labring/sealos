@@ -26,6 +26,7 @@ const CreateOrUpdateDrawer = ({
   onClose: () => void;
   templateRepositoryList: {
     iconId: string | null;
+    icon?: string | null;
     name: string;
     description: null | string;
     uid: string;

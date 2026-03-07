@@ -57,7 +57,8 @@ export async function GET(req: NextRequest) {
         uid: true,
         isPublic: true,
         description: true,
-        iconId: true
+        iconId: true,
+        icon: true
       },
       skip: (page - 1) * pageSize,
       take: pageSize,

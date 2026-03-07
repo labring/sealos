@@ -28,6 +28,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
   {
     templateRepository: {
       iconId: string | null;
+      icon?: string | null;
     };
     uid: string;
     name: string;
@@ -140,6 +141,7 @@ export const adaptDevboxDetailV2 = ([
     templateConfig: JSON.stringify(devbox.spec.config),
     image: template.image,
     iconId: template.templateRepository.iconId || '',
+    icon: template.templateRepository.icon || null,
     status: devboxStatusMap[devbox.status.phase] || devboxStatusMap.Error,
     state: devbox.spec.state || 'Error',
     sshPort:

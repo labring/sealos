@@ -12,6 +12,7 @@ import { cn } from '@sealos/shadcn-ui';
 
 interface TRepositoryItem {
   iconId: string | null;
+  icon?: string | null;
   name: string;
   description: string | null;
   uid: string;
@@ -42,6 +43,7 @@ export default function TemplateDropdown({
         <TemplateButton
           isActive={false}
           iconId={selectedTemplateRepository?.iconId || ''}
+          icon={selectedTemplateRepository?.icon || null}
           title={selectedTemplateRepository?.name || ''}
           description={selectedTemplateRepository?.description || ''}
           tags={selectedTemplateRepository?.templateRepositoryTags.map((t) => t.tag) || []}
@@ -53,11 +55,12 @@ export default function TemplateDropdown({
         </span>
         <div className="flex flex-col gap-2">
           {templateRepositoryList.map(
-            ({ uid, iconId, description, name, templateRepositoryTags }) => (
+            ({ uid, iconId, icon, description, name, templateRepositoryTags }) => (
               <TemplateButton
                 key={uid}
                 isActive={selectedTemplateRepoUid === uid}
                 iconId={iconId || ''}
+                icon={icon || null}
                 isInMenu
                 title={name}
                 className="border-[#EBEBED] shadow-none"
@@ -75,6 +78,7 @@ export default function TemplateDropdown({
 
 interface TemplateButtonProps {
   iconId: string;
+  icon?: string | null;
   title: string;
   isActive?: boolean;
   isInMenu?: boolean;
@@ -87,6 +91,7 @@ interface TemplateButtonProps {
 const TemplateButton = ({
   isActive = false,
   iconId,
+  icon,
   title,
   description,
   tags,
@@ -116,7 +121,7 @@ const TemplateButton = ({
         <div className="flex items-center justify-center gap-2">
           {/* logo */}
           <div className="flex items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-            <RuntimeIcon iconId={iconId} width={32} height={32} alt={title} />
+            <RuntimeIcon iconId={iconId} icon={icon} width={32} height={32} alt={title} />
           </div>
           <div className="flex w-full min-w-0 flex-col items-start">
             {/* name */}
