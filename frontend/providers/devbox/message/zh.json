@@ -410,6 +410,7 @@
   "refresh": "刷新",
   "refresh_failed": "刷新失败",
   "refresh_paused": "由于连续失败，自动刷新已暂停10秒",
+  "refresh_requires_running": "暂时仅运行中的 DevBox 支持监控功能",
   "release": "发版",
   "release_confirm_info": "发版过程中将暂时关闭机器，且以当前状态发版，请保存好正在运行的项目。",
   "release_failed": "发版失败",

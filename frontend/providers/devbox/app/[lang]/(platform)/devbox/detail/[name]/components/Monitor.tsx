@@ -2,9 +2,11 @@ import dayjs from 'dayjs';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 import { useDevboxStore } from '@/stores/devbox';
 import { useDateTimeStore } from '@/stores/date';
+import { DevboxStatusEnum } from '@/constants/devbox';
 
 import DatePicker from '@/components/DatePicker';
 import MonitorChart from '@/components/MonitorChart';
@@ -16,6 +18,7 @@ const Monitor = () => {
   const t = useTranslations();
   const { startDateTime, endDateTime } = useDateTimeStore();
   const { devboxDetail, loadDetailMonitorData } = useDevboxStore();
+  const isRunning = devboxDetail?.status.value === DevboxStatusEnum.Running;
   const showGpuMonitor = !!devboxDetail?.gpu && (devboxDetail.gpu.amount || 0) > 0;
   const chartWrapperClass = 'h-[220px] p-8';
 
@@ -32,16 +35,21 @@ const Monitor = () => {
 
   const handleRefresh = useCallback(async () => {
     if (!params?.name) return;
+    if (!isRunning) {
+      toast.warning(t('refresh_requires_running'));
+      return;
+    }
     await loadDetailMonitorData(
       params.name as string,
       startDateTime.getTime(),
       endDateTime.getTime()
     );
-  }, [params?.name, startDateTime, endDateTime, loadDetailMonitorData]);
+  }, [params?.name, isRunning, startDateTime, endDateTime, loadDetailMonitorData, t]);
 
   useEffect(() => {
+    if (!isRunning) return;
     handleRefresh();
-  }, [handleRefresh]);
+  }, [isRunning, handleRefresh]);
 
   return (
     <div className="flex h-full flex-1 min-h-0 flex-col items-start gap-2">
@@ -50,7 +58,7 @@ const Monitor = () => {
         <div className="flex items-center gap-4">
           <span className="text-lg/7 font-medium">{t('filter')}</span>
           <DatePicker onClose={handleRefresh} />
-          <RefreshButton onRefresh={handleRefresh} />
+          <RefreshButton onRefresh={handleRefresh} autoRefreshEnabled={isRunning} />
         </div>
         <span className="text-sm/5 text-neutral-500">
           {t('update Time')}&ensp;

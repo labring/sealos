@@ -408,6 +408,7 @@
   "refresh": "Refresh",
   "refresh_failed": "Refresh failed",
   "refresh_paused": "Auto refresh paused for 10s due to continuous failures",
+  "refresh_requires_running": "Monitoring is currently available only when the DevBox is running",
   "release": "Release",
   "release_confirm_info": "During the release process, your DevBox will be temporarily shutdown. Please save any changes before continuing.",
   "release_failed": "Failed",
