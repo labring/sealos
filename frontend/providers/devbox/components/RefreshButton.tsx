@@ -17,9 +17,10 @@ import { REFRESH_INTERVAL_OPTIONS } from '@/constants/date';
 
 interface RefreshButtonProps {
   onRefresh: () => void;
+  autoRefreshEnabled?: boolean;
 }
 
-export function RefreshButton({ onRefresh }: RefreshButtonProps) {
+export function RefreshButton({ onRefresh, autoRefreshEnabled = true }: RefreshButtonProps) {
   const t = useTranslations();
   const { refreshInterval, setRefreshInterval } = useDateTimeStore();
   const [isPaused, setIsPaused] = useState(false);
@@ -57,14 +58,14 @@ export function RefreshButton({ onRefresh }: RefreshButtonProps) {
   }, [isPaused, onRefresh, t]);
 
   useEffect(() => {
-    if (refreshInterval === 0 || isPaused) return;
+    if (!autoRefreshEnabled || refreshInterval === 0 || isPaused) return;
 
     const timer = setInterval(() => {
       handleRefresh();
     }, refreshInterval);
 
     return () => clearInterval(timer);
-  }, [refreshInterval, isPaused, handleRefresh]);
+  }, [autoRefreshEnabled, refreshInterval, isPaused, handleRefresh]);
 
   return (
     <ButtonGroup>
