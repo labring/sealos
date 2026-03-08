@@ -11,6 +11,7 @@ import { Separator } from '@sealos/shadcn-ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import NetworkStorageDrawer from '@/components/drawers/NetworkStorageDrawer';
 import type { DevboxEditTypeV2 } from '@/types/devbox';
+import { normalizeMountPath } from '@/utils/mountPath';
 
 interface NetworkStorageProps {
   isEdit: boolean;
@@ -161,7 +162,7 @@ export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStora
           }
           existingPaths={volumes
             .filter((_, idx) => idx !== editingStorageIndex)
-            .map((item) => item.path.toLowerCase())}
+            .map((item) => normalizeMountPath(item.path).toLowerCase())}
           onClose={() => {
             setIsNetworkStorageDrawerOpen(false);
             setEditingStorageIndex(null);

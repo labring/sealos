@@ -13,6 +13,7 @@ import {
 import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Label } from '@sealos/shadcn-ui/label';
+import { validateMountPath } from '@/utils/mountPath';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -71,35 +72,35 @@ const NetworkStorageDrawer = ({
     }
   };
 
-  const validatePath = (path: string): string => {
-    if (!path.trim()) {
-      return t('mount_path_cannot_be_empty');
+  const validatePath = (rawPath: string): { error: string; normalizedPath: string } => {
+    const { normalizedPath, error } = validateMountPath(rawPath);
+
+    if (error === 'empty') {
+      return { normalizedPath, error: t('mount_path_cannot_be_empty') };
     }
 
-    if (!path.startsWith('/')) {
-      return t('path_must_be_absolute');
+    if (error === 'not_absolute') {
+      return { normalizedPath, error: t('path_must_be_absolute') };
     }
 
-    if (path === '/') {
-      return '';
+    if (error === 'invalid_format') {
+      return { normalizedPath, error: t('mount_path_invalid_format') };
     }
 
-    const pathPattern = /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/;
-    if (!pathPattern.test(path)) {
-      return t('mount_path_invalid_format');
+    if (error === 'protected_path') {
+      return { normalizedPath, error: t('mount_path_protected') };
     }
 
-    if (existingPaths.includes(path.toLowerCase())) {
-      return t('mount_path_conflict');
+    if (existingPaths.includes(normalizedPath.toLowerCase())) {
+      return { normalizedPath, error: t('mount_path_conflict') };
     }
 
-    return '';
+    return { normalizedPath, error: '' };
   };
 
   const handleConfirm = () => {
-    const path = pathRef.current?.value || '';
-
-    const error = validatePath(path);
+    const rawPath = pathRef.current?.value || '';
+    const { normalizedPath, error } = validatePath(rawPath);
     if (error) {
       setPathError(error);
       return;
@@ -108,7 +109,7 @@ const NetworkStorageDrawer = ({
     setPathError('');
     onSuccess({
       id: initialValue?.id || nanoid(),
-      path,
+      path: normalizedPath,
       size: capacity
     });
     onClose();
