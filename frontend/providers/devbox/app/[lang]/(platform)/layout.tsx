@@ -137,6 +137,10 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     const page = searchParams.get('page');
     const runtime = searchParams.get('runtime');
 
+    if (!page && !runtime) {
+      return;
+    }
+
     const path = `${page ? `/devbox/${page}` : ''}${runtime ? `?runtime=${runtime}` : ''}`;
 
     router.push(path);

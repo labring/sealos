@@ -311,7 +311,6 @@ const LocalImportDrawer = ({ open, onClose, onSuccess }: LocalImportDrawerProps)
       }
 
       onSuccess(devboxName);
-      onClose();
     } catch (error: any) {
       console.error('Import failed:', error);
       setImportStage('error');
