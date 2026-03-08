@@ -204,7 +204,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
   build-cluster-image:
-    if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
     needs:
       - image-build
     runs-on: ubuntu-24.04
@@ -285,6 +284,7 @@ jobs:
           done
 
       - name: Sealos login to ghcr.io
+        if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
@@ -292,7 +292,7 @@ jobs:
           sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
 
       - name: Sealos login to Aliyun Registry
-        if: ${{ env.ALIYUN_REGISTRY }}
+        if: ${{ ((github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)) && env.ALIYUN_REGISTRY }}
         env:
           ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
           ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
@@ -300,6 +300,7 @@ jobs:
           sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Manifest Cluster Images
+        if: ${{ (github.event_name == 'push')||(github.event_name == 'create') || (inputs.push_image == true) }}
         run: |
           sudo sealos images
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
