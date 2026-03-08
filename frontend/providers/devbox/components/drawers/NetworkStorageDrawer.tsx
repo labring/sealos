@@ -44,7 +44,9 @@ const NetworkStorageDrawer = ({
   const minCapacity = isEdit && originalValue ? originalValue.size : 1;
   const parsedMaxCapacity = Number(maxCapacity);
   const configuredMaxCapacity =
-    Number.isFinite(parsedMaxCapacity) && parsedMaxCapacity >= 1 ? Math.floor(parsedMaxCapacity) : 30;
+    Number.isFinite(parsedMaxCapacity) && parsedMaxCapacity >= 1
+      ? Math.floor(parsedMaxCapacity)
+      : 20;
   const maxCapacityLimit = Math.max(minCapacity, configuredMaxCapacity);
 
   const handleCapacityChange = (delta: number) => {
@@ -141,7 +143,7 @@ const NetworkStorageDrawer = ({
                   value={capacityInput}
                   onChange={(e) => handleCapacityInput(e.target.value)}
                   onBlur={handleCapacityBlur}
-                  className="h-10 w-20 rounded-none border-x-0 text-center text-sm font-medium shadow-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="h-10 w-20 [appearance:textfield] rounded-none border-x-0 text-center text-sm font-medium shadow-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <Button
                   variant="outline"

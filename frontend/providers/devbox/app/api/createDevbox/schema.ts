@@ -4,6 +4,12 @@ import { customAlphabet } from 'nanoid';
 import { normalizeStorageDefaultGi } from '@/utils/storage';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 const DEFAULT_STORAGE_GI = normalizeStorageDefaultGi(process.env.STORAGE_DEFAULT);
+const DEFAULT_NFS_MAX_SIZE = 20;
+const parsedNfsMaxSize = Number(process.env.NFS_MAX_SIZE);
+const nfsMaxSize =
+  Number.isFinite(parsedNfsMaxSize) && parsedNfsMaxSize >= 1
+    ? Math.floor(parsedNfsMaxSize)
+    : DEFAULT_NFS_MAX_SIZE;
 
 const GpuSchema = z
   .object({
@@ -123,7 +129,7 @@ export const RequestSchema = z
           path: z.string().refine((path) => path.startsWith('/'), {
             message: 'Volume path must be an absolute path starting with "/"'
           }),
-          size: z.number().min(1).max(30)
+          size: z.number().min(1).max(nfsMaxSize)
         })
       )
       .optional()

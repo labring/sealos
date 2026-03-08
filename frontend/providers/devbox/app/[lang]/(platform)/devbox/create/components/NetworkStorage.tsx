@@ -11,6 +11,7 @@ import { Separator } from '@sealos/shadcn-ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import NetworkStorageDrawer from '@/components/drawers/NetworkStorageDrawer';
 import type { DevboxEditTypeV2 } from '@/types/devbox';
+import { useEnvStore } from '@/stores/env';
 
 interface NetworkStorageProps {
   isEdit: boolean;
@@ -31,6 +32,7 @@ const createDefaultGpuVolume = (): NonNullable<DevboxEditTypeV2['volumes']>[numb
 export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStorageProps) {
   const t = useTranslations();
   const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
+  const { env } = useEnvStore();
 
   const watchedVolumes = watch('volumes');
   const volumes = useMemo(() => watchedVolumes ?? [], [watchedVolumes]);
@@ -149,6 +151,7 @@ export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStora
       {isNetworkStorageDrawerOpen && (
         <NetworkStorageDrawer
           isEdit={isEdit}
+          maxCapacity={env.nfsMaxSize}
           initialValue={editingStorageIndex !== null ? volumes[editingStorageIndex] : undefined}
           originalValue={
             isEdit && editingStorageIndex !== null && originalVolumes
