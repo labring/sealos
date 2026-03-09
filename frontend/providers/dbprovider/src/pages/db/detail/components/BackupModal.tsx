@@ -26,7 +26,7 @@ import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { ResponseCode } from '@/types/response';
 import ErrorModal from '@/components/ErrorModal';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
@@ -48,7 +48,7 @@ const BackupModal = ({
   const { t } = useTranslation();
   const { message: toast } = useMessage();
 
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const { data: defaultVal, refetch: refetchPolicy } = useQuery(
     ['initpolicy', dbName, dbType],
@@ -137,8 +137,8 @@ const BackupModal = ({
   const checkQuotaAndProceed = useQuotaGuarded(
     {
       requirements: {
-        cpu: SystemEnv.BACKUP_JOB_CPU_REQUIREMENT,
-        memory: SystemEnv.BACKUP_JOB_MEMORY_REQUIREMENT,
+        cpu: config.backupJobCpu,
+        memory: config.backupJobMemory,
         traffic: true
       },
       immediate: false,

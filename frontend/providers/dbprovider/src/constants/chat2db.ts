@@ -13,6 +13,7 @@ export interface GenerateLoginUrlOpts {
   userNS: string;
   orgId: string;
   secretKey: string;
+  clientDomain: string;
   ui?: {
     theme?: 'light' | 'dark';
     primaryColor?: string;

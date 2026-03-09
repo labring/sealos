@@ -1,0 +1,86 @@
+# yaml-language-server: $schema=config.schema.json
+
+cloud:
+  # Cloud platform domain used for API calls and resource management
+  domain: cloud.sealos.io
+  # Desktop application domain for postMessage origin whitelist and navigation links
+  desktopDomain: cloud.sealos.io
+
+dbprovider:
+  ui:
+    # Currency symbol type: shellCoin | cny | usd
+    currencySymbol: shellCoin
+    # Custom scripts injected via Next.js <Script> component
+    # External script example:
+    # customScripts:
+    #   - id: clarity
+    #     src: https://example.com/clarity.js
+    #     strategy: afterInteractive
+    # Inline script example:
+    #   - id: inline-script
+    #     content: "console.log('hello')"
+    #     strategy: afterInteractive
+    customScripts: []
+    # Whether to enable the interactive guide feature
+    guideEnabled: false
+    # Whether to show the documentation entry button
+    showDocument: true
+
+  storage:
+    # Kubernetes StorageClass name for database PVC
+    className: openebs-backup
+    # Maximum storage size in GB
+    maxSize: 300
+
+  monitoring:
+    # Prometheus monitoring service URL
+    url: http://database-monitor.sealos.svc.cluster.local:9090
+
+  # MinIO object storage configuration (server-side only, never exposed to browser)
+  minio:
+    # Whether the MinIO-based file import feature is enabled
+    enabled: false
+    url: objectstorageapi.example.sealos.run
+    port: 9000
+    bucketName: file-migration
+    accessKey: your-access-key
+    secretKey: your-secret-key
+
+  migration:
+    fetchFileImage: quay.io/minio/mc:latest
+    importDataImage: sealos.hub:5000/db-import-client:latest
+    # CPU limit in millicores
+    jobCpuRequirement: 2000
+    # Memory limit in MiB
+    jobMemoryRequirement: 4096
+    dumpImportCpuRequirement: 2000
+    dumpImportMemoryRequirement: 4096
+
+  backup:
+    enabled: true
+    # CPU limit in millicores
+    jobCpuRequirement: 300
+    # Memory limit in MiB
+    jobMemoryRequirement: 256
+
+  # Database alert service (server-side only, never exposed to browser)
+  alert:
+    url: http://database-alert-service.sealos.svc.cluster.local:8000
+
+  billing:
+    url: http://account-service.account-system.svc:2333
+    # Billing secret (server-side only, never exposed to browser)
+    secret: your-billing-secret
+
+  # Chat2DB managed database feature configuration
+  chat2db:
+    enabled: false
+    # AES encryption key for Chat2DB passwords (server-side only)
+    aesKey: ""
+    # Chat2DB API key (server-side only)
+    apiKey: ""
+    clientDomainName: https://chat2dbclient.example.sealos.run
+    gatewayDomainName: https://chat2dbgateway.example.sealos.run
+
+  # FastGPT integration API key (server-side only)
+  fastGPTKey: ""
