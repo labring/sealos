@@ -1,5 +1,9 @@
+import { Config } from '@/config';
+
 export const VLOGS_CONFIG = {
-  BASE_URL: process.env.VLOGS_BASE_URL || '',
+  get BASE_URL() {
+    return Config().dbprovider.vlogsBaseUrl;
+  },
 
   ENDPOINTS: {
     QUERY_LOGS: '/queryLogsByPod',

@@ -84,6 +84,7 @@ const MinioSchema = z
     enabled: z.boolean().describe('Whether the MinIO-based file import feature is enabled'),
     url: z.string().describe('MinIO server URL'),
     port: z.number().int().positive().describe('MinIO server port'),
+    useSSL: z.boolean().describe('Whether to use SSL/TLS for MinIO connection'),
     bucketName: z.string().describe('MinIO bucket name for file migration'),
     accessKey: z.string().describe('MinIO access key'),
     secretKey: z.string().describe('MinIO secret key')
@@ -173,7 +174,10 @@ const DbProviderSchema = z
     alert: AlertSchema.describe('Database alert service configuration (server-side only)'),
     billing: BillingSchema.describe('Billing service configuration'),
     chat2db: Chat2DbSchema.describe('Chat2DB managed database feature configuration'),
-    fastGPTKey: z.string().describe('FastGPT integration API key (server-side only)')
+    fastGPTKey: z.string().describe('FastGPT integration API key (server-side only)'),
+    vlogsBaseUrl: z
+      .string()
+      .describe('VictoriaLogs base URL for pod log querying (server-side only)')
   })
   .strict();
 

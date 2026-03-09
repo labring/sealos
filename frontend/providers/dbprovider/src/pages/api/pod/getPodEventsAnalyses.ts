@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
@@ -45,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       {
         headers: {
-          apikey: process.env.FASTGPT_KEY
+          apikey: Config().dbprovider.fastGPTKey
         },
         responseType: 'stream',
         timeout: 30000

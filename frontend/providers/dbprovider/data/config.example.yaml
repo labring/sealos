@@ -42,6 +42,7 @@ dbprovider:
     enabled: false
     url: objectstorageapi.example.sealos.run
     port: 9000
+    useSSL: false
     bucketName: file-migration
     accessKey: your-access-key
     secretKey: your-secret-key
@@ -84,3 +85,6 @@ dbprovider:
 
   # FastGPT integration API key (server-side only)
   fastGPTKey: ""
+
+  # VictoriaLogs base URL for pod log querying (server-side only)
+  vlogsBaseUrl: ""

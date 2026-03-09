@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
@@ -24,9 +25,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  const apiUrl = `${process.env.GATEWAY_DOMAIN_NAME}/api/open/enterprise/sync_data_source_a`;
+  const apiUrl = `${
+    Config().dbprovider.chat2db.gatewayDomainName
+  }/api/open/enterprise/sync_data_source_a`;
 
-  const apiKey = process.env.CHAT2DB_API_KEY;
+  const apiKey = Config().dbprovider.chat2db.apiKey;
 
   const { userKey, ...requestBody } = req.body as any;
 

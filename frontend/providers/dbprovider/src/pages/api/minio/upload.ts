@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -63,17 +64,9 @@ class UploadModel {
 
 const upload = new UploadModel();
 
-const minioClient = new Minio.Client({
-  endPoint: process.env?.MINIO_URL || 'minioapi.dev.sealos.top',
-  port: Number(process.env?.MINIO_PORT) || 443,
-  useSSL: Boolean(process.env?.MINIO_USE_SSL) || true,
-  accessKey: process.env?.MINIO_ACCESS_KEY || 'database',
-  secretKey: process.env?.MINIO_SECRET_KEY || 'database'
-});
-
 export default async function handler(req: any, res: NextApiResponse) {
   try {
-    if (!process.env?.MINIO_URL || !process.env?.MINIO_SECRET_KEY) {
+    if (!Config().dbprovider.minio.enabled) {
       return jsonRes(res, {
         code: 500,
         data: 'Missing minio service'
@@ -86,10 +79,19 @@ export default async function handler(req: any, res: NextApiResponse) {
 
     const { namespace } = k8sResult;
 
+    const minioConfig = Config().dbprovider.minio;
+    const minioClient = new Minio.Client({
+      endPoint: minioConfig.url,
+      port: minioConfig.port,
+      useSSL: minioConfig.useSSL,
+      accessKey: minioConfig.accessKey,
+      secretKey: minioConfig.secretKey
+    });
+
     const uploadResult = await upload.doUpload(req, res);
     const files = uploadResult.files || [];
 
-    const bucketName = process.env?.MINIO_BUCKET_NAME || 'database-test';
+    const bucketName = minioConfig.bucketName;
 
     const upLoadResults = await Promise.all(
       files.map(async (file) => {
