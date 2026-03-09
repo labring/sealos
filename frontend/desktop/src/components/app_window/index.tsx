@@ -19,7 +19,6 @@ export default function AppWindow(props: {
     updateOpenedAppInfo,
     setToHighestLayerById,
     currentApp,
-    currentAppPid,
     findAppInfoById,
     maxZIndex
   } = useAppStore();
@@ -86,7 +85,7 @@ export default function AppWindow(props: {
       ...wnapp,
       isShow: false
     });
-    closeAppById(currentAppPid);
+    closeAppById(pid);
   };
 
   return (
