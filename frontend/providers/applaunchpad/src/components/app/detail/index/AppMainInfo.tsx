@@ -96,7 +96,9 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             ? `${appProtocol?.label}${
                 network.customDomain
                   ? network.customDomain
-                  : `${network.publicDomain}.${network.domain}${config.port}`
+                  : `${network.publicDomain}.${network.domain}${
+                      config.port !== undefined ? `:${config.port}` : ''
+                    }`
               }`
             : '',
           customDomain: network.openPublicDomain ? network.customDomain : null,

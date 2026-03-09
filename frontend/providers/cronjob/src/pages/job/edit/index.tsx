@@ -69,9 +69,9 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   });
 
   const cronJobConfig = {
-    applaunchpadUrl: config.applaunchpadUrl,
-    successfulJobsHistoryLimit: config.successfulJobsHistoryLimit,
-    failedJobsHistoryLimit: config.failedJobsHistoryLimit
+    url: config.components.applaunchpad.url,
+    successfulLimit: config.jobHistory.successfulLimit,
+    failedLimit: config.jobHistory.failedLimit
   };
 
   const formData2Yamls = useCallback(
@@ -82,7 +82,11 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
       }
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [config.applaunchpadUrl, config.successfulJobsHistoryLimit, config.failedJobsHistoryLimit]
+    [
+      config.components.applaunchpad.url,
+      config.jobHistory.successfulLimit,
+      config.jobHistory.failedLimit
+    ]
   );
 
   const submitSuccess = useCallback(async () => {
@@ -129,8 +133,8 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const handleSubmit = useQuotaGuarded(
     {
       requirements: {
-        cpu: config.podCpuRequest,
-        memory: config.podMemoryRequest,
+        cpu: config.podResources.cpuMilliCores,
+        memory: config.podResources.memoryMiB,
         traffic: true
       },
       immediate: false,

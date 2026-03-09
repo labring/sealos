@@ -1,11 +1,15 @@
 # yaml-language-server: $schema=config.schema.json
 cloud:
-    domain: cloud.sealos.io
+  domain: cloud.sealos.io
+  desktopDomain: cloud.sealos.io
 
 cronjob:
-    applaunchpadUrl: ''
-    podCpuRequest: 50
-    podMemoryRequest: 64
-    jobHistory:
-        successfulLimit: 3
-        failedLimit: 3
+  components:
+    applaunchpad:
+      url: ''
+  podResources:
+    cpuMilliCores: 50
+    memoryMiB: 64
+  jobHistory:
+    successfulLimit: 3
+    failedLimit: 3

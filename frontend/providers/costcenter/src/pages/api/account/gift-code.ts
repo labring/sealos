@@ -6,7 +6,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    if (!Config().costCenter.giftCodeEnabled) {
+    if (!Config().costCenter.features.giftCode) {
       throw new Error('gift code is not enabled');
     }
     const { code } = req.body;

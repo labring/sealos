@@ -68,7 +68,7 @@ function countSourcePrice(rawData: ResourcePriceType['data']['properties'], type
 
 const getResourcePrice = async () => {
   const { Config } = await import('@/config');
-  const url = Config().dbprovider.billing.url;
+  const url = Config().dbprovider.components.billing.url;
 
   const res = await fetch(`${url}/account/v1alpha1/properties`, {
     method: 'POST'

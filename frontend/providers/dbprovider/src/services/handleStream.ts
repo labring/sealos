@@ -11,7 +11,7 @@ export const handleAxiosStream = async (props: AxiosRequestConfig, kubeconfig: s
         Authorization: encodeURIComponent(kubeconfig)
       }
     };
-    const domain = Config().dbprovider.monitoring.url;
+    const domain = Config().dbprovider.components.monitoring.url;
     const response = await fetch(`${domain}${url}?${queryString}`, requestOptions).then((res) =>
       res.json()
     );

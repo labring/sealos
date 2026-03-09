@@ -7,7 +7,7 @@ import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    if (!Config().launchpad.guideEnabled)
+    if (!Config().launchpad.features.guide)
       return jsonRes(res, {
         data: {
           needGuide: false

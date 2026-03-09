@@ -42,6 +42,16 @@ const CloudSchema = z
   .strict();
 
 /**
+ * Feature flags schema.
+ */
+const FeaturesSchema = z
+  .object({
+    guide: z.boolean().describe('Whether the interactive guide feature is enabled'),
+    showDocument: z.boolean().describe('Whether to show the documentation entry button')
+  })
+  .strict();
+
+/**
  * UI configuration schema for dbprovider.
  */
 const UiSchema = z
@@ -51,9 +61,7 @@ const UiSchema = z
       .describe('Currency symbol type displayed in price components'),
     customScripts: z
       .array(CustomScriptSchema)
-      .describe('Custom scripts injected via Next.js <Script> component'),
-    guideEnabled: z.boolean().describe('Whether to enable the interactive guide feature'),
-    showDocument: z.boolean().describe('Whether to show the documentation entry button')
+      .describe('Custom scripts injected via Next.js <Script> component')
   })
   .strict();
 
@@ -160,24 +168,42 @@ const Chat2DbSchema = z
   })
   .strict();
 
+const ComponentsSchema = z
+  .object({
+    monitoring: MonitoringSchema.describe('Prometheus monitoring service URL'),
+    alerting: AlertSchema.describe('Database alert service configuration (server-side only)'),
+    billing: BillingSchema.describe('Billing service configuration'),
+    logging: z
+      .object({
+        url: z.string().describe('VictoriaLogs base URL for pod log querying (server-side only)')
+      })
+      .strict()
+      .describe('Log querying service configuration (server-side only)')
+  })
+  .strict();
+
+const IntegrationsSchema = z
+  .object({
+    fastGPTKey: z.string().describe('FastGPT integration API key (server-side only)')
+  })
+  .strict();
+
 /**
  * DbProvider-specific configuration schema.
  */
 const DbProviderSchema = z
   .object({
+    features: FeaturesSchema.describe('Feature flags and behavior switches'),
     ui: UiSchema.describe('UI and branding configuration'),
     storage: StorageSchema.describe('Kubernetes storage configuration'),
-    monitoring: MonitoringSchema.describe('Prometheus monitoring configuration'),
+    components: ComponentsSchema.describe('External component service configuration'),
     minio: MinioSchema.describe('MinIO object storage configuration (server-side only)'),
     migration: MigrationSchema.describe('File migration job configuration'),
     backup: BackupSchema.describe('Database backup configuration'),
-    alert: AlertSchema.describe('Database alert service configuration (server-side only)'),
-    billing: BillingSchema.describe('Billing service configuration'),
     chat2db: Chat2DbSchema.describe('Chat2DB managed database feature configuration'),
-    fastGPTKey: z.string().describe('FastGPT integration API key (server-side only)'),
-    vlogsBaseUrl: z
-      .string()
-      .describe('VictoriaLogs base URL for pod log querying (server-side only)')
+    integrations: IntegrationsSchema.describe(
+      'Third-party integration configuration (server-side only)'
+    )
   })
   .strict();
 

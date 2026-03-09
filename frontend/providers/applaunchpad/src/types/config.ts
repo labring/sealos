@@ -7,15 +7,15 @@ const UserDomainSchema = z.object({
 
 const CloudSchema = z.object({
   domain: z.string().describe('Main promoted domain'),
-  port: z.string().optional().describe('Optional port string, e.g. ":443"'),
+  port: z.number().optional().describe('Optional port number, e.g. 443'),
   userDomains: z.array(UserDomainSchema).describe('List of domains available for users'),
   desktopDomain: z.string().describe('Domain for the desktop application')
 });
 
 const InfrastructureSchema = z.object({
   provider: z.string(),
-  requiresDomainReg: z.boolean(),
-  domainRegQueryLink: z.string(),
+  requiresIcpReg: z.boolean(),
+  icpRegQueryLink: z.string(),
   domainBindingDocumentationLink: z
     .string()
     .nullable()
@@ -43,47 +43,64 @@ const SliderConfigSchema = z.object({
   memory: z.array(z.number())
 });
 
+const FeaturesSchema = z
+  .object({
+    guide: z.boolean().describe('Whether the interactive guide feature is enabled'),
+    api: z.boolean().describe('Whether the public API feature is enabled'),
+    gpu: z
+      .boolean()
+      .describe(
+        'Whether GPU resource support is enabled; overridden at runtime by GPU node detection'
+      )
+  })
+  .strict();
+
+const UiSchema = z
+  .object({
+    currencySymbol: z
+      .enum(['shellCoin', 'cny', 'usd'])
+      .describe('Currency symbol type for pricing display'),
+    meta: MetaSchema.describe('Page meta tags and custom script injection'),
+    appResourceFormSliderConfig: z
+      .record(z.string(), SliderConfigSchema)
+      .default({
+        default: {
+          cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
+          memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+        },
+        'default-gpu': {
+          cpu: [8000, 16000, 32000, 48000, 64000, 80000, 108000],
+          memory: [16384, 32768, 65536, 131072, 262144, 524288, 614400]
+        }
+      })
+      .describe('Slider configuration per GPU type key; "default" is the base config')
+  })
+  .strict();
+
 const LaunchpadSchema = z.object({
-  guideEnabled: z.boolean(),
-  apiEnabled: z.boolean(),
-  gpuEnabled: z
-    .boolean()
-    .describe('Set at runtime by instrumentation hook based on GPU node detection'),
+  features: FeaturesSchema.describe('Feature flags and behavior switches'),
+  ui: UiSchema.describe('UI and branding configuration'),
   infrastructure: InfrastructureSchema,
   domainChallengeSecret: z.string().optional(),
-  meta: MetaSchema,
-  gtmId: z.string().nullable().describe('Google Tag Manager ID, e.g. GTM-XXXXXX'),
-  currencySymbol: z
-    .enum(['shellCoin', 'cny', 'usd'])
-    .describe('Currency symbol type for pricing display'),
   pvcStorageMax: z.number().describe('Maximum PVC storage in GB'),
-  eventAnalyze: z.object({
+  analytics: z.object({
     enabled: z.boolean(),
-    fastGPTKey: z.string().optional()
+    fastGPTKey: z.string().optional(),
+    gtmId: z.string().nullable().describe('Google Tag Manager ID, e.g. GTM-XXXXXX')
   }),
   components: z.object({
-    monitor: z.object({
+    monitoring: z.object({
       url: z.string()
     }),
     billing: z.object({
       url: z.string()
     }),
-    log: z.object({ url: z.string() })
-  }),
-  appResourceFormSliderConfig: z
-    .record(z.string(), SliderConfigSchema)
-    .default({
-      default: {
-        cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000],
-        memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-      },
-      'default-gpu': {
-        cpu: [8000, 16000, 32000, 48000, 64000, 80000, 108000],
-        memory: [16384, 32768, 65536, 131072, 262144, 524288, 614400]
-      }
+    logging: z.object({
+      url: z.string(),
+      enabled: z.boolean().describe('Whether the logging service is enabled')
     })
-    .describe('Slider configuration per GPU type key; "default" is the base config'),
-  fileManger: z.object({
+  }),
+  fileManager: z.object({
     uploadLimit: z.number().describe('Upload limit in MB'),
     downloadLimit: z.number().describe('Download limit in MB')
   }),
@@ -108,13 +125,16 @@ export const AppConfigSchema = z.object({
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 
+export type SliderConfig = z.infer<typeof SliderConfigSchema>;
+export type FormSliderListType = Record<string, SliderConfig>;
+
 /**
  * Client-safe application configuration schema.
  * Excludes sensitive server-side secrets (e.g. checkIcpReg credentials).
  */
 export const ClientAppConfigSchema = z.object({
   domain: z.string(),
-  port: z.string().optional(),
+  port: z.number().optional(),
   userDomains: z.array(UserDomainSchema),
   desktopDomain: z.string(),
   guideEnabled: z.boolean(),
@@ -122,31 +142,31 @@ export const ClientAppConfigSchema = z.object({
   gpuEnabled: z.boolean(),
   infrastructure: z.object({
     provider: z.string(),
-    requiresDomainReg: z.boolean(),
-    domainRegQueryLink: z.string(),
+    requiresIcpReg: z.boolean(),
+    icpRegQueryLink: z.string(),
     domainBindingDocumentationLink: z.string().nullable()
   }),
   currencySymbol: z.enum(['shellCoin', 'cny', 'usd']),
   pvcStorageMax: z.number(),
-  eventAnalyze: z.object({
+  analytics: z.object({
     enabled: z.boolean(),
-    fastGPTKey: z.string().optional()
+    fastGPTKey: z.string().optional(),
+    gtmId: z.string().nullable()
   }),
   components: z.object({
-    monitor: z.object({ url: z.string() }),
+    monitoring: z.object({ url: z.string() }),
     billing: z.object({ url: z.string() }),
-    log: z.object({ url: z.string() })
+    logging: z.object({ url: z.string(), enabled: z.boolean() })
   }),
   appResourceFormSliderConfig: z.record(z.string(), SliderConfigSchema),
-  fileManger: z.object({
+  fileManager: z.object({
     uploadLimit: z.number(),
     downloadLimit: z.number()
   }),
   meta: z.object({
     title: z.string(),
     description: z.string()
-  }),
-  gtmId: z.string().nullable()
+  })
 });
 
 export type ClientAppConfig = z.infer<typeof ClientAppConfigSchema>;

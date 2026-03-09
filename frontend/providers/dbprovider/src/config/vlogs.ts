@@ -2,7 +2,7 @@ import { Config } from '@/config';
 
 export const VLOGS_CONFIG = {
   get BASE_URL() {
-    return Config().dbprovider.vlogsBaseUrl;
+    return Config().dbprovider.components.logging.url;
   },
 
   ENDPOINTS: {

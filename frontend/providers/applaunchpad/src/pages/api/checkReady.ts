@@ -45,7 +45,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const fetchUrl = `https://${host}`;
         const protocol =
           ProtocolList.find((item) => item.value === backendProtocol)?.label || 'https://';
-        const url = `${protocol}${host}${Config().cloud.port}`;
+        const portSuffix = Config().cloud.port !== undefined ? `:${Config().cloud.port}` : '';
+        const url = `${protocol}${host}${portSuffix}`;
 
         try {
           const response = await fetch(fetchUrl);

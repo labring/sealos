@@ -126,8 +126,8 @@ export default function Valuation() {
       }}
     >
       <TabList mx={'24px'}>
-        {config.subscriptionEnabled && <Tab>{t('common:subscription_plans')}</Tab>}
-        {(config.subscriptionEnabled ? !!isPaygType : true) && (
+        {config.features.subscriptionEnabled && <Tab>{t('common:subscription_plans')}</Tab>}
+        {(config.features.subscriptionEnabled ? !!isPaygType : true) && (
           <>
             <Tab>{t('common:price_table')}</Tab>
             <Tab>{t('common:price_calculator')}</Tab>
@@ -135,17 +135,17 @@ export default function Valuation() {
         )}
         <Flex ml="auto" gap={'12px'}>
           {/* Show region selector in PriceTablePanel and CalculatorPanel */}
-          {(config.subscriptionEnabled
+          {(config.features.subscriptionEnabled
             ? tabIdx === 1 || tabIdx === 2
             : tabIdx === 0 || tabIdx === 1) && <RegionMenu isDisabled={false} />}
           {/* Show duration selector in PriceTablePanel */}
-          {(config.subscriptionEnabled ? tabIdx === 1 : tabIdx === 0) && (
+          {(config.features.subscriptionEnabled ? tabIdx === 1 : tabIdx === 0) && (
             <CycleMenu cycleIdx={cycleIdx} setCycleIdx={setCycleIdx} />
           )}
         </Flex>
       </TabList>
       <TabPanels>
-        {config.subscriptionEnabled && (
+        {config.features.subscriptionEnabled && (
           <TabPanel>
             <div className="border rounded-2xl bg-zinc-50 overflow-hidden">
               <SubscriptionPlansPanel plansData={plansData?.data?.plans} />

@@ -26,7 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { namespace } = req.query;
-  const apiUrl = `${Config().dbprovider.alert.url}/v1/databases?namespace=${namespace}`;
+  const apiUrl = `${
+    Config().dbprovider.components.alerting.url
+  }/v1/databases?namespace=${namespace}`;
 
   try {
     const response = await fetch(apiUrl, {

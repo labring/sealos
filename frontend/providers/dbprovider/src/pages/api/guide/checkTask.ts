@@ -6,7 +6,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    if (!Config().dbprovider.ui.guideEnabled) return jsonRes(res, { data: null });
+    if (!Config().dbprovider.features.guide) return jsonRes(res, { data: null });
     const token = await authAppToken(req.headers);
     if (!token) {
       return jsonRes(res, { code: 401, message: 'token is valid' });

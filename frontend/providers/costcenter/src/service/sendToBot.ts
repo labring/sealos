@@ -25,7 +25,7 @@ const getStatus = (invoiceStatus: InvoicePayload['status']) =>
   invoiceStatus === 'COMPLETED' ? '已完成' : '申请中';
 export const updateTenantAccessToken = async () => {
   try {
-    const feishuConfig = Config().costCenter.invoice.feishApp;
+    const feishuConfig = Config().costCenter.invoice.feishuApp;
 
     const body = {
       app_id: feishuConfig.appId,
@@ -115,8 +115,8 @@ const generateBotTemplate = ({
   const card = {
     type: 'template',
     data: {
-      template_id: Config().costCenter.invoice.feishApp.template.id,
-      template_version_name: Config().costCenter.invoice.feishApp.template.version,
+      template_id: Config().costCenter.invoice.feishuApp.template.id,
+      template_version_name: Config().costCenter.invoice.feishuApp.template.version,
       template_variable: {
         invoiceId: invoice.id,
         invoiceDetail,
@@ -180,7 +180,7 @@ export const sendToBot = async ({
 
   const body = {
     msg_type: 'interactive',
-    receive_id: Config().costCenter.invoice.feishApp.chatId,
+    receive_id: Config().costCenter.invoice.feishuApp.chatId,
     content: JSON.stringify(card)
   };
 
@@ -207,7 +207,7 @@ export const sendToUpdateBot = async ({
   const card = generateBotTemplate({ invoice, payments });
   const body = {
     msg_type: 'interactive',
-    receive_id: Config().costCenter.invoice.feishApp.chatId,
+    receive_id: Config().costCenter.invoice.feishuApp.chatId,
     content: JSON.stringify(card)
   };
 

@@ -7,9 +7,9 @@ import { cronJobKey } from '@/constants/keys';
 export const json2CronJob = (
   data: CronJobEditType,
   cronjobConfig: {
-    applaunchpadUrl: string;
-    successfulJobsHistoryLimit: number;
-    failedJobsHistoryLimit: number;
+    url: string;
+    successfulLimit: number;
+    failedLimit: number;
   }
 ) => {
   const timeZone = getUserTimeZone();
@@ -57,8 +57,8 @@ export const json2CronJob = (
       let command = `echo "${Buffer.from(decodeURIComponent(kcHeader)).toString(
         'base64'
       )}" | base64 -d > ~/.kube/config`;
-      if (data.enableNumberCopies && cronjobConfig.applaunchpadUrl) {
-        command += ` && curl -k -X POST -H "Authorization: $(cat ~/.kube/config | jq -sRr @uri)" -d "appName=${data.launchpadName}&replica=${data.replicas}" https://${cronjobConfig.applaunchpadUrl}/api/v1alpha/updateReplica`;
+      if (data.enableNumberCopies && cronjobConfig.url) {
+        command += ` && curl -k -X POST -H "Authorization: $(cat ~/.kube/config | jq -sRr @uri)" -d "appName=${data.launchpadName}&replica=${data.replicas}" ${cronjobConfig.url}/api/v1alpha/updateReplica`;
       }
       if (data.enableResources) {
         command += ` && kubectl set resources ${data.launchpadKind} ${data.launchpadName} --limits=cpu=${resources.limits.cpu},memory=${resources.limits.memory} --requests=cpu=${resources.requests.cpu},memory=${resources.requests.memory}`;
@@ -118,8 +118,8 @@ export const json2CronJob = (
       schedule: data.schedule,
       concurrencyPolicy: 'Replace',
       startingDeadlineSeconds: 60,
-      successfulJobsHistoryLimit: cronjobConfig.successfulJobsHistoryLimit,
-      failedJobsHistoryLimit: cronjobConfig.failedJobsHistoryLimit,
+      successfulJobsHistoryLimit: cronjobConfig.successfulLimit,
+      failedJobsHistoryLimit: cronjobConfig.failedLimit,
       timeZone: timeZone,
       jobTemplate: {
         activeDeadlineSeconds: 600,

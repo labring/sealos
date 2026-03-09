@@ -23,14 +23,14 @@ export default function Home() {
         }
       });
 
-      const indexPage = config.subscriptionEnabled ? '/plan' : '/cost';
+      const indexPage = config.features.subscriptionEnabled ? '/plan' : '/cost';
       const queryString = params.toString();
       const targetUrl = queryString ? `${indexPage}?${queryString}` : indexPage;
 
       // Replace current route to avoid adding to history
       router.replace(targetUrl);
     }
-  }, [router, router.query, config.subscriptionEnabled]);
+  }, [router, router.query, config.features.subscriptionEnabled]);
 
   // Show minimal loading state while redirecting
   return <div className="flex items-center justify-center min-h-screen"></div>;

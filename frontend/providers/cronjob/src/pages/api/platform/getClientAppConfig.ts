@@ -7,12 +7,16 @@ export function getClientAppConfigServer() {
   const fullConfig = Config();
   return ClientAppConfigSchema.parse({
     domain: fullConfig.cloud.domain,
-    applaunchpadUrl:
-      fullConfig.cronjob.applaunchpadUrl || `applaunchpad.${fullConfig.cloud.domain}`,
-    podCpuRequest: fullConfig.cronjob.podCpuRequest,
-    podMemoryRequest: fullConfig.cronjob.podMemoryRequest,
-    successfulJobsHistoryLimit: fullConfig.cronjob.jobHistory.successfulLimit,
-    failedJobsHistoryLimit: fullConfig.cronjob.jobHistory.failedLimit
+    desktopDomain: fullConfig.cloud.desktopDomain,
+    components: {
+      applaunchpad: {
+        url:
+          fullConfig.cronjob.components.applaunchpad.url ||
+          `https://applaunchpad.${fullConfig.cloud.domain}`
+      }
+    },
+    podResources: fullConfig.cronjob.podResources,
+    jobHistory: fullConfig.cronjob.jobHistory
   });
 }
 

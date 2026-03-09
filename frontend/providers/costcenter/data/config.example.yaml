@@ -2,19 +2,20 @@
 
 cloud:
   domain: 'example.nip.io'
-  port: '443'
-  regionUID: 'your-region-uid-here'
+  port: 443
+  regionUid: 'your-region-uid-here'
   certSecretName: 'wildcard-cert'
   proxyDomain: 'example.nip.io'
 
 costCenter:
-  gpuEnabled: false
-  transferEnabled: true
-  currencyType: 'shellCoin'
-  subscriptionEnabled: false
-  giftCodeEnabled: true
-  realNameRechargeLimit: false
-  layout:
+  features:
+    rechargeRequiresRealName: false
+    transfer: true
+    giftCode: true
+    subscription: false
+    gpu: false
+  ui:
+    currencySymbolType: 'shellCoin'
     meta:
       scripts: []
       noscripts: []
@@ -25,7 +26,7 @@ costCenter:
   invoice:
     enabled: false
     serviceToken: 'your-service-token-here'
-    feishApp:
+    feishuApp:
       appId: 'your-feishu-app-id'
       appSecret: 'your-feishu-app-secret'
       feiShuBotURL: 'https://open.feishu.cn/open-apis/bot/v2/hook/your-hook-id'

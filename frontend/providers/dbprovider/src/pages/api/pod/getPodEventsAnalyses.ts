@@ -46,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       {
         headers: {
-          apikey: Config().dbprovider.fastGPTKey
+          apikey: Config().dbprovider.integrations.fastGPTKey
         },
         responseType: 'stream',
         timeout: 30000

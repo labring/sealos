@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     }
 
     const regions = (await getRegionList()) || [];
-    const currentRegionUid = Config().cloud.regionUID;
+    const currentRegionUid = Config().cloud.regionUid;
     const currentRegionIdx = regions.findIndex((region: Region) => region.uid === currentRegionUid);
     if (currentRegionIdx === -1) {
       throw Error('current region not found');

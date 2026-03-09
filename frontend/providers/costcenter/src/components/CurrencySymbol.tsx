@@ -21,7 +21,7 @@ export default function CurrencySymbol({
       ? useRealCurrency
         ? 'cny'
         : 'shellCoin'
-      : forcedType ?? config.currency;
+      : forcedType ?? config.currencySymbolType;
 
   return currencyType === 'shellCoin' ? (
     <span

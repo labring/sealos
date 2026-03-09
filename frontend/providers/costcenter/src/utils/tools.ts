@@ -68,7 +68,7 @@ type RealNameInfoResponse = {
 
 export const checkSealosUserIsRealName = async (client: AxiosInstance): Promise<boolean> => {
   try {
-    if (!Config().costCenter.realNameRechargeLimit) {
+    if (!Config().costCenter.features.rechargeRequiresRealName) {
       return true;
     }
 

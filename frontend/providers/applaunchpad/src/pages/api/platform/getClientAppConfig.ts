@@ -10,21 +10,20 @@ export function getClientAppConfigServer() {
     port: fullConfig.cloud.port,
     userDomains: fullConfig.cloud.userDomains,
     desktopDomain: fullConfig.cloud.desktopDomain,
-    guideEnabled: fullConfig.launchpad.guideEnabled,
-    apiEnabled: fullConfig.launchpad.apiEnabled,
-    gpuEnabled: fullConfig.launchpad.gpuEnabled,
+    guideEnabled: fullConfig.launchpad.features.guide,
+    apiEnabled: fullConfig.launchpad.features.api,
+    gpuEnabled: fullConfig.launchpad.features.gpu,
     infrastructure: fullConfig.launchpad.infrastructure,
-    currencySymbol: fullConfig.launchpad.currencySymbol,
+    currencySymbol: fullConfig.launchpad.ui.currencySymbol,
     pvcStorageMax: fullConfig.launchpad.pvcStorageMax,
-    eventAnalyze: fullConfig.launchpad.eventAnalyze,
+    analytics: fullConfig.launchpad.analytics,
     components: fullConfig.launchpad.components,
-    appResourceFormSliderConfig: fullConfig.launchpad.appResourceFormSliderConfig,
-    fileManger: fullConfig.launchpad.fileManger,
+    appResourceFormSliderConfig: fullConfig.launchpad.ui.appResourceFormSliderConfig,
+    fileManager: fullConfig.launchpad.fileManager,
     meta: {
-      title: fullConfig.launchpad.meta.title,
-      description: fullConfig.launchpad.meta.description
-    },
-    gtmId: fullConfig.launchpad.gtmId
+      title: fullConfig.launchpad.ui.meta.title,
+      description: fullConfig.launchpad.ui.meta.description
+    }
   });
 }
 

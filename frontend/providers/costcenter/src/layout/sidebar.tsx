@@ -24,14 +24,14 @@ export default function SideBar() {
       url: '/cost',
       value: 'sidebar.cost',
       icon: Dock,
-      display: !config.subscriptionEnabled
+      display: !config.features.subscriptionEnabled
     },
     {
       id: 'Plan',
       url: '/plan',
       value: 'sidebar.plan',
       icon: Dock,
-      display: config.subscriptionEnabled
+      display: config.features.subscriptionEnabled
     },
     {
       id: 'Billing',
@@ -45,7 +45,7 @@ export default function SideBar() {
       url: '/create_invoice',
       value: 'sidebar.invoice',
       icon: TicketMinus,
-      display: config.invoiceEnabled
+      display: config.invoice.enabled
     },
     {
       id: 'Usage',

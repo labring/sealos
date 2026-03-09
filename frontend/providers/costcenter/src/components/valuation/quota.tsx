@@ -31,7 +31,7 @@ export default function Quota() {
   const config = useClientAppConfig();
 
   const quota = (filtersSelected ? data?.data?.quota ?? [] : [])
-    .filter((item) => config.gpuEnabled || item.type !== 'gpu')
+    .filter((item) => config.features.gpuEnabled || item.type !== 'gpu')
     .map((item) => {
       const mapping = valuationMap.get(item.type);
 

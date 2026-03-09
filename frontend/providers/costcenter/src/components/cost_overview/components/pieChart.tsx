@@ -24,7 +24,7 @@ export default function CostChart({ data }: { data: number[]; appName: string })
   const config = useClientAppConfig();
   const radius = ['50%', '90%'];
 
-  const result = (config.gpuEnabled ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4]).map((_, i) => {
+  const result = (config.features.gpuEnabled ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4]).map((_, i) => {
     return [t(resourceType[i]), formatMoney(data[i]).toFixed(2)];
   });
   const title = t('All APP', { ns: 'applist' }) + '\n' + t('Cost Form');

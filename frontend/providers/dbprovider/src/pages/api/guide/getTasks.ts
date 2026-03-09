@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    if (!Config().dbprovider.ui.guideEnabled) {
+    if (!Config().dbprovider.features.guide) {
       return jsonRes(res, {
         data: {
           needGuide: false

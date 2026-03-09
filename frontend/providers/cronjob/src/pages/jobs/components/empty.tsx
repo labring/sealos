@@ -15,8 +15,8 @@ const Empty = () => {
   const handleCreateApp = useQuotaGuarded(
     {
       requirements: {
-        cpu: config.podCpuRequest,
-        memory: config.podMemoryRequest,
+        cpu: config.podResources.cpuMilliCores,
+        memory: config.podResources.memoryMiB,
         traffic: true
       },
       immediate: false,

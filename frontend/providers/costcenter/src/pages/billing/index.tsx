@@ -416,7 +416,7 @@ function Billing() {
             {t('common:billing_page.billing')}
           </TabsTrigger>
 
-          {config.subscriptionEnabled ? (
+          {config.features.subscriptionEnabled ? (
             <TabsTrigger variant="cleanUnderline" value="trends">
               {t('common:billing_page.cost_and_revenue_trends')}
             </TabsTrigger>
@@ -445,7 +445,9 @@ function Billing() {
                 totalCost={displayCost}
                 className="w-full"
               >
-                {config.subscriptionEnabled && <SubscriptionCostTable data={subscriptionData} />}
+                {config.features.subscriptionEnabled && (
+                  <SubscriptionCostTable data={subscriptionData} />
+                )}
 
                 {selectedRegion && (
                   <PAYGCostTable
@@ -476,13 +478,13 @@ function Billing() {
           </div>
         </TabsContent>
 
-        {!config.subscriptionEnabled && (
+        {!config.features.subscriptionEnabled && (
           <TabsContent value="recharge" className="h-full overflow-hidden">
             <RechargePanel />
           </TabsContent>
         )}
 
-        {config.subscriptionEnabled && (
+        {config.features.subscriptionEnabled && (
           <TabsContent value="trends" className="flex flex-col gap-4 overflow-auto">
             <OverviewTrend />
             <TrendOverviewBar />

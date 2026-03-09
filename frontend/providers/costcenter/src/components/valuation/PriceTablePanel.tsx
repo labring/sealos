@@ -161,7 +161,7 @@ export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
             )}
 
             {/* GPU Section */}
-            {config.gpuEnabled && gpuData.length > 0 && (
+            {config.features.gpuEnabled && gpuData.length > 0 && (
               <>
                 <SectionHeader title={t('common:gpu_valuation')} />
                 {renderDataRows(gpuData)}

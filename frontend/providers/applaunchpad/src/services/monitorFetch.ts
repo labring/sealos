@@ -10,7 +10,7 @@ export const monitorFetch = async (props: AxiosRequestConfig, kubeconfig: string
       Authorization: encodeURIComponent(kubeconfig)
     }
   };
-  const domain = Config().launchpad.components.monitor.url;
+  const domain = Config().launchpad.components.monitoring.url;
   try {
     const response = await fetch(`${domain}${url}?${queryString}`, requestOptions);
 

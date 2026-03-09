@@ -99,7 +99,7 @@ function streamFetch(res: NextApiResponse<ApiResp>, events: any) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${Config().launchpad.eventAnalyze.fastGPTKey}`
+          Authorization: `Bearer ${Config().launchpad.analytics.fastGPTKey}`
         },
         body: JSON.stringify({
           stream: true,

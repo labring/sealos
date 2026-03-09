@@ -295,10 +295,10 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
   try {
     if (typeof window === 'undefined') {
       const config = Config();
-      title = config.launchpad.meta.title;
-      description = config.launchpad.meta.description;
-      scripts = config.launchpad.meta.scripts as MetaScript[];
-      gtmId = config.launchpad.gtmId;
+      title = config.launchpad.ui.meta.title;
+      description = config.launchpad.ui.meta.description;
+      scripts = config.launchpad.ui.meta.scripts as MetaScript[];
+      gtmId = config.launchpad.analytics.gtmId;
     }
   } catch (error) {
     console.error('Failed to load config:', error);

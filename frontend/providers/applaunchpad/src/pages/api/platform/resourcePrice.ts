@@ -27,7 +27,7 @@ export const valuationMap: Record<string, number> = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const gpuEnabled = Config().launchpad.gpuEnabled;
+    const gpuEnabled = Config().launchpad.features.gpu;
     const [priceResponse, gpuNodes] = await Promise.all([
       getResourcePrice(),
       gpuEnabled ? getGpuNode() : Promise.resolve([])

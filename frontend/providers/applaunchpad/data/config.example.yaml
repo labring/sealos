@@ -1,44 +1,47 @@
 # yaml-language-server: $schema=config.schema.json
 cloud:
   domain: cloud.example.io
-  port: ':443'
+  port: 443
   desktopDomain: cloud.example.io
   userDomains:
     - name: cloud.example.io
       secretName: wildcard-cert
 
 launchpad:
-  guideEnabled: false
-  apiEnabled: false
-  gpuEnabled: false
-  domainChallengeSecret: default-dev-secret-change-in-production
+  features:
+    guide: false
+    api: false
+    gpu: false
+  ui:
+    currencySymbol: shellCoin
+    meta:
+      title: 'Sealos App Launchpad'
+      description: 'Deploy and manage your applications on Sealos'
+      scripts: []
+    appResourceFormSliderConfig:
+      default:
+        cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
+        memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
   infrastructure:
     provider: 'alibaba'
-    requiresDomainReg: false
-    domainRegQueryLink: 'https://beian.miit.gov.cn/#/Integrated/index'
+    requiresIcpReg: false
+    icpRegQueryLink: 'https://beian.miit.gov.cn/#/Integrated/index'
     domainBindingDocumentationLink: null
-  meta:
-    title: 'Sealos App Launchpad'
-    description: 'Deploy and manage your applications on Sealos'
-    scripts: []
-  gtmId: null
-  currencySymbol: shellCoin
+  domainChallengeSecret: default-dev-secret-change-in-production
   pvcStorageMax: 100
-  eventAnalyze:
+  analytics:
     enabled: false
     fastGPTKey: ''
+    gtmId: null
   components:
-    monitor:
+    monitoring:
       url: http://launchpad-monitor.sealos.svc.cluster.local:8428
     billing:
       url: http://account-service.account-system.svc:2333
-    log:
+    logging:
+      enabled: true
       url: http://log-service.sealos.svc.cluster.local:8080
-  appResourceFormSliderConfig:
-    default:
-      cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
-      memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-  fileManger:
+  fileManager:
     uploadLimit: 50 # MB
     downloadLimit: 100 # MB
   checkIcpReg:

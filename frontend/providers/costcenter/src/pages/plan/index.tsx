@@ -43,7 +43,10 @@ export default function Plan() {
   const { session } = useSessionStore();
   const { getRegion } = useBillingStore();
   const config = useClientAppConfig();
-  const stripePromise = useMemo(() => loadStripe(config.stripePublicKey), [config.stripePublicKey]);
+  const stripePromise = useMemo(
+    () => loadStripe(config.recharge.payMethods.stripe.publicKey),
+    [config.recharge.payMethods.stripe.publicKey]
+  );
   const region = getRegion();
   const { toast } = useCustomToast();
 
@@ -712,8 +715,8 @@ export default function Plan() {
           <div className="flex-1/3">
             <BalanceSection
               balance={balance}
-              rechargeEnabled={config.rechargeEnabled}
-              subscriptionEnabled={config.subscriptionEnabled}
+              rechargeEnabled={config.recharge.enabled}
+              subscriptionEnabled={config.features.subscriptionEnabled}
               onTopUpClick={() => rechargeRef?.current?.onOpen()}
             />
           </div>
@@ -782,8 +785,8 @@ export default function Plan() {
 
           <BalanceSection
             balance={balance}
-            rechargeEnabled={config.rechargeEnabled}
-            subscriptionEnabled={config.subscriptionEnabled}
+            rechargeEnabled={config.recharge.enabled}
+            subscriptionEnabled={config.features.subscriptionEnabled}
             onTopUpClick={() => rechargeRef?.current!.onOpen()}
           />
         </>
@@ -799,7 +802,7 @@ export default function Plan() {
         }}
       />
       {/* Modals */}
-      {config.rechargeEnabled && (
+      {config.recharge.enabled && (
         <RechargeModal
           ref={rechargeRef}
           balance={balance}
@@ -813,7 +816,7 @@ export default function Plan() {
         />
       )}
 
-      {config.transferEnabled && (
+      {config.features.transferEnabled && (
         <TransferModal
           ref={transferRef}
           balance={balance}

@@ -10,7 +10,9 @@ export const logFetch = async (props: AxiosRequestConfig, kubeconfig: string) =>
       Authorization: encodeURIComponent(kubeconfig)
     }
   };
-  const domain = Config().launchpad.components.monitor.url;
+
+  // Yes, this API intentionally uses monitoring URL.
+  const domain = Config().launchpad.components.monitoring.url;
 
   try {
     const response = await fetch(`${domain}${url}?${queryString}`, requestOptions);

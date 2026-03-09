@@ -215,7 +215,7 @@ const CustomAccessModal = ({
             </Box>
 
             {/* Tips */}
-            {config.infrastructure.requiresDomainReg ? (
+            {config.infrastructure.requiresIcpReg ? (
               <Stack>
                 <Text>
                   {t('domain_requires_registration_tip_1')}
@@ -245,7 +245,7 @@ const CustomAccessModal = ({
                     as={NextLink}
                     target="_blank"
                     color={'brightBlue.600'}
-                    href={config.infrastructure.domainRegQueryLink}
+                    href={config.infrastructure.icpRegQueryLink}
                   >
                     {t('domain_registration_query_link_text')}
                   </Link>

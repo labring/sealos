@@ -582,7 +582,7 @@ const RechargeModal = forwardRef(
                   </div>
 
                   <Flex gap={'16px'} width={'full'} mt={'24px'}>
-                    {config.stripeEnabled && (
+                    {config.recharge.payMethods.stripe.enabled && (
                       <Button
                         variant="solid"
                         w="full"
@@ -601,7 +601,7 @@ const RechargeModal = forwardRef(
                         </Text>
                       </Button>
                     )}
-                    {config.wechatEnabled && (
+                    {config.recharge.payMethods.wechat.enabled && (
                       <Button
                         variant="solid"
                         w="full"
@@ -618,7 +618,7 @@ const RechargeModal = forwardRef(
                         </Text>
                       </Button>
                     )}
-                    {config.alipayEnabled && (
+                    {config.recharge.payMethods.alipay.enabled && (
                       <Button
                         variant="solid"
                         w="full"

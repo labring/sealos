@@ -186,7 +186,7 @@ export default function CalculatorPanel({
     const portPrice = priceData.find((x) => x.title === 'Port')?.price || 0;
     const portAmount = config.resources.ports * portPrice;
     let amount = cpuAmount + memoryAmount + storageAmount + portAmount;
-    if (appConfig.gpuEnabled) {
+    if (appConfig.features.gpuEnabled) {
       const gpuPrice = gpuData[config.resources.gpu.idx]?.price || 0;
       const gpuAmount = config.resources.gpu.count * gpuPrice;
       amount += gpuAmount;
@@ -229,7 +229,7 @@ export default function CalculatorPanel({
     config.usage.quantity,
     config.usage.timeUnit,
     gpuData,
-    appConfig.gpuEnabled,
+    appConfig.features.gpuEnabled,
     priceData
   ]);
 
@@ -336,7 +336,7 @@ export default function CalculatorPanel({
             </div>
           </div>
           {/*gpu*/}
-          {appConfig.gpuEnabled && (
+          {appConfig.features.gpuEnabled && (
             <div className="flex items-center">
               <div className="flex items-center gap-2 w-[15ch]">
                 <CircuitBoard size={20} strokeWidth={1.33} className="text-gray-400" />

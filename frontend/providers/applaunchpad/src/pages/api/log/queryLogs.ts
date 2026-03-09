@@ -26,7 +26,7 @@ export interface LogQueryPayload {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const logUrl = Config().launchpad.components.log.url;
+  const logUrl = Config().launchpad.components.logging.url;
 
   if (!logUrl) {
     return jsonRes(res, {

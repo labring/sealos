@@ -14,7 +14,7 @@ export default function Sidebar() {
   const { t } = useTranslation();
   const router = useRouter();
   const config = useClientAppConfig();
-  const logEnabled = !!config.components.log.url;
+  const logEnabled = config.components.logging.enabled;
 
   const siderbarMap = [
     {

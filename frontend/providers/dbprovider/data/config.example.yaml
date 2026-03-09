@@ -7,6 +7,12 @@ cloud:
   desktopDomain: cloud.sealos.io
 
 dbprovider:
+  features:
+    # Whether to enable the interactive guide feature
+    guide: false
+    # Whether to show the documentation entry button
+    showDocument: true
+
   ui:
     # Currency symbol type: shellCoin | cny | usd
     currencySymbol: shellCoin
@@ -21,10 +27,6 @@ dbprovider:
     #     content: "console.log('hello')"
     #     strategy: afterInteractive
     customScripts: []
-    # Whether to enable the interactive guide feature
-    guideEnabled: false
-    # Whether to show the documentation entry button
-    showDocument: true
 
   storage:
     # Kubernetes StorageClass name for database PVC
@@ -32,9 +34,21 @@ dbprovider:
     # Maximum storage size in GB
     maxSize: 300
 
-  monitoring:
-    # Prometheus monitoring service URL
-    url: http://database-monitor.sealos.svc.cluster.local:9090
+  components:
+    monitoring:
+      # Prometheus monitoring service URL
+      url: http://database-monitor.sealos.svc.cluster.local:9090
+    # Database alert service (server-side only, never exposed to browser)
+    alerting:
+      url: http://database-alert-service.sealos.svc.cluster.local:8000
+    billing:
+      url: http://account-service.account-system.svc:2333
+      # Billing secret (server-side only, never exposed to browser)
+      secret: your-billing-secret
+    # Log querying service configuration (server-side only)
+    logging:
+      # VictoriaLogs base URL for pod log querying
+      url: ''
 
   # MinIO object storage configuration (server-side only, never exposed to browser)
   minio:
@@ -64,15 +78,6 @@ dbprovider:
     # Memory limit in MiB
     jobMemoryRequirement: 256
 
-  # Database alert service (server-side only, never exposed to browser)
-  alert:
-    url: http://database-alert-service.sealos.svc.cluster.local:8000
-
-  billing:
-    url: http://account-service.account-system.svc:2333
-    # Billing secret (server-side only, never exposed to browser)
-    secret: your-billing-secret
-
   # Chat2DB managed database feature configuration
   chat2db:
     enabled: false
@@ -83,8 +88,6 @@ dbprovider:
     clientDomainName: https://chat2dbclient.example.sealos.run
     gatewayDomainName: https://chat2dbgateway.example.sealos.run
 
-  # FastGPT integration API key (server-side only)
-  fastGPTKey: ""
-
-  # VictoriaLogs base URL for pod log querying (server-side only)
-  vlogsBaseUrl: ""
+  integrations:
+    # FastGPT integration API key (server-side only)
+    fastGPTKey: ""

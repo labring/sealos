@@ -45,7 +45,7 @@ function Invoice() {
               <TabsTrigger variant="cleanUnderline" value="listing">
                 {t('common:orders.order_list')}
               </TabsTrigger>
-              {!config.subscriptionEnabled && (
+              {!config.features.subscriptionEnabled && (
                 <TabsTrigger variant="cleanUnderline" value="history">
                   {t('common:orders.invoice_history')}
                 </TabsTrigger>
@@ -53,7 +53,7 @@ function Invoice() {
             </TabsList>
 
             <TabsContent value="listing">
-              {config.subscriptionEnabled ? (
+              {config.features.subscriptionEnabled ? (
                 <WithSubscriptionOrderList
                   dateRange={dateRange}
                   onDateRangeChange={setDateRange}
@@ -86,7 +86,7 @@ function Invoice() {
               )}
             </TabsContent>
 
-            {!config.subscriptionEnabled && (
+            {!config.features.subscriptionEnabled && (
               <TabsContent value="history">
                 <InvoiceHistory
                   dateRange={historyDateRange}

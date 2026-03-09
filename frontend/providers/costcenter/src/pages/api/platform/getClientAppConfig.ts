@@ -6,21 +6,20 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export function getClientAppConfigServer(): ClientAppConfig {
   const fullConfig = Config();
   return ClientAppConfigSchema.parse({
-    realNameRechargeLimit: fullConfig.costCenter.realNameRechargeLimit,
-    rechargeEnabled: fullConfig.costCenter.recharge.enabled,
-    transferEnabled: fullConfig.costCenter.transferEnabled,
-    giftCodeEnabled: fullConfig.costCenter.giftCodeEnabled,
-    currency: fullConfig.costCenter.currencyType,
-    subscriptionEnabled: fullConfig.costCenter.subscriptionEnabled,
-    stripeEnabled: fullConfig.costCenter.recharge.payMethods.stripe.enabled,
-    stripePublicKey: fullConfig.costCenter.recharge.payMethods.stripe.publicKey,
-    wechatEnabled: fullConfig.costCenter.recharge.payMethods.wechat.enabled,
-    alipayEnabled: fullConfig.costCenter.recharge.payMethods.alipay.enabled,
-    invoiceEnabled: fullConfig.costCenter.invoice.enabled,
-    gpuEnabled: fullConfig.costCenter.gpuEnabled,
-    billingInfo: fullConfig.costCenter.invoice.billingInfo,
-    accountServiceUrl: fullConfig.costCenter.components.accountService.url,
-    desktopServiceUrl: fullConfig.costCenter.components.desktopService.url
+    features: {
+      rechargeRequiresRealName: fullConfig.costCenter.features.rechargeRequiresRealName,
+      transferEnabled: fullConfig.costCenter.features.transfer,
+      giftCodeEnabled: fullConfig.costCenter.features.giftCode,
+      subscriptionEnabled: fullConfig.costCenter.features.subscription,
+      gpuEnabled: fullConfig.costCenter.features.gpu
+    },
+    currencySymbolType: fullConfig.costCenter.ui.currencySymbolType,
+    recharge: fullConfig.costCenter.recharge,
+    invoice: {
+      enabled: fullConfig.costCenter.invoice.enabled,
+      billingInfo: fullConfig.costCenter.invoice.billingInfo
+    },
+    components: fullConfig.costCenter.components
   });
 }
 

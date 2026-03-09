@@ -19,7 +19,10 @@ import { RechargeExpenditureSection } from '@/components/plan/RechargeExpenditur
 export default function Cost() {
   const router = useRouter();
   const config = useClientAppConfig();
-  const stripePromise = useMemo(() => loadStripe(config.stripePublicKey), [config.stripePublicKey]);
+  const stripePromise = useMemo(
+    () => loadStripe(config.recharge.payMethods.stripe.publicKey),
+    [config.recharge.payMethods.stripe.publicKey]
+  );
 
   // useEffect to handle the router query
   useEffect(() => {
@@ -78,8 +81,8 @@ export default function Cost() {
         <div className="flex-1">
           <BalanceSection
             balance={balance}
-            rechargeEnabled={config.rechargeEnabled}
-            subscriptionEnabled={config.subscriptionEnabled}
+            rechargeEnabled={config.recharge.enabled}
+            subscriptionEnabled={config.features.subscriptionEnabled}
             onTopUpClick={() => rechargeRef?.current?.onOpen()}
           />
         </div>
@@ -93,7 +96,7 @@ export default function Cost() {
       </div>
 
       {/* Modals */}
-      {config.rechargeEnabled && (
+      {config.recharge.enabled && (
         <RechargeModal
           ref={rechargeRef}
           balance={balance}
@@ -107,7 +110,7 @@ export default function Cost() {
         />
       )}
 
-      {config.transferEnabled && (
+      {config.features.transferEnabled && (
         <TransferModal
           ref={transferRef}
           balance={balance}

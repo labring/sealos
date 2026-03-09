@@ -9,8 +9,8 @@ interface MyDocumentProps {
 class MyDocument extends Document<MyDocumentProps> {
   static async getInitialProps(ctx: DocumentContext) {
     const initialProps = await Document.getInitialProps(ctx);
-    const noscripts = Config().costCenter.layout.meta.noscripts;
-    const scripts = Config().costCenter.layout.meta.scripts;
+    const noscripts = Config().costCenter.ui.meta.noscripts;
+    const scripts = Config().costCenter.ui.meta.scripts;
     return {
       ...initialProps,
       scripts,

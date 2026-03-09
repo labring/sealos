@@ -258,7 +258,7 @@ const PodFile = ({
     setIsUploadLoading(true);
     try {
       const filteredFiles = files.filter((file) => {
-        if (file.size > config.fileManger.uploadLimit * 1024 * 1024) {
+        if (file.size > config.fileManager.uploadLimit * 1024 * 1024) {
           message({
             status: 'info',
             title: t('File is too large tip', { name: file.name })
