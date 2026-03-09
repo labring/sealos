@@ -6,9 +6,7 @@ import MyTable from '@/components/Table';
 import { StatusEnum } from '@/constants/job';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useCronJobOperation } from '@/hooks/useCronJobOperation';
-import { useGlobalStore } from '@/store/global';
-import { useUserStore } from '@/store/user';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { CronJobListItemType } from '@/types/job';
 import { Box, Button, Flex, MenuButton, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
@@ -28,17 +26,11 @@ const JobList = ({
   refetchApps: () => void;
 }) => {
   const { t } = useTranslation();
-  const { setLoading } = useGlobalStore();
-  const {
-    executeOperation,
-    loading: operationLoading,
-    errorModalState,
-    closeErrorModal
-  } = useCronJobOperation();
+  const { executeOperation, errorModalState, closeErrorModal } = useCronJobOperation();
   const theme = useTheme();
   const router = useRouter();
   const [delAppName, setDelAppName] = useState('');
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('Pause Hint')
@@ -47,8 +39,8 @@ const JobList = ({
   const handleCreateApp = useQuotaGuarded(
     {
       requirements: {
-        cpu: SystemEnv.podCpuRequest,
-        memory: SystemEnv.podMemoryRequest,
+        cpu: config.podCpuRequest,
+        memory: config.podMemoryRequest,
         traffic: true
       },
       immediate: false,

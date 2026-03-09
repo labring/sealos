@@ -4,19 +4,19 @@ import { Button, Box } from '@chakra-ui/react';
 import styles from './empty.module.scss';
 import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useQuotaGuarded } from '@sealos/shared';
 
 const Empty = () => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const handleCreateApp = useQuotaGuarded(
     {
       requirements: {
-        cpu: SystemEnv.podCpuRequest,
-        memory: SystemEnv.podMemoryRequest,
+        cpu: config.podCpuRequest,
+        memory: config.podMemoryRequest,
         traffic: true
       },
       immediate: false,

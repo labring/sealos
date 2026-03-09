@@ -3,6 +3,7 @@ import { editModeMap } from '@/constants/editApp';
 import { DefaultJobEditValue } from '@/constants/job';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useCronJobOperation } from '@/hooks/useCronJobOperation';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useGlobalStore } from '@/store/global';
 import { useJobStore } from '@/store/job';
 import type { YamlItemType } from '@/types';
@@ -20,7 +21,6 @@ import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useQuotaGuarded } from '@sealos/shared';
-import useEnvStore from '@/store/env';
 import { useToast } from '@/hooks/useToast';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
@@ -28,13 +28,6 @@ const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 const defaultEdit: CronJobEditType = {
   ...DefaultJobEditValue
 };
-
-const formData2Yamls = (data: CronJobEditType) => [
-  {
-    filename: 'cronjob.yaml',
-    value: json2CronJob(data)
-  }
-];
 
 const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'yaml' }) => {
   const { t, i18n } = useTranslation();
@@ -46,7 +39,7 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const { loadJobDetail } = useJobStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!jobName);
   const isEdit = useMemo(() => !!jobName, [jobName]);
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t(applyMessage)
@@ -74,6 +67,23 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
     realTimeForm.current = data as CronJobEditType;
     setForceUpdate(!forceUpdate);
   });
+
+  const cronJobConfig = {
+    applaunchpadUrl: config.applaunchpadUrl,
+    successfulJobsHistoryLimit: config.successfulJobsHistoryLimit,
+    failedJobsHistoryLimit: config.failedJobsHistoryLimit
+  };
+
+  const formData2Yamls = useCallback(
+    (data: CronJobEditType) => [
+      {
+        filename: 'cronjob.yaml',
+        value: json2CronJob(data, cronJobConfig)
+      }
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [config.applaunchpadUrl, config.successfulJobsHistoryLimit, config.failedJobsHistoryLimit]
+  );
 
   const submitSuccess = useCallback(async () => {
     const yamlList = formData2Yamls(realTimeForm.current);
@@ -119,8 +129,8 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
   const handleSubmit = useQuotaGuarded(
     {
       requirements: {
-        cpu: SystemEnv.podCpuRequest,
-        memory: SystemEnv.podMemoryRequest,
+        cpu: config.podCpuRequest,
+        memory: config.podMemoryRequest,
         traffic: true
       },
       immediate: false,
@@ -136,7 +146,7 @@ const EditApp = ({ jobName, tabType }: { jobName?: string; tabType?: 'form' | 'y
         setYamlList([
           {
             filename: 'cronjob.yaml',
-            value: json2CronJob(defaultEdit)
+            value: json2CronJob(defaultEdit, cronJobConfig)
           }
         ]);
         return null;
