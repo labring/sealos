@@ -431,7 +431,7 @@ export default function Account() {
                       </Text>
                     </Flex>
                     <Flex alignItems="center" gap="4px">
-                      {layoutConfig?.common.kcRotationEnabled && (
+                      {layoutConfig?.common?.kcRotationEnabled && (
                         <Box
                           p="2px"
                           cursor={isRotatingKubeconfig ? 'not-allowed' : 'pointer'}
