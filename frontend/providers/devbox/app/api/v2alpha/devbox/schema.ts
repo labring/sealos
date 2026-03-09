@@ -192,40 +192,66 @@ const PortSummary = z.object({
   })
 });
 
+/** @deprecated wrapper shape — does not match the actual API response */
 export const SuccessResponseSchema = z.object({
   data: z.object({
-    name: z.string().openapi({
-      description: 'Devbox name'
-    }),
-    sshPort: z.number().openapi({
-      description: 'SSH port for connection'
-    }),
-    base64PrivateKey: z.string().openapi({
-      description: 'Base64 encoded SSH private key'
-    }),
-    userName: z.string().openapi({
-      description: 'SSH username'
-    }),
-    workingDir: z.string().openapi({
-      description: 'Default working directory'
-    }),
-    domain: z.string().openapi({
-      description: 'Base domain'
-    }),
-    ports: z.array(PortResponseData).optional().openapi({
-      description: 'Created port configurations'
-    }),
-    autostarted: z.boolean().optional().openapi({
-      description: 'Whether autostart was triggered'
-    }),
-    portErrors: z.array(PortError).optional().openapi({
-      description: 'Errors for failed ports (if any)'
-    }),
-    summary: PortSummary.optional().openapi({
-      description: 'Summary of port creation results'
-    })
+    name: z.string(),
+    sshPort: z.number(),
+    base64PrivateKey: z.string(),
+    userName: z.string(),
+    workingDir: z.string(),
+    domain: z.string(),
+    ports: z.array(PortResponseData).optional(),
+    autostarted: z.boolean().optional(),
+    portErrors: z.array(PortError).optional(),
+    summary: PortSummary.optional()
   })
 });
+
+export const CreateDevboxResponseSchema = z
+  .object({
+    name: z.string().openapi({
+      description: 'Devbox name',
+      example: 'my-python-api'
+    }),
+    sshPort: z.number().openapi({
+      description: 'SSH node port for connecting to the Devbox',
+      example: 40001
+    }),
+    base64PrivateKey: z.string().openapi({
+      description: 'Base64-encoded SSH private key. Decode before use.',
+      example: 'LS0tLS1CRUdJTi...'
+    }),
+    userName: z.string().openapi({
+      description: 'SSH login username',
+      example: 'devbox'
+    }),
+    workingDir: z.string().openapi({
+      description: 'Default working directory inside the Devbox',
+      example: '/home/devbox/project'
+    }),
+    domain: z.string().optional().openapi({
+      description: 'Base domain of the Sealos instance',
+      example: 'cloud.sealos.io'
+    }),
+    ports: z.array(PortResponseData).openapi({
+      description: 'Created port configurations (may be empty)'
+    }),
+    autostarted: z.boolean().optional().openapi({
+      description: 'Whether the autostart job was triggered (`autostart: true` in request)'
+    }),
+    portErrors: z.array(PortError).optional().openapi({
+      description: 'Ports that failed to be created (only present when partial failure occurred)'
+    }),
+    summary: PortSummary.openapi({
+      description: 'Aggregate counts for port creation'
+    })
+  })
+  .openapi({
+    description:
+      'Devbox creation response. The pod is starting asynchronously — ' +
+      'poll GET /devbox/{name} until `status` is `running` before establishing an SSH connection.'
+  });
 
 export const ErrorResponseSchema = z.object({
   code: z.number().openapi({

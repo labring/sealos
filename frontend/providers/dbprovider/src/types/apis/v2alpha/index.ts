@@ -1,5 +1,17 @@
 import { createDocument } from 'zod-openapi';
 import { z } from 'zod';
+import {
+  createError400Schema,
+  createError401Schema,
+  createError403Schema,
+  createError404Schema,
+  createError409Schema,
+  createError500Schema,
+  createError503Schema,
+  ErrorType,
+  ErrorCode,
+  createErrorExample
+} from '@/types/v2alpha/error';
 import { dbEditSchema, dbStatusSchema } from '@/types/schemas/v2alpha/db';
 
 import * as createDatabaseSchemas from './database/create-database';
@@ -30,55 +42,319 @@ import * as logsFileSchemas from './logs/file';
 export * as logsFileSchemas from './logs/file';
 
 import * as databaseVersionListSchemas from './database/version/list';
+export * as databaseVersionListSchemas from './database/version/list';
 
 import * as enablePublicAccessSchemas from './network/enable-public-access';
 export * as enablePublicAccessSchemas from './network/enable-public-access';
 
 import * as disablePublicAccessSchemas from './network/disable-public-access';
-
-const getDatabaseResponseDocSchema = dbEditSchema.extend({
-  uid: z.string().describe('Unique identifier of the database resource'),
-  status: dbStatusSchema.describe('Current status of the database cluster'),
-  createdAt: z.string().describe('Creation timestamp of the database cluster')
-});
 export * as disablePublicAccessSchemas from './network/disable-public-access';
+
+const getDatabaseResponseJsonSchema = {
+  type: 'object',
+  properties: {
+    terminationPolicy: {
+      type: 'string',
+      enum: ['delete', 'wipeout'],
+      default: 'delete',
+      description:
+        'Cluster termination policy. "delete" removes the cluster but keeps PVCs, "wipeout" removes everything including data.',
+      example: 'delete'
+    },
+    name: {
+      type: 'string',
+      minLength: 1,
+      description: 'Database name (Kubernetes resource name — lowercase alphanumeric and hyphens)',
+      example: 'my-postgres-db'
+    },
+    type: {
+      type: 'string',
+      enum: [
+        'postgresql',
+        'mongodb',
+        'apecloud-mysql',
+        'redis',
+        'kafka',
+        'qdrant',
+        'nebula',
+        'weaviate',
+        'milvus',
+        'pulsar',
+        'clickhouse'
+      ],
+      description: 'Database engine type',
+      example: 'postgresql'
+    },
+    version: {
+      type: 'string',
+      description: 'Database version string (e.g. "postgresql-14.8.0")',
+      example: 'postgresql-14.8.0'
+    },
+    quota: {
+      type: 'object',
+      description: 'Resource allocation for each database replica',
+      properties: {
+        cpu: { type: 'number', description: 'CPU cores per replica', example: 1 },
+        memory: { type: 'number', description: 'Memory in GB per replica', example: 2 },
+        storage: { type: 'number', description: 'Storage in GB per replica', example: 5 },
+        replicas: { type: 'number', description: 'Number of database replicas', example: 1 }
+      }
+    },
+    autoBackup: {
+      type: 'object',
+      description: 'Automatic backup configuration',
+      properties: {
+        start: {
+          type: 'boolean',
+          description: 'Whether automatic backups are enabled',
+          example: true
+        },
+        type: {
+          type: 'string',
+          enum: ['day', 'hour', 'week'],
+          description: 'Backup frequency type',
+          example: 'day'
+        },
+        week: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+          },
+          description: 'Days of the week for weekly backups',
+          example: ['monday']
+        },
+        hour: {
+          type: 'string',
+          description: 'Hour to run backup (24-hour format)',
+          example: '02'
+        },
+        minute: { type: 'string', description: 'Minute to run backup', example: '00' },
+        saveTime: {
+          type: 'number',
+          description: 'Backup retention duration',
+          example: 7
+        },
+        saveType: {
+          type: 'string',
+          enum: ['days', 'hours', 'weeks', 'months'],
+          description: 'Backup retention unit',
+          example: 'days'
+        }
+      }
+    },
+    parameterConfig: {
+      type: 'object',
+      description: 'Database-specific parameter configuration',
+      properties: {
+        maxConnections: {
+          type: 'string',
+          description: 'Maximum number of database connections',
+          example: '100'
+        },
+        timeZone: {
+          type: 'string',
+          description: 'Database timezone',
+          example: 'Asia/Shanghai'
+        },
+        lowerCaseTableNames: {
+          type: 'string',
+          enum: ['0', '1'],
+          description:
+            'MySQL-specific: case sensitivity for table names. 0=case-sensitive, 1=case-insensitive',
+          example: '0'
+        },
+        maxmemory: {
+          type: 'string',
+          description: 'Redis-specific: maximum memory usage',
+          example: '512mb'
+        }
+      }
+    },
+    uid: {
+      type: 'string',
+      description: 'Unique identifier of the database resource',
+      example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+    },
+    status: {
+      type: 'string',
+      enum: [
+        'creating',
+        'starting',
+        'stopping',
+        'stopped',
+        'running',
+        'updating',
+        'specUpdating',
+        'rebooting',
+        'upgrade',
+        'verticalScaling',
+        'volumeExpanding',
+        'failed',
+        'unknown',
+        'deleting'
+      ],
+      description: 'Current status of the database cluster',
+      example: 'running'
+    },
+    createdAt: {
+      type: 'string',
+      description: 'Creation timestamp of the database cluster (ISO 8601)',
+      example: '2024-01-15T10:30:00Z'
+    },
+    resourceType: {
+      type: 'string',
+      description: 'Resource type identifier — always "cluster"',
+      default: 'cluster',
+      example: 'cluster'
+    },
+    operationalStatus: {
+      type: 'object',
+      description: 'Operational status flags from KubeBlocks (structure varies by version)',
+      additionalProperties: true,
+      example: {}
+    },
+    connection: {
+      type: 'object',
+      description: 'Connection details for the database cluster',
+      properties: {
+        privateConnection: {
+          description: 'Internal (in-cluster) connection details. null if not yet available.',
+          oneOf: [
+            {
+              type: 'object',
+              properties: {
+                endpoint: {
+                  type: 'string',
+                  description: 'host:port string for internal cluster access',
+                  example: 'my-postgres-db-postgresql.ns-abc.svc.cluster.local:5432'
+                },
+                host: {
+                  type: 'string',
+                  description: 'ClusterIP service hostname (internal only)',
+                  example: 'my-postgres-db-postgresql.ns-abc.svc.cluster.local'
+                },
+                port: { type: 'string', description: 'Database port', example: '5432' },
+                username: {
+                  type: 'string',
+                  description: 'Database username',
+                  example: 'postgres'
+                },
+                password: {
+                  type: 'string',
+                  description: 'Database password',
+                  example: 's3cr3tpassword'
+                },
+                connectionString: {
+                  type: 'string',
+                  description: 'Ready-to-use connection string',
+                  example:
+                    'postgresql://postgres:s3cr3tpassword@my-postgres-db-postgresql.ns-abc.svc.cluster.local:5432/postgres'
+                }
+              }
+            },
+            { type: 'null' }
+          ]
+        },
+        publicConnection: {
+          description:
+            'External connection string via NodePort/LoadBalancer. null if public access is not enabled.',
+          oneOf: [
+            {
+              type: 'string',
+              example: 'postgresql://postgres:s3cr3tpassword@203.0.113.1:30001/postgres'
+            },
+            { type: 'null' }
+          ]
+        }
+      }
+    },
+    pods: {
+      type: 'array',
+      description: 'List of database pods and their current phase',
+      items: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Pod name',
+            example: 'my-postgres-db-postgresql-0'
+          },
+          status: {
+            type: 'string',
+            description: 'Pod phase (e.g. "running", "pending", "failed")',
+            example: 'running'
+          }
+        }
+      }
+    }
+  }
+};
 
 export const document = createDocument({
   openapi: '3.1.0',
   info: {
     title: 'Database API',
-    version: '1.0.0',
+    version: '2.0.0-alpha',
     description:
-      'RESTful API for managing database instances with KubeBlocks on Kubernetes. This API follows REST best practices:\n\n' +
-      '**Query Operations (GET):**\n' +
-      '- Return `200 OK` on success with data in response body\n' +
-      '- Return appropriate error status codes (400, 401, 403, 404, 500, 503) with error details\n\n' +
-      '**Mutation Operations (POST, PATCH, DELETE):**\n' +
-      '- Return `204 No Content` on success without response body\n' +
-      '- Return appropriate error status codes (400, 401, 403, 404, 409, 500, 503) with error details\n\n' +
-      '**Features:**\n' +
-      '- Database lifecycle management (create, update, delete, start, pause, restart)\n' +
-      '- Resource scaling (CPU, memory, storage, replicas)\n' +
-      '- Backup and restore operations\n' +
-      '- Network access control (public/private)\n' +
-      '- Log retrieval and monitoring'
+      'Manage database instances (PostgreSQL, MySQL, Redis, MongoDB, and more) on Kubernetes via KubeBlocks.\n\n' +
+      '## Authentication\n\n' +
+      'All endpoints require a URL-encoded kubeconfig in the `Authorization` header. ' +
+      'Encode with `encodeURIComponent(kubeconfigYaml)` before setting the header value. ' +
+      'Obtain your kubeconfig from the Sealos console.\n\n' +
+      '## Errors\n\n' +
+      'All error responses use a unified format:\n\n' +
+      '```json\n' +
+      '{\n' +
+      '  "error": {\n' +
+      '    "type": "validation_error",\n' +
+      '    "code": "INVALID_PARAMETER",\n' +
+      '    "message": "...",\n' +
+      '    "details": [...]\n' +
+      '  }\n' +
+      '}\n' +
+      '```\n\n' +
+      '- `type` — high-level category (e.g. `validation_error`, `resource_error`, `internal_error`)\n' +
+      '- `code` — stable identifier for programmatic handling\n' +
+      '- `message` — human-readable explanation\n' +
+      '- `details` — optional extra context; shape varies by `code` (field list, string, or object)\n\n' +
+      '## Operations\n\n' +
+      '**Query** (read-only): returns `200 OK` with data in the response body.\n\n' +
+      '**Mutation** (write):\n\n' +
+      '- **Create** → `201 Created` with `{ "name": "...", "status": "creating" }`. ' +
+      'The Kubernetes resource is created synchronously; the cluster is provisioned in the background. ' +
+      'Poll `GET /databases/{name}` until `status` is `"Running"`.\n' +
+      '- **Update / Delete / Action** → `204 No Content` with no response body.'
   },
   servers: [
     {
-      url: `http://127.0.0.1:3000/api/v2alpha`,
-      description: 'Development'
+      url: 'http://localhost:3000/api/v2alpha',
+      description: 'Local development'
     },
     {
-      url: `https://dbprovider./api/v2alpha`,
+      url: 'https://dbprovider.example.com/api/v2alpha',
       description: 'Production'
+    },
+    {
+      url: '{baseUrl}/api/v2alpha',
+      description: 'Custom',
+      variables: {
+        baseUrl: {
+          default: 'https://dbprovider.example.com',
+          description: 'Base URL of your instance (e.g. https://dbprovider.192.168.x.x.nip.io)'
+        }
+      }
     }
   ],
   components: {
     securitySchemes: {
-      KubeconfigAuth: {
+      kubeconfigAuth: {
         type: 'apiKey',
         in: 'header',
-        name: 'Authorization'
+        name: 'Authorization',
+        description:
+          'URL-encoded kubeconfig YAML. Encode with `encodeURIComponent(kubeconfigYaml)` ' +
+          'before setting the header value. Obtain your kubeconfig from the Sealos console.'
       }
     },
     schemas: {
@@ -87,26 +363,32 @@ export const document = createDocument({
         properties: {
           cpu: {
             type: 'number',
-            minimum: 0.1,
-            maximum: 32,
-            description: 'CPU cores - range [0.1, 32] (will be converted to millicores in K8s)'
+            enum: [1, 2, 3, 4, 5, 6, 7, 8],
+            description:
+              'CPU cores. Allowed values: 1, 2, 3, 4, 5, 6, 7, or 8 (converted to millicores in K8s)',
+            example: 2
           },
           memory: {
             type: 'number',
-            minimum: 0.1,
-            maximum: 32,
-            description: 'Memory in GB - range [0.1, 32] (will be converted to Gi in K8s)'
+            enum: [1, 2, 4, 6, 8, 12, 16, 32],
+            description:
+              'Memory in GB. Allowed values: 1, 2, 4, 6, 8, 12, 16, or 32 GB (converted to Gi in K8s)',
+            example: 4
           },
           storage: {
             type: 'number',
-            enum: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21],
-            description: 'Storage in GB (will be converted to Gi in K8s)'
+            minimum: 1,
+            maximum: 300,
+            description:
+              'Storage in GB (1–300). Storage can only be expanded, not shrunk (converted to Gi in K8s)',
+            example: 20
           },
           replicas: {
             type: 'integer',
-            minimum: 3,
-            maximum: 300,
-            description: 'Number of replicas'
+            minimum: 1,
+            maximum: 20,
+            description: 'Number of replicas (1–20)',
+            example: 2
           }
         },
         description: 'Resource configuration for database update. All fields are optional.'
@@ -156,19 +438,51 @@ export const document = createDocument({
       }
     }
   },
+  security: [{ kubeconfigAuth: [] }],
+  tags: [
+    {
+      name: 'Query',
+      description: 'Read-only operations. Success: `200 OK` with data in the response body.'
+    },
+    {
+      name: 'Mutation',
+      description:
+        'Write operations. Create: `201 Created` with `{ name, status: "creating" }` (K8s resource created synchronously; poll GET to confirm running). Update/Delete/Action: `204 No Content`.'
+    }
+  ],
   paths: {
-    '/database': {
+    '/databases': {
       post: {
-        summary: 'Create Database',
+        summary: 'Create database',
         description:
-          'Creates a new database instance with KubeBlocks. This mutation operation provisions database resources, configures settings, and optionally sets up automatic backups. CPU and memory must be in range [0.1, 32]. CPU values are converted to millicores (e.g., 2 cores -> 2000m), memory to Gi (e.g., 2GB -> 2Gi), and storage to Gi.',
+          'Provisions a new database cluster. The database is created asynchronously — the request returns immediately and the cluster becomes available shortly after.\n\n' +
+          '**Example — PostgreSQL with daily backup:**\n' +
+          '```json\n' +
+          '{\n' +
+          '  "name": "my-postgres-db",\n' +
+          '  "type": "postgresql",\n' +
+          '  "version": "postgresql-14.8.0",\n' +
+          '  "quota": { "cpu": 1, "memory": 2, "storage": 5, "replicas": 1 },\n' +
+          '  "autoBackup": {\n' +
+          '    "start": true,\n' +
+          '    "type": "day",\n' +
+          '    "hour": "02",\n' +
+          '    "minute": "00",\n' +
+          '    "saveTime": 7,\n' +
+          '    "saveType": "days"\n' +
+          '  }\n' +
+          '}\n' +
+          '```\n\n' +
+          '**Example — Redis (minimal):**\n' +
+          '```json\n' +
+          '{\n' +
+          '  "name": "my-redis",\n' +
+          '  "type": "redis",\n' +
+          '  "quota": { "cpu": 1, "memory": 1, "storage": 3, "replicas": 1 }\n' +
+          '}\n' +
+          '```',
         operationId: 'createDatabase',
         tags: ['Mutation'],
-        security: [
-          {
-            KubeconfigAuth: []
-          }
-        ],
         requestBody: {
           required: true,
           description:
@@ -177,14 +491,15 @@ export const document = createDocument({
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['name', 'type', 'resource'],
+                required: ['name', 'type', 'quota'],
                 properties: {
                   terminationPolicy: {
                     type: 'string',
-                    enum: ['Delete', 'WipeOut'],
-                    default: 'Delete',
+                    enum: ['delete', 'wipeout'],
+                    default: 'delete',
                     description:
-                      'Cluster termination policy. "Delete" removes the cluster but keeps PVCs, "WipeOut" removes everything including data. Defaults to "Delete" if not provided.'
+                      'Cluster termination policy. "delete" removes the cluster but keeps PVCs, "wipeout" removes everything including data. Defaults to "delete" if not provided.',
+                    example: 'delete'
                   },
                   name: {
                     type: 'string',
@@ -192,7 +507,8 @@ export const document = createDocument({
                     maxLength: 63,
                     pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
                     description:
-                      'Database name. Must be a valid Kubernetes resource name (lowercase alphanumeric and hyphens)'
+                      'Database name. Must be a valid Kubernetes resource name (lowercase alphanumeric and hyphens)',
+                    example: 'my-postgres-db'
                   },
                   type: {
                     type: 'string',
@@ -209,24 +525,28 @@ export const document = createDocument({
                       'pulsar',
                       'clickhouse'
                     ],
-                    description: 'Database type/engine to deploy'
+                    description: 'Database type/engine to deploy',
+                    example: 'postgresql'
                   },
                   version: {
                     type: 'string',
                     description:
-                      'Database version (e.g., "14.8.0" for PostgreSQL). Must match available versions from /database/version/list endpoint. If not provided, the latest version for the specified database type will be automatically selected.'
+                      'Database version (e.g., "14.8.0" for PostgreSQL). Must match available versions from /databases/versions endpoint. If not provided, the latest version for the specified database type will be automatically selected.',
+                    example: 'postgresql-14.8.0'
                   },
-                  resource: {
+                  quota: {
                     type: 'object',
                     required: ['cpu', 'memory', 'storage', 'replicas'],
+                    description:
+                      'Resource allocation for the database cluster. All four fields are required.',
                     properties: {
                       cpu: {
                         type: 'number',
-                        minimum: 0.1,
-                        maximum: 32,
+                        enum: [1, 2, 3, 4, 5, 6, 7, 8],
                         description:
-                          'CPU cores allocated to each database instance - range [0.1, 32] (automatically converted to millicores in Kubernetes)',
-                        default: 1
+                          'CPU cores allocated to each database instance. Allowed values: 1, 2, 3, 4, 5, 6, 7, or 8 (converted to millicores in Kubernetes)',
+                        default: 1,
+                        example: 1
                       },
                       memory: {
                         type: 'number',
@@ -234,117 +554,116 @@ export const document = createDocument({
                         maximum: 32,
                         description:
                           'Memory in GB allocated to each database instance - range [0.1, 32] (automatically converted to Gi in Kubernetes)',
-                        default: 1
+                        default: 1,
+                        example: 2
                       },
                       storage: {
                         type: 'number',
-                        enum: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21],
+                        minimum: 1,
+                        maximum: 300,
                         description:
                           'Persistent storage in GB for each database instance (automatically converted to Gi in Kubernetes)',
-                        default: 3
+                        default: 3,
+                        example: 5
                       },
                       replicas: {
                         type: 'integer',
-                        minimum: 3,
-                        maximum: 300,
+                        minimum: 1,
+                        maximum: 20,
                         description: 'Number of database replicas for high availability',
-                        default: 3
+                        default: 3,
+                        example: 1
                       }
                     }
                   },
                   autoBackup: {
                     type: 'object',
+                    description:
+                      'Automatic backup configuration (optional). If not provided, no automatic backups will be configured',
                     properties: {
                       start: {
                         type: 'boolean',
-                        description: 'Enable automatic backups'
+                        description: 'Enable automatic backups',
+                        example: true
                       },
                       type: {
                         type: 'string',
-                        enum: ['day', 'week'],
-                        description: 'Backup frequency type'
+                        enum: ['day', 'hour', 'week'],
+                        description: 'Backup frequency type',
+                        example: 'day'
                       },
                       week: {
                         type: 'array',
                         items: {
                           type: 'string',
-                          enum: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                          enum: [
+                            'monday',
+                            'tuesday',
+                            'wednesday',
+                            'thursday',
+                            'friday',
+                            'saturday',
+                            'sunday'
+                          ]
                         },
-                        description: 'Days of the week to run backups (for weekly backups)'
+                        description: 'Days of the week to run backups (for weekly backups)',
+                        example: ['monday']
                       },
                       hour: {
                         type: 'string',
                         pattern: '^([01]?[0-9]|2[0-3])$',
-                        description: 'Hour to run backup (24-hour format, 00-23)'
+                        description: 'Hour to run backup (24-hour format, 00-23)',
+                        example: '02'
                       },
                       minute: {
                         type: 'string',
                         pattern: '^[0-5]?[0-9]$',
-                        description: 'Minute to run backup (00-59)'
+                        description: 'Minute to run backup (00-59)',
+                        example: '00'
                       },
                       saveTime: {
                         type: 'number',
                         minimum: 1,
-                        description: 'Backup retention duration'
+                        maximum: 365,
+                        description: 'Backup retention duration',
+                        example: 7
                       },
                       saveType: {
                         type: 'string',
-                        enum: ['days', 'weeks', 'months'],
-                        description: 'Backup retention unit'
+                        enum: ['days', 'hours', 'weeks', 'months'],
+                        description: 'Backup retention unit',
+                        example: 'days'
                       }
-                    },
-                    description:
-                      'Automatic backup configuration (optional). If not provided, no automatic backups will be configured'
+                    }
                   },
                   parameterConfig: {
                     type: 'object',
+                    description:
+                      'Database-specific parameter configuration (optional). Available parameters vary by database type',
                     properties: {
                       maxConnections: {
                         type: 'string',
-                        description: 'Maximum number of database connections'
+                        description: 'Maximum number of database connections',
+                        example: '100'
                       },
                       timeZone: {
                         type: 'string',
-                        description: 'Database timezone (e.g., "Asia/Shanghai", "UTC")'
+                        description: 'Database timezone (e.g., "Asia/Shanghai", "UTC")',
+                        example: 'Asia/Shanghai'
                       },
                       lowerCaseTableNames: {
                         type: 'string',
                         enum: ['0', '1'],
                         description:
-                          'MySQL-specific: whether table names are case-sensitive. 0=case-sensitive, 1=case-insensitive'
+                          'MySQL-specific: whether table names are case-sensitive. 0=case-sensitive, 1=case-insensitive',
+                        example: '0'
                       },
                       maxmemory: {
                         type: 'string',
-                        description: 'Redis-specific: maximum memory usage in bytes'
+                        description: 'Redis-specific: maximum memory usage in bytes',
+                        example: '512mb'
                       }
-                    },
-                    description:
-                      'Database-specific parameter configuration (optional). Available parameters vary by database type'
-                  }
-                },
-                example: {
-                  name: 'my-postgres-db',
-                  type: 'postgresql',
-                  version: 'postgresql-14.8.0',
-                  resource: {
-                    cpu: 1.5,
-                    memory: 3.0,
-                    storage: 5,
-                    replicas: 3
-                  },
-                  autoBackup: {
-                    start: true,
-                    type: 'day',
-                    week: [],
-                    hour: '02',
-                    minute: '00',
-                    saveTime: 7,
-                    saveType: 'days'
-                  },
-                  parameterConfig: {
-                    maxConnections: '100',
-                    timeZone: 'Asia/Shanghai',
-                    lowerCaseTableNames: '0'
+                    }
                   }
                 }
               }
@@ -352,114 +671,169 @@ export const document = createDocument({
           }
         },
         responses: {
-          '204': {
+          '201': {
             description:
-              'No Content - Database creation initiated successfully. The database is being provisioned and will be available shortly.'
-          },
-          '400': {
-            description:
-              'Bad Request - Invalid request body, resource values, or parameter configuration',
+              'Database created. The Kubernetes Cluster resource has been created and provisioning is underway. ' +
+              'Poll `GET /databases/{databaseName}` until `status` is `"Running"`.',
             content: {
               'application/json': {
                 schema: {
                   type: 'object',
+                  required: ['name', 'status'],
                   properties: {
-                    code: {
-                      type: 'number',
-                      example: 400
-                    },
-                    message: {
+                    name: {
                       type: 'string',
-                      example: 'Invalid request body'
+                      description: 'Name of the created database',
+                      example: 'my-postgres-db'
                     },
-                    error: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          field: {
-                            type: 'string',
-                            example: 'resource.cpu'
-                          },
-                          message: {
-                            type: 'string',
-                            example: 'CPU must be in range [0.1, 32]'
-                          }
-                        }
-                      }
+                    status: {
+                      type: 'string',
+                      enum: ['creating'],
+                      description:
+                        'Initial provisioning status — always "creating" at creation time',
+                      example: 'creating'
                     }
+                  }
+                },
+                example: { name: 'my-postgres-db', status: 'creating' }
+              }
+            }
+          },
+          '400': {
+            description: 'Bad request — invalid body, resource values, or parameter configuration',
+            content: {
+              'application/json': {
+                schema: createError400Schema([
+                  ErrorCode.INVALID_PARAMETER,
+                  ErrorCode.INVALID_VALUE
+                ]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Missing required field',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Request body validation failed.',
+                      [{ field: 'quota', message: 'Required' }]
+                    )
+                  },
+                  invalidValue: {
+                    summary: 'Invalid CPU value',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_VALUE,
+                      'Invalid CPU value. Must be one of: 1, 2, 3, 4, 5, 6, 7, 8 cores.'
+                    )
                   }
                 }
               }
             }
           },
           '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
+            description: 'Unauthorized — invalid or missing kubeconfig',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
                   }
                 }
               }
             }
           },
           '403': {
-            description:
-              'Forbidden - Insufficient permissions to create databases in this namespace',
+            description: 'Forbidden — insufficient permissions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'clusters.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot create resource "clusters" in API group "apps.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
                   }
                 }
               }
             }
           },
           '409': {
-            description: 'Conflict - Database with this name already exists',
+            description: 'Conflict — database with this name already exists',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Database already exists' }
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT]),
+                examples: {
+                  alreadyExists: {
+                    summary: 'Database already exists',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.ALREADY_EXISTS,
+                      'Resource already exists.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db" already exists'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal Server Error - Failed to create database due to server error',
+            description: 'Internal server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'admission webhook "resource.sealos.io" denied the request: resource quota exceeded'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description:
-              'Service Unavailable - Kubernetes cluster is unavailable or not responding',
+            description: 'Service unavailable — Kubernetes cluster unreachable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }
@@ -468,850 +842,14 @@ export const document = createDocument({
         }
       },
       get: {
-        summary: 'List All Databases',
+        summary: 'List all databases',
         description:
-          'Retrieves a list of all database instances in the current namespace. Returns detailed information about each database including status, resources, and configuration.',
+          'Returns all database clusters in the current namespace with their status and resource allocation.',
         operationId: 'listDatabases',
         tags: ['Query'],
-        security: [{ KubeconfigAuth: [] }],
         responses: {
           '200': {
-            description: 'OK - Successfully retrieved list of databases',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['code', 'data'],
-                  properties: {
-                    code: {
-                      type: 'number',
-                      example: 200
-                    },
-                    data: {
-                      type: 'array',
-                      description:
-                        'Array of database instances with their current status and configuration',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          name: { type: 'string', description: 'Database name' },
-                          type: { type: 'string', description: 'Database type' },
-                          version: { type: 'string', description: 'Database version' },
-                          status: {
-                            type: 'string',
-                            enum: ['Running', 'Stopped', 'Creating', 'Updating', 'Failed'],
-                            description: 'Current database status'
-                          },
-                          resource: {
-                            type: 'object',
-                            properties: {
-                              cpu: { type: 'number' },
-                              memory: { type: 'number' },
-                              storage: { type: 'number' },
-                              replicas: { type: 'number' }
-                            }
-                          },
-                          createTime: {
-                            type: 'string',
-                            format: 'date-time',
-                            description: 'Creation timestamp'
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden - Insufficient permissions to list databases',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal Server Error - Failed to retrieve databases',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
-              }
-            }
-          },
-          '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/database/{databaseName}': {
-      patch: {
-        summary: 'Update Database Resources',
-        description:
-          "Updates a database's resource allocation (CPU, Memory, Storage, Replicas). CPU and memory must be in range [0.1, 32]. This mutation triggers Kubernetes OpsRequests for vertical scaling (CPU/Memory), horizontal scaling (Replicas), or volume expansion (Storage). Resources are automatically converted to proper Kubernetes units (cores to millicores, GB to Gi).",
-        operationId: 'updateDatabaseResources',
-        tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
-        parameters: [
-          {
-            name: 'databaseName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the database to update'
-          }
-        ],
-        requestBody: {
-          required: true,
-          description:
-            'Resource updates to apply. All fields are optional - only provide fields you want to update',
-          content: {
-            'application/json': {
-              schema: {
-                type: 'object',
-                properties: {
-                  resource: {
-                    $ref: '#/components/schemas/UpdateResourceSchema'
-                  }
-                },
-                required: ['resource'],
-                example: {
-                  resource: {
-                    cpu: 2.5,
-                    memory: 6.0,
-                    storage: 10,
-                    replicas: 5
-                  }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          '204': {
-            description:
-              'No Content - Database update initiated successfully. The database is being scaled and will reflect the new resources shortly.'
-          },
-          '400': {
-            description: 'Bad Request - Invalid resource values or configuration',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid resource values' },
-                    error: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          field: { type: 'string', example: 'resource.storage' },
-                          message: { type: 'string', example: 'Cannot decrease storage size' }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden - Insufficient permissions to update databases',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Not Found - Database does not exist',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
-              }
-            }
-          },
-          '409': {
-            description:
-              'Conflict - Database is currently being updated or in an incompatible state',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Database update already in progress' }
-                  }
-                }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal Server Error - Failed to update database',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
-              }
-            }
-          },
-          '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      get: {
-        summary: 'Get Database Details',
-        description:
-          'Retrieves detailed information about a specific database including its current status, resource allocation, configuration, connection information, and operational metrics.',
-        operationId: 'getDatabaseDetails',
-        tags: ['Query'],
-        security: [
-          {
-            KubeconfigAuth: []
-          }
-        ],
-        parameters: [
-          {
-            name: 'databaseName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the database to retrieve'
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'OK - Successfully retrieved database details',
-            content: {
-              'application/json': {
-                schema: getDatabaseResponseDocSchema
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden - Insufficient permissions to view database details',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Not Found - Database does not exist',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal Server Error - Failed to retrieve database details',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
-              }
-            }
-          },
-          '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      delete: {
-        summary: 'Delete Database',
-        description:
-          'Permanently deletes a database instance. This mutation removes the database cluster and, depending on the termination policy, may also delete persistent volumes and data. This operation cannot be undone.',
-        operationId: 'deleteDatabase',
-        tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
-        parameters: [
-          {
-            name: 'databaseName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the database to delete'
-          }
-        ],
-        responses: {
-          '204': {
-            description:
-              'No Content - Database deletion initiated successfully. The database and associated resources are being removed.'
-          },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden - Insufficient permissions to delete databases',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Not Found - Database does not exist',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
-              }
-            }
-          },
-          '409': {
-            description: 'Conflict - Database cannot be deleted in its current state',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Database is currently being updated' }
-                  }
-                }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal Server Error - Failed to delete database',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
-              }
-            }
-          },
-          '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/database/{databaseName}/start': {
-      post: {
-        summary: 'Start Database',
-        description:
-          'Starts a paused or stopped database instance. This mutation creates an OpsRequest to resume the database cluster and bring all replicas back online.',
-        operationId: 'startDatabase',
-        tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
-        parameters: [
-          {
-            name: 'databaseName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the database to start'
-          }
-        ],
-        responses: {
-          '204': {
-            description:
-              'No Content - Database start operation initiated successfully. The database is starting and will be ready shortly.'
-          },
-          '400': {
-            description: 'Bad Request - Database is already running',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Database is already running' }
-                  }
-                }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden - Insufficient permissions to start databases',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Not Found - Database does not exist',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal Server Error - Failed to start database',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
-              }
-            }
-          },
-          '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/database/{databaseName}/pause': {
-      post: {
-        summary: 'Pause Database',
-        description:
-          'Pauses a running database instance. This mutation creates an OpsRequest to gracefully stop the database cluster while preserving all data and configuration. The database can be resumed later using the start operation.',
-        operationId: 'pauseDatabase',
-        tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
-        parameters: [
-          {
-            name: 'databaseName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the database to pause'
-          }
-        ],
-        responses: {
-          '204': {
-            description:
-              'No Content - Database pause operation initiated successfully. The database is shutting down gracefully.'
-          },
-          '400': {
-            description: 'Bad Request - Database is already paused or in an incompatible state',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Database is already paused' }
-                  }
-                }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden - Insufficient permissions to pause databases',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Not Found - Database does not exist',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal Server Error - Failed to pause database',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
-              }
-            }
-          },
-          '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/database/{databaseName}/restart': {
-      post: {
-        summary: 'Restart Database',
-        description:
-          'Restarts a running database instance. This mutation creates an OpsRequest to perform a rolling restart of all database replicas, applying any pending configuration changes without data loss.',
-        operationId: 'restartDatabase',
-        tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
-        parameters: [
-          {
-            name: 'databaseName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the database to restart'
-          }
-        ],
-        responses: {
-          '204': {
-            description:
-              'No Content - Database restart operation initiated successfully. The database is performing a rolling restart.'
-          },
-          '400': {
-            description: 'Bad Request - Database cannot be restarted in its current state',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Database must be running to restart' }
-                  }
-                }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden - Insufficient permissions to restart databases',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Not Found - Database does not exist',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
-                  }
-                }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal Server Error - Failed to restart database',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
-              }
-            }
-          },
-          '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    '/database/{databaseName}/backup': {
-      get: {
-        summary: 'List Database Backups',
-        description:
-          'Retrieves all manual and automatic backups associated with the specified database. Returns basic metadata for each backup, including its decoded description, creation timestamp, and current status reported by Kubeblocks.',
-        operationId: 'listDatabaseBackups',
-        tags: ['Query'],
-        security: [{ KubeconfigAuth: [] }],
-        parameters: [
-          {
-            name: 'databaseName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the database whose backups will be listed'
-          }
-        ],
-        responses: {
-          '200': {
-            description: 'OK - Successfully retrieved backups for the database',
+            description: 'List of databases retrieved successfully',
             content: {
               'application/json': {
                 schema: {
@@ -1321,17 +859,1224 @@ export const document = createDocument({
                     properties: {
                       name: {
                         type: 'string',
-                        description: 'Backup resource name'
+                        description: 'Database name',
+                        example: 'my-postgres-db'
+                      },
+                      uid: {
+                        type: 'string',
+                        description: 'Unique identifier',
+                        example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+                      },
+                      type: {
+                        type: 'string',
+                        description: 'Database engine',
+                        example: 'postgresql'
+                      },
+                      version: {
+                        type: 'string',
+                        description: 'Database version',
+                        example: 'postgresql-14.8.0'
+                      },
+                      resourceType: {
+                        type: 'string',
+                        description: 'Resource type identifier — always "cluster"',
+                        example: 'cluster'
+                      },
+                      status: {
+                        type: 'string',
+                        enum: ['Running', 'Stopped', 'Creating', 'Updating', 'Failed', 'Deleting'],
+                        description: 'Current cluster status',
+                        example: 'Running'
+                      },
+                      quota: {
+                        type: 'object',
+                        description: 'Resource allocation for each database replica',
+                        properties: {
+                          cpu: {
+                            type: 'number',
+                            description: 'CPU cores per replica',
+                            example: 1
+                          },
+                          memory: {
+                            type: 'number',
+                            description: 'Memory in GB per replica',
+                            example: 2
+                          },
+                          storage: {
+                            type: 'number',
+                            description: 'Storage in GB per replica',
+                            example: 5
+                          },
+                          replicas: {
+                            type: 'integer',
+                            description: 'Number of database replicas',
+                            example: 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — invalid or missing kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden — insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'clusters.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot get resource "clusters" in API group "apps.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'etcdserver: request timed out'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service unavailable — Kubernetes cluster unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/databases/{databaseName}': {
+      patch: {
+        summary: 'Update database resources',
+        description:
+          "Updates a database's resource allocation (CPU, memory, storage, replicas). Only provide fields you want to change — all fields are optional.\n\n" +
+          'Key points:\n' +
+          '- CPU: one of `1, 2, 3, 4, 5, 6, 7, 8` cores\n' +
+          '- Memory: one of `1, 2, 4, 6, 8, 12, 16, 32` GB\n' +
+          '- Storage: `1–300` GB (can only be expanded, not shrunk)\n' +
+          '- Replicas: `1–20`',
+        operationId: 'updateDatabase',
+        tags: ['Mutation'],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
+            schema: {
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
+          }
+        ],
+        requestBody: {
+          required: true,
+          description:
+            'Resource updates to apply. All fields inside `quota` are optional — only provide fields you want to change.',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['quota'],
+                properties: {
+                  quota: {
+                    $ref: '#/components/schemas/UpdateResourceSchema'
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '204': {
+            description: 'Database update initiated successfully.'
+          },
+          '400': {
+            description: 'Bad request — invalid resource values',
+            content: {
+              'application/json': {
+                schema: createError400Schema([
+                  ErrorCode.INVALID_PARAMETER,
+                  ErrorCode.INVALID_VALUE
+                ]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Missing quota field',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Request body validation failed.',
+                      [{ field: 'quota', message: 'Required' }]
+                    )
+                  },
+                  invalidValue: {
+                    summary: 'Invalid CPU value',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_VALUE,
+                      'Invalid CPU value. Must be one of: 1, 2, 3, 4, 5, 6, 7, 8 cores.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — invalid or missing kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden — insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'opsrequests.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot create resource "opsrequests" in API group "apps.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '404': {
+            description: 'Not found — database does not exist',
+            content: {
+              'application/json': {
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Database not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Database 'my-postgres-db' not found.",
+                      'clusters.apps.kubeblocks.io "my-postgres-db" not found'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '409': {
+            description: 'Conflict — database is currently being updated',
+            content: {
+              'application/json': {
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT]),
+                examples: {
+                  conflict: {
+                    summary: 'Update in progress',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.CONFLICT,
+                      'A conflicting operation is already in progress.',
+                      'opsrequests.apps.kubeblocks.io "my-postgres-db-verticalscaling" already exists'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service unavailable — Kubernetes cluster unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      get: {
+        summary: 'Get database details',
+        description:
+          'Returns detailed information about a specific database including its current status, resource allocation, and configuration.',
+        operationId: 'getDatabase',
+        tags: ['Query'],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
+            schema: {
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
+          }
+        ],
+        responses: {
+          '400': {
+            description: 'Bad request — invalid path parameters',
+            content: {
+              'application/json': {
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Invalid database name',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'databaseName', message: 'Required' }]
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '200': {
+            description: 'Database details retrieved successfully',
+            content: {
+              'application/json': {
+                schema: getDatabaseResponseJsonSchema as any
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — invalid or missing kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden — insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'clusters.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot get resource "clusters" in API group "apps.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '404': {
+            description: 'Not found — database does not exist',
+            content: {
+              'application/json': {
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Database not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Database 'my-postgres-db' not found.",
+                      'clusters.apps.kubeblocks.io "my-postgres-db" not found'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'etcdserver: request timed out'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service unavailable — Kubernetes cluster unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      delete: {
+        summary: 'Delete database',
+        description:
+          'Deletes a database cluster. **Irreversible** — depending on `terminationPolicy`, persistent volumes may also be removed. This operation is idempotent: if the database does not exist, `204` is returned.',
+        operationId: 'deleteDatabase',
+        tags: ['Mutation'],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
+            schema: {
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
+          }
+        ],
+        responses: {
+          '204': {
+            description: 'Database deleted (or did not exist).'
+          },
+          '400': {
+            description: 'Bad request — invalid path parameters',
+            content: {
+              'application/json': {
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Invalid database name',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'databaseName', message: 'Required' }]
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — invalid or missing kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden — insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'clusters.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot delete resource "clusters" in API group "apps.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service unavailable — Kubernetes cluster unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/databases/{databaseName}/start': {
+      post: {
+        summary: 'Start database',
+        description:
+          'Resumes a paused or stopped database. This operation is idempotent: if the database is already running, `204` is returned.',
+        operationId: 'startDatabase',
+        tags: ['Mutation'],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
+            schema: {
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
+          }
+        ],
+        responses: {
+          '204': {
+            description: 'Database start initiated (or was already running).'
+          },
+          '400': {
+            description: 'Bad request — invalid path parameters',
+            content: {
+              'application/json': {
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Missing database name',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'databaseName', message: 'Required' }]
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — invalid or missing kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden — insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'opsrequests.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot create resource "opsrequests" in API group "apps.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '404': {
+            description: 'Not found — database does not exist',
+            content: {
+              'application/json': {
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Database not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Database 'my-postgres-db' not found.",
+                      'clusters.apps.kubeblocks.io "my-postgres-db" not found'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service unavailable — Kubernetes cluster unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/databases/{databaseName}/pause': {
+      post: {
+        summary: 'Pause database',
+        description:
+          'Gracefully stops a running database while preserving all data and configuration. The database can be resumed with the `start` operation.',
+        operationId: 'pauseDatabase',
+        tags: ['Mutation'],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
+            schema: {
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
+          }
+        ],
+        responses: {
+          '204': {
+            description: 'Database pause initiated successfully.'
+          },
+          '400': {
+            description: 'Bad request — invalid path parameters',
+            content: {
+              'application/json': {
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Missing database name',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'databaseName', message: 'Required' }]
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — invalid or missing kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden — insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'opsrequests.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot create resource "opsrequests" in API group "apps.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '404': {
+            description: 'Not found — database does not exist',
+            content: {
+              'application/json': {
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Database not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Database 'my-postgres-db' not found.",
+                      'clusters.apps.kubeblocks.io "my-postgres-db" not found'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '409': {
+            description:
+              'Conflict — database is already paused or a pause operation is in progress',
+            content: {
+              'application/json': {
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT]),
+                examples: {
+                  conflict: {
+                    summary: 'Already paused',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.CONFLICT,
+                      'A conflicting operation is already in progress.',
+                      'opsrequests.apps.kubeblocks.io "my-postgres-db-stop" already exists'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service unavailable — Kubernetes cluster unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/databases/{databaseName}/restart': {
+      post: {
+        summary: 'Restart database',
+        description:
+          'Performs a rolling restart of all database replicas. This operation is idempotent: if a restart is already in progress, `204` is returned.',
+        operationId: 'restartDatabase',
+        tags: ['Mutation'],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
+            schema: {
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
+          }
+        ],
+        responses: {
+          '204': {
+            description: 'Database restart initiated (or was already restarting).'
+          },
+          '400': {
+            description: 'Bad request — invalid path parameters',
+            content: {
+              'application/json': {
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Missing database name',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'databaseName', message: 'Required' }]
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — invalid or missing kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden — insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'opsrequests.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot create resource "opsrequests" in API group "apps.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '404': {
+            description: 'Not found — database does not exist',
+            content: {
+              'application/json': {
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Database not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Database 'my-postgres-db' not found.",
+                      'clusters.apps.kubeblocks.io "my-postgres-db" not found'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service unavailable — Kubernetes cluster unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/databases/{databaseName}/backups': {
+      get: {
+        summary: 'List database backups',
+        description:
+          'Returns all manual and automatic backups associated with the specified database, including status and creation timestamp.',
+        operationId: 'listDatabaseBackups',
+        tags: ['Query'],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
+            schema: {
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
+          }
+        ],
+        responses: {
+          '400': {
+            description: 'Bad request — invalid path parameters',
+            content: {
+              'application/json': {
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Invalid database name',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'databaseName', message: 'Required' }]
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '200': {
+            description: 'Backups retrieved successfully',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: {
+                        type: 'string',
+                        description: 'Backup resource name',
+                        example: 'my-postgres-db-backup-20240115'
                       },
                       description: {
                         type: 'string',
                         description:
-                          'Optional description decoded from backup annotations. Empty string if none was provided.'
+                          'Optional description decoded from backup annotations. Empty string if none was provided.',
+                        example: 'weekly backup before schema migration'
                       },
                       createdAt: {
                         type: 'string',
                         format: 'date-time',
-                        description: 'Creation timestamp of the backup resource'
+                        description: 'Creation timestamp of the backup resource',
+                        example: '2024-01-15T02:00:00Z'
                       },
                       status: {
                         type: 'string',
@@ -1339,11 +2084,12 @@ export const document = createDocument({
                           'completed',
                           'inprogress',
                           'failed',
-                          'unknow',
+                          'unknown',
                           'running',
                           'deleting'
                         ],
-                        description: 'Current backup status as reported by Kubeblocks (lowercase)'
+                        description: 'Current backup status as reported by Kubeblocks (lowercase)',
+                        example: 'completed'
                       }
                     },
                     required: ['name', 'description', 'createdAt', 'status']
@@ -1353,56 +2099,91 @@ export const document = createDocument({
             }
           },
           '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
+            description: 'Unauthorized — invalid or missing kubeconfig',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
                   }
                 }
               }
             }
           },
           '403': {
-            description: 'Forbidden - Insufficient permissions to list backups',
+            description: 'Forbidden — insufficient permissions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'backups.dataprotection.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot list resource "backups" in API group "dataprotection.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal Server Error - Failed to retrieve backups',
+            description: 'Internal server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'etcdserver: request timed out'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
+            description: 'Service unavailable — Kubernetes cluster unreachable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }
@@ -1411,21 +2192,23 @@ export const document = createDocument({
         }
       },
       post: {
-        summary: 'Create Database Backup',
+        summary: 'Create database backup',
         description:
-          'Creates a manual backup of a database. This mutation initiates a backup operation that captures the current state of the database for disaster recovery or migration purposes. The backup is stored according to the configured backup storage provider.',
+          'Initiates a manual backup of the database. The backup is created asynchronously.',
         operationId: 'createDatabaseBackup',
         tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
         parameters: [
           {
             name: 'databaseName',
             in: 'path',
             required: true,
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
             schema: {
-              type: 'string'
-            },
-            description: 'Name of the database to backup'
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
           }
         ],
         requestBody: {
@@ -1462,106 +2245,163 @@ export const document = createDocument({
         },
         responses: {
           '204': {
-            description:
-              'No Content - Backup creation initiated successfully. The backup is being created and will be available shortly.'
+            description: 'Backup creation initiated successfully.'
           },
           '400': {
             description:
-              'Bad Request - Invalid request body, description too long, or unsupported database type',
+              'Bad request — invalid body, description too long, or unsupported database type',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    error: {
-                      type: 'string',
-                      example:
-                        'Description is too long. Maximum length is 31 characters when encoded for Kubernetes labels.'
-                    }
+                schema: createError400Schema([
+                  ErrorCode.INVALID_PARAMETER,
+                  ErrorCode.INVALID_VALUE
+                ]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Body validation failure',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request body.',
+                      [{ field: 'name', message: 'String must contain at least 1 character(s)' }]
+                    )
+                  },
+                  descriptionTooLong: {
+                    summary: 'Description exceeds limit',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_VALUE,
+                      'Backup description is too long. Maximum 31 characters allowed.'
+                    )
                   }
                 }
               }
             }
           },
           '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
+            description: 'Unauthorized — invalid or missing kubeconfig',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
                   }
                 }
               }
             }
           },
           '403': {
-            description: 'Forbidden - Insufficient permissions to create backups',
+            description: 'Forbidden — insufficient permissions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'backups.dataprotection.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot create resource "backups" in API group "dataprotection.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
                   }
                 }
               }
             }
           },
           '404': {
-            description: 'Not Found - Database does not exist',
+            description: 'Not found — database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Database not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Database 'my-postgres-db' not found.",
+                      'clusters.apps.kubeblocks.io "my-postgres-db" not found'
+                    )
                   }
                 }
               }
             }
           },
           '409': {
-            description: 'Conflict - Another backup is currently in progress',
+            description: 'Conflict — a backup is currently in progress',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Backup already in progress' }
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT]),
+                examples: {
+                  alreadyExists: {
+                    summary: 'Backup already in progress',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.ALREADY_EXISTS,
+                      'Resource already exists.',
+                      'backups.dataprotection.kubeblocks.io "my-postgres-db-backup" already exists'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal Server Error - Failed to create backup',
+            description: 'Internal server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description: 'Service Unavailable - Backup storage provider is unavailable',
+            description: 'Service unavailable — Kubernetes cluster unreachable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Backup storage unavailable' }
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }
@@ -1570,42 +2410,197 @@ export const document = createDocument({
         }
       }
     },
-    '/database/{databaseName}/backup/{backupName}': {
-      post: {
-        summary: 'Restore Database from Backup',
+    '/databases/{databaseName}/backups/{backupName}': {
+      delete: {
+        summary: 'Delete database backup',
         description:
-          'Restores a database from a specific backup by creating a new database instance. This mutation creates a new database cluster with the data from the backup, allowing point-in-time recovery or database cloning for testing/development purposes.',
-        operationId: 'restoreDatabaseFromBackup',
+          'Deletes a backup. **Irreversible.** This operation is idempotent: if the backup does not exist, `204` is returned.',
+        operationId: 'deleteDatabaseBackup',
         tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
         parameters: [
           {
             name: 'databaseName',
             in: 'path',
             required: true,
+            description:
+              'Name of the database that owns the backup (format: lowercase alphanumeric and hyphens)',
             schema: {
-              type: 'string'
-            },
-            description: 'Name of the original database (source of the backup)'
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
           },
           {
             name: 'backupName',
             in: 'path',
             required: true,
+            description:
+              'Name of the backup to delete (format: lowercase alphanumeric and hyphens)',
             schema: {
-              type: 'string'
-            },
-            description: 'Name of the backup to restore from'
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db-backup-20240115'
+            }
+          }
+        ],
+        responses: {
+          '204': {
+            description: 'Backup deleted (or did not exist).'
+          },
+          '400': {
+            description: 'Bad request — missing or invalid parameters',
+            content: {
+              'application/json': {
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Missing backup name',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Database name and backup name are required.',
+                      [{ field: 'backupName', message: 'Required' }]
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — invalid or missing kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden — insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'backups.dataprotection.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot delete resource "backups" in API group "dataprotection.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'backups.dataprotection.kubeblocks.io "my-postgres-db-backup-20240115": Internal error occurred'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service unavailable — Kubernetes cluster unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/databases/{databaseName}/backups/{backupName}/restore': {
+      post: {
+        summary: 'Restore database from backup',
+        description:
+          'Creates a new database cluster restored from the specified backup. Useful for point-in-time recovery or cloning a database for testing.\n\n' +
+          'Key points:\n' +
+          '- All body fields are optional — if `name` is omitted a name is auto-generated, if `replicas` is omitted the source cluster replica count is used.\n' +
+          '- The restored database is a completely new cluster — it does not modify or delete the backup.',
+        operationId: 'restoreDatabase',
+        tags: ['Mutation'],
+        parameters: [
+          {
+            name: 'databaseName',
+            in: 'path',
+            required: true,
+            description: 'Name of the source database (format: lowercase alphanumeric and hyphens)',
+            schema: {
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
+            }
+          },
+          {
+            name: 'backupName',
+            in: 'path',
+            required: true,
+            description:
+              'Name of the backup to restore from (format: lowercase alphanumeric and hyphens)',
+            schema: {
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db-backup-20240115'
+            }
           }
         ],
         requestBody: {
-          required: true,
-          description: 'Configuration for the restored database instance',
+          required: false,
+          description: 'Optional configuration for the restored database instance',
           content: {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['name'],
                 properties: {
                   name: {
                     type: 'string',
@@ -1613,8 +2608,15 @@ export const document = createDocument({
                     maxLength: 63,
                     pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$',
                     description:
-                      'Name for the new restored database instance. Must be a valid Kubernetes resource name',
+                      'Name for the new restored database instance. Must be a valid Kubernetes resource name. If omitted, a name is auto-generated using the source database name as a prefix.',
                     example: 'my-postgres-db-restored'
+                  },
+                  replicas: {
+                    type: 'integer',
+                    minimum: 1,
+                    description:
+                      'Number of replicas for the restored cluster. If omitted, inherits the source cluster replica count.',
+                    example: 1
                   }
                 }
               }
@@ -1623,233 +2625,148 @@ export const document = createDocument({
         },
         responses: {
           '204': {
-            description:
-              'No Content - Database restore initiated successfully. A new database is being created from the backup.'
+            description: 'Database restore initiated successfully.'
           },
           '400': {
-            description: 'Bad Request - Invalid request body or database name',
+            description: 'Bad request — missing path parameters or invalid request body',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid database name format' }
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  missingPathParam: {
+                    summary: 'Missing path parameter',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Database name and backup name are required.'
+                    )
                   }
                 }
               }
             }
           },
           '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
+            description: 'Unauthorized — invalid or missing kubeconfig',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
                   }
                 }
               }
             }
           },
           '403': {
-            description: 'Forbidden - Insufficient permissions to restore backups',
+            description: 'Forbidden — insufficient permissions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'clusters.apps.kubeblocks.io is forbidden: User "system:serviceaccount:ns-abc" cannot get resource "clusters" in API group "apps.kubeblocks.io"'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
                   }
                 }
               }
             }
           },
           '404': {
-            description: 'Not Found - Backup or original database not found',
+            description: 'Not found — backup or source database not found',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Backup not found' }
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Backup not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      'Backup not found.'
+                    )
                   }
                 }
               }
             }
           },
           '409': {
-            description: 'Conflict - Database with the provided name already exists',
+            description: 'Conflict — a database with the target name already exists',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Database with this name already exists' }
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT]),
+                examples: {
+                  alreadyExists: {
+                    summary: 'Database already exists',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.ALREADY_EXISTS,
+                      'Database with this name already exists.'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal Server Error - Failed to restore database',
+            description: 'Internal server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description: 'Service Unavailable - Backup storage or Kubernetes cluster unavailable',
+            description: 'Service unavailable — Kubernetes cluster unreachable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Service unavailable' }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      delete: {
-        summary: 'Delete Database Backup',
-        description:
-          'Permanently deletes a database backup. This mutation removes the backup from storage and cannot be undone. The original database and other backups are not affected.',
-        operationId: 'deleteDatabaseBackup',
-        tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
-        parameters: [
-          {
-            name: 'databaseName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the database that owns the backup'
-          },
-          {
-            name: 'backupName',
-            in: 'path',
-            required: true,
-            schema: {
-              type: 'string'
-            },
-            description: 'Name of the backup to delete'
-          }
-        ],
-        responses: {
-          '204': {
-            description: 'No Content - Backup deleted successfully'
-          },
-          '400': {
-            description: 'Bad Request - Missing or invalid parameters',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid backup name' }
-                  }
-                }
-              }
-            }
-          },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden - Insufficient permissions to delete backups',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
-              }
-            }
-          },
-          '404': {
-            description: 'Not Found - Backup not found',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Backup not found' }
-                  }
-                }
-              }
-            }
-          },
-          '409': {
-            description: 'Conflict - Backup is currently being used for a restore operation',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Backup is currently in use' }
-                  }
-                }
-              }
-            }
-          },
-          '500': {
-            description: 'Internal Server Error - Failed to delete backup',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
-                  }
-                }
-              }
-            }
-          },
-          '503': {
-            description: 'Service Unavailable - Backup storage provider is unavailable',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Backup storage unavailable' }
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }
@@ -1858,123 +2775,173 @@ export const document = createDocument({
         }
       }
     },
-    '/database/{databaseName}/enablePublic': {
+    '/databases/{databaseName}/enable-public': {
       post: {
-        summary: 'Enable Public Access',
+        summary: 'Enable public access',
         description:
-          'Enables public network access for a database by creating a NodePort or LoadBalancer service. This mutation allows the database to be accessed from outside the Kubernetes cluster network.',
+          'Exposes the database externally via a NodePort or LoadBalancer service. After this succeeds, external connection details are available via `GET /databases/{databaseName}`.',
         operationId: 'enablePublicAccess',
         tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
         parameters: [
           {
             name: 'databaseName',
             in: 'path',
             required: true,
-            description: 'Name of the database',
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
             schema: {
-              type: 'string'
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
             }
           }
         ],
         responses: {
           '204': {
-            description:
-              'No Content - Public access enabled successfully. External connection details can be retrieved via the GET /database/{databaseName} endpoint.'
+            description: 'Public access enabled successfully.'
           },
           '400': {
-            description: 'Bad Request - Invalid database name',
+            description: 'Bad request — invalid database name',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid parameters' }
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Invalid database name',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'databaseName', message: 'Required' }]
+                    )
                   }
                 }
               }
             }
           },
           '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
+            description: 'Unauthorized — invalid or missing kubeconfig',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
                   }
                 }
               }
             }
           },
           '403': {
-            description: 'Forbidden - Insufficient permissions to modify network access',
+            description: 'Forbidden — insufficient permissions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'services is forbidden: User "system:serviceaccount:ns-abc" cannot create resource "services" in API group ""'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
                   }
                 }
               }
             }
           },
           '404': {
-            description: 'Not Found - Database does not exist',
+            description: 'Not found — database does not exist',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Database not found' }
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Database not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      'Database not found.'
+                    )
                   }
                 }
               }
             }
           },
           '409': {
-            description: 'Conflict - Public access is already enabled',
+            description: 'Conflict — public access is already enabled',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 409 },
-                    message: { type: 'string', example: 'Public access already enabled' }
+                schema: createError409Schema([ErrorCode.ALREADY_EXISTS, ErrorCode.CONFLICT]),
+                examples: {
+                  alreadyExists: {
+                    summary: 'Already enabled',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.ALREADY_EXISTS,
+                      'Resource already exists.',
+                      'services "my-postgres-db-export" already exists'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal Server Error - Failed to enable public access',
+            description: 'Internal server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
+            description: 'Service unavailable — Kubernetes cluster unreachable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }
@@ -1983,98 +2950,155 @@ export const document = createDocument({
         }
       }
     },
-    '/database/{databaseName}/disablePublic': {
+    '/databases/{databaseName}/disable-public': {
       post: {
-        summary: 'Disable Public Access',
+        summary: 'Disable public access',
         description:
-          'Disables public network access for a database by removing the NodePort or LoadBalancer service. This mutation restricts database access to within the Kubernetes cluster network only.',
+          'Removes the external NodePort or LoadBalancer service, restricting database access to within the cluster.',
         operationId: 'disablePublicAccess',
         tags: ['Mutation'],
-        security: [{ KubeconfigAuth: [] }],
         parameters: [
           {
             name: 'databaseName',
             in: 'path',
             required: true,
-            description: 'Name of the database',
+            description:
+              'Name of the database to operate on (format: lowercase alphanumeric and hyphens)',
             schema: {
-              type: 'string'
+              type: 'string',
+              minLength: 1,
+              example: 'my-postgres-db'
             }
           }
         ],
         responses: {
           '204': {
-            description:
-              'No Content - Public access disabled successfully. The database is now only accessible within the cluster.'
+            description: 'Public access disabled successfully.'
           },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
+          '400': {
+            description: 'Bad request — invalid path parameters',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Invalid database name',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'databaseName', message: 'Required' }]
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized — invalid or missing kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
                   }
                 }
               }
             }
           },
           '403': {
-            description: 'Forbidden - Insufficient permissions to modify network access',
+            description: 'Forbidden — insufficient permissions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'services is forbidden: User "system:serviceaccount:ns-abc" cannot delete resource "services" in API group ""'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
                   }
                 }
               }
             }
           },
           '404': {
-            description: 'Not Found - Database not found or public access not enabled',
+            description: 'Not found — database or public service not found',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: {
-                      type: 'string',
-                      example: 'Public access not enabled for this database'
-                    }
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Database not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Database 'my-postgres-db' not found.",
+                      'clusters.apps.kubeblocks.io "my-postgres-db" not found'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal Server Error - Failed to disable public access',
+            description: 'Internal server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
+            description: 'Service unavailable — Kubernetes cluster unreachable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }
@@ -2083,74 +3107,61 @@ export const document = createDocument({
         }
       }
     },
-    '/database/version/list': {
+    '/databases/versions': {
       get: {
-        summary: 'List Available Database Versions',
+        summary: 'List available database versions',
         description:
-          'Retrieves a list of all available database versions for each supported database type. This query returns version information that can be used when creating new databases.',
+          'Returns all supported database versions per engine type. Use these version strings when creating a new database.\n\n' +
+          'This endpoint does not require authentication — it queries the cluster using the server\u2019s own service account.',
         operationId: 'listDatabaseVersions',
         tags: ['Query'],
-        security: [{ KubeconfigAuth: [] }],
+        security: [],
         responses: {
           '200': {
-            description: 'OK - Successfully retrieved database versions',
+            description: 'Database versions retrieved successfully',
             content: {
               'application/json': {
                 schema: databaseVersionListSchemas.response
               }
             }
           },
-          '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
-                  }
-                }
-              }
-            }
-          },
-          '403': {
-            description: 'Forbidden - Insufficient permissions to list database versions',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
-                  }
-                }
-              }
-            }
-          },
           '500': {
-            description: 'Internal Server Error - Failed to retrieve database versions',
+            description: 'Internal server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'etcdserver: request timed out'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
+            description: 'Service unavailable — Kubernetes cluster unreachable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }
@@ -2159,23 +3170,23 @@ export const document = createDocument({
         }
       }
     },
-    '/logs/data': {
+    '/logs': {
       get: {
-        summary: 'Get Database Logs Data',
+        summary: 'Get database log entries',
         description:
-          'Retrieves paginated log data from a specific database pod. This query returns log entries from the specified log file path, supporting pagination for large log files.',
+          'Returns paginated log entries from a specific database pod. Use `/logs/files` first to discover available log file paths.',
         operationId: 'getDatabaseLogsData',
         tags: ['Query'],
-        security: [{ KubeconfigAuth: [] }],
         parameters: [
           {
             name: 'podName',
             in: 'query',
             required: true,
             schema: {
-              type: 'string'
+              type: 'string',
+              example: 'my-postgres-db-postgresql-0'
             },
-            description: 'Name of the Kubernetes pod to retrieve logs from'
+            description: 'Name of the pod to retrieve logs from'
           },
           {
             name: 'dbType',
@@ -2183,27 +3194,32 @@ export const document = createDocument({
             required: true,
             schema: {
               type: 'string',
-              enum: ['mysql', 'mongodb', 'redis', 'postgresql']
+              enum: ['mysql', 'mongodb', 'redis', 'postgresql'],
+              example: 'postgresql'
             },
-            description: 'Database type (determines log format and parsing)'
+            description: 'Database engine type (determines log format and parsing)'
           },
           {
             name: 'logType',
             in: 'query',
             required: true,
             schema: {
-              type: 'string'
+              type: 'string',
+              enum: ['runtimeLog', 'slowQuery', 'errorLog'],
+              example: 'errorLog'
             },
-            description: 'Type of log to retrieve (e.g., "error", "slow-query", "general")'
+            description:
+              'Type of log to retrieve. Allowed values: "runtimeLog", "slowQuery", "errorLog"'
           },
           {
             name: 'logPath',
             in: 'query',
             required: true,
             schema: {
-              type: 'string'
+              type: 'string',
+              example: '/var/lib/postgresql/data/log/postgresql.log'
             },
-            description: 'File path to the log file within the pod'
+            description: 'Absolute path to the log file within the pod'
           },
           {
             name: 'page',
@@ -2212,7 +3228,8 @@ export const document = createDocument({
             schema: {
               type: 'integer',
               minimum: 1,
-              default: 1
+              default: 1,
+              example: 1
             },
             description: 'Page number for pagination (starts at 1)'
           },
@@ -2224,14 +3241,15 @@ export const document = createDocument({
               type: 'integer',
               minimum: 1,
               maximum: 1000,
-              default: 100
+              default: 100,
+              example: 100
             },
             description: 'Number of log entries per page (max 1000)'
           }
         ],
         responses: {
           '200': {
-            description: 'OK - Successfully retrieved log data',
+            description: 'Log entries retrieved successfully',
             content: {
               'application/json': {
                 schema: logsDataSchemas.response
@@ -2239,84 +3257,129 @@ export const document = createDocument({
             }
           },
           '400': {
-            description: 'Bad Request - Invalid query parameters',
+            description: 'Bad request — invalid query parameters',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid page or pageSize parameter' }
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Missing required parameter',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'podName', message: 'Required' }]
+                    )
                   }
                 }
               }
             }
           },
           '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
+            description: 'Unauthorized — invalid or missing kubeconfig',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
                   }
                 }
               }
             }
           },
           '403': {
-            description: 'Forbidden - Insufficient permissions to access logs',
+            description: 'Forbidden — insufficient permissions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'pods/exec is forbidden: User "system:serviceaccount:ns-abc" cannot create resource "pods/exec" in API group ""'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
                   }
                 }
               }
             }
           },
           '404': {
-            description: 'Not Found - Pod or log file not found',
+            description: 'Not found — pod or log file not found',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Pod or log file not found' }
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Pod not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      'Pod "my-postgres-db-postgresql-0" not found.',
+                      'pods "my-postgres-db-postgresql-0" not found'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal Server Error - Failed to retrieve logs',
+            description: 'Internal server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
+            description: 'Service unavailable — Kubernetes cluster unreachable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }
@@ -2327,21 +3390,21 @@ export const document = createDocument({
     },
     '/logs/files': {
       get: {
-        summary: 'List Database Log Files',
+        summary: 'List database log files',
         description:
-          'Retrieves a list of available log files for a specific database pod. This query returns metadata about log files including names, sizes, and paths that can be used with the /logs/data endpoint.',
+          'Returns metadata about available log files for a specific database pod. Use the returned paths with `GET /logs` to fetch log entries.',
         operationId: 'listDatabaseLogFiles',
         tags: ['Query'],
-        security: [{ KubeconfigAuth: [] }],
         parameters: [
           {
             name: 'podName',
             in: 'query',
             required: true,
             schema: {
-              type: 'string'
+              type: 'string',
+              example: 'my-postgres-db-postgresql-0'
             },
-            description: 'Name of the Kubernetes pod to list log files from'
+            description: 'Name of the pod to list log files from'
           },
           {
             name: 'dbType',
@@ -2349,23 +3412,27 @@ export const document = createDocument({
             required: true,
             schema: {
               type: 'string',
-              enum: ['mysql', 'mongodb', 'redis', 'postgresql']
+              enum: ['mysql', 'mongodb', 'redis', 'postgresql'],
+              example: 'postgresql'
             },
-            description: 'Database type (determines where to look for log files)'
+            description: 'Database engine type (determines where to look for log files)'
           },
           {
             name: 'logType',
             in: 'query',
             required: true,
             schema: {
-              type: 'string'
+              type: 'string',
+              enum: ['runtimeLog', 'slowQuery', 'errorLog'],
+              example: 'errorLog'
             },
-            description: 'Type of logs to list (e.g., "error", "slow-query", "general")'
+            description:
+              'Type of logs to list. Allowed values: "runtimeLog", "slowQuery", "errorLog"'
           }
         ],
         responses: {
           '200': {
-            description: 'OK - Successfully retrieved list of log files',
+            description: 'Log files retrieved successfully',
             content: {
               'application/json': {
                 schema: logsFileSchemas.response
@@ -2373,84 +3440,129 @@ export const document = createDocument({
             }
           },
           '400': {
-            description: 'Bad Request - Invalid query parameters',
+            description: 'Bad request — invalid query parameters',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 400 },
-                    message: { type: 'string', example: 'Invalid dbType or logType parameter' }
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Missing required parameter',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'podName', message: 'Required' }]
+                    )
                   }
                 }
               }
             }
           },
           '401': {
-            description: 'Unauthorized - Invalid or missing authentication credentials',
+            description: 'Unauthorized — invalid or missing kubeconfig',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 401 },
-                    message: { type: 'string', example: 'Unauthorized' }
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Unauthorized, please login again.'
+                    )
                   }
                 }
               }
             }
           },
           '403': {
-            description: 'Forbidden - Insufficient permissions to access logs',
+            description: 'Forbidden — insufficient permissions',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 403 },
-                    message: { type: 'string', example: 'Forbidden: insufficient permissions' }
+                schema: createError403Schema([
+                  ErrorCode.PERMISSION_DENIED,
+                  ErrorCode.INSUFFICIENT_BALANCE
+                ]),
+                examples: {
+                  permissionDenied: {
+                    summary: 'Insufficient permissions',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Insufficient permissions to perform this operation.',
+                      'pods/exec is forbidden: User "system:serviceaccount:ns-abc" cannot create resource "pods/exec" in API group ""'
+                    )
+                  },
+                  insufficientBalance: {
+                    summary: 'Insufficient account balance',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.INSUFFICIENT_BALANCE,
+                      'Insufficient balance to perform this operation.',
+                      'admission webhook "account.sealos.io" denied the request: account balance less than 0'
+                    )
                   }
                 }
               }
             }
           },
           '404': {
-            description: 'Not Found - Pod not found or no log files available',
+            description: 'Not found — pod not found or no log files available',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 404 },
-                    message: { type: 'string', example: 'Pod not found' }
+                schema: createError404Schema(),
+                examples: {
+                  notFound: {
+                    summary: 'Pod not found',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      'Pod "my-postgres-db-postgresql-0" not found.',
+                      'pods "my-postgres-db-postgresql-0" not found'
+                    )
                   }
                 }
               }
             }
           },
           '500': {
-            description: 'Internal Server Error - Failed to list log files',
+            description: 'Internal server error',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 500 },
-                    message: { type: 'string', example: 'Internal server error' }
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.OPERATION_FAILED,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'A Kubernetes API call failed.',
+                      'clusters.apps.kubeblocks.io "my-postgres-db": Internal error occurred: etcdserver: request timed out'
+                    )
                   }
                 }
               }
             }
           },
           '503': {
-            description: 'Service Unavailable - Kubernetes cluster is unavailable',
+            description: 'Service unavailable — Kubernetes cluster unreachable',
             content: {
               'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    code: { type: 'number', example: 503 },
-                    message: { type: 'string', example: 'Kubernetes cluster unavailable' }
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'The Kubernetes cluster is temporarily unreachable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
                   }
                 }
               }
