@@ -47,6 +47,7 @@ desktop:
       emailAlertEnabled: false
       phoneAlertEnabled: false
       announcementEnabled: false
+      kcRotationEnabled: true
     gtmId: null
   auth:
     proxyAddress: ""
