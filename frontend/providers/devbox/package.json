@@ -18,7 +18,7 @@
     "@hookform/resolvers": "^3.9.0",
     "@kubernetes/client-node": "^0.21.0",
     "@prisma/client": "^5.10.2",
-    "@scalar/api-reference-react": "^0.6.23",
+    "@scalar/api-reference-react": "^0.8.36",
     "@sealos/driver": "workspace:^",
     "@sealos/gtm": "workspace:^",
     "@sealos/shadcn-ui": "workspace:^",

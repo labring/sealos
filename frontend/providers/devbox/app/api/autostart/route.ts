@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
 import { AutostartRequestSchema } from './schema';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,18 +60,16 @@ export async function POST(req: NextRequest) {
 
     const validationResult = AutostartRequestSchema.safeParse(body);
     if (!validationResult.success) {
-      return jsonRes({
-        code: 400,
-        message: 'Invalid request body',
-        error: validationResult.error.errors
-      });
+      return sendValidationError(validationResult.error, 'Invalid request body');
     }
 
     const { execCommand, devboxName } = validationResult.data || {};
 
     if (!/^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/.test(devboxName)) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
         message: 'Invalid devbox name format'
       });
     }
@@ -90,8 +88,10 @@ export async function POST(req: NextRequest) {
     )) as { body: any };
 
     if (!devboxBody.metadata?.uid) {
-      return jsonRes({
-        code: 404,
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
         message: 'Devbox not found'
       });
     }
@@ -155,8 +155,10 @@ export async function POST(req: NextRequest) {
       );
 
       if (!deleted) {
-        return jsonRes({
-          code: 408,
+        return sendError({
+          status: 500,
+          type: ErrorType.OPERATION_ERROR,
+          code: ErrorCode.OPERATION_FAILED,
           message:
             'Timeout waiting for previous Job to be deleted. Please try again in a few seconds.'
         });
@@ -179,16 +181,19 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     if (is404Error(err)) {
-      return jsonRes({
-        code: 404,
+      return sendError({
+        status: 404,
+        type: ErrorType.RESOURCE_ERROR,
+        code: ErrorCode.NOT_FOUND,
         message: 'Devbox not found'
       });
     }
 
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? err : undefined
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Internal server error'
     });
   }
 }

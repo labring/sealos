@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
-const { i18n } = require('./next-i18next.config');
-const path = require('path');
+const { i18n } = require('./next-i18next.config')
+const path = require('path')
 const nextConfig = {
   i18n,
   output: 'standalone',
@@ -13,20 +13,32 @@ const nextConfig = {
         issuer: /\.[jt]sx?$/,
         use: ['@svgr/webpack']
       }
-    ]);
-    config.plugins = [...config.plugins];
+    ])
+    config.plugins = [...config.plugins]
     if (!isServer) {
       config.resolve.fallback = {
         fs: false
-      };
+      }
     }
-    return config;
+    return config
   },
   transpilePackages: ['@sealos/driver', '@sealos/ui'],
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../../'),
     instrumentationHook: true
+  },
+  async rewrites () {
+    return [
+      {
+        source: '/api/v2alpha/docs',
+        destination: '/doc/v2alpha'
+      },
+      {
+        source: '/api/v2alpha/openapi.json',
+        destination: '/api/v2alpha/openapi'
+      }
+    ]
   }
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

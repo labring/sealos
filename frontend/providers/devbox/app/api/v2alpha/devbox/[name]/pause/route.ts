@@ -1,0 +1,165 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { authSession } from '@/services/backend/auth';
+import { getK8s } from '@/services/backend/kubernetes';
+import { devboxKey } from '@/constants/devbox';
+import { RequestSchema } from './schema';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
+
+export const dynamic = 'force-dynamic';
+
+async function updateIngressClass(
+  k8sNetworkingApp: any,
+  ingressName: string,
+  namespace: string,
+  annotationsIngressClass?: string,
+  specIngressClass?: string
+) {
+  const patchOptions = {
+    headers: {
+      'Content-Type': 'application/merge-patch+json'
+    }
+  };
+
+  if (annotationsIngressClass) {
+    await k8sNetworkingApp.patchNamespacedIngress(
+      ingressName,
+      namespace,
+      {
+        metadata: {
+          annotations: {
+            'kubernetes.io/ingress.class': 'pause'
+          }
+        }
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      patchOptions
+    );
+  } else if (specIngressClass) {
+    await k8sNetworkingApp.patchNamespacedIngress(
+      ingressName,
+      namespace,
+      {
+        spec: {
+          ingressClassName: 'pause'
+        }
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      patchOptions
+    );
+  }
+}
+
+export async function POST(req: NextRequest, { params }: { params: { name: string } }) {
+  try {
+    const body = await req.json();
+    const validationResult = RequestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return sendValidationError(validationResult.error, 'Invalid request body');
+    }
+
+    const devboxName = params.name;
+    const headerList = req.headers;
+    const { k8sCustomObjects, namespace, k8sNetworkingApp } = await getK8s({
+      kubeconfig: await authSession(headerList)
+    });
+
+    try {
+      await k8sCustomObjects.getNamespacedCustomObject(
+        'devbox.sealos.io',
+        'v1alpha2',
+        namespace,
+        'devboxes',
+        devboxName
+      );
+    } catch (err: any) {
+      if (err?.response?.statusCode === 404 || err?.statusCode === 404) {
+        return sendError({
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'Devbox not found'
+        });
+      }
+      throw err;
+    }
+
+    const ingressesResponse = await k8sNetworkingApp.listNamespacedIngress(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${devboxKey}=${devboxName}`
+    );
+
+    const ingresses = (ingressesResponse.body as { items: any[] }).items;
+    console.log(`Found ${ingresses.length} ingresses for devbox: ${devboxName}`);
+
+    const ingressUpdatePromises = ingresses
+      .filter((ingress: any) => {
+        const annotationsIngressClass =
+          ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
+        const specIngressClass = ingress.spec?.ingressClassName;
+
+        return annotationsIngressClass === 'nginx' || specIngressClass === 'nginx';
+      })
+      .map((ingress: any) => {
+        const annotationsIngressClass =
+          ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
+        const specIngressClass = ingress.spec?.ingressClassName;
+
+        console.log(`Updating ingress: ${ingress.metadata.name}`);
+
+        return updateIngressClass(
+          k8sNetworkingApp,
+          ingress.metadata.name,
+          namespace,
+          annotationsIngressClass,
+          specIngressClass
+        );
+      });
+
+    if (ingressUpdatePromises.length > 0) {
+      await Promise.all(ingressUpdatePromises);
+      console.log(`Successfully updated ${ingressUpdatePromises.length} ingresses`);
+    }
+
+    await k8sCustomObjects.patchNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha2',
+      namespace,
+      'devboxes',
+      devboxName,
+      { spec: { state: 'Stopped' } },
+      undefined,
+      undefined,
+      undefined,
+      {
+        headers: {
+          'Content-Type': 'application/merge-patch+json'
+        }
+      }
+    );
+
+    console.log(`Successfully paused devbox: ${devboxName}`);
+
+    return new NextResponse(null, { status: 204 });
+  } catch (err: any) {
+    console.error('Pause devbox error:', err);
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Failed to pause devbox'
+    });
+  }
+}
