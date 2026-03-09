@@ -10,6 +10,7 @@ export type GetDevboxByNameReturn = [
       uid: string;
       name: string;
       iconId: string | null;
+      icon?: string | null;
       kind: TemplateRepositoryKind;
       description: string | null;
     };

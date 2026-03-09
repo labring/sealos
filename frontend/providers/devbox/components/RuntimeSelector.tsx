@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import Image from 'next/image';
 import { Check, ChevronDown, PencilLine } from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
@@ -23,11 +22,13 @@ import {
   listPrivateTemplateRepository,
   listTemplate
 } from '@/api/template';
+import { RuntimeIcon } from '@/components/RuntimeIcon';
 
 interface RuntimeSelectorProps {
   selectedRuntime: {
     name: string;
     iconId: string;
+    icon?: string | null;
     templateRepositoryUid: string;
     templateUid: string;
     version: string;
@@ -35,6 +36,7 @@ interface RuntimeSelectorProps {
   onRuntimeSelect: (runtime: {
     name: string;
     iconId: string;
+    icon?: string | null;
     templateRepositoryUid: string;
     templateUid: string;
     version: string;
@@ -89,6 +91,7 @@ const RuntimeSelector = ({
         uid: repo.uid,
         name: repo.name,
         iconId: repo.iconId || '',
+        icon: repo.icon || null,
         description: repo.description,
         kind: undefined as any, // private template repository kind is not used
         tags: repo.templateRepositoryTags?.map((t) => t.tag) || []
@@ -99,6 +102,7 @@ const RuntimeSelector = ({
       uid: repo.uid,
       name: repo.name,
       iconId: repo.iconId,
+      icon: repo.icon || null,
       description: repo.description,
       kind: repo.kind as any,
       tags: repo.templateRepositoryTags?.map((t) => t.tag) || []
@@ -205,6 +209,7 @@ const RuntimeSelector = ({
       onRuntimeSelect({
         name: runtime.name,
         iconId: runtime.iconId,
+        icon: runtime.icon,
         templateRepositoryUid: runtime.uid,
         templateUid: firstTemplate.uid,
         version: firstTemplate.name
@@ -257,8 +262,9 @@ const RuntimeSelector = ({
           <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white p-3">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.4px] border-zinc-200 bg-white">
-                <Image
-                  src={`/images/runtime/${selectedRuntime.iconId}.svg`}
+                <RuntimeIcon
+                  iconId={selectedRuntime.iconId}
+                  icon={selectedRuntime.icon}
                   alt={selectedRuntime.name}
                   width={22}
                   height={22}
@@ -366,8 +372,9 @@ const RuntimeSelector = ({
                         >
                           <div className="flex w-[200px] flex-1 items-start gap-2">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border-[0.4px] border-zinc-200">
-                              <Image
-                                src={`/images/runtime/${runtime.iconId}.svg`}
+                              <RuntimeIcon
+                                iconId={runtime.iconId}
+                                icon={runtime.icon}
                                 alt={runtime.name}
                                 width={22}
                                 height={22}

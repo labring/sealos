@@ -99,6 +99,7 @@ export default function PrivateTemplate({ search }: { search: string }) {
                 isPublic={tr.isPublic}
                 isDisabled={tr.templates.length === 0}
                 iconId={tr.iconId || ''}
+                icon={tr.icon || null}
                 templateRepositoryName={tr.name}
                 templateRepositoryDescription={tr.description}
                 templateRepositoryUid={tr.uid}
