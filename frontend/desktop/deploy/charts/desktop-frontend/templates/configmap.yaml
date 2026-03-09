@@ -78,6 +78,7 @@ data:
           emailAlertEnabled: false
           phoneAlertEnabled: false
           announcementEnabled: false
+          kcRotationEnabled: {{ .Values.desktopConfig.kcRotationEnabled }}
       auth:
         proxyAddress: ""
         callbackURL: "https://{{ .Values.desktopConfig.cloudDomain }}{{ if .Values.desktopConfig.cloudPort }}:{{ .Values.desktopConfig.cloudPort }}{{ end }}/callback"

@@ -97,6 +97,7 @@ export type LayoutConfigType = {
     emailAlertEnabled: boolean;
     phoneAlertEnabled: boolean;
     announcementEnabled: boolean;
+    kcRotationEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -330,7 +331,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     guestModeEnabled: false,
     emailAlertEnabled: false,
     phoneAlertEnabled: false,
-    announcementEnabled: false
+    announcementEnabled: false,
+    kcRotationEnabled: true
   },
   gtmId: null
 };
