@@ -2,7 +2,7 @@ import { jsonRes } from '@/services/backend/response';
 import { enableRealNameAuth } from '@/services/enable';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import * as tcsdk from 'tencentcloud-sdk-nodejs';
-import { generateGlobalToken, verifyAccessToken } from '@/services/backend/auth';
+import { generateLegacyGlobalToken, verifyAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 
 type TencentCloudFaceAuthConfig = {
@@ -121,7 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       global.AppConfig?.common.realNameCallbackUrl ||
       `https://${global.AppConfig?.cloud.domain}/api/account/faceIdRealNameAuthCallback`;
 
-    const globalToken = generateGlobalToken(
+    const globalToken = generateLegacyGlobalToken(
       {
         userUid: payload.userUid,
         userId: payload.userId

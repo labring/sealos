@@ -43,6 +43,9 @@ const isRefreshTokenClaims = (payload: GlobalJwtClaims): payload is OAuth2Refres
   isNonEmptyString(payload.sub) &&
   isNonEmptyString(payload.user_id);
 
+/**
+ * @deprecated Not recommended to use legacy global tokens
+ */
 const isLegacyGlobalPayload = (
   payload: GlobalTokenSignablePayload
 ): payload is GlobalTokenPayload => 'userUid' in payload && 'userId' in payload;
@@ -64,6 +67,17 @@ export const ensureGlobalTokenClaims = (
   payload: GlobalJwtClaims | null
 ): OAuth2AccessTokenPayload | null => {
   if (!payload || !isAccessTokenClaims(payload)) return null;
+  return payload;
+};
+
+/**
+ * Checks legacy global token claims.
+ * @deprecated Not recommended to use legacy global tokens
+ */
+export const ensureLegacyGlobalTokenClaims = (
+  payload: GlobalJwtClaims | null
+): GlobalTokenPayload | null => {
+  if (!payload || !isLegacyGlobalPayload(payload)) return null;
   return payload;
 };
 
@@ -91,15 +105,29 @@ export const verifyGlobalToken = async (
     readAuthorizationToken,
     (token) => verifyGlobalJwt<GlobalJwtClaims>(token)
   );
+
   const parsedPayload = ensureGlobalTokenClaims(payload);
-  if (!parsedPayload) {
-    return null;
+  if (parsedPayload) {
+    return {
+      userUid: parsedPayload.sub,
+      userId: parsedPayload.user_id
+    };
   }
 
-  return {
-    userUid: parsedPayload.sub,
-    userId: parsedPayload.user_id
-  };
+  const parsedLegacyPayload = ensureLegacyGlobalTokenClaims(payload);
+  if (parsedLegacyPayload) {
+    return {
+      userUid: parsedLegacyPayload?.userUid,
+      userId: parsedLegacyPayload?.userId,
+      /**
+       * For backwards compatibility
+       * @deprecated Not recommended to include regionUid in access (global) tokens.
+       */
+      regionUid: parsedLegacyPayload.regionUid
+    };
+  }
+
+  return null;
 };
 
 const verifyJwt = <T extends object = JWTPayload>(token: string | undefined, secret: string) =>
@@ -142,19 +170,36 @@ export const generateAppToken = (props: AccessTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '7d' });
 
 /**
+ * Signs global token.
+ *
+ * @param props Global token payload
+ * @param expiresIn Token expiry
+ * @returns JWT token string
+ *
+ * @see generateOAuth2AccessToken, generateOAuth2RefreshToken, generateGlobalAccessToken
+ */
+export const signGlobalToken = (props: GlobalJwtClaims, expiresIn?: string) => {
+  const payload = {
+    ...props
+  };
+
+  return sign(payload, globalJwtSecret(), { expiresIn: expiresIn ?? '7d' });
+};
+
+/**
  * Generates legacy global token.
  *
+ * @deprecated Not recommended to use legacy global tokens
  * @param props Legacy global token payload
- * @param expiresIn
+ * @param expiresIn Token expiry
  * @returns JWT token string
  */
-export const generateGlobalToken = (props: GlobalTokenSignablePayload, expiresIn?: string) => {
-  const payload = isLegacyGlobalPayload(props)
-    ? {
-        ...props,
-        client_id: LEGACY_GLOBAL_TOKEN_CLIENT_ID
-      }
-    : props;
+export const generateLegacyGlobalToken = (props: GlobalTokenPayload, expiresIn?: string) => {
+  const payload = {
+    ...props,
+    client_id: LEGACY_GLOBAL_TOKEN_CLIENT_ID
+  };
+
   return sign(payload, globalJwtSecret(), { expiresIn: expiresIn ?? '7d' });
 };
 
@@ -162,7 +207,7 @@ export const generateGlobalToken = (props: GlobalTokenSignablePayload, expiresIn
  * Generate OAuth2 access token using OAuth2-style claims.
  */
 export const generateOAuth2AccessToken = (props: OAuth2TokenPayload, expiresIn?: string) =>
-  generateGlobalToken(
+  signGlobalToken(
     {
       ...props,
       token_type: ACCESS_TOKEN_TYPE
@@ -174,7 +219,7 @@ export const generateOAuth2AccessToken = (props: OAuth2TokenPayload, expiresIn?:
  * Generate OAuth2 refresh token using OAuth2-style claims.
  */
 export const generateOAuth2RefreshToken = (props: OAuth2TokenPayload, expiresIn?: string) =>
-  generateGlobalToken(
+  signGlobalToken(
     {
       ...props,
       token_type: REFRESH_TOKEN_TYPE
