@@ -17,6 +17,9 @@ export const OperatorSchema = z.enum([
 ]);
 export type Operator = z.infer<typeof OperatorSchema>;
 
+export const WorkspaceRoleSchema = z.enum(['MANAGER', 'DEVELOPER', 'OWNER']);
+export type WorkspaceRole = z.infer<typeof WorkspaceRoleSchema>;
+
 // Stripe 信息
 export const StripeInfoSchema = z.object({
   subscriptionId: z.string(),
@@ -95,7 +98,8 @@ export const WorkspaceSubscriptionSchema = z.object({
   ExpireAt: z.string().nullable(),
   Traffic: z.array(z.any()).nullable(),
   type: SubscriptionTypeSchema,
-  InvoiceInfo: InvoiceInfoSchema.optional()
+  InvoiceInfo: InvoiceInfoSchema.optional(),
+  role: WorkspaceRoleSchema
 });
 export type WorkspaceSubscription = z.infer<typeof WorkspaceSubscriptionSchema>;
 
@@ -136,7 +140,7 @@ export type PaymentRecord = z.infer<typeof PaymentRecordSchema>;
 
 // 请求类型
 export const WorkspaceSubscriptionRequestSchema = z.object({
-  workspace: z.string(),
+  workspace: z.string().optional(),
   regionDomain: z.string()
 });
 export type WorkspaceSubscriptionRequest = z.infer<typeof WorkspaceSubscriptionRequestSchema>;

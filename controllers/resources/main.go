@@ -161,9 +161,9 @@ func main() {
 		setupLog.Info("traffic mongo uri not found, please check env: TRAFFIC_MONGO_URI")
 	}
 
-	err = reconciler.DBClient.InitDefaultPropertyTypeLS()
+	err = reconciler.DBClient.InitDefaultPropertyTypeLSWithDefaults()
 	if err != nil {
-		setupLog.Error(err, "failed to get property type")
+		setupLog.Error(err, "failed to init property type with defaults")
 		os.Exit(1)
 	}
 	reconciler.Properties = resources.DefaultPropertyTypeLS

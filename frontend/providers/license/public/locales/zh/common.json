@@ -26,6 +26,7 @@
   "CPU": "CPU",
   "Memory": "内存",
   "Nodes": "节点",
+  "Workspaces": "空间",
   "Users": "用户 / 工作空间",
   "Cores": "核",
   "file.upload error description": "文件上传失败",

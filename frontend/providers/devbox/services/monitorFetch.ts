@@ -1,26 +1,12 @@
-import { AxiosRequestConfig } from 'axios';
+import { MetricsClient } from 'sealos-metrics-sdk';
+import type { LaunchpadQueryParams } from 'sealos-metrics-sdk';
 
-export const monitorFetch = async (props: AxiosRequestConfig, kubeconfig: string) => {
-  const { url, params } = props;
-  const queryString = typeof params === 'object' ? new URLSearchParams(params).toString() : params;
-  const requestOptions = {
-    method: 'GET',
-    headers: {
-      Authorization: encodeURIComponent(kubeconfig)
-    }
-  };
+export const monitorFetch = async (params: LaunchpadQueryParams, kubeconfig: string) => {
+  const metricsURL = process.env.METRICS_URL;
+  const client = new MetricsClient({
+    kubeconfig,
+    metricsURL
+  });
 
-  const doMain =
-    process.env.MONITOR_URL || 'http://launchpad-monitor.sealos.svc.cluster.local:8428';
-
-  try {
-    const response = await fetch(`${doMain}${url}?${queryString}`, requestOptions);
-
-    if (!response.ok) {
-      throw new Error(`Error monitorFetch ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    throw error;
-  }
+  return client.launchpad.query(params);
 };

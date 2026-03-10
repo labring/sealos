@@ -261,9 +261,9 @@ const Form = ({
   };
 
   const supportBackup = useMemo(
-    () => BackupSupportedDBTypeList.includes(getValues('dbType')),
+    () => SystemEnv.BACKUP_ENABLED && BackupSupportedDBTypeList.includes(getValues('dbType')),
     //eslint-disable-next-line react-hooks/exhaustive-deps
-    [getValues('dbType')]
+    [getValues('dbType'), SystemEnv.BACKUP_ENABLED]
   );
 
   const [dbType, dbVersion] = watch(['dbType', 'dbVersion']);
@@ -1255,8 +1255,8 @@ const Form = ({
                                     {lowerCaseTableNames === '0'
                                       ? `0 (${t('case_sensitive')})`
                                       : lowerCaseTableNames === '1'
-                                        ? `1 (${t('case_insensitive')})`
-                                        : t('param_unset')}
+                                      ? `1 (${t('case_insensitive')})`
+                                      : t('param_unset')}
                                   </Text>
                                 )}
                                 <MyIcon

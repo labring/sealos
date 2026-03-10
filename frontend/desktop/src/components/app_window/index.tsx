@@ -20,7 +20,6 @@ export default function AppWindow(props: {
     updateOpenedAppInfo,
     setToHighestLayerById,
     currentApp,
-    currentAppPid,
     findAppInfoById,
     maxZIndex
   } = useAppStore();
@@ -54,8 +53,8 @@ export default function AppWindow(props: {
               ? 0
               : x
             : x > 0.9 * appHeaderWidth
-              ? 0
-              : x,
+            ? 0
+            : x,
         y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? 0 : y
       });
     } else {
@@ -88,7 +87,7 @@ export default function AppWindow(props: {
       ...wnapp,
       isShow: false
     });
-    closeAppById(currentAppPid);
+    closeAppById(pid);
   };
 
   return (

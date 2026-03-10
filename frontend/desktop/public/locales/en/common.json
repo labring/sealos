@@ -55,7 +55,8 @@
     "trial_expiry_upgrade_tip_one": "Your trial will expire in {{count}} day. Upgrade to keep your services online.",
     "trial_expiry_upgrade_tip_other": "Your trial will expire in {{count}} days. Upgrade to keep your services online.",
     "upgrade_button": "Upgrade Plan",
-    "upgrade_tip": "To upgrade your plan, you can visit the Cost Center."
+    "upgrade_tip": "To upgrade your plan, you can visit the Cost Center.",
+    "can_not_manage_payments": "Please contact the namespace owner to update or cancel the subscription."
   },
   "balance_text": "Balance",
   "bank_name": "Bank",
@@ -453,5 +454,9 @@
       "update_success": "Updated successfully",
       "update_failed": "Failed to update"
     }
-  }
+  },
+  "refresh_kubeconfig": "Refresh Kubeconfig",
+  "kubeconfig_rotating": "Rotating Kubeconfig...",
+  "kubeconfig_rotated_successfully": "Kubeconfig refreshed successfully",
+  "kubeconfig_rotation_failed": "Failed to refresh Kubeconfig"
 }

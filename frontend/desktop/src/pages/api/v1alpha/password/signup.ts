@@ -6,7 +6,7 @@ import { strongPassword } from '@/utils/crypto';
 import { globalPrisma } from '@/services/backend/db/init';
 import { signUpByPassword } from '@/services/backend/globalAuth';
 import { getRegionToken } from '@/services/backend/regionAuth';
-import { verifyJWT } from '@/services/backend/auth';
+import { verifyRegionalJwt } from '@/services/backend/auth';
 import { ProviderType } from 'prisma/global/generated/client';
 import { AccessTokenPayload } from '@/types/token';
 
@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 401,
         message: 'Unauthorized'
       });
-    const regionUser = (await verifyJWT<AccessTokenPayload>(data.token))!;
+    const regionUser = (await verifyRegionalJwt<AccessTokenPayload>(data.token))!;
     return jsonRes<ApiSession>(res, {
       data: {
         user: {

@@ -5,6 +5,7 @@ import { useSigninFormStore } from '@/stores/signinForm';
 import { ApiResp } from '@/types';
 import { gtmLoginSuccess } from '@/utils/gtm';
 import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { useGuideModalStore } from '@/stores/guideModal';
 import {
   Flex,
@@ -67,6 +68,8 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
         adClickData: getAdClickData()
       }),
     async onSuccess(result) {
+      const oauth2RedirectPath = consumePendingOauth2RedirectPath();
+      const postLoginRedirect = oauth2RedirectPath || '/';
       const globalToken = result.data?.token;
       if (!globalToken) throw Error();
       setGlobalToken(globalToken); // Sets global token and cookie
@@ -83,8 +86,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
             await sessionConfig(initResult.data);
             const { setInitGuide } = useGuideModalStore.getState();
             setInitGuide(true);
-            // Force full page reload to close modal and reinitialize app state
-            window.location.href = '/';
+            window.location.href = postLoginRedirect;
           }
         } catch (error) {
           console.error('Auto init failed, fallback to manual:', error);
@@ -92,8 +94,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
             user_type: 'new',
             method: 'phone'
           });
-          // Force full page reload for workspace selection
-          window.location.href = '/workspace';
+          window.location.href = oauth2RedirectPath || '/workspace';
         }
       } else {
         const regionTokenRes = await getRegionToken();
@@ -103,8 +104,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
             method: 'phone'
           });
           await sessionConfig(regionTokenRes.data);
-          // Force full page reload to close modal and reinitialize app state
-          window.location.href = '/';
+          window.location.href = postLoginRedirect;
         }
       }
     }

@@ -34,8 +34,8 @@ type State = {
   setExceededPromptOpen: (open: boolean) => void;
   showExceededPromptControls: boolean;
   setExceededPromptControls: (show: boolean) => void;
-  exceededPromptCallback: (() => void) | null;
-  setExceededPromptCallback: (callback: (() => void) | null) => void;
+  exceededPromptCallback: (() => void | Promise<void>) | null;
+  setExceededPromptCallback: (callback: (() => void | Promise<void>) | null) => void;
   showRequirements: WorkspaceQuotaItemType[];
   setShowRequirements: (types: WorkspaceQuotaItemType[]) => void;
   disallowClosing: boolean;
