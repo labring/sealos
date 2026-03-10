@@ -928,10 +928,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           updateData.image ||
           updateData.env
         ) {
+          const rawArgs = updateData.launchCommand?.args;
+          const argsArray: string[] | undefined =
+            rawArgs !== undefined
+              ? (() => {
+                  try {
+                    const p = JSON.parse(rawArgs);
+                    return Array.isArray(p) ? p : [rawArgs];
+                  } catch {
+                    return rawArgs ? rawArgs.split(' ').filter(Boolean) : [];
+                  }
+                })()
+              : undefined;
           const updateResourcesData = {
             ...updateData,
             command: updateData.launchCommand?.command,
-            args: updateData.launchCommand?.args,
+            args: argsArray,
             image: updateData.image?.imageName,
             imageName: updateData.image?.imageName,
             ...(updateData.image && {

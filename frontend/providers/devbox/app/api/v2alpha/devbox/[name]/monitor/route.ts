@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
 import { monitorFetch } from '@/services/monitorFetch';
 import type { LaunchpadQueryResult } from 'sealos-metrics-sdk';
+import { sendError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
 
@@ -114,8 +114,10 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const { searchParams } = req.nextUrl;
 
     if (!devboxName || !DEVBOX_NAME_PATTERN.test(devboxName) || devboxName.length > 63) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
         message: 'Invalid devbox name format'
       });
     }
@@ -138,8 +140,10 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const step = stepParam && stepParam.trim().length > 0 ? stepParam : DEFAULT_STEP;
 
     if (startTime >= endTime) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_VALUE,
         message: 'Start timestamp must be earlier than end timestamp'
       });
     }
@@ -175,10 +179,11 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     );
     return NextResponse.json(mergedData);
   } catch (err: any) {
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Failed to fetch devbox monitor data',
-      error: err
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Failed to fetch devbox monitor data'
     });
   }
 }

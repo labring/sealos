@@ -97,6 +97,7 @@ export type LayoutConfigType = {
     emailAlertEnabled: boolean;
     phoneAlertEnabled: boolean;
     announcementEnabled: boolean;
+    kcRotationEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -121,6 +122,9 @@ export type AuthConfigType = {
   billingUrl?: string;
   workorderUrl?: string;
   cloudVitrualMachineUrl: string;
+  oauth2idp: {
+    enabled: boolean;
+  };
   idp: {
     password?: {
       enabled: boolean;
@@ -207,6 +211,8 @@ export type AuthClientConfigType = {
       'baiduToken',
       'bingAd',
       'signUpEnabled',
+      // OAuth2 IdP
+      'oauth2idp',
       'idp.password.salt',
       'idp.github.clientSecret',
       'idp.wechat.clientSecret',
@@ -325,7 +331,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     guestModeEnabled: false,
     emailAlertEnabled: false,
     phoneAlertEnabled: false,
-    announcementEnabled: false
+    announcementEnabled: false,
+    kcRotationEnabled: true
   },
   gtmId: null
 };

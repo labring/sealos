@@ -431,33 +431,35 @@ export default function Account() {
                       </Text>
                     </Flex>
                     <Flex alignItems="center" gap="4px">
-                      <Box
-                        p="2px"
-                        cursor={isRotatingKubeconfig ? 'not-allowed' : 'pointer'}
-                        onClick={handleRotateKubeconfig}
-                        opacity={isRotatingKubeconfig ? 0.5 : 1}
-                        transition="opacity 0.2s"
-                        title={t('refresh_kubeconfig')}
-                        _hover={{
-                          color: 'blue.600'
-                        }}
-                        color="#737373"
-                        sx={
-                          isRotatingKubeconfig
-                            ? {
-                                '& svg': {
-                                  animation: 'spin 1s linear infinite'
-                                },
-                                '@keyframes spin': {
-                                  from: { transform: 'rotate(0deg)' },
-                                  to: { transform: 'rotate(360deg)' }
+                      {layoutConfig?.common?.kcRotationEnabled && (
+                        <Box
+                          p="2px"
+                          cursor={isRotatingKubeconfig ? 'not-allowed' : 'pointer'}
+                          onClick={handleRotateKubeconfig}
+                          opacity={isRotatingKubeconfig ? 0.5 : 1}
+                          transition="opacity 0.2s"
+                          title={t('refresh_kubeconfig')}
+                          _hover={{
+                            color: 'blue.600'
+                          }}
+                          color="#737373"
+                          sx={
+                            isRotatingKubeconfig
+                              ? {
+                                  '& svg': {
+                                    animation: 'spin 1s linear infinite'
+                                  },
+                                  '@keyframes spin': {
+                                    from: { transform: 'rotate(0deg)' },
+                                    to: { transform: 'rotate(360deg)' }
+                                  }
                                 }
-                              }
-                            : {}
-                        }
-                      >
-                        <RefreshCw size={16} />
-                      </Box>
+                              : {}
+                          }
+                        >
+                          <RefreshCw size={16} />
+                        </Box>
+                      )}
                       <Box
                         p="2px"
                         cursor="pointer"

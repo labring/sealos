@@ -82,6 +82,7 @@ desktopConfig:
   enterpriseRealNameAuthEnabled: false
   trackingEnabled: false
   realNameAuthEnabled: false
+  kcRotationEnabled: true
 
   # Common URLs (default values)
   realNameReward: 0

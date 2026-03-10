@@ -24,7 +24,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.18.1",
-    "@scalar/api-reference-react": "^0.6.24",
+    "@scalar/api-reference-react": "^0.8.36",
     "@sealos/driver": "workspace:^",
     "@sealos/gtm": "workspace:^",
     "@sealos/shared": "workspace:^",

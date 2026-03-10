@@ -12,6 +12,7 @@ export const enableWechat = () => global.AppConfig.desktop.auth.idp.wechat?.enab
 export const enableGoogle = () => global.AppConfig.desktop.auth.idp.google?.enabled || false;
 export const enableSignUp = () => global.AppConfig.desktop.auth.signUpEnabled || false;
 export const enableApi = () => global.AppConfig.common.apiEnabled || false;
+export const enableOAuth2Idp = () => global.AppConfig.desktop.auth.oauth2idp?.enabled || false;
 export const enableOAuth2 = () => global.AppConfig.desktop.auth.idp.oauth2?.enabled || false;
 export const getBillingUrl = () => global.AppConfig.desktop.auth.billingUrl || '';
 export const getWorkorderUrl = () => global.AppConfig.desktop.auth.workorderUrl || '';

@@ -1,12 +1,8 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-import { verifyJWT } from '@/services/backend/auth';
-import { AuthenticationTokenPayload } from '@/types/token';
-
-const SHARED_AUTH_COOKIE_NAME = 'sealos_auth_token';
-
-// Get global JWT secret (for authentication/global token)
-const globalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';
+import { ensureGlobalTokenClaims, verifyGlobalJwt } from '@/services/backend/auth';
+import { OAuth2AccessTokenPayload, OAuth2RefreshTokenPayload } from '@/types/token';
+import { SHARED_AUTH_COOKIE_NAME } from '@/utils/cookieUtils';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -28,8 +24,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Verify token using global JWT secret (for global/authentication token)
-    const payload = await verifyJWT<AuthenticationTokenPayload>(token, globalJwtSecret());
-
+    const payload = await verifyGlobalJwt<OAuth2AccessTokenPayload | OAuth2RefreshTokenPayload>(
+      token
+    );
     if (!payload) {
       return jsonRes(res, {
         code: 401,
@@ -37,13 +34,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Return user basic information from global token
+    const parsedPayload = ensureGlobalTokenClaims(payload);
+
+    if (!parsedPayload) {
+      return jsonRes(res, {
+        code: 401,
+        message: 'Invalid or expired token'
+      });
+    }
+
+    // Return user basic information from oauth2 access token.
     return jsonRes(res, {
       code: 200,
       message: 'Successfully',
       data: {
-        userId: payload.userId,
-        userUid: payload.userUid
+        user_id: parsedPayload.user_id,
+        sub: parsedPayload.sub
       }
     });
   } catch (err) {
