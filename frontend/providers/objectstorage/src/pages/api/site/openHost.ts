@@ -1,14 +1,17 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { jsonRes, handleK8sError } from '@/services/backend/response';
-import { appLanuchPadClient } from '@/services/request';
+import { getAppLaunchpadClient } from '@/services/request';
 import fs from 'fs/promises';
 import _ from 'lodash';
 import path from 'path';
 import { checkSealosUserIsRealName } from '@/utils/isRealName';
+import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
+    const config = Config();
+    const appLaunchpadClient = getAppLaunchpadClient();
     const appToken = req.headers['app-token'];
 
     if (!appToken) {
@@ -24,10 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     if (!bucket) return jsonRes(res, { code: 400, data: { error: 'bucketName is invaild' } });
 
-    const domain = process.env.SEALOS_DOMAIN;
-
-    const appName = `static-host-${bucket}`;
-    const result = await appLanuchPadClient.post(
+    const appName = `${config.objectStorage.hosting.appNamePrefix}-${bucket}`;
+    const result = await appLaunchpadClient.post(
       '/createApp',
       {
         appForm: {
@@ -36,19 +37,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           runCMD: '',
           cmdParam: '',
           replicas: 1,
-          cpu: process.env.HOSTING_POD_CPU_REQUIREMENT,
-          memory: process.env.HOSTING_POD_MEMORY_REQUIREMENT,
+          cpu: config.objectStorage.resources.hostingPodCpuMilliCores,
+          memory: config.objectStorage.resources.hostingPodMemoryMiB,
           networks: [
             {
               networkName: `network-${appName}`,
               portName: 'static-host',
-              port: 80,
+              port: config.objectStorage.hosting.networkPort,
               protocol: 'TCP',
               openPublicDomain: true,
               publicDomain: appName,
               customDomain: '',
-              domain: domain,
-              appProtocol: 'HTTP',
+              domain: config.cloud.domain,
+              appProtocol: config.objectStorage.hosting.networkProtocol,
               openNodePort: false
             }
           ],

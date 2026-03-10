@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { Config } from '@/config';
 
 interface AppTokenPayload {
   workspaceUid: string;
@@ -22,9 +23,10 @@ type RealNameInfoResponse = {
 };
 
 export async function checkSealosUserIsRealName(token: string): Promise<boolean> {
-  const sealosAccountServer = process.env.SEALOS_ACCOUNT_SERVER;
-  const sealosAccountServerTokenJwtKey = process.env.SEALOS_ACCOUNT_SERVER_TOKEN_JWT_KEY;
-  const sealosAppTokenJwtKey = process.env.SEALOS_APP_TOKEN_JWT_KEY;
+  const config = Config();
+  const sealosAccountServer = config.objectStorage.components.billing.url;
+  const sealosAccountServerTokenJwtKey = config.objectStorage.components.billing.secret;
+  const sealosAppTokenJwtKey = config.objectStorage.realName.appTokenJwtKey;
 
   if (!sealosAccountServer) {
     console.warn('CheckSealosUserIsRealName: Account server is not set');

@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm run config:gen-json-schema && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json",
     "test": "jest"
   },
   "dependencies": {
@@ -48,6 +49,7 @@
     "react-markdown": "^8.0.7",
     "sealos-desktop-sdk": "workspace:^",
     "typescript": "^5.2.2",
+    "zod": "^4.3.6",
     "zustand": "^4.4.1"
   },
   "devDependencies": {

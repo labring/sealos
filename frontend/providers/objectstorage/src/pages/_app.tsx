@@ -1,35 +1,48 @@
 import { initUser } from '@/api/bucket';
 import { QueryKey } from '@/consts';
-import useEnvStore from '@/store/env';
 import { useOssStore } from '@/store/ossStore';
 import useSessionStore from '@/store/session';
 import { theme } from '@/styles/chakraTheme';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { ChakraProvider } from '@chakra-ui/react';
-import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { dehydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { appWithTranslation } from 'next-i18next';
-import type { AppProps } from 'next/app';
+import NextApp, { AppContext, AppInitialProps, type AppProps } from 'next/app';
 import { useRouter } from 'next/router';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
-import { InsufficientQuotaDialog, QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
+import {
+  ClientConfigProvider,
+  InsufficientQuotaDialog,
+  prefetchClientAppConfig,
+  QuotaGuardProvider,
+  setupClientAppConfigDefaults,
+  type SupportedLang
+} from '@sealos/shared';
+import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 
-function App({ Component, pageProps }: AppProps) {
-  const [queryClient] = useState(
-    new QueryClient({
-      defaultOptions: {
-        queries: {
-          // With SSR, we usually want to set some default staleTime
-          // above 0 to avoid refetching immediately on the client
-          staleTime: 60 * 1000
-        }
-      }
-    })
-  );
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+      cacheTime: 0
+    }
+  }
+});
+
+setupClientAppConfigDefaults(queryClient, ['client-app-config']);
+
+type AppOwnProps = {
+  dehydratedState?: unknown;
+};
+
+function AppContent({ Component, pageProps }: AppProps) {
+  useClientAppConfig();
+
   const initMinioClient = useOssStore((s) => s.initClient);
-  const client = useOssStore((s) => s.client);
-  const { session: oldSession, setSession } = useSessionStore();
-  const { initSystemEnv } = useEnvStore();
+  const { setSession } = useSessionStore();
   const { clearClient, setSecret, secret } = useOssStore((s) => s);
   const router = useRouter();
 
@@ -39,7 +52,6 @@ function App({ Component, pageProps }: AppProps) {
 
   useEffect(() => {
     createSealosApp();
-    initSystemEnv();
   }, []);
 
   useEffect(() => {
@@ -62,14 +74,13 @@ function App({ Component, pageProps }: AppProps) {
     const initApp = async () => {
       try {
         const session = await sealosApp.getSession();
-        if (oldSession?.kubeconfig === session.kubeconfig && client) return;
         setSession(session);
         const userInit = await queryClient.fetchQuery([QueryKey.bucketUser, { session }], initUser);
         userInit?.secret && setSecret(userInit.secret);
       } catch (error) {}
     };
     initApp();
-  }, [oldSession?.kubeconfig]);
+  }, []);
 
   useEffect(() => {
     const initClient = async () => {
@@ -90,25 +101,50 @@ function App({ Component, pageProps }: AppProps) {
           forcePathStyle: true,
           region: 'us-east-1'
         });
-        queryClient.invalidateQueries();
+        queryClient.invalidateQueries({ queryKey: [QueryKey.bucketList] });
+        queryClient.invalidateQueries({ queryKey: [QueryKey.bucketInfo] });
+        queryClient.invalidateQueries({ queryKey: [QueryKey.minioFileList] });
+        queryClient.invalidateQueries({ queryKey: [QueryKey.HostStatus] });
       } else {
         clearClient();
       }
     };
     initClient();
-  }, [secret, oldSession]);
+  }, [secret]);
 
   return (
+    <ChakraProvider theme={theme}>
+      <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
+        <Component {...pageProps} />
+        <InsufficientQuotaDialog lang={(router.locale || 'en') as SupportedLang} />
+      </QuotaGuardProvider>
+    </ChakraProvider>
+  );
+}
+
+function MyApp({ Component, pageProps, dehydratedState }: AppProps & AppOwnProps) {
+  return (
     <QueryClientProvider client={queryClient}>
-      <Hydrate state={pageProps.dehydratedState}>
-        <ChakraProvider theme={theme}>
-          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
-            <Component {...pageProps} />
-            <InsufficientQuotaDialog lang={(router.locale || 'en') as SupportedLang} />
-          </QuotaGuardProvider>
-        </ChakraProvider>
-      </Hydrate>
+      <ClientConfigProvider dehydratedState={dehydratedState}>
+        <AppContent Component={Component} pageProps={pageProps} />
+      </ClientConfigProvider>
     </QueryClientProvider>
   );
 }
-export default appWithTranslation(App);
+
+MyApp.getInitialProps = async (context: AppContext): Promise<AppInitialProps & AppOwnProps> => {
+  const ctx = await NextApp.getInitialProps(context);
+  let dehydratedState: unknown;
+  try {
+    if (typeof window === 'undefined') {
+      const qc = new QueryClient();
+      await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
+      dehydratedState = dehydrate(qc);
+    }
+  } catch (error) {
+    console.error('[Client App Config] Failed to prefetch:', error);
+  }
+  return { ...ctx, dehydratedState };
+};
+
+export default appWithTranslation(MyApp);
