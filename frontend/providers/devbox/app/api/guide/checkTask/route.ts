@@ -1,11 +1,12 @@
 import { jsonRes } from '@/services/backend/response';
 import { NextRequest } from 'next/server';
+import { Config } from '@/src/config';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    if (process.env.GUIDE_ENABLED !== 'true') return jsonRes({ data: null });
+    if (!Config().devbox.features.guide) return jsonRes({ data: null });
 
     const data = (await req.json()) as {
       desktopToAppToken: string;
@@ -14,9 +15,7 @@ export async function POST(req: NextRequest) {
       return jsonRes({ code: 401, message: 'token is valid' });
     }
 
-    const domain = process.env.SEALOS_DOMAIN;
-
-    const response = await fetch(`https://${domain}/api/account/checkTask`, {
+    const response = await fetch(`https://${Config().cloud.domain}/api/account/checkTask`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

@@ -8,6 +8,7 @@
     "moduleResolution": "bundler",
     "paths": {
       "@/*": ["./*"],
+      "@/config": ["./src/config.ts"],
       "prisma/*": ["prisma/*"]
     },
     "plugins": [
@@ -16,5 +17,5 @@
       }
     ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts", ".next/types/**/*.ts"]
 }

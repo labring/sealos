@@ -2048,11 +2048,11 @@ importers:
         specifier: ^2.0.5
         version: 2.0.5(react-dom@18.3.1)(react@18.3.1)
       zod:
-        specifier: ^3.23.8
-        version: 3.23.8
+        specifier: ^3.25.76
+        version: 3.25.76
       zod-openapi:
         specifier: ^4.2.4
-        version: 4.2.4(zod@3.23.8)
+        version: 4.2.4(zod@3.25.76)
       zustand:
         specifier: ^4.5.4
         version: 4.5.4(@types/react@18.3.27)(immer@10.1.1)(react@18.3.1)
@@ -2717,6 +2717,9 @@ importers:
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
+      zod:
+        specifier: ^3.23.8
+        version: 3.24.1
       zustand:
         specifier: ^4.4.1
         version: 4.4.7(@types/react@18.3.27)(immer@10.0.3)(react@18.3.1)
@@ -9051,8 +9054,8 @@ packages:
       express-rate-limit: 7.5.0(express@5.1.0)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.24.1
-      zod-to-json-schema: 3.24.5(zod@3.24.1)
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.5(zod@3.25.76)
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -11844,7 +11847,7 @@ packages:
       vue-router: 4.5.1(vue@3.5.13)
       whatwg-mimetype: 4.0.0
       yaml: 2.7.1
-      zod: 3.24.1
+      zod: 3.25.76
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -11899,7 +11902,7 @@ packages:
       vue-router: 4.5.1(vue@3.5.13)
       whatwg-mimetype: 4.0.0
       yaml: 2.7.1
-      zod: 3.24.1
+      zod: 3.25.76
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -12104,7 +12107,7 @@ packages:
       microdiff: 1.5.0
       nanoid: 5.1.5
       vue: 3.5.13(typescript@5.2.2)
-      zod: 3.24.1
+      zod: 3.25.76
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -12149,7 +12152,7 @@ packages:
       microdiff: 1.5.0
       nanoid: 5.1.5
       vue: 3.5.13(typescript@5.2.2)
-      zod: 3.24.1
+      zod: 3.25.76
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -12527,7 +12530,7 @@ packages:
       nanoid: 5.1.5
       type-fest: 4.40.1
       yaml: 2.7.1
-      zod: 3.24.1
+      zod: 3.25.76
     transitivePeerDependencies:
       - '@hyperjump/browser'
     dev: false
@@ -12642,7 +12645,7 @@ packages:
     resolution: {integrity: sha512-UMxX54taQXnEWYEuesbH+pkjlXRVV1u/Wx6YbVeU3QoJdFGqT3Z7si9zsokoG6MXDcdi1LGny7A0KwownmPvUQ==}
     engines: {node: '>=18'}
     dependencies:
-      zod: 3.24.1
+      zod: 3.25.76
     dev: false
 
   /@scalar/openapi-types@0.2.3:
@@ -12771,7 +12774,7 @@ packages:
       '@unhead/schema': 1.11.20
       nanoid: 5.1.5
       type-fest: 4.40.1
-      zod: 3.24.1
+      zod: 3.25.76
     dev: false
 
   /@scalar/types@0.1.16:
@@ -12887,7 +12890,7 @@ packages:
       cva: 1.0.0-beta.2(typescript@5.2.2)
       tailwind-merge: 2.6.0
       vue: 3.5.13(typescript@5.2.2)
-      zod: 3.24.1
+      zod: 3.25.76
     transitivePeerDependencies:
       - '@vue/composition-api'
       - typescript
@@ -31713,13 +31716,13 @@ packages:
       readable-stream: 3.6.2
     dev: false
 
-  /zod-openapi@4.2.4(zod@3.23.8):
+  /zod-openapi@4.2.4(zod@3.25.76):
     resolution: {integrity: sha512-tsrQpbpqFCXqVXUzi3TPwFhuMtLN3oNZobOtYnK6/5VkXsNdnIgyNr4r8no4wmYluaxzN3F7iS+8xCW8BmMQ8g==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.21.4
     dependencies:
-      zod: 3.23.8
+      zod: 3.25.76
     dev: false
 
   /zod-openapi@4.2.4(zod@4.3.5):
@@ -31749,12 +31752,12 @@ packages:
       zod: 4.3.5
     dev: false
 
-  /zod-to-json-schema@3.24.5(zod@3.24.1):
+  /zod-to-json-schema@3.24.5(zod@3.25.76):
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
       zod: ^3.24.1
     dependencies:
-      zod: 3.24.1
+      zod: 3.25.76
     dev: false
 
   /zod@3.23.8:
@@ -31763,6 +31766,10 @@ packages:
 
   /zod@3.24.1:
     resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+    dev: false
+
+  /zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
     dev: false
 
   /zod@4.0.14:

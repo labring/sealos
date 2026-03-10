@@ -8,9 +8,9 @@ import { adaptDevboxVersionListItem } from '@/utils/adapt';
 import { RequestSchema } from './schema';
 import { devboxKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
+import { Config } from '@/src/config';
 
 export const dynamic = 'force-dynamic';
-
 
 const DEVBOX_NAME_PATTERN = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
 const MAX_DEVBOX_NAME_LENGTH = 63;
@@ -27,8 +27,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const validateDevboxName = (name: string) =>
   DEVBOX_NAME_PATTERN.test(name) && name.length <= MAX_DEVBOX_NAME_LENGTH;
 
-const is404Error = (err: any) =>
-  err?.response?.statusCode === 404 || err?.statusCode === 404;
+const is404Error = (err: any) => err?.response?.statusCode === 404 || err?.statusCode === 404;
 
 async function checkResourceExists(checkFn: () => Promise<any>): Promise<boolean> {
   try {
@@ -59,22 +58,33 @@ async function waitForResourceDeletion(
 
 async function listIngresses(k8sNetworkingApp: any, namespace: string, devboxName: string) {
   const { body } = await k8sNetworkingApp.listNamespacedIngress(
-    namespace, undefined, undefined, undefined, undefined, `${devboxKey}=${devboxName}`
+    namespace,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    `${devboxKey}=${devboxName}`
   );
   return body.items || [];
 }
 
 async function listDevboxReleases(k8sCustomObjects: any, namespace: string) {
-  const { body } = await k8sCustomObjects.listNamespacedCustomObject(
-    DEVBOX_API.group, DEVBOX_API.version, namespace, DEVBOX_API.releases
-  ) as { body: { items: KBDevboxReleaseType[] } };
+  const { body } = (await k8sCustomObjects.listNamespacedCustomObject(
+    DEVBOX_API.group,
+    DEVBOX_API.version,
+    namespace,
+    DEVBOX_API.releases
+  )) as { body: { items: KBDevboxReleaseType[] } };
   return body.items || [];
 }
 
 async function listDevboxes(k8sCustomObjects: any, namespace: string) {
-  const { body } = await k8sCustomObjects.listNamespacedCustomObject(
-    DEVBOX_API.group, DEVBOX_API.version, namespace, DEVBOX_API.devboxes
-  ) as { body: { items: KBDevboxTypeV2[] } };
+  const { body } = (await k8sCustomObjects.listNamespacedCustomObject(
+    DEVBOX_API.group,
+    DEVBOX_API.version,
+    namespace,
+    DEVBOX_API.devboxes
+  )) as { body: { items: KBDevboxTypeV2[] } };
   return body.items || [];
 }
 
@@ -92,16 +102,28 @@ async function patchIngresses(
 
     if (ann === fromClass) {
       return k8sNetworkingApp.patchNamespacedIngress(
-        name, namespace,
+        name,
+        namespace,
         { metadata: { annotations: { 'kubernetes.io/ingress.class': toClass } } },
-        undefined, undefined, undefined, undefined, undefined, PATCH_OPTIONS
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        PATCH_OPTIONS
       );
     }
     if (spec === fromClass) {
       return k8sNetworkingApp.patchNamespacedIngress(
-        name, namespace,
+        name,
+        namespace,
         { spec: { ingressClassName: toClass } },
-        undefined, undefined, undefined, undefined, undefined, PATCH_OPTIONS
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        PATCH_OPTIONS
       );
     }
     return null;
@@ -109,7 +131,6 @@ async function patchIngresses(
 
   await Promise.all(patchTasks.filter(Boolean));
 }
-
 
 async function setDevboxState(
   k8sNetworkingApp: any,
@@ -131,9 +152,16 @@ async function setDevboxState(
 
   await patchIngresses(k8sNetworkingApp, namespace, targetIngresses, fromClass, toClass);
   await k8sCustomObjects.patchNamespacedCustomObject(
-    DEVBOX_API.group, DEVBOX_API.version, namespace, DEVBOX_API.devboxes, devboxName,
+    DEVBOX_API.group,
+    DEVBOX_API.version,
+    namespace,
+    DEVBOX_API.devboxes,
+    devboxName,
     { spec: { state: running ? 'Running' : 'Stopped' } },
-    undefined, undefined, undefined, PATCH_OPTIONS
+    undefined,
+    undefined,
+    undefined,
+    PATCH_OPTIONS
   );
 }
 
@@ -150,7 +178,17 @@ interface AutostartJobParams {
 }
 
 async function ensureAutostartJob(params: AutostartJobParams) {
-  const { applyYamlList, delYamlList, k8sCore, k8sAuth, k8sBatch, namespace, devboxName, devboxUid, execCommand } = params;
+  const {
+    applyYamlList,
+    delYamlList,
+    k8sCore,
+    k8sAuth,
+    k8sBatch,
+    namespace,
+    devboxName,
+    devboxUid,
+    execCommand
+  } = params;
 
   const [serviceAccountYaml, roleYaml, roleBindingYaml, jobYaml] = generateDevboxRbacAndJob({
     devboxName,
@@ -166,7 +204,9 @@ async function ensureAutostartJob(params: AutostartJobParams) {
   const [saExists, roleExists, rbExists] = await Promise.all([
     checkResourceExists(() => k8sCore.readNamespacedServiceAccount(executorName, namespace)),
     checkResourceExists(() => k8sAuth.readNamespacedRole(`${executorName}-role`, namespace)),
-    checkResourceExists(() => k8sAuth.readNamespacedRoleBinding(`${executorName}-binding`, namespace))
+    checkResourceExists(() =>
+      k8sAuth.readNamespacedRoleBinding(`${executorName}-binding`, namespace)
+    )
   ]);
 
   if (!saExists) yamlsToApply.push(serviceAccountYaml);
@@ -177,7 +217,9 @@ async function ensureAutostartJob(params: AutostartJobParams) {
   const jobExists = await checkResourceExists(() => k8sBatch.readNamespacedJob(jobName, namespace));
   if (jobExists) {
     await delYamlList([jobYaml]);
-    const deleted = await waitForResourceDeletion(() => k8sBatch.readNamespacedJob(jobName, namespace));
+    const deleted = await waitForResourceDeletion(() =>
+      k8sBatch.readNamespacedJob(jobName, namespace)
+    );
     if (!deleted) throw new Error('Timeout waiting for previous autostart Job to be deleted');
   }
 
@@ -196,16 +238,31 @@ interface ReleaseTaskParams extends AutostartJobParams {
 
 async function executeReleaseTask(params: ReleaseTaskParams) {
   const {
-    applyYamlList, delYamlList, k8sCustomObjects, k8sNetworkingApp,
-    k8sCore, k8sAuth, k8sBatch, namespace, devboxName, devboxUid,
-    tag, releaseDes, wasRunning, shouldRestart, execCommand
+    applyYamlList,
+    delYamlList,
+    k8sCustomObjects,
+    k8sNetworkingApp,
+    k8sCore,
+    k8sAuth,
+    k8sBatch,
+    namespace,
+    devboxName,
+    devboxUid,
+    tag,
+    releaseDes,
+    wasRunning,
+    shouldRestart,
+    execCommand
   } = params;
 
   await setDevboxState(k8sNetworkingApp, k8sCustomObjects, namespace, devboxName, false);
 
   try {
     const devboxYaml = json2DevboxRelease({
-      devboxName, tag, releaseDes, devboxUid,
+      devboxName,
+      tag,
+      releaseDes,
+      devboxUid,
       startDevboxAfterRelease: false
     });
     await applyYamlList([devboxYaml], 'create');
@@ -223,8 +280,15 @@ async function executeReleaseTask(params: ReleaseTaskParams) {
         if (shouldRestart) {
           await setDevboxState(k8sNetworkingApp, k8sCustomObjects, namespace, devboxName, true);
           await ensureAutostartJob({
-            applyYamlList, delYamlList, k8sCore, k8sAuth, k8sBatch,
-            namespace, devboxName, devboxUid, execCommand
+            applyYamlList,
+            delYamlList,
+            k8sCore,
+            k8sAuth,
+            k8sBatch,
+            namespace,
+            devboxName,
+            devboxUid,
+            execCommand
           });
         }
         return;
@@ -237,7 +301,9 @@ async function executeReleaseTask(params: ReleaseTaskParams) {
     throw new Error('Devbox release timeout');
   } catch (e) {
     if (wasRunning) {
-      try { await setDevboxState(k8sNetworkingApp, k8sCustomObjects, namespace, devboxName, true); } catch {}
+      try {
+        await setDevboxState(k8sNetworkingApp, k8sCustomObjects, namespace, devboxName, true);
+      } catch {}
     }
     console.error('[ReleaseTask Error]', devboxName, tag, e);
   }
@@ -260,7 +326,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     }
 
     const releases = await listDevboxReleases(k8sCustomObjects, namespace);
-    const { REGISTRY_ADDR } = process.env;
+    const registryHost = Config().devbox.runtime.registryHost;
 
     const versions = releases
       .filter((item) => item.spec?.devboxName === devboxName)
@@ -269,7 +335,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
       .map(({ createTime, ...rest }) => ({
         ...rest,
         createdAt: createTime,
-        image: `${REGISTRY_ADDR}/${namespace}/${rest.devboxName}:${rest.tag}`
+        image: `${registryHost}/${namespace}/${rest.devboxName}:${rest.tag}`
       }));
 
     return NextResponse.json(versions);
@@ -283,7 +349,11 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     const body = await req.json();
     const validationResult = RequestSchema.safeParse(body);
     if (!validationResult.success) {
-      return jsonRes({ code: 400, message: 'Invalid request body', error: validationResult.error.errors });
+      return jsonRes({
+        code: 400,
+        message: 'Invalid request body',
+        error: validationResult.error.errors
+      });
     }
 
     const { name: devboxName } = params;
@@ -294,8 +364,14 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     const { tag, releaseDes, execCommand } = validationResult.data;
 
     const {
-      applyYamlList, delYamlList, namespace,
-      k8sCustomObjects, k8sNetworkingApp, k8sCore, k8sAuth, k8sBatch
+      applyYamlList,
+      delYamlList,
+      namespace,
+      k8sCustomObjects,
+      k8sNetworkingApp,
+      k8sCore,
+      k8sAuth,
+      k8sBatch
     } = await getK8s({ kubeconfig: await authSession(req.headers) });
 
     const [releases, devboxes] = await Promise.all([
@@ -316,10 +392,18 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     }
 
     executeReleaseTask({
-      applyYamlList, delYamlList, k8sCustomObjects, k8sNetworkingApp,
-      k8sCore, k8sAuth, k8sBatch, namespace, devboxName,
+      applyYamlList,
+      delYamlList,
+      k8sCustomObjects,
+      k8sNetworkingApp,
+      k8sCore,
+      k8sAuth,
+      k8sBatch,
+      namespace,
+      devboxName,
       devboxUid: devbox?.metadata?.uid || '',
-      tag, releaseDes,
+      tag,
+      releaseDes,
       wasRunning: devbox?.spec?.state === 'Running',
       shouldRestart: true,
       execCommand

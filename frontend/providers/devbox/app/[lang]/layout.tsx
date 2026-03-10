@@ -3,9 +3,11 @@ import { enableMapSet } from 'immer';
 import { GeistSans } from 'geist/font/sans';
 import { Fira_Code } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
+import { Config } from '@/src/config';
 
 import IntlProvider from '@/components/providers/MyIntlProvider';
-import QueryProvider from '@/components/providers/MyQueryProvider';
+import ClientAppConfigBootstrap from '@/components/providers/ClientAppConfigBootstrap';
+import { CustomScript } from '@/src/types/config';
 
 import './globals.css';
 import 'react-day-picker/style.css';
@@ -41,15 +43,23 @@ export default function RootLayout({
   children: React.ReactNode;
   params: { lang: string };
 }>) {
-  const scripts: { src: string }[] = JSON.parse(process.env.CUSTOM_SCRIPTS ?? '[]');
+  const scripts = Config().devbox.ui.customScripts;
   return (
     <html lang={lang} className={`${GeistSans.variable} ${FiraCode.variable}`}>
       <body>
         <IntlProvider>
-          <QueryProvider>{children}</QueryProvider>
+          <ClientAppConfigBootstrap>{children}</ClientAppConfigBootstrap>
         </IntlProvider>
-        {scripts.map((script, i) => (
-          <Script key={i} {...script} />
+        {scripts.map((script: CustomScript) => (
+          <Script
+            key={script.id}
+            id={script.id}
+            strategy={script.strategy}
+            {...('src' in script ? { src: script.src } : {})}
+            {...('content' in script
+              ? { dangerouslySetInnerHTML: { __html: script.content } }
+              : {})}
+          />
         ))}
       </body>
     </html>

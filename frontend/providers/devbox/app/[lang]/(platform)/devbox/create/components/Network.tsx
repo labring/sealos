@@ -6,9 +6,9 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { nanoid } from '@/utils/tools';
-import { useEnvStore } from '@/stores/env';
 import { ProtocolList } from '@/constants/devbox';
 import { DevboxEditTypeV2, ProtocolType } from '@/types/devbox';
+import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
 
 import {
   Select,
@@ -34,7 +34,7 @@ export default function Network({
 }: React.HTMLAttributes<HTMLDivElement> & { isEdit: boolean }) {
   const { register, getValues, control } = useFormContext<DevboxEditTypeV2>();
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
 
   const {
     fields: networks,
@@ -115,7 +115,8 @@ export default function Network({
           {/* Port List */}
           {networks.map((network, i) => {
             const isReservedPort =
-              env.enableWebideFeature === 'true' && network.port === env.webIdePort;
+              appConfig.devbox.features.webide &&
+              network.port === appConfig.devbox.runtime.webidePort;
             return (
               <div key={network.id} className="flex w-full flex-col gap-3">
                 <div className="guide-network-configuration flex w-full items-center gap-4">
@@ -127,7 +128,7 @@ export default function Network({
                         {t('Container Port')}
                       </span>
                       <Input
-                        className="w-25 h-10"
+                        className="h-10 w-25"
                         type="number"
                         min={1}
                         max={65535}
@@ -154,8 +155,10 @@ export default function Network({
                               return !isDuplicate || t('The port number cannot be repeated');
                             },
                             reservedPort: (value) => {
-                              if (value === env.webIdePort) {
-                                return t('port_reserved', { port: env.webIdePort });
+                              if (value === appConfig.devbox.runtime.webidePort) {
+                                return t('port_reserved', {
+                                  port: appConfig.devbox.runtime.webidePort
+                                });
                               }
                               return true;
                             }
@@ -187,7 +190,8 @@ export default function Network({
                                 protocol: network.protocol || ('HTTP' as ProtocolType),
                                 openPublicDomain: checked,
                                 publicDomain:
-                                  network.publicDomain || `${nanoid()}.${env.ingressDomain}`
+                                  network.publicDomain ||
+                                  `${nanoid()}.${appConfig.devbox.userDomain.domain}`
                               });
                             }}
                           />
@@ -215,15 +219,15 @@ export default function Network({
                                 ))}
                               </SelectContent>
                             </Select>
-                            <div className="flex-grow-1 flex h-10 flex-shrink-0 items-center rounded-r-md border border-l-0 px-3 py-2">
-                              <div className="mr-2 min-w-64 flex-1 select-all truncate text-sm/5 text-muted-foreground">
+                            <div className="flex h-10 flex-shrink-0 flex-grow-1 items-center rounded-r-md border border-l-0 px-3 py-2">
+                              <div className="mr-2 min-w-64 flex-1 truncate text-sm/5 text-muted-foreground select-all">
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.publicDomain!}
                               </div>
                               <Button
                                 variant="ghost"
-                                className="cursor-pointer whitespace-nowrap text-sm/5 text-blue-600 hover:bg-white hover:text-blue-700"
+                                className="cursor-pointer text-sm/5 whitespace-nowrap text-blue-600 hover:bg-white hover:text-blue-700"
                                 disabled={isReservedPort}
                                 onClick={() =>
                                   setCustomAccessModalData({

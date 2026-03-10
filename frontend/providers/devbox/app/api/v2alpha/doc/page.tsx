@@ -2,12 +2,12 @@
 import { useEffect, useState, Suspense } from 'react';
 import { ApiReferenceReact } from '@scalar/api-reference-react';
 
-import { useEnvStore } from '@/stores/env';
+import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
 
 import '@scalar/api-reference-react/style.css';
 
 function ApiDocsContent() {
-  const { env } = useEnvStore();
+  const clientAppConfig = useClientAppConfig();
   const [apiData, setApiData] = useState(null);
 
   useEffect(() => {
@@ -44,7 +44,7 @@ function ApiDocsContent() {
     },
     cdn: process.env.NEXT_PUBLIC_MOCK_USER
       ? undefined
-      : `https://devbox.${env.sealosDomain}/scalar/cdn.js`
+      : `https://devbox.${clientAppConfig.cloud.domain}/scalar/cdn.js`
   };
 
   if (!apiData) {

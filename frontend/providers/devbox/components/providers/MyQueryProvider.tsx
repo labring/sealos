@@ -1,8 +1,9 @@
 'use client';
 
 import { isServer, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ClientConfigProvider, setupClientAppConfigDefaults } from '@sealos/shared';
 const makeQueryClient = () => {
-  return new QueryClient({
+  const client = new QueryClient({
     defaultOptions: {
       queries: {
         refetchOnWindowFocus: false,
@@ -11,6 +12,8 @@ const makeQueryClient = () => {
       }
     }
   });
+  setupClientAppConfigDefaults(client, ['client-app-config']);
+  return client;
 };
 let browserQueryClient: QueryClient | undefined = undefined;
 const getQueryClient = () => {
@@ -20,21 +23,19 @@ const getQueryClient = () => {
     return browserQueryClient;
   }
 };
-const QueryProvider = ({ children }: { children: React.ReactNode }) => {
-  // const [queryClient] = useState(
-  //   () =>
-  //     new QueryClient({
-  //       defaultOptions: {
-  //         queries: {
-  //           refetchOnWindowFocus: false,
-  //           retry: false,
-  //           cacheTime: 0
-  //         }
-  //       }
-  //     })
-  // )
+const QueryProvider = ({
+  children,
+  dehydratedState
+}: {
+  children: React.ReactNode;
+  dehydratedState?: unknown;
+}) => {
   const queryClient = getQueryClient();
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ClientConfigProvider dehydratedState={dehydratedState}>{children}</ClientConfigProvider>
+    </QueryClientProvider>
+  );
 };
 
 export default QueryProvider;

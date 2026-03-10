@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm run config:gen-json-schema && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod/v4'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json",
     "ts-lint": "tsc --noEmit",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk",
@@ -70,7 +71,7 @@
     "sealos-mcp-sdk": "workspace:^",
     "sealos-metrics-sdk": "workspace:^",
     "sonner": "^2.0.5",
-    "zod": "^3.23.8",
+    "zod": "^3.25.76",
     "zod-openapi": "^4.2.4",
     "zustand": "^4.5.4"
   },

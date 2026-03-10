@@ -14,10 +14,10 @@ import {
 import { useSearchParams } from 'next/navigation';
 
 import { useRouter } from '@/i18n';
-import { useEnvStore } from '@/stores/env';
 import { useGuideStore } from '@/stores/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
+import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
 
 import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
@@ -37,7 +37,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
   const locale = useLocale();
   const t = useTranslations();
   const searchParams = useSearchParams();
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
   const [importDrawerType, setImportDrawerType] = useState<ImportType | null>(null);
@@ -60,9 +60,9 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
 
   const handleGotoDocs: any = () => {
     if (locale === 'zh') {
-      window.open(env.documentUrlZH, '_blank');
+      window.open(appConfig.devbox.ui.docUrls.docs.zh, '_blank');
     } else {
-      window.open(env.documentUrlEN, '_blank');
+      window.open(appConfig.devbox.ui.docUrls.docs.en, '_blank');
     }
   };
 
@@ -159,7 +159,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
             <LayoutTemplate className="h-4 w-4" />
             <span className="leading-5"> {t('scan_templates')}</span>
           </Button>
-          {env.enableImportFeature === 'true' ? (
+          {appConfig.devbox.features.importTemplate ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="list-create-app-button h-10 gap-2">

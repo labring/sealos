@@ -11,11 +11,13 @@ import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import { devboxDB } from '@/services/db/init';
 import { ProtocolType } from '@/types/devbox';
 import { adaptDevboxVersionListItem } from '@/utils/adapt';
+import { Config } from '@/src/config';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    const config = Config();
     const body = await req.json();
     const validatedBody = DeployDevboxRequestSchema.parse(body);
     const { devboxName, tag, cpu = 2000, memory = 4096 } = validatedBody;
@@ -52,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     const appName = `${devboxName}-release-${nanoid()}`;
-    const image = `${process.env.REGISTRY_ADDR}/${namespace}/${devboxName}:${tag}`;
+    const image = `${config.devbox.runtime.registryHost}/${namespace}/${devboxName}:${tag}`;
 
     const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
@@ -120,7 +122,7 @@ export async function POST(req: NextRequest) {
           openPublicDomain: true,
           publicDomain: `${nanoid()}`,
           customDomain: '',
-          domain: process.env.INGRESS_DOMAIN || '',
+          domain: config.devbox.userDomain.domain,
           port: svcport.port,
           appProtocol: ingressInfo?.protocol as ProtocolType
         };
@@ -159,17 +161,14 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    const fetchResponse = await fetch(
-      `https://applaunchpad.${process.env.SEALOS_DOMAIN}/api/v1alpha/createApp`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: headers.Authorization
-        },
-        body: JSON.stringify(formData)
-      }
-    );
+    const fetchResponse = await fetch(config.devbox.components.appLaunchpad.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: headers.Authorization
+      },
+      body: JSON.stringify(formData)
+    });
 
     const responseData = await fetchResponse.json();
 

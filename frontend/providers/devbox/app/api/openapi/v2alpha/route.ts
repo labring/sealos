@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 import { NextResponse } from 'next/server';
+import { Config } from '@/src/config';
 import {
   RequestSchema as CreateDevboxRequestSchema,
   SuccessResponseSchema as CreateDevboxSuccessResponseSchema,
@@ -219,7 +220,8 @@ All endpoints require authentication via kubeconfig or JWT token.
         post: {
           tags: ['Mutation'],
           summary: 'Create new devbox',
-          description: 'Create a new Devbox instance with customizable runtime, resources, and ports. CPU and memory quota must be in range [0.1, 32].',
+          description:
+            'Create a new Devbox instance with customizable runtime, resources, and ports. CPU and memory quota must be in range [0.1, 32].',
           requestBody: {
             description:
               'Devbox creation configuration including runtime, resources, ports, and environment settings',
@@ -240,7 +242,8 @@ All endpoints require authentication via kubeconfig or JWT token.
                     }
                   },
                   advanced: {
-                    summary: 'Advanced Devbox with ports and environment variables (supports flexible CPU/memory values)',
+                    summary:
+                      'Advanced Devbox with ports and environment variables (supports flexible CPU/memory values)',
                     value: {
                       name: 'my-python-api',
                       runtime: 'python',
@@ -535,7 +538,8 @@ All endpoints require authentication via kubeconfig or JWT token.
         patch: {
           tags: ['Mutation'],
           summary: 'Update devbox configuration',
-          description: 'Update Devbox resources and port configurations without restart. CPU and memory quota must be in range [0.1, 32].',
+          description:
+            'Update Devbox resources and port configurations without restart. CPU and memory quota must be in range [0.1, 32].',
           parameters: [
             {
               name: 'name',
@@ -586,7 +590,8 @@ All endpoints require authentication via kubeconfig or JWT token.
                     }
                   },
                   both: {
-                    summary: 'Update both resources and ports (supports flexible CPU/memory values)',
+                    summary:
+                      'Update both resources and ports (supports flexible CPU/memory values)',
                     value: {
                       quota: {
                         cpu: 0.5,
@@ -1943,7 +1948,7 @@ All endpoints require authentication via kubeconfig or JWT token.
   });
 
 export async function GET(request: Request) {
-  const domain = process.env.SEALOS_DOMAIN || '';
+  const domain = Config().cloud.domain;
   try {
     const openApiDoc = tmpOpenApiDocument(domain);
     return NextResponse.json(openApiDoc);

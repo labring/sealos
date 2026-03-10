@@ -5,9 +5,9 @@ import { ArrowUpRight } from 'lucide-react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useQuery } from '@tanstack/react-query';
 
-import { useEnvStore } from '@/stores/env';
 import { AppListItemType } from '@/types/app';
 import { getAppsByDevboxId } from '@/api/devbox';
+import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
 
 import {
   Table,
@@ -86,7 +86,7 @@ export default function DeployDevboxDrawer({
   open
 }: DeployDevboxDrawerProps) {
   const t = useTranslations();
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
 
   const { data: apps, isLoading } = useQuery(
     ['apps', devboxId],
@@ -174,10 +174,10 @@ export default function DeployDevboxDrawer({
                           <Tooltip>
                             <TooltipTrigger className="w-full cursor-pointer truncate">
                               {item.imageName.startsWith(
-                                `${env.registryAddr}/${env.namespace}/${devboxName}`
+                                `${appConfig.devbox.runtime.registryHost}/${appConfig.devbox.runtime.defaultNamespace}/${devboxName}`
                               )
                                 ? item.imageName.replace(
-                                    `${env.registryAddr}/${env.namespace}/`,
+                                    `${appConfig.devbox.runtime.registryHost}/${appConfig.devbox.runtime.defaultNamespace}/`,
                                     ''
                                   )
                                 : '-'}

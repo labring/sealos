@@ -10,6 +10,7 @@ import { getRegionUid } from '@/utils/env';
 import { updateTemplateSchema } from '@/utils/validate';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
+import { Config } from '@/src/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,9 +18,9 @@ export async function POST(req: NextRequest) {
   try {
     const headerList = req.headers;
     const queryRaw = await req.json();
-    const imageHub = process.env.REGISTRY_ADDR;
+    const imageHub = Config().devbox.runtime.registryHost;
     if (!imageHub) {
-      console.log('REGISTRY_ADDR is not set');
+      console.log('devbox.runtime.registryHost is not set');
       return jsonRes({
         code: 500
       });

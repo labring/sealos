@@ -1,9 +1,7 @@
 import { GET, POST } from '@/services/request';
 import type { UserTask } from '@/types/user';
-import type { Env } from '@/types/static';
 import { AuthCnamePrams, AuthDomainChallengeParams } from '@/types/params';
 import { useUserStore } from '@/stores/user';
-export const getAppEnv = () => GET<Env>('/api/getEnv');
 
 export const getUserIsOutStandingPayment = () =>
   GET<{

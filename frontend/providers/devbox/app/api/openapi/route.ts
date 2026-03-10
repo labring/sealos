@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 import { NextResponse } from 'next/server';
+import { Config } from '@/src/config';
 import {
   RequestSchema as CreateDevboxRequestSchema,
   SuccessResponseSchema as CreateDevboxSuccessResponseSchema,
@@ -2915,7 +2916,7 @@ Returns two arrays:
   });
 
 export async function GET(request: Request) {
-  const domain = process.env.SEALOS_DOMAIN || '';
+  const domain = Config().cloud.domain;
   try {
     const openApiDoc = tmpOpenApiDocument(domain);
     return NextResponse.json(openApiDoc);

@@ -18,7 +18,6 @@ import { createDevbox, updateDevbox } from '@/api/devbox';
 import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
 import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox';
 
-import { useEnvStore } from '@/stores/env';
 import { useIDEStore } from '@/stores/ide';
 import { usePriceStore } from '@/stores/price';
 import { useGuideStore } from '@/stores/guide';
@@ -26,6 +25,7 @@ import { useDevboxStore } from '@/stores/devbox';
 import { useQuotaGuarded } from '@sealos/shared';
 import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 import ErrorModal from '@/components/ErrorModal';
+import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
 
 import Form from './components/Form';
 import Yaml from './components/Yaml';
@@ -41,7 +41,7 @@ const DevboxCreatePage = () => {
   const searchParams = useSearchParams();
   const { executeOperation, errorModalState, closeErrorModal } = useDevboxOperation();
 
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const { addDevboxIDE } = useIDEStore();
   const { setDevboxDetail, setStartedTemplate, startedTemplate } = useDevboxStore();
   const { sourcePrice, setSourcePrice } = usePriceStore();
@@ -115,14 +115,24 @@ const DevboxCreatePage = () => {
     [templateListQuery.data?.templateList]
   );
 
-  const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env);
+  const yamlEnv = useMemo(
+    () => ({
+      devboxAffinityEnable: String(appConfig.devbox.features.affinityScheduling),
+      storageLimit: appConfig.devbox.resources.storageLimit,
+      ingressSecret: appConfig.devbox.userDomain.secretName,
+      nfsStorageClassName: appConfig.devbox.resources.storageClassNfs
+    }),
+    [appConfig]
+  );
+
+  const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, yamlEnv);
 
   // update yamlList every time yamlList change
   const debouncedUpdateYaml = useMemo(
     () =>
-      debounce((data: DevboxEditTypeV2, env) => {
+      debounce((data: DevboxEditTypeV2, yamlEnv) => {
         try {
-          const newYamlList = generateYamlList(data, env);
+          const newYamlList = generateYamlList(data, yamlEnv);
           setYamlList(newYamlList);
         } catch (error) {
           console.error('Failed to generate yaml:', error);
@@ -143,14 +153,14 @@ const DevboxCreatePage = () => {
   useEffect(() => {
     const subscription = formHook.watch((value) => {
       if (value) {
-        debouncedUpdateYaml(value as DevboxEditTypeV2, env);
+        debouncedUpdateYaml(value as DevboxEditTypeV2, yamlEnv);
       }
     });
     return () => {
       subscription.unsubscribe();
       debouncedUpdateYaml.cancel();
     };
-  }, [debouncedUpdateYaml, env, formHook]);
+  }, [debouncedUpdateYaml, yamlEnv, formHook]);
 
   const { refetch: refetchPrice } = useQuery(['init-price'], setSourcePrice, {
     enabled: !!sourcePrice?.gpu,
@@ -165,7 +175,7 @@ const DevboxCreatePage = () => {
         return null;
       }
       setIsLoading(true);
-      return setDevboxDetail(devboxName, env.sealosDomain);
+      return setDevboxDetail(devboxName, appConfig.cloud.domain);
     },
     {
       onSuccess(res) {
@@ -173,8 +183,8 @@ const DevboxCreatePage = () => {
           return;
         }
         oldDevboxEditData.current = res;
-        formOldYamls.current = generateYamlList(res, env);
-        crOldYamls.current = generateYamlList(res, env) as DevboxKindsType[];
+        formOldYamls.current = generateYamlList(res, yamlEnv);
+        crOldYamls.current = generateYamlList(res, yamlEnv) as DevboxKindsType[];
         formHook.reset(res);
       },
       onError(err) {
@@ -206,7 +216,7 @@ const DevboxCreatePage = () => {
 
     // update
     if (isEdit) {
-      const yamlList = generateYamlList(formData, env);
+      const yamlList = generateYamlList(formData, yamlEnv);
       setYamlList(yamlList);
       const parsedNewYamlList = yamlList.map((item) => item.value);
       const parsedOldYamlList = formOldYamls.current.map((item) => item.value);
@@ -326,7 +336,7 @@ const DevboxCreatePage = () => {
             from={captureFrom as 'list' | 'detail'}
             applyCb={handleApply}
           />
-          <div className="pb-30 w-full px-5 pt-10 md:px-10 lg:px-20">
+          <div className="w-full px-5 pt-10 pb-30 md:px-10 lg:px-20">
             {tabType === 'form' ? (
               <Form
                 isEdit={isEdit}

@@ -17,6 +17,7 @@ import {
   memoryFormatToMi
 } from '@/utils/tools';
 import { UpdateDevboxRequestSchema, DeleteDevboxRequestSchema, nanoid } from './schema';
+import { Config } from '@/src/config';
 
 //need really realtime use force-dynamic
 export const dynamic = 'force-dynamic';
@@ -185,13 +186,11 @@ async function createNewPort(
   k8sNetworkingApp: any,
   applyYamlList: any
 ) {
-  const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
-
   const { number: port, protocol = 'HTTP', exposesPublicDomain = true, customDomain } = portConfig;
   const normalizedProtocol = normalizeProtocol(protocol);
 
   const networkName = `${devboxName}-${nanoid()}`;
-  const generatedPublicDomain = `${nanoid()}.${INGRESS_DOMAIN}`;
+  const generatedPublicDomain = `${nanoid()}.${Config().devbox.userDomain.domain}`;
   const portName = `port-${nanoid()}`;
 
   try {
@@ -262,8 +261,11 @@ async function createNewPort(
     }
 
     // Create ingress if public domain is enabled
-    if (exposesPublicDomain && INGRESS_SECRET) {
-      await applyYamlList([json2Ingress(networkConfig, INGRESS_SECRET)], 'create');
+    if (exposesPublicDomain) {
+      await applyYamlList(
+        [json2Ingress(networkConfig, Config().devbox.userDomain.secretName)],
+        'create'
+      );
     }
 
     return {
@@ -367,8 +369,6 @@ async function updateExistingPort(
       (updateFields.protocol && updateFields.protocol !== existingPort.protocol);
 
     if (needsIngressRebuild) {
-      const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
-
       // Delete existing ingress if it exists
       if (existingPort.networkName) {
         try {
@@ -378,9 +378,9 @@ async function updateExistingPort(
         }
       }
 
-      // Create new ingress if public domain is enabled and secret exists
-      if (updatedPort.exposesPublicDomain && INGRESS_SECRET) {
-        const generatedPublicDomain = `${nanoid()}.${INGRESS_DOMAIN}`;
+      // Create new ingress if public domain is enabled
+      if (updatedPort.exposesPublicDomain) {
+        const generatedPublicDomain = `${nanoid()}.${Config().devbox.userDomain.domain}`;
         const newNetworkName = `${devboxName}-${nanoid()}`;
 
         const networkConfig = {
@@ -398,7 +398,10 @@ async function updateExistingPort(
           ]
         };
 
-        await applyYamlList([json2Ingress(networkConfig, INGRESS_SECRET)], 'create');
+        await applyYamlList(
+          [json2Ingress(networkConfig, Config().devbox.userDomain.secretName)],
+          'create'
+        );
 
         updatedPort.networkName = newNetworkName;
         updatedPort.publicDomain = generatedPublicDomain;
@@ -647,7 +650,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
 
     const label = `${devboxKey}=${devboxName}`;
     const podLabel = `app.kubernetes.io/name=${devboxName}`;
-    const sshDomain = process.env.SSH_DOMAIN || process.env.SEALOS_DOMAIN;
+    const sshDomain = Config().devbox.runtime.sshDomain;
 
     // Get ingresses, service, secret, and pods
     const [ingressesResponse, serviceResponse, secretResponse, podsResponse] = await Promise.all([

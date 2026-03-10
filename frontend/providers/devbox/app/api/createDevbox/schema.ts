@@ -1,6 +1,7 @@
 import 'zod-openapi/extend';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
+import { Config } from '@/src/config';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const GpuSchema = z
@@ -38,7 +39,7 @@ const NetworkSchema = (devboxName: string) =>
     publicDomain: z
       .string()
       .optional()
-      .default(`${nanoid()}.${process.env.INGRESS_DOMAIN}`)
+      .default(`${nanoid()}.${Config().devbox.userDomain.domain}`)
       .openapi({
         description: 'Public domain, no need to fill in'
       }),

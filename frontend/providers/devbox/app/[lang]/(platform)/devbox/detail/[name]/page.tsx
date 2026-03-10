@@ -16,16 +16,16 @@ import { Loading } from '@sealos/shadcn-ui/loading';
 import LiveMonitoring from './components/LiveMonitoring';
 import AdvancedConfig from './components/AdvancedConfig';
 
-import { useEnvStore } from '@/stores/env';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
+import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name;
   const searchParams = useSearchParams();
   const [currentTab, setCurrentTab] = useState<TabValue>('overview');
 
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const { guideIDE } = useGuideStore();
   const { devboxDetail, setDevboxDetail, loadDetailMonitorData, intervalLoadPods } =
     useDevboxStore();
@@ -34,7 +34,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
 
   const { refetch } = useQuery(
     ['initDevboxDetail'],
-    () => setDevboxDetail(devboxName, env.sealosDomain, !guideIDE),
+    () => setDevboxDetail(devboxName, appConfig.cloud.domain, !guideIDE),
     {
       onSettled() {
         setInitialized(true);
@@ -76,7 +76,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
 
   useEffect(() => {
     const tab = searchParams.get('tab') as TabValue;
-    const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+    const showAdvancedConfig = appConfig.devbox.features.advancedSettings;
     if (
       tab &&
       (tab === 'overview' ||
@@ -86,11 +86,11 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     ) {
       setCurrentTab(tab);
     }
-  }, [searchParams, env.enableAdvancedConfig]);
+  }, [searchParams, appConfig.devbox.features.advancedSettings]);
 
   if (!initialized || !devboxDetail) return <Loading />;
 
-  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+  const showAdvancedConfig = appConfig.devbox.features.advancedSettings;
 
   const renderContent = () => {
     switch (currentTab) {

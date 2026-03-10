@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { jsonRes } from '../../../../../services/backend/response';
+import { Config } from '@/src/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,9 +70,6 @@ export async function GET(request: NextRequest, { params }: { params: { token: s
 
     const proxyInfo = detectProxy(request);
 
-    const secret =
-      process.env.DEVBOX_DOMAIN_CHALLENGE_SECRET || 'default-dev-secret-change-in-production';
-
     const timestamp = Math.floor(Date.now() / 1000);
     const service = 'devbox';
 
@@ -84,7 +82,10 @@ export async function GET(request: NextRequest, { params }: { params: { token: s
     };
 
     const signatureData = `${data.host}:${data.token}:${data.timestamp}:${data.service}:${data.isProxy}`;
-    const signature = crypto.createHmac('sha256', secret).update(signatureData).digest('hex');
+    const signature = crypto
+      .createHmac('sha256', Config().devbox.security.domainChallengeSecret)
+      .update(signatureData)
+      .digest('hex');
 
     return jsonRes({
       data: {

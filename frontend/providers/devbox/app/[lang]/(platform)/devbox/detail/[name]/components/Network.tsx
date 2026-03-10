@@ -5,11 +5,11 @@ import { CircleHelp, Network as NetworkIcon } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
-import { useEnvStore } from '@/stores/env';
 import { useCopyData } from '@/utils/tools';
 import { checkReady } from '@/api/platform';
 import { NetworkType } from '@/types/devbox';
 import { useDevboxStore } from '@/stores/devbox';
+import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
 
 import {
   Table,
@@ -30,7 +30,7 @@ const Network = () => {
   const t = useTranslations();
   const router = useRouter();
 
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const { copyData } = useCopyData();
   const { devboxDetail } = useDevboxStore();
 
@@ -105,7 +105,7 @@ const Network = () => {
         const protocolPrefix =
           ProtocolList.find((p) => p.value === item.protocol)?.inline || 'http://';
         const prefix = item.openPublicDomain ? protocolPrefix : 'http://';
-        const address = `${prefix}${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
+        const address = `${prefix}${devboxDetail?.name}.${appConfig.devbox.runtime.defaultNamespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -201,7 +201,7 @@ const Network = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
-                  className="guide-network-address cursor-pointer break-all text-sm/5 hover:underline"
+                  className="guide-network-address cursor-pointer text-sm/5 break-all hover:underline"
                   onClick={() => window.open(`${protocolMap[item.protocol]}${address}`, '_blank')}
                 >
                   {protocolMap[item.protocol]}
@@ -223,7 +223,7 @@ const Network = () => {
   };
 
   return (
-    <div className="shadow-xs flex h-full max-h-[400px] flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-5">
+    <div className="flex h-full max-h-[400px] flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       {/* title */}
       <div className="flex w-full items-center justify-between">
         <span className="text-lg/7 font-medium text-accent-foreground">{t('network')}</span>
@@ -241,7 +241,7 @@ const Network = () => {
                   <TableHead
                     key={column.key}
                     style={{ width: column.width }}
-                    className="whitespace-normal break-words px-4"
+                    className="px-4 break-words whitespace-normal"
                   >
                     {column.title}
                   </TableHead>
@@ -252,14 +252,17 @@ const Network = () => {
               {devboxDetail.networks
                 .filter(
                   (network) =>
-                    !(env.enableWebideFeature === 'true' && network.port === env.webIdePort)
+                    !(
+                      appConfig.devbox.features.webide &&
+                      network.port === appConfig.devbox.runtime.webidePort
+                    )
                 )
                 .map((network, index) => (
                   <TableRow key={`${network.port}-${index}`}>
                     {networkColumn.map((column) => (
                       <TableCell
                         key={`${network.port}-${column.key}`}
-                        className="whitespace-normal break-words px-4"
+                        className="px-4 break-words whitespace-normal"
                       >
                         {column.render
                           ? column.render(network as NetworkType)

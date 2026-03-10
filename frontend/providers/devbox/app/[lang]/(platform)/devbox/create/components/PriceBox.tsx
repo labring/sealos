@@ -4,8 +4,8 @@ import { useTranslations } from 'next-intl';
 import { CircuitBoard, Cpu, MemoryStick } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
-import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
+import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
 
 import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
 
@@ -29,7 +29,7 @@ interface PriceBoxProps {
 const PriceBox = ({ components = [], className }: PriceBoxProps) => {
   const t = useTranslations();
   const { sourcePrice } = usePriceStore();
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
 
   const priceList: {
     icon?: React.ReactNode;
@@ -106,7 +106,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
                 index === priceList.length - 1 && 'text-blue-600'
               )}
             >
-              <CurrencySymbol type={env.currencySymbol} />
+              <CurrencySymbol type={appConfig.devbox.ui.currencySymbolType} />
               &nbsp;
               {item.value}
             </div>

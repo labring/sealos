@@ -11,30 +11,6 @@ export interface SourcePrice {
   }[];
 }
 
-export interface Env {
-  documentUrlZH: string;
-  documentUrlEN: string;
-  privacyUrlZH: string;
-  privacyUrlEN: string;
-  sealosDomain: string;
-  sshDomain: string;
-  ingressSecret: string;
-  registryAddr: string;
-  devboxAffinityEnable: string;
-  namespace: string;
-  rootRuntimeNamespace: string;
-  ingressDomain: string;
-  currencySymbol: 'shellCoin' | 'cny' | 'usd';
-  storageLimit: string;
-  enableImportFeature: string;
-  enableWebideFeature: string;
-  enableAdvancedConfig: string;
-  cpuSlideMarkList: string;
-  memorySlideMarkList: string;
-  nfsStorageClassName: string;
-  webIdePort: number;
-}
-
 export interface RuntimeTypeMap {
   id: string;
   label: string;
