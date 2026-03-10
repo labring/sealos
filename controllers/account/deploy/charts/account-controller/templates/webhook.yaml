@@ -2,14 +2,14 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "account.fullname" . }}-serving-cert
-  name: {{ include "account.fullname" . }}-validating-webhook-configuration
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "account-controller.fullname" . }}-serving-cert
+  name: {{ include "account-controller.fullname" . }}-validating-webhook-configuration
 webhooks:
   - admissionReviewVersions:
       - v1
     clientConfig:
       service:
-        name: {{ include "account.fullname" . }}-webhook-service
+        name: {{ include "account-controller.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /validate-v1-sealos-cloud
     timeoutSeconds: 10

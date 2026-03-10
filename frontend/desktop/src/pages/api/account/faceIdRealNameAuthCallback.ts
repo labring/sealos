@@ -1,4 +1,4 @@
-import { verifyAuthenticationToken } from '@/services/backend/auth';
+import { verifyGlobalToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { enableRealNameAuth } from '@/services/enable';
 import * as tcsdk from 'tencentcloud-sdk-nodejs';
@@ -59,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   req.headers['authorization'] = globalToken;
 
-  const payload = await verifyAuthenticationToken(req.headers);
+  const payload = await verifyGlobalToken(req.headers);
   if (!payload) return jsonRes(res, { code: 401, message: 'Token is invaild' });
 
   if (!realNameOSS) {

@@ -180,6 +180,22 @@ export function NetworkSection({
     [getValues, appendNetworks, removeNetworks, updateNetworks]
   );
 
+  const getAccessDisplayText = useCallback(
+    (network: AppEditType['networks'][0]) => {
+      if (network.customDomain) return network.customDomain;
+
+      if (network.openNodePort) {
+        const prefix = `${network.protocol.toLowerCase()}.${network.domain}`;
+        return network?.nodePort
+          ? `${prefix}:${network.nodePort}`
+          : `${prefix}:${t('pending_to_allocated')}`;
+      }
+
+      return `${network.publicDomain}.${network.domain}`;
+    },
+    [t]
+  );
+
   return (
     <>
       <Box id={'network'} {...boxStyles}>
@@ -328,20 +344,10 @@ export function NetworkSection({
                             userSelect={'all'}
                             className="textEllipsis"
                             onClick={() => {
-                              copyData(`${network.publicDomain}.${network.domain}`);
+                              copyData(getAccessDisplayText(network));
                             }}
                           >
-                            {network.customDomain
-                              ? network.customDomain
-                              : network.openNodePort
-                              ? network?.nodePort
-                                ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                    network.nodePort
-                                  }`
-                                : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                    'pending_to_allocated'
-                                  )}`
-                              : `${network.publicDomain}.${network.domain}`}
+                            {getAccessDisplayText(network)}
                           </Box>
                         </Tooltip>
 

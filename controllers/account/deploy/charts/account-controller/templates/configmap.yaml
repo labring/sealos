@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     control-plane: controller-manager
-    {{- include "account.labels" . | nindent 4 }}
+    {{- include "account-controller.labels" . | nindent 4 }}
 data:
   {{- $data := dict
       "ApproachingDeletionPeriod" .Values.accountEnv.approachingDeletionPeriod

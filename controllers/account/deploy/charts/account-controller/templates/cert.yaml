@@ -1,27 +1,27 @@
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
-  name: {{ include "account.fullname" . }}-selfsigned-issuer
+  name: {{ include "account-controller.fullname" . }}-selfsigned-issuer
   labels:
     control-plane: controller-manager
-    {{- include "account.labels" . | nindent 4 }}
+    {{- include "account-controller.labels" . | nindent 4 }}
 spec:
   selfSigned: {}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ include "account.fullname" . }}-serving-cert
+  name: {{ include "account-controller.fullname" . }}-serving-cert
   labels:
     control-plane: controller-manager
-    {{- include "account.labels" . | nindent 4 }}
+    {{- include "account-controller.labels" . | nindent 4 }}
 spec:
   dnsNames:
-    - {{ include "account.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc
-    - {{ include "account.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ include "account-controller.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc
+    - {{ include "account-controller.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
     kind: Issuer
-    name: {{ include "account.fullname" . }}-selfsigned-issuer
+    name: {{ include "account-controller.fullname" . }}-selfsigned-issuer
   secretName: webhook-server-cert
 ---
 {{- if .Values.metrics.enabled }}
@@ -29,7 +29,7 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   labels:
-    {{- include "account.labels" . | nindent 4 }}
+    {{- include "account-controller.labels" . | nindent 4 }}
   name: selfsigned-issuer
 spec:
   selfSigned: {}
@@ -38,14 +38,14 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
-    {{- include "account.labels" . | nindent 4 }}
+    {{- include "account-controller.labels" . | nindent 4 }}
   name: metrics-certs
 spec:
   privateKey:
     rotationPolicy: Always
   dnsNames:
-    - {{ include "account.fullname" . }}-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
-    - {{ include "account.fullname" . }}-controller-manager-metrics-service.{{ .Release.Namespace }}.svc.cluster.local
+    - {{ include "account-controller.fullname" . }}-controller-manager-metrics-service.{{ .Release.Namespace }}.svc
+    - {{ include "account-controller.fullname" . }}-controller-manager-metrics-service.{{ .Release.Namespace }}.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: selfsigned-issuer

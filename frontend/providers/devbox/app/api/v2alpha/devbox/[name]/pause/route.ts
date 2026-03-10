@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { devboxKey } from '@/constants/devbox';
 import { RequestSchema } from './schema';
+import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,11 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     const validationResult = RequestSchema.safeParse(body);
 
     if (!validationResult.success) {
-      return jsonRes({
-        code: 400,
-        message: 'Invalid request body',
-        error: validationResult.error.errors
-      });
+      return sendValidationError(validationResult.error, 'Invalid request body');
     }
 
     const devboxName = params.name;
@@ -75,6 +71,26 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     const { k8sCustomObjects, namespace, k8sNetworkingApp } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
+
+    try {
+      await k8sCustomObjects.getNamespacedCustomObject(
+        'devbox.sealos.io',
+        'v1alpha2',
+        namespace,
+        'devboxes',
+        devboxName
+      );
+    } catch (err: any) {
+      if (err?.response?.statusCode === 404 || err?.statusCode === 404) {
+        return sendError({
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'Devbox not found'
+        });
+      }
+      throw err;
+    }
 
     const ingressesResponse = await k8sNetworkingApp.listNamespacedIngress(
       namespace,
@@ -139,11 +155,11 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     return new NextResponse(null, { status: 204 });
   } catch (err: any) {
     console.error('Pause devbox error:', err);
-
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? err : undefined
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Failed to pause devbox'
     });
   }
 }

@@ -161,7 +161,7 @@ export const document = createDocument({
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['terminationPolicy', 'name', 'type', 'version', 'resource'],
+                required: ['terminationPolicy', 'name', 'type', 'version', 'quota'],
                 properties: {
                   terminationPolicy: {
                     type: 'string',
@@ -193,7 +193,7 @@ export const document = createDocument({
                     type: 'string',
                     description: 'Database version'
                   },
-                  resource: {
+                  quota: {
                     type: 'object',
                     required: ['cpu', 'memory', 'storage', 'replicas'],
                     properties: {
@@ -279,7 +279,7 @@ export const document = createDocument({
                   name: 'my-postgres-db',
                   type: 'postgresql',
                   version: '14.8.0',
-                  resource: {
+                  quota: {
                     cpu: 2,
                     memory: 2,
                     storage: 5,
@@ -397,13 +397,13 @@ export const document = createDocument({
               schema: {
                 type: 'object',
                 properties: {
-                  resource: {
+                  quota: {
                     $ref: '#/components/schemas/UpdateResourceSchema'
                   }
                 },
-                required: ['resource'],
+                required: ['quota'],
                 example: {
-                  resource: {
+                  quota: {
                     cpu: 2,
                     memory: 4,
                     storage: 5,
@@ -814,7 +814,7 @@ export const document = createDocument({
                           description: 'Database version',
                           example: 'postgresql-14.8.2'
                         },
-                        resource: {
+                        quota: {
                           type: 'object',
                           properties: {
                             cpu: { type: 'number' },

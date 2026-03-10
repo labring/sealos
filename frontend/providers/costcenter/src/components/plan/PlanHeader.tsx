@@ -54,6 +54,7 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
 
   const plans = plansData?.plans;
   const subscription = subscriptionData?.subscription;
+  const canManagePayment = subscription?.role === 'OWNER';
   const lastTransaction = lastTransactionData?.transaction;
   const planName = subscription?.PlanName || t('common:free_plan');
   const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
@@ -190,9 +191,16 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
 
           {children?.({
             trigger: (
-              <Button size="lg" variant="outline">
-                <span>{inDebt ? t('common:renew') : t('common:subscribe_plan')}</span>
-              </Button>
+              <Tooltip open={canManagePayment ? false : undefined}>
+                <TooltipTrigger asChild>
+                  <Button size="lg" variant="outline" disabled={!canManagePayment}>
+                    <span>{inDebt ? t('common:renew') : t('common:subscribe_plan')}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t('common:can_not_manage_payments')}</p>
+                </TooltipContent>
+              </Tooltip>
             )
           })}
         </div>
@@ -216,74 +224,81 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {isNormal && !isFreePlan && (
-              <Button
-                size="lg"
-                variant="outline"
-                disabled={isCancelled}
-                onClick={() => {
-                  if (isCancelled) return;
-                  setCancelModalOpen(true);
-                }}
-              >
-                <span>{isCancelled ? t('common:cancelled') : t('common:cancel_plan')}</span>
-              </Button>
-            )}
-            {isCancelled && (
-              <Button
-                size="lg"
-                disabled={resumePlanMutation.isLoading}
-                onClick={() => {
-                  if (!subscription) return;
+          <Tooltip open={canManagePayment ? false : undefined}>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-3">
+                {isNormal && !isFreePlan && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    disabled={isCancelled || !canManagePayment}
+                    onClick={() => {
+                      if (isCancelled) return;
+                      setCancelModalOpen(true);
+                    }}
+                  >
+                    <span>{isCancelled ? t('common:cancelled') : t('common:cancel_plan')}</span>
+                  </Button>
+                )}
+                {isCancelled && (
+                  <Button
+                    size="lg"
+                    disabled={resumePlanMutation.isLoading || !canManagePayment}
+                    onClick={() => {
+                      if (!subscription) return;
 
-                  const statusLower = subscription.Status?.toLowerCase?.() || '';
-                  const isDeleted = statusLower === 'deleted';
-                  const periodEndMs = subscription.CurrentPeriodEndAt
-                    ? new Date(subscription.CurrentPeriodEndAt).getTime()
-                    : 0;
-                  const isExpired = !periodEndMs || periodEndMs <= Date.now();
+                      const statusLower = subscription.Status?.toLowerCase?.() || '';
+                      const isDeleted = statusLower === 'deleted';
+                      const periodEndMs = subscription.CurrentPeriodEndAt
+                        ? new Date(subscription.CurrentPeriodEndAt).getTime()
+                        : 0;
+                      const isExpired = !periodEndMs || periodEndMs <= Date.now();
 
-                  if (isDeleted || isExpired) {
-                    toast({
-                      title: t('common:resume_plan_expired_title'),
-                      description: t('common:resume_plan_expired_desc'),
-                      variant: 'destructive'
-                    });
-                    return;
-                  }
+                      if (isDeleted || isExpired) {
+                        toast({
+                          title: t('common:resume_plan_expired_title'),
+                          description: t('common:resume_plan_expired_desc'),
+                          variant: 'destructive'
+                        });
+                        return;
+                      }
 
-                  const payMethod =
-                    subscription.PayMethod === 'balance' || subscription.PayMethod === 'stripe'
-                      ? subscription.PayMethod
-                      : 'stripe';
+                      const payMethod =
+                        subscription.PayMethod === 'balance' || subscription.PayMethod === 'stripe'
+                          ? subscription.PayMethod
+                          : 'stripe';
 
-                  resumePlanMutation.mutate({
-                    workspace: subscription.Workspace,
-                    regionDomain: subscription.RegionDomain,
-                    planName: subscription.PlanName,
-                    payMethod,
-                    operator: 'resumed'
-                  });
-                }}
-              >
-                <Sparkles />
-                <span>{t('common:renew_plan')}</span>
-              </Button>
-            )}
+                      resumePlanMutation.mutate({
+                        workspace: subscription.Workspace,
+                        regionDomain: subscription.RegionDomain,
+                        planName: subscription.PlanName,
+                        payMethod,
+                        operator: 'resumed'
+                      });
+                    }}
+                  >
+                    <Sparkles />
+                    <span>{t('common:renew_plan')}</span>
+                  </Button>
+                )}
 
-            {/* Keep UpgradePlanDialog mounted even when cancelled, so message-driven open works */}
-            {children?.({
-              trigger: isCancelled ? (
-                <span className="hidden" />
-              ) : (
-                <Button size="lg">
-                  <Sparkles />
-                  <span>{inDebt ? t('common:renew') : t('common:upgrade_plan')}</span>
-                </Button>
-              )
-            })}
-          </div>
+                {/* Keep UpgradePlanDialog mounted even when cancelled, so message-driven open works */}
+                {children?.({
+                  trigger: isCancelled ? (
+                    <span className="hidden" />
+                  ) : (
+                    <Button size="lg" disabled={!canManagePayment}>
+                      <Sparkles />
+                      <span>{inDebt ? t('common:renew') : t('common:upgrade_plan')}</span>
+                    </Button>
+                  )
+                })}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t('common:can_not_manage_payments')}</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <Separator className="border-slate-200" />
