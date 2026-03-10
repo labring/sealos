@@ -4,6 +4,11 @@
 export type GlobalTokenPayload = {
   userUid: string;
   userId: string;
+  /**
+   * For backwards compatibility
+   * @deprecated Not recommended to include regionUid in access (global) tokens.
+   */
+  regionUid?: string;
 };
 
 export type OAuth2TokenPayload = {
@@ -12,6 +17,10 @@ export type OAuth2TokenPayload = {
   client_id: string;
   preferred_username?: string;
   scope?: string;
+  /**
+   * For backwards compatibility
+   * @deprecated Not recommended to include regionUid in access (global) tokens.
+   */
   regionUid?: never;
 };
 
