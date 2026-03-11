@@ -146,6 +146,7 @@ export type AuthConfigType = {
     };
     oauth2?: {
       enabled: boolean;
+      pkce?: boolean;
       callbackURL: string;
       clientID: string;
       proxyAddress?: string;
@@ -367,6 +368,7 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
     },
     oauth2: {
       enabled: false,
+      pkce: false,
       callbackURL: '',
       clientID: '',
       authURL: '',

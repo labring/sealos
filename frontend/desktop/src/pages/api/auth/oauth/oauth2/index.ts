@@ -20,21 +20,25 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     throw new Error('OAuth2 configuration missing');
   }
 
-  const { code, inviterId, semData, adClickData } = req.body;
+  const { code, inviterId, semData, adClickData, code_verifier } = req.body;
   const url = `${tokenUrl}`;
+  const tokenParams: Record<string, string> = {
+    code,
+    client_id: clientId,
+    client_secret: clientSecret,
+    grant_type: 'authorization_code',
+    redirect_uri: oauth2CallbackUrl
+  };
+  if (code_verifier) {
+    tokenParams.code_verifier = code_verifier;
+  }
   const oauth2Data = (await (
     await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: new URLSearchParams({
-        code,
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'authorization_code',
-        redirect_uri: oauth2CallbackUrl
-      })
+      body: new URLSearchParams(tokenParams)
     })
   ).json()) as OAuth2Type;
   const access_token = oauth2Data.access_token;

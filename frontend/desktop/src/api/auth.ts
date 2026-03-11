@@ -112,7 +112,13 @@ export const _getNewSmsCodeRequest =
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
   (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string; semData?: SemData; adClickData?: AdClickData }) =>
+  (data: {
+    code: string;
+    inviterId?: string;
+    semData?: SemData;
+    adClickData?: AdClickData;
+    code_verifier?: string;
+  }) =>
     request.post<
       typeof data,
       ApiResp<
