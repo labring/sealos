@@ -56,6 +56,7 @@ function genResAuthClientConfig(conf: AuthConfigType) {
       },
       oauth2: {
         enabled: !!conf.idp.oauth2?.enabled,
+        pkce: !!conf.idp.oauth2?.pkce,
         callbackURL: conf.idp.oauth2?.callbackURL || '',
         clientID: conf.idp.oauth2?.clientID || '',
         authURL: conf.idp.oauth2?.authURL || '',

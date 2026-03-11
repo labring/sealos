@@ -75,11 +75,16 @@ export default function Callback() {
           const { statePayload, action } = compareResult;
           // return
           if (action === 'LOGIN') {
+            const codeVerifier = sessionStorage.getItem('oauth2_code_verifier') ?? undefined;
+            if (codeVerifier) {
+              sessionStorage.removeItem('oauth2_code_verifier');
+            }
             const data = await signInRequest(provider)({
               code,
               inviterId: getInviterId() ?? undefined,
               semData: getUserSemData() ?? undefined,
-              adClickData: getAdClickData() ?? undefined
+              adClickData: getAdClickData() ?? undefined,
+              code_verifier: codeVerifier
             }).catch((e) => e);
             if (data instanceof Error) {
               throw data;
