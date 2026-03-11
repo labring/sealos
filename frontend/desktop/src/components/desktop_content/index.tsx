@@ -16,7 +16,7 @@ import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
 import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
 import { useQuery } from '@tanstack/react-query';
-import { getAmount, UserInfo } from '@/api/auth';
+import { getAmount, UserInfo, validateKubeconfig } from '@/api/auth';
 import OnlineServiceButton from './serviceButton';
 import SaleBanner from '../banner';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
@@ -65,6 +65,13 @@ export default function Desktop() {
     select(d) {
       return d.data?.info;
     }
+  });
+
+  useQuery({
+    queryKey: ['validateKubeconfig', session?.kubeconfig],
+    queryFn: () => validateKubeconfig({ kubeconfig: session?.kubeconfig || '' }),
+    enabled: !!session?.kubeconfig,
+    retry: false
   });
 
   const { data: account } = useQuery({
