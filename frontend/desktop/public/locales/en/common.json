@@ -422,5 +422,7 @@
   "refresh_kubeconfig": "Refresh Kubeconfig",
   "kubeconfig_rotating": "Rotating Kubeconfig...",
   "kubeconfig_rotated_successfully": "Kubeconfig refreshed successfully",
-  "kubeconfig_rotation_failed": "Failed to refresh Kubeconfig"
+  "kubeconfig_rotation_failed": "Failed to refresh Kubeconfig",
+  "kubeconfig_rotate_confirm_title": "Notice",
+  "kubeconfig_rotate_confirm_desc": "After refreshing, the old Kubeconfig will be invalidated and may affect your existing functionality. Other shared users in the workspace will be temporarily logged out and need to log in again. Confirm refresh?"
 }
