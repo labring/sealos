@@ -279,6 +279,6 @@ export const _rotateKubeconfig = (request: AxiosInstance) => () =>
 export const rotateKubeconfig = _rotateKubeconfig(request);
 
 export const _validateKubeconfig = (request: AxiosInstance) => (data: { kubeconfig: string }) =>
-  request.post<typeof data, ApiResp>('/api/auth/validateKubeconfig', data);
+  request.post<typeof data, ApiResp<{ valid: boolean }>>('/api/auth/validateKubeconfig', data);
 
 export const validateKubeconfig = _validateKubeconfig(request);

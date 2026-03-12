@@ -416,5 +416,7 @@
   "kubeconfig_rotated_successfully": "Kubeconfig 刷新成功",
   "kubeconfig_rotation_failed": "Kubeconfig 刷新失败",
   "kubeconfig_rotate_confirm_title": "提示",
-  "kubeconfig_rotate_confirm_desc": "刷新后旧的 Kubeconfig 将失效，可能会影响到您已有的功能。且空间内其他共享用户会暂时退出账号，需手动重新登录。确认刷新吗？"
+  "kubeconfig_rotate_confirm_desc": "刷新后旧的 Kubeconfig 将失效，可能会影响到您已有的功能。且空间内其他共享用户会暂时退出账号，需手动重新登录。确认刷新吗？",
+  "session_expired": "当前登录状态已过期，请重新登录。",
+  "kubeconfig_validate_failed": "Kubeconfig 验证失败，请刷新重试"
 }

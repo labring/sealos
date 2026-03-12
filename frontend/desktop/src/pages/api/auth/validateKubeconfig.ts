@@ -22,11 +22,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const coreApi = kc.makeApiClient(k8s.CoreV1Api);
     await coreApi.readNamespace(namespace);
 
-    return jsonRes(res, { code: 200, message: 'valid' });
+    return jsonRes(res, { code: 200, data: { valid: true } });
   } catch (err: any) {
     const statusCode = err?.statusCode || err?.response?.statusCode;
     if (statusCode === 401 || statusCode === 403) {
-      return jsonRes(res, { code: 401, message: 'kubeconfig is invalid or expired' });
+      // Return 200 with valid:false so the frontend can show a toast before logging out,
+      // rather than being caught by the global axios 401 interceptor.
+      return jsonRes(res, { code: 200, data: { valid: false } });
     }
     return jsonRes(res, { code: 500, message: 'failed to validate kubeconfig' });
   }
