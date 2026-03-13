@@ -15,7 +15,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 
 import { postAuthCname, postAuthDomainChallenge } from '@/api/platform';
 import { useRequest } from '@/hooks/useRequest';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export type CustomAccessDrawerParams = {
   publicDomain: string;

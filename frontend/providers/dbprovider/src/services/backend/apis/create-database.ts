@@ -116,7 +116,7 @@ export async function createDatabase(
 
   const account = json2Account(rawDbForm);
   const cluster = json2CreateCluster(rawDbForm, undefined, {
-    storageClassName: Config().dbprovider.storage.className
+    storageClassName: Config().dbprovider.storage.forcedClassName ?? undefined
   });
 
   console.log('Generated cluster config preview:', {

@@ -22,7 +22,7 @@ import AdvancedConfig from './AdvancedConfig';
 import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 interface FormProps {
   isEdit: boolean;

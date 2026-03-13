@@ -5,7 +5,7 @@ import { CircuitBoard, Cpu, MemoryStick } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
 import { usePriceStore } from '@/stores/price';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
 
@@ -106,7 +106,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
                 index === priceList.length - 1 && 'text-blue-600'
               )}
             >
-              <CurrencySymbol type={appConfig.devbox.ui.currencySymbolType} />
+              <CurrencySymbol type={appConfig.devbox.ui.currencySymbol} />
               &nbsp;
               {item.value}
             </div>

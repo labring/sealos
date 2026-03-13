@@ -2,7 +2,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { ApiReferenceReact } from '@scalar/api-reference-react';
 
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import '@scalar/api-reference-react/style.css';
 

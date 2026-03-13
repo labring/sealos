@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Step 1: Create workspace if needed
     if (createWorkspace) {
       try {
-        const desktopUrl = Config().costCenter.components.desktopService.url;
+        const desktopUrl = Config().costCenter.components.desktop.url;
         const internalToken = req.body.internalToken;
         if (!desktopUrl) {
           return jsonRes(res, {

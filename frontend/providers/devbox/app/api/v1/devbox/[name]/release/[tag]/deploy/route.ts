@@ -11,7 +11,7 @@ import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import { devboxDB } from '@/services/db/init';
 import { ProtocolType } from '@/types/devbox';
 import { adaptDevboxVersionListItem } from '@/utils/adapt';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

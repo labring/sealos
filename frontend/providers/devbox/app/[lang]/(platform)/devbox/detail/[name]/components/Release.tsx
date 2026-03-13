@@ -53,7 +53,7 @@ import CreateTemplateDrawer from '@/components/drawers/CreateTemplateDrawer';
 import CreateOrUpdateDrawer from '@/components/drawers/CreateOrUpdateDrawer';
 import UpdateTemplateDrawer from '@/components/drawers/UpdateTemplateDrawer';
 import DeployDevboxDrawer from '@/components/drawers/DeployDevboxDrawer';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 

@@ -3,11 +3,11 @@ import { enableMapSet } from 'immer';
 import { GeistSans } from 'geist/font/sans';
 import { Fira_Code } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 import IntlProvider from '@/components/providers/MyIntlProvider';
 import ClientAppConfigBootstrap from '@/components/providers/ClientAppConfigBootstrap';
-import { CustomScript } from '@/src/types/config';
+import { CustomScript } from '@/types/config';
 
 import './globals.css';
 import 'react-day-picker/style.css';

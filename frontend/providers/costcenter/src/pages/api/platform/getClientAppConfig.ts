@@ -13,13 +13,16 @@ export function getClientAppConfigServer(): ClientAppConfig {
       subscriptionEnabled: fullConfig.costCenter.features.subscription,
       gpuEnabled: fullConfig.costCenter.features.gpu
     },
-    currencySymbolType: fullConfig.costCenter.ui.currencySymbolType,
+    currencySymbol: fullConfig.costCenter.ui.currencySymbol,
     recharge: fullConfig.costCenter.recharge,
     invoice: {
       enabled: fullConfig.costCenter.invoice.enabled,
       billingInfo: fullConfig.costCenter.invoice.billingInfo
     },
-    components: fullConfig.costCenter.components
+    components: {
+      billing: { url: fullConfig.costCenter.components.billing.url },
+      desktop: { url: fullConfig.costCenter.components.desktop.url }
+    }
   });
 }
 

@@ -120,7 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const account = json2Account(dbForm);
     const cluster = json2CreateCluster(dbForm, backupInfo, {
-      storageClassName: Config().dbprovider.storage.className
+      storageClassName: Config().dbprovider.storage.forcedClassName ?? undefined
     });
 
     const yamlList = [account, cluster];

@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const secret = await fetchDBSecret(k8sCore, data.dbName, data.dbType, namespace);
 
-    if (!Config().dbprovider.minio.enabled) {
+    if (!Config().dbprovider.features.fileImport) {
       throw new Error('MinIO file import feature is not enabled!');
     }
     const yamlObj = await json2DumpCR({
@@ -91,19 +91,19 @@ export const json2DumpCR = async (
               env: [
                 {
                   name: 'MINIO_URL',
-                  value: `http://${Config().dbprovider.minio.url}`
+                  value: `http://${Config().dbprovider.components.storage.url}`
                 },
                 {
                   name: 'MINIO_ACCESS_KEY',
-                  value: Config().dbprovider.minio.accessKey
+                  value: Config().dbprovider.components.storage.accessKey
                 },
                 {
                   name: 'MINIO_SECRET_KEY',
-                  value: Config().dbprovider.minio.secretKey
+                  value: Config().dbprovider.components.storage.secretKey
                 },
                 {
                   name: 'MINIO_BUCKET',
-                  value: Config().dbprovider.minio.bucketName
+                  value: Config().dbprovider.components.storage.bucketName
                 },
                 {
                   name: 'FILE_NAME',

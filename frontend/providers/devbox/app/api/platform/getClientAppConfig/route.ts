@@ -1,4 +1,4 @@
-import { getClientAppConfigServer } from '@/src/server/getClientAppConfig';
+import { getClientAppConfigServer } from '@/server/getClientAppConfig';
 import { jsonRes } from '@/services/backend/response';
 
 export const dynamic = 'force-dynamic';

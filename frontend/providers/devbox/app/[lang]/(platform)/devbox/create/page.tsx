@@ -25,7 +25,7 @@ import { useDevboxStore } from '@/stores/devbox';
 import { useQuotaGuarded } from '@sealos/shared';
 import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 import ErrorModal from '@/components/ErrorModal';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import Form from './components/Form';
 import Yaml from './components/Yaml';

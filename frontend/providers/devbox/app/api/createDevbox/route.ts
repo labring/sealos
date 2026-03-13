@@ -13,7 +13,7 @@ import {
 } from '@/utils/json2Yaml';
 import { RequestSchema } from './schema';
 import { KBDevboxTypeV2 } from '@/types/k8s';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

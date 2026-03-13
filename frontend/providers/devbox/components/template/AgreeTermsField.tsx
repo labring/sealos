@@ -1,7 +1,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { UseFormReturn } from 'react-hook-form';
 
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import { Checkbox } from '@sealos/shadcn-ui/checkbox';
 import { FormControl, FormField, FormItem, FormMessage } from '@sealos/shadcn-ui/form';

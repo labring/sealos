@@ -12,7 +12,7 @@ import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
 import { parseTemplateConfig, cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

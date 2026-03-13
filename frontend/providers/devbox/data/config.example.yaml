@@ -14,7 +14,7 @@ devbox:
       privacy:
         zh: https://sealos.run/docs/msa/privacy-policy
         en: https://sealos.io/docs/msa/privacy-policy
-    currencySymbolType: shellCoin
+    currencySymbol: shellCoin
     customScripts: []
 
   features:
@@ -23,6 +23,7 @@ devbox:
     webide: false
     advancedSettings: false
     affinityScheduling: true
+    gpu: false
 
   runtime:
     rootNamespace: devbox-system
@@ -44,13 +45,11 @@ devbox:
       url: http://monitor.sealos.svc.cluster.local:8428
     retagService:
       url: ''
-    account:
+    billing:
       url: ''
-    gpu:
-      enabled: false
 
   userDomain:
-    domain: sealosusw.site
+    domain: ''
     secretName: wildcard-cert
 
   security:
@@ -58,4 +57,4 @@ devbox:
     jwtSecret: default-dev-jwt-secret-change-in-production
 
   mcp:
-    forcedLanguage: en
+    forcedLanguage: null

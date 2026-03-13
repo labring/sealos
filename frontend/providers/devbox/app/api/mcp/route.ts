@@ -1,6 +1,6 @@
 import { McpHandler } from 'sealos-mcp-sdk';
 import path from 'path';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

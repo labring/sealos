@@ -66,7 +66,7 @@ const upload = new UploadModel();
 
 export default async function handler(req: any, res: NextApiResponse) {
   try {
-    if (!Config().dbprovider.minio.enabled) {
+    if (!Config().dbprovider.features.fileImport) {
       return jsonRes(res, {
         code: 500,
         data: 'Missing minio service'
@@ -79,7 +79,7 @@ export default async function handler(req: any, res: NextApiResponse) {
 
     const { namespace } = k8sResult;
 
-    const minioConfig = Config().dbprovider.minio;
+    const minioConfig = Config().dbprovider.components.storage;
     const minioClient = new Minio.Client({
       endPoint: minioConfig.url,
       port: minioConfig.port,

@@ -28,7 +28,7 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { usePathname } from '@/i18n';
 import { track } from '@sealos/gtm';
 import { useConfirm } from '@/hooks/useConfirm';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export interface SSHConnectionData {
   devboxName: string;
@@ -266,10 +266,10 @@ const IDEButton = memo(
                 <div
                   className={cn(
                     'space-y-1',
-                    appConfig.devbox.ui.currencySymbolType === 'usd' ? 'w-[160px]' : 'w-[230px]'
+                    appConfig.devbox.ui.currencySymbol === 'usd' ? 'w-[160px]' : 'w-[230px]'
                   )}
                 >
-                  {getLeftColumnItems(appConfig.devbox.ui.currencySymbolType).map((item) =>
+                  {getLeftColumnItems(appConfig.devbox.ui.currencySymbol).map((item) =>
                     item.group ? (
                       <div key={item.value} className="flex gap-1">
                         {item.options?.map((option, index) => (
@@ -337,7 +337,7 @@ const IDEButton = memo(
                 {/* right column */}
                 <div className="h-20 w-[230px] space-y-1">
                   {getRightColumnItems(
-                    appConfig.devbox.ui.currencySymbolType,
+                    appConfig.devbox.ui.currencySymbol,
                     appConfig.devbox.features.webide
                   ).map((item) =>
                     item.group ? (

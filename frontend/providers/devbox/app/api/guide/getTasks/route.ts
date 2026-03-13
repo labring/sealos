@@ -1,7 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { UserTask } from '@/types/user';
 import { NextRequest } from 'next/server';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

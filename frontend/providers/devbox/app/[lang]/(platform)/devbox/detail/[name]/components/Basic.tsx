@@ -8,7 +8,7 @@ import { usePriceStore } from '@/stores/price';
 import { useDevboxStore } from '@/stores/devbox';
 import { getTemplateConfig } from '@/api/template';
 import { downLoadBlob, parseTemplateConfig, useCopyData } from '@/utils/tools';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import GPUItem from '@/components/GPUItem';
 import { Button } from '@sealos/shadcn-ui/button';

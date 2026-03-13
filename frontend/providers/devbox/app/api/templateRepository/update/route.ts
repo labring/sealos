@@ -6,7 +6,7 @@ import { getRegionUid } from '@/utils/env';
 import { updateTemplateRepositorySchema } from '@/utils/validate';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 export async function POST(req: NextRequest) {
   try {
     const headerList = req.headers;

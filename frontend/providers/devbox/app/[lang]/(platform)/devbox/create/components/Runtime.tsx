@@ -14,7 +14,7 @@ import { listOfficialTemplateRepository, listTemplate } from '@/api/template';
 import { useDevboxStore } from '@/stores/devbox';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { RuntimeIcon } from '@/components/RuntimeIcon';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import {
   Select,

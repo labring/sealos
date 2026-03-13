@@ -12,7 +12,7 @@ import { KBDevboxTypeV2 } from '@/types/k8s';
 import { UpdateDevboxRequestSchema, nanoid } from './schema';
 import { devboxDB } from '@/services/db/init';
 import { cpuFormatToM, memoryFormatToMi, parseTemplateConfig } from '@/utils/tools';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

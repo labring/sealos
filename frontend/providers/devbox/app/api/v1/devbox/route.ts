@@ -15,7 +15,7 @@ import { getRegionUid } from '@/utils/env';
 import { adaptDevboxDetailV2 } from '@/utils/adapt';
 import { parseTemplateConfig, cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

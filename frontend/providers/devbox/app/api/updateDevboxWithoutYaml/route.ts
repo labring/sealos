@@ -9,7 +9,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
 import { generateYamlList } from '@/utils/json2Yaml';
 import { patchYamlList } from '@/utils/tools';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

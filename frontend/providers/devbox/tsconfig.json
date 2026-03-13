@@ -8,7 +8,6 @@
     "moduleResolution": "bundler",
     "paths": {
       "@/*": ["./*"],
-      "@/config": ["./src/config.ts"],
       "prisma/*": ["prisma/*"]
     },
     "plugins": [

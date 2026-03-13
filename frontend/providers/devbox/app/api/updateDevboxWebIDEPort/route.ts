@@ -8,7 +8,7 @@ import { RequestSchema } from './schema';
 import { devboxKey } from '@/constants/devbox';
 import { PatchUtils, V1Ingress } from '@kubernetes/client-node';
 import { nanoid, str2Num } from '@/utils/tools';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

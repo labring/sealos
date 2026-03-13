@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { AppListItemType } from '@/types/app';
 import { getAppsByDevboxId } from '@/api/devbox';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import {
   Table,

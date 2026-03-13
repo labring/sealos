@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { jsonRes } from '../../../../../services/backend/response';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

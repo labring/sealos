@@ -3,7 +3,7 @@ import { Config } from '@/config';
 
 const internalJwtSecret = () => Config().costCenter.auth.jwt.internal;
 
-const billingJwtSecret = () => Config().costCenter.auth.jwt.billing;
+const billingJwtSecret = () => Config().costCenter.components.billing.secret;
 
 export type AuthenticationTokenPayload = {
   userUid: string;

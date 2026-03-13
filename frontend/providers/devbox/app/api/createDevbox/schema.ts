@@ -1,7 +1,7 @@
 import 'zod-openapi/extend';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const GpuSchema = z

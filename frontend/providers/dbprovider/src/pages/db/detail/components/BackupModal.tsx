@@ -137,8 +137,8 @@ const BackupModal = ({
   const checkQuotaAndProceed = useQuotaGuarded(
     {
       requirements: {
-        cpu: config.backupJobCpu,
-        memory: config.backupJobMemory,
+        cpu: config.backupJobCpuMillicores,
+        memory: config.backupJobMemoryMiB,
         traffic: true
       },
       immediate: false,

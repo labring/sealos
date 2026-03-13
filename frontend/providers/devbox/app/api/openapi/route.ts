@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 import { NextResponse } from 'next/server';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 import {
   RequestSchema as CreateDevboxRequestSchema,
   SuccessResponseSchema as CreateDevboxSuccessResponseSchema,

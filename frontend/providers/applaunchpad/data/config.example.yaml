@@ -8,10 +8,12 @@ cloud:
       secretName: wildcard-cert
 
 launchpad:
-  features:
-    guide: false
-    api: false
-    gpu: false
+  infrastructure:
+    provider: 'alibaba'
+    requiresIcpReg: false
+    icpRegQueryLink: 'https://beian.miit.gov.cn/#/Integrated/index'
+    domainBindingDocumentationLink: null
+
   ui:
     currencySymbol: shellCoin
     meta:
@@ -22,17 +24,7 @@ launchpad:
       default:
         cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
         memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-  infrastructure:
-    provider: 'alibaba'
-    requiresIcpReg: false
-    icpRegQueryLink: 'https://beian.miit.gov.cn/#/Integrated/index'
-    domainBindingDocumentationLink: null
-  domainChallengeSecret: default-dev-secret-change-in-production
-  pvcStorageMax: 100
-  analytics:
-    enabled: false
-    fastGPTKey: ''
-    gtmId: null
+
   components:
     monitoring:
       url: http://launchpad-monitor.sealos.svc.cluster.local:8428
@@ -41,11 +33,30 @@ launchpad:
     logging:
       enabled: true
       url: http://log-service.sealos.svc.cluster.local:8080
-  fileManager:
-    uploadLimit: 50 # MB
-    downloadLimit: 100 # MB
+    eventAnalysis:
+      enabled: false
+      url: https://fastgpt.run/api/openapi/v1
+      fastGPTKey: ''
+
+  features:
+    guide: false
+    api: false
+    gpu: false
+
   checkIcpReg:
     enabled: false
     endpoint: ''
     accessKeyID: ''
     accessKeySecret: ''
+
+  analytics:
+    gtm:
+      enabled: false
+      gtmId: ''
+
+  fileManager:
+    uploadLimit: 50
+    downloadLimit: 100
+
+  domainChallengeSecret: default-dev-secret-change-in-production
+  pvcStorageMax: 100

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 
 import { DevboxEditTypeV2 } from '@/types/devbox';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import { Label } from '@sealos/shadcn-ui/label';
 import { Slider } from '@sealos/shadcn-ui/slider';

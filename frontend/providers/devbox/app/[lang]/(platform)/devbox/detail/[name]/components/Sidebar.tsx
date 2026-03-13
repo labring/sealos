@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { LayoutDashboard, LineChart, Settings } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export type TabValue = 'overview' | 'monitor' | 'logs' | 'advancedConfig';
 

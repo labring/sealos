@@ -1,6 +1,6 @@
 import { MetricsClient } from 'sealos-metrics-sdk';
 import type { LaunchpadQueryParams } from 'sealos-metrics-sdk';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const monitorFetch = async (params: LaunchpadQueryParams, kubeconfig: string) => {
   const metricsURL = Config().devbox.components.monitoring.url;

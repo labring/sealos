@@ -8,7 +8,7 @@ import { adaptDevboxVersionListItem } from '@/utils/adapt';
 import { RequestSchema } from './schema';
 import { devboxKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

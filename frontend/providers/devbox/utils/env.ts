@@ -1,3 +1,3 @@
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const getRegionUid = () => Config().cloud.regionUid;

@@ -8,7 +8,7 @@ import { useFieldArray, useFormContext } from 'react-hook-form';
 import { nanoid } from '@/utils/tools';
 import { ProtocolList } from '@/constants/devbox';
 import { DevboxEditTypeV2, ProtocolType } from '@/types/devbox';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import {
   Select,

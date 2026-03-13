@@ -26,10 +26,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const apiUrl = `${
-    Config().dbprovider.chat2db.gatewayDomainName
+    Config().dbprovider.components.chat2db.gatewayDomainName
   }/api/open/enterprise/sync_data_source_a`;
 
-  const apiKey = Config().dbprovider.chat2db.apiKey;
+  const apiKey = Config().dbprovider.components.chat2db.apiKey;
 
   const { userKey, ...requestBody } = req.body as any;
 

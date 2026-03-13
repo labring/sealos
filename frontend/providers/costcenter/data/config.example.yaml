@@ -5,7 +5,6 @@ cloud:
   port: 443
   regionUid: 'your-region-uid-here'
   certSecretName: 'wildcard-cert'
-  proxyDomain: 'example.nip.io'
 
 costCenter:
   features:
@@ -14,15 +13,17 @@ costCenter:
     giftCode: true
     subscription: false
     gpu: false
+
   ui:
-    currencySymbolType: 'shellCoin'
+    currencySymbol: 'shellCoin'
     meta:
       scripts: []
       noscripts: []
+
   auth:
     jwt:
       internal: 'your-internal-jwt-secret-here'
-      billing: 'your-billing-jwt-secret-here'
+
   invoice:
     enabled: false
     serviceToken: 'your-service-token-here'
@@ -51,6 +52,7 @@ costCenter:
         - 'contact@example.com'
     mongo:
       uri: ''
+
   recharge:
     enabled: false
     payMethods:
@@ -61,8 +63,10 @@ costCenter:
         publicKey: 'pk_test_your-stripe-public-key'
       alipay:
         enabled: false
+
   components:
-    accountService:
+    billing:
       url: 'http://account-service.account-system.svc:2333'
-    desktopService:
+      secret: 'your-billing-jwt-secret-here'
+    desktop:
       url: 'http://desktop-frontend.sealos.svc:3000'

@@ -57,7 +57,8 @@ type AppOwnProps = {
   title: string;
   description: string;
   scripts: MetaScript[];
-  gtmId: string | null;
+  gtmEnabled: boolean;
+  gtmId: string;
   dehydratedState?: unknown;
 };
 
@@ -263,6 +264,7 @@ const MyApp = ({
   title,
   description,
   scripts,
+  gtmEnabled,
   gtmId,
   dehydratedState
 }: AppProps & AppOwnProps) => (
@@ -280,7 +282,7 @@ const MyApp = ({
     {scripts?.map((script, i) => (
       <Script key={i} {...script} />
     ))}
-    <GTMScript enabled={!!gtmId} gtmId={gtmId!} debug={process.env.NODE_ENV === 'development'} />
+    <GTMScript enabled={gtmEnabled} gtmId={gtmId} debug={process.env.NODE_ENV === 'development'} />
   </>
 );
 
@@ -290,7 +292,8 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
   let title = '';
   let description = '';
   let scripts: MetaScript[] = [];
-  let gtmId: string | null = null;
+  let gtmEnabled: boolean = false;
+  let gtmId: string = '';
 
   try {
     if (typeof window === 'undefined') {
@@ -298,7 +301,8 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
       title = config.launchpad.ui.meta.title;
       description = config.launchpad.ui.meta.description;
       scripts = config.launchpad.ui.meta.scripts as MetaScript[];
-      gtmId = config.launchpad.analytics.gtmId;
+      gtmEnabled = config.launchpad.analytics.gtm.enabled;
+      gtmId = config.launchpad.analytics.gtm.gtmId;
     }
   } catch (error) {
     console.error('Failed to load config:', error);
@@ -315,7 +319,7 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
     console.error('[Client App Config] Failed to prefetch:', error);
   }
 
-  return { ...ctx, title, description, scripts, gtmId, dehydratedState };
+  return { ...ctx, title, description, scripts, gtmEnabled, gtmId, dehydratedState };
 };
 
 export default appWithTranslation(MyApp);

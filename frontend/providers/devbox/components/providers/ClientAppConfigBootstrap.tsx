@@ -1,7 +1,7 @@
 import { dehydrate, QueryClient } from '@tanstack/react-query';
 import { prefetchClientAppConfig } from '@sealos/shared';
 import QueryProvider from '@/components/providers/MyQueryProvider';
-import { getClientAppConfigServer } from '@/src/server/getClientAppConfig';
+import { getClientAppConfigServer } from '@/server/getClientAppConfig';
 
 export default async function ClientAppConfigBootstrap({
   children

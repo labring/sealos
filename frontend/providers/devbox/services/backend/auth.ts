@@ -1,6 +1,6 @@
 import { decode, JwtPayload, sign, verify } from 'jsonwebtoken';
 import { ERROR_ENUM } from '../error';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 interface CustomJwtPayload extends JwtPayload {
   namespace: string;

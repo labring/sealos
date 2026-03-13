@@ -95,11 +95,12 @@ function parseStreamChunk(value: BufferSource) {
 function streamFetch(res: NextApiResponse<ApiResp>, events: any) {
   return new Promise(async (resolve, reject) => {
     try {
-      const response = await fetch('https://fastgpt.run/api/openapi/v1/chat/completions', {
+      const { url, fastGPTKey } = Config().launchpad.components.eventAnalysis;
+      const response = await fetch(`${url}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${Config().launchpad.analytics.fastGPTKey}`
+          Authorization: `Bearer ${fastGPTKey}`
         },
         body: JSON.stringify({
           stream: true,

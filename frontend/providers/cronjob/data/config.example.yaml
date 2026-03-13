@@ -7,9 +7,11 @@ cronjob:
   components:
     applaunchpad:
       url: ''
+
   podResources:
     cpuMilliCores: 50
     memoryMiB: 64
+
   jobHistory:
     successfulLimit: 3
     failedLimit: 3

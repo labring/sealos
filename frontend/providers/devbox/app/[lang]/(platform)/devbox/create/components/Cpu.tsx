@@ -8,7 +8,7 @@ import { Label } from '@sealos/shadcn-ui/label';
 import { Slider } from '@sealos/shadcn-ui/slider';
 
 import { DevboxEditTypeV2 } from '@/types/devbox';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export default function Cpu() {
   const t = useTranslations();

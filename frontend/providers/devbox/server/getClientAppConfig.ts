@@ -1,5 +1,5 @@
-import { Config } from '@/src/config';
-import { ClientAppConfig, ClientAppConfigSchema } from '@/src/types/config';
+import { Config } from '@/config';
+import { ClientAppConfig, ClientAppConfigSchema } from '@/types/config';
 
 export function getClientAppConfigServer(): ClientAppConfig {
   const fullConfig = Config();
@@ -10,7 +10,7 @@ export function getClientAppConfigServer(): ClientAppConfig {
     devbox: {
       ui: {
         docUrls: fullConfig.devbox.ui.docUrls,
-        currencySymbolType: fullConfig.devbox.ui.currencySymbolType,
+        currencySymbol: fullConfig.devbox.ui.currencySymbol,
         customScripts: fullConfig.devbox.ui.customScripts
       },
       features: fullConfig.devbox.features,

@@ -6,7 +6,7 @@ import { AccessTokenPayload, generateBillingToken, verifyInternalToken } from '.
 import { jsonRes } from './response';
 
 export async function getRegionList() {
-  const regionUrl = Config().costCenter.components.accountService.url + '/account/v1alpha1/regions';
+  const regionUrl = Config().costCenter.components.billing.url + '/account/v1alpha1/regions';
   const fetchResponse = await fetch(regionUrl, {
     method: 'POST'
   });
@@ -64,7 +64,7 @@ export function makeAPIClient(
 ): AxiosInstance {
   const baseURL = region?.accountSvc
     ? `http://${region?.accountSvc}`
-    : Config().costCenter.components.accountService.url;
+    : Config().costCenter.components.billing.url;
   // console.log(baseURL);
   if (!payload) {
     return axios.create({

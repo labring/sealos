@@ -9,7 +9,7 @@ import { useCopyData } from '@/utils/tools';
 import { checkReady } from '@/api/platform';
 import { NetworkType } from '@/types/devbox';
 import { useDevboxStore } from '@/stores/devbox';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import {
   Table,

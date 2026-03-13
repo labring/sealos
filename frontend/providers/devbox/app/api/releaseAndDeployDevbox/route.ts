@@ -14,7 +14,7 @@ import {
 import { json2DevboxRelease } from '@/utils/json2Yaml';
 import { ReleaseAndDeployDevboxRequestSchema } from './schema';
 import { z } from 'zod';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

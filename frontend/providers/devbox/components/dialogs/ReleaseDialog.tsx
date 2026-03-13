@@ -31,7 +31,7 @@ import { Textarea } from '@sealos/shadcn-ui/textarea';
 import { Checkbox } from '@sealos/shadcn-ui/checkbox';
 import { Separator } from '@sealos/shadcn-ui/separator';
 import { track } from '@sealos/gtm';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 interface ReleaseDialogProps {
   devbox: Omit<DevboxListItemTypeV2, 'template'>;

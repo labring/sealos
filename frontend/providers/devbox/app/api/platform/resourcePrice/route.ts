@@ -4,7 +4,7 @@ import { CoreV1Api } from '@kubernetes/client-node';
 import { jsonRes } from '@/services/backend/response';
 import { userPriceType } from '@/types/user';
 import { K8sApiDefault } from '@/services/backend/kubernetes';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     const getResourcePrice = async () => {
       try {
         const res = await fetch(
-          `${config.devbox.components.account.url}/account/v1alpha1/properties`,
+          `${config.devbox.components.billing.url}/account/v1alpha1/properties`,
           {
             method: 'POST'
           }
@@ -70,15 +70,13 @@ export async function GET(req: NextRequest) {
 
     const [priceResponse, gpuNodes] = await Promise.all([
       getResourcePrice() as Promise<ResourcePriceType['data']['properties']>,
-      config.devbox.components.gpu.enabled ? getGpuNode() : Promise.resolve([])
+      config.devbox.features.gpu ? getGpuNode() : Promise.resolve([])
     ]);
 
     const data: userPriceType = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
-      gpu: config.devbox.components.gpu.enabled
-        ? countGpuSource(priceResponse, gpuNodes)
-        : undefined
+      gpu: config.devbox.features.gpu ? countGpuSource(priceResponse, gpuNodes) : undefined
     };
 
     return jsonRes({

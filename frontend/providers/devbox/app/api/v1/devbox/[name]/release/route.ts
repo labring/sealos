@@ -7,7 +7,7 @@ import { KBDevboxReleaseType } from '@/types/k8s';
 import { json2DevboxRelease } from '@/utils/json2Yaml';
 import { adaptDevboxVersionListItem } from '@/utils/adapt';
 import { RequestSchema } from './schema';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

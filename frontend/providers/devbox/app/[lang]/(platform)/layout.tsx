@@ -10,7 +10,7 @@ import { useLocale } from 'next-intl';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 
 import { initUser } from '@/api/template';
-import { useClientAppConfig } from '@/src/hooks/useClientAppConfig';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useUserStore } from '@/stores/user';
 import { useConfirm } from '@/hooks/useConfirm';
 import { usePriceStore } from '@/stores/price';

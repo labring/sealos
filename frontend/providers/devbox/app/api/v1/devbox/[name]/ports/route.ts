@@ -9,7 +9,7 @@ import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devb
 import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 import { ProtocolType } from '@/types/devbox';
 import { UpdatePortsRequestSchema, nanoid } from './schema';
-import { Config } from '@/src/config';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 

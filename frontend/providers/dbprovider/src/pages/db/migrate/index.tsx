@@ -200,8 +200,8 @@ const EditApp = ({
   const handleCreateApp = useQuotaGuarded(
     {
       requirements: {
-        cpu: config.migrationJobCpu,
-        memory: config.migrationJobMemory,
+        cpu: config.migrationJobCpuMillicores,
+        memory: config.migrationJobMemoryMiB,
         traffic: true
       },
       immediate: false,

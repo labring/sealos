@@ -249,7 +249,7 @@ const Logs = ({
           <Flex position={'relative'} flexDirection={'column'} h={'100%'}>
             <Flex mb={4} alignItems={'center'}>
               <Box color={'myGray.600'}>Events</Box>
-              {events.length > 0 && config.analytics.enabled && (
+              {events.length > 0 && config.components.eventAnalysis.enabled && (
                 <Button
                   ml={3}
                   size={'sm'}
