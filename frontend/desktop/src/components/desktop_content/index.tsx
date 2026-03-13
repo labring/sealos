@@ -7,7 +7,6 @@ import { Box, Flex, Image, useToast } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import { ChakraIndicator } from './ChakraIndicator';
@@ -50,13 +49,12 @@ export default function Desktop() {
   const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
   const { realNameAuthNotification } = useRealNameAuthNotification();
   const { layoutConfig, cloudConfig } = useConfigStore();
-  const { session, delSession, setToken } = useSessionStore();
+  const { session } = useSessionStore();
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
   const [isClient, setIsClient] = useState(false);
   const guideModal = useGuideModalStore();
   const toast = useToast();
-  const router = useRouter();
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -76,18 +74,11 @@ export default function Desktop() {
     queryFn: () => validateKubeconfig({ kubeconfig: session?.kubeconfig || '' }),
     enabled: !!session?.kubeconfig,
     retry: false,
+    refetchOnWindowFocus: true,
     onSuccess(data) {
       if (data?.data?.valid === false) {
-        toast({
-          title: t('common:session_expired'),
-          status: 'error',
-          duration: 8000,
-          isClosable: true,
-          position: 'top'
-        });
-        delSession();
-        setToken('');
-        router.replace('/signin');
+        localStorage.removeItem('session');
+        window.location.replace('/signin');
       }
     },
     onError() {

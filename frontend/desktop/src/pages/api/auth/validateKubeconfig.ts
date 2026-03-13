@@ -26,8 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (err: any) {
     const statusCode = err?.statusCode || err?.response?.statusCode;
     if (statusCode === 401 || statusCode === 403) {
-      // Return 200 with valid:false so the frontend can show a toast before logging out,
-      // rather than being caught by the global axios 401 interceptor.
+      res.setHeader('Set-Cookie', 'session_expired=1; Path=/; Max-Age=30; SameSite=Strict');
       return jsonRes(res, { code: 200, data: { valid: false } });
     }
     return jsonRes(res, { code: 500, message: 'failed to validate kubeconfig' });
