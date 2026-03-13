@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { subDays } from 'date-fns';
 
 import { useGuideStore } from '@/stores/guide';
+import { useDateTimeStore } from '@/stores/date';
 import { useDevboxList } from './hooks/useDevboxList';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { ALL_TIME_START_DATE } from '@/utils/timeRange';
 
 import List from './components/List';
 import Empty from './components/Empty';
@@ -17,6 +20,7 @@ export default function HomePage() {
   const action = searchParams.get('action');
 
   const { resetGuideState } = useGuideStore();
+  const { setStartDateTime, setEndDateTime } = useDateTimeStore();
   const isClientSide = useClientSideValue(true);
   const { list, isLoading, refetchList } = useDevboxList();
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,6 +30,18 @@ export default function HomePage() {
       resetGuideState(!(action === 'guide'));
     }
   }, [action, isClientSide, resetGuideState]);
+
+  useEffect(() => {
+    const now = new Date();
+    setStartDateTime(new Date(ALL_TIME_START_DATE));
+    setEndDateTime(now);
+
+    return () => {
+      const resetTime = new Date();
+      setStartDateTime(subDays(resetTime, 7));
+      setEndDateTime(resetTime);
+    };
+  }, [setEndDateTime, setStartDateTime]);
 
   if (isLoading) return <Loading />;
 
