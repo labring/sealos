@@ -1,0 +1,276 @@
+@import '@sealos/shadcn-ui/shadcn.css';
+@import '@sealos/shadcn-ui/styles.css';
+@import '@sealos/shared/components/shadcn/styles.css';
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  font-size: 16px;
+  font-weight: 400;
+  min-width: 1024px;
+  min-height: 100%;
+  background-color: #e4e4e7;
+  overflow-x: auto;
+}
+
+#__next {
+  min-height: 100%;
+}
+
+#app-root {
+  min-height: 100%;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  overflow: hidden;
+}
+
+/* ========== scrollbar styles ========== */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.scrollbar-default {
+  -ms-overflow-style: auto;
+  scrollbar-width: auto;
+}
+
+.scrollbar-default::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.scrollbar-default::-webkit-scrollbar-thumb {
+  background: #f4f4f5 !important;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(189, 193, 197, 1) !important;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(189, 193, 197, 1) !important;
+}
+
+div::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  border-radius: 10px;
+  transition: 1s;
+}
+
+div:hover::-webkit-scrollbar-thumb {
+  background: rgba(189, 193, 197, 0.5) !important;
+}
+
+div:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(189, 193, 197, 1) !important;
+}
+
+/* ========== component styles ========== */
+.table-cross {
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table-cross th {
+  text-align: left;
+  padding: 8px 16px;
+  user-select: auto;
+  font-weight: 500;
+  color: #485264;
+  line-height: 16px;
+}
+
+.table-cross th:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.table-cross th:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.table-cross thead tr {
+  background: #f7f8fa;
+}
+
+.table-cross tbody tr:nth-child(even) {
+  background: #fbfbfc;
+}
+
+.table-cross tbody tr:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.table-cross tbody tr:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.textEllipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* PingFang SC font class */
+.font-pingfang {
+  font-family: 'PingFang SC', var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ========== Driver Popover ========== */
+#driver-popover-content {
+  border: none;
+  padding: 0px;
+  border-radius: 20px;
+  max-width: fit-content;
+}
+
+.driver-popover-arrow-side-left {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-left-color: #2563eb !important;
+}
+
+.driver-popover-arrow-side-right {
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: #2563eb !important;
+}
+
+.driver-popover-arrow-side-top {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  border-top-color: #2563eb !important;
+}
+
+.driver-popover-arrow-side-bottom {
+  border-left-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: #2563eb !important;
+}
+
+/* ========== Date Picker (react-day-picker v9) ========== */
+/* CSS Variables for DayPicker */
+.rdp-root {
+  /* Accent colors */
+  --rdp-accent-color: #111827;
+  --rdp-accent-background-color: #111827;
+
+  /* Day cells */
+  --rdp-day-height: 30px;
+  --rdp-day-width: 30px;
+  --rdp-day_button-height: 30px;
+  --rdp-day_button-width: 30px;
+  --rdp-day_button-border-radius: 6px;
+
+  /* Today's date */
+  --rdp-today-color: #2563eb;
+
+  /* Range selection */
+  --rdp-range_start-color: white;
+  --rdp-range_start-background: #18181b;
+  --rdp-range_end-color: white;
+  --rdp-range_end-background: #18181b;
+  --rdp-range_middle-color: #111827;
+  --rdp-range_middle-background-color: #f4f4f5;
+
+  /* Disabled and outside days */
+  --rdp-disabled-opacity: 0.3;
+  --rdp-outside-opacity: 0.5;
+
+  /* Navigation */
+  --rdp-nav_button-height: 26px;
+  --rdp-nav_button-width: 26px;
+  --rdp-nav-height: 26px;
+
+  /* Spacing */
+  --rdp-months-gap: 16px;
+}
+
+.rdp-month_grid {
+  border-collapse: separate;
+  border-spacing: 0 4px;
+}
+
+.rdp-chevron {
+  width: 16px;
+  height: 16px;
+}
+
+.rdp-caption_label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.rdp-weekday {
+  font-size: 12px;
+  font-weight: 500;
+  height: 30px;
+  padding: 0;
+}
+
+.rdp-day_button {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.rdp-range_start {
+  border-radius: 6px 0 0 6px !important;
+}
+.rdp-range_end {
+  border-radius: 0 6px 6px 0;
+}
+
+.rdp-today .rdp-day_button {
+  background-color: #eff6ff;
+}
+
+.rdp-range_end .rdp-day_button {
+  background-color: #111827;
+}
+
+/* ========== Animations ========== */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.3s;
+}

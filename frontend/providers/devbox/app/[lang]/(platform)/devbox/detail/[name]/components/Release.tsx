@@ -283,7 +283,7 @@ const Release = () => {
               <TooltipTrigger asChild>
                 <span className="max-w-50 cursor-pointer truncate">{item.description}</span>
               </TooltipTrigger>
-              <TooltipContent className="max-w-[300px] whitespace-pre-wrap break-words">
+              <TooltipContent className="max-w-[300px] break-words whitespace-pre-wrap">
                 <p>{item.description}</p>
               </TooltipContent>
             </Tooltip>
@@ -352,7 +352,7 @@ const Release = () => {
   }, [guideRelease, handleOpenRelease, isClientSide, t, guideIDE]);
 
   return (
-    <div className="shadow-xs flex h-[40%] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5">
+    <div className="flex h-[40%] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">
