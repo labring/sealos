@@ -203,7 +203,7 @@ func (d *DebtValidate) checkOption(
 					code.MessageFormat,
 					code.InsufficientBalance,
 					fmt.Sprintf(
-						"account balance less than 0, now account is %.2f¥. Please recharge the user %s.",
+						"(cache) account balance less than 0, now account is %.2f¥. Please recharge the user %s.",
 						GetAccountDebtBalance(cachedAccount),
 						user,
 					),
@@ -235,7 +235,7 @@ func (d *DebtValidate) checkOption(
 		}
 	} else {
 		// Cache miss, query database
-		userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user})
+		userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user, WithOutCache: true})
 		if err != nil {
 			logger.Error(err, "get user error", "user", user)
 			return admission.ValidationResponse(true, err.Error())

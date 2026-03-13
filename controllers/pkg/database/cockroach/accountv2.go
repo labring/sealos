@@ -503,7 +503,7 @@ func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uid uuid.UUID, err err
 	}
 	// data in the cache owner is preferred
 	if ops.Owner != "" {
-		uid, err = c.getUserUIDByOwnerWithCache(ops.Owner)
+		uid, err = c.getUserUIDByOwner(ops.Owner)
 	} else {
 		uid, err = c.getUserUIDByID(ops.ID)
 	}
