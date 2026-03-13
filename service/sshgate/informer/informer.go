@@ -283,6 +283,9 @@ func transformPod(obj any) (any, error) {
 			Labels:          pod.Labels,
 			OwnerReferences: pod.OwnerReferences,
 		},
+		Spec: corev1.PodSpec{
+			NodeName: pod.Spec.NodeName,
+		},
 		Status: corev1.PodStatus{
 			PodIP: pod.Status.PodIP,
 		},

@@ -62,6 +62,7 @@ export default function RechargePanel() {
       createdAt: payment.CreatedAt,
       gift: payment.Gift,
       amount: payment.Amount,
+      refunded: payment.Status === 'REFUNDED',
       raw: payment
     }));
   }, [data?.data?.payments]);

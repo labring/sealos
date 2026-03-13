@@ -919,6 +919,7 @@ name = "httpgate"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "bytes",
  "dashmap",
  "futures",
  "k8s-openapi",

@@ -25,15 +25,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     await updateTenantAccessToken();
     const { detail, contract, billings } = req.body as ReqGenInvoice;
-    if (
-      !detail ||
-      !contract ||
-      !billings ||
-      !isValidPhoneNumber(contract.phone) ||
-      !isValidCNTaxNumber(detail.tax) ||
-      !isValidBANKAccount(detail.bankAccount) ||
-      !isValidEmail(contract.email)
-    ) {
+
+    // Check basic required fields
+    if (!detail || !contract || !billings) {
       return jsonRes(res, {
         data: {
           status: false
@@ -41,6 +35,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'The content is invalid',
         code: 400
       });
+    }
+
+    // Validate contact information (required for all types)
+    if (!isValidPhoneNumber(contract.phone) || !isValidEmail(contract.email)) {
+      return jsonRes(res, {
+        data: {
+          status: false
+        },
+        message: 'The content is invalid',
+        code: 400
+      });
+    }
+
+    // Validate invoice details based on invoice type
+    const isPersonal = detail.type === 'personal';
+    if (isPersonal) {
+      // Personal type: tax and bankAccount are optional, no validation needed
+      // Only validate that required fields exist
+      if (!detail.title) {
+        return jsonRes(res, {
+          data: {
+            status: false
+          },
+          message: 'The content is invalid',
+          code: 400
+        });
+      }
+    } else {
+      // Normal/Special type: validate tax and bankAccount
+      if (!isValidCNTaxNumber(detail.tax) || !isValidBANKAccount(detail.bankAccount)) {
+        return jsonRes(res, {
+          data: {
+            status: false
+          },
+          message: 'The content is invalid',
+          code: 400
+        });
+      }
     }
     if (
       process.env.NODE_ENV !== 'development' &&

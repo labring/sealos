@@ -21,10 +21,24 @@ const nextConfig = {
     return config;
   },
   // https://www.npmjs.com/package/geist
-  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver', 'geist'],
+  transpilePackages: [
+    '@sealos/ui',
+    'sealos-desktop-sdk',
+    '@sealos/driver',
+    'geist',
+    '@sealos/shared'
+  ],
   experimental: {
     // this includes files from the monorepo base two directories up
     outputFileTracingRoot: path.join(__dirname, '../../')
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/v2alpha/openapi.json',
+        destination: '/api/v2alpha/openapi'
+      }
+    ];
   }
 };
 

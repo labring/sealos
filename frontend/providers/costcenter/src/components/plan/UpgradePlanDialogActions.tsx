@@ -116,7 +116,11 @@ export function UpgradePlanDialogActions({
               // Create workspace with selected plan
               const selectedPlan = plans?.find((p) => p.ID === selectedPlanId);
               if (selectedPlan) {
-                showConfirmationModal(selectedPlan, { workspaceName, isCreateMode });
+                showConfirmationModal(selectedPlan, {
+                  workspaceName,
+                  operator: 'created',
+                  businessOperation: 'create'
+                });
               }
             }
           }}
@@ -154,6 +158,7 @@ export function UpgradeButton({
   onUpgradeClick?: (plan: SubscriptionPlan) => void;
 }) {
   const { t } = useTranslation();
+  const subscriptionData = usePlanStore((state) => state.subscriptionData);
   const showConfirmationModal = usePlanStore((state) => state.showConfirmationModal);
   const showDowngradeModal = usePlanStore((state) => state.showDowngradeModal);
 
@@ -162,22 +167,58 @@ export function UpgradeButton({
   const plan = additionalPlans.find((p) => p.ID === selectedPlan);
   if (!plan) return null;
 
+  const subscription = subscriptionData?.subscription;
+  const inDebt = subscription?.Status?.toLowerCase() === 'debt';
+
   const handleUpgradeClick = () => {
     if (onUpgradeClick) {
       onUpgradeClick(plan);
     } else {
       // Fallback to default behavior
       const getOperator = () => {
-        if (!currentPlanObj || isCreateMode) return 'created';
+        // If in debt state, always use 'created' operation
+        if (inDebt) return 'created';
+        if (!currentPlanObj) return 'created';
         if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
         if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
         return 'upgraded';
       };
       const operator = getOperator();
+      // Determine business operation for UI display
+      let businessOperation: 'create' | 'upgrade' | 'downgrade' | 'renew' | undefined;
+      if (inDebt) {
+        // In debt state: check if it's current plan (renew) or other plan (upgrade/downgrade)
+        const isCurrentPlanInDebt = selectedPlanName === currentPlan;
+        if (isCurrentPlanInDebt) {
+          businessOperation = 'renew';
+        } else {
+          // Check if it's actually a downgrade based on plan relationship
+          if (currentPlanObj && currentPlanObj.DowngradePlanList?.includes(selectedPlanName)) {
+            businessOperation = 'downgrade';
+          } else {
+            businessOperation = 'upgrade';
+          }
+        }
+      } else if (operator === 'created') {
+        businessOperation = 'create';
+      } else if (operator === 'upgraded') {
+        businessOperation = 'upgrade';
+      } else if (operator === 'downgraded') {
+        businessOperation = 'downgrade';
+      }
+
       if (operator === 'downgraded') {
-        showDowngradeModal(plan, { workspaceName, isCreateMode });
+        showDowngradeModal(plan, {
+          workspaceName,
+          operator,
+          businessOperation: 'downgrade'
+        });
       } else {
-        showConfirmationModal(plan, { workspaceName, isCreateMode });
+        showConfirmationModal(plan, {
+          workspaceName,
+          operator,
+          businessOperation
+        });
       }
     }
   };

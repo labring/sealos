@@ -13,13 +13,7 @@
     "McpHub": "MCP 广场"
   },
   "keyList": {
-    "title": "API Keys",
-    "invitationText1": "限时福利!!",
-    "invite": "活动详情",
-    "invitationText2": "邀请好友注册 Sealos，",
-    "invitationText3": "立返 10元 余额！",
-    "invitationText4": "邀请链接：",
-    "invitationText5": "点击复制"
+    "title": "API Keys"
   },
   "key": {
     "key": "API Key",
@@ -170,8 +164,7 @@
     "exportAll": "全部导出",
     "importSuccess": "导入成功",
     "importError": "导入失败",
-    "doc": "文档",
-    "invite": "邀请"
+    "doc": "文档"
   },
   "channelStatus": {
     "autoDisabled": "系统禁用"

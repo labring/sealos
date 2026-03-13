@@ -384,6 +384,7 @@ func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(
 	sub.CurrentPeriodStartAt = now
 	sub.CurrentPeriodEndAt = now.Add(addPeriod)
 	sub.CancelAtPeriodEnd = false
+	sub.ExpireAt = &sub.CurrentPeriodEndAt
 	sub.PayStatus = tx.PayStatus
 	sub.UpdateAt = now
 	if err := dbTx.Where("workspace = ? AND region_domain = ?", tx.Workspace, r.localDomain).First(&types.WorkspaceSubscription{}).Error; err == nil {

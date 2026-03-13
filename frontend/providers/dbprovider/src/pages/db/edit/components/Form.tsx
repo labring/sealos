@@ -1343,8 +1343,8 @@ const Form = ({
                                       {lowerCaseTableNames === '0'
                                         ? `0 (${t('case_sensitive')})`
                                         : lowerCaseTableNames === '1'
-                                          ? `1 (${t('case_insensitive')})`
-                                          : t('param_unset')}
+                                        ? `1 (${t('case_insensitive')})`
+                                        : t('param_unset')}
                                     </Text>
                                   )}
                                   <MyIcon

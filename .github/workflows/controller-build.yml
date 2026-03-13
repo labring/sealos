@@ -56,6 +56,7 @@ env:
   GO_VERSION: "1.24"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
+  LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
 
 jobs:
   golangci-lint:
@@ -249,6 +250,12 @@ jobs:
             if [[ -f charts/${MODULE_PATH}/values.yaml ]]; then
               sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_PATH}/values.yaml
             fi
+            if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
+            fi
+            if [[ -f charts/${MODULE_NAME}-controller/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}-controller/values.yaml
+            fi
             sudo rm -rf registry
             echo "Building ${TAG}-amd64"
             sudo sealos build -t "${TAG}-amd64" --platform linux/amd64 -f Kubefile
@@ -263,6 +270,12 @@ jobs:
             fi
             if [[ -f charts/${MODULE_PATH}/values.yaml ]]; then
               sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_PATH}/values.yaml
+            fi
+            if [[ -f charts/${MODULE_NAME}/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}/values.yaml
+            fi
+            if [[ -f charts/${MODULE_NAME}-controller/values.yaml ]]; then
+              sed -i -E "s;(${OLD_DOCKER_REPO}|${GHCR_DOCKER_REPO}):[^[:space:]\"']*;${NEW_DOCKER_IMAGE};" charts/${MODULE_NAME}-controller/values.yaml
             fi
             sudo rm -rf registry
             echo "Building ${TAG}-arm64"

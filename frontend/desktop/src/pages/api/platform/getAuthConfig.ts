@@ -23,9 +23,6 @@ function genResAuthClientConfig(conf: AuthConfigType) {
 
   const authClientConfig: AuthClientConfigType = {
     callbackURL: conf.callbackURL || '',
-    invite: {
-      enabled: !!conf.invite?.enabled
-    },
     idp: {
       password: {
         enabled: !!conf.idp.password?.enabled

@@ -36,8 +36,12 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 RUN sed -i 's/https/http/' /etc/apk/repositories
-RUN apk add curl \
-  && apk add ca-certificates \
+RUN apk add --no-cache curl ca-certificates \
+  && (apk add --no-cache postgresql18-client \
+    || apk add --no-cache postgresql17-client \
+    || apk add --no-cache postgresql16-client \
+    || apk add --no-cache postgresql15-client \
+    || apk add --no-cache postgresql-client) \
   && update-ca-certificates
 
 # You only need to copy next.config.js if you are NOT using the default configuration

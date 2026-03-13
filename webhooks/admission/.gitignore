@@ -5,6 +5,8 @@
 *.dll
 *.so
 *.dylib
+.gocache
+.gotmp
 bin
 testbin/*
 Dockerfile.cross

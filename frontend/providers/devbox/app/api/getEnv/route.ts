@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
         privacyUrlZH: process.env.PRIVACY_URL_ZH || defaultEnv.privacyUrlZH,
         privacyUrlEN: process.env.PRIVACY_URL_EN || defaultEnv.privacyUrlEN,
         sealosDomain: process.env.SEALOS_DOMAIN || defaultEnv.sealosDomain,
+        sshDomain: process.env.SSH_DOMAIN || process.env.SEALOS_DOMAIN || defaultEnv.sshDomain,
         ingressSecret: process.env.INGRESS_SECRET || defaultEnv.ingressSecret,
         registryAddr: process.env.REGISTRY_ADDR || defaultEnv.registryAddr,
         devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE || defaultEnv.devboxAffinityEnable,
@@ -36,8 +37,11 @@ export async function GET(req: NextRequest) {
           | 'usd',
         enableImportFeature: process.env.ENABLE_IMPORT_FEATURE || defaultEnv.enableImportFeature,
         enableWebideFeature: process.env.ENABLE_WEBIDE_FEATURE || defaultEnv.enableWebideFeature,
+        enableAdvancedConfig: process.env.ENABLE_ADVANCED_CONFIG || defaultEnv.enableAdvancedConfig,
         cpuSlideMarkList: process.env.CPU_SLIDE_MARK_LIST || defaultEnv.cpuSlideMarkList,
-        memorySlideMarkList: process.env.MEMORY_SLIDE_MARK_LIST || defaultEnv.memorySlideMarkList
+        memorySlideMarkList: process.env.MEMORY_SLIDE_MARK_LIST || defaultEnv.memorySlideMarkList,
+        nfsStorageClassName: process.env.NFS_STORAGE_CLASS_NAME || defaultEnv.nfsStorageClassName,
+        webIdePort: Number(process.env.WEBIDE_PORT) || defaultEnv.webIdePort
       }
     });
   } catch (err: any) {

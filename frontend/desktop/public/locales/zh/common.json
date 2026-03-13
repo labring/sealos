@@ -37,10 +37,13 @@
   "avatar": "头像",
   "balance_popover": {
     "balance": "余额",
+    "cancelled_notice": "您的订阅已取消。资源将在 {{date}} 后删除。请及时备份数据或恢复订阅以避免损失。",
     "check_costcenter_tip": "到费用中心查看详细信息",
     "expired_at": "过期时间：",
+    "expires_on": "到期时间：",
     "payg_plan": "按量付费",
     "plan_suffix": "套餐",
+    "renew_subscription_button": "恢复订阅",
     "subscription_status": {
       "expired": "过期",
       "limited_trial": "限时试用"
@@ -51,7 +54,8 @@
     "trial_expiry_upgrade_tip_one": "你的试用将在 {{count}} 天后过期. 升级套餐以保证服务在线.",
     "trial_expiry_upgrade_tip_other": "你的试用将在 {{count}} 天后过期. 升级套餐以保证服务在线.",
     "upgrade_button": "升级套餐",
-    "upgrade_tip": "跳转到费用中心以升级套餐"
+    "upgrade_tip": "跳转到费用中心以升级套餐",
+    "can_not_manage_payments": "请联系空间管理员执行取消或升级订阅操作"
   },
   "balance_text": "余额",
   "bank_name": "开户银行",
@@ -88,6 +92,7 @@
   "completed": "完成",
   "completed_the_deployment_of_an_nginx_for_the_first_time": "部署一个 nginx ，首次完成 将",
   "confirm": "确认",
+  "copy": "复制",
   "confirm_again": "再次确认",
   "confirmnewpassword": "确认新密码",
   "contact_info": "联系方式 (手机号码)",
@@ -184,7 +189,6 @@
   "invitation_reminder": "受邀提醒",
   "invite_member": "邀请成员",
   "invite_members_to_workspace": "邀请成员至工作空间 {{workspace}}",
-  "inviter_id_tips": "邀请码（仅支持手机注册，选填）",
   "irreversibleactiontips": "此操作不可逆转，请谨慎操作",
   "jump_over": "跳过",
   "language": "语言",
@@ -218,8 +222,10 @@
   "name_of_team": "工作空间名称",
   "nav_links": {
     "balance": "余额",
+    "cancelled": "已取消",
     "plan_expired": "已过期",
     "plan_suffix": "套餐",
+    "renew": "续费",
     "subscribe": "订阅套餐",
     "upgrade_plan": "升级"
   },
@@ -233,6 +239,8 @@
   "no_apps_found": "未找到任何应​​用",
   "no_realname_auth": "未实名认证",
   "notification": "通知",
+  "no_notifications_yet": "暂无通知",
+  "no_notifications_desc": "最近的通知将显示在这里。一切正常。",
   "noworkspacecreated": "您还没有创建工作空间",
   "official_account_login": "公众号登录",
   "old_email": "旧电子邮箱",
@@ -287,8 +295,8 @@
   "receive_tips": "{{managerName}} 邀请你到 {{teamName}} 成为 {{role}}",
   "recharge_amount": "充值金额",
   "redirecting_to_homepage_in_3_seconds": "3秒后跳回主页",
-  "referral": "推荐有奖",
   "refresh_qr_code": "刷新二维码",
+  "regenerate_link": "重新生成",
   "region": "可用区",
   "reject": "拒绝",
   "remain_app_tips": "您的账户中仍有未删除的应用资源，为了帮助您顺利完成账户注销流程，请您手动删除所有应用资源，以避免数据丢失",
@@ -438,5 +446,9 @@
       "update_success": "更新成功",
       "update_failed": "更新失败"
     }
-  }
+  },
+  "refresh_kubeconfig": "刷新 Kubeconfig",
+  "kubeconfig_rotating": "正在刷新 Kubeconfig...",
+  "kubeconfig_rotated_successfully": "Kubeconfig 刷新成功",
+  "kubeconfig_rotation_failed": "Kubeconfig 刷新失败"
 }

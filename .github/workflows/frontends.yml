@@ -102,8 +102,6 @@ jobs:
               - 'frontend/providers/objectstorage/**'
             kubepanel:
               - 'frontend/providers/kubepanel/**'
-            workorder:
-              - 'frontend/providers/workorder/**'
             devbox:
               - 'frontend/providers/devbox/**'
             desktop:
@@ -129,7 +127,6 @@ jobs:
               "providers/costcenter"
               "providers/objectstorage"
               "providers/kubepanel"
-              "providers/workorder"
               "providers/devbox"
               "desktop"
             )
@@ -145,7 +142,6 @@ jobs:
             [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
             [[ "${{ steps.filter.outputs.objectstorage }}" == "true" ]] && modules+=("providers/objectstorage")
             [[ "${{ steps.filter.outputs.kubepanel }}" == "true" ]] && modules+=("providers/kubepanel")
-            [[ "${{ steps.filter.outputs.workorder }}" == "true" ]] && modules+=("providers/workorder")
             [[ "${{ steps.filter.outputs.devbox }}" == "true" ]] && modules+=("providers/devbox")
             [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
           fi

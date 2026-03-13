@@ -1,0 +1,53 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "user.fullname" . }}-selfsigned-issuer
+  labels:
+    control-plane: controller-manager
+    {{- include "user.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "user.fullname" . }}-serving-cert
+  labels:
+    control-plane: controller-manager
+    {{- include "user.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+    - {{ include "user.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc
+    - {{ include "user.fullname" . }}-webhook-service.{{ .Release.Namespace }}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: {{ include "user.fullname" . }}-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+{{- if .Values.metrics.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    {{- include "user.labels" . | nindent 4 }}
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    {{- include "user.labels" . | nindent 4 }}
+  name: metrics-certs
+spec:
+  privateKey:
+    rotationPolicy: Always
+  dnsNames:
+    - {{ include "user.fullname" . }}-metrics.{{.Release.Namespace}}.svc
+    - {{ include "user.fullname" . }}-metrics.{{.Release.Namespace}}.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: {{.Values.metrics.secretName}}
+{{- end }}

@@ -27,7 +27,6 @@ export const initAppConfig = () =>
     aiproxyBackend: string
     currencySymbol: 'shellCoin' | 'cny' | 'usd'
     docUrl: string
-    isInvitationActive: boolean
     invitationUrl: string
   }>('/api/init-app-config')
 

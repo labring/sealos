@@ -276,6 +276,22 @@ func (c *Cockroach) GetAccountConfig() (types.AccountConfig, error) {
 	return *c.accountConfig, nil
 }
 
+func (c *Cockroach) ReloadAccountConfig() (types.AccountConfig, error) {
+	config := &types.Configs{}
+	if err := c.DB.Where(&types.Configs{}).First(config).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return types.AccountConfig{}, nil
+		}
+		return types.AccountConfig{}, fmt.Errorf("failed to get account config: %w", err)
+	}
+	var accountConfig types.AccountConfig
+	if err := json.Unmarshal([]byte(config.Data), &accountConfig); err != nil {
+		return types.AccountConfig{}, fmt.Errorf("failed to unmarshal account config: %w", err)
+	}
+	c.accountConfig = &accountConfig
+	return *c.accountConfig, nil
+}
+
 func (c *Cockroach) InsertAccountConfig(config *types.AccountConfig) error {
 	data, err := json.Marshal(config)
 	if err != nil {
@@ -2010,6 +2026,7 @@ func (c *Cockroach) InitTables() error {
 	enumTypes = append(
 		enumTypes,
 		`ALTER TYPE subscription_transaction_status ADD VALUE IF NOT EXISTS 'canceled'`,
+		`ALTER TYPE subscription_operator ADD VALUE IF NOT EXISTS 'resumed'`,
 	)
 	for _, query := range enumTypes {
 		err := c.DB.Exec(query).Error

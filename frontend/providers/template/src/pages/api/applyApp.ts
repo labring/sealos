@@ -1,9 +1,12 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { handleK8sError, jsonRes } from '@/services/backend/response';
+import { jsonRes } from '@/services/backend/response';
+import { withErrorHandler } from '@/services/backend/middleware';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { ResponseCode } from '@/types/response';
+import { applyWithInstanceOwnerReferences } from '@/services/backend/instanceOwnerReferencesApply';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default withErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { yamlList, type = 'create' } = req.body as {
     yamlList: string[];
     type: 'create' | 'replace' | 'dryrun';
@@ -11,20 +14,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!yamlList) {
     return jsonRes(res, {
-      code: 500,
-      error: 'yaml list is empty'
+      code: ResponseCode.BAD_REQUEST,
+      message: 'yaml list is empty'
     });
   }
 
-  try {
-    const { applyYamlList } = await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
+  const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
+    kubeconfig: await authSession(req.headers)
+  });
 
-    const applyRes = await applyYamlList(yamlList, type);
+  const { appliedKinds } = await applyWithInstanceOwnerReferences(
+    { applyYamlList, k8sCustomObjects, namespace },
+    yamlList,
+    type
+  );
 
-    jsonRes(res, { data: applyRes.map((item) => item.kind) });
-  } catch (err: any) {
-    return jsonRes(res, handleK8sError(err));
-  }
-}
+  jsonRes(res, { data: appliedKinds });
+});

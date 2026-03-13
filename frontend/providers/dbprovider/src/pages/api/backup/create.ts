@@ -3,8 +3,10 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { withErrorHandler } from '@/services/backend/middleware';
 import { json2ManualBackup } from '@/utils/json2Yaml';
 import { DBBackupMethodNameMap, DBBackupPolicyNameMap, DBTypeEnum } from '@/constants/db';
+import { ResponseCode } from '@/types/response';
 
 export type Props = {
   backupName: string;
@@ -13,59 +15,40 @@ export type Props = {
   dbType: `${DBTypeEnum}`;
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   const { backupName, dbName, remark, dbType } = req.body as Props;
 
   if (!dbName || !backupName || !dbType) {
-    jsonRes(res, {
-      code: 500,
-      error: 'params error'
-    });
-    return;
-  }
-
-  const group = 'dataprotection.kubeblocks.io';
-  const version = 'v1alpha1';
-  const plural = 'backuppolicies';
-
-  try {
-    const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
-      kubeconfig: await authSession(req)
-    });
-
-    // get backup backupolicies.dataprotection.kubeblocks.io
-    // const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
-    //   group,
-    //   version,
-    //   namespace,
-    //   plural,
-    //   `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`
-    // )) as { body: any };
-
-    const backupPolicyName = `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`;
-    const backupMethod = DBBackupMethodNameMap[dbType];
-
-    if (!backupPolicyName) {
-      throw new Error('Cannot find backup policy');
-    }
-
-    const backupCr = json2ManualBackup({
-      name: backupName,
-      backupPolicyName,
-      backupMethod,
-      remark
-    });
-
-    console.info(backupCr);
-
-    // create backup
-    await applyYamlList([backupCr], 'create');
-
-    jsonRes(res);
-  } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
+    return jsonRes(res, {
+      code: ResponseCode.BAD_REQUEST,
+      message: 'params error'
     });
   }
+
+  const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
+    kubeconfig: await authSession(req)
+  });
+
+  const backupPolicyName = `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`;
+  const backupMethod = DBBackupMethodNameMap[dbType];
+
+  if (!backupPolicyName) {
+    throw new Error('Cannot find backup policy');
+  }
+
+  const backupCr = json2ManualBackup({
+    name: backupName,
+    backupPolicyName,
+    backupMethod,
+    remark
+  });
+
+  console.info(backupCr);
+
+  // create backup
+  await applyYamlList([backupCr], 'create');
+
+  jsonRes(res, { message: 'Backup created successfully' });
 }
+
+export default withErrorHandler(handler);

@@ -123,15 +123,6 @@ export const str2Num = (str?: string | number) => {
 export const getErrText = (err: any, def = '') => {
   let msg: string = typeof err === 'string' ? err : err?.message || def || '';
 
-  // Extract message from "code:message" format
-  if (msg.includes(':')) {
-    const parts = msg.split(':');
-    if (parts.length >= 2) {
-      // Get everything after the first colon
-      msg = parts.slice(1).join(':').trim();
-    }
-  }
-
   msg && console.log('error =>', msg);
   return msg;
 };
@@ -349,16 +340,6 @@ export const parseTemplateConfig = (config: string) => {
     workingDir: string;
     releaseCommand: string[];
     releaseArgs: string[];
-    env?: Array<{
-      name: string;
-      value?: string;
-      valueFrom?: {
-        secretKeyRef: {
-          name: string;
-          key: string;
-        };
-      };
-    }>;
     appPorts: {
       name: string;
       port: number;
@@ -369,6 +350,29 @@ export const parseTemplateConfig = (config: string) => {
       containerPort: number;
       name: string;
       protocol: string;
+    }[];
+    env?: {
+      name: string;
+      value?: string;
+      valueFrom?: {
+        secretKeyRef: {
+          name: string;
+          key: string;
+        };
+      };
+    }[];
+    volumes?: {
+      name: string;
+      configMap?: {
+        name: string;
+      };
+      persistentVolumeClaim?: {
+        claimName: string;
+      };
+    }[];
+    volumeMounts?: {
+      name: string;
+      mountPath: string;
     }[];
   };
 };

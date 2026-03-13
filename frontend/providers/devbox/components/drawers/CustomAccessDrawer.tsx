@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { InfoIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 import {
   Drawer,
@@ -14,6 +15,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 
 import { postAuthCname, postAuthDomainChallenge } from '@/api/platform';
 import { useRequest } from '@/hooks/useRequest';
+import { useEnvStore } from '@/stores/env';
 
 export type CustomAccessDrawerParams = {
   publicDomain: string;
@@ -28,12 +30,18 @@ const CustomAccessDrawer = ({
 }: CustomAccessDrawerParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
   const ref = useRef<HTMLInputElement>(null);
   const t = useTranslations();
+  const { env } = useEnvStore();
 
   const { mutate: authDomain, isLoading } = useRequest({
     mutationFn: async () => {
       const val = ref.current?.value || '';
       if (!val) {
         return '';
+      }
+
+      if (val.endsWith(`.${env.ingressDomain}`) || val.endsWith(`.${env.sealosDomain}`)) {
+        toast.error(t('cannot_use_internal_domain'));
+        throw new Error('Cannot use internal domain');
       }
 
       try {
@@ -70,11 +78,11 @@ const CustomAccessDrawer = ({
         </DrawerHeader>
         <div className="px-4 py-2">
           <div className="mb-2 font-semibold">CNAME</div>
-          <div className="flex h-9 items-center rounded-lg border bg-zinc-50 px-4 select-all">
+          <div className="flex h-9 select-all items-center rounded-lg border bg-zinc-50 px-4">
             {publicDomain}
           </div>
 
-          <div className="mt-7 mb-2 font-semibold">{t('Custom Domain')}</div>
+          <div className="mb-2 mt-7 font-semibold">{t('Custom Domain')}</div>
           <Input
             ref={ref}
             defaultValue={customDomain}

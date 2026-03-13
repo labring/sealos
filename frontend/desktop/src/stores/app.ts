@@ -10,6 +10,9 @@ import { useDesktopConfigStore } from './desktopConfig';
 import { track } from '@sealos/gtm';
 import useSessionStore from './session';
 
+export const BRAIN_APP_KEY = 'system-brain';
+export const SESSION_RESTORE_APP_KEY = 'sealos_desktop_restore_app_key';
+
 export class AppInfo {
   pid: number;
   isShow: boolean;
@@ -63,10 +66,13 @@ const useAppStore = create<TOSState>()(
         runningInfo: [],
         // present of highest layer
         currentAppPid: -1,
+        currentAppKey: '',
         maxZIndex: 10,
         launchQuery: {},
         autolaunch: '',
         autolaunchWorkspaceUid: '',
+        autoDeployTemplate: '',
+        autoDeployTemplateForm: undefined as Record<string, any> | undefined,
         runner: new AppStateManager([]),
         async init() {
           const { isGuest } = useSessionStore.getState();
@@ -90,7 +96,12 @@ const useAppStore = create<TOSState>()(
         closeAppById: (pid: number) => {
           useDesktopConfigStore.getState().temporarilyDisableAnimation();
           set((state) => {
+            const closingApp = state.runningInfo.find((item) => item.pid === pid);
             state.runner.closeApp(pid);
+            // If closing the current app, clear currentAppKey
+            if (closingApp && closingApp.key === state.currentAppKey) {
+              state.currentAppKey = '';
+            }
             // make sure the process is killed
             state.runningInfo = state.runningInfo.filter((item) => item.pid !== pid);
           });
@@ -99,6 +110,7 @@ const useAppStore = create<TOSState>()(
           set((state) => {
             state.runner.closeAppAll();
             state.runningInfo = [];
+            state.currentAppKey = '';
           });
         },
         installApp: (app: TApp) => {
@@ -120,6 +132,14 @@ const useAppStore = create<TOSState>()(
                 return _app;
               }
             });
+            // If updating the current app, update currentAppKey based on size
+            if (app.pid === state.currentAppPid) {
+              if (app.size === 'maximize') {
+                state.currentAppKey = app.key;
+              } else {
+                state.currentAppKey = '';
+              }
+            }
           });
         },
 
@@ -186,6 +206,10 @@ const useAppStore = create<TOSState>()(
           set((state) => {
             state.runningInfo.push(_app);
             state.currentAppPid = _app.pid;
+            // Only save currentAppKey when app is maximized
+            if (appSize === 'maximize') {
+              state.currentAppKey = _app.key;
+            }
             state.maxZIndex = zIndex;
           });
 
@@ -250,6 +274,12 @@ const useAppStore = create<TOSState>()(
             _app.zIndex = zIndex;
             get().updateOpenedAppInfo(_app);
             state.currentAppPid = pid;
+            // Only save currentAppKey when app is maximized
+            if (_app.size === 'maximize') {
+              state.currentAppKey = _app.key;
+            } else {
+              state.currentAppKey = '';
+            }
             state.maxZIndex = zIndex;
           });
         },
@@ -273,14 +303,40 @@ const useAppStore = create<TOSState>()(
             state.launchQuery = {};
             state.autolaunchWorkspaceUid = '';
           });
+        },
+        setAutoDeployTemplate(templateName: string, templateForm: Record<string, any>) {
+          set((state) => {
+            state.autoDeployTemplate = templateName;
+            state.autoDeployTemplateForm = templateForm;
+          });
+        },
+        cancelAutoDeployTemplate: () => {
+          set((state) => {
+            state.autoDeployTemplate = '';
+            state.autoDeployTemplateForm = undefined;
+          });
         }
       })),
       {
         name: 'app',
+        version: 1,
+        migrate(persistedState: any) {
+          if (persistedState?.currentAppKey && persistedState.currentAppKey !== BRAIN_APP_KEY) {
+            return {
+              ...persistedState,
+              currentAppKey: ''
+            };
+          }
+          return persistedState;
+        },
         partialize(state) {
           return {
             launchQuery: state.launchQuery,
-            autolaunch: state.autolaunch
+            autolaunch: state.autolaunch,
+            autoDeployTemplate: state.autoDeployTemplate,
+            autoDeployTemplateForm: state.autoDeployTemplateForm,
+            // Only Brain can persist across tab close; other apps should rely on sessionStorage.
+            currentAppKey: state.currentAppKey === BRAIN_APP_KEY ? state.currentAppKey : ''
           };
         }
       }

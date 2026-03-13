@@ -4,7 +4,8 @@ import useSessionStore from '@/stores/session';
 import { useSigninFormStore } from '@/stores/signinForm';
 import { ApiResp } from '@/types';
 import { gtmLoginSuccess } from '@/utils/gtm';
-import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
 import { useGuideModalStore } from '@/stores/guideModal';
 import {
   Flex,
@@ -33,7 +34,7 @@ interface PhoneCheckFormProps {
 export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { setToken } = useSessionStore();
+  const { setGlobalToken } = useSessionStore();
 
   const [pinValue, setPinValue] = useState('');
   const { formValues, startTime } = useSigninFormStore();
@@ -63,14 +64,15 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/phone/verify', {
         id: data.id,
         code: data.code,
-        inviterId: getInviterId(),
         semData: getUserSemData(),
         adClickData: getAdClickData()
       }),
     async onSuccess(result) {
+      const oauth2RedirectPath = consumePendingOauth2RedirectPath();
+      const postLoginRedirect = oauth2RedirectPath || '/';
       const globalToken = result.data?.token;
       if (!globalToken) throw Error();
-      setToken(globalToken);
+      setGlobalToken(globalToken); // Sets global token and cookie
       if (result.data?.needInit) {
         try {
           // 自动初始化工作空间
@@ -84,8 +86,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
             await sessionConfig(initResult.data);
             const { setInitGuide } = useGuideModalStore.getState();
             setInitGuide(true);
-            // Force full page reload to close modal and reinitialize app state
-            window.location.href = '/';
+            window.location.href = postLoginRedirect;
           }
         } catch (error) {
           console.error('Auto init failed, fallback to manual:', error);
@@ -93,8 +94,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
             user_type: 'new',
             method: 'phone'
           });
-          // Force full page reload for workspace selection
-          window.location.href = '/workspace';
+          window.location.href = oauth2RedirectPath || '/workspace';
         }
       } else {
         const regionTokenRes = await getRegionToken();
@@ -104,8 +104,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
             method: 'phone'
           });
           await sessionConfig(regionTokenRes.data);
-          // Force full page reload to close modal and reinitialize app state
-          window.location.href = '/';
+          window.location.href = postLoginRedirect;
         }
       }
     }

@@ -1,37 +1,39 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { authSession } from '@/services/backend/auth';
-import { CRDMeta, getK8s } from '@/services/backend/kubernetes';
+import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { withErrorHandler } from '@/services/backend/middleware';
+import {
+  deleteInstanceOnly,
+  getInstanceOrThrow404,
+  isInstanceOwnerReferencesReady,
+  legacyDeleteInstanceAll
+} from '@/services/backend/instanceDelete';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default withErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { instanceName } = req.query as { instanceName: string };
+  const k8s = await getK8s({
+    kubeconfig: await authSession(req.headers)
+  });
+
+  let instance;
   try {
-    const { instanceName } = req.query as { instanceName: string };
-    const { k8sCustomObjects, namespace } = await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
-
-    const InstanceCRD: CRDMeta = {
-      group: 'app.sealos.io',
-      version: 'v1',
-      namespace: namespace,
-      plural: 'instances'
-    };
-
-    // 删除指定名称的自定义对象
-    await k8sCustomObjects.deleteNamespacedCustomObject(
-      InstanceCRD.group,
-      InstanceCRD.version,
-      InstanceCRD.namespace,
-      InstanceCRD.plural,
-      instanceName
-    );
-
-    jsonRes(res, { message: `Custom object "${instanceName}" deleted successfully` });
-  } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
+    instance = await getInstanceOrThrow404(k8s.k8sCustomObjects, k8s.namespace, instanceName);
+  } catch (error: any) {
+    if (error?.body?.code === 404) {
+      return jsonRes(res, { code: 404, message: 'Instance not found in namespace' });
+    }
+    throw error;
   }
-}
+
+  if (isInstanceOwnerReferencesReady(instance)) {
+    await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+    return jsonRes(res, { message: `Instance "${instanceName}" deleted successfully` });
+  }
+
+  await legacyDeleteInstanceAll(k8s, instanceName);
+  await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+
+  return jsonRes(res, { message: `Instance "${instanceName}" deleted successfully` });
+});

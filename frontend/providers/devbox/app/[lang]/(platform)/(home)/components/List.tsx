@@ -28,6 +28,7 @@ import { Pagination } from '@sealos/shadcn-ui/pagination';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
 import SimpleShutdownDialog from '@/components/dialogs/SimpleShutdownDialog';
+import ErrorModal from '@/components/ErrorModal';
 import SearchEmpty from './SearchEmpty';
 import { Name as NameColumn } from './list/columns/Name';
 import { Status as StatusColumn } from './list/columns/Status';
@@ -85,8 +86,13 @@ const DevboxList = ({
 }) => {
   const router = useRouter();
   const t = useTranslations();
-  const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal } =
-    useControlDevbox(refetchDevboxList);
+  const {
+    handleRestartDevbox,
+    handleStartDevbox,
+    handleGoToTerminal,
+    errorModalState,
+    closeErrorModal
+  } = useControlDevbox(refetchDevboxList);
 
   const { startDateTime: dateRangeStart } = useDateTimeStore();
   const { sourcePrice } = usePriceStore();
@@ -132,80 +138,96 @@ const DevboxList = ({
   }, []);
 
   const columns = useMemo<ColumnDef<DevboxListItemTypeV2>[]>(
-    () => [
-      {
-        accessorKey: 'name',
-        header: NameHeader,
-        size: 220,
-        cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => <NameColumn {...props} onEditRemark={handleEditRemark} />
-      },
-      {
-        accessorKey: 'status',
-        enableColumnFilter: true,
-        filterFn: statusFilterFn,
-        size: 120,
-        header: (props: HeaderContext<DevboxListItemTypeV2, unknown>) => (
-          <StatusFilter
-            {...props}
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-          />
-        ),
-        cell: StatusColumn
-      },
-      {
-        accessorKey: 'cpu',
-        header: () => <span className="select-none">{t('cpu')}</span>,
-        size: 200,
-        cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => <MonitorColumn {...props} type="cpu" />
-      },
-      {
-        accessorKey: 'memory',
-        header: () => <span className="select-none">{t('memory')}</span>,
-        size: 200,
-        cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => <MonitorColumn {...props} type="memory" />
-      },
-      {
-        accessorKey: 'gpu',
-        header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => <span className="select-none">GPU</span>,
-        size: 150,
-        cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
-          const item = row.original;
-          return <GPUItem gpu={item.gpu} />;
+    () =>
+      [
+        {
+          accessorKey: 'name',
+          header: NameHeader,
+          size: 220,
+          cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => (
+            <NameColumn {...props} onEditRemark={handleEditRemark} />
+          )
+        },
+        {
+          accessorKey: 'status',
+          enableColumnFilter: true,
+          filterFn: statusFilterFn,
+          size: 120,
+          header: (props: HeaderContext<DevboxListItemTypeV2, unknown>) => (
+            <StatusFilter
+              {...props}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+            />
+          ),
+          cell: StatusColumn
+        },
+        {
+          accessorKey: 'cpu',
+          header: () => <span className="select-none">{t('cpu')}</span>,
+          size: 200,
+          cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => (
+            <MonitorColumn {...props} type="cpu" />
+          )
+        },
+        {
+          accessorKey: 'memory',
+          header: () => <span className="select-none">{t('memory')}</span>,
+          size: 200,
+          cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => (
+            <MonitorColumn {...props} type="memory" />
+          )
+        },
+        {
+          accessorKey: 'gpu',
+          header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => (
+            <span className="select-none">GPU</span>
+          ),
+          size: 150,
+          cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
+            const item = row.original;
+            return (
+              <div className="overflow-hidden pr-4">
+                <GPUItem gpu={item.gpu} />
+              </div>
+            );
+          }
+        },
+        {
+          accessorKey: 'createTime',
+          enableColumnFilter: true,
+          filterFn: dateFilterFn,
+          header: (props: HeaderContext<DevboxListItemTypeV2, unknown>) => (
+            <CreateTimeFilter
+              {...props}
+              isSpecificTimeRangeSelected={isSpecificTimeRangeSelected}
+            />
+          ),
+          size: 150,
+          cell: CreateTimeColumn
+        },
+        {
+          id: 'actions',
+          header: () => <span className="select-none">{t('action')}</span>,
+          size: 280,
+          cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => (
+            <ActionsColumn
+              {...props}
+              onOpenRelease={handleOpenRelease}
+              onGoToTerminal={handleGoToTerminal}
+              onStartDevbox={handleStartDevbox}
+              onRestartDevbox={handleRestartDevbox}
+              onOpenShutdown={handleOpenShutdownModal}
+              onDeleteDevbox={handleDeleteDevbox}
+            />
+          )
         }
-      },
-      {
-        accessorKey: 'createTime',
-        enableColumnFilter: true,
-        filterFn: dateFilterFn,
-        header: (props: HeaderContext<DevboxListItemTypeV2, unknown>) => (
-          <CreateTimeFilter {...props} isSpecificTimeRangeSelected={isSpecificTimeRangeSelected} />
-        ),
-        size: 150,
-        cell: CreateTimeColumn
-      },
-      {
-        id: 'actions',
-        header: () => <span className="select-none">{t('action')}</span>,
-        size: 280,
-        cell: (props: CellContext<DevboxListItemTypeV2, unknown>) => (
-          <ActionsColumn
-            {...props}
-            onOpenRelease={handleOpenRelease}
-            onGoToTerminal={handleGoToTerminal}
-            onStartDevbox={handleStartDevbox}
-            onRestartDevbox={handleRestartDevbox}
-            onOpenShutdown={handleOpenShutdownModal}
-            onDeleteDevbox={handleDeleteDevbox}
-          />
-        )
-      }
-    ].filter((column) => {
-      if (column.accessorKey === 'gpu' && !sourcePrice.gpu) {
-        return false;
-      }
-      return true;
-    }),
+      ].filter((column) => {
+        if (column.accessorKey === 'gpu' && !sourcePrice.gpu) {
+          return false;
+        }
+        return true;
+      }),
     [
       t,
       statusFilter,
@@ -279,7 +301,7 @@ const DevboxList = ({
               <div
                 key={header.id}
                 style={{ width: header.getSize() }}
-                className="flex-shrink-0 flex-grow-1"
+                className="flex-grow-1 flex-shrink-0"
               >
                 {flexRender(header.column.columnDef.header, header.getContext())}
               </div>
@@ -299,7 +321,7 @@ const DevboxList = ({
                   <div
                     key={cell.id}
                     style={{ width: cell.column.getSize() }}
-                    className="flex-shrink-0 flex-grow-1"
+                    className="flex-grow-1 flex-shrink-0"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </div>
@@ -392,6 +414,12 @@ const DevboxList = ({
           currentRemark={editRemarkItem.remark}
         />
       )}
+      <ErrorModal
+        isOpen={errorModalState.isOpen}
+        onClose={closeErrorModal}
+        errorCode={errorModalState.errorCode}
+        errorMessage={errorModalState.errorMessage}
+      />
     </>
   );
 };

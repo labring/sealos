@@ -12,12 +12,42 @@ metadata:
   namespace: template-frontend
 data:
   config.yaml: |-
-    addr: :3000
-  config.json: |-
-    {
-      "showCarousel": false,
-      "slideData": []
-    }
+    # yaml-language-server: $schema=config.schema.json
+    cloud:
+        domain: '{{ .cloudDomain }}'
+        port: {{ .cloudPort }}
+        regionUid: ''
+        certSecretName: '{{ .certSecretName }}'
+
+    template:
+        ui:
+            brandName: Sealos
+            forcedLanguage: en
+            currencySymbolType: shellCoin
+            meta:
+                canonicalUrl: https://template.example.org
+                customScripts: []
+            carousel:
+                enabled: false
+                slides: []
+
+        repo:
+            url: {{ .templateRepoUrl }}
+            branch: {{ .templateRepoBranch }}
+            localDir: template
+
+        features:
+            fetchReadme: {{ .enableReadmeFetch }}
+            showAuthor: false
+            guide: {{ .guideEnabled }}
+
+        # cdnHost: cdn.jsdelivr.net
+        excludedCategories: []
+        sidebarMenuCount: 10
+        desktopDomain: '{{ .cloudDomain }}'
+        userDomain: '{{ .userDomain }}'
+        billingUrl: '{{ .billingUrl }}'
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -54,40 +84,23 @@ spec:
             capabilities:
               drop:
                 - "ALL"
-          env:
-            - name: SEALOS_CLOUD_DOMAIN
-              value: {{ .cloudDomain }}
-            - name: SEALOS_CLOUD_PORT
-              value: "{{ .cloudPort }}"
-            - name: SEALOS_USER_DOMAIN
-              value: {{ .userDomain }}
-            - name: SEALOS_CERT_SECRET_NAME
-              value: {{ .certSecretName }}
-            - name: TEMPLATE_REPO_URL
-              value: {{ .templateRepoUrl }}
-            - name: TEMPLATE_REPO_BRANCH
-              value: {{ .templateRepoBranch }}
-            - name: SHOW_AUTHOR
-              value: "false"
-            - name: ACCOUNT_URL
-              value: http://account-service.account-system.svc.cluster.local:2333
-            - name: GUIDE_ENABLED
-              value: "{{ .guideEnabled }}"
-            - name: BILLING_URL
-              value: {{ .billingUrl }}
-            - name: DESKTOP_DOMAIN
-              value: {{ .cloudDomain }}
-            - name: ENABLE_README_FETCH
-              value: "{{ .enableReadmeFetch }}"
           image: ghcr.io/labring/sealos-template-frontend:latest
           imagePullPolicy: Always
+          readinessProbe:
+            httpGet:
+              httpHeaders:
+              - name: Accept
+                value: application/json
+              path: /api/platform/getClientAppConfig
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 3
+
           volumeMounts:
             - name: template-frontend-volume
-              mountPath: /config.yaml
+              mountPath: /app/data/config.yaml
               subPath: config.yaml
-            - name: template-frontend-volume
-              mountPath: /app/data/config.json
-              subPath: config.json
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

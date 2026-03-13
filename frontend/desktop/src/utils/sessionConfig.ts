@@ -15,7 +15,7 @@ export const sessionConfig = async ({
   appToken: string;
 }) => {
   const store = useSessionStore.getState();
-  store.setToken(token);
+  store.setToken(token); // Sets region token for API requests
   const infoData = await UserInfo();
   const payload = jwtDecode<AccessTokenPayload>(token);
   const planInfo = await getPlanInfo(payload.workspaceId);
@@ -42,10 +42,6 @@ export const sessionConfig = async ({
   const sessionStore = useSessionStore.getState();
   sessionStore.setHasEverLoggedIn(true);
 };
-
-export const getInviterId = () => localStorage.getItem('inviterId');
-
-export const setInviterId = (id: string) => localStorage.setItem('inviterId', id);
 
 export const getUserSemData = (): SemData | null => {
   const semDataString = localStorage.getItem('sealos_sem');

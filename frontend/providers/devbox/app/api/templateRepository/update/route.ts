@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
         isDeleted: false
       },
       select: {
+        isPublic: true,
         templateRepositoryTags: {
           select: {
             tagUid: true
@@ -46,6 +47,12 @@ export async function POST(req: NextRequest) {
       return jsonRes({
         code: 404,
         error: 'template repository not found'
+      });
+    }
+    if (templateRepository.isPublic && !query.isPublic) {
+      return jsonRes({
+        code: 403,
+        error: 'template repository is public and cannot be set to private'
       });
     }
     const officialTagList = await devboxDB.tag.findMany({

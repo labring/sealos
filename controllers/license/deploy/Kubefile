@@ -4,5 +4,5 @@ USER 65532:65532
 
 COPY registry registry
 COPY charts charts
-COPY entrypoint.sh entrypoint.sh
-CMD ["bash entrypoint.sh"]
+COPY license-controller-entrypoint.sh license-controller-entrypoint.sh
+CMD ["bash license-controller-entrypoint.sh"]

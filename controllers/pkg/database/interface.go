@@ -58,6 +58,8 @@ type Account interface {
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category, property string) (time.Time, error)
 	GetAllPayment() ([]resources.Billing, error)
 	InitDefaultPropertyTypeLS() error
+	InitDefaultPropertyTypeLSWithDefaults() error
+	ReloadPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(
 		accountType common.Type,
@@ -122,6 +124,7 @@ type AccountV2 interface {
 	GetAccountWithCredits(userUID uuid.UUID) (*types.UsableBalanceWithCredits, error)
 	GetAvailableCredits(ops *types.UserQueryOpts) ([]types.Credits, error)
 	GetAccountConfig() (types.AccountConfig, error)
+	ReloadAccountConfig() (types.AccountConfig, error)
 	InsertAccountConfig(config *types.AccountConfig) error
 	GetRegions() ([]types.Region, error)
 	GetLocalRegion() types.Region

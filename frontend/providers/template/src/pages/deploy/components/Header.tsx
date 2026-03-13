@@ -28,13 +28,13 @@ import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback, useMemo } from 'react';
 import PriceBox, { usePriceCalculation } from './PriceBox';
 import { CurrencySymbol } from '@sealos/ui';
-import { useSystemConfigStore } from '@/store/config';
 import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { X } from 'lucide-react';
 import { startDriver, quitGuideDriverObj } from '@/hooks/driver';
 import { track } from '@sealos/gtm';
 import useSessionStore from '@/store/session';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const Header = ({
   appName,
@@ -43,7 +43,8 @@ const Header = ({
   applyCb,
   applyBtnText,
   templateDetail,
-  cloudDomain
+  cloudDomain,
+  isResourcesReady
 }: {
   appName: string;
   title: string;
@@ -52,11 +53,12 @@ const Header = ({
   applyBtnText: string;
   templateDetail: TemplateType;
   cloudDomain: string;
+  isResourcesReady: boolean;
 }) => {
   const { t, i18n } = useTranslation();
   const { copyData } = useCopyData();
-  const { envs } = useSystemConfigStore();
   const { session } = useSessionStore();
+  const clientAppConfig = useClientAppConfig();
 
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList?.map((i) => i.value).join('---\n');
@@ -298,7 +300,7 @@ const Header = ({
               flexShrink={'0'}
               gap={'4px'}
             >
-              <CurrencySymbol type={envs?.CURRENCY_SYMBOL} />
+              <CurrencySymbol type={clientAppConfig.currencySymbolType} />
               {priceList?.[priceList.length - 1]?.value}
               <Text fontSize={'16px'}>/{t('Day')}</Text>
               <MyIcon name="help" width={'16px'} height={'16px'} color={'grayModern.500'}></MyIcon>
@@ -327,6 +329,9 @@ const Header = ({
         bg={'grayModern.150'}
         color={'grayModern.900'}
         onClick={handleExportYaml}
+        isDisabled={!isResourcesReady}
+        opacity={!isResourcesReady ? 0.5 : 1}
+        cursor={!isResourcesReady ? 'not-allowed' : 'pointer'}
       >
         {t('Export')} Yaml
       </Button>
@@ -337,6 +342,9 @@ const Header = ({
           minW={'140px'}
           h={'40px'}
           onClick={applyCb}
+          isDisabled={!isResourcesReady}
+          opacity={!isResourcesReady ? 0.5 : 1}
+          cursor={!isResourcesReady ? 'not-allowed' : 'pointer'}
           _focusVisible={{ boxShadow: '' }}
           outline={isClientSide && !createCompleted ? '1px solid #1C4EF5' : 'none'}
           outlineOffset={isClientSide && !createCompleted ? '2px' : '0'}

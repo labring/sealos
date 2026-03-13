@@ -91,8 +91,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               dynamicMaxConnections
             );
             await applyYamlList([configYaml], 'replace');
-          } catch (err) {
+          } catch (err: any) {
             console.log('Failed to update parameter configuration:', err);
+            return jsonRes(res, handleK8sError(err));
           }
         }
       }

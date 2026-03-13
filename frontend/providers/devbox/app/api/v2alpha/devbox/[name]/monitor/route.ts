@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
 import { monitorFetch } from '@/services/monitorFetch';
-import { MonitorServiceResult } from '@/types/monitor';
+import type { LaunchpadQueryResult } from 'sealos-metrics-sdk';
+import { sendError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +46,7 @@ function toSeconds(value: number, defaultValue: number): number {
   return Math.floor(value);
 }
 
-function collectAveragedSeries(data: MonitorServiceResult | null | undefined): Map<number, number> {
+function collectAveragedSeries(data: LaunchpadQueryResult | null | undefined): Map<number, number> {
   const bucket = new Map<number, { total: number; count: number }>();
 
   if (!data?.data?.result) {
@@ -84,8 +84,8 @@ function collectAveragedSeries(data: MonitorServiceResult | null | undefined): M
 }
 
 function mergeMonitorSeries(
-  cpuData: MonitorServiceResult | null | undefined,
-  memoryData: MonitorServiceResult | null | undefined
+  cpuData: LaunchpadQueryResult | null | undefined,
+  memoryData: LaunchpadQueryResult | null | undefined
 ): MonitorDataPoint[] {
   const cpuSeries = collectAveragedSeries(cpuData);
   const memorySeries = collectAveragedSeries(memoryData);
@@ -114,14 +114,16 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const { searchParams } = req.nextUrl;
 
     if (!devboxName || !DEVBOX_NAME_PATTERN.test(devboxName) || devboxName.length > 63) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_PARAMETER,
         message: 'Invalid devbox name format'
       });
     }
 
     const kubeconfig = await authSession(headerList);
-    const { namespace } = await getK8s({
+    const { namespace, k8sCore } = await getK8s({
       kubeconfig
     });
 
@@ -138,51 +140,50 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     const step = stepParam && stepParam.trim().length > 0 ? stepParam : DEFAULT_STEP;
 
     if (startTime >= endTime) {
-      return jsonRes({
-        code: 400,
+      return sendError({
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_VALUE,
         message: 'Start timestamp must be earlier than end timestamp'
       });
     }
 
-    const requestParams = {
-      launchPadName: devboxName,
+    const requestParamsWithoutType = {
+      podName: devboxName,
       namespace,
-      start: startTime,
-      end: endTime,
-      step
+      range: {
+        start: startTime,
+        end: endTime,
+        step
+      }
     };
     const [cpuResult, memoryResult] = await Promise.all([
       monitorFetch(
         {
-          url: '/query',
-          params: {
-            ...requestParams,
-            type: 'average_cpu'
-          }
+          ...requestParamsWithoutType,
+          type: 'average_cpu'
         },
         kubeconfig
       ),
       monitorFetch(
         {
-          url: '/query',
-          params: {
-            ...requestParams,
-            type: 'average_memory'
-          }
+          ...requestParamsWithoutType,
+          type: 'average_memory'
         },
         kubeconfig
       )
     ]);
     const mergedData = mergeMonitorSeries(
-      cpuResult as MonitorServiceResult,
-      memoryResult as MonitorServiceResult
+      cpuResult as LaunchpadQueryResult,
+      memoryResult as LaunchpadQueryResult
     );
     return NextResponse.json(mergedData);
   } catch (err: any) {
-    return jsonRes({
-      code: 500,
-      message: err?.message || 'Failed to fetch devbox monitor data',
-      error: err
+    return sendError({
+      status: 500,
+      type: ErrorType.INTERNAL_ERROR,
+      code: ErrorCode.INTERNAL_ERROR,
+      message: err?.message || 'Failed to fetch devbox monitor data'
     });
   }
 }

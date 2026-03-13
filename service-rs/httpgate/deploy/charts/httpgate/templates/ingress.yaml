@@ -1,6 +1,6 @@
 {{- if .Values.ingress.enabled -}}
 ---
-# HTTP Ingress (devbox- prefix)
+# HTTP Ingress (devbox- prefix, non-gRPC requests)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -55,7 +55,7 @@ spec:
     {{- end }}
   {{- end }}
 ---
-# gRPC Ingress (devboxgrpc- prefix)
+# gRPC Ingress (devbox- prefix, gRPC requests detected by content-type)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -65,7 +65,8 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
-    higress.io/prefix-match-header-host: devboxgrpc-
+    higress.io/prefix-match-header-host: devbox-
+    higress.io/prefix-match-header-content-type: application/grpc
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

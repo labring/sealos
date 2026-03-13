@@ -88,7 +88,12 @@ func TestDeleteContainer(t *testing.T) {
 	// create a container
 	devboxName := fmt.Sprintf("test-devbox-%d", time.Now().Unix())
 	var containerID string
-	if containerID, err = committer.CreateContainer(ctx, devboxName, "test-content-id-789", baseImageAlpine); err != nil {
+	if containerID, err = committer.CreateContainer(
+		ctx,
+		devboxName,
+		"test-content-id-789",
+		baseImageAlpine,
+	); err != nil {
 		t.Fatalf("CreateContainer failed: %v", err)
 	}
 
@@ -140,7 +145,12 @@ func TestRemoveContainer(t *testing.T) {
 	// create a container
 	devboxName := fmt.Sprintf("test-devbox-%d", time.Now().Unix())
 	var containerID string
-	if containerID, err = committer.CreateContainer(ctx, devboxName, "test-content-id-789", baseImageAlpine); err != nil {
+	if containerID, err = committer.CreateContainer(
+		ctx,
+		devboxName,
+		"test-content-id-789",
+		baseImageAlpine,
+	); err != nil {
 		t.Fatalf("CreateContainer failed: %v", err)
 	}
 
@@ -190,7 +200,12 @@ func TestErrorCases(t *testing.T) {
 	}
 
 	// test use not exist image to create container
-	if _, err = committer.CreateContainer(ctx, "test-devbox", "test-content-id", "not-exist-image:latest"); err == nil {
+	if _, err = committer.CreateContainer(
+		ctx,
+		"test-devbox",
+		"test-content-id",
+		"not-exist-image:latest",
+	); err == nil {
 		t.Fatalf("expected error when creating container with non-exist image")
 	}
 
@@ -278,7 +293,12 @@ func TestRuntimeSelection(t *testing.T) {
 	contentID := "test-runtime-content-id"
 
 	var containerID string
-	if containerID, err = committer.CreateContainer(ctx, devboxName, contentID, baseImageBusyBox); err != nil {
+	if containerID, err = committer.CreateContainer(
+		ctx,
+		devboxName,
+		contentID,
+		baseImageBusyBox,
+	); err != nil {
 		t.Fatalf("CreateContainer failed: %v", err)
 	}
 	assert.NotEmpty(t, containerID)
@@ -335,7 +355,12 @@ func TestConnectionManagement(t *testing.T) {
 	contentID := "903b3c87-1458-4dd8-b0f4-9da7184cf8ca"
 	testImage := "ghcr.io/labring-actions/devbox/go-1.23.0:13aacd8"
 	var containerID string
-	if containerID, err = committer.CreateContainer(ctx, devboxName, contentID, testImage); err != nil {
+	if containerID, err = committer.CreateContainer(
+		ctx,
+		devboxName,
+		contentID,
+		testImage,
+	); err != nil {
 		t.Fatalf("CreateContainer failed: %v", err)
 	}
 	assert.NotEmpty(t, containerID)
@@ -351,7 +376,12 @@ func TestConnectionManagement(t *testing.T) {
 	}
 
 	// create container again
-	if containerID, err = committer.CreateContainer(ctx, devboxName, contentID, testImage); err != nil {
+	if containerID, err = committer.CreateContainer(
+		ctx,
+		devboxName,
+		contentID,
+		testImage,
+	); err != nil {
 		t.Fatalf("CreateContainer failed: %v", err)
 	}
 	assert.NotEmpty(t, containerID)
@@ -530,7 +560,12 @@ func TestAtomicLabels(t *testing.T) {
 	devboxName := fmt.Sprintf("test-atomic-%d", time.Now().Unix())
 	contentID := fmt.Sprintf("test-atomic-content-%d", time.Now().Unix())
 	var containerID string
-	if containerID, err = committer.CreateContainer(ctx, devboxName, contentID, baseImageBusyBox); err != nil {
+	if containerID, err = committer.CreateContainer(
+		ctx,
+		devboxName,
+		contentID,
+		baseImageBusyBox,
+	); err != nil {
 		t.Fatalf("CreateContainer failed: %v", err)
 	}
 

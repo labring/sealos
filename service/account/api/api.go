@@ -1159,7 +1159,7 @@ func ApplyInvoice(c *gin.Context) {
 		)
 		return
 	}
-	if len(payments) == 0 {
+	if len(payments) == 0 || invoice.TotalAmount == 0 {
 		c.JSON(http.StatusForbidden, gin.H{"error": "no payment can be applied to the invoice"})
 		return
 	}

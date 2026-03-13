@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from 'react';
-import { Box, Flex, Button, useDisclosure, Center } from '@chakra-ui/react';
+import React, { useCallback } from 'react';
+import { Box, Flex, Button, useDisclosure, Center, Skeleton } from '@chakra-ui/react';
 import type { AppStatusMapType, TAppSource } from '@/types/app';
 import { useRouter } from 'next/router';
 import { restartAppByName, pauseAppByName, startAppByName } from '@/api/app';
-import { useToast } from '@/hooks/useToast';
+import { useAppOperation } from '@/hooks/useAppOperation';
 import { useConfirm } from '@/hooks/useConfirm';
 import { AppStatusEnum, appStatusMap } from '@/constants/app';
 import AppStatusTag from '@/components/AppStatusTag';
@@ -13,23 +13,26 @@ import { useTranslation } from 'next-i18next';
 import UpdateModal from './UpdateModal';
 
 const DelModal = dynamic(() => import('./DelModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const Header = ({
   appName = 'app-name',
   appStatus = appStatusMap[AppStatusEnum.waiting],
   isPause = false,
   refetch,
-  source
+  source,
+  isLoading = false
 }: {
   appName?: string;
   appStatus?: AppStatusMapType;
   isPause?: boolean;
   refetch: () => void;
   source?: TAppSource;
+  isLoading?: boolean;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { toast } = useToast();
+  const { executeOperation, loading, errorModalState, closeErrorModal } = useAppOperation();
   const {
     isOpen: isOpenDelModal,
     onOpen: onOpenDelModal,
@@ -48,63 +51,28 @@ const Header = ({
     content: 'pause_message'
   });
 
-  const [loading, setLoading] = useState(false);
-
   const handleRestartApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await restartAppByName(appName);
-      toast({
-        title: `${t('Restart Success')}`,
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || '重启出现了意外',
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-  }, [appName, toast]);
+    await executeOperation(() => restartAppByName(appName), {
+      successMessage: t('Restart Success'),
+      errorMessage: t('Restart Failed')
+    });
+  }, [appName, executeOperation, t]);
 
   const handlePauseApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await pauseAppByName(appName);
-      toast({
-        title: '应用已暂停',
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || '暂停应用出现了意外',
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-    refetch();
-  }, [appName, refetch, toast]);
+    await executeOperation(() => pauseAppByName(appName), {
+      successMessage: t('Application paused'),
+      errorMessage: t('Application failed'),
+      onSuccess: () => refetch()
+    });
+  }, [appName, executeOperation, refetch, t]);
 
   const handleStartApp = useCallback(async () => {
-    try {
-      setLoading(true);
-      await startAppByName(appName);
-      toast({
-        title: '应用已启动',
-        status: 'success'
-      });
-    } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || '启动应用出现了意外',
-        status: 'error'
-      });
-      console.error(error);
-    }
-    setLoading(false);
-    refetch();
-  }, [appName, refetch, toast]);
+    await executeOperation(() => startAppByName(appName), {
+      successMessage: t('Start Successful'),
+      errorMessage: t('Start Failed'),
+      onSuccess: () => refetch()
+    });
+  }, [appName, executeOperation, refetch, t]);
 
   return (
     <Flex h={'32px'} my={'14px'} alignItems={'center'}>
@@ -114,105 +82,128 @@ const Header = ({
       <Box ml={'4px'} mr={3} fontWeight={'bold'} color={'grayModern.900'} fontSize={'18px'}>
         {appName}
       </Box>
-      <AppStatusTag status={appStatus} isPause={isPause} showBorder={false} />
+      {isLoading ? (
+        <Skeleton h="20px" w="88px" borderRadius="999px" />
+      ) : (
+        <AppStatusTag status={appStatus} isPause={isPause} showBorder={false} />
+      )}
       <Box flex={1} />
 
       {/* btns */}
-      {isPause ? (
-        <Button
-          minW={'75px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          mr={'12px'}
-          h={'32px'}
-          leftIcon={<MyIcon name="continue" w={'16px'} fill={'#485264'} />}
-          isLoading={loading}
-          onClick={handleStartApp}
-        >
-          {t('Continue')}
-        </Button>
+      {isLoading ? (
+        <Flex alignItems="center" gap="12px">
+          <Skeleton h="32px" w="84px" borderRadius="8px" />
+          <Skeleton h="32px" w="84px" borderRadius="8px" />
+          <Skeleton h="32px" w="84px" borderRadius="8px" />
+          <Skeleton h="32px" w="84px" borderRadius="8px" />
+        </Flex>
       ) : (
-        <Button
-          minW={'75px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          mr={'12px'}
-          h={'32px'}
-          leftIcon={<MyIcon name="pause" w={'16px'} fill={'#485264'} />}
-          isLoading={loading}
-          onClick={onOpenPause(handlePauseApp)}
-        >
-          {t('Pause')}
-        </Button>
-      )}
-      {!isPause && (
-        <Button
-          className="driver-detail-update-button"
-          _focusVisible={{ boxShadow: '' }}
-          mr={'12px'}
-          h={'32px'}
-          minW={'75px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name={'change'} w={'16px'} fill={'#485264'} />}
-          isLoading={loading}
-          onClick={() => {
-            if (source?.hasSource && source?.sourceType === 'sealaf') {
-              onOpenUpdateModal();
-            } else {
-              router.push(`/app/edit?name=${appName}`);
-            }
-          }}
-        >
-          {t('Update')}
-        </Button>
-      )}
+        <>
+          {isPause ? (
+            <Button
+              minW={'75px'}
+              fontSize={'12px'}
+              variant={'outline'}
+              mr={'12px'}
+              h={'32px'}
+              leftIcon={<MyIcon name="continue" w={'16px'} fill={'#485264'} />}
+              isLoading={loading}
+              onClick={handleStartApp}
+            >
+              {t('Continue')}
+            </Button>
+          ) : (
+            <Button
+              minW={'75px'}
+              fontSize={'12px'}
+              variant={'outline'}
+              mr={'12px'}
+              h={'32px'}
+              leftIcon={<MyIcon name="pause" w={'16px'} fill={'#485264'} />}
+              isLoading={loading}
+              onClick={onOpenPause(handlePauseApp)}
+            >
+              {t('Pause')}
+            </Button>
+          )}
+          {!isPause && (
+            <Button
+              className="driver-detail-update-button"
+              _focusVisible={{ boxShadow: '' }}
+              mr={'12px'}
+              h={'32px'}
+              minW={'75px'}
+              fontSize={'12px'}
+              variant={'outline'}
+              leftIcon={<MyIcon name={'change'} w={'16px'} fill={'#485264'} />}
+              isLoading={loading}
+              onClick={() => {
+                if (source?.hasSource && source?.sourceType === 'sealaf') {
+                  onOpenUpdateModal();
+                } else {
+                  router.push(`/app/edit?name=${appName}`);
+                }
+              }}
+            >
+              {t('Update')}
+            </Button>
+          )}
 
-      {!isPause && (
-        <Button
-          mr={'12px'}
-          h={'32px'}
-          minW={'75px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name="restart" w={'16px'} fill={'#485264'} />}
-          onClick={openRestartConfirm(handleRestartApp)}
-          isLoading={loading}
-        >
-          {t('Restart')}
-        </Button>
+          {!isPause && (
+            <Button
+              mr={'12px'}
+              h={'32px'}
+              minW={'75px'}
+              fontSize={'12px'}
+              variant={'outline'}
+              leftIcon={<MyIcon name="restart" w={'16px'} fill={'#485264'} />}
+              onClick={openRestartConfirm(handleRestartApp)}
+              isLoading={loading}
+            >
+              {t('Restart')}
+            </Button>
+          )}
+          <Button
+            h={'32px'}
+            minW={'75px'}
+            fontSize={'12px'}
+            variant={'outline'}
+            leftIcon={<MyIcon name="delete" w={'16px'} fill={'#485264'} />}
+            _hover={{
+              color: '#FF324A'
+            }}
+            isDisabled={loading}
+            onClick={onOpenDelModal}
+          >
+            {t('Delete')}
+          </Button>
+          <RestartConfirmChild />
+          <PauseChild />
+          {isOpenDelModal && (
+            <DelModal
+              appName={appName}
+              source={source}
+              onClose={onCloseDelModal}
+              onSuccess={() => router.replace('/apps')}
+            />
+          )}
+          <UpdateModal
+            source={source}
+            isOpen={isOpenUpdateModal}
+            onClose={() => {
+              onCloseUpdateModal();
+            }}
+          />
+          {errorModalState.visible && (
+            <ErrorModal
+              title={errorModalState.title}
+              content={errorModalState.content}
+              errorCode={errorModalState.errorCode}
+              onClose={closeErrorModal}
+            />
+          )}
+        </>
       )}
-      <Button
-        h={'32px'}
-        minW={'75px'}
-        fontSize={'12px'}
-        variant={'outline'}
-        leftIcon={<MyIcon name="delete" w={'16px'} fill={'#485264'} />}
-        _hover={{
-          color: '#FF324A'
-        }}
-        isDisabled={loading}
-        onClick={onOpenDelModal}
-      >
-        {t('Delete')}
-      </Button>
-      <RestartConfirmChild />
-      <PauseChild />
-      {isOpenDelModal && (
-        <DelModal
-          appName={appName}
-          source={source}
-          onClose={onCloseDelModal}
-          onSuccess={() => router.replace('/apps')}
-        />
-      )}
-      <UpdateModal
-        source={source}
-        isOpen={isOpenUpdateModal}
-        onClose={() => {
-          onCloseUpdateModal();
-        }}
-      />
     </Flex>
   );
 };

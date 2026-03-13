@@ -2,17 +2,16 @@ import { AlertCircle, LoaderCircle } from 'lucide-react';
 import { Button, Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
 import { useTranslation } from 'next-i18next';
 import usePlanStore from '@/stores/plan';
-import { PendingUpgrade } from '@/types/plan';
 
 interface PendingUpgradeDialogProps {
-  pendingUpgrade: PendingUpgrade;
+  planName: string;
   onContinuePayment: () => void;
   onCancelAndPayNew: () => void;
   isCanceling?: boolean;
 }
 
 export function PendingUpgradeDialog({
-  pendingUpgrade,
+  planName,
   onContinuePayment,
   onCancelAndPayNew,
   isCanceling = false
@@ -37,7 +36,7 @@ export function PendingUpgradeDialog({
                 {t('common:pending_upgrade_title')}
               </h2>
               <p className="text-sm text-gray-600">
-                {t('common:pending_upgrade_message', { planName: pendingUpgrade.plan_name })}
+                {t('common:pending_upgrade_message', { planName })}
               </p>
             </div>
           </div>

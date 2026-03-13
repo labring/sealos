@@ -41,10 +41,21 @@ func (c *fakeClusterClient) Run(images ...string) error {
 	})
 }
 
+func (c *fakeClusterClient) RunWithOpts(opts *cmd.RunOptions) error {
+	if opts.Cluster == "" {
+		opts.Cluster = c.clusterName
+	}
+	return c.SealosCmd.Run(opts)
+}
+
 func (c *fakeClusterClient) Apply(file string) error {
 	return c.SealosCmd.Apply(&cmd.ApplyOptions{
 		Clusterfile: file,
 	})
+}
+
+func (c *fakeClusterClient) ApplyOpts(opts *cmd.ApplyOptions) error {
+	return c.SealosCmd.Apply(opts)
 }
 
 func (c *fakeClusterClient) Reset() error {

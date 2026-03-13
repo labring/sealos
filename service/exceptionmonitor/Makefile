@@ -12,6 +12,7 @@ PLATFORMS ?= linux_arm64 linux_amd64
 GOOS=linux
 CGO_ENABLED=0
 GOARCH=$(shell go env GOARCH)
+TARGETARCH ?= $(GOARCH)
 
 GO_BUILD_FLAGS=-trimpath -ldflags "-s -w"
 
@@ -46,10 +47,13 @@ build: ## Build service-hub binary.
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) go build $(GO_BUILD_FLAGS) -o bin/manager main.go
 
 .PHONY: docker-build
-docker-build: build
-	mv bin/manager bin/service-exceptionmonitor-${TARGETARCH}
-	docker build -t $(IMG) .
+docker-build: ## Build docker image for specified architecture.
+	docker build --platform linux/$(TARGETARCH) -t $(IMG) -f Dockerfile ../..
 
 .PHONY: docker-push
 docker-push:
 	docker push $(IMG)
+
+.PHONY: docker-buildx-push
+docker-buildx-push: ## Build and push multi-arch image (amd64 & arm64).
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG) -f Dockerfile --push ../..

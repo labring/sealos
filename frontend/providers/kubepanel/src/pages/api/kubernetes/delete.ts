@@ -22,16 +22,35 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       throw buildErrno('Request Method is not allowed', ErrnoCode.UserMethodNotAllow);
 
     const { namespace, config } = authKubeConfig(req.headers);
+
     if (!isDeleteQuery(req.query))
       throw buildErrno(`There has some invalid query in ${req.query}`, ErrnoCode.UserBadRequest);
 
     const { kind, name } = req.query;
     const url = getApiUrl(kind, namespace, name);
 
-    const res = await axios.delete(url, config);
+    let resourceData;
+    try {
+      const getRes = await axios.get(url, config);
+      resourceData = getRes.data;
+    } catch (getErr: any) {
+      if (getErr.response?.status !== 404) {
+        throw getErr;
+      }
+    }
+
+    const deleteConfig = {
+      ...config,
+      params: {
+        propagationPolicy: 'Background'
+      }
+    };
+
+    const res = await axios.delete(url, deleteConfig);
+
     resp.status(res.status).json({
       code: res.status,
-      data: res.data
+      data: resourceData || res.data
     });
   } catch (err: any) {
     sendErrorResponse(

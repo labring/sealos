@@ -47,6 +47,10 @@ func GetQuery(query *api.VMRequest) (string, error) {
 		result = "avg(round(sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\",namespace=~\"$namespace\",pod=~\"$pod.*\",container!=\"\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) * 100, 0.01))"
 	case "storage":
 		result = "round((max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"$namespace\", persistentvolumeclaim=~\"@persistentvolumeclaim\"})) / (max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes {namespace=~\"$namespace\", persistentvolumeclaim=~\"@persistentvolumeclaim\"})) * 100, 0.01)"
+	case "gpu":
+		result = "Device_utilization_desc_of_container{podnamespace=~\"$namespace\",podname=~\"$pod.*\"}"
+	case "gpu_memory":
+		result = "sum without(data) (Device_memory_desc_of_container{podnamespace=~\"$namespace\",podname=~\"$pod.*\"})"
 	default:
 		log.Println(query.Type)
 	}

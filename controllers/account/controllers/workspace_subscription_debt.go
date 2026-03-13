@@ -364,7 +364,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(
 		if err := wdp.Get(ctx, types2.NamespacedName{Name: nsName}, ns); err != nil {
 			return fmt.Errorf("failed to get namespace %s: %w", nsName, err)
 		}
-
+		original := ns.DeepCopy()
 		if ns.Annotations == nil {
 			ns.Annotations = make(map[string]string)
 		}
@@ -379,7 +379,6 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(
 			ns.Annotations[types.DebtNamespaceAnnoStatusKey] = status
 		}
 
-		original := ns.DeepCopy()
 		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = status
 		ns.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().
 			Format(time.RFC3339)

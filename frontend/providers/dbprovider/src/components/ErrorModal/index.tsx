@@ -21,7 +21,7 @@ const ErrorModal = ({
   onClose,
   errorCode
 }: {
-  title: string;
+  title?: string;
   content: string;
   onClose: () => void;
   errorCode?: ResponseCode;
@@ -44,7 +44,7 @@ const ErrorModal = ({
         <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
           <MyIcon color={'#CA8A04'} widths={'16px'} height={'16px'} name="warning"></MyIcon>
           <Box ml={3} fontSize={'xl'}>
-            {title}
+            {title || t('operation_failed')}
           </Box>
         </ModalHeader>
         <ModalCloseButton fontSize={'16px'} />
@@ -54,22 +54,13 @@ const ErrorModal = ({
         <ModalFooter>
           <Button
             onClick={() => {
-              onClose();
-            }}
-            variant={'outline'}
-          >
-            {t('Cancel')}
-          </Button>
-          <Button
-            ml={'12px'}
-            onClick={() => {
               if (errorCode === ResponseCode.BALANCE_NOT_ENOUGH) {
                 openCostCenterApp();
               }
               onClose();
             }}
           >
-            {errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? t('add_credit') : t('confirm')}
+            {errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? t('add_credit') : t('Confirm')}
           </Button>
         </ModalFooter>
       </ModalContent>

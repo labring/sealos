@@ -30,6 +30,7 @@ interface PlanConfirmationModalViewProps {
   onPaymentCancel?: () => void;
   isSubmitting?: boolean;
   isCancelingInvoice?: boolean;
+  isRenew?: boolean;
 }
 
 // ==================== Plan Display Component ====================
@@ -631,6 +632,7 @@ function PaymentWaitingSection({
 // ==================== Action Button Component ====================
 interface ActionButtonProps {
   isCreateMode?: boolean;
+  isRenew?: boolean;
   amountLoading: boolean;
   onConfirm: () => void;
   isPaymentWaiting?: boolean;
@@ -639,6 +641,7 @@ interface ActionButtonProps {
 
 function ActionButton({
   isCreateMode = false,
+  isRenew = false,
   amountLoading,
   onConfirm,
   isPaymentWaiting = false,
@@ -694,9 +697,11 @@ function ActionButton({
     >
       {amountLoading || isSubmitting
         ? t('common:calculating')
+        : isRenew
+        ? t('common:renew_subscription')
         : isCreateMode
-          ? t('common:create_workspace')
-          : t('common:subscribe_and_pay')}
+        ? t('common:create_workspace')
+        : t('common:subscribe_and_pay')}
     </Button>
   );
 }
@@ -746,7 +751,8 @@ export function PlanConfirmationModalView({
   onPaymentSuccess,
   onPaymentCancel,
   isSubmitting,
-  isCancelingInvoice = false
+  isCancelingInvoice = false,
+  isRenew = false
 }: PlanConfirmationModalViewProps) {
   const { t } = useTranslation();
   const {
@@ -764,7 +770,10 @@ export function PlanConfirmationModalView({
     subscriptionData
   } = usePlanStore();
 
-  const isCreateMode = modalContext.isCreateMode ?? false;
+  const businessOperation = modalContext.businessOperation;
+  const isCreateMode =
+    businessOperation === 'create' || (!businessOperation && modalContext.operator === 'created');
+  const isRenewMode = businessOperation === 'renew' || isRenew;
   const paymentMethod = cardInfoData?.payment_method;
   const redeemCodeValidating = amountLoading;
 
@@ -786,6 +795,7 @@ export function PlanConfirmationModalView({
   ) : (
     <ActionButton
       isCreateMode={isCreateMode}
+      isRenew={isRenewMode}
       amountLoading={amountLoading ?? true}
       onConfirm={onConfirm}
       isPaymentWaiting={isPaymentWaiting}

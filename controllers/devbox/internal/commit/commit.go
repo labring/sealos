@@ -486,7 +486,12 @@ func (c *CommitterImpl) forceGC(ctx context.Context) error {
 		imageNames = append(imageNames, image.Name())
 	}
 	if len(imageNames) > 0 {
-		if err := c.RemoveImages(ctx, imageNames, DefaultRemoveImageForce, DefaultRemoveImageAsync); err != nil {
+		if err := c.RemoveImages(
+			ctx,
+			imageNames,
+			DefaultRemoveImageForce,
+			DefaultRemoveImageAsync,
+		); err != nil {
 			log.Printf("Failed to remove images, err: %v", err)
 			return err
 		}

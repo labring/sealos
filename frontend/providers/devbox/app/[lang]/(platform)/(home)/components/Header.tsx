@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import {
   BookOpen,
@@ -83,6 +83,10 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
     }
   );
 
+  // Use ref to stabilize handleCreateDevbox reference for useEffect
+  const handleCreateDevboxRef = useRef(handleCreateDevbox);
+  handleCreateDevboxRef.current = handleCreateDevbox;
+
   const guardedOpenImportDrawer = useQuotaGuarded(
     {
       requirements: {
@@ -116,9 +120,9 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
 
   useEffect(() => {
     if (!guide2 && isClientSide) {
-      startDriver(startGuide2(t, handleCreateDevbox));
+      startDriver(startGuide2(t, handleCreateDevboxRef.current));
     }
-  }, [guide2, isClientSide, handleCreateDevbox, t]);
+  }, [guide2, isClientSide, t]);
 
   useEffect(() => {
     const from = searchParams.get('from');

@@ -1,7 +1,6 @@
 import { deleteBucket } from '@/api/bucket';
 import DeleteIcon from '@/components/Icons/DeleteIcon';
 import { QueryKey } from '@/consts';
-import { useToast } from '@/hooks/useToast';
 import {
   Text,
   Modal,
@@ -14,28 +13,27 @@ import {
   Button,
   ButtonProps,
   Input,
-  Flex
+  Flex,
+  useToast
 } from '@chakra-ui/react';
 import { WarnTriangeIcon } from '@sealos/ui';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
+import { useStorageOperation } from '@/hooks/useStorageOperation';
+import ErrorModal from '@/components/ErrorModal';
+
 export default function DeleteBucketModal({
   bucketName,
   layout = 'md',
   ...styles
 }: ButtonProps & { bucketName: string; layout?: 'md' | 'sm' }) {
   const { onOpen, onClose, isOpen } = useDisclosure();
-  const { toast } = useToast();
   const { t } = useTranslation(['common', 'bucket', 'file']);
   const [inputVal, setInputVal] = useState('');
   const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationFn: deleteBucket,
-    onSuccess() {
-      queryClient.invalidateQueries([QueryKey.bucketList]);
-    }
-  });
+  const toast = useToast();
+  const { executeOperation, errorModalState, closeErrorModal } = useStorageOperation();
   return (
     <>
       {layout === 'md' ? (
@@ -111,14 +109,18 @@ export default function DeleteBucketModal({
                   if (inputVal !== bucketName) {
                     toast({
                       title: t('bucket:enterValidBucketName'),
-                      status: 'error'
+                      status: 'error',
+                      position: 'top'
                     });
                     return;
                   }
-                  mutation.mutate({
-                    bucketName
+                  executeOperation(() => deleteBucket({ bucketName }), {
+                    onSuccess: () => {
+                      queryClient.invalidateQueries([QueryKey.bucketList]);
+                      onClose();
+                    },
+                    successMessage: 'Delete successfully'
                   });
-                  onClose();
                 }}
               >
                 {t('file:confirm')}
@@ -127,6 +129,12 @@ export default function DeleteBucketModal({
           </ModalBody>
         </ModalContent>
       </Modal>
+      <ErrorModal
+        isOpen={errorModalState.isOpen}
+        onClose={closeErrorModal}
+        errorCode={errorModalState.errorCode}
+        errorMessage={errorModalState.errorMessage}
+      />
     </>
   );
 }

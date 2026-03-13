@@ -31,14 +31,11 @@ import (
 	"time"
 
 	confighelper "github.com/labring/sealos/controllers/user/controllers/helper/config"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"k8s.io/client-go/rest"
-
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // tryLoadKeyFromDisk tries to load the key from the disk and validates that it is valid
@@ -46,7 +43,7 @@ func tryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
 	// Parse the private key from a file
 	privKey, err := keyutil.PrivateKeyFromFile(pkiPath)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't load the private key file %s", err)
+		return nil, fmt.Errorf("couldn't load the private key file %w", err)
 	}
 
 	// Allow RSA and ECDSA formats only
@@ -57,7 +54,7 @@ func tryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
 	case *ecdsa.PrivateKey:
 		key = k
 	default:
-		return nil, fmt.Errorf("couldn't convert the private key file %s", err)
+		return nil, fmt.Errorf("couldn't convert the private key file %w", err)
 	}
 
 	return key, nil
@@ -84,15 +81,23 @@ func (c *CertConfig) Apply(config *rest.Config, _ client.Client) (*api.Config, e
 	caCert := certs[0]
 	caKey, err := tryLoadKeyFromDisk(c.caKeyFile)
 	if err != nil {
-		return nil, fmt.Errorf("load ca key file failed %s", err)
+		return nil, fmt.Errorf("load ca key file failed %w", err)
 	}
-	clientCert, clientKey, err := newCertAndKey(caCert, caKey, c.user, c.groups, c.dnsNames, c.ipAddresses, c.expirationSeconds)
+	clientCert, clientKey, err := newCertAndKey(
+		caCert,
+		caKey,
+		c.user,
+		c.groups,
+		c.dnsNames,
+		c.ipAddresses,
+		c.expirationSeconds,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("new client key failed %s", err)
+		return nil, fmt.Errorf("new client key failed %w", err)
 	}
 	encodedClientKey, err := keyutil.MarshalPrivateKeyToPEM(clientKey)
 	if err != nil {
-		return nil, fmt.Errorf("encode client key failed %s", err)
+		return nil, fmt.Errorf("encode client key failed %w", err)
 	}
 	encodedClientCert := encodeCertPEM(clientCert)
 	ctx := fmt.Sprintf("%s@%s", c.user, c.clusterName)
@@ -120,14 +125,21 @@ func (c *CertConfig) Apply(config *rest.Config, _ client.Client) (*api.Config, e
 	}, nil
 }
 
-func newCertAndKey(caCert *x509.Certificate, caKey crypto.Signer, user string, groups []string, DNSNames []string, IPAddresses []net.IP, expiration int32) (*x509.Certificate, crypto.Signer, error) {
+func newCertAndKey(
+	caCert *x509.Certificate,
+	caKey crypto.Signer,
+	user string,
+	groups, dnsNames []string,
+	ipAddresses []net.IP,
+	expiration int32,
+) (*x509.Certificate, crypto.Signer, error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return nil, nil, fmt.Errorf("generate client key error %s", err)
+		return nil, nil, fmt.Errorf("generate client key error %w", err)
 	}
 	serial, err := rand.Int(rand.Reader, new(big.Int).SetInt64(math.MaxInt64))
 	if err != nil {
-		return nil, nil, fmt.Errorf("rand serial error %s", err)
+		return nil, nil, fmt.Errorf("rand serial error %w", err)
 	}
 
 	noAfter := time.Now().Add(time.Second * time.Duration(expiration))
@@ -137,8 +149,8 @@ func newCertAndKey(caCert *x509.Certificate, caKey crypto.Signer, user string, g
 			CommonName:   user,
 			Organization: groups,
 		},
-		DNSNames:     DNSNames,
-		IPAddresses:  IPAddresses,
+		DNSNames:     dnsNames,
+		IPAddresses:  ipAddresses,
 		SerialNumber: serial,
 		NotBefore:    caCert.NotBefore,
 		NotAfter:     noAfter,
@@ -147,11 +159,11 @@ func newCertAndKey(caCert *x509.Certificate, caKey crypto.Signer, user string, g
 	}
 	certDERBytes, err := x509.CreateCertificate(rand.Reader, &certTmpl, caCert, key.Public(), caKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("create cert failed %s", err)
+		return nil, nil, fmt.Errorf("create cert failed %w", err)
 	}
 	cert, err := x509.ParseCertificate(certDERBytes)
 	if err != nil {
-		return nil, nil, fmt.Errorf("parse cert failed %s", err)
+		return nil, nil, fmt.Errorf("parse cert failed %w", err)
 	}
 	return cert, key, nil
 }

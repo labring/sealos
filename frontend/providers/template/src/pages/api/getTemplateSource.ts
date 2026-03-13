@@ -17,14 +17,17 @@ import { getTemplateEnvs } from '@/utils/common';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
+import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const envEnableReadme = process.env.ENABLE_README_FETCH;
     const queryIncludeReadme = req.query.includeReadme !== 'false';
 
-    const includeReadme =
-      envEnableReadme === 'false' ? 'false' : queryIncludeReadme ? 'true' : 'true';
+    const includeReadme = !Config().template.features.fetchReadme
+      ? 'false'
+      : queryIncludeReadme
+      ? 'true'
+      : 'true';
 
     const { templateName, locale = 'en' } = req.query as {
       templateName: string;
@@ -117,21 +120,30 @@ export async function GetTemplateByName({
   locale?: string;
   includeReadme?: string;
 }) {
-  const cdnUrl = process.env.CDN_URL;
-  const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
+  const cdnUrl = Config().template.cdnHost;
 
   const TemplateEnvs = getTemplateEnvs(namespace);
 
   const originalPath = process.cwd();
-  const targetPath = path.resolve(originalPath, 'templates', targetFolder);
+  const targetPath = path.resolve(originalPath, 'templates', Config().template.repo.localDir);
 
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   const _tempalte = jsonData.find((item) => item.metadata.name === templateName);
   const _tempalteName = _tempalte ? _tempalte.spec.fileName : `${templateName}.yaml`;
-  const yamlString = _tempalte?.spec?.filePath
-    ? fs.readFileSync(_tempalte?.spec?.filePath, 'utf-8')
-    : fs.readFileSync(`${targetPath}/${_tempalteName}`, 'utf-8');
+
+  // Determine the file path to read
+  const templateFilePath = _tempalte?.spec?.filePath || `${targetPath}/${_tempalteName}`;
+
+  // Check if template file exists before reading
+  if (!fs.existsSync(templateFilePath)) {
+    return {
+      code: 40400,
+      message: `Template '${templateName}' not found`
+    };
+  }
+
+  const yamlString = fs.readFileSync(templateFilePath, 'utf-8');
 
   let { appYaml, templateYaml } = getYamlTemplate(yamlString);
 

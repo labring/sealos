@@ -57,13 +57,22 @@ type State = {
 
 export const useDevboxStore = create<State>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       devboxList: [],
       requestCache: new Map(),
       setDevboxList: async () => {
         const res = await getMyDevboxList();
         set((state) => {
-          state.devboxList = res;
+          const oldDevboxMap = new Map(state.devboxList.map((item) => [item.id, item]));
+
+          state.devboxList = res.map((newDevbox) => {
+            const oldDevbox = oldDevboxMap.get(newDevbox.id);
+            return {
+              ...newDevbox,
+              usedCpu: oldDevbox?.usedCpu,
+              usedMemory: oldDevbox?.usedMemory
+            };
+          });
         });
         return res;
       },

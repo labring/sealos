@@ -275,7 +275,7 @@ class MasterSDK {
         messageId: data.messageId,
         success: true,
         data: {
-          lng: getCookie('NEXT_LOCALE') || 'zh'
+          lng: getCookie('NEXT_LOCALE') || 'en'
         }
       });
     } else {

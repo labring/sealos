@@ -66,7 +66,26 @@ export default function RegionToggle() {
 
   return (
     <Box>
-      {regionList?.length > 1 && (
+      {/* Disable interactions when there's only one region */}
+      {regionList?.length <= 1 ? (
+        <HStack position={'relative'} tabIndex={0}>
+          <HStack
+            w={'full'}
+            fontSize={'14px'}
+            color={'primary'}
+            fontWeight={'500'}
+            minH={'36px'}
+            userSelect={'none'}
+            position={'relative'}
+            gap={'8px'}
+            borderRadius={'8px'}
+            pl={'12px'}
+            pr={'8px'}
+          >
+            <Text>{curRegion?.displayName}</Text>
+          </HStack>
+        </HStack>
+      ) : (
         <Popover placement="bottom-start" isLazy>
           {({ isOpen }) => (
             <>

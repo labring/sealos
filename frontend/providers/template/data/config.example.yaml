@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=config.schema.json
+cloud:
+    domain: 'example.org'
+    port: 443
+    regionUid: ''
+    certSecretName: ''
+
+template:
+    ui:
+        brandName: Sealos
+        forcedLanguage: en
+        currencySymbolType: shellCoin
+        meta:
+            canonicalUrl: https://template.example.org
+            customScripts: []
+        carousel:
+            enabled: false
+            slides: []
+
+    repo:
+        url: https://github.com/labring-actions/templates
+        branch: main
+        localDir: template
+
+    features:
+        fetchReadme: true
+        showAuthor: false
+        guide: false
+
+    cdnHost: cdn.jsdelivr.net
+    excludedCategories: []
+    sidebarMenuCount: 10
+    desktopDomain: ''
+    userDomain: ''
+    billingUrl: 'http://account-api.example.org'

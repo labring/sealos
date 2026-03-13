@@ -96,6 +96,13 @@ fi
 RUN if [ "$name" = "devbox" ]; then \
     npm install -g prisma@5.10.2; \
 fi
+RUN if [ "$name" = "devbox" ]; then \
+    (apk add --no-cache postgresql18-client \
+      || apk add --no-cache postgresql17-client \
+      || apk add --no-cache postgresql16-client \
+      || apk add --no-cache postgresql15-client \
+      || apk add --no-cache postgresql-client); \
+fi
 USER nextjs
 
 # You only need to copy next.config.js if you are NOT using the default configuration

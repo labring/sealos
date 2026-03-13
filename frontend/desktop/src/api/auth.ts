@@ -1,10 +1,10 @@
 import { InitRegionTokenParams } from '@/schema/auth';
 import { ILoginParams, ILoginResult, IRegisterParams } from '@/schema/auth';
 import { IEmailCheckParams } from '@/schema/email';
+import { OAuth2AuthorizeContextResponse } from '@/schema/oauth2';
 import { SmsType } from '@/services/backend/db/verifyCode';
 import { RegionResourceType } from '@/services/backend/svc/checkResource';
 import request from '@/services/request';
-import useSessionStore from '@/stores/session';
 import { ApiResp, Region } from '@/types';
 import { AdClickData } from '@/types/adClick';
 import { BIND_STATUS } from '@/types/response/bind';
@@ -15,7 +15,6 @@ import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { SemData } from '@/types/sem';
 import { ValueOf } from '@/types/tools';
-import { TUserExist } from '@/types/user';
 import { type AxiosInstance } from 'axios';
 import { ProviderType } from 'prisma/global/generated/client';
 import { SubscriptionInfoResponse, WorkspacesPlansResponse } from '@/types/plan';
@@ -34,7 +33,6 @@ export const _passwordLoginRequest =
       | {
           user: string;
           password: string;
-          inviterId: string | null | undefined;
           semData: SemData | null | undefined;
           adClickData: AdClickData | null | undefined;
         }
@@ -115,7 +113,7 @@ export const _getNewSmsCodeRequest =
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
   (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string; semData?: SemData; adClickData?: AdClickData }) =>
+  (data: { code: string; semData?: SemData; adClickData?: AdClickData }) =>
     request.post<
       typeof data,
       ApiResp<
@@ -130,17 +128,13 @@ export const _oauthProviderSignIn =
       >
     >(`/api/auth/oauth/${provider.toLocaleLowerCase()}`, data);
 export const _oauthProviderBind =
-  (request: AxiosInstance) =>
-  (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string }) =>
+  (request: AxiosInstance) => (provider: ProviderType) => (data: { code: string }) =>
     request.post<
       typeof data,
       ApiResp<{ code: string | null | undefined }, ValueOf<typeof BIND_STATUS>>
     >(`/api/auth/oauth/${provider.toLocaleLowerCase()}/bind`, data);
 export const _oauthProviderUnbind =
-  (request: AxiosInstance) =>
-  (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string }) =>
+  (request: AxiosInstance) => (provider: ProviderType) => (data: { code: string }) =>
     request.post<typeof data, ApiResp<{ code: string | null | undefined }, ValueOf<UNBIND_STATUS>>>(
       `/api/auth/oauth/${provider.toLocaleLowerCase()}/unbind`,
       data
@@ -217,6 +211,8 @@ export const _getAmount = (request: AxiosInstance) => () =>
   request<never, ApiResp<{ balance: number; deductionBalance: number }>>('/api/account/getAmount');
 export const _verifyToken = (request: AxiosInstance) => () =>
   request<never, ApiResp<null>>('/api/auth/verify');
+export const _verifySharedToken = (request: AxiosInstance) => () =>
+  request.get<any, ApiResp<{ userId: string; userUid: string }>>('/api/auth/verifySharedToken');
 
 export const _EmailSignIn = (request: AxiosInstance) => (data: ILoginParams) =>
   request.post<never, ApiResp<ILoginResult>>('/api/auth/email', data);
@@ -248,6 +244,7 @@ export const passwordLoginRequest = _passwordLoginRequest(request);
 export const passwordModifyRequest = _passwordModifyRequest(request);
 export const UserInfo = _UserInfo(request);
 export const verifyToken = _verifyToken(request);
+export const verifySharedTokenRequest = _verifySharedToken(request);
 export const regionList = _regionList(request);
 export const refreshRealNameQRecodeUriRequest = _refreshRealNameQRecodeUriRequest(request);
 export const getSmsBindCodeRequest = _getSmsBindCodeRequest(request);
@@ -289,3 +286,50 @@ export const getWorkspacesPlans = (workspaces: string[]) =>
       workspaces
     }
   });
+
+export const _rotateKubeconfig = (request: AxiosInstance) => () =>
+  request.post<never, ApiResp<{ kubeconfig: string }>>('/api/auth/rotateKubeconfig');
+
+export const rotateKubeconfig = _rotateKubeconfig(request);
+
+const buildOauth2AuthHeaders = (authToken?: string): HeadersInit =>
+  authToken ? { Authorization: encodeURIComponent(authToken) } : {};
+
+export const oauth2AuthorizeContext = async (
+  params: { user_code?: string; request_id?: string },
+  authToken?: string
+): Promise<OAuth2AuthorizeContextResponse> => {
+  const query = new URLSearchParams();
+  if (params.user_code) query.set('user_code', params.user_code);
+  if (params.request_id) query.set('request_id', params.request_id);
+  const response = await fetch(`/api/auth/oauth2/authorize/context?${query.toString()}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: buildOauth2AuthHeaders(authToken)
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw data;
+  }
+  return data as OAuth2AuthorizeContextResponse;
+};
+
+export const oauth2AuthorizeDecision = async (
+  data: { request_id: string; decision: 'approve' | 'deny' },
+  authToken?: string
+): Promise<{ status: 'approved' | 'denied' }> => {
+  const response = await fetch('/api/auth/oauth2/authorize/decision', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...buildOauth2AuthHeaders(authToken)
+    },
+    body: JSON.stringify(data)
+  });
+  const payload = await response.json();
+  if (!response.ok) {
+    throw payload;
+  }
+  return payload as { status: 'approved' | 'denied' };
+};

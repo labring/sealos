@@ -26,6 +26,8 @@ const (
 	IngressFailedCnameCheck = 40300
 	IngressFailedOwnerCheck = 40301
 	IngressFailedIcpCheck   = 40302
+	// IngressFailedDomainSuffixCheck admission webhook for ingress
+	IngressFailedDomainSuffixCheck = 40303
 
 	IngressWebhookInternalError = 50000
 )

@@ -26,8 +26,7 @@ type ResourceType =
   | 'minio'
   | 'infra-cpu'
   | 'infra-memory'
-  | 'infra-disk'
-  | 'services.nodeports';
+  | 'infra-disk';
 
 type GpuNodeType = {
   'gpu.count': number;
@@ -44,8 +43,7 @@ const valuationMap: Record<string, number> = {
   cpu: 1000,
   memory: 1024,
   storage: 1024,
-  gpu: 1000,
-  ['services.nodeports']: 1
+  gpu: 1000
 };
 
 export async function GET(req: NextRequest) {
@@ -75,7 +73,6 @@ export async function GET(req: NextRequest) {
     const data: userPriceType = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
-      nodeports: countSourcePrice(priceResponse, 'services.nodeports'),
       gpu: GPU_ENABLE === 'true' ? countGpuSource(priceResponse, gpuNodes) : undefined
     };
 
@@ -94,11 +91,39 @@ async function getGpuNode() {
 
   try {
     const kc = K8sApiDefault();
-    const { body } = await kc.makeApiClient(CoreV1Api).readNamespacedConfigMap(gpuCrName, gpuCrNS);
-    const gpuMap = body?.data?.gpu;
+    const api = kc.makeApiClient(CoreV1Api);
 
-    if (!gpuMap || !body?.data?.alias) return [];
-    const alias = (JSON.parse(body?.data?.alias) || {}) as Record<string, string>;
+    /*
+     * Use listNamespacedConfigMap with fieldSelector instead of readNamespacedConfigMap
+     * to bypass Kubernetes API Server watch cache stale data issue.
+     *
+     * Root cause: For infrequently updated resources like ConfigMap, the API Server's
+     * watch cache may not receive timely progress notifications from etcd, causing
+     * readNamespacedConfigMap to return stale cached data even after backend updates.
+     *
+     * Solution: listNamespacedConfigMap with fieldSelector forces a more consistent read
+     * path that is less susceptible to watch cache staleness, ensuring we get the latest
+     * ConfigMap data without needing to restart the pod.
+     *
+     * References:
+     * - https://github.com/kubernetes/enhancements/blob/master/keps/sig-api-machinery/2340-Consistent-reads-from-cache/README.md
+     * - https://kubernetes.io/blog/2025/09/09/kubernetes-v1-34-snapshottable-api-server-cache/
+     */
+    const { body } = await api.listNamespacedConfigMap(
+      gpuCrNS,
+      undefined,
+      undefined,
+      undefined,
+      `metadata.name=${gpuCrName}`
+    );
+
+    if (!body.items || body.items.length === 0) return [];
+
+    const configMap = body.items[0];
+    const gpuMap = configMap.data?.gpu;
+
+    if (!gpuMap || !configMap.data?.alias) return [];
+    const alias = (JSON.parse(configMap.data.alias) || {}) as Record<string, string>;
 
     const parseGpuMap = JSON.parse(gpuMap) as Record<
       string,

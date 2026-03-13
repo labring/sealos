@@ -133,7 +133,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [pathname]);
 
   useEffect(() => {
-    const lang = getLangStore() || 'zh';
+    const lang = getLangStore() || 'en';
     router.push(pathname, { locale: lang });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

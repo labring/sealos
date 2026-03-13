@@ -295,17 +295,32 @@ const PublicTemplate = ({
   }, [overviewQueries.data]);
 
   const isClientSide = useClientSideValue(true);
+
+  // Get the first template for guide3 - works in both overview and category modes
+  const firstTemplate = useMemo(() => {
+    if (viewMode === 'overview') {
+      // In overview mode, get first template from any category
+      const allCategories = Object.values(overviewData) as any[][];
+      for (const templates of allCategories) {
+        if (templates && templates.length > 0) {
+          return templates[0];
+        }
+      }
+      return null;
+    }
+    return templateRepositoryList[0] || null;
+  }, [viewMode, overviewData, templateRepositoryList]);
+
   useEffect(() => {
-    if (!guide3 && isClientSide && templateRepositoryList.length > 0) {
+    if (!guide3 && isClientSide && firstTemplate) {
       startDriver(
         startGuide3(t, () => {
-          const first = templateRepositoryList[0];
           setStartedTemplate({
-            uid: first.uid,
-            name: first.name,
-            iconId: first.iconId || '',
-            templateUid: first.templates?.[0]?.uid || '',
-            description: first.description
+            uid: firstTemplate.uid,
+            name: firstTemplate.name,
+            iconId: firstTemplate.iconId || '',
+            templateUid: firstTemplate.templates?.[0]?.uid || '',
+            description: firstTemplate.description
           });
           setGuide3(true);
           destroyDriver();
@@ -313,7 +328,7 @@ const PublicTemplate = ({
         })
       );
     }
-  }, [guide3, isClientSide, templateRepositoryList, setGuide3, setStartedTemplate, router, t]);
+  }, [guide3, isClientSide, firstTemplate, setGuide3, setStartedTemplate, router, t]);
 
   // Query to get framework templates to determine which languages have frameworks
   // Only load when user views framework category (lazy loading)
@@ -437,7 +452,7 @@ const PublicTemplate = ({
   return (
     <div className="flex h-[calc(100vh-200px)] gap-3">
       {/* left sidebar */}
-      <div className="flex w-50 flex-shrink-0 flex-col items-start gap-1">
+      <div className="w-50 flex flex-shrink-0 flex-col items-start gap-1">
         <ScrollArea className="flex h-[calc(100vh-200px)] w-full flex-col gap-1 pr-2">
           <div className="flex flex-col gap-1">
             {/* Official Picks */}
@@ -694,7 +709,7 @@ const PublicTemplate = ({
         )}
 
         {viewMode !== 'overview' && (
-          <div className="flex items-center justify-between gap-2.5 pt-2 pr-2 text-sm/5 text-zinc-500">
+          <div className="flex items-center justify-between gap-2.5 pr-2 pt-2 text-sm/5 text-zinc-500">
             <span>{t('Total') + ': ' + pageQueryBody.totalItems}</span>
             <div className="flex items-center gap-3">
               <Pagination

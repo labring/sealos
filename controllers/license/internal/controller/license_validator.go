@@ -35,6 +35,14 @@ type LicenseValidator struct {
 }
 
 func (v *LicenseValidator) Validate(ctx context.Context, license *licensev1.License) error {
+	// Check if token is empty
+	if license.Spec.Token == "" {
+		return licenseutil.NewValidationError(
+			licensev1.ValidationError,
+			"license token is empty",
+		)
+	}
+
 	nodeList := &v1.NodeList{}
 	if err := v.List(ctx, nodeList); err != nil {
 		return fmt.Errorf("failed to list cluster nodes: %w", err)

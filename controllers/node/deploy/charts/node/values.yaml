@@ -107,7 +107,3 @@ metrics:
   # Path to the metrics certificate
   certPath: /tmp/k8s-metrics-server/metrics-certs
   secretName: metrics-server-cert
-
-gpuAlias:
-  - name: Tesla-P41
-    value: Tesla-P41

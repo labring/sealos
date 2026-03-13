@@ -9,6 +9,8 @@ import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
 import { LaunchpadApplicationSchema, resourceConverters } from '@/types/schema';
 import { transformFromLegacySchema } from '@/types/request_schema';
+import { LaunchpadApplicationSchema as LaunchpadApplicationSchemaV2 } from '@/types/v2alpha/schema';
+import { transformFromLegacySchema as transformFromLegacySchemaV2 } from '@/types/v2alpha/request_schema';
 import {
   PatchUtils,
   KubeConfig,
@@ -214,7 +216,7 @@ export async function startApp(appName: string, k8s: K8sContext) {
     }
   } catch (error: any) {
     if (error?.statusCode !== 404) {
-      return Promise.reject('无法读取到ingress');
+      throw error;
     }
   }
 
@@ -254,7 +256,7 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
     requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace));
   } catch (error: any) {
     if (error?.statusCode !== 404) {
-      return Promise.reject('not found hpa');
+      throw error;
     }
   }
 
@@ -304,7 +306,7 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
     }
   } catch (error: any) {
     if (error?.statusCode !== 404) {
-      return Promise.reject('无法读取到ingress');
+      throw error;
     }
   }
 
@@ -393,9 +395,7 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
   delIssuerAndCert.forEach((item) => {
     console.log(item, 'delIssuerAndCert err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(
-        item?.reason?.body?.message || item?.reason?.body?.reason || 'Failed to delete app'
-      );
+      throw item?.reason?.body || item?.reason || new Error('Failed to delete app');
     }
   });
 
@@ -420,7 +420,6 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
       undefined,
       `${appDeployKey}=${name}`
     ),
-
     k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
       namespace,
       undefined,
@@ -436,9 +435,7 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
   delDependent.forEach((item) => {
     console.log(item, 'delApp err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(
-        item?.reason?.body?.reason || item?.reason?.body?.message || 'Failed to delete app'
-      );
+      throw item?.reason?.body || item?.reason || new Error('Failed to delete app');
     }
   });
 
@@ -450,9 +447,7 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
   delApp.forEach((item) => {
     console.log(item, 'delApp Deployment StatefulSet err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
-      throw new Error(
-        item?.reason?.body?.reason || item?.reason?.body?.message || 'Failed to delete app'
-      );
+      throw item?.reason?.body || item?.reason || new Error('Failed to delete app');
     }
   });
 }
@@ -478,7 +473,7 @@ export async function updateAppResources(
       };
     };
     command?: string;
-    args?: string;
+    args?: string[];
     image?: string;
     imageName?: string;
     imageRegistry?: {
@@ -521,7 +516,7 @@ export async function updateAppResources(
         );
       } catch (error: any) {
         if (error?.statusCode !== 404) {
-          throw new Error('无法读取到hpa');
+          throw error;
         }
       }
 
@@ -541,7 +536,7 @@ export async function updateAppResources(
         );
       } catch (error: any) {
         if (error?.statusCode !== 404) {
-          throw new Error('Failed to check existing HPA');
+          throw error;
         }
       }
 
@@ -580,7 +575,7 @@ export async function updateAppResources(
       await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error: any) {
       if (error?.statusCode !== 404) {
-        throw new Error('Failed to check existing HPA');
+        throw error;
       }
     }
 
@@ -669,23 +664,11 @@ export async function updateAppResources(
     }
 
     if (updateData.args !== undefined) {
-      const argsArray = (() => {
-        if (updateData.args === '') return [];
-        if (!updateData.args) return undefined;
-        try {
-          return JSON.parse(updateData.args) as string[];
-        } catch (error) {
-          return [updateData.args];
-        }
-      })();
-
-      if (argsArray !== undefined) {
-        jsonPatch.push({
-          op: 'replace',
-          path: '/spec/template/spec/containers/0/args',
-          value: argsArray
-        });
-      }
+      jsonPatch.push({
+        op: 'replace',
+        path: '/spec/template/spec/containers/0/args',
+        value: updateData.args
+      });
     }
 
     // Handle image name update (either from image or imageName field)
@@ -832,4 +815,82 @@ export async function processAppResponse<T extends boolean = true>(
 
   const standardizedData = transformFromLegacySchema(appDetailData);
   return LaunchpadApplicationSchema.parse(standardizedData) as any;
+}
+
+/**
+ * List all applications in the namespace
+ * @param k8s Kubernetes context containing clients and configuration
+ * @returns Promise<z.infer<typeof LaunchpadApplicationSchema>[]>
+ */
+export async function listApps(
+  k8s: K8sContext
+): Promise<z.infer<typeof LaunchpadApplicationSchemaV2>[]> {
+  const { k8sApp, namespace } = k8s;
+
+  const [deploymentsResult, statefulsetsResult] = await Promise.allSettled([
+    k8sApp.listNamespacedDeployment(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      appDeployKey
+    ),
+    k8sApp.listNamespacedStatefulSet(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      appDeployKey
+    )
+  ]);
+
+  const appNames = new Set<string>();
+
+  if (deploymentsResult.status === 'fulfilled') {
+    for (const item of deploymentsResult.value.body.items) {
+      const name = item.metadata?.labels?.[appDeployKey];
+      if (name) appNames.add(name);
+    }
+  }
+
+  if (statefulsetsResult.status === 'fulfilled') {
+    for (const item of statefulsetsResult.value.body.items) {
+      const name = item.metadata?.labels?.[appDeployKey];
+      if (name) appNames.add(name);
+    }
+  }
+
+  const appResults = await Promise.allSettled(
+    Array.from(appNames).map((name) => getAppByName(name, k8s))
+  );
+
+  const apps: z.infer<typeof LaunchpadApplicationSchemaV2>[] = [];
+  for (const result of appResults) {
+    if (result.status === 'fulfilled') {
+      try {
+        const responseData = result.value
+          .map((item: PromiseSettledResult<any>) => {
+            if (item.status === 'fulfilled') return item.value.body;
+            if (item.status === 'rejected' && +item.reason?.body?.code === 404) return null;
+            return null;
+          })
+          .filter((item: any): item is DeployKindsType => item !== null)
+          .flat() as DeployKindsType[];
+
+        const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
+          SEALOS_DOMAIN: global.AppConfig.cloud.domain,
+          SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
+        });
+
+        const standardizedData = transformFromLegacySchemaV2(appDetailData, undefined, namespace);
+        apps.push(LaunchpadApplicationSchemaV2.parse(standardizedData));
+      } catch {
+        // Skip apps that fail to process
+      }
+    }
+  }
+
+  return apps;
 }

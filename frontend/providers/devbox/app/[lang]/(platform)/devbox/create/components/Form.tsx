@@ -17,10 +17,12 @@ import Runtime from './Runtime';
 import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
 import DevboxName from './DevboxName';
+import AdvancedConfig from './AdvancedConfig';
 
 import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { useEnvStore } from '@/stores/env';
 
 interface FormProps {
   isEdit: boolean;
@@ -33,8 +35,10 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
   const searchParams = useSearchParams();
   const t = useTranslations();
   const { watch } = useFormContext<DevboxEditTypeV2>();
+  const { env } = useEnvStore();
 
   const formValues = watch();
+  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
   const requirements = useMemo(() => {
     const currentGpuAmount = formValues.gpu?.amount || 0;
     const oldGpuAmount = oldDevboxData?.gpu?.amount || 0;
@@ -50,11 +54,14 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
   const { exceededQuotas } = useUserQuota({ requirements });
 
   useEffect(() => {
-    if (searchParams.get('scrollTo') === 'network') {
-      const el = document.getElementById('network');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    const scrollTo = searchParams.get('scrollTo');
+    if (scrollTo) {
+      setTimeout(() => {
+        const el = document.getElementById(scrollTo);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
     }
   }, [searchParams]);
 
@@ -85,7 +92,7 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
   return (
     <div className="flex justify-center gap-6">
       {/* left grid */}
-      <div className="flex min-w-65 flex-col gap-4 text-sm">
+      <div className="min-w-65 flex flex-col gap-4 text-sm">
         <Tabs defaultValue="form" onValueChange={handleTabChange}>
           <TabsList className="h-11 w-full">
             <TabsTrigger value="form">{t('config_form')}</TabsTrigger>
@@ -205,6 +212,9 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
         <div id="network">
           <Network isEdit={isEdit} />
         </div>
+
+        {/* Advanced Configurations */}
+        {showAdvancedConfig && <AdvancedConfig />}
       </div>
     </div>
   );

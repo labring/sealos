@@ -301,7 +301,7 @@ export async function watchClusterObject({
         return body;
       }
     } catch (err) {
-      console.error(`Failed to get status for ${name}: ${err}`);
+      console.error(err);
     }
     if (Date.now() - startTime >= timeout) {
       console.error(`Timed out after ${timeout} ms.`);

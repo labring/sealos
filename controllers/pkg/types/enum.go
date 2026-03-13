@@ -43,6 +43,9 @@ const (
 	SubscriptionTransactionTypeCanceled   SubscriptionOperator = "canceled"
 	SubscriptionTransactionTypeDeleted    SubscriptionOperator = "deleted"
 	SubscriptionTransactionTypeRenewed    SubscriptionOperator = "renewed"
+
+	// SubscriptionResumed Resume Renewal (cancel subscription can be selected to cancel the cancel subscription status within a certain period before the end of the current cycle)
+	SubscriptionTransactionTypeResumed SubscriptionOperator = "resumed"
 	// 续订余额失败状态
 	SubscriptionTransactionTypeRenewFailed SubscriptionOperator = "renew_failed"
 

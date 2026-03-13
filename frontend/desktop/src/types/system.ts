@@ -97,6 +97,7 @@ export type LayoutConfigType = {
     emailAlertEnabled: boolean;
     phoneAlertEnabled: boolean;
     announcementEnabled: boolean;
+    kcRotationEnabled: boolean;
   };
   gtmId: string | null;
 };
@@ -121,10 +122,8 @@ export type AuthConfigType = {
   billingUrl?: string;
   workorderUrl?: string;
   cloudVitrualMachineUrl: string;
-  invite?: {
+  oauth2idp: {
     enabled: boolean;
-    lafSecretKey: string;
-    lafBaseURL: string;
   };
   idp: {
     password?: {
@@ -212,8 +211,8 @@ export type AuthClientConfigType = {
       'baiduToken',
       'bingAd',
       'signUpEnabled',
-      'invite.lafSecretKey',
-      'invite.lafBaseURL',
+      // OAuth2 IdP
+      'oauth2idp',
       'idp.password.salt',
       'idp.github.clientSecret',
       'idp.wechat.clientSecret',
@@ -332,16 +331,14 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     guestModeEnabled: false,
     emailAlertEnabled: false,
     phoneAlertEnabled: false,
-    announcementEnabled: false
+    announcementEnabled: false,
+    kcRotationEnabled: true
   },
   gtmId: null
 };
 
 export const DefaultAuthClientConfig: AuthClientConfigType = {
   hasBaiduToken: false,
-  invite: {
-    enabled: false
-  },
   callbackURL: 'https://cloud.sealos.io/callback',
   idp: {
     password: {

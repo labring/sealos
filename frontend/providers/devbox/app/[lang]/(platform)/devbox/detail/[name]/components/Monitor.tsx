@@ -10,6 +10,7 @@ import { parseTimeRange } from '@/utils/timeRange';
 import DatePicker from '@/components/DatePicker';
 import MonitorChart from '@/components/MonitorChart';
 import { RefreshButton } from '@/components/RefreshButton';
+import { EMPTY_MONITOR_DATA } from '@/constants/monitor';
 
 const Monitor = () => {
   const params = useParams();
@@ -52,7 +53,7 @@ const Monitor = () => {
   return (
     <div className="flex h-full flex-1 flex-col items-start gap-2">
       {/* title */}
-      <div className="flex w-full items-center justify-between rounded-xl border-[0.5px] bg-white p-6 shadow-xs">
+      <div className="shadow-xs flex w-full items-center justify-between rounded-xl border-[0.5px] bg-white p-6">
         <div className="flex items-center gap-4">
           <span className="text-lg/7 font-medium">{t('filter')}</span>
           {isTimeInitialized && <DatePicker onClose={handleRefresh} />}
@@ -64,16 +65,18 @@ const Monitor = () => {
         </span>
       </div>
       {/* CPU */}
-      <div className="flex h-full w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-        <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+      <div className="shadow-xs flex h-full w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white">
+        <div className="flex-grow-1 flex flex-shrink-0 flex-col gap-2">
           <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
             <span>{t('cpu')}</span>
-            <span>{devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%</span>
+            <span>
+              {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1] || '0'}%
+            </span>
           </div>
           <div className="h-full p-8">
             <MonitorChart
               type="blue"
-              data={devboxDetail?.usedCpu}
+              data={devboxDetail?.usedCpu || EMPTY_MONITOR_DATA}
               isShowText={false}
               splitNumber={4}
               className="w-full"
@@ -83,18 +86,18 @@ const Monitor = () => {
         </div>
       </div>
       {/* Memory */}
-      <div className="flex h-full w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-        <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+      <div className="shadow-xs flex h-full w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white">
+        <div className="flex-grow-1 flex flex-shrink-0 flex-col gap-2">
           <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
             <span>{t('memory')}</span>
             <span>
-              {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
+              {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1] || '0'}%
             </span>
           </div>
           <div className="h-full p-8">
             <MonitorChart
               type="green"
-              data={devboxDetail?.usedMemory}
+              data={devboxDetail?.usedMemory || EMPTY_MONITOR_DATA}
               isShowText={false}
               splitNumber={4}
               className="w-full"

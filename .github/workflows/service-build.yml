@@ -70,7 +70,13 @@ jobs:
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
   image-build:
-    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+          - arch: arm64
+            runs-on: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
     permissions:
       contents: read
       packages: write
@@ -80,79 +86,121 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
-
-      - name: Build ${{ inputs.module }} amd64
-        working-directory: service/${{ inputs.module }}
-        env:
-          MODULE: ${{ inputs.module }}
-        run: |
-          GOARCH=amd64 make build
-          mv bin/manager bin/service-${MODULE}-amd64
-          chmod +x bin/service-${MODULE}-amd64
-          file bin/service-${MODULE}-amd64
-          file bin/service-${MODULE}-amd64 | grep -q 'x86-64'
-          if [ $? -ne 0 ]; then
-            echo "amd64 platform build failed"
-            exit 1
-          fi
-
-      - name: Build ${{ inputs.module }} arm64
-        working-directory: service/${{ inputs.module }}
-        env:
-          MODULE: ${{ inputs.module }}
-        run: |
-          GOARCH=arm64 make build
-          mv bin/manager bin/service-${MODULE}-arm64
-          chmod +x bin/service-${MODULE}-arm64
-          file bin/service-${MODULE}-arm64
-          file bin/service-${MODULE}-arm64 | grep -q 'aarch64'
-          if [ $? -ne 0 ]; then
-            echo "arm64 platform build failed"
-            exit 1
-          fi
-
       - name: Set image repo
-        id: set-outputs
+        id: set_repo
         env:
-          REPO_OWNER: ${{ github.repository_owner }}
           MODULE: ${{ inputs.module }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
-          echo "GHCR_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
-          echo "image-name=ghcr.io/${REPO_OWNER}/sealos-${MODULE}-service" >> $GITHUB_OUTPUT
+          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE}-service" >> $GITHUB_ENV
           fi
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.GHCR_REPO }}
+            ${{ env.ALIYUN_REPO }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: network=host
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
+      - name: Login to Github Container Hub
         if: ${{ inputs.push_image }}
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Login to Aliyun Registry
-        uses: docker/login-action@v3
         if: ${{ inputs.push_image && env.ALIYUN_REGISTRY }}
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.ALIYUN_REGISTRY }}
           username: ${{ secrets.ALIYUN_USERNAME }}
           password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Build
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./service/${{ inputs.module }}/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,"name=${{ env.GHCR_REPO }}${{ env.ALIYUN_REPO && format(',{0}', env.ALIYUN_REPO) || '' }}",name-canonical=true,push-by-digest=${{ inputs.push_image }},push=${{ inputs.push_image }}
+
+      - name: Export digest
+        env:
+          TEMP_DIR: ${{ runner.temp }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "${TEMP_DIR}/digests"
+          touch "${TEMP_DIR}/digests/${DIGEST#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ inputs.module }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  image-release:
+    name: Push Docker Images
+    needs: image-build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    if: ${{ inputs.push_image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Login to Github Container Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+
+      - name: Set image repo
+        id: set_repo
+        env:
+          MODULE: ${{ inputs.module }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE}-service" >> $GITHUB_ENV
+          fi
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-${{ inputs.module }}-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Docker meta
         id: meta
@@ -167,23 +215,29 @@ jobs:
             type=ref,event=branch
             type=ref,event=tag
             type=sha
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
         env:
           DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
-      - name: build (and publish) ${{ inputs.module }} main image
-        uses: docker/build-push-action@v6
-        with:
-          context: ./service/${{ inputs.module }}
-          file: ./service/${{ inputs.module }}/Dockerfile
-          # Push if it's a push event or if push_image is true
-          push: ${{ inputs.push_image }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          GHCR_REPO: ${{ env.GHCR_REPO }}
+          IMAGE_SOURCE: https://github.com/${{ github.repository }}
+        run: |
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            docker buildx imagetools create \
+              --annotation "index:org.opencontainers.image.source=${IMAGE_SOURCE}" \
+              -t $TAG \
+              $(printf "${GHCR_REPO}@sha256:%s " *)
+            sleep 5
+          done
 
   cluster-image-build:
+    needs:
+      - image-release
     if: ${{ inputs.push_image }}
-    needs: [image-build]
     runs-on: ubuntu-24.04
     permissions:
       contents: read

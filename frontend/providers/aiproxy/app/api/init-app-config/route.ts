@@ -36,12 +36,6 @@ function getAppConfig(appConfig: AppConfigType): AppConfigType {
   if (process.env.DOC_URL) {
     appConfig.common.docUrl = process.env.DOC_URL
   }
-  if (process.env.IS_INVITATION_ACTIVE) {
-    appConfig.common.isInvitationActive = process.env.IS_INVITATION_ACTIVE === 'true'
-  }
-  if (process.env.INVITATION_URL) {
-    appConfig.common.invitationUrl = process.env.INVITATION_URL
-  }
 
   return appConfig
 }
@@ -51,8 +45,6 @@ function initAppConfig(): AppConfigType {
   const DefaultAppConfig: AppConfigType = {
     common: {
       docUrl: '',
-      isInvitationActive: false,
-      invitationUrl: '',
     },
     auth: {
       appTokenJwtKey: '',
@@ -91,8 +83,6 @@ export async function GET(): Promise<NextResponse> {
         aiproxyBackend: config.backend.aiproxy,
         currencySymbol: config.currencySymbol,
         docUrl: config.common.docUrl,
-        isInvitationActive: config.common.isInvitationActive,
-        invitationUrl: config.common.invitationUrl,
       },
     })
   } catch (error) {

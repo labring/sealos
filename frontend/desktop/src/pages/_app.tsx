@@ -13,8 +13,9 @@ import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import '@/styles/globals.css';
 import { useJoinDiscordPromptStore } from '@/stores/joinDiscordPrompt';
-import useAppStore from '@/stores/app';
+import useAppStore, { BRAIN_APP_KEY, SESSION_RESTORE_APP_KEY } from '@/stores/app';
 import useSessionStore from '@/stores/session';
+import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,15 +36,25 @@ const App = ({ Component, pageProps }: AppProps) => {
   const router = useRouter();
 
   const { initAppConfig, layoutConfig } = useConfigStore();
-  const appStore = useAppStore();
+  const { autolaunch, currentAppKey } = useAppStore();
   const joinDiscordPromptStore = useJoinDiscordPromptStore();
+  useLanguageSwitcher();
 
   useEffect(() => {
     // Block discord prompt under certain circumstances.
-    if (Object.hasOwn(router.query, 'openapp') || appStore.autolaunch) {
+    if (Object.hasOwn(router.query, 'openapp') || autolaunch) {
       joinDiscordPromptStore.blockAutoOpen();
+      return;
     }
-  }, [router.query, joinDiscordPromptStore]);
+
+    // Block discord prompt when restoring system-brain app
+    if (typeof window !== 'undefined') {
+      const sessionRestoreKey = sessionStorage.getItem(SESSION_RESTORE_APP_KEY);
+      if (sessionRestoreKey === BRAIN_APP_KEY || currentAppKey === BRAIN_APP_KEY) {
+        joinDiscordPromptStore.blockAutoOpen();
+      }
+    }
+  }, [router.query, joinDiscordPromptStore, autolaunch, currentAppKey]);
 
   useEffect(() => {
     initAppConfig();

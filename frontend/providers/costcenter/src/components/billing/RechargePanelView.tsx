@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
 import { Input } from '@sealos/shadcn-ui/input';
+import { Badge } from '@sealos/shadcn-ui/badge';
 import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
 import { Pagination } from '@sealos/shadcn-ui/pagination';
 import { Search } from 'lucide-react';
@@ -28,6 +29,7 @@ export type RechargeRow = {
   gift: number;
   amount: number;
   raw?: any;
+  refunded: boolean;
 };
 
 export default function RechargePanelView({
@@ -123,7 +125,17 @@ export default function RechargePanelView({
         <TableLayoutBody>
           {filteredRows.map((row, idx) => (
             <TableRow key={`${row.id}-${idx}`} className="h-14">
-              <TableCell>{row.id}</TableCell>
+              <TableCell>
+                <span>{row.id}</span>
+                {row.refunded && (
+                  <Badge
+                    className="bg-red-50 text-red-600 border border-red-300 ml-1 rounded-full"
+                    variant="destructive"
+                  >
+                    {t('common:orders.refunded')}
+                  </Badge>
+                )}
+              </TableCell>
               <TableCell>{formatDateTime(row.createdAt)}</TableCell>
               <TableCell>{formatMoney(row.gift).toFixed(2)}</TableCell>
               <TableCell>{formatMoney(row.amount).toFixed(2)}</TableCell>

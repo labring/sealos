@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"errors"
 	"io"
 	"net"
 	"sync"
@@ -8,6 +9,19 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
+
+// logCopyError logs io.Copy errors appropriately
+// EOF errors are logged at debug level, other errors at error level
+func logCopyError(err error, logger *log.Entry, direction string) {
+	if err == nil {
+		return
+	}
+	if errors.Is(err, io.EOF) {
+		logger.WithField("direction", direction).Debug("Copy finished with EOF")
+	} else {
+		logger.WithField("direction", direction).WithError(err).Error("Copy error")
+	}
+}
 
 func (g *Gateway) proxyRequests(
 	in <-chan *ssh.Request,
@@ -42,7 +56,8 @@ func (g *Gateway) proxyChannelWithRequests(
 	})
 
 	SafeGo(logger, func() {
-		_, _ = io.Copy(backendChannel, channel)
+		_, err := io.Copy(backendChannel, channel)
+		logCopyError(err, logger, "client->backend")
 		_ = backendChannel.CloseWrite()
 	})
 
@@ -51,7 +66,8 @@ func (g *Gateway) proxyChannelWithRequests(
 
 	backendToClientWg.Go(func() {
 		defer recoverWithLogger(logger)
-		_, _ = io.Copy(channel, backendChannel)
+		_, err := io.Copy(channel, backendChannel)
+		logCopyError(err, logger, "backend->client")
 		_ = channel.CloseWrite()
 	})
 
@@ -65,15 +81,17 @@ func (g *Gateway) proxyChannelWithRequests(
 }
 
 // proxyChannelToConn proxies data between an SSH channel and a net.Conn
-func (g *Gateway) proxyChannelToConn(channel ssh.Channel, conn net.Conn) {
+func (g *Gateway) proxyChannelToConn(channel ssh.Channel, conn net.Conn, logger *log.Entry) {
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		defer recoverWithLogger(g.logger)
-		_, _ = io.Copy(channel, conn)
+		defer recoverWithLogger(logger)
+		_, err := io.Copy(channel, conn)
+		logCopyError(err, logger, "conn->channel")
 		_ = channel.CloseWrite()
 	})
 
-	_, _ = io.Copy(conn, channel)
+	_, err := io.Copy(conn, channel)
+	logCopyError(err, logger, "channel->conn")
 	_ = conn.Close()
 
 	wg.Wait()

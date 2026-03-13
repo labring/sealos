@@ -1,0 +1,67 @@
+# Default values for terminal controller helm chart.
+
+replicaCount: 1
+
+image: ghcr.io/labring/sealos-terminal-controller:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "terminal"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "terminal-controller-manager"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+
+service:
+  metrics:
+    port: 8443
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+config:
+  cloudDomain: "cloud.sealos.io"
+  cloudPort: ""
+  ingressTLSSecretName: "wildcard-cert-sealos"
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+volumes: []
+volumeMounts: []
+
+nodeSelector: {}
+
+tolerations: []
+
+# If no affinity is provided a default podAntiAffinity is used to spread controllers.
+affinity: {}

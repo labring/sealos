@@ -1,8 +1,7 @@
 import { uploadConvertData } from '@/api/platform';
-import { generateAuthenticationToken } from '@/services/backend/auth';
+import { generateGlobalAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 import { AuthError } from '@/services/backend/errors';
-import { AuthConfigType } from '@/types';
 import { SemData } from '@/types/sem';
 import { hashPassword } from '@/utils/crypto';
 import { nanoid } from 'nanoid';
@@ -44,48 +43,6 @@ async function signIn({ provider, id }: { provider: ProviderType; id: string }) 
     user: userProvider.user
   };
 }
-
-export const inviteHandler = ({
-  inviteeId,
-  inviterId,
-  signResult
-}: {
-  inviteeId: string;
-  inviterId: string;
-  signResult: any;
-}) => {
-  const conf = global.AppConfig?.desktop.auth as AuthConfigType;
-  const inviteEnabled = conf.invite?.enabled || false;
-  const secretKey = conf.invite?.lafSecretKey || '';
-  const baseUrl = conf.invite?.lafBaseURL || '';
-
-  if (!inviteEnabled || !baseUrl || inviterId === inviteeId) return;
-
-  const payload = {
-    inviterId,
-    inviteeId,
-    secretKey: secretKey,
-    data: {
-      type: 'signup',
-      signResult
-    }
-  };
-
-  fetch(`https://${baseUrl}/uploadData`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log('Upload laf success:', data);
-    })
-    .catch((error) => {
-      console.error('Upload laf error:', error);
-    });
-};
 
 export async function signInByPassword({ id, password }: { id: string; password: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
@@ -375,7 +332,6 @@ export const getGlobalToken = async ({
   email,
   avatar_url,
   password,
-  inviterId,
   semData,
   adClickData
 }: {
@@ -385,7 +341,6 @@ export const getGlobalToken = async ({
   email?: string;
   avatar_url: string;
   password?: string;
-  inviterId?: string;
   semData?: SemData;
   adClickData?: AdClickData;
 }) => {
@@ -476,13 +431,7 @@ export const getGlobalToken = async ({
       if (signUpResult) {
         const result = signUpResult;
         user = result.user;
-        if (inviterId) {
-          inviteHandler({
-            inviterId: inviterId,
-            inviteeId: result.user.name,
-            signResult: result
-          });
-        }
+
         if (adClickData) {
           await uploadConvertData(adClickData).catch((e) => {
             console.log('Failed to upload AD click data: ', e);
@@ -529,9 +478,10 @@ export const getGlobalToken = async ({
 
   // user is deleted or banned
   if (user.status !== UserStatus.NORMAL_USER) return null;
-  const token = generateAuthenticationToken({
-    userUid: user.uid,
-    userId: user.name
+  const token = generateGlobalAccessToken({
+    sub: user.uid,
+    user_id: user.id,
+    preferred_username: user.nickname
   });
   const userInfo = await globalPrisma.userInfo.findUnique({
     where: {

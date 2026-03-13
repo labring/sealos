@@ -41,9 +41,9 @@ const Basic = () => {
       userName: devboxDetail?.sshConfig?.sshUser as string,
       token: devboxDetail?.sshConfig?.token as string,
       workingDir: config.workingDir,
-      host: env.sealosDomain,
+      host: env.sshDomain,
       port: devboxDetail?.sshPort.toString(),
-      configHost: `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
+      configHost: `${env.sshDomain}_${env.namespace}_${devboxDetail?.name}`
     });
 
     setOnOpenSsHConnect(true);
@@ -52,7 +52,7 @@ const Basic = () => {
     devboxDetail?.templateUid,
     devboxDetail?.sshPort,
     devboxDetail?.templateRepositoryName,
-    env.sealosDomain,
+    env.sshDomain,
     env.namespace,
     devboxDetail?.sshConfig?.sshUser,
     devboxDetail?.sshConfig?.sshPrivateKey,
@@ -61,12 +61,12 @@ const Basic = () => {
 
   const sshConnectCommand = useMemo(
     () =>
-      `ssh -i ${env.sealosDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`,
+      `ssh -i ${env.sshDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sshDomain} -p ${devboxDetail?.sshPort}`,
     [
       devboxDetail?.name,
       devboxDetail?.sshConfig?.sshUser,
       devboxDetail?.sshPort,
-      env.sealosDomain,
+      env.sshDomain,
       env.namespace
     ]
   );
@@ -122,9 +122,9 @@ const Basic = () => {
   ]);
 
   return (
-    <div className="flex min-w-[450px] flex-col items-start rounded-xl border-[0.5px] bg-white shadow-xs">
+    <div className="shadow-xs flex min-w-[450px] flex-col items-start rounded-xl border-[0.5px] bg-white">
       {/* top:basic,ssh config*/}
-      <div className="flex w-full flex-shrink-0 flex-grow-1 flex-col items-start gap-4 p-6">
+      <div className="flex-grow-1 flex w-full flex-shrink-0 flex-col items-start gap-4 p-6">
         {/* title */}
         <div className="flex items-center gap-2">
           <div className="text-lg/7 font-medium">{t('basic_info')}</div>
@@ -180,7 +180,7 @@ const Basic = () => {
                   downLoadBlob(
                     devboxDetail?.sshConfig?.sshPrivateKey as string,
                     'application/octet-stream',
-                    `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
+                    `${env.sshDomain}_${env.namespace}_${devboxDetail?.name}`
                   )
                 }
               >

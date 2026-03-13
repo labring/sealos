@@ -122,19 +122,6 @@ export default function Notification(props: NotificationProps) {
     });
   };
 
-  const handleReferral = () => {
-    openDesktopApp({
-      appKey: 'system-account-center',
-      query: {
-        page: 'referral'
-      },
-      messageData: {
-        page: 'referral'
-      },
-      pathname: '/redirect'
-    });
-  };
-
   useEffect(() => {
     if (i18n.language) {
       refetch();
@@ -243,12 +230,11 @@ export default function Notification(props: NotificationProps) {
                           border="1px solid #F4F4F5"
                           position={'relative'}
                         >
-                          {item?.i18n['en']?.from === 'Referral' ? null : (
-                            <TriangleAlert
-                              size={20}
-                              color={getNotificationIconColor(item?.i18n['en']?.from)}
-                            />
-                          )}
+                          <TriangleAlert
+                            size={20}
+                            color={getNotificationIconColor(item?.i18n['en']?.from)}
+                          />
+
                           {!item.isRead && (
                             <Box
                               position="absolute"
@@ -278,16 +264,7 @@ export default function Notification(props: NotificationProps) {
                             cursor="pointer"
                             position="relative"
                           >
-                            {item?.i18n['en']?.from === 'Referral' ? (
-                              <div
-                                style={{ cursor: 'pointer', marginTop: '10px' }}
-                                onClick={handleReferral}
-                              >
-                                {item.i18n[i18n.language]?.message}
-                              </div>
-                            ) : (
-                              <>{item.i18n[i18n.language]?.message}</>
-                            )}
+                            {item.i18n[i18n.language]?.message}
                           </Text>
                           <Text mt="8px" fontSize={'14px'} fontWeight={400} color={'#18181B'}>
                             {dayjs((item?.timestamp || 0) * 1000).fromNow()}
@@ -307,10 +284,10 @@ export default function Notification(props: NotificationProps) {
                     >
                       <Image src="/images/no-notification.svg" alt="no-notification" />
                       <Text mt={'20px'} fontSize={'16px'} fontWeight={500} color={'#18181B'}>
-                        No notifications yet
+                        {t('common:no_notifications_yet')}
                       </Text>
                       <Text color={'#71717A'} mt={'4px'} fontSize={'14px'}>
-                        Recent notifications will be shown here. Everything is going well.
+                        {t('common:no_notifications_desc')}
                       </Text>
                     </Flex>
                   )}
@@ -342,12 +319,11 @@ export default function Notification(props: NotificationProps) {
               zIndex={9}
             >
               <Flex alignItems={'center'} position={'relative'}>
-                {MessageConfig.popupMessage?.i18n['en']?.from === 'Referral' ? null : (
-                  <TriangleAlert
-                    size={20}
-                    color={getNotificationIconColor(MessageConfig.popupMessage?.i18n['en']?.from)}
-                  />
-                )}
+                <TriangleAlert
+                  size={20}
+                  color={getNotificationIconColor(MessageConfig.popupMessage?.i18n['en']?.from)}
+                />
+
                 <Text fontSize={'16px'} fontWeight={600} ml="6px">
                   {MessageConfig.popupMessage?.i18n[i18n.language]?.title}
                 </Text>
@@ -373,21 +349,15 @@ export default function Notification(props: NotificationProps) {
                 />
               </Flex>
 
-              {MessageConfig.popupMessage?.i18n['en']?.from === 'Referral' ? (
-                <div style={{ cursor: 'pointer', marginTop: '10px' }} onClick={handleReferral}>
-                  {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
-                </div>
-              ) : (
-                <Text
-                  whiteSpace="pre-wrap"
-                  mt="8px"
-                  fontSize={'14px'}
-                  fontWeight={400}
-                  color={'#18181B'}
-                >
-                  {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
-                </Text>
-              )}
+              <Text
+                whiteSpace="pre-wrap"
+                mt="8px"
+                fontSize={'14px'}
+                fontWeight={400}
+                color={'#18181B'}
+              >
+                {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
+              </Text>
 
               <Flex alignItems={'center'} mt="16px">
                 {MessageConfig.popupMessage?.i18n['en']?.from === 'Debt-System' && (

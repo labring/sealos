@@ -65,13 +65,10 @@ export const LogTable = ({
       });
     });
 
-    const prevFieldStates = prevFieldList.reduce(
-      (acc, field) => {
-        acc[field.value] = field.checked;
-        return acc;
-      },
-      {} as Record<string, boolean>
-    );
+    const prevFieldStates = prevFieldList.reduce((acc, field) => {
+      acc[field.value] = field.checked;
+      return acc;
+    }, {} as Record<string, boolean>);
 
     return Array.from(uniqueKeys).map((key) => ({
       value: key,
@@ -106,7 +103,7 @@ export const LogTable = ({
       .map((field) => ({
         accessorKey: field.accessorKey,
         header: () => {
-          return t('common.log_table.' + field.label) || field.label;
+          return t('log_table.' + field.label, { defaultValue: field.label });
         },
         cell: ({ row }) => {
           let value = get(row.original, field.accessorKey, '');
@@ -135,7 +132,7 @@ export const LogTable = ({
           isError: (row: any) => row.stream === 'stderr'
         }
       }));
-  }, [fieldList]);
+  }, [fieldList, t]);
 
   const table = useReactTable({
     data: data,

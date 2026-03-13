@@ -90,7 +90,7 @@ const (
 	RECHARGEGIFT            = "recharge-gift"
 	SEALOS                  = "sealos"
 
-	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
+	EnvNonFreeTrialEnabled = "NON_FREE_TRIAL_ENABLED"
 	EnvJwtSecret           = "ACCOUNT_API_JWT_SECRET"
 	EnvDesktopJwtSecret    = "DESKTOP_API_JWT_SECRET"
 
@@ -128,6 +128,7 @@ type AccountReconciler struct {
 
 	UserContactProvider     usernotify.UserContactProvider
 	UserNotificationService usernotify.EventNotificationService
+	NonSupportFreeTrial     bool
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -365,9 +366,13 @@ func (r *AccountReconciler) syncSubscriptionWorkspaceResourceQuotaAndLimitRange(
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("check user workspace subscription existence failed: %w", err)
 	}
-	err = r.handleProbationPeriodWorkspaceSubscription(ctx, userUID, nsName)
-	if err != nil {
-		return fmt.Errorf("handle workspace subscription created failed: %w", err)
+	if r.NonSupportFreeTrial {
+		return r.handlerNoTrialInitialWorkspaceSubscription(ctx, userUID, nsName)
+	} else {
+		err = r.handleProbationPeriodWorkspaceSubscription(ctx, userUID, nsName)
+		if err != nil {
+			return fmt.Errorf("handle workspace subscription created failed: %w", err)
+		}
 	}
 	r.Logger.Info("handle workspace subscription created", "namespace", nsName)
 	return nil
@@ -453,42 +458,18 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	}
 	r.localDomain = r.AccountV2.GetLocalRegion().Domain
 	r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), 10*time.Minute)
-	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == trueStatus
-	if SubscriptionEnabled {
-		r.InitUserAccountFunc = r.AccountV2.NewAccountWithFreeSubscriptionPlan
-		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRangeBySubscription
-		plans, err := r.AccountV2.GetSubscriptionPlanList()
-		if err != nil {
-			return fmt.Errorf("get subscription plan list failed: %w", err)
-		}
-		if len(plans) == 0 {
-			return errors.New("subscription plan list is empty")
-		}
-		r.SubscriptionQuotaLimit, err = resources.ParseResourceLimitWithPlans(plans)
-		if err != nil {
-			return fmt.Errorf("parse resource limit with subscription failed: %w", err)
-		}
-		for plan, limit := range r.SubscriptionQuotaLimit {
-			r.Logger.Info("subscription plan", "name", plan, "quota", limit)
-		}
-		// manager 添加 subscription controller
-		if err := mgr.Add(NewSubscriptionProcessor(r)); err != nil {
-			return fmt.Errorf("add subscription processor failed: %w", err)
-		}
-		r.desktopJwtManager = utils.NewJWTManager(os.Getenv(EnvDesktopJwtSecret), 10*time.Minute)
-	} else {
-		plans, err := r.AccountV2.GetWorkspaceSubscriptionPlanList()
-		if err != nil {
-			return fmt.Errorf("failed to get workspace subscription plans: %w", err)
-		}
-		res, err := resources.ParseResourceLimitWithPlans(plans)
-		if err != nil {
-			return fmt.Errorf("failed to parse resource limits with plans: %w", err)
-		}
-		r.workspaceSubPlans = plans
-		r.workspaceSubPlansResourceLimit = res
-		r.InitUserAccountFunc = r.AccountV2.NewAccount
+	plans, err := r.AccountV2.GetWorkspaceSubscriptionPlanList()
+	if err != nil {
+		return fmt.Errorf("failed to get workspace subscription plans: %w", err)
 	}
+	res, err := resources.ParseResourceLimitWithPlans(plans)
+	if err != nil {
+		return fmt.Errorf("failed to parse resource limits with plans: %w", err)
+	}
+	r.workspaceSubPlans = plans
+	r.workspaceSubPlansResourceLimit = res
+	r.InitUserAccountFunc = r.AccountV2.NewAccount
+	r.NonSupportFreeTrial = os.Getenv(EnvNonFreeTrialEnabled) == trueStatus
 	r.VLogger = logger.NewFeishuLogger(
 		nil,
 		os.Getenv("FEISHU_WEBHOOK"),
@@ -666,8 +647,4 @@ func (r *AccountReconciler) BillingCVM() error {
 		fmt.Printf("billing cvm success %#+v\n", billing)
 	}
 	return nil
-}
-
-func init() {
-	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == trueStatus
 }

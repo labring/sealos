@@ -197,7 +197,6 @@ func getDefaultIngressState() *IngressOriginalState {
 	}
 }
 
-//nolint:unused
 func encodeDevboxState(state *DevboxOriginalState) (string, error) {
 	data, err := json.Marshal(state)
 	if err != nil {
@@ -206,7 +205,6 @@ func encodeDevboxState(state *DevboxOriginalState) (string, error) {
 	return string(data), nil
 }
 
-//nolint:unused
 func decodeDevboxState(data string) (*DevboxOriginalState, error) {
 	var state DevboxOriginalState
 	if err := json.Unmarshal([]byte(data), &state); err != nil {
@@ -215,7 +213,6 @@ func decodeDevboxState(data string) (*DevboxOriginalState, error) {
 	return &state, nil
 }
 
-//nolint:unused
 func getDefaultDevboxState() *DevboxOriginalState {
 	return &DevboxOriginalState{
 		WasRunning: true, // Default: was running, restore to running

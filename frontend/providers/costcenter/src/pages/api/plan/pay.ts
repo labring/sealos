@@ -175,6 +175,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (error?.response?.data) {
       return jsonRes(res, {
+        code: 500,
         message: error?.response?.data?.error
       });
     }

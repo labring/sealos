@@ -15,14 +15,23 @@
 package v1
 
 import (
+	"os"
 	"testing"
 
 	v1 "k8s.io/api/networking/v1"
 )
 
 func TestIcpValidator_Query(t *testing.T) {
-	icpValidator := NewIcpValidator(true, "http://v.juhe.cn/siteTools/app/NewDomain/query.php", "")
-	for i := 0; i <= 3; i++ {
+	if os.Getenv("RUN_NETWORK_TESTS") != "true" {
+		t.Skip("skipping network test; set RUN_NETWORK_TESTS=true to enable")
+	}
+
+	endpoint := os.Getenv("ICP_TEST_ENDPOINT")
+	if endpoint == "" {
+		endpoint = "http://v.juhe.cn/siteTools/app/NewDomain/query.php"
+	}
+	icpValidator := NewIcpValidator(true, endpoint, os.Getenv("ICP_TEST_KEY"))
+	for range 4 {
 		rule := &v1.IngressRule{
 			Host: "sealos.cn",
 		}

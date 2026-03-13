@@ -40,7 +40,7 @@ import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@sealos/shar
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
-const ErrorModal = dynamic(() => import('./components/ErrorModal'));
+const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 export const formData2Yamls = (data: AppEditType) => [
   {
@@ -392,21 +392,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       (formHook.formState.defaultValues?.hpa?.use
         ? formHook.formState.defaultValues?.hpa?.maxReplicas
         : Number.isSafeInteger(formHook.formState.defaultValues?.replicas)
-          ? (formHook.formState.defaultValues?.replicas as number)
-          : 1) ?? 1;
+        ? (formHook.formState.defaultValues?.replicas as number)
+        : 1) ?? 1;
 
     const newReplicas = realTimeForm.current.hpa.use
       ? realTimeForm.current.hpa.maxReplicas
       : Number.isSafeInteger(realTimeForm.current.replicas)
-        ? (realTimeForm.current.replicas as number)
-        : 1;
+      ? (realTimeForm.current.replicas as number)
+      : 1;
 
     const oldGpuCount =
       formHook.formState.defaultValues?.gpu?.type === ''
         ? 0
-        : (formHook.formState.defaultValues?.gpu?.amount ?? 0);
+        : formHook.formState.defaultValues?.gpu?.amount ?? 0;
     const newGpuCount =
-      realTimeForm.current.gpu?.type === '' ? 0 : (realTimeForm.current.gpu?.amount ?? 0);
+      realTimeForm.current.gpu?.type === '' ? 0 : realTimeForm.current.gpu?.amount ?? 0;
 
     return {
       cpu: isEdit
@@ -470,16 +470,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       // check permission
       if (appName) {
         try {
-          const result = await checkPermission({
+          await checkPermission({
             appName: data.appName
           });
-          if (result === 'insufficient_funds') {
-            return toast({
-              status: 'warning',
-              title: t('user.Insufficient account balance')
-            });
-          }
         } catch (error: any) {
+          if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+            setErrorMessage(t('user_balance_not_enough'));
+            setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+            setIsLoading(false);
+            return;
+          } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+            setErrorMessage(t('forbidden_create_app'));
+            setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+            setIsLoading(false);
+            return;
+          }
           return toast({
             status: 'warning',
             title: error?.message || 'Check Error'

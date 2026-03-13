@@ -62,20 +62,32 @@ const InvoiceForm = ({
   }, [remainTime]);
 
   const validateField = (field: keyof InvoiceFormData, value: string): string => {
+    const isPersonal = formData.invoiceType === 'personal';
+
     switch (field) {
       case 'invoiceTitle':
         return !value.trim() ? t('common:orders.require') : '';
       case 'taxId':
+        // Personal type: taxId is optional and no validation
+        if (isPersonal) return '';
         if (!value.trim()) return t('common:orders.require');
         return !isValidCNTaxNumber(value) ? t('common:orders.tax_number_validation') : '';
       case 'bankName':
+        // Personal type: bankName is not required
+        if (isPersonal) return '';
         return !value.trim() ? t('common:orders.require') : '';
       case 'bankAccount':
+        // Personal type: bankAccount is not required
+        if (isPersonal) return '';
         if (!value.trim()) return t('common:orders.require');
         return !isValidBANKAccount(value) ? t('common:orders.bank_account_validation') : '';
       case 'address':
+        // Personal type: address is not required
+        if (isPersonal) return '';
         return !value.trim() ? t('common:orders.require') : '';
       case 'phone':
+        // Personal type: phone is not required
+        if (isPersonal) return '';
         return !value.trim() ? t('common:orders.require') : '';
       case 'contactPerson':
         return !value.trim() ? t('common:orders.require') : '';
@@ -97,7 +109,26 @@ const InvoiceForm = ({
 
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
-    Object.keys(formData).forEach((field) => {
+    const isPersonal = formData.invoiceType === 'personal';
+
+    // For personal type, only validate: invoiceTitle, contactPerson, email, mobileNumber, verificationCode
+    // For normal/special type, validate all fields except fax
+    const fieldsToValidate = isPersonal
+      ? ['invoiceTitle', 'contactPerson', 'email', 'mobileNumber', 'verificationCode']
+      : [
+          'invoiceTitle',
+          'taxId',
+          'bankName',
+          'bankAccount',
+          'address',
+          'phone',
+          'contactPerson',
+          'email',
+          'mobileNumber',
+          'verificationCode'
+        ];
+
+    fieldsToValidate.forEach((field) => {
       const error = validateField(
         field as keyof InvoiceFormData,
         formData[field as keyof InvoiceFormData]

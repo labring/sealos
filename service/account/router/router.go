@@ -118,7 +118,8 @@ func RegisterPayRouter() {
 		POST(helper.AdminWorkspaceSubscriptionList, api.AdminWorkspaceSubscriptionList).
 		POST(helper.AdminSubscriptionPlans, api.AdminSubscriptionPlans).
 		POST(helper.AdminSubscriptionPlanManage, api.AdminManageSubscriptionPlan).
-		POST(helper.AdminSubscriptionPlanDelete, api.AdminDeleteSubscriptionPlan)
+		POST(helper.AdminSubscriptionPlanDelete, api.AdminDeleteSubscriptionPlan).
+		POST(helper.AdminReloadPropertyTypes, api.ReloadPropertyTypes)
 	paymentGroup := router.Group(helper.PaymentGroup).
 		POST(helper.CreatePay, api.CreateCardPay).
 		POST(helper.Notify, api.NewPayNotifyHandler).

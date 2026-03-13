@@ -169,6 +169,42 @@ export async function POST(req: NextRequest) {
             'certificates',
             name
           )
+      },
+      [YamlKindEnum.ConfigMap]: {
+        patch: (jsonPatch: Object) => {
+          // @ts-ignore
+          const name = jsonPatch?.metadata?.name;
+          return k8sCore.patchNamespacedConfigMap(
+            name,
+            namespace,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+          );
+        },
+        delete: (name) => k8sCore.deleteNamespacedConfigMap(name, namespace)
+      },
+      [YamlKindEnum.PersistentVolumeClaim]: {
+        patch: (jsonPatch: Object) => {
+          // @ts-ignore
+          const name = jsonPatch?.metadata?.name;
+          return k8sCore.patchNamespacedPersistentVolumeClaim(
+            name,
+            namespace,
+            jsonPatch,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+          );
+        },
+        delete: (name) => k8sCore.deleteNamespacedPersistentVolumeClaim(name, namespace)
       }
     };
 

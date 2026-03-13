@@ -1,0 +1,117 @@
+# Copyright © 2026 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# image-cri-shim configuration with registry priority examples
+#
+# This configuration demonstrates how to set up registry priorities
+# to control the order in which registries are tried when pulling images.
+
+shim: /var/run/image-cri-shim.sock
+cri: /var/run/containerd/containerd.sock
+address: http://sealos.hub:5000
+auth: admin:passw0rd
+version: v1
+timeout: 15m
+debug: false
+
+# Optional: Customize sealos.hub priority
+# Default: 1000 (highest)
+# Set to 0 or omit this field to use default
+# Lower this value if you want other registries to be tried first
+offlinePriority: 1000
+
+# Cache configuration
+cache:
+  imageCacheSize: 1024
+  imageCacheTTL: 30m
+  domainCacheTTL: 10m
+  statsLogInterval: 1m
+  disableStats: false
+
+# Registry configuration with priorities
+registries:
+  # Example 1: Docker Hub with default priority (500)
+  # When priority is not specified, defaults to 500
+  - address: docker.io
+    auth: dockeruser:dockerpass
+
+  # Example 2: Private registry with higher priority (800)
+  # This registry will be tried before docker.io but after sealos.hub
+  - address: registry.example.com
+    auth: reguser:regpass
+    priority: 800
+
+  # Example 3: Slow registry with low priority (100)
+  # This registry will be tried last
+  - address: slow-registry.company.com
+    auth: slowuser:slowpass
+    priority: 100
+
+  # Example 4: Another registry with medium priority (600)
+  - address: gcr.io
+    auth: gcruser:gcrpass
+    priority: 600
+
+  # Example 5: Registry with priority exceeding maximum (clamped to 1000)
+  # This will have the same priority as sealos.hub, but sealos.hub comes first in tie-breaking
+  - address: another-registry.io
+    auth: anotheruser:anotherpass
+    priority: 2000  # Will be clamped to 1000
+
+  # Example 6: Registry with negative priority (clamped to 0)
+  # This registry will be tried last (lowest priority)
+  - address: backup-registry.io
+    auth: backupuser:backuppass
+    priority: -50  # Will be clamped to 0
+
+# Priority Order (highest to lowest):
+# 1. sealos.hub (priority 1000, set via offlinePriority)
+# 2. another-registry.io (priority 1000, clamped from 2000)
+# 3. registry.example.com (priority 800)
+# 4. gcr.io (priority 600)
+# 5. docker.io (priority 500, default)
+# 6. slow-registry.company.com (priority 100)
+# 7. backup-registry.io (priority 0, clamped from -50)
+#
+# When pulling an image, image-cri-shim will:
+# - First check sealos.hub for the image
+# - If not found, check another-registry.io
+# - Continue down the list until a registry has the image
+# - Use the original image name if no registry has it
+#
+# The result is cached, so subsequent pulls use the cached registry (within TTL)
+
+# ----------------------------------------------------------------------
+# Example: Lowering sealos.hub priority
+# ----------------------------------------------------------------------
+# If you have a faster registry and want it to be tried before sealos.hub:
+#
+# address: http://sealos.hub:5000
+# auth: admin:passw0rd
+# offlinePriority: 700  # Lower than default (1000)
+#
+# registries:
+#   - address: fast-registry.io
+#     auth: fastuser:fastpass
+#     priority: 900  # Higher than sealos.hub, will be tried first
+#
+#   - address: docker.io
+#     auth: dockeruser:dockerpass
+#     # priority: 500 (default)
+#
+# Priority Order in this case:
+# 1. fast-registry.io (priority 900)
+# 2. sealos.hub (priority 700)
+# 3. docker.io (priority 500)
+# ----------------------------------------------------------------------

@@ -31,8 +31,8 @@ export const handleK8sError = (err: any): Partial<ApiResponse> => {
       }
       if (k8sApiErr?.reason === 'Forbidden') {
         return {
-          code: ResponseCode.FORBIDDEN,
-          message: k8sApiErr.message
+          code: ResponseCode.FORBIDDEN_CREATE_APP,
+          message: ResponseMessages[ResponseCode.FORBIDDEN_CREATE_APP]
         };
       }
       return {

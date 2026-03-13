@@ -21,7 +21,8 @@ export interface PlanStoreState {
   modalType: 'confirmation' | 'downgrade' | null;
   modalContext: {
     workspaceName?: string;
-    isCreateMode?: boolean;
+    operator?: 'created' | 'upgraded' | 'downgraded';
+    businessOperation?: 'create' | 'upgrade' | 'downgrade' | 'renew';
   };
 
   // Default values for modal opening (from URL params)
@@ -58,6 +59,9 @@ export interface PlanStoreState {
   pendingUpgrade: PendingUpgrade | null;
   showPendingUpgradeDialog: boolean;
 
+  // Invoice payment banner state
+  invoicePaymentUrl: string | null;
+
   // Data actions
   setPlansData: (data: PlanListResponse | null) => void;
   setSubscriptionData: (data: SubscriptionInfoResponse | null) => void;
@@ -66,11 +70,19 @@ export interface PlanStoreState {
   // Modal actions
   showConfirmationModal: (
     plan: SubscriptionPlan,
-    context?: { workspaceName?: string; isCreateMode?: boolean }
+    context?: {
+      workspaceName?: string;
+      operator?: 'created' | 'upgraded' | 'downgraded';
+      businessOperation?: 'create' | 'upgrade' | 'downgrade' | 'renew';
+    }
   ) => void;
   showDowngradeModal: (
     plan: SubscriptionPlan,
-    context?: { workspaceName?: string; isCreateMode?: boolean }
+    context?: {
+      workspaceName?: string;
+      operator?: 'created' | 'upgraded' | 'downgraded';
+      businessOperation?: 'create' | 'upgrade' | 'downgrade' | 'renew';
+    }
   ) => void;
   hideModal: () => void;
 
@@ -106,6 +118,9 @@ export interface PlanStoreState {
   // Pending upgrade actions
   setPendingUpgrade: (upgrade: PendingUpgrade | null) => void;
   setShowPendingUpgradeDialog: (show: boolean) => void;
+
+  // Invoice payment banner actions
+  setInvoicePaymentUrl: (url: string | null) => void;
 
   // Computed getters
   getCurrentPlan: () => SubscriptionPlan | null;
@@ -169,6 +184,9 @@ const usePlanStore = create<PlanStoreState>()(
     // Pending upgrade initial state
     pendingUpgrade: null,
     showPendingUpgradeDialog: false,
+
+    // Invoice payment banner initial state
+    invoicePaymentUrl: null,
 
     // Data actions
     setPlansData: (data) => set({ plansData: data }),
@@ -277,6 +295,9 @@ const usePlanStore = create<PlanStoreState>()(
     setPendingUpgrade: (upgrade) => set({ pendingUpgrade: upgrade }),
     setShowPendingUpgradeDialog: (show) => set({ showPendingUpgradeDialog: show }),
 
+    // Invoice payment banner actions
+    setInvoicePaymentUrl: (url) => set({ invoicePaymentUrl: url }),
+
     // Computed getters
     getCurrentPlan: () => {
       const state = get();
@@ -338,6 +359,7 @@ const usePlanStore = create<PlanStoreState>()(
         cardInfoLoading: false,
         pendingUpgrade: null,
         showPendingUpgradeDialog: false,
+        invoicePaymentUrl: null,
         defaultSelectedPlan: '',
         defaultShowPaymentConfirmation: false,
         defaultWorkspaceName: ''

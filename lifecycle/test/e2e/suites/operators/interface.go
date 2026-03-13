@@ -16,6 +16,8 @@ limitations under the License.
 
 package operators
 
+import "github.com/labring/sealos/test/e2e/testhelper/cmd"
+
 type FakeImageInterface interface {
 	ListImages(display bool) ([]DisplayImage, error)
 	PullImage(images ...string) error
@@ -40,7 +42,9 @@ type FakeCRIInterface interface {
 
 type FakeClusterInterface interface {
 	Run(images ...string) error
+	RunWithOpts(opts *cmd.RunOptions) error
 	Apply(file string) error
+	ApplyOpts(opts *cmd.ApplyOptions) error
 	Reset() error
 }
 

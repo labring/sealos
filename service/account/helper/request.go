@@ -704,9 +704,9 @@ type WorkspaceSubscriptionOperatorReq struct {
 	AuthBase `json:",inline" bson:",inline"`
 
 	// @Summary Workspace name
-	// @Description Workspace name
-	// @JSONSchema required
-	Workspace string `json:"workspace" bson:"workspace" binding:"required" example:"my-workspace"`
+	// @Description Workspace name (optional for price preview, required for actual subscription)
+	// @JSONSchema optional
+	Workspace string `json:"workspace,omitempty" bson:"workspace" example:"my-workspace"`
 
 	// @Summary Region domain
 	// @Description Region domain
@@ -721,7 +721,7 @@ type WorkspaceSubscriptionOperatorReq struct {
 	// @Summary Subscription period
 	// @Description Subscription period (1m for monthly, 1y for yearly)
 	// @JSONSchema required
-	Period types.SubscriptionPeriod `json:"period"        bson:"period"        binding:"required" example:"1m"`
+	Period types.SubscriptionPeriod `json:"period"        bson:"period"  example:"1m"`
 	// @Summary Promotion code
 	// @Description Promotion code for applying discount to the upgrade payment
 	// @JSONSchema optional
@@ -812,9 +812,10 @@ func ParseWorkspaceSubscriptionOperatorReq(
 	if err := c.ShouldBindJSON(req); err != nil {
 		return nil, fmt.Errorf("bind json error: %w", err)
 	}
-	if req.Workspace == "" {
-		return nil, errors.New("workspace cannot be empty")
-	}
+	// Workspace is optional for price preview scenarios
+	// if req.Workspace == "" {
+	// 	return nil, errors.New("workspace cannot be empty")
+	// }
 	if req.RegionDomain == "" {
 		return nil, errors.New("regionDomain cannot be empty")
 	}
@@ -837,11 +838,12 @@ func ParseWorkspaceSubscriptionOperatorReq(
 		types.SubscriptionTransactionTypeUpgraded,
 		types.SubscriptionTransactionTypeDowngraded,
 		types.SubscriptionTransactionTypeCanceled,
-		types.SubscriptionTransactionTypeRenewed:
+		types.SubscriptionTransactionTypeRenewed,
+		types.SubscriptionTransactionTypeResumed:
 		// Valid operations
 	default:
 		return nil, fmt.Errorf(
-			"invalid operator: %s. Allowed: created, upgraded, downgraded, canceled, renewed",
+			"invalid operator: %s. Allowed: created, upgraded, downgraded, canceled, renewed, resumed",
 			req.Operator,
 		)
 	}

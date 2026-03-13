@@ -17,6 +17,9 @@ import { AllPlansSection } from '@/components/plan/AllPlansSection';
 import { PlanHeader } from '@/components/plan/PlanHeader';
 import { BalanceSection } from '@/components/plan/BalanceSection';
 import { CardInfoSection } from '@/components/plan/CardInfoSection';
+import { InvoicePaymentBanner } from '@/components/plan/InvoicePaymentBanner';
+import { BeingCancelledBanner } from '@/components/plan/BeingCancelledBanner';
+import { FreePlanExpiryBanner } from '@/components/plan/FreePlanExpiryBanner';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
 import RechargeModal from '@/components/RechargeModal';
@@ -70,13 +73,26 @@ export default function Plan() {
     setDefaultShowPaymentConfirmation,
     setDefaultWorkspaceName,
     clearModalDefaults,
-    clearRedeemCode
+    clearRedeemCode,
+    invoicePaymentUrl,
+    setInvoicePaymentUrl
   } = usePlanStore();
 
   // Check if we're in create mode - use state to persist across re-renders
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [congratulationsMode, setCongratulationsMode] = useState<'upgrade' | 'renew'>('upgrade');
+  const [congratulationsOverride, setCongratulationsOverride] = useState<{
+    planName?: string;
+    maxResources?: {
+      cpu: string;
+      memory: string;
+      storage: string;
+      nodeports: string;
+    };
+    traffic?: number;
+  } | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [workspaceId, setWorkspaceId] = useState('');
   // Track if Stripe success has been tracked to prevent duplicates
@@ -191,6 +207,7 @@ export default function Plan() {
       hideModal();
       // Close UpgradePlanDialog to prevent focus fighting
       setSubscriptionModalOpen(false);
+      setCongratulationsMode('upgrade');
       setShowCongratulations(true);
       setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
       isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
@@ -237,9 +254,13 @@ export default function Plan() {
 
       if (targetPlan) {
         const workspaceName = isCreateMode ? defaultWorkspaceName : '';
+        // Determine operator based on mode: create mode uses 'created', otherwise 'upgraded'
+        const operator = isCreateMode ? 'created' : 'upgraded';
+        const businessOperation = isCreateMode ? 'create' : 'upgrade';
         showConfirmationModal(targetPlan, {
           workspaceName,
-          isCreateMode
+          operator,
+          businessOperation
         });
       }
     }
@@ -264,14 +285,19 @@ export default function Plan() {
         regionDomain: region?.domain || ''
       }),
     enabled: !!(session?.user?.nsid && region?.uid),
-    onSuccess: (data) => setSubscriptionData(data.data || null),
+    onSuccess: (data) => {
+      setSubscriptionData(data.data || null);
+      // Check if InvoiceInfo has PaymentUrl
+      const paymentUrl = data.data?.subscription?.InvoiceInfo?.PaymentUrl;
+      setInvoicePaymentUrl(paymentUrl || null);
+    },
     refetchOnMount: true,
     retry: 5
   });
 
   // Get specific workspace subscription info for congratulations modal
   const { data: workspaceSubscriptionData } = useQuery({
-    queryKey: ['workspace-subscription', workspaceId, region?.uid],
+    queryKey: ['subscription-info', workspaceId, region?.uid],
     queryFn: () =>
       getSubscriptionInfo({
         workspace: workspaceId || '',
@@ -404,8 +430,8 @@ export default function Plan() {
               variables.operator === 'created'
                 ? 'new'
                 : variables.operator === 'downgraded'
-                  ? 'downgrade'
-                  : 'upgrade';
+                ? 'downgrade'
+                : 'upgrade';
 
             gtmSubscribeSuccess({
               amount: monthlyPrice,
@@ -542,7 +568,10 @@ export default function Plan() {
     const currentPlanObj = plansData?.plans?.find(
       (p) => p.Name === subscriptionData?.subscription?.PlanName
     );
+    const inDebt = subscriptionData?.subscription?.Status?.toLowerCase() === 'debt';
     const getOperator = () => {
+      // If in debt state, always use 'created' operation
+      if (inDebt) return 'created';
       if (!currentPlanObj) return 'created';
       if (currentPlanObj.UpgradePlanList?.includes(plan.Name)) return 'upgraded';
       if (currentPlanObj.DowngradePlanList?.includes(plan.Name)) return 'downgraded';
@@ -633,7 +662,38 @@ export default function Plan() {
       {isPaygTypeValue ? (
         <div className="flex gap-4">
           <div className="flex-2/3">
-            <PlanHeader>
+            {invoicePaymentUrl && (
+              <div className="mb-4">
+                <InvoicePaymentBanner
+                  paymentUrl={invoicePaymentUrl}
+                  inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
+                />
+              </div>
+            )}
+            {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+              subscriptionData?.subscription?.PlanName?.toLowerCase() !== 'free' &&
+              subscriptionData?.subscription?.CurrentPeriodEndAt && (
+                <div className="mb-4">
+                  <BeingCancelledBanner
+                    currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+                  />
+                </div>
+              )}
+            {subscriptionData?.subscription?.PlanName?.toLowerCase() === 'free' &&
+              subscriptionData?.subscription?.CurrentPeriodEndAt && (
+                <div className="mb-4">
+                  <FreePlanExpiryBanner
+                    currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+                  />
+                </div>
+              )}
+            <PlanHeader
+              onRenewSuccess={() => {
+                setWorkspaceId(session?.user?.nsid || '');
+                setCongratulationsMode('renew');
+                setShowCongratulations(true);
+              }}
+            >
               {({ trigger }) => (
                 <UpgradePlanDialog
                   onSubscribe={handleSubscribe}
@@ -661,23 +721,50 @@ export default function Plan() {
         </div>
       ) : (
         <>
-          {lastTransactionData?.transaction?.Operator === 'downgraded' && (
-            <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
-              <div className="size-5 rounded-full flex items-center justify-center flex-shrink-0">
-                <Info className="text-orange-600" />
+          {lastTransactionData?.transaction?.Operator === 'downgraded' &&
+            lastTransactionData?.transaction?.Status === 'pending' && (
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
+                <div className="size-5 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Info className="text-orange-600" />
+                </div>
+                <div className="text-orange-600 text-sm leading-5">
+                  {t('common:downgrade_warning_message', {
+                    planName: lastTransactionData?.transaction?.NewPlanName,
+                    date: new Date(
+                      lastTransactionData?.transaction?.StartAt || ''
+                    ).toLocaleDateString()
+                  })}
+                </div>
               </div>
-              <div className="text-orange-600 text-sm leading-5">
-                {t('common:downgrade_warning_message', {
-                  planName: lastTransactionData?.transaction?.NewPlanName,
-                  date: new Date(
-                    lastTransactionData?.transaction?.StartAt || ''
-                  ).toLocaleDateString()
-                })}
-              </div>
-            </div>
-          )}
+            )}
 
-          <PlanHeader>
+          {invoicePaymentUrl && (
+            <InvoicePaymentBanner
+              paymentUrl={invoicePaymentUrl}
+              inDebt={subscriptionData?.subscription?.Status?.toLowerCase() === 'debt'}
+            />
+          )}
+          {subscriptionData?.subscription?.CancelAtPeriodEnd &&
+            subscriptionData?.subscription?.PlanName?.toLowerCase() !== 'free' &&
+            subscriptionData?.subscription?.CurrentPeriodEndAt && (
+              <BeingCancelledBanner
+                currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+              />
+            )}
+          {subscriptionData?.subscription?.PlanName?.toLowerCase() === 'free' &&
+            subscriptionData?.subscription?.CurrentPeriodEndAt && (
+              <FreePlanExpiryBanner
+                currentPeriodEndAt={subscriptionData.subscription.CurrentPeriodEndAt}
+              />
+            )}
+
+          <PlanHeader
+            onRenewSuccess={() => {
+              setWorkspaceId(session?.user?.nsid || '');
+              setCongratulationsMode('renew');
+              setShowCongratulations(true);
+            }}
+          >
             {({ trigger }) => (
               <UpgradePlanDialog
                 onSubscribe={handleSubscribe}
@@ -705,7 +792,13 @@ export default function Plan() {
 
       <CardInfoSection workspace={session?.user?.nsid} regionDomain={region?.domain} />
 
-      <AllPlansSection />
+      <AllPlansSection
+        onRenewSuccess={(payload) => {
+          setCongratulationsOverride(payload);
+          setCongratulationsMode('renew');
+          setShowCongratulations(true);
+        }}
+      />
       {/* Modals */}
       {rechargeEnabled && (
         <RechargeModal
@@ -736,18 +829,25 @@ export default function Plan() {
 
       <CongratulationsModal
         isOpen={showCongratulations}
-        planName={workspaceSubscriptionData?.data?.subscription?.PlanName || 'Pro Plan'}
+        mode={congratulationsMode}
+        planName={
+          congratulationsOverride?.planName ||
+          workspaceSubscriptionData?.data?.subscription?.PlanName ||
+          'Pro Plan'
+        }
         maxResources={
-          workspaceSubscriptionData?.data?.subscription?.PlanName
+          congratulationsOverride?.maxResources ||
+          (workspaceSubscriptionData?.data?.subscription?.PlanName
             ? JSON.parse(
                 plansData?.plans?.find(
                   (p: SubscriptionPlan) =>
                     p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
                 )?.MaxResources || '{}'
               )
-            : undefined
+            : undefined)
         }
         traffic={
+          congratulationsOverride?.traffic ||
           plansData?.plans?.find(
             (p: SubscriptionPlan) =>
               p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
@@ -756,6 +856,7 @@ export default function Plan() {
         onClose={() => {
           setShowCongratulations(false);
           setWorkspaceId('');
+          setCongratulationsOverride(null);
           // Clean up URL parameters after closing the modal
           const url = new URL(window.location.href);
           url.searchParams.delete('stripeState');
@@ -771,9 +872,9 @@ export default function Plan() {
       <PlanConfirmationModal
         plan={pendingPlan || undefined}
         workspaceName={modalContext.workspaceName}
-        isCreateMode={modalContext.isCreateMode || false}
         isOpen={modalType === 'confirmation'}
         isSubmitting={subscriptionMutation.isLoading}
+        isRenew={modalContext.businessOperation === 'renew'}
         onConfirm={() => {
           if (pendingPlan) {
             handleSubscribe(pendingPlan, modalContext.workspaceName, false);
@@ -802,6 +903,7 @@ export default function Plan() {
             // Set workspace ID for congratulations modal
             const targetWorkspace = session?.user?.nsid || '';
             setWorkspaceId(targetWorkspace);
+            setCongratulationsMode('upgrade');
             setShowCongratulations(true);
           }
         }}

@@ -23,7 +23,6 @@ import (
 	"time"
 
 	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -32,12 +31,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (sac *ServiceAccountConfig) Apply(config *rest.Config, client client.Client) (*api.Config, error) {
+func (sac *ServiceAccountConfig) Apply(
+	config *rest.Config,
+	client client.Client,
+) (*api.Config, error) {
 	if err := sac.applyServiceAccount(config, client); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to apply service account error: %w", err)
 	}
 	if err := sac.applySecret(config, client); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to apply secret: %w", err)
 	}
 	token, err := sac.fetchToken(client)
 	if err == nil {
@@ -45,7 +47,7 @@ func (sac *ServiceAccountConfig) Apply(config *rest.Config, client client.Client
 			return cfg, nil
 		}
 	}
-	return nil, err
+	return nil, fmt.Errorf("failed to fetch token: %v", err)
 }
 
 func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client client.Client) error {
@@ -88,7 +90,9 @@ func (sac *ServiceAccountConfig) applySecret(_ *rest.Config, client client.Clien
 		}
 		secret.Type = v1.SecretTypeServiceAccountToken
 		secret.Annotations[v1.ServiceAccountNameKey] = sac.user
-		secret.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(int(sac.expirationSeconds))
+		secret.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(
+			int(sac.expirationSeconds),
+		)
 		return nil
 	})
 	sac.sa = &v1.ServiceAccount{}
@@ -126,17 +130,27 @@ func (sac *ServiceAccountConfig) fetchToken(cli client.Client) (string, error) {
 			}
 			if secret.Data != nil && secret.Data[v1.ServiceAccountTokenKey] != nil {
 				dis := time.Since(start).Milliseconds()
-				defaultLog.Info("The serviceAccount secret is ready.", "secretName", secret.Name, "using Milliseconds", dis)
+				defaultLog.Info(
+					"The serviceAccount secret is ready.",
+					"secretName",
+					secret.Name,
+					"using Milliseconds",
+					dis,
+				)
 				return string(secret.Data[v1.ServiceAccountTokenKey]), nil
 			}
 		case <-ctx.Done():
-			defaultLog.Error(ctx.Err(), "context get secrets time out")
+			// A negligible error: The first 10-second wait to obtain the token failed. Subsequent reconcile will continue to obtain
+			defaultLog.Error(ctx.Err(), "context get secrets time out, wait until next time reconcile to get it done")
 			return "", ctx.Err()
 		}
 	}
 }
 
-func (sac *ServiceAccountConfig) generatorKubeConfig(cfg *rest.Config, token string) (*api.Config, error) {
+func (sac *ServiceAccountConfig) generatorKubeConfig(
+	cfg *rest.Config,
+	token string,
+) (*api.Config, error) {
 	// make sure cadata is loaded into config under incluster mode
 	if err := rest.LoadTLSFiles(cfg); err != nil {
 		return nil, err
@@ -146,7 +160,7 @@ func (sac *ServiceAccountConfig) generatorKubeConfig(cfg *rest.Config, token str
 		Clusters: map[string]*api.Cluster{
 			sac.clusterName: {
 				Server:                   GetKubernetesHost(cfg),
-				CertificateAuthorityData: cfg.TLSClientConfig.CAData,
+				CertificateAuthorityData: cfg.CAData,
 			},
 		},
 		Contexts: map[string]*api.Context{

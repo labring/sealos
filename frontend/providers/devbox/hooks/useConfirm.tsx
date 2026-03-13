@@ -9,11 +9,13 @@ import { Button } from '@sealos/shadcn-ui/button';
 export const useConfirm = ({
   title = 'prompt',
   content,
+  contentParams,
   confirmText = 'confirm',
   cancelText = 'cancel'
 }: {
   title?: string;
   content: string;
+  contentParams?: Record<string, string | number>;
   confirmText?: string;
   cancelText?: string;
 }) => {
@@ -40,7 +42,7 @@ export const useConfirm = ({
                 {t(title)}
               </DialogTitle>
             </DialogHeader>
-            <div className="text-zinc-900">{t(content)}</div>
+            <div className="text-zinc-900">{t(content, contentParams)}</div>
             <DialogFooter>
               <Button
                 variant="outline"
@@ -63,7 +65,7 @@ export const useConfirm = ({
           </DialogContent>
         </Dialog>
       ),
-      [cancelText, confirmText, content, isOpen, t, title]
+      [cancelText, confirmText, content, contentParams, isOpen, t, title]
     )
   };
 };

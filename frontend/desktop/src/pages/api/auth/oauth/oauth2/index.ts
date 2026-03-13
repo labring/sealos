@@ -20,7 +20,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     throw new Error('OAuth2 configuration missing');
   }
 
-  const { code, inviterId, semData, adClickData } = req.body;
+  const { code, semData, adClickData } = req.body;
   const url = `${tokenUrl}`;
   const oauth2Data = (await (
     await fetch(url, {
@@ -59,10 +59,18 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
       message: 'Unauthorized'
     });
   const result = (await response.json()) as OAuth2UserInfoType;
+  // console.log('result', result);
 
   // Support both standard OAuth2 (sub) and SSO360 (id) formats
   const id = result.sub || (result as any).id;
-  const name = result?.nickname || result?.name || nanoid(8);
+
+  // If name_path and user_name exist in attributes, combine them
+  const attributes = (result as any)?.attributes;
+  const name =
+    attributes?.name_path && attributes?.user_name
+      ? `${attributes.name_path} ${attributes.user_name}`
+      : result?.nickname || result?.name || nanoid(8);
+
   const avatar_url = result?.picture || '';
 
   const data = await getGlobalToken({
@@ -70,7 +78,6 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     providerId: id + '',
     avatar_url,
     name,
-    inviterId,
     semData,
     adClickData
   });
