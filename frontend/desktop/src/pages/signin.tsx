@@ -33,7 +33,7 @@ export default function SigninPage({ sessionExpired }: { sessionExpired?: boolea
       toast({
         title: t('common:session_expired'),
         status: 'error',
-        duration: 8000,
+        duration: null,
         isClosable: true,
         position: 'top'
       });
