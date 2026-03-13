@@ -15,7 +15,9 @@
 package buildah
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -56,6 +58,10 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 	if err != nil {
 		return err
 	}
+	images, err = filterIgnoredImages(contextDir, images)
+	if err != nil {
+		return err
+	}
 	tars, err := buildimage.TarList(contextDir)
 	if err != nil {
 		return err
@@ -86,6 +92,27 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 		}
 	}
 	return nil
+}
+
+func filterIgnoredImages(contextDir string, images []string) ([]string, error) {
+	if len(images) == 0 {
+		return images, nil
+	}
+
+	ignoreFile := filepath.Join(contextDir, ".sealignore")
+	if _, err := os.Stat(ignoreFile); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return images, nil
+		}
+		return nil, fmt.Errorf("failed to access ignore file %s: %w", ignoreFile, err)
+	}
+
+	filtered, err := buildimage.Filter(images, ignoreFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to filter ignored images with %s: %w", ignoreFile, err)
+	}
+
+	return filtered, nil
 }
 
 func parsePlatforms(c *cobra.Command) ([]v1.Platform, error) {
