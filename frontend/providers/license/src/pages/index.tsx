@@ -29,6 +29,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { debounce } from 'lodash';
 import yaml from 'js-yaml';
 import { useTranslation } from 'next-i18next';
+import { getLicenseErrorMessage } from '@/utils/licenseError';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function LicenseApp() {
@@ -139,7 +140,10 @@ export default function LicenseApp() {
         });
       } else if (licenseResult.status.phase !== 'Active') {
         toast({
-          title: licenseResult.status.reason,
+          title: getLicenseErrorMessage(t, {
+            validationCode: licenseResult.status.code,
+            fallback: licenseResult.status.reason
+          }),
           status: 'error'
         });
       } else {
@@ -152,10 +156,13 @@ export default function LicenseApp() {
       }
       queryClient.invalidateQueries(['getLicenseActive']);
     },
-    onError(error: { message?: string }) {
+    onError(error: { message?: string; errorCode?: string | number }) {
       if (error?.message && typeof error?.message === 'string') {
         toast({
-          title: error.message,
+          title: getLicenseErrorMessage(t, {
+            errorCode: error.errorCode,
+            fallback: error.message
+          }),
           status: 'error'
         });
       }
