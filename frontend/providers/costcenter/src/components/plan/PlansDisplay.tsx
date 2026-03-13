@@ -191,13 +191,7 @@ export function PlansDisplay({
             </SelectTrigger>
             <SelectContent>
               {additionalPlans.map((plan) => {
-                let resources: any = {};
-                try {
-                  resources = JSON.parse(plan.MaxResources);
-                } catch (e) {
-                  resources = {};
-                }
-
+                const resources = plan.MaxResources;
                 const monthlyPrice = formatMoney(plan.Prices?.[0]?.Price || 0);
                 const isCurrentPlanInSelect = plan.Name === currentPlan;
                 const isNextPlanInSelect = plan.Name === nextPlanName;
@@ -220,6 +214,8 @@ export function PlansDisplay({
                   );
                 }
 
+                const fmt = (q: { formatForDisplay: (o?: object) => string } | undefined) =>
+                  q ? q.formatForDisplay({ format: 'BinarySI' }) : '';
                 return (
                   <SelectItem key={plan.ID} value={plan.ID} className="w-full">
                     <div className="flex w-full items-center">
@@ -232,9 +228,11 @@ export function PlansDisplay({
                         }}
                       />
                       <div className="text-xs text-gray-500">
-                        {resources.cpu} vCPU + {resources.memory} RAM + {resources.storage} Disk +
-                        {formatTrafficAuto(plan.Traffic)} + {resources.nodeports} Nodeport +{' '}
-                        {formatMoney(plan.AIQuota * 100)} AI Credits
+                        {`${fmt(resources.cpu)} vCPU + ${fmt(resources.memory)} RAM + ${fmt(
+                          resources.storage
+                        )} Disk + ${formatTrafficAuto(plan.Traffic)} + ${
+                          resources.nodeports?.toString() ?? ''
+                        } Nodeport + ${formatMoney(plan.AIQuota * 100)} AI Credits`}
                       </div>
                       <Separator
                         orientation="vertical"
