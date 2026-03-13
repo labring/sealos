@@ -5,6 +5,7 @@ import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
 import {
   Box,
+  Button,
   Center,
   Divider,
   Flex,
@@ -13,6 +14,10 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
+  Modal,
+  ModalContent,
+  ModalFooter,
+  ModalOverlay,
   Text,
   useBreakpointValue,
   useDisclosure,
@@ -36,6 +41,7 @@ import {
   ReceiptText,
   Gift,
   RefreshCw,
+  TriangleAlert,
   User
 } from 'lucide-react';
 import AccountCenter from './AccountCenter';
@@ -73,6 +79,7 @@ export default function Account() {
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
   const [isRotatingKubeconfig, setIsRotatingKubeconfig] = useState(false);
+  const rotateConfirmDisclosure = useDisclosure();
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
@@ -82,10 +89,14 @@ export default function Account() {
     setToken('');
   };
 
-  const handleRotateKubeconfig = async (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleRotateKubeconfig = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     if (isRotatingKubeconfig) return;
+    rotateConfirmDisclosure.onOpen();
+  };
 
+  const confirmRotateKubeconfig = async () => {
+    rotateConfirmDisclosure.onClose();
     try {
       setIsRotatingKubeconfig(true);
       toast({
@@ -99,9 +110,7 @@ export default function Account() {
       const res = await rotateKubeconfig();
 
       if (res.code === 200 && res.data?.kubeconfig) {
-        // Update session with new kubeconfig
         setSessionProp('kubeconfig', res.data.kubeconfig);
-
         toast({
           title: t('kubeconfig_rotated_successfully'),
           status: 'success',
@@ -545,6 +554,49 @@ export default function Account() {
           </Flex>
         </Flex> */}
       </Flex>
+
+      <Modal isOpen={rotateConfirmDisclosure.isOpen} onClose={rotateConfirmDisclosure.onClose}>
+        <ModalOverlay />
+        <ModalContent borderRadius="16px" p="24px" maxW="400px" gap="16px">
+          <Flex gap="6px" alignItems="center">
+            <TriangleAlert size={16} color="#D97706" />
+            <Text fontSize="18px" fontWeight="600" color="#18181B">
+              {t('common:kubeconfig_rotate_confirm_title')}
+            </Text>
+          </Flex>
+          <Text fontSize="14px" lineHeight="20px" color="#18181B">
+            {t('common:kubeconfig_rotate_confirm_desc')}
+          </Text>
+          <ModalFooter p="0" gap="12px" justifyContent="flex-end">
+            <Button
+              variant="outline"
+              h="40px"
+              w="80px"
+              fontSize="14px"
+              fontWeight="500"
+              borderRadius="8px"
+              borderColor="#E4E4E7"
+              color="#18181B"
+              onClick={rotateConfirmDisclosure.onClose}
+            >
+              {t('common:cancel')}
+            </Button>
+            <Button
+              h="40px"
+              w="80px"
+              fontSize="14px"
+              fontWeight="500"
+              borderRadius="8px"
+              bg="#DC2626"
+              color="white"
+              _hover={{ bg: '#B91C1C' }}
+              onClick={confirmRotateKubeconfig}
+            >
+              {t('common:confirm')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }

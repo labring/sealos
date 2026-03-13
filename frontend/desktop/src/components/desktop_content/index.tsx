@@ -3,7 +3,7 @@ import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
-import { Box, Flex, Image } from '@chakra-ui/react';
+import { Box, Flex, Image, useToast } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -16,7 +16,7 @@ import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
 import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
 import { useQuery } from '@tanstack/react-query';
-import { getAmount, UserInfo } from '@/api/auth';
+import { getAmount, UserInfo, validateKubeconfig } from '@/api/auth';
 import OnlineServiceButton from './serviceButton';
 import SaleBanner from '../banner';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
@@ -54,6 +54,8 @@ export default function Desktop() {
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
   const [isClient, setIsClient] = useState(false);
   const guideModal = useGuideModalStore();
+  const toast = useToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     setIsClient(true);
@@ -64,6 +66,29 @@ export default function Desktop() {
     queryKey: [session?.token, 'UserInfo'],
     select(d) {
       return d.data?.info;
+    }
+  });
+
+  useQuery({
+    queryKey: ['validateKubeconfig', session?.kubeconfig],
+    queryFn: () => validateKubeconfig({ kubeconfig: session?.kubeconfig || '' }),
+    enabled: !!session?.kubeconfig,
+    retry: false,
+    refetchOnWindowFocus: true,
+    onSuccess(data) {
+      if (data?.data?.valid === false) {
+        localStorage.removeItem('session');
+        window.location.replace('/signin');
+      }
+    },
+    onError() {
+      toast({
+        title: t('common:kubeconfig_validate_failed'),
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top'
+      });
     }
   });
 
