@@ -3,10 +3,12 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { subDays } from 'date-fns';
 
 import { useDevboxStore } from '@/stores/devbox';
 import { useDateTimeStore } from '@/stores/date';
 import { DevboxStatusEnum } from '@/constants/devbox';
+import { ALL_TIME_START_DATE } from '@/utils/timeRange';
 
 import DatePicker from '@/components/DatePicker';
 import MonitorChart from '@/components/MonitorChart';
@@ -16,7 +18,7 @@ import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
 const Monitor = () => {
   const params = useParams();
   const t = useTranslations();
-  const { startDateTime, endDateTime } = useDateTimeStore();
+  const { startDateTime, endDateTime, setStartDateTime, setEndDateTime } = useDateTimeStore();
   const { devboxDetail, loadDetailMonitorData } = useDevboxStore();
   const isRunning = devboxDetail?.status.value === DevboxStatusEnum.Running;
   const showGpuMonitor = !!devboxDetail?.gpu && (devboxDetail.gpu.amount || 0) > 0;
@@ -33,18 +35,39 @@ const Monitor = () => {
     return Math.ceil(maxValue * 1.1);
   }, [devboxDetail?.usedGpuMemory?.yData]);
 
+  const getEffectiveMonitorRange = useCallback(() => {
+    if (startDateTime.getTime() !== ALL_TIME_START_DATE.getTime()) {
+      return { startTime: startDateTime, endTime: endDateTime };
+    }
+
+    const endTime = new Date();
+    const startTime = subDays(endTime, 7);
+    setStartDateTime(startTime);
+    setEndDateTime(endTime);
+
+    return { startTime, endTime };
+  }, [endDateTime, setEndDateTime, setStartDateTime, startDateTime]);
+
+  useEffect(() => {
+    if (startDateTime.getTime() !== ALL_TIME_START_DATE.getTime()) return;
+    const endTime = new Date();
+    setStartDateTime(subDays(endTime, 7));
+    setEndDateTime(endTime);
+  }, [setEndDateTime, setStartDateTime, startDateTime]);
+
   const handleRefresh = useCallback(async () => {
     if (!params?.name) return;
     if (!isRunning) {
       toast.warning(t('refresh_requires_running'));
       return;
     }
+    const { startTime, endTime } = getEffectiveMonitorRange();
     await loadDetailMonitorData(
       params.name as string,
-      startDateTime.getTime(),
-      endDateTime.getTime()
+      startTime.getTime(),
+      endTime.getTime()
     );
-  }, [params?.name, isRunning, startDateTime, endDateTime, loadDetailMonitorData, t]);
+  }, [params?.name, isRunning, getEffectiveMonitorRange, loadDetailMonitorData, t]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -57,7 +80,7 @@ const Monitor = () => {
       <div className="flex w-full items-center justify-between rounded-xl border-[0.5px] bg-white p-6 shadow-xs">
         <div className="flex items-center gap-4">
           <span className="text-lg/7 font-medium">{t('filter')}</span>
-          <DatePicker onClose={handleRefresh} />
+          <DatePicker onClose={handleRefresh} showAllTime={false} />
           <RefreshButton onRefresh={handleRefresh} autoRefreshEnabled={isRunning} />
         </div>
         <span className="text-sm/5 text-neutral-500">

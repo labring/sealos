@@ -7,6 +7,9 @@ interface TimeRange {
   endTime: Date;
 }
 
+export const ALL_TIME_RANGE_VALUE = 'all';
+export const ALL_TIME_START_DATE = new Date('1970-01-01T00:00:00.000Z');
+
 /**
  * Parse time range string
  * @param range Time range string, e.g. "1h", "7d", "30m", "1M"
@@ -14,13 +17,20 @@ interface TimeRange {
  * @returns Object containing start and end time
  */
 export function parseTimeRange(range: string, endTime: Date = new Date()): TimeRange {
+  if (range === ALL_TIME_RANGE_VALUE) {
+    return {
+      startTime: new Date(ALL_TIME_START_DATE),
+      endTime
+    };
+  }
+
   const match = range.match(/^(\d+)([hmdM])$/i);
   if (!match) {
-    throw new Error('Invalid time range format. Supported formats: 1h, 7d, 30m, 1M');
+    throw new Error('Invalid time range format. Supported formats: all, 1h, 7d, 30m, 1M');
   }
 
   const value = parseInt(match[1], 10);
-  const unit = match[2].toLowerCase() as TimeUnit;
+  const unit = match[2] === 'M' ? 'M' : (match[2].toLowerCase() as Exclude<TimeUnit, 'M'>);
 
   let startTime: Date;
   switch (unit) {
@@ -53,6 +63,10 @@ export function parseTimeRange(range: string, endTime: Date = new Date()): TimeR
  * @returns Time range string, e.g. "1h", "7d"
  */
 export function formatTimeRange(startTime: Date, endTime: Date): string {
+  if (startTime.getTime() === ALL_TIME_START_DATE.getTime()) {
+    return ALL_TIME_RANGE_VALUE;
+  }
+
   const diffMs = endTime.getTime() - startTime.getTime();
   const diffMinutes = Math.round(diffMs / (1000 * 60));
   const diffHours = Math.round(diffMs / (1000 * 60 * 60));
