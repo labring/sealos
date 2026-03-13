@@ -16,7 +16,6 @@ import { useQuery } from '@tanstack/react-query';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useEnvStore } from '@/stores/env';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
@@ -54,6 +53,7 @@ import CreateTemplateDrawer from '@/components/drawers/CreateTemplateDrawer';
 import CreateOrUpdateDrawer from '@/components/drawers/CreateOrUpdateDrawer';
 import UpdateTemplateDrawer from '@/components/drawers/UpdateTemplateDrawer';
 import DeployDevboxDrawer from '@/components/drawers/DeployDevboxDrawer';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -63,7 +63,7 @@ const Release = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenEdit, setIsOpenEdit] = useState(false);
 
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const { devboxDetail: devbox, devboxVersionList, setDevboxVersionList } = useDevboxStore();
 
   const [initialized, setInitialized] = useState(false);
@@ -125,17 +125,17 @@ const Release = () => {
       const releaseCommand = config.releaseCommand.join(' ');
       const { cpu, memory, networks, name, gpu, configMaps, volumes, envs } = devbox;
       const newNetworks = networks
-        .filter((network) => network.port !== env.webIdePort)
+        .filter((network) => network.port !== appConfig.devbox.runtime.webidePort)
         .map((network) => {
           return {
             port: network.port,
             appProtocol: network.protocol,
             protocol: 'TCP',
             openPublicDomain: network.openPublicDomain,
-            domain: env.ingressDomain
+            domain: appConfig.devbox.userDomain.domain
           };
         });
-      const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`;
+      const imageName = `${appConfig.devbox.runtime.registryHost}/${appConfig.devbox.runtime.defaultNamespace}/${devbox.name}:${version.tag}`;
 
       const transformData = {
         appName: `${name}-release-${nanoid()}`,
@@ -152,7 +152,7 @@ const Release = () => {
                   protocol: 'TCP',
                   appProtocol: 'HTTP',
                   openPublicDomain: false,
-                  domain: env.ingressDomain
+                  domain: appConfig.devbox.userDomain.domain
                 }
               ],
         runCMD: releaseCommand,
@@ -173,7 +173,7 @@ const Release = () => {
             path: vol.path,
             value: vol.size,
             storageType: 'remote',
-            storageClassName: env.nfsStorageClassName
+            storageClassName: appConfig.devbox.resources.storageClassNfs
           })) || [],
         envs:
           envs?.map((env) => ({
@@ -206,11 +206,11 @@ const Release = () => {
     },
     [
       devbox,
-      env.ingressDomain,
-      env.namespace,
-      env.registryAddr,
-      env.webIdePort,
-      env.nfsStorageClassName
+      appConfig.devbox.userDomain.domain,
+      appConfig.devbox.runtime.defaultNamespace,
+      appConfig.devbox.runtime.registryHost,
+      appConfig.devbox.runtime.webidePort,
+      appConfig.devbox.resources.storageClassNfs
     ]
   );
 
@@ -283,7 +283,7 @@ const Release = () => {
               <TooltipTrigger asChild>
                 <span className="max-w-50 cursor-pointer truncate">{item.description}</span>
               </TooltipTrigger>
-              <TooltipContent className="max-w-[300px] whitespace-pre-wrap break-words">
+              <TooltipContent className="max-w-[300px] break-words whitespace-pre-wrap">
                 <p>{item.description}</p>
               </TooltipContent>
             </Tooltip>
@@ -352,7 +352,7 @@ const Release = () => {
   }, [guideRelease, handleOpenRelease, isClientSide, t, guideIDE]);
 
   return (
-    <div className="shadow-xs flex h-[40%] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5">
+    <div className="flex h-[40%] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">

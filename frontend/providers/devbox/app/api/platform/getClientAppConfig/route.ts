@@ -1,0 +1,10 @@
+import { getClientAppConfigServer } from '@/server/getClientAppConfig';
+import { jsonRes } from '@/services/backend/response';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
+  return jsonRes({
+    data: getClientAppConfigServer()
+  });
+}

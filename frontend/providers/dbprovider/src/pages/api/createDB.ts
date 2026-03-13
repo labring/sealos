@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
@@ -85,7 +86,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       if (
-        process.env.BACKUP_ENABLED === 'true' &&
+        Config().dbprovider.backup.enabled &&
         BackupSupportedDBTypeList.includes(dbForm.dbType) &&
         dbForm?.autoBackup
       ) {
@@ -119,7 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const account = json2Account(dbForm);
     const cluster = json2CreateCluster(dbForm, backupInfo, {
-      storageClassName: process.env.STORAGE_CLASSNAME
+      storageClassName: Config().dbprovider.storage.forcedClassName ?? undefined
     });
 
     const yamlList = [account, cluster];
@@ -159,7 +160,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     try {
       if (
-        process.env.BACKUP_ENABLED === 'true' &&
+        Config().dbprovider.backup.enabled &&
         BackupSupportedDBTypeList.includes(dbForm.dbType) &&
         dbForm?.autoBackup
       ) {

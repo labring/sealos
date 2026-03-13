@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
@@ -31,10 +32,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
+    const { url, modelId, fastGPTKey } = Config().dbprovider.components.eventAnalysis;
+
     const response = await axios.post(
-      'https://fastgpt.run/api/openapi/chat/chat',
+      `${url}/chat/chat`,
       {
-        modelId: '6455c433f437e55c638e630c',
+        modelId,
         isStream: true,
         prompts: [
           {
@@ -45,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       {
         headers: {
-          apikey: process.env.FASTGPT_KEY
+          apikey: fastGPTKey
         },
         responseType: 'stream',
         timeout: 30000

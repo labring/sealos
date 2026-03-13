@@ -4,7 +4,6 @@ import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 import { cn } from '@sealos/shadcn-ui';
-import { useEnvStore } from '@/stores/env';
 import { useDevboxStore } from '@/stores/devbox';
 import { versionSchema, versionErrorEnum } from '@/utils/validate';
 import { DevboxListItemTypeV2, DevboxVersionListItemType } from '@/types/devbox';
@@ -32,6 +31,7 @@ import { Textarea } from '@sealos/shadcn-ui/textarea';
 import { Checkbox } from '@sealos/shadcn-ui/checkbox';
 import { Separator } from '@sealos/shadcn-ui/separator';
 import { track } from '@sealos/gtm';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 interface ReleaseDialogProps {
   devbox: Omit<DevboxListItemTypeV2, 'template'>;
@@ -45,7 +45,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
   const locale = useLocale();
   const { getErrorMessage } = useErrorMessage();
 
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const { setDevboxDetail } = useDevboxStore();
 
   const [tag, setTag] = useState('');
@@ -161,7 +161,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
           // Wait for Go backend to start devbox
           await new Promise((resolve) => setTimeout(resolve, 2000));
           // Refresh devbox detail to update status and restart polling
-          await setDevboxDetail(devbox.name, env.sealosDomain);
+          await setDevboxDetail(devbox.name, appConfig.cloud.domain);
         }
 
         toast.success(t('submit_release_successful'));
@@ -191,7 +191,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
       versionList.length,
       getErrorMessage,
       setDevboxDetail,
-      env.sealosDomain
+      appConfig.cloud.domain
     ]
   );
 
@@ -254,7 +254,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
             <Label htmlFor="image-name">{t('image_name')}</Label>
             <Input
               id="image-name"
-              value={`${env.registryAddr}/${env.namespace}/${devbox.name}`}
+              value={`${appConfig.devbox.runtime.registryHost}/${appConfig.devbox.runtime.defaultNamespace}/${devbox.name}`}
               disabled
             />
           </div>

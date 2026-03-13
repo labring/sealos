@@ -3,10 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm run config:gen-json-schema && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
   },
@@ -19,7 +20,6 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.18.1",
-    "@next/font": "13.1.6",
     "@sealos/shared": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
@@ -39,7 +39,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.544.0",
     "nanoid": "^4.0.2",
-    "next": "13.1.6",
+    "next": "14.2.35",
     "next-i18next": "^15.3.0",
     "nprogress": "^0.2.0",
     "prettier": "^2.8.8",
@@ -67,7 +67,7 @@
     "@types/react-dom": "18.3.7",
     "@types/react-syntax-highlighter": "^15.5.7",
     "eslint": "8.33.0",
-    "eslint-config-next": "13.1.6",
+    "eslint-config-next": "14.2.35",
     "svg-inline-loader": "^0.8.2",
     "webpack-bundle-analyzer": "^4.9.1"
   }

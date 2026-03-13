@@ -2,9 +2,12 @@
 import { useEffect, useState, Suspense } from 'react';
 import { ApiReferenceReact } from '@scalar/api-reference-react';
 
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+
 import '@scalar/api-reference-react/style.css';
 
 function ApiDocsContent() {
+  const clientAppConfig = useClientAppConfig();
   const [apiData, setApiData] = useState(null);
 
   useEffect(() => {
@@ -37,7 +40,10 @@ function ApiDocsContent() {
           name: 'Authorization-Bearer'
         }
       }
-    }
+    },
+    cdn: process.env.NEXT_PUBLIC_MOCK_USER
+      ? undefined
+      : `https://devbox.${clientAppConfig.cloud.domain}/scalar/cdn.js`
   };
 
   if (!apiData) {

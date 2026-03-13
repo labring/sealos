@@ -15,6 +15,7 @@ import { getRegionUid } from '@/utils/env';
 import { adaptDevboxDetailV2 } from '@/utils/adapt';
 import { parseTemplateConfig, cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -304,11 +305,12 @@ async function createPortsAndNetworks(
     return [];
   }
 
-  const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
   const serviceManager = new ServiceManager(k8sCore, namespace, applyYamlList);
-  const ingressManager = INGRESS_SECRET
-    ? new IngressManager(applyYamlList, INGRESS_SECRET, INGRESS_DOMAIN!)
-    : null;
+  const ingressManager = new IngressManager(
+    applyYamlList,
+    Config().devbox.userDomain.secretName,
+    Config().devbox.userDomain.domain
+  );
 
   try {
     await serviceManager.ensureServiceWithPorts(devboxName, ports);
@@ -511,7 +513,7 @@ export async function POST(req: NextRequest) {
     }
 
     const resourceConfig = convertResourceConfig(resourceSource);
-    const { DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT } = process.env;
+    const appConfig = Config();
     const devbox = json2Devbox(
       {
         ...devboxForm,
@@ -522,8 +524,8 @@ export async function POST(req: NextRequest) {
         networks: [],
         env: devboxForm.env || []
       },
-      DEVBOX_AFFINITY_ENABLE,
-      STORAGE_LIMIT
+      String(appConfig.devbox.features.affinityScheduling),
+      appConfig.devbox.resources.storageLimit
     );
 
     const [devboxBody, createdPorts] = await Promise.all([
@@ -585,7 +587,7 @@ export async function POST(req: NextRequest) {
 
     const config = parseTemplateConfig(template.config);
     const { user: userName, workingDir } = config;
-    const { SEALOS_DOMAIN: domain } = process.env;
+    const domain = Config().cloud.domain;
 
     const failedPorts = createdPorts.filter((port: any) => 'error' in port && port.error);
     const successfulPorts = createdPorts.filter((port: any) => !('error' in port) || !port.error);

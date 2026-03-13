@@ -4,7 +4,8 @@ import { Trend as OverviewTrend } from '@/components/cost_overview/trend';
 import { TrendBar as TrendOverviewBar } from '@/components/cost_overview/trendBar';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { loadStripe } from '@stripe/stripe-js';
 import { BalanceSection } from '@/components/plan/BalanceSection';
 import { getAccountBalance } from '@/api/account';
 import request from '@/service/request';
@@ -17,10 +18,11 @@ import { RechargeExpenditureSection } from '@/components/plan/RechargeExpenditur
 
 export default function Cost() {
   const router = useRouter();
-  const transferEnabled = useEnvStore((state) => state.transferEnabled);
-  const rechargeEnabled = useEnvStore((state) => state.rechargeEnabled);
-  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
-  const stripePromise = useEnvStore((s) => s.stripePromise);
+  const config = useClientAppConfig();
+  const stripePromise = useMemo(
+    () => loadStripe(config.recharge.payMethods.stripe.publicKey),
+    [config.recharge.payMethods.stripe.publicKey]
+  );
 
   // useEffect to handle the router query
   useEffect(() => {
@@ -79,8 +81,8 @@ export default function Cost() {
         <div className="flex-1">
           <BalanceSection
             balance={balance}
-            rechargeEnabled={rechargeEnabled}
-            subscriptionEnabled={subscriptionEnabled}
+            rechargeEnabled={config.recharge.enabled}
+            subscriptionEnabled={config.features.subscriptionEnabled}
             onTopUpClick={() => rechargeRef?.current?.onOpen()}
           />
         </div>
@@ -94,7 +96,7 @@ export default function Cost() {
       </div>
 
       {/* Modals */}
-      {rechargeEnabled && (
+      {config.recharge.enabled && (
         <RechargeModal
           ref={rechargeRef}
           balance={balance}
@@ -108,7 +110,7 @@ export default function Cost() {
         />
       )}
 
-      {transferEnabled && (
+      {config.features.transferEnabled && (
         <TransferModal
           ref={transferRef}
           balance={balance}

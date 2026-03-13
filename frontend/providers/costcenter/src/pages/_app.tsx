@@ -1,18 +1,17 @@
 import '@/styles/globals.css';
 
 import Layout from '@/layout';
-import { getAppConfig } from '@/api/platform';
 import { getAppList } from '@/api/billing';
 import request from '@/service/request';
 import { ApiResp } from '@/types/api';
 import { Region } from '@/types/region';
 import useAppTypeStore from '@/stores/appType';
 import useBillingStore from '@/stores/billing';
-import useEnvStore from '@/stores/env';
 import { theme } from '@/styles/chakraTheme';
-import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { dehydrate, Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { appWithTranslation } from 'next-i18next';
-import type { AppProps } from 'next/app';
+import type { AppContext, AppInitialProps, AppProps } from 'next/app';
+import App from 'next/app';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
@@ -22,9 +21,13 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { ChakraProvider } from '@chakra-ui/react';
 import { Toaster } from '@sealos/shadcn-ui/sonner';
+import {
+  ClientConfigProvider,
+  prefetchClientAppConfig,
+  setupClientAppConfigDefaults
+} from '@sealos/shared';
+import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 
-// Make sure to call `loadStripe` outside a component’s render to avoid
-// recreating the `Stripe` object on every render.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -35,16 +38,19 @@ const queryClient = new QueryClient({
   }
 });
 
+setupClientAppConfigDefaults(queryClient, ['client-app-config']);
+
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());
 Router.events.on('routeChangeError', () => NProgress.done());
 
-const App = ({ Component, pageProps }: AppProps) => {
-  const state = useEnvStore();
+type AppOwnProps = { dehydratedState?: unknown };
+
+function AppContent({ Component, pageProps }: Pick<AppProps, 'Component' | 'pageProps'>) {
   const router = useRouter();
-  const { setAppTypeMap, appTypeMap } = useAppTypeStore();
+  const { setAppTypeMap } = useAppTypeStore();
   const { setAppTypeList, setRegionList } = useBillingStore();
-  // init language
+
   const changeI18n = (data: { currentLanguage: string }) => {
     router.replace(router.basePath, router.asPath, { locale: data.currentLanguage });
   };
@@ -52,7 +58,6 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     sealosApp.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
 
-    // Add postMessage listener to handle external communication
     const handlePostMessage = ({
       data,
       source
@@ -66,7 +71,6 @@ const App = ({ Component, pageProps }: AppProps) => {
       try {
         if (!source) return;
         if (data && typeof data === 'object' && data.type === 'InternalAppCall') {
-          // Forward parameters
           const params = new URLSearchParams();
           if (data.page) params.set('page', data.page);
           if (data.mode) params.set('mode', data.mode);
@@ -94,47 +98,17 @@ const App = ({ Component, pageProps }: AppProps) => {
   }, [router]);
 
   useEffect(() => {
-    state.setEnv('i18nIsInitialized', false);
     (async () => {
       try {
         const lang = await sealosApp.getLanguage();
         changeI18n({
           currentLanguage: lang.lng
         });
-        state.setEnv('i18nIsInitialized', true);
       } catch (error) {
         console.error('get language error');
-        state.setEnv('i18nIsInitialized', false);
       }
     })();
   }, [router.asPath]);
-
-  // init
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await getAppConfig();
-        state.setEnv('realNameRechargeLimit', !!data?.REALNAME_RECHARGE_LIMIT);
-        state.setEnv('invoiceEnabled', !!data?.INVOICE_ENABLED);
-        state.setEnv('transferEnabled', !!data?.TRANSFER_ENABLED);
-        state.setEnv('rechargeEnabled', !!data?.RECHARGE_ENABLED);
-        state.setEnv('currency', data?.CURRENCY || 'shellCoin');
-        state.setEnv('gpuEnabled', !!data?.GPU_ENABLED);
-        const stripeE = !!data?.STRIPE_ENABLED;
-        state.setEnv('stripeEnabled', stripeE);
-        stripeE && state.setStripe(data?.STRIPE_PUB || '');
-        state.setEnv('wechatEnabled', !!data?.WECHAT_ENABLED);
-        state.setEnv('alipayEnabled', !!data?.ALIPAY_ENABLED);
-        state.setEnv(
-          'billingInfo',
-          data?.BILLING_INFO ?? { companyName: '', addressLines: [], contactLines: [] }
-        );
-        state.setEnv('subscriptionEnabled', !!data?.SUBSCRIPTION_ENABLED);
-      } catch (error) {
-        console.error('get init config error');
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -150,7 +124,6 @@ const App = ({ Component, pageProps }: AppProps) => {
     })();
   }, []);
 
-  // Initialize regions data
   useEffect(() => {
     (async () => {
       try {
@@ -167,16 +140,40 @@ const App = ({ Component, pageProps }: AppProps) => {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Hydrate state={pageProps.dehydratedState}>
-        <ChakraProvider theme={theme} resetScope=".ck-reset" disableGlobalStyle>
-          <Layout>
-            <Component {...pageProps} />
-          </Layout>
-          <Toaster position="top-center" />
-        </ChakraProvider>
-      </Hydrate>
-    </QueryClientProvider>
+    <Hydrate state={pageProps.dehydratedState}>
+      <ChakraProvider theme={theme} resetScope=".ck-reset" disableGlobalStyle>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+        <Toaster position="top-center" />
+      </ChakraProvider>
+    </Hydrate>
   );
+}
+
+const MyApp = ({ Component, pageProps, dehydratedState }: AppProps & AppOwnProps) => (
+  <QueryClientProvider client={queryClient}>
+    <ClientConfigProvider dehydratedState={dehydratedState}>
+      <AppContent Component={Component} pageProps={pageProps} />
+    </ClientConfigProvider>
+  </QueryClientProvider>
+);
+
+MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppInitialProps> => {
+  const ctx = await App.getInitialProps(context);
+
+  let dehydratedState: unknown;
+  try {
+    if (typeof window === 'undefined') {
+      const qc = new QueryClient();
+      await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
+      dehydratedState = dehydrate(qc);
+    }
+  } catch (error) {
+    console.error('[Client App Config] Failed to prefetch:', error);
+  }
+
+  return { ...ctx, dehydratedState };
 };
-export default appWithTranslation(App);
+
+export default appWithTranslation(MyApp);

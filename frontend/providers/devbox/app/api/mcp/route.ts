@@ -1,9 +1,10 @@
 import { McpHandler } from 'sealos-mcp-sdk';
 import path from 'path';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
-const region = process.env.FORCED_LANGUAGE || 'en';
+const region = Config().devbox.mcp.forcedLanguage || 'en';
 const fileName = region === 'en' ? 'devbox.json' : 'devbox-zh.json';
 
 const handler = McpHandler(

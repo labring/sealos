@@ -1,8 +1,9 @@
 import { sign, verify } from 'jsonwebtoken';
+import { Config } from '@/config';
 
-const internalJwtSecret = () => global.AppConfig?.costCenter.auth.jwt.internal || '123456789';
+const internalJwtSecret = () => Config().costCenter.auth.jwt.internal;
 
-const billingJwtSecret = () => global.AppConfig?.costCenter.auth.jwt.billing || '123456789';
+const billingJwtSecret = () => Config().costCenter.components.billing.secret;
 
 export type AuthenticationTokenPayload = {
   userUid: string;

@@ -16,6 +16,7 @@ import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppEditType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
 import { LaunchpadApplicationSchema } from '@/types/v2alpha/schema';
+import { Config } from '@/config';
 import {
   PatchUtils,
   V1Deployment,
@@ -240,8 +241,8 @@ async function processAppResponseV2Alpha(
     .flat() as DeployKindsType[];
 
   const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
-    SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-    SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
+    domain: Config().cloud.domain,
+    userDomains: Config().cloud.userDomains
   });
 
   const standardizedData = transformFromLegacySchema(appDetailData, appName, namespace);
@@ -388,7 +389,7 @@ async function updateServiceAndIngress(
     );
 
     if (hasIngressPorts) {
-      const ingressYaml = json2Ingress(appEditData);
+      const ingressYaml = json2Ingress(appEditData, Config().cloud.userDomains);
       if (ingressYaml.trim()) {
         yamlList.push(ingressYaml);
       }
@@ -447,7 +448,7 @@ async function convertToStatefulSet(
     );
 
     if (hasIngressPorts) {
-      const ingressYaml = json2Ingress(updatedAppData);
+      const ingressYaml = json2Ingress(updatedAppData, Config().cloud.userDomains);
       if (ingressYaml.trim()) yamlList.push(ingressYaml);
     }
   }
@@ -664,7 +665,7 @@ function createNetworkConfig(appName: string, portConfig: any): any {
       isAppProtocol && (portConfig.isPublic !== undefined ? portConfig.isPublic : false),
     publicDomain: isAppProtocol ? nanoid() : '',
     customDomain: '',
-    domain: isAppProtocol ? global.AppConfig?.cloud?.domain || 'cloud.sealos.io' : '',
+    domain: isAppProtocol ? Config().cloud.domain : '',
     nodePort: undefined,
     openNodePort: !isAppProtocol
   };
@@ -691,8 +692,7 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
       updatedNetwork.domain = '';
     } else if (portConfig.isPublic) {
       updatedNetwork.publicDomain = existingNetwork.publicDomain || nanoid();
-      updatedNetwork.domain =
-        existingNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+      updatedNetwork.domain = existingNetwork.domain || Config().cloud.domain;
     }
   }
 
@@ -705,8 +705,7 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
 
       if (portConfig.isPublic) {
         updatedNetwork.publicDomain = updatedNetwork.publicDomain || nanoid();
-        updatedNetwork.domain =
-          updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+        updatedNetwork.domain = updatedNetwork.domain || Config().cloud.domain;
 
         if (!updatedNetwork.networkName) {
           updatedNetwork.networkName = `${appName}-${updatedNetwork.port}-${nanoid()}-network`;

@@ -7,6 +7,7 @@ import {
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { Config } from '@/config';
 import {
   getAppByName,
   deleteAppByName,
@@ -266,7 +267,7 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
     );
 
     if (hasIngressPorts) {
-      const ingressYaml = json2Ingress(appEditData);
+      const ingressYaml = json2Ingress(appEditData, Config().cloud.userDomains);
       if (ingressYaml.trim()) {
         yamlList.push(ingressYaml);
       }
@@ -387,7 +388,7 @@ async function updateStorage(
       );
 
       if (hasIngressPorts) {
-        const ingressYaml = json2Ingress(updatedAppData);
+        const ingressYaml = json2Ingress(updatedAppData, Config().cloud.userDomains);
         if (ingressYaml.trim()) {
           yamlList.push(ingressYaml);
         }
@@ -742,8 +743,7 @@ async function manageAppPorts(
             updatedNetwork.domain = '';
           } else if (isApplicationProtocol && portConfig.exposesPublicDomain) {
             updatedNetwork.publicDomain = existingNetwork.publicDomain || nanoid();
-            updatedNetwork.domain =
-              existingNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+            updatedNetwork.domain = existingNetwork.domain || Config().cloud.domain;
           }
         }
 
@@ -756,8 +756,7 @@ async function manageAppPorts(
 
             if (portConfig.exposesPublicDomain) {
               updatedNetwork.publicDomain = updatedNetwork.publicDomain || nanoid();
-              updatedNetwork.domain =
-                updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+              updatedNetwork.domain = updatedNetwork.domain || Config().cloud.domain;
 
               if (!updatedNetwork.networkName) {
                 updatedNetwork.networkName = `network-${nanoid()}`;
@@ -827,7 +826,7 @@ async function manageAppPorts(
             (portConfig.exposesPublicDomain !== undefined ? portConfig.exposesPublicDomain : false),
           publicDomain: isApplicationProtocol ? nanoid() : '',
           customDomain: '',
-          domain: isApplicationProtocol ? global.AppConfig?.cloud?.domain || 'cloud.sealos.io' : '',
+          domain: isApplicationProtocol ? Config().cloud.domain : '',
           nodePort: undefined,
           openNodePort: !isApplicationProtocol
         };

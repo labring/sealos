@@ -1,7 +1,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { UseFormReturn } from 'react-hook-form';
 
-import { useEnvStore } from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import { Checkbox } from '@sealos/shadcn-ui/checkbox';
 import { FormControl, FormField, FormItem, FormMessage } from '@sealos/shadcn-ui/form';
@@ -13,14 +13,14 @@ interface AgreeTermsFieldProps {
 
 const AgreeTermsField = ({ form, disabled = false }: AgreeTermsFieldProps) => {
   const t = useTranslations();
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const locale = useLocale();
 
   const handleGotoPrivacyDocs = () => {
     if (locale === 'zh') {
-      window.open(env.privacyUrlZH, '_blank');
+      window.open(appConfig.devbox.ui.docUrls.privacy.zh, '_blank');
     } else {
-      window.open(env.privacyUrlEN, '_blank');
+      window.open(appConfig.devbox.ui.docUrls.privacy.en, '_blank');
     }
   };
 

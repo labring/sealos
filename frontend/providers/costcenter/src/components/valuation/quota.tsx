@@ -1,7 +1,7 @@
 import { valuationMap } from '@/constants/payment';
 import { getWorkspaceQuota } from '@/api/workspace';
 import useBillingStore from '@/stores/billing';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { TableCell, TableRow, TableHead } from '@sealos/shadcn-ui/table';
@@ -28,10 +28,10 @@ export default function Quota() {
     () => getWorkspaceQuota({ regionUid, workspace }),
     { enabled: filtersSelected }
   );
-  const { gpuEnabled } = useEnvStore();
+  const config = useClientAppConfig();
 
-  const quota = (filtersSelected ? (data?.data?.quota ?? []) : [])
-    .filter((item) => gpuEnabled || item.type !== 'gpu')
+  const quota = (filtersSelected ? data?.data?.quota ?? [] : [])
+    .filter((item) => config.features.gpuEnabled || item.type !== 'gpu')
     .map((item) => {
       const mapping = valuationMap.get(item.type);
 

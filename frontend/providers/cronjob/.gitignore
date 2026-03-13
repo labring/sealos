@@ -39,3 +39,6 @@ next-env.d.ts
 platform.json
 .yalc/
 yalc.lock
+
+data/*
+!data/config.example.yaml

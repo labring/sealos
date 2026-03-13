@@ -8,6 +8,7 @@ import { adaptDevboxVersionListItem } from '@/utils/adapt';
 import { RequestSchema } from './schema';
 import { devboxKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
+import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -335,7 +336,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     }
 
     const releases = await listDevboxReleases(k8sCustomObjects, namespace);
-    const { REGISTRY_ADDR } = process.env;
+    const registryHost = Config().devbox.runtime.registryHost;
 
     const versions = releases
       .filter((item) => item.spec?.devboxName === devboxName)
@@ -344,7 +345,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
       .map(({ createTime, ...rest }) => ({
         ...rest,
         createdAt: createTime,
-        image: `${REGISTRY_ADDR}/${namespace}/${rest.devboxName}:${rest.tag}`
+        image: `${registryHost}/${namespace}/${rest.devboxName}:${rest.tag}`
       }));
 
     return NextResponse.json(versions);

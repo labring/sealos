@@ -8,15 +8,15 @@ import { Label } from '@sealos/shadcn-ui/label';
 import { Slider } from '@sealos/shadcn-ui/slider';
 
 import { DevboxEditTypeV2 } from '@/types/devbox';
-import { useEnvStore } from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export default function Cpu() {
   const t = useTranslations();
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
 
   const CpuSlideMarkList = useMemo(() => {
-    if (!env.cpuSlideMarkList) {
+    if (!appConfig.devbox.resources.cpuMarks.length) {
       return [
         { label: 1, value: 1000 },
         { label: 2, value: 2000 },
@@ -27,8 +27,10 @@ export default function Cpu() {
     }
 
     try {
-      const cpuList = env.cpuSlideMarkList.split(',').map((v) => Number(v.trim()));
-      return cpuList.map((cpu) => ({ label: cpu, value: cpu * 1000 }));
+      return appConfig.devbox.resources.cpuMarks.map((cpu) => ({
+        label: cpu,
+        value: cpu * 1000
+      }));
     } catch (error) {
       console.error('Failed to parse CPU list from env:', error);
       return [
@@ -39,7 +41,7 @@ export default function Cpu() {
         { label: 16, value: 16000 }
       ];
     }
-  }, [env.cpuSlideMarkList]);
+  }, [appConfig.devbox.resources.cpuMarks]);
 
   const currentValue = watch('cpu');
   const currentIndex = CpuSlideMarkList.findIndex((item) => item.value === currentValue);

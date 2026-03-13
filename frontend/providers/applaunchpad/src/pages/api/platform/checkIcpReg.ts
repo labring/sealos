@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { checkDomainICP } from '@/services/backend/acsCdnActions';
+import { Config } from '@/config';
 
 export type CheckICPRegParams = {
   domain: string;
@@ -8,7 +9,7 @@ export type CheckICPRegParams = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (!global.AppConfig.launchpad.checkIcpReg.enabled) {
+    if (!Config().launchpad.checkIcpReg.enabled) {
       throw new Error('Domain ICP registration checker is disabled.');
     }
 

@@ -6,21 +6,13 @@ import {
   DBReconfigureMap,
   DBTypeEnum,
   MigrationRemark,
-  RedisHAConfig,
   crLabelKey,
   defaultDBEditValue,
   sealafDeployKey
 } from '@/constants/db';
-import { StorageClassName } from '@/store/env';
-import type {
-  BackupItemType,
-  DBComponentsName,
-  DBDetailType,
-  DBEditType,
-  DBType
-} from '@/types/db';
+import type { DBDetailType, DBEditType, DBType } from '@/types/db';
 import { MigrateForm } from '@/types/migrate';
-import { encodeToHex, formatNumber, formatTime, str2Num } from '@/utils/tools';
+import { encodeToHex, str2Num } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
@@ -80,11 +72,6 @@ export const json2CreateCluster = (
     },
     name: data.dbName
   };
-
-  const storageClassName =
-    options?.storageClassName || StorageClassName
-      ? { storageClassName: options?.storageClassName || StorageClassName }
-      : {};
 
   function createDBObject(dbType: DBType) {
     // Special circumstances process here
@@ -208,7 +195,9 @@ export const json2CreateCluster = (
                                 storage: `${resourceData.storage}Gi`
                               }
                             },
-                            ...storageClassName
+                            ...(options?.storageClassName
+                              ? { storageClassName: options.storageClassName }
+                              : {})
                           }
                         }
                       ]

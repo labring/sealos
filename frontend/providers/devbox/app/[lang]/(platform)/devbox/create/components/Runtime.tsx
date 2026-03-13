@@ -10,11 +10,11 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
 import { nanoid } from '@/utils/tools';
-import { useEnvStore } from '@/stores/env';
 import { listOfficialTemplateRepository, listTemplate } from '@/api/template';
 import { useDevboxStore } from '@/stores/devbox';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { RuntimeIcon } from '@/components/RuntimeIcon';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import {
   Select,
@@ -35,7 +35,7 @@ interface RuntimeProps {
 export default function Runtime({ isEdit = false }: RuntimeProps) {
   const router = useRouter();
   const t = useTranslations();
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const { startedTemplate, devboxDetail, setStartedTemplate } = useDevboxStore();
   const { getValues, setValue, watch } = useFormContext<DevboxEditTypeV2>();
   const searchParams = useSearchParams();
@@ -90,12 +90,12 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
             port: port,
             protocol: 'HTTP',
             openPublicDomain: true,
-            publicDomain: `${nanoid()}.${env.ingressDomain}`,
+            publicDomain: `${nanoid()}.${appConfig.devbox.userDomain.domain}`,
             customDomain: ''
           }) as const
       )
     );
-  }, [getValues, setValue, env]);
+  }, [getValues, setValue, appConfig.devbox.userDomain.domain]);
 
   const handleVersionChange = (val: string) => {
     if (isEdit) return;

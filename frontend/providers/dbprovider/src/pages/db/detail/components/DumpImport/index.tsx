@@ -37,7 +37,7 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useMemo } from 'react';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 enum MigrateStatusEnum {
   Prepare = 'Prepare',
@@ -61,7 +61,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   const [podName, setPodName] = useState('');
   const [fileProgressText, setFileProgressText] = useState('');
 
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const { getValues, setValue, watch } = formHook;
   const tableName = watch('tableName');
@@ -69,8 +69,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   const checkQuotaAndProceed = useQuotaGuarded(
     {
       requirements: {
-        cpu: SystemEnv.MIGRATION_JOB_CPU_REQUIREMENT,
-        memory: SystemEnv.MIGRATION_JOB_MEMORY_REQUIREMENT,
+        cpu: config.migrationJobCpuMillicores,
+        memory: config.migrationJobMemoryMiB,
         traffic: true
       },
       immediate: false,

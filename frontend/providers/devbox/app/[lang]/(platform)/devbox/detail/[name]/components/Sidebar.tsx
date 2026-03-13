@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { LayoutDashboard, LineChart, Settings } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
-import { useEnvStore } from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export type TabValue = 'overview' | 'monitor' | 'logs' | 'advancedConfig';
 
@@ -13,9 +13,9 @@ interface SidebarProps {
 
 const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
   const t = useTranslations();
-  const { env } = useEnvStore();
+  const appConfig = useClientAppConfig();
 
-  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
+  const showAdvancedConfig = appConfig.devbox.features.advancedSettings;
 
   const allTabs = [
     {
@@ -45,13 +45,13 @@ const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
     : allTabs.filter((tab) => tab.value !== 'advancedConfig');
 
   return (
-    <div className="shadow-xs flex flex-col rounded-xl border-[0.5px] border-zinc-200 bg-white p-2">
+    <div className="flex flex-col rounded-xl border-[0.5px] border-zinc-200 bg-white p-2 shadow-xs">
       <div className="flex flex-col items-start gap-2">
         {tabs.map((tab) => (
           <div
             key={tab.value}
             className={cn(
-              'w-15 flex cursor-pointer flex-col items-center gap-1 rounded-lg p-2 text-zinc-500 hover:bg-zinc-100',
+              'flex w-15 cursor-pointer flex-col items-center gap-1 rounded-lg p-2 text-zinc-500 hover:bg-zinc-100',
               currentTab === tab.value && 'bg-zinc-100 text-zinc-900'
             )}
             onClick={() => onTabChange(tab.value)}

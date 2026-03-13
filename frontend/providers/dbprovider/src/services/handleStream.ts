@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { AxiosRequestConfig } from 'axios';
 
 export const handleAxiosStream = async (props: AxiosRequestConfig, kubeconfig: string) => {
@@ -10,8 +11,8 @@ export const handleAxiosStream = async (props: AxiosRequestConfig, kubeconfig: s
         Authorization: encodeURIComponent(kubeconfig)
       }
     };
-    const doMain = process.env.MONITOR_URL || 'http://monitor-system.cloud.sealos.run';
-    const response = await fetch(`${doMain}${url}?${queryString}`, requestOptions).then((res) =>
+    const domain = Config().dbprovider.components.monitoring.url;
+    const response = await fetch(`${domain}${url}?${queryString}`, requestOptions).then((res) =>
       res.json()
     );
     return response;

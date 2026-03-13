@@ -37,12 +37,16 @@ import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
 import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@sealos/shared';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
-export const formData2Yamls = (data: AppEditType) => [
+export const formData2Yamls = (
+  data: AppEditType,
+  userDomains: { name: string; secretName: string }[]
+) => [
   {
     filename: 'service.yaml',
     value: json2Service(data)
@@ -68,7 +72,7 @@ export const formData2Yamls = (data: AppEditType) => [
     ? [
         {
           filename: 'ingress.yaml',
-          value: json2Ingress(data)
+          value: json2Ingress(data, userDomains)
         }
       ]
     : []),
@@ -101,6 +105,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { screenWidth, formSliderListConfig } = useGlobalStore();
+  const config = useClientAppConfig();
   const { userSourcePrice, loadUserSourcePrice } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
@@ -263,12 +268,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (data.networks?.[index]) {
           data.networks[index].customDomain = customDomain;
         }
-        const ingressYaml = json2Ingress(data);
+        const ingressYaml = json2Ingress(data, config.userDomains);
         setIsLoading(true);
         postDeployApp([ingressYaml], 'replace')
           .then(() => {
             toast({ status: 'success', title: t('Deployment Successful') });
-            formOldYamls.current = formData2Yamls(data);
+            formOldYamls.current = formData2Yamls(data, config.userDomains);
           })
           .catch((err) => {
             toast({ status: 'error', title: getErrText(err) });
@@ -310,14 +315,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (!res) return;
         console.log(res, 'init res');
         oldAppEditData.current = res;
-        formOldYamls.current = formData2Yamls(res);
+        formOldYamls.current = formData2Yamls(res, config.userDomains);
         crOldYamls.current = res.crYamlList;
 
         setExistingStores(res.storeList);
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
-        setYamlList(formData2Yamls(realTimeForm.current));
+        setYamlList(formData2Yamls(realTimeForm.current, config.userDomains));
       },
       onError(err) {
         toast({
@@ -334,7 +339,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   useEffect(() => {
     if (tabType === 'yaml') {
       try {
-        setYamlList(formData2Yamls(realTimeForm.current));
+        setYamlList(formData2Yamls(realTimeForm.current, config.userDomains));
       } catch (error) {}
     }
   }, [router.query.name, tabType]);
@@ -392,21 +397,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       (formHook.formState.defaultValues?.hpa?.use
         ? formHook.formState.defaultValues?.hpa?.maxReplicas
         : Number.isSafeInteger(formHook.formState.defaultValues?.replicas)
-          ? (formHook.formState.defaultValues?.replicas as number)
-          : 1) ?? 1;
+        ? (formHook.formState.defaultValues?.replicas as number)
+        : 1) ?? 1;
 
     const newReplicas = realTimeForm.current.hpa.use
       ? realTimeForm.current.hpa.maxReplicas
       : Number.isSafeInteger(realTimeForm.current.replicas)
-        ? (realTimeForm.current.replicas as number)
-        : 1;
+      ? (realTimeForm.current.replicas as number)
+      : 1;
 
     const oldGpuCount =
       formHook.formState.defaultValues?.gpu?.type === ''
         ? 0
-        : (formHook.formState.defaultValues?.gpu?.amount ?? 0);
+        : formHook.formState.defaultValues?.gpu?.amount ?? 0;
     const newGpuCount =
-      realTimeForm.current.gpu?.type === '' ? 0 : (realTimeForm.current.gpu?.amount ?? 0);
+      realTimeForm.current.gpu?.type === '' ? 0 : realTimeForm.current.gpu?.amount ?? 0;
 
     return {
       cpu: isEdit
@@ -443,7 +448,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const doSubmit = useCallback(() => {
     formHook.handleSubmit(async (data) => {
-      const parseYamls = formData2Yamls(data);
+      const parseYamls = formData2Yamls(data, config.userDomains);
       setYamlList(parseYamls);
 
       // gpu inventory check

@@ -10,6 +10,7 @@ import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import { devboxDB } from '@/services/db/init';
 import { ProtocolType } from '@/types/devbox';
 import { adaptDevboxVersionListItem } from '@/utils/adapt';
+import { Config } from '@/config';
 import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,7 @@ export async function POST(
   { params }: { params: { name: string; tag: string } }
 ) {
   try {
+    const config = Config();
     const { name: devboxName, tag } = DeployDevboxPathParamsSchema.parse(params);
     const cpu = 2000;
     const memory = 2048;
@@ -31,24 +33,6 @@ export async function POST(
     const { namespace, k8sCore, k8sNetworkingApp, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
-
-    if (!process.env.SEALOS_DOMAIN) {
-      return sendError({
-        status: 500,
-        type: ErrorType.INTERNAL_ERROR,
-        code: ErrorCode.INTERNAL_ERROR,
-        message: 'SEALOS_DOMAIN environment variable is not configured'
-      });
-    }
-
-    if (!process.env.REGISTRY_ADDR) {
-      return sendError({
-        status: 500,
-        type: ErrorType.INTERNAL_ERROR,
-        code: ErrorCode.INTERNAL_ERROR,
-        message: 'REGISTRY_ADDR environment variable is not configured'
-      });
-    }
 
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
@@ -75,7 +59,7 @@ export async function POST(
     }
 
     const appName = `${devboxName}-release-${nanoid()}`;
-    const image = `${process.env.REGISTRY_ADDR}/${namespace}/${devboxName}:${tag}`;
+    const image = `${config.devbox.runtime.registryHost}/${namespace}/${devboxName}:${tag}`;
 
     const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
@@ -149,7 +133,7 @@ export async function POST(
           openPublicDomain: true,
           publicDomain: `${nanoid()}`,
           customDomain: '',
-          domain: process.env.INGRESS_DOMAIN || '',
+          domain: config.devbox.userDomain.domain,
           port: svcport.port,
           appProtocol: ingressInfo?.protocol as ProtocolType
         };
@@ -188,7 +172,7 @@ export async function POST(
       }
     };
     const fetchResponse = await fetch(
-      `https://applaunchpad.${process.env.SEALOS_DOMAIN}/api/v1alpha/createApp`,
+      config.devbox.components.appLaunchpad.url + '/api/v1alpha/createApp',
       {
         method: 'POST',
         headers: {

@@ -15,7 +15,6 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
 import { cn } from '@sealos/shadcn-ui';
-import { useEnvStore } from '@/stores/env';
 import { useGuideStore } from '@/stores/guide';
 import { IDEType, useIDEStore } from '@/stores/ide';
 import { getSSHConnectionInfo, getDevboxPorts, updateDevboxWebIDEPort } from '@/api/devbox';
@@ -29,6 +28,7 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { usePathname } from '@/i18n';
 import { track } from '@sealos/gtm';
 import { useConfirm } from '@/hooks/useConfirm';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export interface SSHConnectionData {
   devboxName: string;
@@ -73,7 +73,7 @@ const IDEButton = memo(
   }: IDEButtonProps) => {
     const t = useTranslations();
 
-    const { env } = useEnvStore();
+    const appConfig = useClientAppConfig();
     const { getDevboxIDEByDevboxName, updateDevboxIDE } = useIDEStore();
 
     const [loading, setLoading] = useState(false);
@@ -88,7 +88,7 @@ const IDEButton = memo(
     const { openConfirm, ConfirmChild } = useConfirm({
       title: 'prompt',
       content: 'webide_fee_warning',
-      contentParams: { port: env.webIdePort },
+      contentParams: { port: appConfig.devbox.runtime.webidePort },
       confirmText: 'confirm',
       cancelText: 'cancel'
     });
@@ -119,7 +119,9 @@ const IDEButton = memo(
           if (currentIDE === 'webide') {
             const portsResponse = await getDevboxPorts(devboxName);
             const existingPorts = portsResponse.ports || [];
-            const webIdePortConfig = existingPorts.find((p) => p.number === env.webIdePort);
+            const webIdePortConfig = existingPorts.find(
+              (p) => p.number === appConfig.devbox.runtime.webidePort
+            );
 
             if (
               webIdePortConfig &&
@@ -133,7 +135,10 @@ const IDEButton = memo(
 
             const executeWebIDE = async () => {
               toast.info('Creating Web IDE network...');
-              const response = await updateDevboxWebIDEPort(devboxName, env.webIdePort);
+              const response = await updateDevboxWebIDEPort(
+                devboxName,
+                appConfig.devbox.runtime.webidePort
+              );
 
               if (response.publicDomain) {
                 const webIDEUrl = `https://${response.publicDomain}/?folder=/home/devbox/project`;
@@ -159,9 +164,9 @@ const IDEButton = memo(
             userName,
             token,
             workingDir,
-            host: env.sshDomain,
+            host: appConfig.devbox.runtime.sshDomain,
             port: sshPort.toString(),
-            configHost: `${env.sshDomain}_${env.namespace}_${devboxName}`
+            configHost: `${appConfig.devbox.runtime.sshDomain}_${appConfig.devbox.runtime.defaultNamespace}_${devboxName}`
           });
 
           if (currentIDE === 'gateway') {
@@ -177,11 +182,11 @@ const IDEButton = memo(
 
           const idePrefix = ideObj[currentIDE].prefix;
           const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
-            `${userName}@${env.sshDomain}`
+            `${userName}@${appConfig.devbox.runtime.sshDomain}`
           )}&sshPort=${encodeURIComponent(sshPort)}&base64PrivateKey=${encodeURIComponent(
             base64PrivateKey
           )}&sshHostLabel=${encodeURIComponent(
-            `${env.sshDomain}_${env.namespace}_${devboxName}`
+            `${appConfig.devbox.runtime.sshDomain}_${appConfig.devbox.runtime.defaultNamespace}_${devboxName}`
           )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(token)}`;
           window.location.href = fullUri;
         } catch (error: any) {
@@ -195,10 +200,9 @@ const IDEButton = memo(
         t,
         devboxName,
         runtimeType,
-        env.sealosDomain,
-        env.sshDomain,
-        env.namespace,
-        env.webIdePort,
+        appConfig.devbox.runtime.sshDomain,
+        appConfig.devbox.runtime.defaultNamespace,
+        appConfig.devbox.runtime.webidePort,
         sshPort,
         setGuideIDE,
         openConfirm
@@ -262,10 +266,10 @@ const IDEButton = memo(
                 <div
                   className={cn(
                     'space-y-1',
-                    env.currencySymbol === 'usd' ? 'w-[160px]' : 'w-[230px]'
+                    appConfig.devbox.ui.currencySymbol === 'usd' ? 'w-[160px]' : 'w-[230px]'
                   )}
                 >
-                  {getLeftColumnItems(env.currencySymbol).map((item) =>
+                  {getLeftColumnItems(appConfig.devbox.ui.currencySymbol).map((item) =>
                     item.group ? (
                       <div key={item.value} className="flex gap-1">
                         {item.options?.map((option, index) => (
@@ -274,7 +278,7 @@ const IDEButton = memo(
                               className={cn(
                                 index === 0 ? 'w-[140px]' : 'w-[80px]',
                                 'text-zinc-600',
-                                index === 0 && 'pl-2 pr-1',
+                                index === 0 && 'pr-1 pl-2',
                                 index === 1 && 'pr-2 text-zinc-600',
                                 currentIDE === option.value && 'text-zinc-900'
                               )}
@@ -290,7 +294,7 @@ const IDEButton = memo(
                                   alt={option.value}
                                   src={`/images/ide/${option.value}.svg`}
                                 />
-                                <span className="whitespace-nowrap text-sm">
+                                <span className="text-sm whitespace-nowrap">
                                   {option.menuLabel}
                                 </span>
                                 {currentIDE === option.value && (
@@ -332,7 +336,10 @@ const IDEButton = memo(
                 <div className="mx-1.5 w-px bg-gray-200"></div>
                 {/* right column */}
                 <div className="h-20 w-[230px] space-y-1">
-                  {getRightColumnItems(env.currencySymbol, env.enableWebideFeature).map((item) =>
+                  {getRightColumnItems(
+                    appConfig.devbox.ui.currencySymbol,
+                    appConfig.devbox.features.webide
+                  ).map((item) =>
                     item.group ? (
                       <div key={item.value} className="flex gap-1">
                         {item.options?.map((option, index) => (
@@ -340,7 +347,7 @@ const IDEButton = memo(
                             <DropdownMenuItem
                               className={cn(
                                 'w-[110px] text-zinc-600',
-                                index === 0 && 'pl-2 pr-1',
+                                index === 0 && 'pr-1 pl-2',
                                 index === 1 && 'pr-2 text-zinc-600',
                                 currentIDE === option.value && 'text-zinc-900'
                               )}
@@ -505,7 +512,7 @@ export const ideObj = {
   }
 } as const;
 
-const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
+const getLeftColumnItems = (currencySymbol: 'shellCoin' | 'cny' | 'usd'): MenuItem[] => {
   if (currencySymbol === 'usd') {
     return [
       { value: 'zed', menuLabel: 'Zed' },
@@ -540,7 +547,10 @@ const getLeftColumnItems = (currencySymbol: string): MenuItem[] => {
     }
   ];
 };
-const getRightColumnItems = (currencySymbol: string, enableWebideFeature: string): MenuItem[] => {
+const getRightColumnItems = (
+  currencySymbol: 'shellCoin' | 'cny' | 'usd',
+  enableWebideFeature: boolean
+): MenuItem[] => {
   if (currencySymbol === 'usd') {
     return [
       { value: 'cursor', menuLabel: 'Cursor' },
@@ -562,13 +572,12 @@ const getRightColumnItems = (currencySymbol: string, enableWebideFeature: string
     value: 'vscode-group',
     menuLabel: 'VSCode',
     group: 'vscode',
-    options:
-      enableWebideFeature === 'true'
-        ? [
-            { value: 'vscode' as IDEType, menuLabel: 'VS Code' },
-            { value: 'webide' as IDEType, menuLabel: 'Online' }
-          ]
-        : [{ value: 'vscode' as IDEType, menuLabel: 'VS Code' }]
+    options: enableWebideFeature
+      ? [
+          { value: 'vscode' as IDEType, menuLabel: 'VS Code' },
+          { value: 'webide' as IDEType, menuLabel: 'Online' }
+        ]
+      : [{ value: 'vscode' as IDEType, menuLabel: 'VS Code' }]
   };
 
   const items: MenuItem[] = [

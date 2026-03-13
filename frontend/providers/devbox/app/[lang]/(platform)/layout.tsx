@@ -10,7 +10,7 @@ import { useLocale } from 'next-intl';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 
 import { initUser } from '@/api/template';
-import { useEnvStore } from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useUserStore } from '@/stores/user';
 import { useConfirm } from '@/hooks/useConfirm';
 import { usePriceStore } from '@/stores/price';
@@ -33,7 +33,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   });
   const queryClient = useQueryClient();
 
-  const { setEnv, env } = useEnvStore();
+  const appConfig = useClientAppConfig();
   const { loadUserDebt, setSession } = useUserStore();
   const { setSourcePrice } = usePriceStore();
   const { setScreenWidth, setLastRoute, setInitialized } = useGlobalStore();
@@ -67,7 +67,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           cleanSession();
           openConfirm(() => {
-            window.open(`https://${env.sealosDomain}`, '_self');
+            window.open(`https://${appConfig.cloud.domain}`, '_self');
           })();
         }
       }
@@ -80,7 +80,6 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     if (!init) return;
     setSourcePrice();
     loadUserDebt();
-    setEnv();
     const changeI18n = async (data: any) => {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;

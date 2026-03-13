@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=config.schema.json
+cloud:
+  domain: cloud.example.io
+  port: 443
+  desktopDomain: cloud.example.io
+  userDomains:
+    - name: cloud.example.io
+      secretName: wildcard-cert
+
+launchpad:
+  infrastructure:
+    provider: 'alibaba'
+    requiresIcpReg: false
+    icpRegQueryLink: 'https://beian.miit.gov.cn/#/Integrated/index'
+    domainBindingDocumentationLink: null
+
+  ui:
+    currencySymbol: shellCoin
+    meta:
+      title: 'Sealos App Launchpad'
+      description: 'Deploy and manage your applications on Sealos'
+      scripts: []
+    appResourceFormSliderConfig:
+      default:
+        cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
+        memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+
+  components:
+    monitoring:
+      url: http://launchpad-monitor.sealos.svc.cluster.local:8428
+    billing:
+      url: http://account-service.account-system.svc:2333
+    logging:
+      enabled: true
+      url: http://log-service.sealos.svc.cluster.local:8080
+    eventAnalysis:
+      enabled: false
+      url: https://fastgpt.run/api/openapi/v1
+      fastGPTKey: ''
+
+  features:
+    guide: false
+    api: false
+    gpu: false
+
+  checkIcpReg:
+    enabled: false
+    endpoint: ''
+    accessKeyID: ''
+    accessKeySecret: ''
+
+  analytics:
+    gtm:
+      enabled: false
+      gtmId: ''
+
+  fileManager:
+    uploadLimit: 50
+    downloadLimit: 100
+
+  domainChallengeSecret: default-dev-secret-change-in-production
+  pvcStorageMax: 100

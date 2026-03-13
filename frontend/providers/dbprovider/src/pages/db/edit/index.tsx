@@ -46,7 +46,7 @@ import StopBackupModal from '../detail/components/StopBackupModal';
 import { resourcePropertyMap, useUserQuota, useQuotaGuarded } from '@sealos/shared';
 import { distributeResources } from '@/utils/database';
 import MyIcon from '@/components/Icon';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { AutoBackupFormType } from '@/types/backup';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -62,7 +62,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const defaultEdit = {
     ...defaultDBEditValue,
@@ -70,7 +70,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     autoBackup: {
       ...defaultDBEditValue.autoBackup,
       // Enable backup only when the flag is set.
-      start: SystemEnv.BACKUP_ENABLED
+      start: config.backupEnabled
     } satisfies Partial<AutoBackupFormType> as AutoBackupFormType | undefined
   };
 
@@ -259,7 +259,9 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           ]),
       {
         filename: 'cluster.yaml',
-        value: json2CreateCluster(data)
+        value: json2CreateCluster(data, undefined, {
+          storageClassName: config.forcedStorageClassName
+        })
       }
     ];
   };
@@ -420,7 +422,9 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         setYamlList([
           {
             filename: 'cluster.yaml',
-            value: json2CreateCluster(defaultEdit)
+            value: json2CreateCluster(defaultEdit, undefined, {
+              storageClassName: config.forcedStorageClassName
+            })
           },
           {
             filename: 'account.yaml',

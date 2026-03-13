@@ -1,5 +1,6 @@
 import { decode, JwtPayload, sign, verify } from 'jsonwebtoken';
 import { ERROR_ENUM } from '../error';
+import { Config } from '@/config';
 
 interface CustomJwtPayload extends JwtPayload {
   namespace: string;
@@ -26,7 +27,7 @@ export const authSessionWithDesktopJWT = async (headers: Headers) => {
   if (!token) return Promise.reject(ERROR_ENUM.unAuthorization);
   const payload = await verifyToken<{ workspaceId: string }>(
     token,
-    process.env.JWT_SECRET as string
+    Config().devbox.security.jwtSecret
   );
   if (!payload) return Promise.reject(ERROR_ENUM.unAuthorization);
   return {
@@ -44,7 +45,7 @@ export const authSessionWithJWT = async (headers: Headers) => {
     organizationUid: string;
     userUid: string;
     regionUid: string;
-  }>(token, process.env.JWT_SECRET as string);
+  }>(token, Config().devbox.security.jwtSecret);
   if (!payload) return Promise.reject(ERROR_ENUM.unAuthorization);
   return {
     kubeConfig,
@@ -57,7 +58,7 @@ export const generateDevboxToken = (payload: {
   organizationUid: string;
   userUid: string;
   regionUid: string;
-}) => sign(payload, process.env.JWT_SECRET as string, { expiresIn: '7d' });
+}) => sign(payload, Config().devbox.security.jwtSecret, { expiresIn: '7d' });
 
 export const getPayloadWithoutVerification = <T = CustomJwtPayload>(
   headers: Headers

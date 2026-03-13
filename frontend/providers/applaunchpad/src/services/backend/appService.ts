@@ -1,6 +1,6 @@
 import { appDeployKey, pauseKey, minReplicasKey, maxReplicasKey } from '@/constants/app';
 import { formData2Yamls } from '@/pages/app/edit';
-import { serverLoadInitData } from '@/store/static';
+import { Config } from '@/config';
 import { AppEditType } from '@/types/app';
 import { json2HPA } from '@/utils/deployYaml2Json';
 import { str2Num } from '@/utils/tools';
@@ -107,16 +107,14 @@ export async function getAppByName(appName: string, k8s: K8sContext) {
  * @param k8s Kubernetes context containing clients and configuration
  */
 export async function createApp(appForm: AppEditType, k8s: K8sContext) {
-  serverLoadInitData();
-
   const { applyYamlList } = k8s;
 
   appForm.networks = appForm.networks.map((network: any) => ({
     ...network,
-    domain: global.AppConfig.cloud.domain
+    domain: Config().cloud.domain
   }));
 
-  const parseYamls = formData2Yamls(appForm);
+  const parseYamls = formData2Yamls(appForm, Config().cloud.userDomains);
   const yamls = parseYamls.map((item) => item.value);
 
   await applyYamlList(yamls, 'create');
@@ -804,9 +802,10 @@ export async function processAppResponse<T extends boolean = true>(
     .filter((item): item is DeployKindsType => item !== null)
     .flat() as DeployKindsType[];
 
+  const _config = Config();
   const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
-    SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-    SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
+    domain: _config.cloud.domain,
+    userDomains: _config.cloud.userDomains
   });
 
   if (transform === false) {
