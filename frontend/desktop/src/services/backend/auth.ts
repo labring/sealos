@@ -20,7 +20,6 @@ const internalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.internal || '
 const ACCESS_TOKEN_TYPE = 'access_token' as const;
 const REFRESH_TOKEN_TYPE = 'refresh_token' as const;
 export const GLOBAL_TOKEN_CLIENT_ID = 'global-auth' as const;
-export const LEGACY_GLOBAL_TOKEN_CLIENT_ID = 'desktop-legacy-global-auth' as const;
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.length > 0;
@@ -196,8 +195,8 @@ export const signGlobalToken = (props: GlobalJwtClaims, expiresIn?: string) => {
  */
 export const generateLegacyGlobalToken = (props: GlobalTokenPayload, expiresIn?: string) => {
   const payload = {
-    ...props,
-    client_id: LEGACY_GLOBAL_TOKEN_CLIENT_ID
+    ...props
+    // [FIXME] Should have a client_id in here but external services will reject the additional claim.
   };
 
   return sign(payload, globalJwtSecret(), { expiresIn: expiresIn ?? '7d' });
