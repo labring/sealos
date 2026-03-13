@@ -1685,73 +1685,20 @@ export const json2ParameterConfig = (
     }
 
     if (parameterConfig?.timeZone) {
-      mysqlParams['default-time-zone'] = String(parameterConfig.timeZone);
+      // MySQL prefers numeric offsets in most clusters (avoid relying on timezone tables).
+      if (parameterConfig.timeZone === 'UTC') {
+        mysqlParams['default-time-zone'] = '+00:00';
+      } else if (parameterConfig.timeZone === 'Asia/Shanghai') {
+        mysqlParams['default-time-zone'] = '+08:00';
+      } else {
+        mysqlParams['default-time-zone'] = String(parameterConfig.timeZone);
+      }
     }
 
     // Do not automatically set a value for (existing) databases.
     if (parameterConfig?.lowerCaseTableNames) {
       mysqlParams['lower_case_table_names'] = String(parameterConfig.lowerCaseTableNames);
     }
-
-    // Check if this is MySQL 5.7.42 version
-    // 临时废弃 mysql-5.7.42
-    // if (dbVersion === 'mysql-5.7.42') {
-    //   if (parameterConfig?.timeZone === 'UTC') {
-    //     mysqlParams['default-time-zone'] = '+00:00';
-    //   } else if (parameterConfig?.timeZone === 'Asia/Shanghai') {
-    //     mysqlParams['default-time-zone'] = '+08:00';
-    //   }
-
-    //   const replicationItem: any = {
-    //     ...(Object.keys(mysqlParams).length > 0 && {
-    //       configFileParams: {
-    //         'my.cnf': {
-    //           parameters: mysqlParams
-    //         }
-    //       }
-    //     }),
-    //     configSpec: {
-    //       constraintRef: 'oracle-mysql8.0-config-constraints',
-    //       name: 'mysql-replication-config',
-    //       namespace: 'kb-system',
-    //       templateRef: 'oracle-mysql5.7-config-template',
-    //       volumeName: 'mysql-config'
-    //     },
-    //     name: 'mysql-replication-config'
-    //   };
-
-    //   const template = {
-    //     apiVersion: 'apps.kubeblocks.io/v1alpha1',
-    //     kind: 'Configuration',
-    //     metadata: {
-    //       labels: {
-    //         'app.kubernetes.io/instance': dbName,
-    //         'app.kubernetes.io/managed-by': 'kubeblocks'
-    //       },
-    //       name: `${dbName}-mysql`,
-    //       namespace: getUserNamespace()
-    //     },
-    //     spec: {
-    //       clusterRef: dbName,
-    //       componentName: 'mysql',
-    //       configItemDetails: [
-    //         replicationItem,
-    //         {
-    //           configSpec: {
-    //             defaultMode: 292,
-    //             name: 'agamotto-configuration',
-    //             namespace: 'kb-system',
-    //             templateRef: 'mysql-agamotto-configuration',
-    //             volumeName: 'agamotto-configuration'
-    //           },
-    //           name: 'agamotto-configuration'
-    //         }
-    //       ]
-    //     }
-    //   };
-
-    //   return yaml.dump(template);
-    // }
 
     // Default MySQL 8.0 configuration for other versions
     const consensusItem = {

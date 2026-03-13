@@ -273,13 +273,10 @@ const Form = ({
   );
 
   const [dbType, dbVersion] = watch(['dbType', 'dbVersion']);
+  const isMysql5742 = dbVersion === 'mysql-5.7.42';
   const supportParameterConfig = useMemo(() => {
-    if (dbType === 'mysql' && dbVersion === 'mysql-5.7.42') {
-      return false;
-    }
-
     return ['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(dbType);
-  }, [dbType, dbVersion]);
+  }, [dbType]);
 
   const navList: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] =
     useMemo(() => {
@@ -1154,89 +1151,91 @@ const Form = ({
                         </Tr>
                       </Thead>
                       <Tbody>
-                        <Tr>
-                          <Td w="350px">
-                            <Text fontSize={'14px'} color={'grayModern.900'}>
-                              {getParaName(getValues('dbType'))}
-                            </Text>
-                          </Td>
-                          <Td>
-                            <Flex alignItems={'center'} gap={'8px'}>
-                              {editingParam === 'maxConnections' ? (
-                                <Input
-                                  value={
-                                    isMaxConnectionsCustomized
+                        {!isMysql5742 && (
+                          <Tr>
+                            <Td w="350px">
+                              <Text fontSize={'14px'} color={'grayModern.900'}>
+                                {getParaName(getValues('dbType'))}
+                              </Text>
+                            </Td>
+                            <Td>
+                              <Flex alignItems={'center'} gap={'8px'}>
+                                {editingParam === 'maxConnections' ? (
+                                  <Input
+                                    value={
+                                      isMaxConnectionsCustomized
+                                        ? maxConnections
+                                        : getScore(getValues('dbType'))
+                                    }
+                                    size="sm"
+                                    type="number"
+                                    borderRadius={'md'}
+                                    borderColor={'#E8EBF0'}
+                                    bg={'#F7F8FA'}
+                                    width={'120px'}
+                                    _focusVisible={{
+                                      borderColor: 'brightBlue.500',
+                                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                                      bg: '#FFF',
+                                      color: '#111824'
+                                    }}
+                                    _hover={{
+                                      borderColor: 'brightBlue.300'
+                                    }}
+                                    onBlur={() => setEditingParam(null)}
+                                    onChange={(e) => {
+                                      setValue('parameterConfig', {
+                                        ...getValues('parameterConfig'),
+                                        maxConnections: e.target.value,
+                                        isMaxConnectionsCustomized: true
+                                      });
+                                    }}
+                                  />
+                                ) : (
+                                  <Text fontSize={'12px'} color={'grayModern.600'}>
+                                    {isMaxConnectionsCustomized
                                       ? maxConnections
-                                      : getScore(getValues('dbType'))
-                                  }
-                                  size="sm"
-                                  type="number"
-                                  borderRadius={'md'}
-                                  borderColor={'#E8EBF0'}
-                                  bg={'#F7F8FA'}
-                                  width={'120px'}
-                                  _focusVisible={{
-                                    borderColor: 'brightBlue.500',
-                                    boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                                    bg: '#FFF',
-                                    color: '#111824'
-                                  }}
-                                  _hover={{
-                                    borderColor: 'brightBlue.300'
-                                  }}
-                                  onBlur={() => setEditingParam(null)}
-                                  onChange={(e) => {
-                                    setValue('parameterConfig', {
-                                      ...getValues('parameterConfig'),
-                                      maxConnections: e.target.value,
-                                      isMaxConnectionsCustomized: true
-                                    });
-                                  }}
-                                />
-                              ) : (
-                                <Text fontSize={'12px'} color={'grayModern.600'}>
-                                  {isMaxConnectionsCustomized
-                                    ? maxConnections
-                                    : getScore(getValues('dbType'))}
-                                </Text>
-                              )}
-                              <MyIcon
-                                name="edit"
-                                w={'16px'}
-                                h={'16px'}
-                                color={'grayModern.500'}
-                                cursor={'pointer'}
-                                _hover={{
-                                  color: 'brightBlue.500'
-                                }}
-                                onClick={() =>
-                                  setEditingParam(
-                                    editingParam === 'maxConnections' ? null : 'maxConnections'
-                                  )
-                                }
-                              />
-                              {isMaxConnectionsCustomized && (
+                                      : getScore(getValues('dbType'))}
+                                  </Text>
+                                )}
                                 <MyIcon
-                                  name="delete"
-                                  w={'14px'}
-                                  h={'14px'}
-                                  color={'grayModern.400'}
+                                  name="edit"
+                                  w={'16px'}
+                                  h={'16px'}
+                                  color={'grayModern.500'}
                                   cursor={'pointer'}
                                   _hover={{
                                     color: 'brightBlue.500'
                                   }}
-                                  onClick={() => {
-                                    setValue('parameterConfig', {
-                                      ...getValues('parameterConfig'),
-                                      maxConnections: undefined,
-                                      isMaxConnectionsCustomized: false
-                                    });
-                                  }}
+                                  onClick={() =>
+                                    setEditingParam(
+                                      editingParam === 'maxConnections' ? null : 'maxConnections'
+                                    )
+                                  }
                                 />
-                              )}
-                            </Flex>
-                          </Td>
-                        </Tr>
+                                {isMaxConnectionsCustomized && (
+                                  <MyIcon
+                                    name="delete"
+                                    w={'14px'}
+                                    h={'14px'}
+                                    color={'grayModern.400'}
+                                    cursor={'pointer'}
+                                    _hover={{
+                                      color: 'brightBlue.500'
+                                    }}
+                                    onClick={() => {
+                                      setValue('parameterConfig', {
+                                        ...getValues('parameterConfig'),
+                                        maxConnections: undefined,
+                                        isMaxConnectionsCustomized: false
+                                      });
+                                    }}
+                                  />
+                                )}
+                              </Flex>
+                            </Td>
+                          </Tr>
+                        )}
 
                         {/* maxmemory parameter for Redis only */}
                         {getValues('dbType') === DBTypeEnum.redis && (
@@ -1313,7 +1312,8 @@ const Form = ({
                         {/* lower_case_table_names parameter for MySQL only */}
                         {(getValues('dbType') === DBTypeEnum.mysql ||
                           getValues('dbType') === DBTypeEnum.notapemysql) &&
-                          !isEdit && (
+                          !isEdit &&
+                          !isMysql5742 && (
                             <Tr>
                               <Td w="350px">
                                 <Text fontSize={'14px'} color={'grayModern.900'}>

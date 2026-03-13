@@ -73,14 +73,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Handle parameter configuration updates
       if (['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-        if (!(dbForm.dbType === 'mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
+        const isMysql5742 = dbForm.dbVersion === 'mysql-5.7.42';
+        const tz = dbForm.parameterConfig?.timeZone;
+        const shouldApplyOnlyTimezone = isMysql5742 && !!tz;
+
+        // For MySQL 5.7.42, only configure default-time-zone (derived from timeZone).
+        if (!isMysql5742 || shouldApplyOnlyTimezone) {
           try {
-            const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+            const dynamicMaxConnections = isMysql5742
+              ? undefined
+              : getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
             const configYaml = json2ParameterConfig(
               dbForm.dbName,
               dbForm.dbType,
               dbForm.dbVersion,
-              dbForm.parameterConfig,
+              isMysql5742 ? { timeZone: tz as string } : dbForm.parameterConfig,
               dynamicMaxConnections
             );
             await applyYamlList([configYaml], 'replace');
@@ -140,15 +147,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const yamlList = [account, cluster];
 
     if (['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-      // MySQL 5.7.42 version should not apply parameter config
-      if (!(dbForm.dbType === 'mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
-        const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+      const isMysql5742 = dbForm.dbVersion === 'mysql-5.7.42';
+      const tz = dbForm.parameterConfig?.timeZone;
+      const shouldApplyOnlyTimezone = isMysql5742 && !!tz;
+
+      // For MySQL 5.7.42, only configure default-time-zone (derived from timeZone).
+      if (!isMysql5742 || shouldApplyOnlyTimezone) {
+        const dynamicMaxConnections = isMysql5742
+          ? undefined
+          : getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
 
         const config = json2ParameterConfig(
           dbForm.dbName,
           dbForm.dbType,
           dbForm.dbVersion,
-          dbForm.parameterConfig,
+          isMysql5742 ? { timeZone: tz as string } : dbForm.parameterConfig,
           dynamicMaxConnections
         );
         yamlList.unshift(config);

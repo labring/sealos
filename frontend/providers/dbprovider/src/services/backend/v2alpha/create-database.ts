@@ -138,19 +138,26 @@ export async function createDatabase(
   const yamlList = [account, cluster];
 
   if (['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
-    if (!(rawDbForm.dbType === 'mysql' && rawDbForm.dbVersion === 'mysql-5.7.42')) {
-      let dynamicMaxConnections: number = 0;
-      try {
-        dynamicMaxConnections = getScore(rawDbForm.dbType, rawDbForm.cpu, rawDbForm.memory);
-      } catch (error) {
-        dynamicMaxConnections = 0;
+    const isMysql5742 = rawDbForm.dbVersion === 'mysql-5.7.42';
+    const tz = rawDbForm.parameterConfig?.timeZone;
+    const shouldApplyOnlyTimezone = isMysql5742 && !!tz;
+
+    // For MySQL 5.7.42, only configure default-time-zone (derived from timeZone).
+    if (!isMysql5742 || shouldApplyOnlyTimezone) {
+      let dynamicMaxConnections: number | undefined = undefined;
+      if (!isMysql5742) {
+        try {
+          dynamicMaxConnections = getScore(rawDbForm.dbType, rawDbForm.cpu, rawDbForm.memory);
+        } catch (error) {
+          dynamicMaxConnections = 0;
+        }
       }
 
       const config = json2ParameterConfig(
         rawDbForm.dbName,
         rawDbForm.dbType,
         rawDbForm.dbVersion,
-        rawDbForm.parameterConfig || {},
+        isMysql5742 ? { timeZone: tz as string } : rawDbForm.parameterConfig || {},
         dynamicMaxConnections
       );
 
