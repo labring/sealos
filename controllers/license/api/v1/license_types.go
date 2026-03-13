@@ -58,6 +58,7 @@ type LicenseStatus struct {
 	//+kubebuilder:validation:Enum=Pending;Failed;Active;Expired;Invalid;Mismatch
 	//+kubebuilder:default=Pending
 	Phase          LicenseStatusPhase `json:"phase,omitempty"`
+	Code           ValidationCode     `json:"code,omitempty"`
 	Reason         string             `json:"reason,omitempty"`
 	ActivationTime metav1.Time        `json:"activationTime,omitempty"`
 	ExpirationTime metav1.Time        `json:"expirationTime,omitempty"`
