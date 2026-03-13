@@ -304,7 +304,7 @@ func (r *UserReconciler) syncNamespace(
 			}
 			ns.Annotations[userAnnotationCreatorKey] = user.Name
 			ns.Annotations[userAnnotationOwnerKey] = user.Annotations[userAnnotationOwnerKey]
-			if ns.Name != "admin" {
+			if ns.Name != "ns-admin" {
 				ns.Labels = config.SetPodSecurity(ns.Labels)
 			} else {
 				for k := range ns.Labels {
