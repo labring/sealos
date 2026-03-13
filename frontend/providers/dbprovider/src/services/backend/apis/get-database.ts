@@ -11,10 +11,10 @@ type DatabaseDetail = z.infer<typeof dbDetailV1Schema>;
 type ComponentSpec = NonNullable<KbPgClusterType['spec']>['componentSpecs'][number];
 
 function parseDbType(cluster: KbPgClusterType): string {
-  const rawDbType =
+  return (
     (cluster?.metadata?.labels?.['clusterdefinition.kubeblocks.io/name'] as string | undefined) ??
-    'postgresql';
-  return rawDbType === 'mysql' ? 'apecloud-mysql' : rawDbType;
+    'postgresql'
+  );
 }
 
 function calcTotalResource(componentSpecs: ComponentSpec[] = []) {

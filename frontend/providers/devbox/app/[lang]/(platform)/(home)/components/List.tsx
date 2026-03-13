@@ -301,7 +301,7 @@ const DevboxList = ({
               <div
                 key={header.id}
                 style={{ width: header.getSize() }}
-                className="flex-shrink-0 flex-grow-1"
+                className="flex-grow-1 flex-shrink-0"
               >
                 {flexRender(header.column.columnDef.header, header.getContext())}
               </div>
@@ -321,7 +321,7 @@ const DevboxList = ({
                   <div
                     key={cell.id}
                     style={{ width: cell.column.getSize() }}
-                    className="flex-shrink-0 flex-grow-1"
+                    className="flex-grow-1 flex-shrink-0"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </div>

@@ -63,6 +63,9 @@ export const createDB = (payload: {
   backupInfo?: BackupItemType;
 }) => POST(`/api/createDB`, payload);
 
+export const restoreBackup = (payload: { databaseName: string; backupName: string }) =>
+  POST(`/api/restoreBackup`, payload);
+
 export const getDBEvents = (name: string) => GET(`/api/getDBEvents?name=${name}`);
 
 export const getDBSecret = (data: { dbName: string; dbType: DBType; mock?: boolean }) =>
@@ -111,6 +114,13 @@ export const getDBServiceByName = (name: string) =>
 
 export const delDBServiceByName = (name: string) => DELETE('/api/delServiceByName', { name });
 
+/**
+ * kb 0.9 StatefulSets have all been changed to instancesets
+ * @param name
+ * @param dbType
+ * @returns
+ * @deprecated
+ */
 export const getDBStatefulSetByName = (name: string, dbType: DBType) =>
   GET<V1StatefulSet>(`/api/getStatefulSetByName?name=${name}&dbType=${dbType}`);
 

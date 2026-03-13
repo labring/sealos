@@ -58,7 +58,7 @@ export default function ErrorModal({ isOpen, onClose, errorCode, errorMessage }:
           </DialogTitle>
         </DialogHeader>
 
-        <div className="max-h-[50vh] overflow-auto text-sm whitespace-pre-wrap">{errorMessage}</div>
+        <div className="max-h-[50vh] overflow-auto whitespace-pre-wrap text-sm">{errorMessage}</div>
 
         <DialogFooter>
           <Button onClick={handleConfirm}>{getButtonText()}</Button>

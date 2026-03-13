@@ -1,12 +1,5 @@
-import {
-  delDBServiceByName,
-  pauseDBByName,
-  restartDB,
-  startDBByName,
-  type DatabaseAlertItem
-} from '@/api/db';
+import { pauseDBByName, restartDB, startDBByName, type DatabaseAlertItem } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
-import MyIcon from '@/components/Icon';
 import { defaultDBDetail } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDBOperation } from '@/hooks/useDBOperation';
@@ -16,7 +9,7 @@ import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { Dispatch, useCallback, useState, useEffect } from 'react';
+import React, { Dispatch, useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
 import {
@@ -135,6 +128,9 @@ const Header = ({
             connectionUrl = `mongodb://${host}:${port}`;
             break;
           case 'apecloud-mysql':
+            connectionUrl = `jdbc:mysql://${host}:${port}`;
+            break;
+          case 'mysql':
             connectionUrl = `jdbc:mysql://${host}:${port}`;
             break;
           case 'postgresql':

@@ -287,7 +287,11 @@ export const storageFormatToGi = (value: string | undefined, defaultValue: numbe
  * print memory to Mi of Gi
  */
 export const printMemory = (val: number) => {
-  return val >= 1024 ? `${Math.round(val / 1024)} Gi` : `${val} Mi`;
+  const formatValue = (num: number) => {
+    const fixed = Number(num.toFixed(1));
+    return fixed % 1 === 0 ? fixed.toString() : fixed.toString();
+  };
+  return val >= 1024 ? `${formatValue(val / 1024)} Gi` : `${formatValue(val)} Mi`;
 };
 
 /**
@@ -580,7 +584,8 @@ export const getScore = (dbType: DBType, cpu: number, memory: number) => {
   if (
     dbType === DBTypeEnum.postgresql ||
     dbType === DBTypeEnum.mongodb ||
-    dbType === DBTypeEnum.mysql
+    dbType === DBTypeEnum.mysql ||
+    dbType === DBTypeEnum.notapemysql
   ) {
     score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
   } else if (dbType === DBTypeEnum.redis) {

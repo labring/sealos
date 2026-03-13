@@ -68,19 +68,25 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
   const compNum = Object.keys(resources).length;
   const dbName = DBTypeList.find((item) => item.id === data.dbType)?.label ?? '';
 
+  // Resource distribution descriptions for each DB type
   const descriptionMap: Map<DBType, string> = new Map([
     [DBTypeEnum.postgresql, t('occupy', { comp: 'PostgreSQL', num: '100%' })],
     [DBTypeEnum.mongodb, t('occupy', { comp: 'MongoDB', num: '100%' })],
     [DBTypeEnum.mysql, t('occupy', { comp: 'MySQL', num: '100%' })],
+    [DBTypeEnum.notapemysql, t('occupy', { comp: 'MySQL', num: '100%' })],
     [DBTypeEnum.redis, `${t('occupy', { comp: 'Redis', num: '100%' })}, ${t('ha_desc')}`],
-    [DBTypeEnum.kafka, `Controller, broker, exporter, server${t('each', { perc: '25%' })}`],
+    [
+      DBTypeEnum.kafka,
+      `controller 50%, kafka-broker, kafka-exporter ${t('each', { perc: '25%' })}`
+    ],
     [
       DBTypeEnum.milvus,
-      `${t('occupy', { comp: 'Etcd', num: '30%' })}, ${t('occupy', {
-        comp: 'milvus',
-        num: '40%'
-      })}, ${t('occupy', { comp: 'minio', num: '30%' })}`
-    ]
+      `${t('occupy', { comp: 'milvus', num: '50%' })}, ${t('occupy', {
+        comp: 'Etcd',
+        num: '25%'
+      })}, ${t('occupy', { comp: 'minio', num: '25%' })}`
+    ],
+    [DBTypeEnum.clickhouse, `clickhouse 50%, ch-keeper, zookeeper ${t('each', { perc: '25%' })}`]
   ]);
 
   return (
@@ -161,7 +167,7 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
                         <Td w="190px">{keyName}</Td>
                         <Td>{value.cpuMemory.limits.cpu}</Td>
                         <Td>{value.cpuMemory.limits.memory}</Td>
-                        <Td>{value.storage} G</Td>
+                        <Td>{value.storage === 0 ? '-' : `${value.storage} G`}</Td>
                         <Td>{value.other?.replicas ?? data.replicas}</Td>
                       </Tr>
                     );
@@ -267,13 +273,10 @@ const Form = ({
   );
 
   const [dbType, dbVersion] = watch(['dbType', 'dbVersion']);
+  const isMysql5742 = dbVersion === 'mysql-5.7.42';
   const supportParameterConfig = useMemo(() => {
-    if (dbType === 'apecloud-mysql' && dbVersion === 'mysql-5.7.42') {
-      return false;
-    }
-
-    return ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbType);
-  }, [dbType, dbVersion]);
+    return ['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(dbType);
+  }, [dbType]);
 
   const navList: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] =
     useMemo(() => {
@@ -307,6 +310,8 @@ const Form = ({
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const [editingParam, setEditingParam] = useState<string | null>(null);
+  const prevDbTypeRef = useRef<string | undefined>(dbType);
+
   // Fetch addon list using useQuery
   const { data: addonList = [], isLoading: addonLoading } = useQuery(
     ['addonList'],
@@ -336,8 +341,12 @@ const Form = ({
         [minStorageChange, minCPU, minMemory] = [4, 2, 2];
         break;
       case DBTypeEnum.milvus:
-        [minStorageChange, minCPU, minMemory] = [3, 2, 2];
+        [minStorageChange, minCPU, minMemory] = [4, 2, 2]; // 4的倍数，从4开始
+        specialUse = 4;
         break;
+      case DBTypeEnum.clickhouse:
+        [minStorageChange, minCPU, minMemory] = [4, 2, 2]; // 4的倍数，从4开始
+        specialUse = 4;
       default:
         break;
     }
@@ -358,8 +367,17 @@ const Form = ({
     if (getValues('memory') < minMemory) {
       setValue('memory', minMemory);
     }
-    setValue('storage', Math.max(3, minStorage, allocatedStorage));
-  }, [getValues, allocatedStorage, isEdit, minCPU, minMemory, setValue, minStorage]);
+
+    let storageValue = Math.max(3, minStorage, allocatedStorage);
+
+    // For Milvus, ensure storage is multiple of 4 and at least 4
+    if (getValues('dbType') === DBTypeEnum.milvus) {
+      storageValue = Math.max(4, Math.ceil(storageValue / 4) * 4);
+    }
+
+    setValue('storage', storageValue);
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getValues('dbType'), allocatedStorage]);
 
   useEffect(() => {
     const currentDbType = getValues('dbType');
@@ -443,7 +461,8 @@ const Form = ({
     if (
       dbType === DBTypeEnum.postgresql ||
       dbType === DBTypeEnum.mongodb ||
-      dbType === DBTypeEnum.mysql
+      dbType === DBTypeEnum.mysql ||
+      dbType === DBTypeEnum.notapemysql
     ) {
       score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
     } else if (dbType === DBTypeEnum.redis) {
@@ -453,7 +472,11 @@ const Form = ({
   };
 
   const getParaName = (dbType: DBType) => {
-    if (dbType === DBTypeEnum.postgresql || dbType === DBTypeEnum.mysql) {
+    if (
+      dbType === DBTypeEnum.postgresql ||
+      dbType === DBTypeEnum.mysql ||
+      dbType === DBTypeEnum.notapemysql
+    ) {
       return 'max_connections';
     } else if (dbType === DBTypeEnum.mongodb) {
       return 'maxIncomingConnections';
@@ -472,7 +495,8 @@ const Form = ({
 
   const availableDBTypes = useMemo(() => {
     if (addonLoading) {
-      return DBTypeList;
+      // Only show one mysql.
+      return DBTypeList.filter((db) => db.id !== DBTypeEnum.notapemysql);
     }
 
     const addonStatusMap = new Map<string, string>();
@@ -488,26 +512,42 @@ const Form = ({
 
       const addonName = dbType.id;
       const addonStatus = addonStatusMap.get(addonName);
-      const shouldInclude = addonStatus !== 'Disabled';
+      // Only show one mysql.
+      const shouldInclude = addonStatus !== 'Disabled' && addonName !== DBTypeEnum.notapemysql;
       return shouldInclude;
     });
 
     return filtered;
   }, [addonList, addonLoading]);
 
-  const handleOpenCostcenter = () => {
-    sealosApp.runEvents('openDesktopApp', {
-      appKey: 'system-costcenter',
-      pathname: '/',
-      query: {
-        mode: 'upgrade'
-      },
-      messageData: {
-        type: 'InternalAppCall',
-        mode: 'upgrade'
+  const availableDBVersions = useMemo(() => {
+    // Only show one mysql type, so we merge here.
+    if (dbType === DBTypeEnum.mysql || dbType === DBTypeEnum.notapemysql) {
+      return [...DBVersionMap[DBTypeEnum.mysql], ...DBVersionMap[DBTypeEnum.notapemysql]];
+    }
+
+    const ownVersions = DBVersionMap[getValues('dbType')];
+    return ownVersions;
+  }, [dbType, getValues]);
+
+  // Set dbVersion to first available option when dbType changes
+  useEffect(() => {
+    if (prevDbTypeRef.current !== dbType) {
+      prevDbTypeRef.current = dbType;
+      if (!isEdit && availableDBVersions.length > 0) {
+        const currentVersion = getValues('dbVersion');
+
+        // Prevent overriding user intent
+        const isCurrentVersionValid = availableDBVersions.some(
+          (version) => version.id === currentVersion
+        );
+        if (!isCurrentVersionValid) {
+          setValue('dbVersion', availableDBVersions[0].id);
+        }
       }
-    });
-  };
+    }
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbType, availableDBVersions.length, availableDBVersions[0]?.id, isEdit]);
 
   return (
     <>
@@ -644,7 +684,10 @@ const Form = ({
                           opacity={isEdit && getValues('dbType') !== item.id ? '0.4' : '1'}
                           fontWeight={'bold'}
                           color={'grayModern.900'}
-                          {...(getValues('dbType') === item.id
+                          {...(getValues('dbType') === item.id ||
+                          // We only have one mysql option
+                          (item.id === DBTypeEnum.mysql &&
+                            getValues('dbType') === DBTypeEnum.notapemysql)
                             ? {
                                 bg: '#F9FDFE',
                                 borderColor: 'brightBlue.500',
@@ -659,11 +702,8 @@ const Form = ({
                               })}
                           onClick={() => {
                             if (isEdit) return;
+
                             setValue('dbType', item.id);
-                            const versions = DBVersionMap[item.id] || [];
-                            if (versions.length > 0) {
-                              setValue('dbVersion', versions[0].id);
-                            }
                           }}
                         >
                           <Image
@@ -694,11 +734,22 @@ const Form = ({
                   width={'200px'}
                   placeholder={`${t('DataBase')} ${t('version')}`}
                   value={getValues('dbVersion')}
-                  list={(DBVersionMap[getValues('dbType')] || []).map((i) => ({
+                  list={availableDBVersions.map((i) => ({
                     label: i.label,
                     value: i.id
                   }))}
-                  onchange={(val: any) => setValue('dbVersion', val)}
+                  onchange={(val) => {
+                    setValue('dbVersion', val);
+
+                    // Select correct dbType for mysql versions.
+                    if (dbType === DBTypeEnum.mysql || dbType === DBTypeEnum.notapemysql) {
+                      if (DBVersionMap[DBTypeEnum.mysql].find((i) => i.id === val)) {
+                        setValue('dbType', DBTypeEnum.mysql);
+                      } else {
+                        setValue('dbType', DBTypeEnum.notapemysql);
+                      }
+                    }
+                  }}
                 />
               </Flex>
               <FormControl mb={7} isInvalid={!!errors.dbName} w={'500px'}>
@@ -829,7 +880,8 @@ const Form = ({
                   max={20}
                   step={
                     getValues('dbType') === DBTypeEnum.mongodb ||
-                    getValues('dbType') === DBTypeEnum.mysql
+                    getValues('dbType') === DBTypeEnum.mysql ||
+                    getValues('dbType') === DBTypeEnum.notapemysql
                       ? 2
                       : 1
                   }
@@ -848,7 +900,11 @@ const Form = ({
                     const dbType = getValues('dbType');
                     const oddVal = val % 2 === 0 ? val + 1 : val;
                     const replicasValue =
-                      dbType === DBTypeEnum.mongodb || dbType === DBTypeEnum.mysql ? oddVal : val;
+                      dbType === DBTypeEnum.mongodb ||
+                      dbType === DBTypeEnum.mysql ||
+                      dbType === DBTypeEnum.notapemysql
+                        ? oddVal
+                        : val;
                     setValue('replicas', isNaN(replicasValue) ? 1 : replicasValue);
                   }}
                 />
@@ -873,7 +929,8 @@ const Form = ({
                 )}
 
                 {(getValues('dbType') === DBTypeEnum.mongodb ||
-                  getValues('dbType') === DBTypeEnum.mysql) &&
+                  getValues('dbType') === DBTypeEnum.mysql ||
+                  dbType === DBTypeEnum.notapemysql) &&
                   getValues('replicas') > 1 && (
                     <Tip
                       ml={4}
@@ -900,11 +957,24 @@ const Form = ({
                       step={minStorageChange}
                       position={'relative'}
                       value={
-                        Math.round(Math.max(getValues('storage') / minStorageChange, 1)) *
-                        minStorageChange
+                        getValues('dbType') === DBTypeEnum.milvus
+                          ? Math.round(Math.max(getValues('storage') / minStorageChange, 1)) *
+                            minStorageChange
+                          : Math.round(Math.max(getValues('storage') / minStorageChange, 1)) *
+                            minStorageChange
                       }
                       onChange={(e) => {
-                        e !== '' ? setValue('storage', +e) : setValue('storage', minStorage);
+                        if (e !== '') {
+                          const value = +e;
+                          if (getValues('dbType') === DBTypeEnum.milvus) {
+                            const adjustedValue = Math.max(4, Math.ceil(value / 4) * 4);
+                            setValue('storage', adjustedValue);
+                          } else {
+                            setValue('storage', value);
+                          }
+                        } else {
+                          setValue('storage', minStorage);
+                        }
                       }}
                     >
                       <NumberInputField
@@ -917,8 +987,7 @@ const Form = ({
                           max: {
                             value: SystemEnv.STORAGE_MAX_SIZE,
                             message: `${t('storage_max')}${SystemEnv.STORAGE_MAX_SIZE} Gi`
-                          },
-                          valueAsNumber: true
+                          }
                         })}
                         min={minStorage}
                         max={SystemEnv.STORAGE_MAX_SIZE}
@@ -963,6 +1032,18 @@ const Form = ({
                       ml={4}
                       icon={<InfoOutlineIcon />}
                       text={t('multi_components_tip')}
+                      size="sm"
+                      borderRadius={'md'}
+                      height={'fit-content'}
+                      maxWidth={310}
+                      maxHeight={'100%'}
+                    />
+                  )}
+                  {getValues('dbType') === DBTypeEnum.milvus && (
+                    <Tip
+                      ml={4}
+                      icon={<InfoOutlineIcon />}
+                      text={'Milvus storage must be a multiple of 4 Gi, starting from 4 Gi' as any}
                       size="sm"
                       borderRadius={'md'}
                       height={'fit-content'}
@@ -1070,89 +1151,91 @@ const Form = ({
                         </Tr>
                       </Thead>
                       <Tbody>
-                        <Tr>
-                          <Td w="350px">
-                            <Text fontSize={'14px'} color={'grayModern.900'}>
-                              {getParaName(getValues('dbType'))}
-                            </Text>
-                          </Td>
-                          <Td>
-                            <Flex alignItems={'center'} gap={'8px'}>
-                              {editingParam === 'maxConnections' ? (
-                                <Input
-                                  value={
-                                    isMaxConnectionsCustomized
+                        {!isMysql5742 && (
+                          <Tr>
+                            <Td w="350px">
+                              <Text fontSize={'14px'} color={'grayModern.900'}>
+                                {getParaName(getValues('dbType'))}
+                              </Text>
+                            </Td>
+                            <Td>
+                              <Flex alignItems={'center'} gap={'8px'}>
+                                {editingParam === 'maxConnections' ? (
+                                  <Input
+                                    value={
+                                      isMaxConnectionsCustomized
+                                        ? maxConnections
+                                        : getScore(getValues('dbType'))
+                                    }
+                                    size="sm"
+                                    type="number"
+                                    borderRadius={'md'}
+                                    borderColor={'#E8EBF0'}
+                                    bg={'#F7F8FA'}
+                                    width={'120px'}
+                                    _focusVisible={{
+                                      borderColor: 'brightBlue.500',
+                                      boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                                      bg: '#FFF',
+                                      color: '#111824'
+                                    }}
+                                    _hover={{
+                                      borderColor: 'brightBlue.300'
+                                    }}
+                                    onBlur={() => setEditingParam(null)}
+                                    onChange={(e) => {
+                                      setValue('parameterConfig', {
+                                        ...getValues('parameterConfig'),
+                                        maxConnections: e.target.value,
+                                        isMaxConnectionsCustomized: true
+                                      });
+                                    }}
+                                  />
+                                ) : (
+                                  <Text fontSize={'12px'} color={'grayModern.600'}>
+                                    {isMaxConnectionsCustomized
                                       ? maxConnections
-                                      : getScore(getValues('dbType'))
-                                  }
-                                  size="sm"
-                                  type="number"
-                                  borderRadius={'md'}
-                                  borderColor={'#E8EBF0'}
-                                  bg={'#F7F8FA'}
-                                  width={'120px'}
-                                  _focusVisible={{
-                                    borderColor: 'brightBlue.500',
-                                    boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                                    bg: '#FFF',
-                                    color: '#111824'
-                                  }}
-                                  _hover={{
-                                    borderColor: 'brightBlue.300'
-                                  }}
-                                  onBlur={() => setEditingParam(null)}
-                                  onChange={(e) => {
-                                    setValue('parameterConfig', {
-                                      ...getValues('parameterConfig'),
-                                      maxConnections: e.target.value,
-                                      isMaxConnectionsCustomized: true
-                                    });
-                                  }}
-                                />
-                              ) : (
-                                <Text fontSize={'12px'} color={'grayModern.600'}>
-                                  {isMaxConnectionsCustomized
-                                    ? maxConnections
-                                    : getScore(getValues('dbType'))}
-                                </Text>
-                              )}
-                              <MyIcon
-                                name="edit"
-                                w={'16px'}
-                                h={'16px'}
-                                color={'grayModern.500'}
-                                cursor={'pointer'}
-                                _hover={{
-                                  color: 'brightBlue.500'
-                                }}
-                                onClick={() =>
-                                  setEditingParam(
-                                    editingParam === 'maxConnections' ? null : 'maxConnections'
-                                  )
-                                }
-                              />
-                              {isMaxConnectionsCustomized && (
+                                      : getScore(getValues('dbType'))}
+                                  </Text>
+                                )}
                                 <MyIcon
-                                  name="delete"
-                                  w={'14px'}
-                                  h={'14px'}
-                                  color={'grayModern.400'}
+                                  name="edit"
+                                  w={'16px'}
+                                  h={'16px'}
+                                  color={'grayModern.500'}
                                   cursor={'pointer'}
                                   _hover={{
                                     color: 'brightBlue.500'
                                   }}
-                                  onClick={() => {
-                                    setValue('parameterConfig', {
-                                      ...getValues('parameterConfig'),
-                                      maxConnections: undefined,
-                                      isMaxConnectionsCustomized: false
-                                    });
-                                  }}
+                                  onClick={() =>
+                                    setEditingParam(
+                                      editingParam === 'maxConnections' ? null : 'maxConnections'
+                                    )
+                                  }
                                 />
-                              )}
-                            </Flex>
-                          </Td>
-                        </Tr>
+                                {isMaxConnectionsCustomized && (
+                                  <MyIcon
+                                    name="delete"
+                                    w={'14px'}
+                                    h={'14px'}
+                                    color={'grayModern.400'}
+                                    cursor={'pointer'}
+                                    _hover={{
+                                      color: 'brightBlue.500'
+                                    }}
+                                    onClick={() => {
+                                      setValue('parameterConfig', {
+                                        ...getValues('parameterConfig'),
+                                        maxConnections: undefined,
+                                        isMaxConnectionsCustomized: false
+                                      });
+                                    }}
+                                  />
+                                )}
+                              </Flex>
+                            </Td>
+                          </Tr>
+                        )}
 
                         {/* maxmemory parameter for Redis only */}
                         {getValues('dbType') === DBTypeEnum.redis && (
@@ -1174,11 +1257,13 @@ const Form = ({
 
                         {/* Timezone parameter for MySQL and PostgreSQL */}
                         {(getValues('dbType') === DBTypeEnum.mysql ||
+                          getValues('dbType') === DBTypeEnum.notapemysql ||
                           getValues('dbType') === DBTypeEnum.postgresql) && (
                           <Tr>
                             <Td w="350px">
                               <Text fontSize={'14px'} color={'grayModern.900'}>
-                                {getValues('dbType') === DBTypeEnum.mysql
+                                {getValues('dbType') === DBTypeEnum.mysql ||
+                                getValues('dbType') === DBTypeEnum.notapemysql
                                   ? 'default-time-zone'
                                   : 'time_zone'}
                               </Text>
@@ -1225,61 +1310,64 @@ const Form = ({
                         )}
 
                         {/* lower_case_table_names parameter for MySQL only */}
-                        {getValues('dbType') === DBTypeEnum.mysql && !isEdit && (
-                          <Tr>
-                            <Td w="350px">
-                              <Text fontSize={'14px'} color={'grayModern.900'}>
-                                lower_case_table_names
-                              </Text>
-                            </Td>
-                            <Td>
-                              <Flex alignItems={'center'} gap={'8px'}>
-                                {editingParam === 'lowerCaseTableNames' ? (
-                                  <MySelect
-                                    width={'140px'}
-                                    value={lowerCaseTableNames}
-                                    list={[
-                                      { value: '0', label: '0 (' + t('case_sensitive') + ')' },
-                                      { value: '1', label: '1 (' + t('case_insensitive') + ')' }
-                                    ]}
-                                    onchange={(val: string) => {
-                                      setValue('parameterConfig', {
-                                        ...getValues('parameterConfig'),
-                                        lowerCaseTableNames: val
-                                      });
-                                      setEditingParam(null);
+                        {(getValues('dbType') === DBTypeEnum.mysql ||
+                          getValues('dbType') === DBTypeEnum.notapemysql) &&
+                          !isEdit &&
+                          !isMysql5742 && (
+                            <Tr>
+                              <Td w="350px">
+                                <Text fontSize={'14px'} color={'grayModern.900'}>
+                                  lower_case_table_names
+                                </Text>
+                              </Td>
+                              <Td>
+                                <Flex alignItems={'center'} gap={'8px'}>
+                                  {editingParam === 'lowerCaseTableNames' ? (
+                                    <MySelect
+                                      width={'140px'}
+                                      value={lowerCaseTableNames}
+                                      list={[
+                                        { value: '0', label: '0 (' + t('case_sensitive') + ')' },
+                                        { value: '1', label: '1 (' + t('case_insensitive') + ')' }
+                                      ]}
+                                      onchange={(val: string) => {
+                                        setValue('parameterConfig', {
+                                          ...getValues('parameterConfig'),
+                                          lowerCaseTableNames: val
+                                        });
+                                        setEditingParam(null);
+                                      }}
+                                    />
+                                  ) : (
+                                    <Text fontSize={'12px'} color={'grayModern.600'}>
+                                      {lowerCaseTableNames === '0'
+                                        ? `0 (${t('case_sensitive')})`
+                                        : lowerCaseTableNames === '1'
+                                        ? `1 (${t('case_insensitive')})`
+                                        : t('param_unset')}
+                                    </Text>
+                                  )}
+                                  <MyIcon
+                                    name="edit"
+                                    w={'16px'}
+                                    h={'16px'}
+                                    color={'grayModern.500'}
+                                    cursor={'pointer'}
+                                    _hover={{
+                                      color: 'brightBlue.500'
                                     }}
+                                    onClick={() =>
+                                      setEditingParam(
+                                        editingParam === 'lowerCaseTableNames'
+                                          ? null
+                                          : 'lowerCaseTableNames'
+                                      )
+                                    }
                                   />
-                                ) : (
-                                  <Text fontSize={'12px'} color={'grayModern.600'}>
-                                    {lowerCaseTableNames === '0'
-                                      ? `0 (${t('case_sensitive')})`
-                                      : lowerCaseTableNames === '1'
-                                      ? `1 (${t('case_insensitive')})`
-                                      : t('param_unset')}
-                                  </Text>
-                                )}
-                                <MyIcon
-                                  name="edit"
-                                  w={'16px'}
-                                  h={'16px'}
-                                  color={'grayModern.500'}
-                                  cursor={'pointer'}
-                                  _hover={{
-                                    color: 'brightBlue.500'
-                                  }}
-                                  onClick={() =>
-                                    setEditingParam(
-                                      editingParam === 'lowerCaseTableNames'
-                                        ? null
-                                        : 'lowerCaseTableNames'
-                                    )
-                                  }
-                                />
-                              </Flex>
-                            </Td>
-                          </Tr>
-                        )}
+                                </Flex>
+                              </Td>
+                            </Tr>
+                          )}
                       </Tbody>
                     </Table>
                   </TableContainer>
@@ -1390,7 +1478,7 @@ const Form = ({
                       <MyTooltip label={'1~14' + t('Day')}>
                         <NumberInput
                           w={'120px'}
-                          max={100}
+                          max={14}
                           min={1}
                           step={1}
                           position={'relative'}

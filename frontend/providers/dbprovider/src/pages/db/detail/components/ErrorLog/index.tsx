@@ -15,6 +15,7 @@ const DB_LOG_TYPES: Record<SupportReconfigureDBType, LogTypeEnum[]> = {
   postgresql: [LogTypeEnum.RuntimeLog],
   mongodb: [LogTypeEnum.RuntimeLog],
   'apecloud-mysql': [LogTypeEnum.ErrorLog, LogTypeEnum.SlowQuery],
+  mysql: [LogTypeEnum.ErrorLog, LogTypeEnum.SlowQuery],
   redis: [LogTypeEnum.RuntimeLog]
 };
 
