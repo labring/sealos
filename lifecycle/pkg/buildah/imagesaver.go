@@ -41,11 +41,13 @@ import (
 type saverOptions struct {
 	maxPullProcs int
 	enabled      bool
+	all          bool
 }
 
 func (opts *saverOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&opts.maxPullProcs, "max-pull-procs", 5, "maximum number of goroutines for pulling")
 	fs.BoolVar(&opts.enabled, "save-image", true, "store images that parsed from the specific directories")
+	fs.BoolVar(&opts.all, "all", false, "pull all images if source image is a manifest list")
 }
 
 func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.SystemContext, opts *saverOptions) error {
@@ -73,8 +75,8 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 	if err != nil {
 		return err
 	}
-	is := save.NewImageSaver(getContext(), opts.maxPullProcs, auths)
-	isTar := save.NewImageTarSaver(getContext(), opts.maxPullProcs)
+	is := save.NewImageSaver(getContext(), opts.maxPullProcs, auths, opts.all)
+	isTar := save.NewImageTarSaver(getContext(), opts.maxPullProcs, opts.all)
 	for _, pf := range platforms {
 		if len(images) != 0 {
 			images, err = is.SaveImages(images, registryDir, pf)

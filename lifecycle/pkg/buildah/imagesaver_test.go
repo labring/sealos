@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/spf13/pflag"
 )
 
 func TestFilterIgnoredImages(t *testing.T) {
@@ -41,4 +43,19 @@ func TestFilterIgnoredImages(t *testing.T) {
 			t.Fatalf("filtered images = %v, want %v", got, want)
 		}
 	})
+}
+
+func TestSaverOptionsRegisterFlags(t *testing.T) {
+	var opts saverOptions
+	fs := pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+	opts.RegisterFlags(fs)
+
+	flag := fs.Lookup("all")
+	if flag == nil {
+		t.Fatal("expected all flag to be registered")
+	}
+	if flag.DefValue != "false" {
+		t.Fatalf("all flag default = %s, want false", flag.DefValue)
+	}
 }
