@@ -279,6 +279,8 @@ dockers:
     image_templates:
       - ghcr.io/{{ .Env.USERNAME }}/sreg-storage:{{ .Tag }}-amd64
     dockerfile: docker/sreg/Dockerfile.sreg-storage
+    extra_files:
+      - docker/sreg/scripts/sreg-storage.sh
     build_flag_templates:
       - --pull
       - --platform=linux/amd64
@@ -295,6 +297,8 @@ dockers:
     image_templates:
       - ghcr.io/{{ .Env.USERNAME }}/sreg-storage:{{ .Tag }}-arm64
     dockerfile: docker/sreg/Dockerfile.sreg-storage
+    extra_files:
+      - docker/sreg/scripts/sreg-storage.sh
     build_flag_templates:
       - --pull
       - --platform=linux/arm64
