@@ -4,12 +4,28 @@ import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
-const region = Config().devbox.mcp.forcedLanguage || 'en';
-const fileName = region === 'en' ? 'devbox.json' : 'devbox-zh.json';
+let cachedHandler: ReturnType<typeof McpHandler> | null = null;
 
-const handler = McpHandler(
-  path.join(process.cwd(), 'public', fileName),
-  'http://devbox-frontend.devbox-frontend.svc.cluster.local:3000'
-);
+function getHandler() {
+  if (cachedHandler) return cachedHandler;
 
-export { handler as GET, handler as POST, handler as DELETE };
+  const region = Config().devbox.mcp.forcedLanguage || 'en';
+  const fileName = region === 'en' ? 'devbox.json' : 'devbox-zh.json';
+  cachedHandler = McpHandler(
+    path.join(process.cwd(), 'public', fileName),
+    'http://devbox-frontend.devbox-frontend.svc.cluster.local:3000'
+  );
+  return cachedHandler;
+}
+
+export async function GET(request: Request) {
+  return getHandler()(request);
+}
+
+export async function POST(request: Request) {
+  return getHandler()(request);
+}
+
+export async function DELETE(request: Request) {
+  return getHandler()(request);
+}

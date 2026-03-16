@@ -23,12 +23,12 @@ import App from 'next/app';
 import { useUserStore } from '@/store/user';
 import {
   ClientConfigProvider,
-  InsufficientQuotaDialog,
   prefetchClientAppConfig,
   QuotaGuardProvider,
   setupClientAppConfigDefaults,
   type SupportedLang
 } from '@sealos/shared';
+import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 

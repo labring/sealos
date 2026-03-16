@@ -22,26 +22,11 @@ export async function register() {
       mountToGlobalThis('__APP_CONFIG__', result.data);
       console.log('[Instrumentation Hook] Configuration loaded.');
 
-      // GPU node detection — patches features.gpu at runtime
+      // GPU node detection
       try {
         const { getGpuNode } = await import('./services/backend/gpu');
         const gpuNodes = await getGpuNode();
         console.log(gpuNodes, 'gpuNodes');
-
-        // [FIXME] The overriding behavior is weird.
-        if (globalThis.__APP_CONFIG__) {
-          (globalThis.__APP_CONFIG__ as any).launchpad = {
-            ...globalThis.__APP_CONFIG__.launchpad,
-            features: {
-              ...globalThis.__APP_CONFIG__.launchpad.features,
-              gpu: gpuNodes.length > 0
-            }
-          };
-
-          console.log(
-            '[Instrumentation Hook] No GPU nodes retrieved, overriding features.gpu to false'
-          );
-        }
       } catch (gpuErr) {
         console.warn('[Instrumentation Hook] GPU node detection failed (non-fatal):', gpuErr);
       }

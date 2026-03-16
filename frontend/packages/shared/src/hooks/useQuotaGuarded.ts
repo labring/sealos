@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback } from 'react';
 import { useQuotaStore } from '../store/quota';
 import type { WorkspaceQuotaItemType } from '../types/workspace';

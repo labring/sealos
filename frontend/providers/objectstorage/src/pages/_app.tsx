@@ -14,12 +14,12 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
 import {
   ClientConfigProvider,
-  InsufficientQuotaDialog,
   prefetchClientAppConfig,
   QuotaGuardProvider,
   setupClientAppConfigDefaults,
   type SupportedLang
 } from '@sealos/shared';
+import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 
 const queryClient = new QueryClient({
@@ -38,9 +38,9 @@ type AppOwnProps = {
   dehydratedState?: unknown;
 };
 
-function AppContent({ Component, pageProps }: AppProps) {
-  useClientAppConfig();
+type AppContentProps = Pick<AppProps, 'Component' | 'pageProps'>;
 
+function AppContent({ Component, pageProps }: AppContentProps) {
   const initMinioClient = useOssStore((s) => s.initClient);
   const { setSession } = useSessionStore();
   const { clearClient, setSecret, secret } = useOssStore((s) => s);

@@ -4,7 +4,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
 import { ERROR_ENUM } from '@/services/error';
-import { retagSvcClient } from '@/services/retag';
+import { getRetagSvcClient } from '@/services/retag';
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import { getRegionUid } from '@/utils/env';
 import { updateTemplateSchema } from '@/utils/validate';
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       original: originalImage,
       target: tagretImage
     };
-    const retagResult = await retagSvcClient.post('/tag', retagbody, {
+    const retagResult = await getRetagSvcClient().post('/tag', retagbody, {
       headers: {
         Authorization: token
       }

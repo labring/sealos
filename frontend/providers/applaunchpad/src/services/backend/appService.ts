@@ -879,8 +879,8 @@ export async function listApps(
           .flat() as DeployKindsType[];
 
         const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
-          SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-          SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
+          domain: Config().cloud.domain,
+          userDomains: Config().cloud.userDomains
         });
 
         const standardizedData = transformFromLegacySchemaV2(appDetailData, undefined, namespace);

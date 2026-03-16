@@ -28,7 +28,7 @@ export default function Home() {
   );
 }
 
-export async function getStaticProps({ locale }: { locale: string }) {
+export async function getServerSideProps({ locale }: { locale: string }) {
   const queryClient = new QueryClient();
   return {
     props: {

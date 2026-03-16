@@ -1,3 +1,7 @@
+import ClientAppConfigBootstrap from '@/components/providers/ClientAppConfigBootstrap';
+
+export const dynamic = 'force-dynamic';
+
 export const metadata = {
   title: 'Devbox API Documentation',
   description: 'Devbox API Documentation'
@@ -6,7 +10,9 @@ export const metadata = {
 export default function ApiDocsLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ClientAppConfigBootstrap>{children}</ClientAppConfigBootstrap>
+      </body>
     </html>
   );
 }

@@ -1,6 +1,9 @@
+import { unstable_noStore as noStore } from 'next/cache';
 import { AppConfig } from './types/config';
 
 export function Config(): Readonly<AppConfig> {
+  noStore();
+
   if (typeof window !== 'undefined') {
     throw new Error('[App Config] App config should only exist on the server side.');
   }
