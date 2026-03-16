@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"os"
 
-	sreglog "github.com/labring/sreg/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/templates"
 
@@ -54,7 +52,6 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(func() {
 		logger.CfgConsoleLogger(debug, false)
-		sreglog.CfgConsoleLogger(debug, false)
 	})
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")

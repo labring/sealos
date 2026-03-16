@@ -19,7 +19,6 @@ import (
 	"io"
 	"os"
 
-	sreglog "github.com/labring/sreg/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/templates"
 
@@ -122,7 +121,6 @@ func onBootOnDie() {
 	errExit(file.MkDirs(rootDirs...))
 
 	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
-	sreglog.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
 }
 
 func errExit(err error) {
