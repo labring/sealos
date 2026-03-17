@@ -36,6 +36,10 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const { env } = useEnvStore();
 
   const formValues = watch();
+  const pvcStorageGi = (formValues.volumes || []).reduce((total, volume) => {
+    const size = Number(volume?.size);
+    return total + (Number.isFinite(size) ? size : 0);
+  }, 0);
   const showEnvAndConfigmap = env.enableAdvancedEnvAndConfigmap === 'true';
   const showNfs = env.enableAdvancedNfs === 'true';
   const showSharedMemory = env.enableAdvancedSharedMemory === 'true';
@@ -86,7 +90,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
             {
               cpu: watch('cpu'),
               memory: watch('memory'),
-              storage: watch('storage'),
+              pvcStorage: pvcStorageGi,
               gpu: formValues.gpu
             }
           ]}
