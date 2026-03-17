@@ -231,8 +231,8 @@ export async function getUserQuota(
     },
     {
       type: 'storage',
-      limit: storageQuantityToMi(status?.hard?.['limits.ephemeral-storage'] || '') / 1024,
-      used: storageQuantityToMi(status?.used?.['limits.ephemeral-storage'] || '') / 1024
+      limit: storageQuantityToMi(status?.hard?.['requests.storage'] || '') / 1024,
+      used: storageQuantityToMi(status?.used?.['requests.storage'] || '') / 1024
     },
     {
       type: 'nodeports',
