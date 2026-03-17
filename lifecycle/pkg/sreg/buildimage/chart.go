@@ -22,8 +22,8 @@ import (
 
 	"github.com/labring/sealos/pkg/sreg/buildimage/manifests"
 	"github.com/labring/sealos/pkg/sreg/utils/yaml"
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/sreg/utils/file"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"

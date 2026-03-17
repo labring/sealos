@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 	"io"
 	"net"
 	"net/http"

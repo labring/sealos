@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/sreg/registry/commands"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 )
 
 var (

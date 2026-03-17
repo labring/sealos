@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types/registry"
-	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/sreg/utils/file"
 	"path"
 
 	"github.com/labring/sealos/pkg/sreg/registry/save"
@@ -30,7 +30,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/sreg/buildimage"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 )
 
 func NewRegistryImageSaveCmd(examplePrefix string) *cobra.Command {

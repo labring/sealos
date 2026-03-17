@@ -16,29 +16,72 @@ package http
 
 import (
 	"context"
+	"crypto/tls"
+	"errors"
+	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
-	basehttp "github.com/labring/sealos/pkg/utils/http"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 )
 
 var DefaultClient = &http.Client{
 	Transport: DefaultSkipVerify,
 }
 
-var DefaultSkipVerify = basehttp.DefaultSkipVerify
+var DefaultSkipVerify = &http.Transport{
+	Proxy:               http.ProxyFromEnvironment,
+	MaxIdleConnsPerHost: 100,
+	DialContext: (&net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}).DialContext,
+	MaxIdleConns:          100,
+	IdleConnTimeout:       90 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 1 * time.Second,
+	TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: true,
+	},
+}
 
 func IsURL(u string) (*url.URL, bool) {
-	return basehttp.IsURL(u)
+	if uu, err := url.Parse(u); err == nil && uu != nil && uu.Host != "" {
+		return uu, true
+	}
+	return nil, false
 }
 
 func WaitUntilEndpointAlive(ctx context.Context, endpoint string) error {
 	if !strings.HasPrefix(endpoint, "http") {
 		endpoint = "http://" + endpoint
 	}
-	if !strings.HasSuffix(endpoint, "/v2/") {
-		endpoint = strings.TrimRight(endpoint, "/") + "/v2/"
+	endpoint = strings.TrimRight(endpoint, "/") + "/v2/"
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return err
 	}
-	return basehttp.WaitUntilEndpointAlive(ctx, endpoint)
+	logger.Debug("checking if endpoint %s is alive", u.String())
+	for {
+		select {
+		case <-ctx.Done():
+			return err
+		default:
+			var resp *http.Response
+			resp, err = DefaultClient.Get(u.String())
+			if err == nil {
+				if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusUnauthorized {
+					return errors.New("registry http status code not 200")
+				}
+				_, _ = io.Copy(io.Discard, resp.Body)
+				resp.Body.Close()
+				logger.Debug("http endpoint %s is alive", u.String())
+				return nil
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
 }

@@ -18,7 +18,7 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/sreg/utils/file"
 	"net"
 	"net/http"
 	"os"
@@ -29,7 +29,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/sreg/registry/handler"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 )
 
 func newRegistryServeFilesystemCommand() *cobra.Command {

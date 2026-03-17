@@ -18,11 +18,21 @@ import (
 	"path/filepath"
 	"strings"
 
-	baseyaml "github.com/labring/sealos/pkg/utils/yaml"
+	fileutil "github.com/labring/sealos/pkg/sreg/utils/file"
+
+	"sigs.k8s.io/yaml"
 )
 
 func UnmarshalYamlFromFile(file string, obj interface{}) error {
-	return baseyaml.UnmarshalFile(file, obj)
+	metadata, err := fileutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	err = yaml.Unmarshal(metadata, obj)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func Matcher(path string) bool {

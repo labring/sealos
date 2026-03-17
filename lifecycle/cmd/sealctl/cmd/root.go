@@ -22,6 +22,7 @@ import (
 	"k8s.io/kubectl/pkg/util/templates"
 
 	"github.com/labring/sealos/pkg/buildah"
+	sreglog "github.com/labring/sealos/pkg/sreg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -52,6 +53,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(func() {
 		logger.CfgConsoleLogger(debug, false)
+		sreglog.CfgConsoleLogger(debug, false)
 	})
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")

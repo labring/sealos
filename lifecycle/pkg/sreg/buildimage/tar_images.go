@@ -16,8 +16,8 @@ package buildimage
 
 import (
 	"fmt"
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/sreg/utils/file"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 	"path"
 	"strings"
 )

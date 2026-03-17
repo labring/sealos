@@ -27,8 +27,8 @@ import (
 	strutil "github.com/labring/sealos/pkg/sreg/utils/strings"
 	"github.com/labring/sealos/pkg/sreg/utils/tmpl"
 	"github.com/labring/sealos/pkg/sreg/utils/yaml"
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/sreg/utils/file"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 )
 
 func ParseYamlImages(dir string) ([]string, error) {

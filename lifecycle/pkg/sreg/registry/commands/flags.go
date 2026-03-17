@@ -25,7 +25,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/sreg/utils/file"
 )
 
 type registrySaveResults struct {

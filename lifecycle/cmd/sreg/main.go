@@ -14,15 +14,8 @@
 
 package main
 
-import (
-	"github.com/containers/buildah"
-
-	"github.com/labring/sealos/cmd/sreg/cmd"
-)
+import "github.com/labring/sealos/cmd/sreg/cmd"
 
 func main() {
-	if buildah.InitReexec() {
-		return
-	}
 	cmd.Execute()
 }

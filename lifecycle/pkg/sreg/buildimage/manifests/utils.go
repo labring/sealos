@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	strutil "github.com/labring/sealos/pkg/sreg/utils/strings"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 )
 
 // ParseImages parse image from yaml content

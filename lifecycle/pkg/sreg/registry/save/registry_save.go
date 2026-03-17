@@ -28,7 +28,7 @@ import (
 	"github.com/labring/sealos/pkg/sreg/registry/handler"
 	"github.com/labring/sealos/pkg/sreg/registry/sync"
 	httputils "github.com/labring/sealos/pkg/sreg/utils/http"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/sreg/utils/logger"
 )
 
 const localhost = "127.0.0.1"
