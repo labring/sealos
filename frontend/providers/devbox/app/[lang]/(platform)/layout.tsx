@@ -61,7 +61,9 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
           setInit(true);
           setInitialized(true);
         }
-        queryClient.clear();
+        queryClient.removeQueries({
+          predicate: (query) => query.queryKey[0] !== 'client-app-config'
+        });
       } catch (err) {
         console.log('devbox: app is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {

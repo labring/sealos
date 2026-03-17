@@ -4,16 +4,17 @@ import { notFound } from 'next/navigation';
 
 // TODO: update next-intl
 // Can be imported from a shared config
-const locales = ['en', 'zh'];
+const locales = ['en', 'zh'] as const;
 
-export default getRequestConfig(async ({ locale, ...props }) => {
-  // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as any)) {
-    return notFound();
+export default getRequestConfig(async ({ locale }) => {
+  const resolvedLocale = locale || 'en';
+
+  if (!locales.includes(resolvedLocale as (typeof locales)[number])) {
+    notFound();
   }
+
   return {
-    locale,
-    messages: (await import(`./message/${locale}.json`)).default
+    messages: (await import(`./message/${resolvedLocale}.json`)).default
   };
 });
 

@@ -1,9 +1,10 @@
 import { Config } from '@/config';
 import { ClientAppConfig, ClientAppConfigSchema } from '@/types/config';
+import { validateClientAppConfigOrThrow } from '@sealos/shared/server/config';
 
 export function getClientAppConfigServer(): ClientAppConfig {
   const fullConfig = Config();
-  return ClientAppConfigSchema.parse({
+  return validateClientAppConfigOrThrow(ClientAppConfigSchema, {
     cloud: {
       domain: fullConfig.cloud.domain
     },
