@@ -11,7 +11,7 @@ export function createClientAppConfigHook<T = unknown>(queryKey: readonly unknow
   return function useClientAppConfig(): T {
     const query = useQuery({
       queryFn: () => {
-        throw new Error('[Client App Config] Not pre-fetched on server side');
+        throw new Error('[Client App Config] Prefetch not successfully executed on server side.');
       },
       queryKey,
       suspense: true,
@@ -20,7 +20,7 @@ export function createClientAppConfigHook<T = unknown>(queryKey: readonly unknow
     });
 
     if (!query.data) {
-      throw new Error('[Client App Config] Not found in cache');
+      throw new Error('[Client App Config] Prefetch not successfully executed on server side.');
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

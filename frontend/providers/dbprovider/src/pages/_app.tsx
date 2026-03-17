@@ -263,13 +263,9 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
       console.error('[_app] Failed to read custom scripts:', error);
     }
 
-    try {
-      const qc = new QueryClient();
-      await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
-      dehydratedState = dehydrate(qc);
-    } catch (error) {
-      console.error('[Client App Config] Failed to prefetch:', error);
-    }
+    const qc = new QueryClient();
+    await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
+    dehydratedState = dehydrate(qc);
   }
 
   return { ...ctx, customScripts, dehydratedState };

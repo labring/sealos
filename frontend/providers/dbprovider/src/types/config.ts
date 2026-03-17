@@ -210,7 +210,7 @@ export const ClientAppConfigSchema = z.strictObject({
   guideEnabled: z.boolean(),
   showDocument: z.boolean(),
   fileImportEnabled: z.boolean(),
-  forcedStorageClassName: z.string(),
+  forcedStorageClassName: z.string().nullable(),
   storageMaxSize: z.number(),
   monitoringUrl: z.string(),
   migrationJobCpuMillicores: z.number(),

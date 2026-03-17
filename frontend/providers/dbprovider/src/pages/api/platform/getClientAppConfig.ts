@@ -1,11 +1,15 @@
 import { Config } from '@/config';
 import { jsonRes } from '@/services/backend/response';
 import { ClientAppConfigSchema } from '@/types/config';
+import {
+  isServerMisconfiguredError,
+  validateClientAppConfigOrThrow
+} from '@sealos/shared/server/config';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export function getClientAppConfigServer() {
   const cfg = Config();
-  return ClientAppConfigSchema.parse({
+  return validateClientAppConfigOrThrow(ClientAppConfigSchema, {
     domain: cfg.cloud.domain,
     desktopDomain: cfg.cloud.desktopDomain,
     currencySymbol: cfg.dbprovider.ui.currencySymbol,
@@ -33,8 +37,16 @@ export function getClientAppConfigServer() {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  jsonRes(res, {
-    code: 200,
-    data: getClientAppConfigServer()
-  });
+  try {
+    jsonRes(res, {
+      code: 200,
+      data: getClientAppConfigServer()
+    });
+  } catch (error) {
+    if (isServerMisconfiguredError(error)) {
+      return jsonRes(res, { code: 500, message: 'Server misconfigured' });
+    }
+    console.error('[Client App Config] Unexpected server error:', error);
+    return jsonRes(res, { code: 500, message: 'Internal Server Error' });
+  }
 }

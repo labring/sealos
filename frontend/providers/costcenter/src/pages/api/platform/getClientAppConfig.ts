@@ -1,11 +1,15 @@
 import { Config } from '@/config';
 import { jsonRes } from '@/service/backend/response';
 import { ClientAppConfigSchema, type ClientAppConfig } from '@/types/config';
+import {
+  isServerMisconfiguredError,
+  validateClientAppConfigOrThrow
+} from '@sealos/shared/server/config';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export function getClientAppConfigServer(): ClientAppConfig {
   const fullConfig = Config();
-  return ClientAppConfigSchema.parse({
+  return validateClientAppConfigOrThrow(ClientAppConfigSchema, {
     features: {
       rechargeRequiresRealName: fullConfig.costCenter.features.rechargeRequiresRealName,
       transferEnabled: fullConfig.costCenter.features.transfer,
@@ -27,5 +31,13 @@ export function getClientAppConfigServer(): ClientAppConfig {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  jsonRes(res, { code: 200, data: getClientAppConfigServer() });
+  try {
+    jsonRes(res, { code: 200, data: getClientAppConfigServer() });
+  } catch (error) {
+    if (isServerMisconfiguredError(error)) {
+      return jsonRes(res, { code: 500, message: 'Server misconfigured' });
+    }
+    console.error('[Client App Config] Unexpected server error:', error);
+    return jsonRes(res, { code: 500, message: 'Internal Server Error' });
+  }
 }

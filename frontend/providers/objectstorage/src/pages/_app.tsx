@@ -135,14 +135,10 @@ function MyApp({ Component, pageProps, dehydratedState }: AppProps & AppOwnProps
 MyApp.getInitialProps = async (context: AppContext): Promise<AppInitialProps & AppOwnProps> => {
   const ctx = await NextApp.getInitialProps(context);
   let dehydratedState: unknown;
-  try {
-    if (typeof window === 'undefined') {
-      const qc = new QueryClient();
-      await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
-      dehydratedState = dehydrate(qc);
-    }
-  } catch (error) {
-    console.error('[Client App Config] Failed to prefetch:', error);
+  if (typeof window === 'undefined') {
+    const qc = new QueryClient();
+    await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
+    dehydratedState = dehydrate(qc);
   }
   return { ...ctx, dehydratedState };
 };

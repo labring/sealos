@@ -309,14 +309,10 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
   }
 
   let dehydratedState: unknown;
-  try {
-    if (typeof window === 'undefined') {
-      const qc = new QueryClient();
-      await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
-      dehydratedState = dehydrate(qc);
-    }
-  } catch (error) {
-    console.error('[Client App Config] Failed to prefetch:', error);
+  if (typeof window === 'undefined') {
+    const qc = new QueryClient();
+    await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
+    dehydratedState = dehydrate(qc);
   }
 
   return { ...ctx, title, description, scripts, gtmEnabled, gtmId, dehydratedState };

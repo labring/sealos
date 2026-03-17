@@ -260,7 +260,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       {
         filename: 'cluster.yaml',
         value: json2CreateCluster(data, undefined, {
-          storageClassName: config.forcedStorageClassName
+          storageClassName: config.forcedStorageClassName ?? undefined
         })
       }
     ];
@@ -423,7 +423,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           {
             filename: 'cluster.yaml',
             value: json2CreateCluster(defaultEdit, undefined, {
-              storageClassName: config.forcedStorageClassName
+              storageClassName: config.forcedStorageClassName ?? undefined
             })
           },
           {
