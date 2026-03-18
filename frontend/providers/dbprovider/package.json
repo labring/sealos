@@ -26,6 +26,7 @@
     "@sealos/gtm": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
+    "@sealos/shared": "workspace:^",
     "@tanstack/react-table": "^8.10.7",
     "@tanstack/react-virtual": "^3.10.8",
     "ansi_up": "^5.2.1",

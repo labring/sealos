@@ -46,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
     const { podName, dbType, logType, logPath, page = 0, pageSize = 10 } = parseResult.data;
 
+    //@ts-ignore todo
     const logConfig = ServiceLogConfigs[dbType][logType];
 
     if (!logConfig) {

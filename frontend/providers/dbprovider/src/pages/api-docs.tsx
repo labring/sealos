@@ -1,11 +1,7 @@
-'use client';
+import dynamic from 'next/dynamic';
 
-import { document } from '@/types/apis';
-import { ApiReferenceReact } from '@scalar/api-reference-react';
+const ApiDocs = dynamic(() => import('@/components/ApiDocs'), { ssr: false });
 
-export default function ApiDocs() {
-  const config = {
-    content: document
-  };
-  return <ApiReferenceReact configuration={config} />;
+export default function References() {
+  return <ApiDocs />;
 }

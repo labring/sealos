@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { podName, dbType, logType } = parseResult.data;
 
     const kubefs = new KubeFileSystem(k8sExec);
-
+    //@ts-ignore todo
     const logConfig = ServiceLogConfigs[dbType][logType];
 
     console.log('/api/logs/getFiles', { podName, dbType, logType, logConfig });
