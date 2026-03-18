@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return {
         name: template.metadata.name,
-        uid: template.metadata.uid,
+        // uid: template.metadata.uid,
         resourceType: 'template',
         readme: i18nData?.readme || template.spec.readme || '',
         icon: i18nData?.icon || template.spec.icon || '',

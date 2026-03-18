@@ -97,8 +97,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     } catch (error) {}
 
-    if (!simplifiedResource && template.spec.requirements) {
-      const staticReq = template.spec.requirements as any;
+    if (!simplifiedResource && (template.spec as any).requirements) {
+      const staticReq = (template.spec as any).requirements;
       if (staticReq.cpu && typeof staticReq.cpu === 'object' && 'min' in staticReq.cpu) {
         simplifiedResource = simplifyResourceUsage(staticReq as ResourceUsage);
       } else {
@@ -108,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const result = {
       name: template.metadata.name,
-      uid: template.metadata.uid,
+      uid: (template.metadata as any).uid,
       resourceType: 'template',
       resource: simplifiedResource,
       readme: i18nData?.readme || template.spec.readme || '',
