@@ -430,6 +430,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         formHook.setValue('storeList', completeStoreList);
       }
 
+      // Handle Network Store list
+      if (Array.isArray(parsedData.networkStoreList)) {
+        const completeNetworkStoreList = parsedData.networkStoreList.map((store) => ({
+          name: store.name || '',
+          path: store.path || '',
+          storageClassName: store.storageClassName
+        }));
+        formHook.setValue('networkStoreList', completeNetworkStoreList);
+      }
+
       // Handle Environment variables
       if (Array.isArray(parsedData.envs)) {
         const completeEnvs = parsedData.envs.map((env) => ({
@@ -473,6 +483,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyBtnText={applyBtnText}
           applyCb={() => {
             formHook.handleSubmit(async (data) => {
+              console.log('data', data);
+
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
 

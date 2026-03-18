@@ -82,7 +82,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 borderColor={'grayModern.300'}
               />
               <Text>
-                {t('Storage')}: {app.storeList?.length}
+                {t('Storage')}: {(app.storeList?.length || 0) + (app.networkStoreList?.length || 0)}
               </Text>
             </Flex>
 
@@ -140,8 +140,8 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                           const valText = env.value
                             ? env.value
                             : env.valueFrom
-                            ? 'value from | ***'
-                            : '';
+                              ? 'value from | ***'
+                              : '';
                           return (
                             <Flex
                               key={env.key}
@@ -253,7 +253,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                     p={'12px'}
                     mt={'8px'}
                   >
-                    {app.storeList?.length > 0 ? (
+                    {app.storeList?.length > 0 || app.networkStoreList?.length > 0 ? (
                       <Box
                         borderRadius={'md'}
                         overflow={'hidden'}
@@ -281,6 +281,31 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                                 fontSize={'sm'}
                               >
                                 {item.value} Gi
+                              </Box>
+                            </Box>
+                          </Flex>
+                        ))}
+                        {app.networkStoreList?.map((item) => (
+                          <Flex
+                            key={item.path}
+                            alignItems={'center'}
+                            px={'14px'}
+                            py={'8px'}
+                            _notLast={{
+                              borderBottom: theme.borders.base
+                            }}
+                          >
+                            <MyIcon name={'store'} width={'24px'} height={'24px'} />
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
+                              <Box color={'grayModern.900'} fontWeight={'bold'}>
+                                {item.path}
+                              </Box>
+                              <Box
+                                className={styles.textEllipsis}
+                                color={'grayModern.600'}
+                                fontSize={'sm'}
+                              >
+                                {t('network_storage')} - {item.name}
                               </Box>
                             </Box>
                           </Flex>

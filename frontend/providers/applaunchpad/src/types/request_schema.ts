@@ -483,6 +483,7 @@ export function transformToLegacySchema(
     secret,
     configMapList,
     storeList,
+    networkStoreList: [],
     labels: {},
     volumes: [],
     volumeMounts: [],

@@ -1,4 +1,5 @@
 import { obj2Query } from '@/api/tools';
+import { getSharePVCs } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
 import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
@@ -48,6 +49,7 @@ import { useQuery } from '@tanstack/react-query';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
+const NetworkStoreModal = dynamic(() => import('./NetworkStoreModal'));
 const EditEnvs = dynamic(() => import('./EditEnvs'));
 
 const labelWidth = 120;
@@ -110,6 +112,14 @@ const Form = ({
     control,
     name: 'storeList'
   });
+  const {
+    fields: networkStoreList,
+    append: appendNetworkStore,
+    remove: removeNetworkStore
+  } = useFieldArray({
+    control,
+    name: 'networkStoreList'
+  });
 
   const navList = useMemo(
     () => [
@@ -141,7 +151,8 @@ const Form = ({
           getValues('cmdParam') ||
           getValues('envs').length > 0 ||
           getValues('configMapList').length > 0 ||
-          getValues('storeList').length > 0
+          getValues('storeList').length > 0 ||
+          getValues('networkStoreList').length > 0
       }
     ],
     [getValues, refresh]
@@ -150,11 +161,15 @@ const Form = ({
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
   const [storeEdit, setStoreEdit] = useState<StoreType>();
+  const [networkStoreEdit, setNetworkStoreEdit] = useState(false);
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
 
   // For quota calculation in fields
   const { userQuota, loadUserQuota } = useUserStore();
   useQuery(['getUserQuota'], loadUserQuota);
+
+  // Fetch share storage PVC list
+  const { data: sharePVCList = [] } = useQuery(['getSharePVCs'], getSharePVCs);
 
   const storageQuotaLeft = useMemo(() => {
     const storageQuota = userQuota?.find((item) => item.type === 'storage');
@@ -167,7 +182,7 @@ const Form = ({
     return storageQuota.limit - storageQuota.used - newlyUsedStorage;
   }, [userQuota, existingStores, storeList]);
 
-  // Separate local and remote stores
+  // Separate local and remote stores (storeList original logic unchanged)
   const { localStores, remoteStores } = useMemo(() => {
     const local = storeList.filter((item) => item.storageType !== 'remote');
     const remote = storeList.filter((item) => item.storageType === 'remote');
@@ -1250,7 +1265,7 @@ const Form = ({
                     </Box>
                   </Box>
 
-                  {/* Remote Storage Section */}
+                  {/* Remote Storage Section (from storeList, read-only) */}
                   {remoteStores.length > 0 && (
                     <>
                       <Divider my={'30px'} borderColor={'#EFF0F1'} />
@@ -1294,6 +1309,73 @@ const Form = ({
                       </Flex>
                     </>
                   )}
+
+                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
+
+                  {/* Network Storage Section */}
+                  <Box>
+                    <Flex alignItems={'center'} mb={'10px'}>
+                      <Label className={styles.formSecondTitle} m={0}>
+                        {t('network_storage')}
+                      </Label>
+
+                      <Button
+                        w={'320px'}
+                        height={'32px'}
+                        variant={'outline'}
+                        onClick={() => setNetworkStoreEdit(true)}
+                        leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
+                      >
+                        {t('network_store_add_volume')}
+                      </Button>
+                    </Flex>
+                    {networkStoreList.length > 0 && (
+                      <Box mt={4} pl={`${labelWidth}px`}>
+                        {networkStoreList.map((item, index) => (
+                          <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
+                            <Flex
+                              alignItems={'center'}
+                              px={4}
+                              py={1}
+                              border={theme.borders.base}
+                              flex={'0 0 320px'}
+                              w={0}
+                              borderRadius={'md'}
+                              bg={'grayModern.25'}
+                            >
+                              <MyIcon name={'store'} w={'20px'} />
+                              <Box ml={4} flex={'1 0 0'} w={'0px'}>
+                                <Box color={'myGray.900'} fontWeight={'bold'}>
+                                  {item.path}
+                                </Box>
+                                <Box
+                                  className={styles.textEllipsis}
+                                  color={'grayModern.900'}
+                                  fontSize={'sm'}
+                                >
+                                  {item.name}
+                                </Box>
+                              </Box>
+                            </Flex>
+                            <IconButton
+                              height={'32px'}
+                              width={'32px'}
+                              aria-label={'delete'}
+                              variant={'outline'}
+                              bg={'#FFF'}
+                              ml={3}
+                              icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
+                              _hover={{
+                                color: 'red.600',
+                                bg: 'rgba(17, 24, 36, 0.05)'
+                              }}
+                              onClick={() => removeNetworkStore(index)}
+                            />
+                          </Flex>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
                 </AccordionPanel>
               </AccordionItem>
             </Accordion>
@@ -1366,6 +1448,20 @@ const Form = ({
             setStoreEdit(undefined);
           }}
           closeCb={() => setStoreEdit(undefined)}
+        />
+      )}
+      {networkStoreEdit && (
+        <NetworkStoreModal
+          pvcList={sharePVCList}
+          listNames={[
+            ...storeList.map((item) => item.path.toLocaleLowerCase()),
+            ...networkStoreList.map((item) => item.path.toLocaleLowerCase())
+          ]}
+          successCb={(e) => {
+            appendNetworkStore(e);
+            setNetworkStoreEdit(false);
+          }}
+          closeCb={() => setNetworkStoreEdit(false)}
         />
       )}
     </>
