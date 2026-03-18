@@ -830,6 +830,9 @@ importers:
       '@sealos/gtm':
         specifier: workspace:^
         version: link:../../packages/gtm
+      '@sealos/shared':
+        specifier: workspace:^
+        version: link:../../packages/shared
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui
@@ -13599,6 +13602,7 @@ packages:
 
   /@swagger-api/apidom-ns-json-schema-draft-4@1.0.0-beta.51:
     resolution: {integrity: sha512-KRaipRy2ZI1+8Z2OiXBSOSRO/RFyC7lNiXk8h9Yg1W5DDD5H9/AL4Jq6PWJaeAdKaXV/Thgon9fjK4YGPRTlQA==}
+    requiresBuild: true
     dependencies:
       '@babel/runtime-corejs3': 7.28.4
       '@swagger-api/apidom-ast': 1.0.0-beta.51
@@ -20449,11 +20453,6 @@ packages:
     engines: {node: '>=0.8.x'}
     dev: false
 
-  /eventsource-parser@3.0.2:
-    resolution: {integrity: sha512-6RxOBZ/cYgd8usLwsEl+EC09Au/9BcmCKYF2/xbml6DNczf7nv0MQb+7BA2F+li6//I+28VNlQR37XfQtcAJuA==}
-    engines: {node: '>=18.0.0'}
-    dev: false
-
   /eventsource-parser@3.0.6:
     resolution: {integrity: sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==}
     engines: {node: '>=18.0.0'}
@@ -20468,7 +20467,7 @@ packages:
     resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
     engines: {node: '>=18.0.0'}
     dependencies:
-      eventsource-parser: 3.0.2
+      eventsource-parser: 3.0.6
     dev: false
 
   /exceljs@4.4.0:
