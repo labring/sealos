@@ -261,8 +261,7 @@ async function executeReleaseTask(params: ReleaseTaskParams) {
       devboxName,
       tag,
       releaseDes: releaseDescription,
-      devboxUid,
-      startDevboxAfterRelease: false
+      devboxUid
     });
     await applyYamlList([devboxYaml], 'create');
 
@@ -270,7 +269,7 @@ async function executeReleaseTask(params: ReleaseTaskParams) {
     for (let retry = 0; retry < 200; retry++) {
       const releases = await listDevboxReleases(k8sCustomObjects, namespace);
       const release = releases.find((item) => {
-        if (item?.spec?.devboxName !== devboxName || item?.spec?.version !== tag) return false;
+        if (item?.spec?.devboxName !== devboxName || item?.spec?.newTag !== tag) return false;
         const ownerUid = item?.metadata?.ownerReferences?.[0]?.uid;
         return !devboxUid || !ownerUid || ownerUid === devboxUid;
       });
@@ -405,7 +404,7 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     }
 
     const tagExists = releases.some(
-      (item) => item.spec?.devboxName === devboxName && item.spec?.version === tag
+      (item) => item.spec?.devboxName === devboxName && item.spec?.newTag === tag
     );
     if (tagExists) {
       return sendError({
