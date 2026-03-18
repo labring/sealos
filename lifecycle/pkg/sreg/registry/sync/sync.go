@@ -168,11 +168,15 @@ func ImageNameToReference(sys *types.SystemContext, img string, auth map[string]
 	}
 	reg := src.Context().RegistryStr()
 	info, ok := auth[reg]
-	if sys != nil && ok {
-		sys.DockerAuthConfig = &types.DockerAuthConfig{
-			Username:      info.Username,
-			Password:      info.Password,
-			IdentityToken: info.IdentityToken,
+	if sys != nil {
+		if ok {
+			sys.DockerAuthConfig = &types.DockerAuthConfig{
+				Username:      info.Username,
+				Password:      info.Password,
+				IdentityToken: info.IdentityToken,
+			}
+		} else {
+			sys.DockerAuthConfig = nil
 		}
 	}
 	image := src.Name()
