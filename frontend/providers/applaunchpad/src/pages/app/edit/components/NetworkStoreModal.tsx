@@ -77,11 +77,32 @@ const NetworkStoreModal = ({
         <ModalBody py={'24px'} px={'36px'}>
           <Box mb={'24px'}>
             <Flex alignItems={'center'} mb={'8px'}>
-              <Box fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
+              <Box fontSize={'14px'} fontWeight={500} color={'grayModern.900'} mr={'4px'}>
                 {t('network_store_select_volume')}
               </Box>
               <MyTooltip label={t('network_store_select_volume_tip')}>
-                <InfoOutlineIcon ml={'4px'} w={'14px'} h={'14px'} color={'grayModern.500'} />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                >
+                  <g clip-path="url(#clip0_4652_11607)">
+                    <path
+                      d="M5.30243 5.25013C5.43957 4.86027 5.71027 4.53152 6.06657 4.32212C6.42287 4.11272 6.84179 4.03618 7.24912 4.10604C7.65645 4.17591 8.02591 4.38768 8.29206 4.70385C8.55821 5.02002 8.70388 5.42018 8.70326 5.83346C8.70326 7.00013 6.95326 7.58346 6.95326 7.58346M7.00002 9.91675H7.00585M12.8334 7.00008C12.8334 10.2217 10.2217 12.8334 7.00002 12.8334C3.77836 12.8334 1.16669 10.2217 1.16669 7.00008C1.16669 3.77842 3.77836 1.16675 7.00002 1.16675C10.2217 1.16675 12.8334 3.77842 12.8334 7.00008Z"
+                      stroke="#71717A"
+                      strokeWidth="1.16375"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_4652_11607">
+                      <rect width="14" height="14" fill="white" />
+                    </clipPath>
+                  </defs>
+                </svg>
               </MyTooltip>
             </Flex>
             <MySelect
@@ -92,7 +113,7 @@ const NetworkStoreModal = ({
               list={selectList}
               onchange={(val: any) => setValue('pvcName', val)}
             />
-            <Box mt={'8px'} fontSize={'14px'} color={'grayModern.900'}>
+            <Box mt={'8px'} fontSize={'14px'} color={'grayModern.900'} fontWeight={500}>
               {t('network_store_no_volume')}{' '}
               <Link
                 color={'#2563EB'}
