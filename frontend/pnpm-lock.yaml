@@ -1765,6 +1765,9 @@ importers:
       '@sealos/shadcn-ui':
         specifier: workspace:^
         version: link:../../packages/shadcn-ui
+      '@sealos/shared':
+        specifier: workspace:^
+        version: link:../../packages/shared
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui

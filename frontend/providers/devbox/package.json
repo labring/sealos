@@ -20,6 +20,7 @@
     "@prisma/client": "^5.10.2",
     "@scalar/api-reference-react": "^0.8.36",
     "@sealos/driver": "workspace:^",
+    "@sealos/shared": "workspace:^",
     "@sealos/gtm": "workspace:^",
     "@sealos/shadcn-ui": "workspace:^",
     "@sealos/ui": "workspace:^",
