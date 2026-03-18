@@ -2652,6 +2652,9 @@ importers:
       '@sealos/gtm':
         specifier: workspace:^
         version: link:../../packages/gtm
+      '@sealos/shared':
+        specifier: workspace:^
+        version: link:../../packages/shared
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui

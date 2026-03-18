@@ -26,8 +26,6 @@ import {
 
 import { SuccessResponseSchema as GetDevboxTemplatesSuccessResponseSchema } from '../../v2alpha/devbox/templates/schema';
 
-import { MonitorSuccessResponseSchema } from '../../v2alpha/devbox/[name]/monitor/schema';
-
 import { GetSuccessResponseSchema as GetDeployListSuccessResponseSchema } from '../../v2alpha/devbox/[name]/deployments/schema';
 
 import {
@@ -1613,117 +1611,6 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
                         ErrorType.OPERATION_ERROR,
                         ErrorCode.OPERATION_FAILED,
                         'Failed to deploy to AppLaunchpad.'
-                      )
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      '/devbox/{name}/monitor': {
-        get: {
-          tags: ['Query'],
-          operationId: 'getDevboxMonitor',
-          summary: 'Get devbox monitoring data',
-          description: 'Retrieve time-series CPU and memory usage metrics for a specific Devbox.',
-          parameters: [
-            devboxNameParam,
-            {
-              name: 'start',
-              in: 'query',
-              required: false,
-              description:
-                'Start of the monitoring window. Accepts a Unix timestamp in either **seconds** or **milliseconds** (values > 10¹² are automatically divided by 1000). Defaults to `end − 3 h`.',
-              schema: { type: 'string', example: '1760510280' }
-            },
-            {
-              name: 'end',
-              in: 'query',
-              required: false,
-              description:
-                'End of the monitoring window. Accepts a Unix timestamp in either **seconds** or **milliseconds** (values > 10¹² are automatically divided by 1000). Defaults to the current server time.',
-              schema: { type: 'string', example: '1760513880' }
-            },
-            {
-              name: 'step',
-              in: 'query',
-              required: false,
-              description: 'Sampling interval (e.g. `1m`, `5m`, `1h`).',
-              schema: { type: 'string', default: '2m', example: '2m' }
-            }
-          ],
-          responses: {
-            '200': {
-              description: 'Monitoring data retrieved successfully.',
-              content: {
-                'application/json': {
-                  schema: MonitorSuccessResponseSchema,
-                  examples: {
-                    success: {
-                      summary: 'CPU and memory metrics',
-                      value: [
-                        {
-                          timestamp: 1760510280,
-                          readableTime: '2025/10/15 14:38',
-                          cpu: 1.08,
-                          memory: 10.32
-                        },
-                        {
-                          timestamp: 1760510340,
-                          readableTime: '2025/10/15 14:39',
-                          cpu: 1.18,
-                          memory: 10.37
-                        }
-                      ]
-                    }
-                  }
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid devbox name or query parameters.',
-              content: {
-                'application/json': {
-                  schema: createError400Schema([
-                    ErrorCode.INVALID_PARAMETER,
-                    ErrorCode.INVALID_VALUE
-                  ]),
-                  examples: {
-                    invalidParam: {
-                      summary: 'Invalid devbox name',
-                      value: createErrorExample(
-                        ErrorType.VALIDATION_ERROR,
-                        ErrorCode.INVALID_PARAMETER,
-                        'Invalid devbox name format.'
-                      )
-                    },
-                    invalidTimeRange: {
-                      summary: 'start is not earlier than end',
-                      value: createErrorExample(
-                        ErrorType.VALIDATION_ERROR,
-                        ErrorCode.INVALID_VALUE,
-                        'Start timestamp must be earlier than end timestamp.'
-                      )
-                    }
-                  }
-                }
-              }
-            },
-            '401': unauthorizedResponse,
-            '500': {
-              description: 'Failed to fetch monitoring data.',
-              content: {
-                'application/json': {
-                  schema: createError500Schema([ErrorCode.INTERNAL_ERROR]),
-                  examples: {
-                    serverError: {
-                      summary: 'Internal error',
-                      value: createErrorExample(
-                        ErrorType.INTERNAL_ERROR,
-                        ErrorCode.INTERNAL_ERROR,
-                        'Failed to fetch devbox monitor data.'
                       )
                     }
                   }

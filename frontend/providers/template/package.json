@@ -26,6 +26,7 @@
     "@replit/codemirror-vscode-keymap": "^6.0.2",
     "@scalar/api-reference-react": "^0.8.36",
     "@sealos/driver": "workspace:^",
+    "@sealos/shared": "workspace:^",
     "@sealos/gtm": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",

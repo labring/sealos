@@ -4,6 +4,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
 import { AutostartRequestSchema } from './schema';
 import { sendError, sendValidationError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
+import { jsonRes } from '@/services/backend/response';
 
 export const dynamic = 'force-dynamic';
 
