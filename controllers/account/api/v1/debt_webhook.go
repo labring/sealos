@@ -94,6 +94,10 @@ func (d *DebtValidate) Handle(ctx context.Context, req admission.Request) admiss
 		if strings.Contains(req.UserInfo.Username, "user-controller-manager") {
 			break
 		}
+		if strings.HasSuffix(req.UserInfo.Username, "user-system:admin") {
+			logger.V(1).Info("pass for ns-admin")
+			return admission.ValidationResponse(true, "")
+		}
 		if isWhiteList(req) {
 			return admission.ValidationResponse(true, "")
 		}
