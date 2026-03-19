@@ -3,16 +3,10 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { BackupClusterUidLabel } from '@/constants/db';
-
-export type Props = {
-  dbUid: string;
-};
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+import { BackupClusterUidLabel, UUID_REGEX } from '@/constants/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { dbUid } = req.query as Props;
+  const { dbUid } = req.query as { dbUid: string };
 
   if (!dbUid || !UUID_REGEX.test(dbUid)) {
     jsonRes(res, {
@@ -35,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 }
 
-export async function getBackupListByDBUid({ dbUid, req }: Props & { req: NextApiRequest }) {
+export async function getBackupListByDBUid({ dbUid, req }: { dbUid: string; req: NextApiRequest }) {
   const group = 'dataprotection.kubeblocks.io';
   const version = 'v1alpha1';
   const plural = 'backups';

@@ -87,7 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             message: 'Database not found.'
           });
         }
-        throw err;
+        return sendK8sError(res, err);
       }
 
       const clusterUid = clusterInfo?.metadata?.uid;
