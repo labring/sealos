@@ -6,7 +6,7 @@ import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { PVC_STORAGE_MAX } from '@/store/static';
+import { PVC_STORAGE_MAX, NETWORK_STORAGE_ENABLED } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
@@ -1310,72 +1310,76 @@ const Form = ({
                     </>
                   )}
 
-                  <Divider my={'30px'} borderColor={'#EFF0F1'} />
+                  {NETWORK_STORAGE_ENABLED && (
+                    <>
+                      <Divider my={'30px'} borderColor={'#EFF0F1'} />
 
-                  {/* Network Storage Section */}
-                  <Box>
-                    <Flex alignItems={'center'} mb={'10px'}>
-                      <Label className={styles.formSecondTitle} m={0}>
-                        {t('network_storage')}
-                      </Label>
+                      {/* Network Storage Section */}
+                      <Box>
+                        <Flex alignItems={'center'} mb={'10px'}>
+                          <Label className={styles.formSecondTitle} m={0}>
+                            {t('network_storage')}
+                          </Label>
 
-                      <Button
-                        w={'320px'}
-                        height={'32px'}
-                        variant={'outline'}
-                        onClick={() => setNetworkStoreEdit(true)}
-                        leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
-                      >
-                        {t('network_store_add_volume')}
-                      </Button>
-                    </Flex>
-                    {networkStoreList.length > 0 && (
-                      <Box mt={4} pl={`${labelWidth}px`}>
-                        {networkStoreList.map((item, index) => (
-                          <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
-                            <Flex
-                              alignItems={'center'}
-                              px={4}
-                              py={1}
-                              border={theme.borders.base}
-                              flex={'0 0 320px'}
-                              w={0}
-                              borderRadius={'md'}
-                              bg={'grayModern.25'}
-                            >
-                              <MyIcon name={'store'} w={'20px'} />
-                              <Box ml={4} flex={'1 0 0'} w={'0px'}>
-                                <Box color={'myGray.900'} fontWeight={'bold'}>
-                                  {item.path}
-                                </Box>
-                                <Box
-                                  className={styles.textEllipsis}
-                                  color={'grayModern.900'}
-                                  fontSize={'sm'}
+                          <Button
+                            w={'320px'}
+                            height={'32px'}
+                            variant={'outline'}
+                            onClick={() => setNetworkStoreEdit(true)}
+                            leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
+                          >
+                            {t('network_store_add_volume')}
+                          </Button>
+                        </Flex>
+                        {networkStoreList.length > 0 && (
+                          <Box mt={4} pl={`${labelWidth}px`}>
+                            {networkStoreList.map((item, index) => (
+                              <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
+                                <Flex
+                                  alignItems={'center'}
+                                  px={4}
+                                  py={1}
+                                  border={theme.borders.base}
+                                  flex={'0 0 320px'}
+                                  w={0}
+                                  borderRadius={'md'}
+                                  bg={'grayModern.25'}
                                 >
-                                  {item.name}
-                                </Box>
-                              </Box>
-                            </Flex>
-                            <IconButton
-                              height={'32px'}
-                              width={'32px'}
-                              aria-label={'delete'}
-                              variant={'outline'}
-                              bg={'#FFF'}
-                              ml={3}
-                              icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
-                              _hover={{
-                                color: 'red.600',
-                                bg: 'rgba(17, 24, 36, 0.05)'
-                              }}
-                              onClick={() => removeNetworkStore(index)}
-                            />
-                          </Flex>
-                        ))}
+                                  <MyIcon name={'store'} w={'20px'} />
+                                  <Box ml={4} flex={'1 0 0'} w={'0px'}>
+                                    <Box color={'myGray.900'} fontWeight={'bold'}>
+                                      {item.path}
+                                    </Box>
+                                    <Box
+                                      className={styles.textEllipsis}
+                                      color={'grayModern.900'}
+                                      fontSize={'sm'}
+                                    >
+                                      {item.name}
+                                    </Box>
+                                  </Box>
+                                </Flex>
+                                <IconButton
+                                  height={'32px'}
+                                  width={'32px'}
+                                  aria-label={'delete'}
+                                  variant={'outline'}
+                                  bg={'#FFF'}
+                                  ml={3}
+                                  icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
+                                  _hover={{
+                                    color: 'red.600',
+                                    bg: 'rgba(17, 24, 36, 0.05)'
+                                  }}
+                                  onClick={() => removeNetworkStore(index)}
+                                />
+                              </Flex>
+                            ))}
+                          </Box>
+                        )}
                       </Box>
-                    )}
-                  </Box>
+                    </>
+                  )}
                 </AccordionPanel>
               </AccordionItem>
             </Accordion>
