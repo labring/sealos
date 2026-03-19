@@ -166,6 +166,9 @@ export default function EditApp({
       } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
         setErrorMessage(t('forbidden_create_app'));
         setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+      } else if (error?.code === ResponseCode.QUOTA_EXCEEDED) {
+        setErrorMessage(t('quota_exceeded'));
+        setErrorCode(ResponseCode.QUOTA_EXCEEDED);
       } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
         setErrorMessage(t('app_already_exists'));
         setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
@@ -402,7 +405,7 @@ export default function EditApp({
       <Loading />
       {!!errorMessage && (
         <ErrorModal
-          title={applyError}
+          title={t(applyError)}
           content={errorMessage}
           errorCode={errorCode}
           onClose={() => setErrorMessage('')}

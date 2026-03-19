@@ -298,6 +298,7 @@
   "first_charge": "首充优惠",
   "first_charge_tip": "部分规格首次充值可享双倍赠送金额",
   "forbidden_create_app": "您在当前工作空间没有足够的权限来创建应用。请联系该工作空间的 owner (所有者) 为您授权。",
+  "quota_exceeded": "请求的资源超出了配额限制，请减少资源请求或联系管理员提升配额。",
   "form": {
     "add_configmap": "新增配置文件",
     "storage_path_placeholder": "如：/data"

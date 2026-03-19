@@ -214,6 +214,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             module: 'applaunchpad',
             error_code: 'FORBIDDEN_CREATE_APP'
           });
+        } else if (error?.code === ResponseCode.QUOTA_EXCEEDED) {
+          setErrorMessage(t('quota_exceeded'));
+          setErrorCode(ResponseCode.QUOTA_EXCEEDED);
+
+          track('error_occurred', {
+            module: 'applaunchpad',
+            error_code: 'QUOTA_EXCEEDED'
+          });
         } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
           setErrorMessage(t('app_already_exists'));
           setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
@@ -580,7 +588,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       <Loading />
       {!!errorMessage && (
         <ErrorModal
-          title={applyError}
+          title={t(applyError)}
           content={errorMessage}
           onClose={() => setErrorMessage('')}
           errorCode={errorCode}
