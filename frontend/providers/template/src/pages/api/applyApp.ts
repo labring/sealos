@@ -30,6 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     jsonRes(res, { data: appliedKinds });
   } catch (err: any) {
+    console.log('deploy template app error', err);
     return jsonRes(res, handleK8sError(err));
   }
 }

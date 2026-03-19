@@ -1339,11 +1339,13 @@ const Form = ({
           defaultValue={storeEdit}
           isEditStore={!!existingStores.find((item) => storeEdit.path === item.path)}
           minValue={existingStores.find((item) => storeEdit.path === item.path)?.value ?? 1}
-          maxValue={Math.min(
-            // left quota - this one
-            storageQuotaLeft + (storeList.find((item) => item.id === storeEdit.id)?.value ?? 0),
-            // But not exceed the size cap
-            PVC_STORAGE_MAX
+          maxValue={Math.floor(
+            Math.min(
+              // left quota - this one
+              storageQuotaLeft + (storeList.find((item) => item.id === storeEdit.id)?.value ?? 0),
+              // But not exceed the size cap
+              PVC_STORAGE_MAX
+            )
           )}
           listNames={storeList
             .filter((item) => item.id !== storeEdit.id)

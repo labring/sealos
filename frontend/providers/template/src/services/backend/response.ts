@@ -29,6 +29,12 @@ export const handleK8sError = (err: any): Partial<ApiResponse> => {
           message: ResponseMessages[ResponseCode.BALANCE_NOT_ENOUGH]
         };
       }
+      if (k8sApiErr.message?.includes('exceeded quota')) {
+        return {
+          code: ResponseCode.QUOTA_EXCEEDED,
+          message: ResponseMessages[ResponseCode.QUOTA_EXCEEDED]
+        };
+      }
       return {
         code: ResponseCode.FORBIDDEN_CREATE_APP,
         message: ResponseMessages[ResponseCode.FORBIDDEN_CREATE_APP]

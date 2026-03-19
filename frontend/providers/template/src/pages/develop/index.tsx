@@ -275,7 +275,11 @@ export default function Develop() {
       </Flex>
       <Loading />
       {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+        <ErrorModal
+          title={t(applyError)}
+          content={errorMessage}
+          onClose={() => setErrorMessage('')}
+        />
       )}
     </Flex>
   );
