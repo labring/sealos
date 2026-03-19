@@ -54,6 +54,8 @@ const AppItem = ({
 
   const { i18n } = useTranslation();
   const fallbackIcon = useConfigStore().layoutConfig?.logo || '/logo.svg';
+  const forcedIconStyle = app.representativeMeta.forcedIconStyle;
+  const iconSize = forcedIconStyle === 'contain' ? '60px' : '100%';
 
   return (
     <Flex
@@ -91,10 +93,11 @@ const AppItem = ({
         draggable
       >
         <Image
-          w={app.key.startsWith('user-') ? '60px' : '100%'}
-          h={app.key.startsWith('user-') ? '60px' : '100%'}
+          w={iconSize}
+          h={iconSize}
           src={app?.icon}
           fallbackSrc={fallbackIcon}
+          objectFit={forcedIconStyle}
           draggable={false}
           pointerEvents={'none'}
           alt="app logo"

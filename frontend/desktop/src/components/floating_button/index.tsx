@@ -61,6 +61,9 @@ export default function FloatingButton() {
         url: '',
         desc: ''
       },
+      representativeMeta: {
+        forcedIconStyle: 'fill'
+      },
       displayType: 'hidden'
     },
     ...runningInfo
@@ -133,8 +136,8 @@ export default function FloatingButton() {
       x < leftBoundary
         ? handleSuction(Suction.Left)
         : x > rightBoundary
-        ? handleSuction(Suction.Right)
-        : null;
+          ? handleSuction(Suction.Right)
+          : null;
     } catch (error) {
       console.log(error);
     }
