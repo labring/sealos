@@ -1,5 +1,12 @@
-import { APPTYPE, TAppMenuData, displayType } from './app';
+import { APPTYPE, TAppMenuData, TForcedIconStyle, displayType } from './app';
 import { LicenseFrontendKey } from '@/constants/account';
+
+export const ForcedIconStyleAnnotation =
+  'app.sealos.io/representative-meta.forced-icon-style' as const;
+
+export type TAppRepresentativeAnnotations = {
+  [ForcedIconStyleAnnotation]?: TForcedIconStyle;
+} & Record<string, string | undefined>;
 
 export type CRDMeta = {
   group: string; // group
@@ -68,7 +75,7 @@ export type TAppCR = {
   apiVersion: 'app.sealos.io/v1';
   kind: 'App';
   metadata: {
-    annotations: any;
+    annotations?: TAppRepresentativeAnnotations;
     creationTimestamp: string;
     generation: number;
     labels: Record<string, string>;
