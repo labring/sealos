@@ -73,9 +73,9 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
     data: backups = [],
     isSuccess
   } = useQuery(
-    ['intervalLoadBackups', db.dbName],
+    ['intervalLoadBackups', db.id],
     async () => {
-      const backups: BackupItemType[] = await getBackupList(db.dbName);
+      const backups: BackupItemType[] = await getBackupList(db.id);
       backups.sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
       return backups;
     },
@@ -285,8 +285,8 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
-                        ? `${app[col.dataIndex]}`
-                        : '-'}
+                      ? `${app[col.dataIndex]}`
+                      : '-'}
                   </Td>
                 ))}
               </Tr>

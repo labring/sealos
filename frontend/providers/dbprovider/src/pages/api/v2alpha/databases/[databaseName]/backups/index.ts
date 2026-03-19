@@ -6,7 +6,7 @@ import {
   DBBackupMethodNameMap,
   DBBackupPolicyNameMap,
   DBTypeEnum,
-  DBNameLabel
+  BackupClusterUidLabel
 } from '@/constants/db';
 import { customAlphabet } from 'nanoid';
 import z from 'zod';
@@ -64,6 +64,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     try {
+      const clusterGroup = 'apps.kubeblocks.io';
+      const clusterVersion = 'v1alpha1';
+      const clusterPlural = 'clusters';
+
+      let clusterInfo: any;
+      try {
+        const { body } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
+          clusterGroup,
+          clusterVersion,
+          k8s.namespace,
+          clusterPlural,
+          databaseName
+        )) as any;
+        clusterInfo = body;
+      } catch (err: any) {
+        if (err?.response?.statusCode === 404) {
+          return sendError(res, {
+            status: 404,
+            type: ErrorType.RESOURCE_ERROR,
+            code: ErrorCode.NOT_FOUND,
+            message: 'Database not found.'
+          });
+        }
+        throw err;
+      }
+
+      const clusterUid = clusterInfo?.metadata?.uid;
+      if (!clusterUid) {
+        return sendError(res, {
+          status: 404,
+          type: ErrorType.RESOURCE_ERROR,
+          code: ErrorCode.NOT_FOUND,
+          message: 'Database not found.'
+        });
+      }
+
       const group = 'dataprotection.kubeblocks.io';
       const version = 'v1alpha1';
       const plural = 'backups';
@@ -72,36 +108,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         group,
         version,
         k8s.namespace,
-        plural
+        plural,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `${BackupClusterUidLabel}=${clusterUid}`
       )) as any;
 
       const items: any[] = Array.isArray(backupList?.items) ? backupList.items : [];
 
-      const backups = items
-        .filter((item) => item?.metadata?.labels?.[DBNameLabel] === databaseName)
-        .map((item) => {
-          const labels = item?.metadata?.labels || {};
-          const descriptionHex = labels[BACKUP_REMARK_LABEL_KEY];
-          let description = '';
-          if (descriptionHex) {
-            try {
-              description = decodeFromHex(descriptionHex);
-            } catch (error) {
-              description = '';
-            }
+      const backups = items.map((item) => {
+        const labels = item?.metadata?.labels || {};
+        const descriptionHex = labels[BACKUP_REMARK_LABEL_KEY];
+        let description = '';
+        if (descriptionHex) {
+          try {
+            description = decodeFromHex(descriptionHex);
+          } catch (error) {
+            description = '';
           }
+        }
 
-          const status = (
-            (item?.status?.phase as BackupStatusEnum) || BackupStatusEnum.UnKnow
-          ).toLowerCase();
+        const status = (
+          (item?.status?.phase as BackupStatusEnum) || BackupStatusEnum.UnKnow
+        ).toLowerCase();
 
-          return {
-            name: item?.metadata?.name || '',
-            description,
-            createdAt: item?.metadata?.creationTimestamp || '',
-            status
-          };
-        });
+        return {
+          name: item?.metadata?.name || '',
+          description,
+          createdAt: item?.metadata?.creationTimestamp || '',
+          status
+        };
+      });
 
       return res.status(200).json(backups);
     } catch (err: any) {
