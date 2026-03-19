@@ -236,6 +236,8 @@
   "please_enter_enterprise_key": "Enter the Unified Social Credit Code",
   "please_enter_legal_person": "Enter the name of the legal representative",
   "please_enter_username": "Please enter your username",
+  "please_input_password": "Please enter password",
+  "please_input_username": "Please enter username",
   "please_enter_verification_amount": "Enter the verification amount (in cents).",
   "privacy_policy": "Privacy Policy",
   "private_team_id_of_user": "User's ID",
