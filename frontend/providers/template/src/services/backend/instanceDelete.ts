@@ -61,6 +61,22 @@ export async function deleteInstanceOnly(
   await operations.deleteInstance(api, namespace, instanceName);
 }
 
+export async function legacyDeletePersistentVolumeClaimsOnly(
+  k8s: Awaited<ReturnType<typeof getK8s>>,
+  instanceName: string
+): Promise<void> {
+  const ns = k8s.namespace;
+
+  try {
+    await operations.deletePersistentVolumeClaimsInApp(k8s.k8sCore, ns, instanceName);
+  } catch (error: any) {
+    if (+error?.body?.code === 404) return;
+    throw (
+      error?.body || error || new Error('An error occurred whilst deleting PersistentVolumeClaims.')
+    );
+  }
+}
+
 async function listObjectStorageBucketsByInstance(
   api: CustomObjectsApi,
   namespace: string,
@@ -140,6 +156,8 @@ async function listHorizontalPodAutoscalersByInstance(
  *
  * IMPORTANT: This is intentionally comprehensive and should mirror (and extend) the resource
  * categories currently shown on the Instance detail page.
+ *
+ * @deprecated Use new ownerReference based deletion approach instead!
  */
 export async function legacyDeleteInstanceAll(
   k8s: Awaited<ReturnType<typeof getK8s>>,
@@ -255,11 +273,7 @@ export async function legacyDeleteInstanceAll(
   );
 
   // PVC
-  await deleteResourcesBatch(
-    operations.getPersistentVolumeClaims(k8s.k8sCore, ns, instanceName),
-    (name: string) => operations.deletePersistentVolumeClaim(k8s.k8sCore, ns, name),
-    'An error occurred whilst deleting PersistentVolumeClaims.'
-  );
+  await legacyDeletePersistentVolumeClaimsOnly(k8s, instanceName);
 
   // Monitoring (Prometheus Operator)
   await deleteResourcesBatch(
