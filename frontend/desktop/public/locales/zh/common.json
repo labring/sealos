@@ -231,6 +231,8 @@
   "please_enter_enterprise_key": "请输入统一社会信用代码",
   "please_enter_legal_person": "请输入法人姓名",
   "please_enter_username": "请输入您的用户名",
+  "please_input_password": "请输入密码",
+  "please_input_username": "请输入用户名",
   "please_enter_verification_amount": "请输入验证金额（单位分）",
   "privacy_policy": "隐私政策",
   "private_team_id_of_user": "用户ID",
