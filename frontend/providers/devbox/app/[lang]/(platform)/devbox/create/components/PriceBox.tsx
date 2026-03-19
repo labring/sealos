@@ -20,7 +20,7 @@ interface PriceBoxProps {
   components: {
     cpu: number;
     memory: number;
-    storage?: number;
+    pvcStorage?: number;
     gpu?: {
       type: string;
       amount: number;
@@ -46,10 +46,10 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
     let tp = 0;
     let gp = 0;
 
-    components.forEach(({ cpu, memory, storage, gpu }) => {
+    components.forEach(({ cpu, memory, pvcStorage, gpu }) => {
       cp = (sourcePrice.cpu * cpu * 24) / 1000;
       mp = (sourcePrice.memory * memory * 24) / 1024;
-      sp = sourcePrice.storage * (storage || 0) * 24;
+      sp = sourcePrice.storage * (pvcStorage || 0) * 24;
       pp = sourcePrice.nodeports * 1 * 24;
 
       gp = (() => {
