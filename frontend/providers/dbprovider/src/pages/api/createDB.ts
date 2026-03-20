@@ -72,13 +72,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       // Handle parameter configuration updates
-      if (['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-        const isMysql5742 = dbForm.dbVersion === 'mysql-5.7.42';
+      if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
+        const isMysql5742 =
+          dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42';
         const tz = dbForm.parameterConfig?.timeZone;
-        const shouldApplyOnlyTimezone = isMysql5742 && !!tz;
+        const shouldApplyMysql5742Timezone =
+          isMysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
 
-        // For MySQL 5.7.42, only configure default-time-zone (derived from timeZone).
-        if (!isMysql5742 || shouldApplyOnlyTimezone) {
+        if (!isMysql5742 || shouldApplyMysql5742Timezone) {
           try {
             const dynamicMaxConnections = isMysql5742
               ? undefined
@@ -87,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               dbForm.dbName,
               dbForm.dbType,
               dbForm.dbVersion,
-              isMysql5742 ? { timeZone: tz as string } : dbForm.parameterConfig,
+              shouldApplyMysql5742Timezone ? { timeZone: tz as string } : dbForm.parameterConfig,
               dynamicMaxConnections
             );
             await applyYamlList([configYaml], 'replace');
@@ -151,22 +152,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const yamlList = [account, cluster];
 
-    if (['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-      const isMysql5742 = dbForm.dbVersion === 'mysql-5.7.42';
+    if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
+      const isMysql5742 = dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42';
       const tz = dbForm.parameterConfig?.timeZone;
-      const shouldApplyOnlyTimezone = isMysql5742 && !!tz;
+      const shouldApplyMysql5742Timezone =
+        isMysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
 
-      // For MySQL 5.7.42, only configure default-time-zone (derived from timeZone).
-      if (!isMysql5742 || shouldApplyOnlyTimezone) {
-        const dynamicMaxConnections = isMysql5742
-          ? undefined
-          : getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+      // For MySQL 5.7.42, only allow timezone configuration to be applied.
+      if (!isMysql5742 || shouldApplyMysql5742Timezone) {
+        const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
 
         const config = json2ParameterConfig(
           dbForm.dbName,
           dbForm.dbType,
           dbForm.dbVersion,
-          isMysql5742 ? { timeZone: tz as string } : dbForm.parameterConfig,
+          shouldApplyMysql5742Timezone ? { timeZone: tz as string } : dbForm.parameterConfig,
           dynamicMaxConnections
         );
         yamlList.unshift(config);

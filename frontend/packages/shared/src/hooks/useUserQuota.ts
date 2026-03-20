@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useCallback, useMemo } from 'react';
 import { useQuotaStore } from '../store/quota';
 import type {

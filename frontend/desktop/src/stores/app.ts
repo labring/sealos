@@ -36,6 +36,7 @@ export class AppInfo {
   menuData?: TAppMenuData[];
   displayType: displayType;
   i18n?: any;
+  representativeMeta: TApp['representativeMeta'];
 
   constructor(app: TApp, pid: number) {
     this.isShow = false;
@@ -55,6 +56,7 @@ export class AppInfo {
     this.pid = pid;
     this.displayType = app.displayType;
     this.i18n = app?.i18n;
+    this.representativeMeta = cloneDeep(app.representativeMeta);
   }
 }
 

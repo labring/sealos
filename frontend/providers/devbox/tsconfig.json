@@ -2,8 +2,8 @@
   "extends": "../../tsconfig.web.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "target": "ES2020",
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "target": "es2022",
     "forceConsistentCasingInFileNames": false,
     "moduleResolution": "bundler",
     "paths": {

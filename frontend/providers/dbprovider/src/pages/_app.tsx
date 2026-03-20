@@ -22,7 +22,8 @@ import 'nprogress/nprogress.css';
 import Script from 'next/script';
 import App from 'next/app';
 import { useUserStore } from '@/store/user';
-import { InsufficientQuotaDialog, QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
+import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
+import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());

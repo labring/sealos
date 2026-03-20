@@ -273,9 +273,9 @@ const Form = ({
   );
 
   const [dbType, dbVersion] = watch(['dbType', 'dbVersion']);
-  const isMysql5742 = dbVersion === 'mysql-5.7.42';
+  const isMysql5742 = dbType === 'apecloud-mysql' && dbVersion === 'mysql-5.7.42';
   const supportParameterConfig = useMemo(() => {
-    return ['postgresql', 'apecloud-mysql', 'mysql', 'mongodb', 'redis'].includes(dbType);
+    return ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbType);
   }, [dbType]);
 
   const navList: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] =

@@ -8,6 +8,8 @@ import { dbTypeMap, fetchDBSecret, getSecretNames } from '@/utils/database';
 import { json2BasicOps } from '@/utils/json2Yaml';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
 import { CoreV1Api } from '@kubernetes/client-node';
+import { editPasswordSchema, editPasswordSchemaErrorMessage } from '@/types/schemas/password';
+import { ResponseCode } from '@/types/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type EditPasswordReq = {
@@ -61,10 +63,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const { dbName, dbType, newPassword } = req.body as EditPasswordReq;
 
-    if (!newPassword.match(/^(?!-)[A-Za-z\d~`!\@#%^&\*()\-\_=+\|:,<.>\/? ]{8,32}$/)) {
-      throw new Error(
-        'Password must be 8-32 characters long and cannot contain certain special characters!'
-      );
+    const passwordParseResult = editPasswordSchema.safeParse(newPassword);
+    if (!passwordParseResult.success) {
+      return jsonRes(res, {
+        code: ResponseCode.BAD_REQUEST,
+        message: editPasswordSchemaErrorMessage
+      });
     }
 
     const firstPodName = `${dbName}-${DBBackupPolicyNameMap[dbType]}-0`;
