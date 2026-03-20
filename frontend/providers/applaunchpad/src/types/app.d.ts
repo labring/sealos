@@ -135,6 +135,12 @@ export interface AppEditType {
     storageType?: StorageType; // 'local' = managed by launchpad (PVC with LVM), 'remote' = external storage (e.g. NFS), display only. Default: 'local'
     storageClassName?: string; // Kubernetes StorageClass name (e.g. 'nfs-csi', 'local'). Used to determine storage type if provided.
   }[];
+  // Network storage: mounts existing PVCs (e.g. NFS). Does NOT trigger StatefulSet.
+  networkStoreList: {
+    name: string; // PVC name to mount
+    path: string; // mount path
+    storageClassName?: string;
+  }[];
   labels: { [key: string]: string };
   volumes: V1Volume[];
   volumeMounts: V1VolumeMount[];
@@ -160,6 +166,7 @@ export type AppEditSyncedFields = Pick<
   | 'gpu'
   | 'configMapList'
   | 'storeList'
+  | 'networkStoreList'
   | 'envs'
   | 'ephemeralStorage'
   | 'sharedMemory'

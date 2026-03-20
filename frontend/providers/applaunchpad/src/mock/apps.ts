@@ -304,6 +304,7 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     serverAddress: 'docker.io'
   },
   storeList: [],
+  networkStoreList: [],
   labels: {
     app: 'hello-world',
     'cloud.sealos.io/app-deploy-manager': 'hello-world'
@@ -362,5 +363,6 @@ export const MockAppEditSyncedFields: AppEditSyncedFields = {
       storageType: 'remote',
       storageClassName: 'nfs-csi'
     }
-  ]
+  ],
+  networkStoreList: []
 };

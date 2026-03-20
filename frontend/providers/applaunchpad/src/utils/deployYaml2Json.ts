@@ -116,7 +116,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
       [deployPVCResizeKey]: `${totalStorage}Gi`,
       [ownerReferencesKey]: ownerReferencesReadyValue,
-      ...(remoteStores.length > 0 ? { remoteStores: JSON.stringify(remoteStores) } : {})
+      ...(remoteStores.length > 0 ? { remoteStores: JSON.stringify(remoteStores) } : {}),
+      ...(data.networkStoreList && data.networkStoreList.length > 0
+        ? { networkStores: JSON.stringify(data.networkStoreList) }
+        : {})
     },
     labels: {
       ...(data.labels || {}),
@@ -231,6 +234,19 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     mountPath: store.path
   }));
 
+  // Network stores: mount existing PVCs (does NOT trigger StatefulSet)
+  const networkStoreVolumes = (data.networkStoreList || []).map((store) => ({
+    name: store.name,
+    persistentVolumeClaim: {
+      claimName: store.name
+    }
+  }));
+
+  const networkStoreVolumeMounts = (data.networkStoreList || []).map((store) => ({
+    name: store.name,
+    mountPath: store.path
+  }));
+
   // Shared memory volume (emptyDir with Memory medium)
   const sharedMemoryVolume =
     data.sharedMemory?.enabled && data.sharedMemory.sizeLimit > 0
@@ -260,6 +276,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     ...(data.volumes || []),
     ...configMapVolumes,
     ...remoteStoreVolumes,
+    ...networkStoreVolumes,
     ...sharedMemoryVolume
   ];
 
@@ -267,6 +284,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     ...(data.volumeMounts || []),
     ...configMapVolumeMounts,
     ...remoteStoreVolumeMounts,
+    ...networkStoreVolumeMounts,
     ...sharedMemoryVolumeMount
   ];
 

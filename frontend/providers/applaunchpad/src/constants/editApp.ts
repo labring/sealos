@@ -62,6 +62,7 @@ export const defaultEditVal: AppEditType = {
     serverAddress: 'docker.io'
   },
   storeList: [],
+  networkStoreList: [],
   volumes: [],
   volumeMounts: [],
   gpu: {

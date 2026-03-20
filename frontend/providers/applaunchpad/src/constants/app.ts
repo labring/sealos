@@ -99,6 +99,7 @@ export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const sealafDeployKey = 'sealaf-app';
 export const ownerReferencesKey = 'cloud.sealos.io/owner-references';
 export const ownerReferencesReadyValue = 'ready';
+export const shareStorageKey = 'cloud.sealos.io/share-storage';
 
 export enum Coin {
   cny = 'cny',

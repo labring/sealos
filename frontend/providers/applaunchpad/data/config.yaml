@@ -9,6 +9,7 @@ common:
   guideEnabled: false
   apiEnabled: false
   gpuEnabled: false
+  networkStorageEnabled: false
 launchpad:
   infrastructure:
     provider: alibaba
