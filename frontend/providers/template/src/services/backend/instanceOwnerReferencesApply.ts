@@ -201,10 +201,25 @@ export async function applyWithInstanceOwnerReferences(
     meta.ownerReferences = addOrReplaceOwnerReference(meta.ownerReferences, instanceOwnerRef);
   }
 
-  // 4) apply dependents
+  // 4) apply dependents — rollback Instance on failure so cascade deletes all dependents
   if (dependentResources.length > 0) {
     const dependentYamlList = dependentResources.map((r) => JsYaml.dump(r));
-    await deps.applyYamlList(dependentYamlList, mode);
+    try {
+      await deps.applyYamlList(dependentYamlList, mode);
+    } catch (error) {
+      try {
+        await deps.k8sCustomObjects.deleteNamespacedCustomObject(
+          'app.sealos.io',
+          'v1',
+          deps.namespace,
+          'instances',
+          instanceName
+        );
+      } catch (cleanupError) {
+        console.error('Failed to cleanup Instance after deployment failure:', cleanupError);
+      }
+      throw error;
+    }
   }
 
   return { appliedKinds: resources.map((r) => r?.kind).filter(Boolean) as string[] };
