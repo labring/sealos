@@ -9,6 +9,10 @@ export enum APPTYPE {
 
 export type WindowSize = 'maximize' | 'maxmin' | 'minimize';
 export type displayType = 'normal' | 'hidden' | 'more';
+export type TForcedIconStyle = 'contain' | 'fill';
+export type TRepresentativeMeta = {
+  forcedIconStyle: TForcedIconStyle;
+};
 
 export type TAppFront = {
   isShow: boolean;
@@ -53,6 +57,7 @@ export type TAppConfig = {
       name: string;
     };
   };
+  representativeMeta: TRepresentativeMeta;
   displayType: displayType;
   creationTimestamp?: string;
 };

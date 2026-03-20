@@ -1,0 +1,5 @@
+registry.k8s.io/autoscaling/vpa-admission-controller:0.13.0
+registry.k8s.io/autoscaling/vpa-recommender:0.13.0
+registry.k8s.io/autoscaling/vpa-updater:0.13.0
+registry.k8s.io/redis:e2e
+registry.k8s.io/ubuntu-slim:0.1

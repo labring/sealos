@@ -375,6 +375,7 @@
   "param_unset": "不设置参数",
   "parse_url_failed": "内容不合法，识别失败！",
   "password_complexity": "密码必须包含数字、字母、特殊字符中的两种",
+  "password_schema_invalid": "密码长度需为 8-32 位，且不能以 ! 或 - 开头",
   "password_min_length": "密码长度至少为 8 个字符",
   "password_required": "密码不能为空",
   "passwords_must_match": "两次输入的密码不一致",

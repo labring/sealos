@@ -9,7 +9,6 @@ require (
 	github.com/google/go-containerregistry v0.15.2
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/labring/sealos v0.0.0
-	github.com/labring/sreg v0.1.7-rc3.0.20250728082818-441302dcb159
 	github.com/pelletier/go-toml v1.9.5
 	google.golang.org/grpc v1.58.3
 	k8s.io/api v0.30.3
@@ -83,7 +82,6 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
-
 )
 
 replace github.com/labring/sealos => ../../../../../

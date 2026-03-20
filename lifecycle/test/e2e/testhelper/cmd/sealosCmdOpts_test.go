@@ -18,9 +18,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func TestAddOptions_Args(t *testing.T) {
@@ -84,7 +83,7 @@ func TestApplyOptions_Args(t *testing.T) {
 func TestArgs_appendFlagsWithValues(t *testing.T) {
 	type args struct {
 		flagName string
-		values   interface{}
+		values   any
 	}
 	tests := []struct {
 		name  string
@@ -96,7 +95,13 @@ func TestArgs_appendFlagsWithValues(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.args1.appendFlagsWithValues(tt.args.flagName, tt.args.values); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.args1.appendFlagsWithValues(
+				tt.args.flagName,
+				tt.args.values,
+			); !reflect.DeepEqual(
+				got,
+				tt.want,
+			) {
 				t.Errorf("appendFlagsWithValues() = %v, want %v", got, tt.want)
 			}
 		})
@@ -127,6 +132,7 @@ func TestBuildOptions_Args(t *testing.T) {
 		Label              []string
 		Manifest           string
 		MaxPullProcs       int
+		All                bool
 		Platform           string
 		Pull               string
 		Quiet              bool
@@ -168,6 +174,7 @@ func TestBuildOptions_Args(t *testing.T) {
 				Label:              tt.fields.Label,
 				Manifest:           tt.fields.Manifest,
 				MaxPullProcs:       tt.fields.MaxPullProcs,
+				All:                tt.fields.All,
 				Platform:           tt.fields.Platform,
 				Pull:               tt.fields.Pull,
 				Quiet:              tt.fields.Quiet,
