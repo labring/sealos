@@ -20,7 +20,7 @@ type InstanceObject = {
   [key: string]: any;
 };
 
-type AnyK8sObject = {
+export type AnyK8sObject = {
   apiVersion?: string;
   kind?: string;
   metadata?: {
@@ -58,7 +58,7 @@ export function generateInstanceOwnerReference(instanceName: string, uid: string
   ];
 }
 
-const CLUSTER_SCOPED_KINDS = new Set<string>([
+export const CLUSTER_SCOPED_KINDS = new Set<string>([
   'Namespace',
   'Node',
   'PersistentVolume',
@@ -71,7 +71,7 @@ const CLUSTER_SCOPED_KINDS = new Set<string>([
   'APIService'
 ]);
 
-function isInstanceObject(obj: AnyK8sObject): obj is InstanceObject {
+export function isInstanceObject(obj: AnyK8sObject): obj is InstanceObject {
   return (
     obj?.kind === 'Instance' &&
     typeof obj?.apiVersion === 'string' &&
@@ -79,7 +79,7 @@ function isInstanceObject(obj: AnyK8sObject): obj is InstanceObject {
   );
 }
 
-function shouldInjectOwnerReferences(obj: AnyK8sObject): boolean {
+export function shouldInjectOwnerReferences(obj: AnyK8sObject): boolean {
   if (!obj) return false;
   const kind = obj.kind;
   if (!kind || !obj.metadata) return false;
@@ -88,7 +88,7 @@ function shouldInjectOwnerReferences(obj: AnyK8sObject): boolean {
   return true;
 }
 
-function ensureMetadata(obj: AnyK8sObject): Required<AnyK8sObject>['metadata'] {
+export function ensureMetadata(obj: AnyK8sObject): Required<AnyK8sObject>['metadata'] {
   if (!obj.metadata) obj.metadata = {};
   return obj.metadata as Required<AnyK8sObject>['metadata'];
 }
@@ -98,7 +98,10 @@ function ensureLabels(meta: Required<AnyK8sObject>['metadata']) {
   return meta.labels;
 }
 
-function addOrReplaceOwnerReference(existing: any[] | undefined, instanceOwnerRef: any): any[] {
+export function addOrReplaceOwnerReference(
+  existing: any[] | undefined,
+  instanceOwnerRef: any
+): any[] {
   const list = Array.isArray(existing) ? [...existing] : [];
   const idx = list.findIndex(
     (r) =>
@@ -114,7 +117,7 @@ function addOrReplaceOwnerReference(existing: any[] | undefined, instanceOwnerRe
   return list;
 }
 
-function parseYamlList(yamlList: string[]): AnyK8sObject[] {
+export function parseYamlList(yamlList: string[]): AnyK8sObject[] {
   const all: AnyK8sObject[] = [];
   for (const str of yamlList) {
     const docs = (JsYaml.loadAll(str).filter(Boolean) as AnyK8sObject[]) || [];
@@ -123,7 +126,7 @@ function parseYamlList(yamlList: string[]): AnyK8sObject[] {
   return all;
 }
 
-async function readInstanceUid(
+export async function readInstanceUid(
   k8sCustomObjects: CustomObjectsApi,
   namespace: string,
   instanceName: string
