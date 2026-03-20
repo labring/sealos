@@ -7,6 +7,7 @@ import type {
   ExceededWorkspaceQuotaItem,
   WorkspaceQuotaItem
 } from '../types/workspace';
+import { useQuotaGuardConfig } from './QuotaGuardProvider';
 
 export interface UseUserQuotaOptions {
   /** Resource requirements to check against */
@@ -70,15 +71,18 @@ export function useUserQuota(
     setShowRequirements
   } = useQuotaStore();
 
+  const quotaGuardConfig = useQuotaGuardConfig();
+
   const refetch = useCallback(async () => {
-    const quota = await fetchUserQuota();
+    const quota = await fetchUserQuota(quotaGuardConfig.sealosApp);
     setUserQuota(quota);
+
     return quota;
-  }, [fetchUserQuota, setUserQuota]);
+  }, [fetchUserQuota, setUserQuota, quotaGuardConfig.sealosApp]);
 
   useEffect(() => {
     refetch();
-  }, [refetch]);
+  }, [refetch, quotaGuardConfig.sealosApp]);
 
   const checkedExceededQuotas = useMemo(() => {
     if (!requirements || !userQuota || userQuota.length === 0) {
