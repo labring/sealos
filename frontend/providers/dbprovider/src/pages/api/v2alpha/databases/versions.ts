@@ -13,7 +13,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [DBTypeEnum.postgresql]: [],
         [DBTypeEnum.mongodb]: [],
         [DBTypeEnum.mysql]: [],
-        [DBTypeEnum.notapemysql]: [],
         [DBTypeEnum.redis]: [],
         [DBTypeEnum.kafka]: [],
         [DBTypeEnum.qdrant]: [],
