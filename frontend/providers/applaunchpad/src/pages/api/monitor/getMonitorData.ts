@@ -3,91 +3,46 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { monitorFetch } from '@/services/monitorFetch';
-import { MonitorServiceResult, MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
+import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import type {
+  LaunchpadMetricType,
+  LaunchpadQueryParams,
+  LaunchpadQueryResult
+} from 'sealos-metrics-sdk';
+
+const normalizeQueryParam = (value: string | string[] | undefined) =>
+  Array.isArray(value) ? value[0] : value;
+
+const adaptChartData = (
+  data: LaunchpadQueryResult,
+  metricName: 'pod' | 'persistentvolumeclaim'
+): MonitorDataResult[] =>
+  data.data.result.map((item) => ({
+    name: item.metric[metricName] || item.metric.pod || item.metric.persistentvolumeclaim,
+    xData: item.values?.map((value) => Number(value[0])) ?? [],
+    yData: item.values?.map((value) => Number.parseFloat(value[1]).toFixed(2)) ?? []
+  }));
 
 const AdapterChartData: Record<
   keyof MonitorQueryKey,
-  (data: MonitorServiceResult) => MonitorDataResult[]
+  (data: LaunchpadQueryResult) => MonitorDataResult[]
 > = {
-  disk: (data: MonitorServiceResult) => {
-    const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod;
-      let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
-      return {
-        name: name,
-        xData: xData,
-        yData: yData
-      };
-    });
-    return newDataArray;
-  },
-  cpu: (data: MonitorServiceResult) => {
-    const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod;
-      let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
-      return {
-        name: name,
-        xData: xData,
-        yData: yData
-      };
-    });
-    return newDataArray;
-  },
-  memory: (data: MonitorServiceResult) => {
-    const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod;
-      let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
-      return {
-        name: name,
-        xData: xData,
-        yData: yData
-      };
-    });
-    return newDataArray;
-  },
-  average_cpu: (data: MonitorServiceResult) => {
-    const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod;
-      let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
-      return {
-        name: name,
-        xData: xData,
-        yData: yData
-      };
-    });
-    return newDataArray;
-  },
-  average_memory: (data: MonitorServiceResult) => {
-    const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod;
-      let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
-      return {
-        name: name,
-        xData: xData,
-        yData: yData
-      };
-    });
-    return newDataArray;
-  },
-  storage: (data: MonitorServiceResult) => {
-    const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.persistentvolumeclaim;
-      let xData = item.values.map((value) => value[0]);
-      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
-      return {
-        name: name,
-        xData: xData,
-        yData: yData
-      };
-    });
-    return newDataArray;
-  }
+  disk: (data) => adaptChartData(data, 'persistentvolumeclaim'),
+  cpu: (data) => adaptChartData(data, 'pod'),
+  memory: (data) => adaptChartData(data, 'pod'),
+  average_cpu: (data) => adaptChartData(data, 'pod'),
+  average_memory: (data) => adaptChartData(data, 'pod'),
+  storage: (data) => adaptChartData(data, 'persistentvolumeclaim')
+};
+
+const queryTypeMap: Record<keyof MonitorQueryKey, LaunchpadMetricType> = {
+  cpu: 'cpu',
+  memory: 'memory',
+  disk: 'disk',
+  average_cpu: 'average_cpu',
+  average_memory: 'average_memory',
+  storage: 'disk'
 };
 
 const alignMonitorData = (dataArray: MonitorDataResult[]): MonitorDataResult[] => {
@@ -115,37 +70,47 @@ const alignMonitorData = (dataArray: MonitorDataResult[]): MonitorDataResult[] =
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const kubeconfig = await authSession(req.headers);
-    const { namespace, kc } = await getK8s({
+    const { namespace } = await getK8s({
       kubeconfig: kubeconfig
     });
 
     const { queryName, queryKey, start, end, step = '1m', pvcName } = req.query;
+    const normalizedQueryName = normalizeQueryParam(queryName as string | string[] | undefined);
+    const normalizedQueryKey = normalizeQueryParam(queryKey as string | string[] | undefined) as
+      | keyof MonitorQueryKey
+      | undefined;
+    const normalizedStep = normalizeQueryParam(step as string | string[] | undefined) || '1m';
+    const normalizedPvcName = normalizeQueryParam(pvcName as string | string[] | undefined);
+
+    if (!normalizedQueryName || !normalizedQueryKey || !queryTypeMap[normalizedQueryKey]) {
+      return jsonRes(res, {
+        code: 400,
+        message: 'Invalid monitor query params'
+      });
+    }
 
     // One hour of monitoring data
-    const endTime = end ? Number(end) : Date.now();
-    const startTime = start ? Number(start) : endTime - 60 * 60 * 1000;
+    const endTime = end
+      ? Number(normalizeQueryParam(end as string | string[] | undefined))
+      : Date.now();
+    const startTime = start
+      ? Number(normalizeQueryParam(start as string | string[] | undefined))
+      : endTime - 60 * 60 * 1000;
 
-    const params = {
-      type: queryKey,
-      launchPadName: queryName,
+    const params: LaunchpadQueryParams = {
+      type: queryTypeMap[normalizedQueryKey],
+      podName: normalizedQueryName,
       namespace: namespace,
-      start: Math.floor(startTime / 1000),
-      end: Math.floor(endTime / 1000),
-      step: step,
-      ...(pvcName && { pvcName: pvcName })
+      range: {
+        start: Math.floor(startTime / 1000),
+        end: Math.floor(endTime / 1000),
+        step: normalizedStep
+      },
+      ...(normalizedPvcName && { pvcName: normalizedPvcName })
     };
 
-    const result: MonitorDataResult[] = await monitorFetch(
-      {
-        url: '/query',
-        params: params
-      },
-      kubeconfig
-    ).then((res) => {
-      const key = queryKey as keyof MonitorQueryKey;
-      const adaptedData = AdapterChartData[key]
-        ? AdapterChartData[key](res as MonitorServiceResult)
-        : (res as any);
+    const result: MonitorDataResult[] = await monitorFetch(params, kubeconfig).then((sdkRes) => {
+      const adaptedData = AdapterChartData[normalizedQueryKey](sdkRes as LaunchpadQueryResult);
 
       return alignMonitorData(adaptedData);
     });
