@@ -165,7 +165,10 @@ export default function Desktop() {
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
 
   useEffect(() => {
-    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
+    const cleanup = createMasterAPP({
+      allowedOrigins: cloudConfig?.allowedOrigins || ['*'],
+      getWorkspaceQuotaApi: async () => []
+    });
     return cleanup;
   }, [cloudConfig?.allowedOrigins]);
 
