@@ -58,6 +58,7 @@ desktopConfig:
   billingUrl: "http://account-service.account-system.svc:2333"
   billingToken: ""
 
+  allowedAllOrigins: false
   allowedOrigins:
     - "costcenter"
     - "license"
