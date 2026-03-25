@@ -4,7 +4,7 @@ import { Config } from '@sealos/driver/src/config';
 import { X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
 import { useGuideModalStore } from '@/stores/guideModal';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 
 export let currentDriver: any = null;
 

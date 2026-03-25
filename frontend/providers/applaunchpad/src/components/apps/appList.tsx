@@ -25,7 +25,7 @@ import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { BookOpen, Plus, TriangleAlert } from 'lucide-react';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { useQuotaGuarded } from '@sealos/shared';
 import Empty from './empty';
 

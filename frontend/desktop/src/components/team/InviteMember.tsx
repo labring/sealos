@@ -29,7 +29,7 @@ import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { GroupAddIcon } from '@sealos/ui';
 import { useCopyData } from '@/hooks/useCopyData';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { needsClipboardWorkaround } from '@/utils/browserDetect';
 
 export default function InviteMember({

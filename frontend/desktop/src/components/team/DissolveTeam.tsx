@@ -20,7 +20,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import CustomInput from './Input';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 export default function DissolveTeam({
   nsid,
   ns_uid,

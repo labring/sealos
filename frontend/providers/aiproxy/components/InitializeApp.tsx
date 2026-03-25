@@ -3,8 +3,8 @@
 import { useCallback, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 import { initAppConfig } from '@/api/platform';
 import { useTranslationClientSide } from '@/app/i18n/client';

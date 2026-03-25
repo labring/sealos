@@ -4,8 +4,8 @@ import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
 import { TFunction } from 'i18next';
 import { CircleCheckBig, X } from 'lucide-react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
-import { track } from '@sealos/gtm';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
+import { track } from '@labring/gtm';
 
 let currentDriver: any = null;
 

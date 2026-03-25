@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/useToast';
 import { ResponseCode } from '@/types/response';
 import { useTranslation } from 'next-i18next';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 
 export interface AppOperationOptions {
   successMessage?: string;

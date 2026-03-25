@@ -6,8 +6,8 @@ import yaml from 'js-yaml';
 import type { CustomObjectsApi, V1StatefulSet } from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
-import { initK8s } from 'sealos-desktop-sdk/service';
-import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
+import { initK8s } from '@labring/sealos-desktop-sdk/service';
+import { errLog, infoLog, warnLog } from '@labring/sealos-desktop-sdk';
 import type { V1Service } from '@kubernetes/client-node';
 
 export type Props = {

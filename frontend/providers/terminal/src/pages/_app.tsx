@@ -7,7 +7,7 @@ import { QuotaGuardProvider } from '@sealos/shared';
 import useSessionStore from '@/store/session';
 import { useRouter } from 'next/router';
 import { useEffect, useCallback } from 'react';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 const queryClient = new QueryClient({
   defaultOptions: {

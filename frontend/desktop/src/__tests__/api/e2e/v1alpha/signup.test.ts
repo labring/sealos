@@ -1,4 +1,4 @@
-import { Session } from 'sealos-desktop-sdk/*';
+import { Session } from '@labring/sealos-desktop-sdk/*';
 import * as k8s from '@kubernetes/client-node';
 import { _setAuth, cleanDb, cleanK8s } from '@/__tests__/api/tools';
 import request from '@/__tests__/api/request';

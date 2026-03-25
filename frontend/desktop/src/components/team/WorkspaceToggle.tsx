@@ -27,7 +27,7 @@ import { useRouter } from 'next/router';
 import { ChevronDown, Plus, Settings } from 'lucide-react';
 import BoringAvatar from 'boring-avatars';
 import { useEffect, useRef } from 'react';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import CreateTeam from './CreateTeam';

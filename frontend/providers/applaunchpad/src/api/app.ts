@@ -6,7 +6,7 @@ import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { LogQueryPayload } from '@/pages/api/log/queryLogs';
 import { PodListQueryPayload } from '@/pages/api/log/queryPodList';
 import { NetworkMonitorDataResult } from '@/services/networkMonitorFetch';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 
 export const postDeployApp = (yamlList: string[], mode: 'create' | 'replace' = 'create') =>
   POST('/api/applyApp', { yamlList, mode });

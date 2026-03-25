@@ -41,14 +41,14 @@ import {
   useDisclosure
 } from '@chakra-ui/react';
 import { CurrencySymbol, MyTooltip, useMessage } from '@sealos/ui';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { useQuery } from '@tanstack/react-query';
 import { pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { useUserStore } from '@/store/user';
 import { useQuotaGuarded } from '@sealos/shared';
 import { editPasswordPattern } from '@/types/schemas/password';

@@ -17,8 +17,8 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import { useEffect, useState, useCallback } from 'react';
 import 'react-day-picker/dist/style.css';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
 import { QuotaGuardProvider } from '@sealos/shared';
 

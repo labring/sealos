@@ -15,13 +15,13 @@
 
 ```bash
 # Using npm
-npm install @zjy365/sealos-desktop-sdk
+npm install @zjy365/@labring/sealos-desktop-sdk
 
 # Using pnpm
-pnpm add @zjy365/sealos-desktop-sdk
+pnpm add @zjy365/@labring/sealos-desktop-sdk
 
 # Using yarn
-yarn add @zjy365/sealos-desktop-sdk
+yarn add @zjy365/@labring/sealos-desktop-sdk
 ```
 
 ## 🚀 Quick Start
@@ -29,7 +29,7 @@ yarn add @zjy365/sealos-desktop-sdk
 ### Desktop Side (Main Application)
 
 ```typescript
-import { createMasterAPP } from '@zjy365/sealos-desktop-sdk/master';
+import { createMasterAPP } from '@zjy365/@labring/sealos-desktop-sdk/master';
 
 useEffect(() => {
   // Configure allowed domains (recommend using specific domains in production)
@@ -42,7 +42,7 @@ useEffect(() => {
 ### App Side (Sub Application)
 
 ```typescript
-import { createSealosApp, sealosApp } from '@zjy365/sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from '@zjy365/@labring/sealos-desktop-sdk';
 
 useEffect(() => {
   // Initialize SDK

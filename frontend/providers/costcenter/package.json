@@ -55,7 +55,7 @@
     "react-dom": "18.3.1",
     "react-i18next": "^14.1.2",
     "react-zoom-pan-pinch": "^3.7.0",
-    "sealos-desktop-sdk": "workspace:*",
+    "@labring/sealos-desktop-sdk": "workspace:*",
     "sonner": "^2.0.7",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.2.2",

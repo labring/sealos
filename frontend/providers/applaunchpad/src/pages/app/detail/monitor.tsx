@@ -10,7 +10,7 @@ import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
 import { getAppMonitorData, getNetworkMonitorData } from '@/api/app';
 import { LineChart } from 'lucide-react';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { generatePvcNameRegex } from '@/utils/tools';
 import { parseTimeRange } from '@/utils/timeRange';
 import { Skeleton } from '@sealos/shadcn-ui/skeleton';

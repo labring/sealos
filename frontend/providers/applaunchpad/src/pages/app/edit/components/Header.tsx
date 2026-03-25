@@ -6,7 +6,7 @@ import type { YamlItemType } from '@/types/index';
 import type { AppEditType } from '@/types/app';
 import { downLoadBold } from '@/utils/tools';
 import { Button } from '@sealos/shadcn-ui/button';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import dayjs from 'dayjs';
 import { ArrowLeft, Info, X } from 'lucide-react';
 import { useTranslation } from 'next-i18next';

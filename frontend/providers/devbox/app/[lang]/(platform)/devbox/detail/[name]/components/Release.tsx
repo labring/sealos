@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useEnvStore } from '@/stores/env';

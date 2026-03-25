@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
 import { ArrowUpRight } from 'lucide-react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { useQuery } from '@tanstack/react-query';
 
 import { useEnvStore } from '@/stores/env';

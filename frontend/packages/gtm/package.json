@@ -1,6 +1,9 @@
 {
-  "name": "@sealos/gtm",
-  "version": "1.0.0",
+  "name": "@labring/gtm",
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "1.0.1",
   "description": "Google Tag Manager integration for Sealos applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

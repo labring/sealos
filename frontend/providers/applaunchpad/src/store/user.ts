@@ -3,7 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { getResourcePrice } from '@/api/platform';
 import type { userPriceType } from '@/types/user';
-import { SessionV1 } from 'sealos-desktop-sdk/*';
+import { SessionV1 } from '@labring/sealos-desktop-sdk/*';
 
 type State = {
   session: SessionV1 | null;

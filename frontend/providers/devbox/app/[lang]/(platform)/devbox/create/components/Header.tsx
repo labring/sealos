@@ -13,7 +13,7 @@ import { useGuideStore } from '@/stores/guide';
 import type { YamlItemType } from '@/types/index';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { useSearchParams } from 'next/navigation';
 
 interface HeaderProps {

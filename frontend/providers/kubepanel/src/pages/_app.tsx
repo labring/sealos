@@ -8,7 +8,7 @@ import Head from 'next/head';
 import { Router, useRouter } from 'next/router';
 import NProgress from 'nprogress';
 import { useEffect } from 'react';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 // Client-side Monaco configuration
 if (typeof window !== 'undefined') {

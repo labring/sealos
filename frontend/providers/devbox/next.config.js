@@ -23,7 +23,7 @@ const nextConfig = {
   // https://www.npmjs.com/package/geist
   transpilePackages: [
     '@sealos/ui',
-    'sealos-desktop-sdk',
+    '@labring/sealos-desktop-sdk',
     '@sealos/driver',
     'geist',
     '@sealos/shared'

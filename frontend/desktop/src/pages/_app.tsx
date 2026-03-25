@@ -7,7 +7,7 @@ import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Router, { useRouter } from 'next/router';
 import { useEffect } from 'react';
-import { GTMScript } from '@sealos/gtm';
+import { GTMScript } from '@labring/gtm';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';

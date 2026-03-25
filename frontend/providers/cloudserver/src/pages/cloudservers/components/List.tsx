@@ -8,7 +8,7 @@ import { LogoutIcon, MyTable, SealosMenu, useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback, useMemo, useState } from 'react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import DelModal from './DelModal';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useCopyData } from '@/hooks/useCopyData';

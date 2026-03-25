@@ -20,7 +20,7 @@ const nextConfig = {
     config.plugins = [...config.plugins, ...analyzer];
     return config;
   },
-  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver'],
+  transpilePackages: ['@sealos/ui', '@labring/sealos-desktop-sdk', '@sealos/driver'],
   experimental: {
     // this includes files from the monorepo base two directories up
     outputFileTracingRoot: path.join(__dirname, '../../')

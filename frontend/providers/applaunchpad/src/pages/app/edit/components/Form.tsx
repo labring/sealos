@@ -9,7 +9,7 @@ import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
 import { resourcePropertyMap, useUserQuota, type WorkspaceQuotaItem } from '@sealos/shared';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { Trash2, Plus, Minus } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';

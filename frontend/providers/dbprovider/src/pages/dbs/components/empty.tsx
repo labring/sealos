@@ -7,7 +7,7 @@ import { useTranslation } from 'next-i18next';
 import { startDriver, applistDriverObj } from '@/hooks/driver';
 import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { useQuotaGuarded } from '@sealos/shared';
 
 const Empty = () => {

@@ -8,7 +8,7 @@ import TruncateTooltip from '@/components/TruncateTooltip';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useMemo, useState } from 'react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { ArrowUpRight } from 'lucide-react';
 
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));

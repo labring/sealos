@@ -7,7 +7,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
 import { useDesktopConfigStore } from './desktopConfig';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import useSessionStore from './session';
 
 export const BRAIN_APP_KEY = 'system-brain';

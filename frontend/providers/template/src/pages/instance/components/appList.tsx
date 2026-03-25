@@ -13,7 +13,7 @@ import { Box, Button, Center, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useMemo } from 'react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 export const EmptyBoxHeight = '60px';
 export const refetchIntervalTime = 10 * 1000;

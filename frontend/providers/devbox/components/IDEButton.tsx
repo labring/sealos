@@ -27,7 +27,7 @@ import ZedDrawer from './drawers/ZedDrawer';
 import JetBrainsGuideDrawer from './drawers/JetbrainsGuideDrawer';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { usePathname } from '@/i18n';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { useConfirm } from '@/hooks/useConfirm';
 
 export interface SSHConnectionData {

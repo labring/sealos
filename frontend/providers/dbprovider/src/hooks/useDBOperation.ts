@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useMessage } from '@sealos/ui';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { ResponseCode } from '@/types/response';
 import { useTranslation } from 'next-i18next';
 

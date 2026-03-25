@@ -36,7 +36,7 @@ import NsListItem from '@/components/team/NsListItem';
 import RenameTeam from './RenameTeam';
 import { Plus } from 'lucide-react';
 import useAppStore from '@/stores/app';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { getWorkspacesPlans } from '@/api/auth';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { cn } from '@sealos/shadcn-ui';

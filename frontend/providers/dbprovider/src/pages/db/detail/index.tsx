@@ -5,7 +5,7 @@ import { DBType } from '@/types/db';
 import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex, Skeleton, SkeletonText, Text, useMediaQuery } from '@chakra-ui/react';
 import { MyTooltip, useMessage } from '@sealos/ui';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';

@@ -30,7 +30,7 @@ import {
   Badge
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import {
   ColumnDef,
   FilterFn,
@@ -53,7 +53,7 @@ import { generateLoginUrl } from '@/services/chat2db/user';
 import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
 import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 import {
   Modal,

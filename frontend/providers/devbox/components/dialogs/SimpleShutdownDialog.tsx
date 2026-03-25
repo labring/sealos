@@ -16,7 +16,7 @@ import {
   DialogTitle
 } from '@sealos/shadcn-ui/dialog';
 import { Button } from '@sealos/shadcn-ui/button';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 
 const BALANCE_NOT_ENOUGH = 402;
 const FORBIDDEN_CREATE_APP = 403;

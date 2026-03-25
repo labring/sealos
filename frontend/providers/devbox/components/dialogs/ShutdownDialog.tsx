@@ -19,7 +19,7 @@ import {
 import { Label } from '@sealos/shadcn-ui/label';
 import { Button } from '@sealos/shadcn-ui/button';
 import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 
 const BALANCE_NOT_ENOUGH = 402;
 const FORBIDDEN_CREATE_APP = 403;

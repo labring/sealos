@@ -10,8 +10,8 @@ import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress'; //nprogress module
 import { useEffect, useState, useCallback, ComponentProps } from 'react';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 import useSessionStore from '@/store/session';
 import { useUserStore } from '@/store/user';
 import {

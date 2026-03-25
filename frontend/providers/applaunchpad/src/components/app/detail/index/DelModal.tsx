@@ -11,7 +11,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { Input } from '@sealos/shadcn-ui/input';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { useAppOperation } from '@/hooks/useAppOperation';
 import dynamic from 'next/dynamic';
 import { TriangleAlert } from 'lucide-react';

@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
-    "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
+    "link-sdk": "rm -rf node_modules/@labring/sealos-desktop-sdk && yalc link @labring/sealos-desktop-sdk",
+    "unlink-sdk": "yalc remove --all && pnpm install @labring/sealos-desktop-sdk"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
@@ -51,7 +51,7 @@
     "react-markdown": "^8.0.7",
     "react-syntax-highlighter": "^15.5.0",
     "sass": "^1.68.0",
-    "sealos-desktop-sdk": "workspace:*",
+    "@labring/sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.2.2",
     "zod": "^4.1.9",
     "zustand": "^4.4.1"

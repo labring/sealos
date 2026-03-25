@@ -2,12 +2,12 @@
 
 import throttle from 'lodash/throttle';
 import { useEffect, useState, useCallback } from 'react';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
 import { usePathname, useRouter } from '@/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 import { initUser } from '@/api/template';
 import { useEnvStore } from '@/stores/env';

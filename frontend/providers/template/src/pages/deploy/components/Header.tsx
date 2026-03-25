@@ -32,7 +32,7 @@ import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { X } from 'lucide-react';
 import { startDriver, quitGuideDriverObj } from '@/hooks/driver';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import useSessionStore from '@/store/session';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 

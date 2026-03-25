@@ -1,10 +1,10 @@
 import { useGuideStore } from '@/store/guide';
 import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { CircleCheckBig, X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import Image from 'next/image';
 
 let currentDriver: any = null;

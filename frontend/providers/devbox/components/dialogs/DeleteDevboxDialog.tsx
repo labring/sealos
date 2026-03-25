@@ -16,7 +16,7 @@ import {
 } from '@sealos/shadcn-ui/dialog';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Button } from '@sealos/shadcn-ui/button';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 import ErrorModal from '@/components/ErrorModal';
 

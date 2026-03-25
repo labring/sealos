@@ -29,7 +29,7 @@ import {
 import { WindowSize } from '@/types';
 import { Image } from '@chakra-ui/react';
 import { useGuideModalStore } from '@/stores/guideModal';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 
 const GuideModal = () => {
   const { t } = useTranslation();

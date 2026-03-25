@@ -21,7 +21,7 @@ const nextConfig = {
   },
   swcMinify: isProduction,
   output: 'standalone',
-  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver'],
+  transpilePackages: ['@sealos/ui', '@labring/sealos-desktop-sdk', '@sealos/driver'],
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../')
   }

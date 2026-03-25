@@ -10,8 +10,8 @@ import { appWithTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
 import { useEffect, useState, useCallback } from 'react';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { sealosApp, createSealosApp } from '@labring/sealos-desktop-sdk/app';
 import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
 import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
 

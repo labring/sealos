@@ -23,7 +23,7 @@ import {
 } from '@sealos/shadcn-ui/dropdown-menu';
 import IDEButton from '@/components/IDEButton';
 import { Button } from '@sealos/shadcn-ui/button';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 
 interface ActionsProps extends CellContext<DevboxListItemTypeV2, unknown> {
   onOpenRelease: (item: DevboxListItemTypeV2) => void;

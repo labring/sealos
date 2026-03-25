@@ -1,6 +1,9 @@
 {
-  "name": "sealos-desktop-sdk",
-  "version": "0.1.20",
+  "name": "@labring/sealos-desktop-sdk",
+  "publishConfig": {
+    "access": "public"
+  },
+  "version": "0.1.21",
   "description": "sealos desktop sdk",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

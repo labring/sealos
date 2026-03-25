@@ -59,7 +59,7 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 function ResourcesDistributeTable({ data }: { data: Parameters<typeof distributeResources>[0] }) {
   const resources = distributeResources(data);

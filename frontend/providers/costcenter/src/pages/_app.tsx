@@ -18,8 +18,8 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import { useEffect } from 'react';
 import 'react-day-picker/dist/style.css';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { ChakraProvider } from '@chakra-ui/react';
 import { Toaster } from '@sealos/shadcn-ui/sonner';
 

@@ -9,7 +9,7 @@ import DOMPurify from 'dompurify';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { useGuideModalStore } from '@/stores/guideModal';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/gtm';
 
 function GlobalAnnouncementComponent() {
   const { i18n, t } = useTranslation();
