@@ -33,6 +33,7 @@ if ! helm status "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" >/dev/null 2>&1; th
   adopt_namespaced_resource configmap region-info
   adopt_namespaced_resource service account-service
   adopt_namespaced_resource deployment account-service
+  adopt_namespaced_resource ingress account-service
 fi
 
 # Build helm set args from ConfigMap
