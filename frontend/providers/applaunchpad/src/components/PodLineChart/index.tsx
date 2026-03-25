@@ -3,109 +3,63 @@ import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
 import { MonitorDataResult } from '@/types/monitor';
 import dayjs from 'dayjs';
+import { cn } from '@sealos/shadcn-ui';
 
 const map = {
   blue: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(3, 190, 232, 0.42)' // 0% 处的颜色
-        },
-        {
-          offset: 1,
-          color: 'rgba(0, 182, 240, 0)'
-        }
-      ],
-      global: false // 缺省为 false
-    },
-    lineColor: '#36ADEF'
-  },
-  deepBlue: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(47, 112, 237, 0.42)' // 0% 处的颜色
-        },
-        {
-          offset: 1,
-          color: 'rgba(94, 159, 235, 0)'
-        }
-      ],
-      global: false
-    },
-    lineColor: '#3293EC'
-  },
-  purple: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(211, 190, 255, 0.42)' // 0% 处的颜色
-        },
-        {
-          offset: 1,
-          color: 'rgba(52, 60, 255, 0)'
-        }
-      ],
-      global: false // 缺省为 false
-    },
-    lineColor: '#8172D8'
+    backgroundColor: 'rgba(73, 174, 255, 0.3)',
+    lineColor: '#49AEFF'
   },
   green: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(4, 209, 148, 0.42)' // 0% 处的颜色
-        },
-        {
-          offset: 1,
-          color: 'rgba(19, 217, 181, 0)'
-        }
-      ],
-      global: false // 缺省为 false
-    },
-    lineColor: '#00A9A6',
-    max: 100
+    backgroundColor: 'rgba(0, 209, 181, 0.3)',
+    lineColor: '#00D1B5'
+  },
+  deepBlue: {
+    backgroundColor: 'rgba(81, 125, 255, 0.3)',
+    lineColor: '#517DFF'
+  },
+  purple: {
+    backgroundColor: 'rgba(139, 139, 255, 0.3)',
+    lineColor: '#8B8BFF'
   }
 };
 
 const PodLineChart = ({
   type,
   data,
-  isShowLabel = false
+  isShowLabel = false,
+  isShowText = true,
+  className
 }: {
   type: 'blue' | 'deepBlue' | 'green' | 'purple';
   data?: MonitorDataResult;
   isShowLabel?: boolean;
+  isShowText?: boolean;
+  className?: string;
 }) => {
   const { screenWidth } = useGlobalStore();
   const xData =
-    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('HH:mm') : '')) ||
+    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('YYYY-MM-DD HH:mm') : '')) ||
     new Array(30).fill(0);
-  const yData = data?.yData || new Array(30).fill('');
+  const yData = data?.yData || new Array(30).fill(null);
+  const lastDisplayValue = useMemo(() => {
+    if (!data?.yData?.length) return '--';
+    for (let i = data.yData.length - 1; i >= 0; i -= 1) {
+      const value = data.yData[i];
+      if (value !== null && value !== undefined) return value;
+    }
+    return '--';
+  }, [data?.yData]);
+  const yAxisMax = useMemo(() => {
+    if (!data?.yData?.length) return 100;
+    const maxValue = data.yData.reduce((max, value) => {
+      if (value === null || value === undefined || Number.isNaN(value)) return max;
+      return Math.max(max, Number(value));
+    }, 0);
+    const rounded = Math.ceil(maxValue / 10) * 10;
+    const nextMax = rounded <= maxValue ? rounded + 10 : rounded;
+    return Math.max(100, nextMax);
+  }, [data?.yData]);
 
   const Dom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
@@ -146,20 +100,25 @@ const PodLineChart = ({
       type: 'value',
       boundaryGap: false,
       splitNumber: 2,
-      max: 100,
+      max: yAxisMax,
       min: 0,
+      interval: 50,
       axisLabel: {
-        show: isShowLabel
+        show: isShowLabel,
+        formatter: '{value}'
       },
       splitLine: {
-        show: false
+        show: true,
+        lineStyle: {
+          color: '#EBEBEB'
+        }
       }
     },
     grid: {
       containLabel: isShowLabel,
       show: false,
-      left: 0,
-      right: isShowLabel ? 14 : 0,
+      left: '2%',
+      right: isShowLabel ? '4%' : 0,
       top: 10,
       bottom: 2
     },
@@ -168,9 +127,31 @@ const PodLineChart = ({
       axisPointer: {
         type: 'line'
       },
+      appendToBody: true,
+      extraCssText: `
+        box-shadow: none;
+        padding: 0;
+        background-color: transparent;
+        border: none;
+      `,
       formatter: (params: any[]) => {
-        const axisValue = params[0]?.axisValue;
-        return `${axisValue} ${params[0]?.value || 0}%`;
+        const xValue = params[0]?.axisValue;
+        const yValue = params[0]?.value;
+        const displayValue =
+          yValue === null || yValue === undefined || Number.isNaN(yValue) ? '-' : yValue;
+        return `
+          <div class="bg-white min-w-[127px] rounded-lg py-3 px-[10px] border-[0.5px] border-zinc-200 shadow-xs">
+            <div class="text-xs font-medium text-zinc-900 mb-1">
+              ${xValue || ''}
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-xs" style="background: ${
+                map[type].lineColor
+              }"></span>
+              <span class="text-xs font-medium text-zinc-900">${displayValue}%</span>
+            </div>
+          </div>
+        `;
       }
     },
     series: [
@@ -201,8 +182,9 @@ const PodLineChart = ({
     if (!myChart.current || !myChart?.current?.getOption()) return;
     option.current.xAxis.data = xData;
     option.current.series[0].data = yData;
+    option.current.yAxis.max = yAxisMax;
     myChart.current.setOption(option.current);
-  }, [xData, yData]);
+  }, [xData, yData, yAxisMax]);
 
   // type changed, update
   useEffect(() => {
@@ -220,7 +202,16 @@ const PodLineChart = ({
     myChart.current.resize();
   }, [screenWidth]);
 
-  return <div ref={Dom} style={{ width: '100%', height: '100%' }} />;
+  return (
+    <div className={cn('relative h-full min-h-0 w-full', className)}>
+      <div ref={Dom} style={{ width: '100%', height: '100%' }} />
+      {isShowText && (
+        <span className="pointer-events-none absolute right-0 bottom-0.5 text-xs font-medium text-zinc-600 [text-shadow:1px_1px_0_#FFF,-1px_-1px_0_#FFF,1px_-1px_0_#FFF,-1px_1px_0_#FFF]">
+          {lastDisplayValue}%
+        </span>
+      )}
+    </div>
+  );
 };
 
 export default React.memo(PodLineChart);

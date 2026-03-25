@@ -1,6 +1,4 @@
-import MyIcon from '@/components/Icon';
 import { checkDomainICP } from '@/api/platform';
-import { Box, Center } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
 
@@ -19,21 +17,11 @@ const ICPStatus = ({ customDomain, enabled }: { customDomain: string; enabled: b
 
   if (!data?.icpRegistered) {
     return (
-      <Box ml={'8px'}>
-        <Center
-          fontSize={'12px'}
-          fontWeight={400}
-          bg={'#FEF2F2'}
-          color={'#DC2626'}
-          border={'1px solid #FECACA'}
-          borderRadius={'full'}
-          p={'2px 4px 2px 4px'}
-          gap={'2px'}
-          whiteSpace={'nowrap'}
-        >
+      <div className="ml-2">
+        <div className="flex items-center justify-center text-xs font-normal bg-red-50 text-red-600 border-[0.5px] border-red-200 rounded-full px-2 py-0.5 gap-0.5 whitespace-nowrap">
           {t('icp_reg_not_registered')}
-        </Center>
-      </Box>
+        </div>
+      </div>
     );
   }
 

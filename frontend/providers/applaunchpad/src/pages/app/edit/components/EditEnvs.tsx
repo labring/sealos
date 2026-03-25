@@ -1,18 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  Button,
-  Textarea,
-  Box
-} from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { AppEditType } from '@/types/app';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter
+} from '@sealos/shadcn-ui/drawer';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Textarea } from '@sealos/shadcn-ui/textarea';
+import { Label } from '@sealos/shadcn-ui/label';
+
+const envNameRegex = /^[-._a-zA-Z][-._a-zA-Z0-9]*$/;
 
 const EditEnvs = ({
   defaultEnv = [],
@@ -30,6 +30,7 @@ const EditEnvs = ({
       .map((item) => `${item.key}=${item.value}`)
       .join('\n')
   );
+  const [errorMsg, setErrorMsg] = useState('');
 
   const onSubmit = useCallback(() => {
     const lines = inputVal.split('\n').filter((item) => item);
@@ -61,39 +62,61 @@ const EditEnvs = ({
         };
       });
 
+    const invalidEnv = result.find((item) => !envNameRegex.test(item.key));
+    if (invalidEnv) {
+      setErrorMsg(
+        t('Invalid Env Name', { name: invalidEnv.key }) || `Invalid env name: ${invalidEnv.key}`
+      );
+      return;
+    }
+
+    setErrorMsg('');
     // concat valueFrom env
     successCb([...defaultEnv.filter((item) => item.valueFrom), ...result]);
     onClose();
-  }, [defaultEnv, inputVal, onClose, successCb]);
+  }, [defaultEnv, inputVal, onClose, successCb, t]);
 
   return (
-    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
-      <ModalOverlay />
-      <ModalContent maxH={'90vh'} maxW={'90vw'} minW={'530px'} w={'auto'}>
-        <ModalHeader>{t('Edit Environment Variables')}</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <Box fontSize={'14px'} fontWeight={500} color={'messenger.900'} mb={'8px'}>
-            {t('Environment Variables')}
-          </Box>
+    <Drawer open onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent direction="right" className="min-w-[560px] sm:max-w-[560px]">
+        <DrawerHeader>
+          <DrawerTitle>{t('Edit Environment Variables')}</DrawerTitle>
+        </DrawerHeader>
+
+        <div className="flex-1 min-h-0 px-6 py-6 flex flex-col gap-2">
+          <Label className="text-sm font-medium text-zinc-900">{t('Environment Variables')}</Label>
           <Textarea
-            whiteSpace={'pre-wrap'}
-            h={'350px'}
-            maxH={'100%'}
+            className={`resize-none flex-1 min-h-0 max-h-none h-full overflow-y-auto whitespace-pre-wrap font-mono text-sm bg-white shadow-none rounded-lg ${
+              errorMsg ? 'border-red-500' : ''
+            }`}
             value={inputVal}
-            resize={'both'}
             placeholder={t('Env Placeholder') || ''}
-            overflowX={'auto'}
-            onChange={(e) => setInputVal(e.target.value)}
+            onChange={(e) => {
+              setInputVal(e.target.value);
+              if (errorMsg) setErrorMsg('');
+            }}
           />
-        </ModalBody>
-        <ModalFooter>
-          <Button w={'88px'} onClick={onSubmit}>
+          {errorMsg && (
+            <div className="text-sm text-red-500">
+              <p>{errorMsg}</p>
+            </div>
+          )}
+        </div>
+
+        <DrawerFooter className="h-auto gap-3">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="h-10 min-w-20 rounded-lg shadow-none hover:bg-zinc-50"
+          >
+            {t('Cancel')}
+          </Button>
+          <Button onClick={onSubmit} className="h-10 min-w-20 rounded-lg shadow-none">
             {t('Confirm')}
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 };
 
