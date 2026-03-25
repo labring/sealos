@@ -10,6 +10,7 @@ kubectl delete rolebinding license-leader-election-rolebinding -n account-system
 kubectl delete clusterrole license-manager-role --ignore-not-found
 kubectl delete clusterrole license-metrics-reader --ignore-not-found
 kubectl delete clusterrole license-proxy-role --ignore-not-found
+kubectl delete clusterrole license-controller-clusterrole --ignore-not-found
 kubectl delete role license-leader-election-role -n account-system --ignore-not-found
 kubectl delete serviceaccount license-controller-manager -n account-system --ignore-not-found
 helm upgrade  -i license -n license-system --create-namespace ./charts/license-controller  ${HELM_OPTS}
