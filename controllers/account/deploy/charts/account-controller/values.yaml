@@ -7,7 +7,7 @@ imagePullPolicy: Always
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: "account-controller"
+fullnameOverride: "account"
 
 serviceAccount:
   create: true
