@@ -91,10 +91,19 @@ const normalizeSpec = (value: unknown): GpuInventorySpec | null => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const item = value as Record<string, unknown>;
 
-  const type = typeof item.type === 'string' ? item.type : '';
-  const memory = typeof item.memory === 'string' ? item.memory : '';
-  const specValue = typeof item.value === 'string' ? item.value : '';
-  const stock = Number(item.stock);
+  const typeRaw =
+    (typeof item.type === 'string' ? item.type : '') ||
+    (typeof item.specType === 'string' ? item.specType : '');
+  const type = typeRaw.trim();
+  const memory =
+    (typeof item.memory === 'string' ? item.memory : '') ||
+    (typeof item.specMemory === 'string' ? item.specMemory : '');
+  const valueRaw =
+    (typeof item.value === 'string' ? item.value : '') ||
+    (typeof item.specValue === 'string' ? item.specValue : '');
+  const specValue = valueRaw || (type.toUpperCase() === 'GPU' ? 'full' : '');
+  const stockRaw = item.stock ?? item.available ?? item.count;
+  const stock = Number(stockRaw);
   const podConfig = normalizePodConfig(item.podConfig);
 
   if (!type || !memory || !specValue) return null;
