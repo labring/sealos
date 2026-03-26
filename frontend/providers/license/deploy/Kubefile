@@ -13,4 +13,4 @@ ENV cloudPort=""
 ENV MONGODB_URI=""
 ENV licensePurchaseDomain="license.sealos.io"
 
-CMD ["kubectl apply -f manifests"]
+CMD ["bash install.sh"]
