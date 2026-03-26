@@ -419,7 +419,37 @@ export const getGlobalToken = async ({
       return null;
     }
     if (!_user) {
-      throw new AuthError('User not found.', 'USER_NOT_FOUND');
+      // Auto sign up when user not found
+      if (!enableSignUp()) throw new AuthError('Failed to signUp user', 'SIGNUP_FAILED');
+      const signUpResult = await signUpByPassword({
+        id: providerId,
+        name: name,
+        avatar_url: avatar_url,
+        password: password,
+        semData
+      });
+      if (!signUpResult) {
+        throw new AuthError('Failed to sign up user', 'SIGNUP_FAILED');
+      }
+      user = signUpResult.user;
+      if (inviterId) {
+        inviteHandler({
+          inviterId: inviterId,
+          inviteeId: signUpResult.user.name,
+          signResult: signUpResult
+        });
+      }
+      if (adClickData) {
+        await uploadConvertData(adClickData).catch((e) => {
+          console.log('Failed to upload AD click data: ', e);
+        });
+      }
+      if (enableTracking()) {
+        await trackSignUp({
+          userId: signUpResult.user.id,
+          userUid: signUpResult.user.uid
+        });
+      }
     } else {
       const result = await signInByPassword({
         id: providerId,
@@ -547,7 +577,8 @@ export const getGlobalToken = async ({
     user: {
       name: user.nickname,
       avatar: user.avatarUri,
-      userUid: user.uid
+      userUid: user.uid,
+      userId: user.name
     },
     needInit
   };
