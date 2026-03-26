@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server';
 
-import { CoreV1Api } from '@kubernetes/client-node';
 import { jsonRes } from '@/services/backend/response';
+import { hasGpuInventoryConfig } from '@/services/backend/gpu';
 import { userPriceType } from '@/types/user';
-import { K8sApiDefault } from '@/services/backend/kubernetes';
+import type { GpuInventoryModel, GpuInventorySpec, GpuPodConfig } from '@/types/gpu';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,45 +29,9 @@ type ResourceType =
   | 'infra-disk'
   | 'services.nodeports';
 
-type GpuAliasName = {
-  zh?: string;
-  en?: string;
-};
-
-type GpuAliasConfig = {
-  default?: string;
-  icon?: string;
-  name?: GpuAliasName;
-  resource?: Record<string, string>;
-};
-
-type GpuAliasMap = Record<string, GpuAliasConfig>;
-
-type GpuNodeType = {
-  'gpu.count': number;
-  'gpu.available': number;
-  'gpu.used': number;
-  'gpu.memory': number;
-  'gpu.product': string;
-  'gpu.ref'?: string;
-  'gpu.annotationType'?: string;
-  'gpu.icon'?: string;
-  'gpu.name'?: GpuAliasName;
-  'gpu.resource'?: Record<string, string>;
-  'gpu.nodes'?: string[];
-};
-
-type GpuConfigMapItem = {
-  'gpu.count': string;
-  'gpu.available': string;
-  'gpu.used': string;
-  'gpu.memory': string;
-  'gpu.product': string;
-  'gpu.devbox': string;
-  'gpu.ref'?: string;
-};
-
 const PRICE_SCALE = 1000000;
+const DEFAULT_GPU_INVENTORY_URL = 'http://node.node-system.svc:8090/api/v1/gpu/inventory';
+const GPU_TYPE_ANNOTATION_KEY = 'nvidia.com/use-gputype';
 
 const valuationMap: Record<string, number> = {
   cpu: 1000,
@@ -77,10 +41,109 @@ const valuationMap: Record<string, number> = {
   ['services.nodeports']: 1
 };
 
+const decodeHeaderValue = (value: string) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
+const parseBearerHeader = (value: string, requirePrefix = false) => {
+  const decoded = decodeHeaderValue(value).trim();
+  if (/^bearer\s+/i.test(decoded)) {
+    return decoded.replace(/^bearer\s+/i, '').trim();
+  }
+  return requirePrefix ? '' : decoded;
+};
+
+const normalizeEndpoint = (url: string) => {
+  const trimmed = url.trim().replace(/\/+$/, '');
+  if (/\/api\/v1\/gpu\/inventory$/i.test(trimmed)) {
+    return trimmed;
+  }
+  return `${trimmed}/api/v1/gpu/inventory`;
+};
+
+const toStringRecord = (value: unknown): Record<string, string> | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([key]) => Boolean(key))
+    .map(([key, raw]) => [key, raw == null ? '' : String(raw)] as const);
+  if (entries.length === 0) return undefined;
+  return Object.fromEntries(entries);
+};
+
+const normalizePodConfig = (value: unknown): GpuPodConfig | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const podConfig = value as Record<string, unknown>;
+  const annotations = toStringRecord(podConfig.annotations);
+  const limits = toStringRecord((podConfig.resources as any)?.limits);
+
+  if (!annotations && !limits) return undefined;
+  return {
+    ...(annotations ? { annotations } : {}),
+    ...(limits ? { resources: { limits } } : {})
+  };
+};
+
+const normalizeSpec = (value: unknown): GpuInventorySpec | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const item = value as Record<string, unknown>;
+
+  const type = typeof item.type === 'string' ? item.type : '';
+  const memory = typeof item.memory === 'string' ? item.memory : '';
+  const specValue = typeof item.value === 'string' ? item.value : '';
+  const stock = Number(item.stock);
+  const podConfig = normalizePodConfig(item.podConfig);
+
+  if (!type || !memory || !specValue) return null;
+  return {
+    type,
+    memory,
+    value: specValue,
+    stock: Number.isFinite(stock) && stock > 0 ? stock : 0,
+    ...(podConfig ? { podConfig } : {})
+  };
+};
+
+const normalizeModel = (value: unknown): GpuInventoryModel | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const item = value as Record<string, unknown>;
+  const model = typeof item.model === 'string' ? item.model : '';
+  if (!model) return null;
+
+  const icon = typeof item.icon === 'string' ? item.icon : undefined;
+  const displayNameRaw = item.displayName as Record<string, unknown> | undefined;
+  const displayName =
+    displayNameRaw && typeof displayNameRaw === 'object'
+      ? {
+          zh: typeof displayNameRaw.zh === 'string' ? displayNameRaw.zh : undefined,
+          en: typeof displayNameRaw.en === 'string' ? displayNameRaw.en : undefined
+        }
+      : undefined;
+  const specs = Array.isArray(item.specs)
+    ? item.specs.map(normalizeSpec).filter((spec): spec is GpuInventorySpec => Boolean(spec))
+    : [];
+
+  if (specs.length === 0) return null;
+
+  return {
+    model,
+    ...(displayName?.zh || displayName?.en ? { displayName } : {}),
+    ...(icon ? { icon } : {}),
+    specs
+  };
+};
+
 export async function GET(req: NextRequest) {
   try {
-    const { ACCOUNT_URL, SEALOS_DOMAIN, GPU_ENABLE } = process.env;
+    const { ACCOUNT_URL, SEALOS_DOMAIN, GPU_ENABLE, GPU_INVENTORY_API_BASE_URL } = process.env;
     const baseUrl = ACCOUNT_URL ? ACCOUNT_URL : `https://account-api.${SEALOS_DOMAIN}`;
+    const gpuFeatureEnabled = GPU_ENABLE === 'true' && (await hasGpuInventoryConfig());
+    const token =
+      parseBearerHeader(req.headers.get('Authorization-Bearer') || '') ||
+      parseBearerHeader(req.headers.get('Authorization') || '', true);
 
     const getResourcePrice = async () => {
       try {
@@ -89,16 +152,41 @@ export async function GET(req: NextRequest) {
         });
 
         const data: ResourcePriceType = await res.clone().json();
-
-        return data.data.properties;
+        return data.data.properties || [];
       } catch (error) {
         console.log(error);
+        return [] as ResourcePriceType['data']['properties'];
       }
     };
 
-    const [priceResponse, gpuNodes] = await Promise.all([
+    const getGpuInventory = async () => {
+      if (!gpuFeatureEnabled || !token) return [] as GpuInventoryModel[];
+      try {
+        const endpoint = normalizeEndpoint(GPU_INVENTORY_API_BASE_URL || DEFAULT_GPU_INVENTORY_URL);
+        const res = await fetch(endpoint, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          cache: 'no-store'
+        });
+        if (!res.ok) {
+          return [] as GpuInventoryModel[];
+        }
+        const data = (await res.json()) as Record<string, unknown>;
+        if (!Array.isArray(data.data)) return [] as GpuInventoryModel[];
+        return data.data
+          .map(normalizeModel)
+          .filter((item): item is GpuInventoryModel => Boolean(item));
+      } catch (error) {
+        console.log('getGpuInventory error', error);
+        return [] as GpuInventoryModel[];
+      }
+    };
+
+    const [priceResponse, gpuInventory] = await Promise.all([
       getResourcePrice() as Promise<ResourcePriceType['data']['properties']>,
-      GPU_ENABLE === 'true' ? getGpuNode() : Promise.resolve([])
+      getGpuInventory()
     ]);
 
     const data: userPriceType = {
@@ -106,7 +194,7 @@ export async function GET(req: NextRequest) {
       memory: countSourcePrice(priceResponse, 'memory'),
       storage: countSourcePrice(priceResponse, 'storage'),
       nodeports: countSourcePrice(priceResponse, 'services.nodeports'),
-      gpu: GPU_ENABLE === 'true' ? countGpuSource(priceResponse, gpuNodes) : undefined
+      gpu: gpuFeatureEnabled ? countGpuSource(priceResponse, gpuInventory) : undefined
     };
 
     return jsonRes({
@@ -117,92 +205,21 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/* get gpu nodes by configmap. */
-async function getGpuNode() {
-  const gpuCrName = 'node-gpu-info';
-  const gpuCrNS = 'node-system';
-
-  try {
-    const kc = K8sApiDefault();
-    const api = kc.makeApiClient(CoreV1Api);
-
-    /*
-     * Use listNamespacedConfigMap with fieldSelector instead of readNamespacedConfigMap
-     * to bypass Kubernetes API Server watch cache stale data issue.
-     *
-     * Root cause: For infrequently updated resources like ConfigMap, the API Server's
-     * watch cache may not receive timely progress notifications from etcd, causing
-     * readNamespacedConfigMap to return stale cached data even after backend updates.
-     *
-     * Solution: listNamespacedConfigMap with fieldSelector forces a more consistent read
-     * path that is less susceptible to watch cache staleness, ensuring we get the latest
-     * ConfigMap data without needing to restart the pod.
-     *
-     * References:
-     * - https://github.com/kubernetes/enhancements/blob/master/keps/sig-api-machinery/2340-Consistent-reads-from-cache/README.md
-     * - https://kubernetes.io/blog/2025/09/09/kubernetes-v1-34-snapshottable-api-server-cache/
-     */
-    const { body } = await api.listNamespacedConfigMap(
-      gpuCrNS,
-      undefined,
-      undefined,
-      undefined,
-      `metadata.name=${gpuCrName}`
-    );
-
-    if (!body.items || body.items.length === 0) return [];
-
-    const configMap = body.items[0];
-    const gpuMap = configMap.data?.gpu;
-
-    if (!gpuMap || !configMap.data?.alias) return [];
-    const alias = (JSON.parse(configMap.data.alias) || {}) as GpuAliasMap;
-    const aliasBackupRaw = configMap.data['alias-backup'];
-    const aliasBackup = aliasBackupRaw
-      ? (JSON.parse(aliasBackupRaw) as Record<string, string>)
-      : undefined;
-
-    const parseGpuMap = JSON.parse(gpuMap) as Record<string, GpuConfigMapItem>;
-    const gpuEntries = Object.entries(parseGpuMap).filter(
-      ([, item]) => item['gpu.product'] && item['gpu.devbox'] === 'true'
-    );
-
-    const gpuList: GpuNodeType[] = gpuEntries.map(([nodeName, item]) => {
-      const fallbackRef =
-        item['gpu.product'] && aliasBackup
-          ? aliasBackup[item['gpu.product']] ||
-            aliasBackup[item['gpu.product'].replace(/\s+/g, '-')]
-          : undefined;
-      const ref = item['gpu.ref'] || fallbackRef;
-      const aliasItem = (ref && alias[ref]) || alias[item['gpu.product']];
-      const annotationType = aliasItem?.default || item['gpu.product'] || ref;
-
-      return {
-        ['gpu.count']: +item['gpu.count'],
-        ['gpu.available']: +item['gpu.available'],
-        ['gpu.used']: +item['gpu.used'],
-        ['gpu.memory']: +item['gpu.memory'],
-        ['gpu.product']: item['gpu.product'],
-        ['gpu.ref']: ref,
-        ['gpu.annotationType']: annotationType,
-        ['gpu.icon']: aliasItem?.icon,
-        ['gpu.name']: aliasItem?.name,
-        ['gpu.resource']: aliasItem?.resource,
-        ['gpu.nodes']: [nodeName]
-      };
-    });
-
-    return gpuList;
-  } catch (error) {
-    console.log('error', error);
-    return [];
-  }
-}
-
 const normalizeGpuKey = (value?: string) =>
   value ? value.trim().replace(/\s+/g, '-').toLowerCase() : '';
 
-function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNodes: GpuNodeType[]) {
+const parseGpuMemoryGi = (memory?: string) => {
+  if (!memory) return 0;
+  const matched = memory.match(/(\d+(\.\d+)?)/);
+  if (!matched) return 0;
+  const value = Number(matched[1]);
+  return Number.isFinite(value) ? value : 0;
+};
+
+function countGpuSource(
+  rawData: ResourcePriceType['data']['properties'],
+  gpuInventory: GpuInventoryModel[]
+) {
   const gpuList: userPriceType['gpu'] = [];
   const gpuPriceMap = rawData
     .filter((item) => item.name.startsWith('gpu'))
@@ -211,24 +228,37 @@ function countGpuSource(rawData: ResourcePriceType['data']['properties'], gpuNod
       normalizedType: normalizeGpuKey(item.name.replace('gpu-', ''))
     }));
 
-  // count gpu price by gpuNode and accountPriceConfig
-  gpuNodes.forEach((gpuNode) => {
-    const matchedPrice = gpuPriceMap.find((item) => {
-      const keys = [gpuNode['gpu.ref'], gpuNode['gpu.product'], gpuNode['gpu.annotationType']];
-      return keys.some((key) => normalizeGpuKey(key) === item.normalizedType);
-    });
-    if (!matchedPrice) return;
+  gpuInventory.forEach((modelItem) => {
+    modelItem.specs.forEach((spec) => {
+      const annotationType =
+        spec.podConfig?.annotations?.[GPU_TYPE_ANNOTATION_KEY] || modelItem.model;
+      const matchKeys = [
+        modelItem.model,
+        modelItem.displayName?.zh,
+        modelItem.displayName?.en,
+        annotationType
+      ]
+        .map((key) => normalizeGpuKey(key))
+        .filter(Boolean);
+      const matchedPrice = gpuPriceMap.find((item) => matchKeys.includes(item.normalizedType));
+      const stock = Math.max(Number(spec.stock) || 0, 0);
 
-    gpuList.push({
-      annotationType: gpuNode['gpu.annotationType'] || '',
-      price: (matchedPrice.unit_price * valuationMap.gpu) / PRICE_SCALE,
-      available: +gpuNode['gpu.available'],
-      count: +gpuNode['gpu.count'],
-      vm: +gpuNode['gpu.memory'] / 1024,
-      icon: gpuNode['gpu.icon'],
-      name: gpuNode['gpu.name'],
-      resource: gpuNode['gpu.resource'],
-      nodes: gpuNode['gpu.nodes']
+      gpuList.push({
+        model: modelItem.model,
+        displayName: modelItem.displayName,
+        specType: spec.type,
+        specValue: spec.value,
+        specMemory: spec.memory,
+        stock,
+        podConfig: spec.podConfig,
+        annotationType,
+        price: matchedPrice ? (matchedPrice.unit_price * valuationMap.gpu) / PRICE_SCALE : 0,
+        available: stock,
+        count: stock,
+        vm: parseGpuMemoryGi(spec.memory),
+        icon: modelItem.icon,
+        name: modelItem.displayName
+      });
     });
   });
 
