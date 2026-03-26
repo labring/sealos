@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	gcrane "github.com/google/go-containerregistry/pkg/crane"
 	"github.com/google/go-containerregistry/pkg/name"
 
 	"github.com/containers/common/pkg/retry"
@@ -105,15 +106,7 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 			for s := range opts.SelectionOptions {
 				selection := opts.SelectionOptions[s]
 				logger.Debug("syncing %s with selection %v", destRef.DockerReference().String(), selection)
-				if err = retry.RetryIfNecessary(ctx, func() error {
-					_, copyErr := copy.Image(ctx, policyContext, destRef, ref, &copy.Options{
-						SourceCtx:          srcSys,
-						DestinationCtx:     dstSys,
-						ImageListSelection: selection,
-						ReportWriter:       reportWriter,
-					})
-					return copyErr
-				}, getRetryOptions()); err != nil {
+				if err = copyImageWithFallback(ctx, policyContext, ref, destRef, srcSys, dstSys, reportWriter, opts.Auths, selection); err != nil {
 					if strings.Contains(err.Error(), "manifest unknown") && selection == copy.CopyAllImages {
 						continue
 					}
@@ -126,6 +119,41 @@ func ToRegistry(ctx context.Context, opts *Options) error {
 		}
 	}
 	return allError
+}
+
+func copyImageWithFallback(ctx context.Context, policyContext *signature.PolicyContext, srcRef, destRef types.ImageReference, srcSys, dstSys *types.SystemContext, reportWriter io.Writer, auths map[string]dtype.AuthConfig, selection copy.ImageListSelection) error {
+	err := retry.RetryIfNecessary(ctx, func() error {
+		_, copyErr := copy.Image(ctx, policyContext, destRef, srcRef, &copy.Options{
+			SourceCtx:          srcSys,
+			DestinationCtx:     dstSys,
+			ImageListSelection: selection,
+			ReportWriter:       reportWriter,
+		})
+		return copyErr
+	}, getRetryOptions())
+	if err == nil || !isUnsupportedOCIV2S2MediaTypeError(err) {
+		return err
+	}
+
+	logger.Debug("fallback to remote registry copy for %s -> %s due to OCI media type compatibility error", srcRef.DockerReference().String(), destRef.DockerReference().String())
+	return retry.RetryIfNecessary(ctx, func() error {
+		return remoteCopyImage(srcRef.DockerReference().String(), destRef.DockerReference().String(), auths)
+	}, getRetryOptions())
+}
+
+func isUnsupportedOCIV2S2MediaTypeError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "unsupported docker v2s2 media type") &&
+		strings.Contains(msg, "application/vnd.oci.image.layer.v1.tar+gzip")
+}
+
+func remoteCopyImage(src, dst string, auths map[string]dtype.AuthConfig) error {
+	options := crane.GetCraneOptions(auths)
+	options = append(options, gcrane.Insecure)
+	return gcrane.Copy(src, dst, options...)
 }
 
 func getRetryOptions() *retry.RetryOptions {
