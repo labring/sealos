@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 
 import { jsonRes } from '@/services/backend/response';
-import { hasGpuInventoryConfig } from '@/services/backend/gpu';
 import { userPriceType } from '@/types/user';
 import type { GpuInventoryModel, GpuInventorySpec, GpuPodConfig } from '@/types/gpu';
 
@@ -149,7 +148,7 @@ export async function GET(req: NextRequest) {
   try {
     const { ACCOUNT_URL, SEALOS_DOMAIN, GPU_ENABLE, GPU_INVENTORY_API_BASE_URL } = process.env;
     const baseUrl = ACCOUNT_URL ? ACCOUNT_URL : `https://account-api.${SEALOS_DOMAIN}`;
-    const gpuFeatureEnabled = GPU_ENABLE === 'true' && (await hasGpuInventoryConfig());
+    const gpuFeatureEnabled = GPU_ENABLE === 'true';
     const token =
       parseBearerHeader(req.headers.get('Authorization-Bearer') || '') ||
       parseBearerHeader(req.headers.get('Authorization') || '', true);
