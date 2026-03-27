@@ -5,7 +5,7 @@ imagePullPolicy: IfNotPresent
 
 imagePullSecrets: []
 nameOverride: ""
-fullnameOverride: "sealos-desktop"
+fullnameOverride: "desktop-frontend"
 
 serviceAccount:
   create: true
