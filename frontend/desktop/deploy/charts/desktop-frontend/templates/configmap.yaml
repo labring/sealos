@@ -12,8 +12,7 @@ data:
       port: "{{ .Values.desktopConfig.cloudPort }}"
       regionUID: "{{ .Values.desktopConfig.regionUID }}"
       certSecretName: "{{ .Values.desktopConfig.certSecretName }}"
-      proxyDomain: "{{ .Values.desktopConfig.cloudDomain }}"
-      allowedAllOrigins: {{ .Values.desktopConfig.allowedAllOrigins | default false }}
+      proxyDomain: "{{ .Values.desktopConfig.proxyDomain | default .Values.desktopConfig.cloudDomain }}"
       allowedOrigins:
 {{- if .Values.desktopConfig.allowedAllOrigins }}
         - "*"
@@ -34,7 +33,10 @@ data:
       realNameAuthEnabled: {{ .Values.desktopConfig.realNameAuthEnabled }}
       realNameReward: {{ .Values.desktopConfig.realNameReward }}
       realNameCallbackUrl: "{{ .Values.desktopConfig.realNameCallbackUrl }}"
-      templateUrl: "https://template.{{ .Values.desktopConfig.cloudDomain }}"
+      templateUrl: "{{ .Values.desktopConfig.templateUrl }}"
+      objectstorageUrl: "{{ .Values.desktopConfig.objectstorageUrl }}"
+      applaunchpadUrl: "{{ .Values.desktopConfig.applaunchpadUrl }}"
+      dbproviderUrl: "{{ .Values.desktopConfig.dbproviderUrl }}"
       cfSiteKey: "{{ .Values.desktopConfig.cfSiteKey }}"
 
     database:
@@ -73,35 +75,34 @@ data:
           scripts: []
           noscripts: []
         common:
-          githubStarEnabled: true
-          accountSettingEnabled: true
+          githubStarEnabled: {{ .Values.desktopConfig.layoutGithubStarEnabled }}
+          workorderEnabled: {{ .Values.desktopConfig.layoutWorkorderEnabled }}
+          accountSettingEnabled: {{ .Values.desktopConfig.layoutAccountSettingEnabled }}
           docsUrl: "{{ .Values.desktopConfig.layoutDocsUrl }}"
-          aiAssistantEnabled: false
-          bannerEnabled: false
-          subscriptionEnabled: false
-          guestModeEnabled: false
-          emailAlertEnabled: false
-          phoneAlertEnabled: false
-          announcementEnabled: false
+          aiAssistantEnabled: {{ .Values.desktopConfig.layoutAiAssistantEnabled }}
+          bannerEnabled: {{ .Values.desktopConfig.layoutBannerEnabled }}
+          announcementEnabled: {{ .Values.desktopConfig.layoutAnnouncementEnabled }}
       auth:
-        proxyAddress: ""
         callbackURL: "https://{{ .Values.desktopConfig.cloudDomain }}{{ if .Values.desktopConfig.cloudPort }}:{{ .Values.desktopConfig.cloudPort }}{{ end }}/callback"
-        signUpEnabled: true
-        baiduToken: ""
-        hasBaiduToken: false
+        signUpEnabled: {{ .Values.desktopConfig.signUpEnabled }}
+        baiduToken: "{{ .Values.desktopConfig.baiduToken }}"
         bingAd:
-          tenant: ""
-          clientId: ""
-          clientSecret: ""
-          refreshToken: ""
-          developerToken: ""
-          customerId: 0
-          customerAccountId: 0
-          conversionName: ""
+          tenant: "{{ .Values.desktopConfig.bingAdTenant }}"
+          clientId: "{{ .Values.desktopConfig.bingAdClientId }}"
+          clientSecret: "{{ .Values.desktopConfig.bingAdClientSecret }}"
+          refreshToken: "{{ .Values.desktopConfig.bingAdRefreshToken }}"
+          developerToken: "{{ .Values.desktopConfig.bingAdDeveloperToken }}"
+          customerId: {{ .Values.desktopConfig.bingAdCustomerId }}
+          customerAccountId: {{ .Values.desktopConfig.bingAdCustomerAccountId }}
+          conversionName: "{{ .Values.desktopConfig.bingAdConversionName }}"
         jwt:
           internal: "{{ .Values.desktopConfig.jwtInternal }}"
           regional: "{{ .Values.desktopConfig.jwtRegional }}"
           global: "{{ .Values.desktopConfig.jwtGlobal }}"
+        invite:
+          enabled: {{ .Values.desktopConfig.inviteEnabled }}
+          lafSecretKey: "{{ .Values.desktopConfig.inviteLafSecretKey }}"
+          lafBaseURL: "{{ .Values.desktopConfig.inviteLafBaseURL }}"
         idp:
           password:
             enabled: {{.Values.desktopConfig.passwordEnabled }}
@@ -123,6 +124,7 @@ data:
             clientSecret: "{{ .Values.desktopConfig.googleClientSecret }}"
           oauth2:
             enabled: {{ .Values.desktopConfig.oauth2Enabled }}
+            pkce: {{ .Values.desktopConfig.oauth2Pkce }}
             callbackURL: "{{ .Values.desktopConfig.oauth2CallbackUrl }}"
             clientID: "{{ .Values.desktopConfig.oauth2ClientId }}"
             proxyAddress: "{{ .Values.desktopConfig.oauth2ProxyAddress }}"
@@ -130,6 +132,7 @@ data:
             authURL: "{{ .Values.desktopConfig.oauth2AuthUrl }}"
             tokenURL: "{{ .Values.desktopConfig.oauth2TokenUrl }}"
             userInfoURL: "{{ .Values.desktopConfig.oauth2UserInfoUrl }}"
+            displayName: "{{ .Values.desktopConfig.oauth2DisplayName }}"
           sms:
             enabled: {{ .Values.desktopConfig.smsEnabled }}
             ali:
@@ -161,6 +164,7 @@ data:
         billingUrl: "{{ .Values.desktopConfig.billingUrl }}"
         billingToken: "{{ .Values.desktopConfig.billingToken }}"
         workorderUrl: "{{ .Values.desktopConfig.workorderUrl }}"
+        cloudVitrualMachineUrl: "{{ .Values.desktopConfig.cloudVitrualMachineUrl }}"
 
       teamManagement:
         maxTeamCount: {{ .Values.desktopConfig.maxTeamCount }}
@@ -169,7 +173,6 @@ data:
     tracking:
       websiteId: "{{ .Values.desktopConfig.trackingWebsiteId }}"
       hostUrl: {{ if .Values.desktopConfig.trackingHostUrl }}"{{ .Values.desktopConfig.trackingHostUrl }}"{{ else if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run"{{ else }}""{{ end }}
-      scriptUrl: {{ if .Values.desktopConfig.trackingScriptUrl }}"{{ .Values.desktopConfig.trackingScriptUrl }}"{{ else if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run/sealos"{{ else }}""{{ end }}
 
     realNameOSS:
       accessKey: "{{ .Values.desktopConfig.realNameOSSAccessKey }}"

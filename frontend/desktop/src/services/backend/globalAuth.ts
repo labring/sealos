@@ -173,13 +173,14 @@ async function signUp({
   semData?: SemData;
 }) {
   const name = nanoid(10);
+  const displayName = nickname?.trim() ? nickname : nanoid(8);
   try {
     const result = await globalPrisma.$transaction(async (tx) => {
       const user: User = await tx.user.create({
         data: {
           name: name,
           id: name,
-          nickname: nickname,
+          nickname: displayName,
           avatarUri: avatar_url,
           oauthProvider: {
             create: {
@@ -233,13 +234,14 @@ async function signUpWithEmail({
   email: string;
 }) {
   const name = nanoid(10);
+  const displayName = nickname?.trim() ? nickname : nanoid(8);
   try {
     const user = await globalPrisma.$transaction(async (tx) => {
       const user: User = await tx.user.create({
         data: {
           name: name,
           id: name,
-          nickname: nickname,
+          nickname: displayName,
           avatarUri: avatar_url,
           oauthProvider: {
             create: {
@@ -297,12 +299,13 @@ export async function signUpByPassword({
   semData?: SemData;
 }) {
   const name = nanoid(10);
+  const displayName = nickname?.trim() ? nickname : nanoid(8);
 
   try {
     const result = await globalPrisma.$transaction(async (tx) => {
       const user: User = await tx.user.create({
         data: {
-          nickname,
+          nickname: displayName,
           avatarUri: avatar_url,
           id: name,
           name,
@@ -536,6 +539,23 @@ export const getGlobalToken = async ({
     }
   }
   if (!user) throw new AuthError('Failed to edit db', 'DATABASE_ERROR');
+
+  // For existing users, always sync latest profile info (when provided).
+  // - If `name` is empty, do not overwrite existing nickname.
+  // - If `avatar_url` is empty, do not overwrite existing avatar.
+  if (_user) {
+    const nicknameToUpdate = name?.trim() ? name : null;
+    const avatarToUpdate = avatar_url?.trim() ? avatar_url : null;
+    if (nicknameToUpdate || avatarToUpdate) {
+      user = await globalPrisma.user.update({
+        where: { uid: user.uid },
+        data: {
+          ...(nicknameToUpdate ? { nickname: nicknameToUpdate } : {}),
+          ...(avatarToUpdate ? { avatarUri: avatarToUpdate } : {})
+        }
+      });
+    }
+  }
 
   if (!forceBindEmail(provider) && email) {
     try {
