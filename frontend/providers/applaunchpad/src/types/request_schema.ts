@@ -268,7 +268,7 @@ export const GetAppPodsByAppNameQuerySchema = z.object({
 const MonitorDataResultSchema = z.object({
   name: z.string().optional(),
   xData: z.array(z.number()),
-  yData: z.array(z.string())
+  yData: z.array(z.string().nullable())
 });
 
 const PodStatusMapTypeSchema = z.object({

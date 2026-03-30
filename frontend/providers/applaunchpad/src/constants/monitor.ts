@@ -1,42 +1,85 @@
+import { MonitorDataResult } from '@/types/monitor';
+
 export const LineStyleMap = [
   {
-    backgroundColor: 'rgba(209, 244, 255, 0.3)',
-    lineColor: '#11B6FC'
+    backgroundColor: 'rgba(73, 174, 255, 0.3)',
+    lineColor: '#49AEFF'
   },
   {
-    backgroundColor: 'rgba(255, 221, 252, 0.3)',
-    lineColor: '#8774EE'
+    backgroundColor: 'rgba(0, 209, 181, 0.3)',
+    lineColor: '#00D1B5'
   },
   {
-    backgroundColor: 'rgba(254, 206, 255, 0.3)',
-    lineColor: '#C172E7'
+    backgroundColor: 'rgba(139, 139, 255, 0.3)',
+    lineColor: '#8B8BFF'
   },
   {
-    backgroundColor: 'rgba(199, 255, 248, 0.3)',
-    lineColor: '#13C4B9'
+    backgroundColor: 'rgba(81, 125, 255, 0.3)',
+    lineColor: '#517DFF'
   },
   {
-    backgroundColor: 'rgba(255, 224, 235, 0.3)',
-    lineColor: '#FF81AE'
+    backgroundColor: 'rgba(189, 139, 255, 0.3)',
+    lineColor: '#BD8BFF'
   },
   {
-    backgroundColor: 'rgba(255, 238, 231, 0.3)',
-    lineColor: '#FB6514'
+    backgroundColor: 'rgba(228, 139, 255, 0.3)',
+    lineColor: '#E48BFF'
   },
   {
-    backgroundColor: 'rgba(255, 224, 224, 0.05)',
-    lineColor: '#F04438'
+    backgroundColor: 'rgba(26, 200, 244, 0.3)',
+    lineColor: '#1AC8F4'
   },
   {
-    backgroundColor: 'rgba(241, 255, 185, 0.3)',
-    lineColor: '#E7D435'
+    backgroundColor: 'rgba(255, 139, 226, 0.3)',
+    lineColor: '#FF8BE2'
+  },
+  {
+    backgroundColor: 'rgba(147, 221, 0, 0.3)',
+    lineColor: '#93DD00'
+  },
+  {
+    backgroundColor: 'rgba(255, 139, 141, 0.3)',
+    lineColor: '#FF8B8D'
+  },
+  {
+    backgroundColor: 'rgba(255, 176, 139, 0.3)',
+    lineColor: '#FFB08B'
+  },
+  {
+    backgroundColor: 'rgba(239, 211, 0, 0.3)',
+    lineColor: '#EFD300'
   }
 ];
 
+export const NetworkLineStyleMap: Record<string, { backgroundColor: string; lineColor: string }> = {
+  '2xx': {
+    backgroundColor: 'rgba(0, 209, 181, 0.3)',
+    lineColor: '#00D1B5'
+  },
+  '3xx': {
+    backgroundColor: 'rgba(73, 174, 255, 0.3)',
+    lineColor: '#49AEFF'
+  },
+  '4xx': {
+    backgroundColor: 'rgba(250, 204, 21, 0.3)',
+    lineColor: '#FACC15'
+  },
+  '5xx': {
+    backgroundColor: 'rgba(248, 113, 113, 0.3)',
+    lineColor: '#F87171'
+  }
+};
+
+export const EMPTY_MONITOR_DATA: MonitorDataResult = {
+  name: '',
+  xData: new Array(30).fill(0),
+  yData: new Array(30).fill('0')
+};
+
 export const REFRESH_INTERVAL_OPTIONS = [
-  { value: 0, label: 'close' },
   { value: 1000, label: '1s' },
   { value: 2000, label: '2s' },
   { value: 5000, label: '5s' },
-  { value: 10000, label: '10s' }
+  { value: 10000, label: '10s' },
+  { value: 0, label: 'close' }
 ];

@@ -1,11 +1,16 @@
 import React, { useMemo } from 'react';
-import { Box, Center, Flex, useTheme } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { Text, Icon } from '@chakra-ui/react';
 import { CURRENCY } from '@/store/static';
 import { useUserStore } from '@/store/user';
-import MyIcon from '@/components/Icon';
-import { CurrencySymbol, MyTooltip } from '@sealos/ui';
+import { CurrencySymbol } from '@sealos/ui';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@sealos/shadcn-ui/tooltip';
+import { HelpCircle, Cpu, MemoryStick, HardDrive, HdmiPort, CircuitBoard } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
 
 const PriceBox = ({
   cpu,
@@ -27,7 +32,6 @@ const PriceBox = ({
 }) => {
   const { t } = useTranslation();
   const { userSourcePrice } = useUserStore();
-  const theme = useTheme();
 
   const priceList = useMemo(() => {
     if (!userSourcePrice) return [];
@@ -45,73 +49,77 @@ const PriceBox = ({
 
     const totalP = +(cpuP + memoryP + storageP + gpuP + nodeportsP).toFixed(2);
 
-    const podScale = (val: number) => {
-      const min = (val * pods[0]).toFixed(2);
-      const max = (val * pods[1]).toFixed(2);
-      return (
-        <Flex alignItems={'center'}>
-          <CurrencySymbol type={CURRENCY} />
-          <Text ml="4px">{pods[0] === pods[1] ? `${min}` : `${min} ~ ${max}`}</Text>
-        </Flex>
-      );
-    };
-
     return [
-      {
-        label: 'CPU',
-        color: '#33BABB',
-        value: podScale(cpuP)
-      },
-      { label: 'Memory', color: '#36ADEF', value: podScale(memoryP) },
-      { label: 'Storage', color: '#8172D8', value: podScale(storageP) },
-      { label: 'nodeports', color: '#FFA500', value: podScale(nodeportsP) },
-      ...(userSourcePrice?.gpu ? [{ label: 'GPU', color: '#89CD11', value: podScale(gpuP) }] : []),
-      { label: 'TotalPrice', color: '#485058', value: podScale(totalP) }
+      { label: 'CPU', price: cpuP },
+      { label: 'Memory', price: memoryP },
+      { label: 'Storage', price: storageP },
+      { label: 'nodeports', price: nodeportsP },
+      ...(userSourcePrice?.gpu ? [{ label: 'GPU', price: gpuP }] : []),
+      { label: 'TotalPrice', price: totalP, isTotal: true }
     ];
-  }, [cpu, gpu, memory, nodeports, pods, storage, userSourcePrice]);
+  }, [cpu, gpu, memory, nodeports, storage, userSourcePrice]);
+
+  const formatPrice = (val: number) => {
+    const min = (val * pods[0]).toFixed(2);
+    const max = (val * pods[1]).toFixed(2);
+    return pods[0] === pods[1] ? min : `${min} ~ ${max}`;
+  };
 
   return (
-    <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>
-      <Flex py={3} px={4} borderBottom={theme.borders.base} gap={'8px'}>
-        <Text color={'grayModern.900'} fontWeight={500}>
-          {t('AnticipatedPrice')}
-        </Text>
-        <Text color={'grayModern.500'}> ({t('Perday')})</Text>
-      </Flex>
-      <Box py={3} px={4}>
-        {priceList.map((item, index) => (
-          <Flex
-            key={item.label}
-            alignItems={'center'}
-            _notFirst={{ mt: '12px' }}
-            fontSize={'12px'}
-            fontWeight={500}
-            color={'grayModern.600'}
-          >
-            <Box
-              flexShrink={0}
-              bg={item.color}
-              w={'8px'}
-              h={'8px'}
-              borderRadius={'10px'}
-              mr={2}
-            ></Box>
-            <Flex alignItems={'center'} gap={'2px'} flex={'0 0 60px'}>
-              {t(item.label)}
-              {index === priceList.length - 1 && (
-                <MyTooltip label={t('total_price_tip')}>
-                  <Center width={'14px'} height={'14px'} cursor={'pointer'}>
-                    <MyIcon name="help" width={'14px'} height={'14px'} color={'grayModern.500'} />
-                  </Center>
-                </MyTooltip>
-              )}
-              :
-            </Flex>
-            <Box whiteSpace={'nowrap'}>{item.value}</Box>
-          </Flex>
-        ))}
-      </Box>
-    </Box>
+    <Card>
+      <CardHeader className="gap-0 py-4">
+        <CardTitle className="text-sm font-medium">
+          {t('AnticipatedPrice')} <span className="font-normal text-zinc-400">{t('Perday')}</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col">
+        <TooltipProvider>
+          {priceList.map((item) => (
+            <div
+              key={item.label}
+              className={`flex justify-between py-3 px-5 items-center text-sm text-zinc-900 border-b border-zinc-100 ${
+                item.isTotal ? 'border-b-0 py-4' : ''
+              }`}
+            >
+              <div className="flex items-center gap-2 text-neutral-400 font-normal">
+                {item.label === 'CPU' ? (
+                  <Cpu className="h-5 w-5" />
+                ) : item.label === 'Memory' ? (
+                  <MemoryStick className="h-5 w-5" />
+                ) : item.label === 'Storage' ? (
+                  <HardDrive className="h-5 w-5" />
+                ) : item.label === 'nodeports' ? (
+                  <HdmiPort className="h-5 w-5" />
+                ) : item.label === 'GPU' ? (
+                  <CircuitBoard className="h-5 w-5" />
+                ) : (
+                  <></>
+                )}
+                <span className="text-zinc-900">{t(item.label)}</span>
+                {item.isTotal && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 cursor-pointer text-neutral-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{t('total_price_tip')}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+              <div
+                className={`flex items-center font-medium leading-none text-zinc-600 ${
+                  item.isTotal ? '!text-blue-600' : ''
+                }`}
+              >
+                <CurrencySymbol type={CURRENCY} />
+                <span>{formatPrice(item.price)}</span>
+              </div>
+            </div>
+          ))}
+        </TooltipProvider>
+      </CardContent>
+    </Card>
   );
 };
 

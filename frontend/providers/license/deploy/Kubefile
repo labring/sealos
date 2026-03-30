@@ -5,10 +5,12 @@ USER 65532:65532
 COPY registry registry
 COPY manifests manifests
 
+COPY install.sh install.sh
+
 ENV certSecretName="wildcard-cert"
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV cloudPort=""
 ENV MONGODB_URI=""
 ENV licensePurchaseDomain="license.sealos.io"
 
-CMD ["kubectl apply -f manifests"]
+CMD ["bash install.sh"]

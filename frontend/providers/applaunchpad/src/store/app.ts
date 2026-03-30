@@ -31,12 +31,18 @@ export const useAppStore = create<State>()(
         return res;
       },
       setAppDetail: async (appName: string, mock = false) => {
+        const currentAppName = get().appDetail?.appName;
+        // Only reset pods when switching to a different app
+        const shouldResetPods = currentAppName !== appName;
+
         set((state) => {
           state.appDetail = {
             ...MOCK_APP_DETAIL,
             appName
           };
-          state.appDetailPods = [];
+          if (shouldResetPods) {
+            state.appDetailPods = [];
+          }
         });
         const res = await getAppByName(appName, mock);
         set((state) => {
