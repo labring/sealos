@@ -13,9 +13,10 @@ import { ProtocolType } from '@/types/devbox';
 import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
 import { adaptDevboxDetailV2 } from '@/utils/adapt';
-import { parseTemplateConfig, cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
+import { parseTemplateConfig } from '@/utils/tools';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
 import { Config } from '@/config';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 export const dynamic = 'force-dynamic';
 

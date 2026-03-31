@@ -20,8 +20,9 @@ import { IngressListItemType } from '@/types/ingress';
 import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
 
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
-import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools';
+import { calculateUptime, formatPodTime } from '@/utils/tools';
 import { devboxRemarkKey, gpuNodeSelectorKey, gpuResourceKey } from '../constants/devbox';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 export const adaptDevboxListItemV2 = ([devbox, template]: [
   KBDevboxTypeV2,

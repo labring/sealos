@@ -2,7 +2,7 @@ import { Info } from 'lucide-react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useTranslation } from 'next-i18next';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { SubscriptionPlan, SubscriptionPayRequest } from '@/types/plan';
+import { SubscriptionPlan, SubscriptionPayRequest, MaxResourcesRecord } from '@/types/plan';
 import useSessionStore from '@/stores/session';
 import useBillingStore from '@/stores/billing';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
@@ -87,12 +87,7 @@ export default function Plan() {
   const [congratulationsMode, setCongratulationsMode] = useState<'upgrade' | 'renew'>('upgrade');
   const [congratulationsOverride, setCongratulationsOverride] = useState<{
     planName?: string;
-    maxResources?: {
-      cpu: string;
-      memory: string;
-      storage: string;
-      nodeports: string;
-    };
+    maxResources?: MaxResourcesRecord;
     traffic?: number;
   } | null>(null);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
@@ -840,12 +835,10 @@ export default function Plan() {
         maxResources={
           congratulationsOverride?.maxResources ||
           (workspaceSubscriptionData?.data?.subscription?.PlanName
-            ? JSON.parse(
-                plansData?.plans?.find(
-                  (p: SubscriptionPlan) =>
-                    p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
-                )?.MaxResources || '{}'
-              )
+            ? plansData?.plans?.find(
+                (p: SubscriptionPlan) =>
+                  p.Name === workspaceSubscriptionData?.data?.subscription?.PlanName
+              )?.MaxResources
             : undefined)
         }
         traffic={

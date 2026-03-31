@@ -3,7 +3,6 @@ import { QueryKey } from '@/consts';
 import { useOssStore } from '@/store/ossStore';
 import useSessionStore from '@/store/session';
 import { theme } from '@/styles/chakraTheme';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { ChakraProvider } from '@chakra-ui/react';
 import { dehydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { appWithTranslation } from 'next-i18next';
@@ -15,12 +14,11 @@ import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
 import {
   ClientConfigProvider,
   prefetchClientAppConfig,
-  QuotaGuardProvider,
-  setupClientAppConfigDefaults,
-  type SupportedLang
+  setupClientAppConfigDefaults
 } from '@sealos/shared';
-import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
+import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
+import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
 
 const queryClient = new QueryClient({
   defaultOptions: {

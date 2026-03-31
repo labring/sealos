@@ -16,22 +16,7 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
   const monthlyPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.Price || 0;
   const originalPrice = plan.Prices?.find((p) => p.BillingCycle === '1m')?.OriginalPrice || 0;
 
-  let resources: { cpu: string; memory: string; storage: string; nodeports: string } = {
-    cpu: '',
-    memory: '',
-    storage: '',
-    nodeports: ''
-  };
-  try {
-    resources = JSON.parse(plan.MaxResources);
-  } catch (e) {
-    resources = {
-      cpu: '',
-      memory: '',
-      storage: '',
-      nodeports: ''
-    };
-  }
+  const resources = plan.MaxResources;
 
   return (
     <section
@@ -75,7 +60,8 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
               <span className="text-sm text-gray-700">
-                {resources.cpu} {t('common:valuation.vcpu')}
+                {resources.cpu.formatForDisplay({ format: 'DecimalSI' })}{' '}
+                {t('common:valuation.vcpu')}
               </span>
             </li>
           )}
@@ -83,7 +69,8 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
               <span className="text-sm text-gray-700">
-                {resources.memory} {t('common:valuation.ram')}
+                {resources.memory.formatForDisplay({ format: 'BinarySI' })}{' '}
+                {t('common:valuation.ram')}
               </span>
             </li>
           )}
@@ -91,19 +78,22 @@ export function StaticPlanCard({ plan, isPopular = false }: StaticPlanCardProps)
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
               <span className="text-sm text-gray-700">
-                {resources.storage} {t('common:valuation.disk')}
+                {resources.storage.formatForDisplay({ format: 'BinarySI' })}{' '}
+                {t('common:valuation.disk')}
               </span>
             </li>
           )}
+
           <li className="flex items-center gap-3">
             <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
             <span className="text-sm text-gray-700">{formatTrafficAuto(plan.Traffic)}</span>
           </li>
+
           {resources.nodeports && (
             <li className="flex items-center gap-3">
               <CircleCheck size={20} className="text-blue-600 flex-shrink-0" />
               <span className="text-sm text-gray-700">
-                {resources.nodeports} {t('common:valuation.nodeport')}
+                {resources.nodeports.toString()} {t('common:valuation.nodeport')}
               </span>
             </li>
           )}

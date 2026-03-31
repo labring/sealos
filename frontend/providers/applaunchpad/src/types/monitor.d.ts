@@ -45,5 +45,5 @@ export type MonitorQueryKey = {
 export type MonitorDataResult = {
   name?: string;
   xData: number[];
-  yData: string[];
+  yData: Array<string | null>;
 };

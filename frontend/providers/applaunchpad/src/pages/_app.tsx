@@ -1,4 +1,4 @@
-import { theme } from '@/constants/theme';
+// import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
@@ -7,6 +7,8 @@ import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
 import { dehydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Fira_Code } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppContext, AppInitialProps, AppProps } from 'next/app';
@@ -16,22 +18,28 @@ import { useEffect, useState, useCallback } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import 'react-day-picker/dist/style.css';
-import '@/styles/reset.scss';
+import '@/styles/tailwind.css';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import Head from 'next/head';
 import App from 'next/app';
 import Script from 'next/script';
 import { GTMScript } from '@sealos/gtm';
-import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
+import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
 import {
   ClientConfigProvider,
   prefetchClientAppConfig,
-  setupClientAppConfigDefaults,
-  QuotaGuardProvider
+  QuotaGuardProvider,
+  setupClientAppConfigDefaults
 } from '@sealos/shared';
+import { Toaster } from '@sealos/shadcn-ui/sonner';
+import { getClientAppConfigServer } from './api/platform/getClientAppConfig';
 import { Config } from '@/config';
-import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
+
+const FiraCode = Fira_Code({
+  subsets: ['latin'],
+  variable: '--font-fira-code'
+});
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -239,22 +247,21 @@ const AppContent = ({ Component, pageProps, title, description }: AppContentProp
   }, []);
 
   return (
-    <>
+    <div id="app-root" className={`${GeistSans.variable} ${FiraCode.variable}`}>
       {title && (
         <Head>
           <title>{title}</title>
           <meta name="description" content={description} />
         </Head>
       )}
-      <ChakraProvider theme={theme}>
-        <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
-          <Component {...pageProps} />
-          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
-          <ConfirmChild />
-          <Loading loading={loading} />
-        </QuotaGuardProvider>
-      </ChakraProvider>
-    </>
+      <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
+        <Component {...pageProps} />
+        <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
+        <ConfirmChild />
+        <Loading loading={loading} />
+        <Toaster position="top-center" richColors />
+      </QuotaGuardProvider>
+    </div>
   );
 };
 

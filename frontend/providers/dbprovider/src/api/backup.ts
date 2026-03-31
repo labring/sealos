@@ -7,8 +7,8 @@ import { BackupItemType } from '@/types/db';
 
 export const createBackup = (data: CreateBackupPros) => POST('/api/backup/create', data);
 
-export const getBackupList = (dbName: string) =>
-  GET('/api/backup/getBackupList', { dbName }).then((res) => res.map(adaptBackup));
+export const getBackupList = (dbUid: string) =>
+  GET('/api/backup/getBackupList', { dbUid }).then((res) => res.map(adaptBackup));
 
 export const getBackups = () => GET<BackupItemType[]>('/api/backup/getBackups');
 

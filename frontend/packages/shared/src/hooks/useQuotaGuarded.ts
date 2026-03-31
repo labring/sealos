@@ -3,8 +3,7 @@
 import { useCallback } from 'react';
 import { useQuotaStore } from '../store/quota';
 import type { WorkspaceQuotaItemType } from '../types/workspace';
-import type { SessionV1 } from 'sealos-desktop-sdk';
-import { useQuotaGuardConfig } from './QuotaGuardProvider';
+import { useQuotaGuardConfig, type UseQuotaGuardedConfig } from './QuotaGuardProvider';
 
 export type QuotaGuardedOptions = {
   /** Resource requirements to check */
@@ -32,7 +31,7 @@ type QuotaGuardedCallback = () => void | Promise<void>;
  * @throws {Error} If not used within QuotaGuardProvider
  */
 export function useQuotaGuarded(options: QuotaGuardedOptions, callback: QuotaGuardedCallback) {
-  const { getSession } = useQuotaGuardConfig();
+  const quotaGuardConfig = useQuotaGuardConfig();
 
   return useCallback(async (): Promise<void> => {
     // Skip quota checking during SSR/pre-rendering
@@ -41,12 +40,12 @@ export function useQuotaGuarded(options: QuotaGuardedOptions, callback: QuotaGua
       return;
     }
 
-    await executeQuotaCheck({ getSession }, options, callback);
-  }, [getSession, options, callback]);
+    await executeQuotaCheck(quotaGuardConfig, options, callback);
+  }, [quotaGuardConfig, options, callback]);
 }
 
 async function executeQuotaCheck(
-  config: { getSession: () => SessionV1 | null },
+  config: UseQuotaGuardedConfig,
   options: QuotaGuardedOptions,
   callback: QuotaGuardedCallback
 ): Promise<boolean> {
@@ -67,7 +66,7 @@ async function executeQuotaCheck(
   };
 
   // [TODO] Add support for 'immediate' option
-  const quota = await quotaStore.fetchUserQuota();
+  const quota = await quotaStore.fetchUserQuota(config.sealosApp);
   quotaStore.setUserQuota(quota);
 
   const exceededQuotas = quotaStore.checkExceededQuotas(requirements);

@@ -2,12 +2,37 @@ import { verifyAccessToken } from '@/services/backend/auth';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { K8sApi, ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
-import { CRDMeta, TAppCRList, TAppConfig } from '@/types';
+import {
+  CRDMeta,
+  ForcedIconStyleAnnotation,
+  TAppCR,
+  TAppCRList,
+  TAppConfig,
+  TForcedIconStyle
+} from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { globalPrisma } from '@/services/backend/db/init';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { UserStatus } from 'prisma/global/generated/client';
+
+const normalizeForcedIconStyle = (value: string | undefined): TForcedIconStyle | undefined => {
+  if (value === 'contain' || value === 'fill') {
+    return value;
+  }
+
+  return undefined;
+};
+
+const getRepresentativeMeta = (key: string, annotations?: TAppCR['metadata']['annotations']) => {
+  const forcedIconStyleFromAnnotation = normalizeForcedIconStyle(
+    annotations?.[ForcedIconStyleAnnotation]
+  );
+
+  return {
+    forcedIconStyle: forcedIconStyleFromAnnotation || (key.startsWith('user-') ? 'contain' : 'fill')
+  };
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -37,9 +62,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const defaultArr = (await getRawAppList(getMeta()))
       .map<TAppConfig>((item) => {
+        const key = `system-${item.metadata.name}` as const;
+
         return {
-          key: `system-${item.metadata.name}`,
+          key,
           ...item.spec,
+          representativeMeta: getRepresentativeMeta(key, item.metadata.annotations),
           creationTimestamp: item.metadata.creationTimestamp
         };
       })
@@ -56,9 +84,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
     const userArr = (await getRawAppList(getMeta(payload.workspaceId))).map<TAppConfig>((item) => {
+      const key = `user-${item.metadata.name}` as const;
+
       return {
-        key: `user-${item.metadata.name}`,
+        key,
         ...item.spec,
+        representativeMeta: getRepresentativeMeta(key, item.metadata.annotations),
         displayType: 'normal',
         creationTimestamp: item.metadata.creationTimestamp
       };

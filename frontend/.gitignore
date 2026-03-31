@@ -5,3 +5,5 @@ next-env.d.ts
 !.vscode/
 .vscode/tasks.json
 .claude
+.agents
+skills-lock.json

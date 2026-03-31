@@ -21,7 +21,6 @@ import {
 import { serviceSideProps } from '@/utils/i18n';
 import { getErrText, patchYamlList } from '@/utils/tools';
 
-import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -31,7 +30,7 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
-import { useMessage } from '@sealos/ui';
+import { toast } from 'sonner';
 import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
@@ -99,7 +98,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const formOldYamls = useRef<YamlItemType[]>([]);
   const crOldYamls = useRef<DeployKindsType[]>([]);
   const oldAppEditData = useRef<AppEditType>();
-  const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const router = useRouter();
   const [forceUpdate, setForceUpdate] = useState(false);
@@ -107,12 +105,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const { screenWidth, formSliderListConfig } = useGlobalStore();
   const config = useClientAppConfig();
   const { userSourcePrice, loadUserSourcePrice } = useUserStore();
-  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
+  const { title, applyBtnText, applyConfirmTitle, applyMessage, applySuccess, applyError } =
+    editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [already, setAlready] = useState(false);
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const { name } = router.query as QueryType;
   const isEdit = useMemo(() => !!name, [name]);
   // For identifying existing stores and quota calculation
@@ -123,6 +121,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     manufacturers: ''
   });
   const { openConfirm, ConfirmChild } = useConfirm({
+    title: applyConfirmTitle,
     content: applyMessage
   });
   const pxVal = useMemo(() => {
@@ -189,10 +188,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
         router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
 
-        toast({
-          title: t(applySuccess),
-          status: 'success'
-        });
+        toast.success(t(applySuccess));
 
         if (userSourcePrice?.gpu) {
           refetchPrice();
@@ -230,7 +226,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     },
     [
       setIsLoading,
-      toast,
       appName,
       router,
       formHook,
@@ -250,14 +245,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       }
       return deepSearch(Object.values(obj)[0]);
     };
-    toast({
-      title: deepSearch(formHook.formState.errors),
-      status: 'error',
-      position: 'top',
-      duration: 3000,
-      isClosable: true
-    });
-  }, [formHook.formState.errors, t, toast]);
+    toast.error(deepSearch(formHook.formState.errors));
+  }, [formHook.formState.errors, t]);
 
   const handleDomainVerified = useCallback(
     ({ index, customDomain }: { index: number; customDomain: string }) => {
@@ -272,16 +261,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         setIsLoading(true);
         postDeployApp([ingressYaml], 'replace')
           .then(() => {
-            toast({ status: 'success', title: t('Deployment Successful') });
+            toast.success(t('Deployment Successful'));
             formOldYamls.current = formData2Yamls(data, config.userDomains);
           })
           .catch((err) => {
-            toast({ status: 'error', title: getErrText(err) });
+            toast.error(getErrText(err));
           })
           .finally(() => setIsLoading(false));
       } catch (error) {}
     },
-    [formHook, setIsLoading, toast, t]
+    [formHook, setIsLoading, t]
   );
 
   useQuery(
@@ -325,10 +314,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         setYamlList(formData2Yamls(realTimeForm.current, config.userDomains));
       },
       onError(err) {
-        toast({
-          title: String(err),
-          status: 'error'
-        });
+        toast.error(String(err));
       },
       onSettled() {
         setIsLoading(false);
@@ -455,21 +441,17 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       if (data.gpu?.type) {
         const inventory = countGpuInventory(data.gpu?.type);
         if (data.gpu?.amount > inventory) {
-          return toast({
-            status: 'warning',
-            title: t('Gpu under inventory Tip', {
+          return toast.warning(
+            t('Gpu under inventory Tip', {
               gputype: data.gpu.type
             })
-          });
+          );
         }
       }
 
       // check network port
       if (!checkNetworkPorts(data.networks)) {
-        return toast({
-          status: 'warning',
-          title: t('Network port conflict')
-        });
+        return toast.warning(t('Network port conflict'));
       }
 
       // check permission
@@ -490,10 +472,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             setIsLoading(false);
             return;
           }
-          return toast({
-            status: 'warning',
-            title: error?.message || 'Check Error'
-          });
+          return toast.warning(error?.message || 'Check Error');
         }
       }
 
@@ -522,7 +501,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         submitSuccess(parseYamls);
       })();
     }, submitError)();
-  }, [formHook, countGpuInventory, toast, t, appName, openConfirm, submitSuccess, submitError]);
+  }, [
+    formHook,
+    countGpuInventory,
+    t,
+    appName,
+    openConfirm,
+    submitSuccess,
+    submitError,
+    setIsLoading
+  ]);
 
   const handleSubmit = useQuotaGuarded(
     {
@@ -535,14 +523,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   return (
     <>
-      <Flex
-        flexDirection={'column'}
-        alignItems={'center'}
-        h={'100%'}
-        minWidth={'1024px'}
-        backgroundColor={'grayModern.100'}
-        overflowY={'auto'}
-      >
+      <div className="h-screen min-w-[1024px] bg-zinc-50 relative flex flex-col overflow-hidden">
         <Header
           appName={formHook.getValues('appName')}
           title={title}
@@ -552,24 +533,22 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyCb={handleSubmit}
         />
 
-        <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
+        <div className="flex-1 overflow-y-auto scrollbar-default flex justify-center pb-20 pt-32">
           {tabType === 'form' ? (
             <Form
               formHook={formHook}
               already={already}
               existingStores={existingStores}
               countGpuInventory={countGpuInventory}
-              pxVal={pxVal}
               refresh={forceUpdate}
-              isAdvancedOpen={isAdvancedOpen}
               onDomainVerified={handleDomainVerified}
               exceededQuotas={exceededQuotas}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}
-        </Box>
-      </Flex>
+        </div>
+      </div>
       <ConfirmChild />
       <Loading />
       {!!errorMessage && (

@@ -113,7 +113,7 @@ const NetworkStorageDrawer = ({
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-10 w-10 rounded-br-none rounded-tr-none shadow-none"
+                  className="h-10 w-10 rounded-tr-none rounded-br-none shadow-none"
                   onClick={() => handleCapacityChange(-1)}
                 >
                   <Minus className="h-4 w-4 text-zinc-500" />
@@ -125,12 +125,12 @@ const NetworkStorageDrawer = ({
                   value={capacityInput}
                   onChange={(e) => handleCapacityInput(e.target.value)}
                   onBlur={handleCapacityBlur}
-                  className="h-10 w-20 rounded-none border-x-0 text-center text-sm font-medium shadow-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="h-10 w-20 [appearance:textfield] rounded-none border-x-0 text-center text-sm font-medium shadow-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-10 w-10 rounded-bl-none rounded-tl-none shadow-none"
+                  className="h-10 w-10 rounded-tl-none rounded-bl-none shadow-none"
                   onClick={() => handleCapacityChange(1)}
                 >
                   <Plus className="h-4 w-4 text-zinc-500" />

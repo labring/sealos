@@ -1,20 +1,16 @@
-import MyIcon from '@/components/Icon';
 import { TAppSource } from '@/types/app';
-import {
-  Box,
-  Button,
-  Flex,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay
-} from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { TriangleAlert } from 'lucide-react';
+import { Button } from '@sealos/shadcn-ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@sealos/shadcn-ui/dialog';
 
 const UpdateModal = ({
   isOpen,
@@ -41,30 +37,27 @@ const UpdateModal = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <Flex alignItems={'center'} gap={'10px'}>
-            <MyIcon name="warning" width={'20px'} h={'20px'} />
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="w-[360px] text-foreground top-20 left-1/2 -translate-x-1/2 translate-y-0">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold leading-none">
+            <TriangleAlert className="h-4 w-4 text-yellow-600" />
             {t('remind')}
-          </Flex>
-        </ModalHeader>
-        <ModalCloseButton top={'10px'} right={'10px'} />
-        <ModalBody pb={4}>
-          <Box color={'grayModern.600'}>{t('update_sealaf_app_tip')}</Box>
-        </ModalBody>
-        <ModalFooter>
-          <Button onClick={onClose} variant={'outline'}>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="text-sm font-normal">{t('update_sealaf_app_tip')}</div>
+
+        <DialogFooter>
+          <Button variant="outline" className="shadow-none" onClick={onClose} size="lg">
             {t('Cancel')}
           </Button>
-
-          <Button ml={3} variant={'solid'} isLoading={loading} onClick={openTemplateApp}>
+          <Button className="shadow-none" onClick={openTemplateApp} disabled={loading} size="lg">
             {t('confirm_to_go')}
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -3,16 +3,12 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { crLabelKey } from '@/constants/db';
-
-export type Props = {
-  dbName: string;
-};
+import { BackupClusterUidLabel, UUID_REGEX } from '@/constants/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  const { dbName } = req.query as Props;
+  const { dbUid } = req.query as { dbUid: string };
 
-  if (!dbName) {
+  if (!dbUid || !UUID_REGEX.test(dbUid)) {
     jsonRes(res, {
       code: 500,
       error: 'params error'
@@ -20,8 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return;
   }
 
-  const data = await getBackupListByDBName({ dbName, req });
   try {
+    const data = await getBackupListByDBUid({ dbUid, req });
     jsonRes(res, {
       data
     });
@@ -33,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 }
 
-export async function getBackupListByDBName({ dbName, req }: Props & { req: NextApiRequest }) {
+export async function getBackupListByDBUid({ dbUid, req }: { dbUid: string; req: NextApiRequest }) {
   const group = 'dataprotection.kubeblocks.io';
   const version = 'v1alpha1';
   const plural = 'backups';
@@ -51,7 +47,7 @@ export async function getBackupListByDBName({ dbName, req }: Props & { req: Next
     undefined,
     undefined,
     undefined,
-    `app.kubernetes.io/instance=${dbName}`
+    `${BackupClusterUidLabel}=${dbUid}`
   )) as { body: { items: any[] } };
 
   return body?.items || [];

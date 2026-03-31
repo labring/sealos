@@ -24,13 +24,12 @@ import { useUserStore } from '@/store/user';
 import {
   ClientConfigProvider,
   prefetchClientAppConfig,
-  QuotaGuardProvider,
-  setupClientAppConfigDefaults,
-  type SupportedLang
+  setupClientAppConfigDefaults
 } from '@sealos/shared';
 import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());

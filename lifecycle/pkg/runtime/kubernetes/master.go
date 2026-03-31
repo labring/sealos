@@ -22,7 +22,7 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/iputils"
 
-	"github.com/labring/sreg/pkg/registry/crane"
+	"github.com/labring/sealos/pkg/sreg/registry/crane"
 	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/labring/sealos/pkg/registry/helpers"
