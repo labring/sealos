@@ -2,9 +2,9 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { json2CreateCluster, json2Account } from '@/utils/json2Yaml';
-import { DBTypeEnum, defaultDBEditValue, templateDeployKey } from '@/constants/db';
+import { DBTypeEnum, defaultDBEditValue } from '@/constants/db';
 import type { DBEditType } from '@/types/db';
-import { cpuFormatToM, memoryFormatToMi, storageFormatToGi } from '@/utils/tools';
+import { storageFormatToGi } from '@/utils/tools';
 import { customAlphabet } from 'nanoid';
 import z from 'zod';
 import {
@@ -14,6 +14,7 @@ import {
   ErrorType,
   ErrorCode
 } from '@/types/v2alpha/error';
+import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 8);
 

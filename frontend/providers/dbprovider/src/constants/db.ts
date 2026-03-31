@@ -25,6 +25,9 @@ export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
 export const DBSwitchRoleKey = 'ops.kubeblocks.io/ops-type=Switchover';
 
 export const DBNameLabel = 'app.kubernetes.io/instance';
+export const BackupClusterUidLabel = 'dataprotection.kubeblocks.io/cluster-uid';
+
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export enum DBTypeEnum {
   postgresql = 'postgresql',

@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { NextApiResponse } from 'next';
 import { Region } from 'prisma/global/generated/client';
 import { Role, Workspace } from 'prisma/region/generated/client';
-import { generateGlobalToken, generateBillingToken, generateOnceToken } from '../auth';
+import { generateLegacyGlobalToken, generateBillingToken, generateOnceToken } from '../auth';
 import { globalPrisma, prisma } from '../db/init';
 import { jsonRes } from '../response';
 type ResourceRawType = {
@@ -165,7 +165,7 @@ export const allRegionResourceSvc =
           {
             headers: {
               authorization: encodeURI(
-                generateGlobalToken({
+                generateLegacyGlobalToken({
                   userUid: userUid,
                   userId: userId
                 })

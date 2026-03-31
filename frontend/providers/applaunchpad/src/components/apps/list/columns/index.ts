@@ -1,0 +1,9 @@
+export { Name } from './Name';
+export { Status } from './Status';
+export { CreateTime } from './CreateTime';
+export { CPU } from './CPU';
+export { Memory } from './Memory';
+export { GPU } from './GPU';
+export { Replicas } from './Replicas';
+export { Storage } from './Storage';
+export { Actions } from './Actions';

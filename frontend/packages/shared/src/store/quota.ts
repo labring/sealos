@@ -6,8 +6,8 @@ import type {
   ExceededWorkspaceQuotaItem,
   WorkspaceQuotaItemType
 } from '../types/workspace';
-import { sealosApp } from 'sealos-desktop-sdk/app';
 import type { SessionV1 } from 'sealos-desktop-sdk';
+import type { sealosApp as defaultSealosApp } from 'sealos-desktop-sdk/app';
 
 /**
  * @internal
@@ -22,7 +22,7 @@ type QuotaGuardedConfig = {
 type State = {
   userQuota: WorkspaceQuotaItem[];
   setUserQuota: (quotas: WorkspaceQuotaItem[]) => void;
-  fetchUserQuota: () => Promise<WorkspaceQuotaItem[]>;
+  fetchUserQuota: (sealosApp?: typeof defaultSealosApp) => Promise<WorkspaceQuotaItem[]>;
   exceededQuotas: ExceededWorkspaceQuotaItem[];
   setExceededQuotas: (quotas: ExceededWorkspaceQuotaItem[]) => void;
   checkExceededQuotas: (
@@ -57,9 +57,9 @@ export const useQuotaStore = create<State>()(
           userQuota: quotas
         });
       },
-      fetchUserQuota: async () => {
-        const response = await sealosApp.getWorkspaceQuota();
-        return response.quota;
+      fetchUserQuota: async (sealosApp?: typeof defaultSealosApp) => {
+        const response = await sealosApp?.getWorkspaceQuota();
+        return response?.quota ?? [];
       },
       exceededQuotas: [],
       setExceededQuotas: (quotas) => {

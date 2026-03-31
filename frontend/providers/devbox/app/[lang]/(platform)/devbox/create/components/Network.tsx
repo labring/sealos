@@ -127,7 +127,7 @@ export default function Network({
                         {t('Container Port')}
                       </span>
                       <Input
-                        className="w-25 h-10"
+                        className="h-10 w-25"
                         type="number"
                         min={1}
                         max={65535}
@@ -215,15 +215,15 @@ export default function Network({
                                 ))}
                               </SelectContent>
                             </Select>
-                            <div className="flex-grow-1 flex h-10 flex-shrink-0 items-center rounded-r-md border border-l-0 px-3 py-2">
-                              <div className="mr-2 min-w-64 flex-1 select-all truncate text-sm/5 text-muted-foreground">
+                            <div className="flex h-10 flex-shrink-0 flex-grow-1 items-center rounded-r-md border border-l-0 px-3 py-2">
+                              <div className="mr-2 min-w-64 flex-1 truncate text-sm/5 text-muted-foreground select-all">
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.publicDomain!}
                               </div>
                               <Button
                                 variant="ghost"
-                                className="cursor-pointer whitespace-nowrap text-sm/5 text-blue-600 hover:bg-white hover:text-blue-700"
+                                className="cursor-pointer text-sm/5 whitespace-nowrap text-blue-600 hover:bg-white hover:text-blue-700"
                                 disabled={isReservedPort}
                                 onClick={() =>
                                   setCustomAccessModalData({

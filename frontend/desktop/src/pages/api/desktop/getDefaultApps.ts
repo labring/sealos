@@ -1,8 +1,33 @@
 import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import { ListCRD } from '@/services/backend/kubernetes/user';
 import { jsonRes } from '@/services/backend/response';
-import { CRDMeta, TAppCRList, TAppConfig } from '@/types';
+import {
+  CRDMeta,
+  ForcedIconStyleAnnotation,
+  TAppCR,
+  TAppCRList,
+  TAppConfig,
+  TForcedIconStyle
+} from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
+
+const normalizeForcedIconStyle = (value: string | undefined): TForcedIconStyle | undefined => {
+  if (value === 'contain' || value === 'fill') {
+    return value;
+  }
+
+  return undefined;
+};
+
+const getRepresentativeMeta = (key: string, annotations?: TAppCR['metadata']['annotations']) => {
+  const forcedIconStyleFromAnnotation = normalizeForcedIconStyle(
+    annotations?.[ForcedIconStyleAnnotation]
+  );
+
+  return {
+    forcedIconStyle: forcedIconStyleFromAnnotation || (key.startsWith('user-') ? 'contain' : 'fill')
+  };
+};
 
 export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -20,9 +45,12 @@ export default async function handler(_req: NextApiRequest, res: NextApiResponse
 
     const defaultArr = (await getRawAppList(getMeta()))
       .map<TAppConfig>((item) => {
+        const key = `system-${item.metadata.name}` as const;
+
         return {
-          key: `system-${item.metadata.name}`,
+          key,
           ...item.spec,
+          representativeMeta: getRepresentativeMeta(key, item.metadata.annotations),
           creationTimestamp: item.metadata.creationTimestamp
         };
       })

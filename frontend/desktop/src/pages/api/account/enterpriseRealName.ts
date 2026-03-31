@@ -1,7 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { enableEnterpriseRealNameAuth } from '@/services/enable';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { generateGlobalToken, verifyAccessToken } from '@/services/backend/auth';
+import { generateLegacyGlobalToken, verifyAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 import { z } from 'zod';
 import { PAYMENTSTATUS } from '@/types/response/enterpriseRealName';
@@ -196,9 +196,10 @@ async function handlePost(
 
     const data = validationResult.data;
 
-    const globalToken = generateGlobalToken({
+    const globalToken = generateLegacyGlobalToken({
       userUid: payload.userUid,
-      userId: payload.userId
+      userId: payload.userId,
+      regionUid: payload.regionUid
     });
 
     const response = await fetch(`${enterpriseRealNameAuthApi}/v1/enterprise-auth`, {
@@ -345,9 +346,10 @@ async function handleGetBanks(
     const config: UnionPay3060Config = realNameAuthProvider.config as UnionPay3060Config;
     const enterpriseRealNameAuthApi = config.api;
 
-    const globalToken = generateGlobalToken({
+    const globalToken = generateLegacyGlobalToken({
       userUid: payload.userUid,
-      userId: payload.userId
+      userId: payload.userId,
+      regionUid: payload.regionUid
     });
 
     const fullApiUrl = `${enterpriseRealNameAuthApi}/v1/banks`;

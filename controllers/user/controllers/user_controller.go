@@ -67,10 +67,11 @@ const (
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
-	Logger   logr.Logger
-	Recorder record.EventRecorder
-	cache    cache.Cache
-	config   *rest.Config
+	Logger    logr.Logger
+	Recorder  record.EventRecorder
+	cache     cache.Cache
+	apiReader client.Reader
+	config    *rest.Config
 	*runtime.Scheme
 	client.Client
 	finalizer          *finalizer.Finalizer
@@ -153,6 +154,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 	}
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
+	r.apiReader = mgr.GetAPIReader()
 	r.config = mgr.GetConfig()
 	r.Logger.V(1).Info("init reconcile controller user")
 	r.minRequeueDuration = minRequeueDuration
@@ -189,7 +191,6 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	if !ok {
 		return ctrl.Result{}, errors.New("obj convert user is error")
 	}
-	isNewUser := r.isNewUser(user)
 
 	blocked, err := r.handleLicenseLimit(ctx, user)
 	if err != nil {
@@ -234,9 +235,6 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 			err,
 		)
 		return ctrl.Result{}, err
-	}
-	if isNewUser {
-		usercount.Inc()
 	}
 	return ctrl.Result{
 		RequeueAfter: RandTimeDurationBetween(r.minRequeueDuration, r.maxRequeueDuration),
@@ -304,7 +302,7 @@ func (r *UserReconciler) syncNamespace(
 			}
 			ns.Annotations[userAnnotationCreatorKey] = user.Name
 			ns.Annotations[userAnnotationOwnerKey] = user.Annotations[userAnnotationOwnerKey]
-			if ns.Name != "admin" {
+			if ns.Name != "ns-admin" {
 				ns.Labels = config.SetPodSecurity(ns.Labels)
 			} else {
 				for k := range ns.Labels {
@@ -870,22 +868,37 @@ func (r *UserReconciler) updateStatus(
 }
 
 func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.User) (bool, error) {
-	userCount := usercount.Get()
-	if !usercount.Initialized() {
-		var err error
-		userCount, err = r.countExistingUsers(ctx, user.Name)
-		if err != nil {
-			return false, err
-		}
+	reader := r.apiReader
+	if reader == nil {
+		reader = r.Client
 	}
-	if licensegate.AllowNewUser(userCount) {
+
+	latest := &userv1.User{}
+	if err := reader.Get(ctx, client.ObjectKeyFromObject(user), latest); err != nil {
+		return false, err
+	}
+	*user = *latest.DeepCopy()
+
+	if !r.isNewUser(user) {
 		user.Status.Conditions = helper.DeleteCondition(
 			user.Status.Conditions,
 			licenseLimitedCondition,
 		)
 		return false, nil
 	}
-	if !r.isNewUser(user) {
+
+	if err := usercount.Init(ctx, reader); err != nil {
+		return false, err
+	}
+	userCount, err := usercount.CountQuotaUsersExcluding(ctx, reader, user.Name)
+	if err != nil {
+		return false, err
+	}
+	if licensegate.AllowNewUser(userCount) {
+		user.Status.Conditions = helper.DeleteCondition(
+			user.Status.Conditions,
+			licenseLimitedCondition,
+		)
 		return false, nil
 	}
 	limitCondition := &userv1.Condition{
@@ -914,21 +927,6 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 
 func (r *UserReconciler) isNewUser(user *userv1.User) bool {
 	return user.Status.ObservedGeneration == 0 && len(user.Status.Conditions) == 0
-}
-
-func (r *UserReconciler) countExistingUsers(ctx context.Context, excludeName string) (int, error) {
-	userList := &userv1.UserList{}
-	if err := r.List(ctx, userList); err != nil {
-		return 0, err
-	}
-	count := 0
-	for i := range userList.Items {
-		if userList.Items[i].Name == excludeName {
-			continue
-		}
-		count++
-	}
-	return count, nil
 }
 
 func (r *UserReconciler) licenseToUserRequests(

@@ -2,7 +2,7 @@ import { generateBillingToken, verifyAccessToken } from '@/services/backend/auth
 import { jsonRes } from '@/services/backend/response';
 import { WorkspaceQuotaItem } from '@/types/workspace';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { cpuFormatToM, memoryFormatToMi } from 'sealos-desktop-sdk';
+import { cpuFormatToM, memoryFormatToMi, storageFormatToMi } from '@sealos/shared';
 
 type QuotaStatus = Record<string, string>;
 type UpstreamQuotaResponse = {
@@ -74,8 +74,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (hard['requests.storage'] !== undefined || used['requests.storage'] !== undefined) {
       quota.push({
         type: 'storage',
-        limit: memoryFormatToMi(hard['requests.storage'] || ''),
-        used: memoryFormatToMi(used['requests.storage'] || '')
+        limit: storageFormatToMi(hard['requests.storage'] || ''),
+        used: storageFormatToMi(used['requests.storage'] || '')
       });
     }
 

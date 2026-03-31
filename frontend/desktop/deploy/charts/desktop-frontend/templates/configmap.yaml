@@ -13,11 +13,16 @@ data:
       regionUID: "{{ .Values.desktopConfig.regionUID }}"
       certSecretName: "{{ .Values.desktopConfig.certSecretName }}"
       proxyDomain: "{{ .Values.desktopConfig.cloudDomain }}"
+      allowedAllOrigins: {{ .Values.desktopConfig.allowedAllOrigins | default false }}
       allowedOrigins:
+{{- if .Values.desktopConfig.allowedAllOrigins }}
+        - "*"
+{{- else }}
 {{- $defaultAllowedOrigins := list "costcenter" "license" -}}
 {{- $allowedOrigins := .Values.desktopConfig.allowedOrigins | default $defaultAllowedOrigins -}}
 {{- range $origin := $allowedOrigins }}
         - "https://{{ $origin }}.{{ $.Values.desktopConfig.cloudDomain }}"
+{{- end }}
 {{- end }}
 
     common:

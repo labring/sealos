@@ -51,6 +51,7 @@ import { SubmitHandler, useForm } from 'react-hook-form';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useUserStore } from '@/store/user';
 import { useQuotaGuarded } from '@sealos/shared';
+import { editPasswordPattern } from '@/types/schemas/password';
 const CopyBox = ({
   value,
   showSecret = true,
@@ -418,7 +419,10 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       reset();
     } catch (error) {
       toast({
-        title: typeof error === 'string' ? error : t('edit_password_failed'),
+        title:
+          typeof error === 'string'
+            ? error
+            : (error as { message?: string })?.message || t('edit_password_failed'),
         status: 'error'
       });
     }
@@ -492,8 +496,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                         message: t('password_min_length')
                       },
                       pattern: {
-                        value: /^(?!-)[A-Za-z\d~`!@#%^&\*()\-\_=+\|:,<.>\/? ]{8,32}$/,
-                        message: t('password_complexity')
+                        value: editPasswordPattern,
+                        message: t('password_schema_invalid')
                       }
                     })}
                   />

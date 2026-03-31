@@ -1,6 +1,7 @@
 export interface ApiResp<T = any> {
   code: number;
   message: string;
+  errorCode?: string | number;
   data?: T;
 }
 
