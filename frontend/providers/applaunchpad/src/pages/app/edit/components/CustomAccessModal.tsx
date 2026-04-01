@@ -20,11 +20,11 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@sealos/shadcn-ui/drawer';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { Alert, AlertDescription } from '@sealos/shadcn-ui/alert';
+} from '@labring/sealos-shadcn-ui/drawer';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
+import { Alert, AlertDescription } from '@labring/sealos-shadcn-ui/alert';
 import {
   Table,
   TableBody,
@@ -32,8 +32,8 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@sealos/shadcn-ui/table';
-import { Separator } from '@sealos/shadcn-ui/separator';
+} from '@labring/sealos-shadcn-ui/table';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 
 export type CustomAccessModalParams = {
   publicDomain: string;

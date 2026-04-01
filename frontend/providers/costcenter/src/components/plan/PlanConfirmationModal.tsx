@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef } from 'react';
-import { Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
+import { Dialog, DialogContent, DialogOverlay } from '@labring/sealos-shadcn-ui';
 import { SubscriptionPlan, PaymentMethod } from '@/types/plan';
 import { getUpgradeAmount, getCardInfo, createCardManageSession, cancelInvoice } from '@/api/plan';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

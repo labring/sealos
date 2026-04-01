@@ -18,17 +18,17 @@ import {
   ClientConfigProvider,
   prefetchClientAppConfig,
   setupClientAppConfigDefaults
-} from '@sealos/shared';
+} from '@labring/sealos-shared-sdk';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 
-import '@sealos/driver/src/driver.css';
+import '@labring/sealos-driver-sdk/src/driver.css';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import { useGuideStore } from '@/store/guide';
 import App from 'next/app';
 import Script from 'next/script';
-import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
-import { QuotaGuardProvider } from '@sealos/shared';
+import { InsufficientQuotaDialog, type SupportedLang } from '@labring/sealos-shared-sdk/chakra';
+import { QuotaGuardProvider } from '@labring/sealos-shared-sdk';
 import { Config } from '@/config';
 import type { CustomScript } from '@/types/config';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';

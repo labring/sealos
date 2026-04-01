@@ -7,10 +7,10 @@ const nextConfig = {
   reactStrictMode: false,
   compress: true,
   transpilePackages: [
-    '@sealos/ui',
+    '@labring/sealos-ui',
     '@labring/sealos-desktop-sdk',
-    '@sealos/driver',
-    '@sealos/shared',
+    '@labring/sealos-driver-sdk',
+    '@labring/sealos-shared-sdk',
   ],
   experimental: {
     // this includes files from the monorepo base two directories up

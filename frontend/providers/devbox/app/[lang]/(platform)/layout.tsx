@@ -18,10 +18,10 @@ import { useGlobalStore } from '@/stores/global';
 import { getLangStore, setLangStore } from '@/utils/cookie';
 import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 
-import { Toaster } from '@sealos/shadcn-ui/sonner';
+import { Toaster } from '@labring/sealos-shadcn-ui/sonner';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
-import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
-import { QuotaGuardProvider } from '@sealos/shared';
+import { InsufficientQuotaDialog, type SupportedLang } from '@labring/sealos-shared-sdk/shadcn';
+import { QuotaGuardProvider } from '@labring/sealos-shared-sdk';
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();

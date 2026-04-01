@@ -1,6 +1,6 @@
 import { getResource } from '@/api/platform';
 import { Box, CircularProgress, CircularProgressLabel, Flex, Text } from '@chakra-ui/react';
-import { MonitorIcon } from '@sealos/ui';
+import { MonitorIcon } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { CpuIcon, FlowIcon, GpuIcon, MemoryIcon, StorageIcon } from '../icons';

@@ -7,7 +7,7 @@ import { useFormContext } from 'react-hook-form';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useRouter } from '@/i18n';
 import { nanoid } from '@/utils/tools';
 import { useEnvStore } from '@/stores/env';
@@ -24,9 +24,9 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
-import { Button } from '@sealos/shadcn-ui/button';
-import { FormItem, FormLabel } from '@sealos/shadcn-ui/form';
+} from '@labring/sealos-shadcn-ui/select';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { FormItem, FormLabel } from '@labring/sealos-shadcn-ui/form';
 
 interface RuntimeProps {
   isEdit?: boolean;

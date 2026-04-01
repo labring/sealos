@@ -4,7 +4,7 @@ import MyIcon from '@/components/Icon';
 import { CVMInstanceType, HandleEnum } from '@/types/cloudserver';
 import { formatTime } from '@/utils/tools';
 import { Box, Button, Center, Flex, FlexProps, MenuButton, Text } from '@chakra-ui/react';
-import { LogoutIcon, MyTable, SealosMenu, useMessage } from '@sealos/ui';
+import { LogoutIcon, MyTable, SealosMenu, useMessage } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback, useMemo, useState } from 'react';

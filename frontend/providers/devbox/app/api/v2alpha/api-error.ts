@@ -6,7 +6,7 @@ import {
   buildValidationErrorBody,
   ErrorCode,
   ErrorType
-} from '@sealos/shared/server/v2alpha';
+} from '@labring/sealos-shared-sdk/server/v2alpha';
 
 export { buildErrorBody, buildValidationErrorBody, ErrorCode, ErrorType };
 export type {
@@ -14,9 +14,13 @@ export type {
   ApiErrorDetails,
   ErrorCodeType,
   ErrorTypeValue
-} from '@sealos/shared/server/v2alpha';
+} from '@labring/sealos-shared-sdk/server/v2alpha';
 
-import type { ApiErrorDetails, ErrorCodeType, ErrorTypeValue } from '@sealos/shared/server/v2alpha';
+import type {
+  ApiErrorDetails,
+  ErrorCodeType,
+  ErrorTypeValue
+} from '@labring/sealos-shared-sdk/server/v2alpha';
 
 // ============================================================================
 // OpenAPI schemas — follow docs/v2alpha-api-error-design.md

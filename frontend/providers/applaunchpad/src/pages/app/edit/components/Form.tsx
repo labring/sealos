@@ -8,29 +8,33 @@ import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
-import { resourcePropertyMap, useUserQuota, type WorkspaceQuotaItem } from '@sealos/shared';
+import {
+  resourcePropertyMap,
+  useUserQuota,
+  type WorkspaceQuotaItem
+} from '@labring/sealos-shared-sdk';
 import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { Trash2, Plus, Minus } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Label } from '@sealos/shadcn-ui/label';
-import { Separator } from '@sealos/shadcn-ui/separator';
-import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
-import { Slider } from '@sealos/shadcn-ui/slider';
+import { Tabs, TabsList, TabsTrigger } from '@labring/sealos-shadcn-ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@labring/sealos-shadcn-ui/card';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
+import { RadioGroup, RadioGroupItem } from '@labring/sealos-shadcn-ui/radio-group';
+import { Slider } from '@labring/sealos-shadcn-ui/slider';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
+} from '@labring/sealos-shadcn-ui/select';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@sealos/shadcn-ui/tooltip';
+} from '@labring/sealos-shadcn-ui/tooltip';
 import {
   Table,
   TableBody,
@@ -38,8 +42,8 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@sealos/shadcn-ui/table';
-import { Button } from '@sealos/shadcn-ui/button';
+} from '@labring/sealos-shadcn-ui/table';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import { toast } from 'sonner';
 import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';

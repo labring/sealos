@@ -1,4 +1,4 @@
-import { Slider } from '@sealos/shadcn-ui/slider';
+import { Slider } from '@labring/sealos-shadcn-ui/slider';
 import React from 'react';
 
 interface CalculatorSliderProps {

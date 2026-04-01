@@ -17,7 +17,7 @@
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.18.1",
     "@next/font": "13.1.6",
-    "@sealos/ui": "workspace:^",
+    "@labring/sealos-ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "@types/multer": "^1.4.10",
     "ansi_up": "^5.2.1",

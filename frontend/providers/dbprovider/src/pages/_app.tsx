@@ -16,14 +16,14 @@ import { useEffect, useState, useCallback } from 'react';
 import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 import useEnvStore from '@/store/env';
-import '@sealos/driver/src/driver.css';
+import '@labring/sealos-driver-sdk/src/driver.css';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import Script from 'next/script';
 import App from 'next/app';
 import { useUserStore } from '@/store/user';
-import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
-import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
+import { QuotaGuardProvider, type SupportedLang } from '@labring/sealos-shared-sdk';
+import { InsufficientQuotaDialog } from '@labring/sealos-shared-sdk/chakra';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());

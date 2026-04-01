@@ -3,11 +3,11 @@
 import { useTranslation } from 'next-i18next';
 import { ChevronDown } from 'lucide-react';
 import React, { useRef, forwardRef, useMemo, useState } from 'react';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
-import { Checkbox } from '@sealos/shadcn-ui/checkbox';
-import { Separator } from '@sealos/shadcn-ui/separator';
-import { cn } from '@sealos/shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@labring/sealos-shadcn-ui/popover';
+import { Checkbox } from '@labring/sealos-shadcn-ui/checkbox';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
+import { cn } from '@labring/sealos-shadcn-ui';
 
 export interface ListItem {
   label: string | React.ReactNode;

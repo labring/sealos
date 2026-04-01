@@ -1,6 +1,6 @@
 'use client';
 import { Badge, Flex, Text } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { Code } from 'lucide-react';
 import Image, { StaticImageData } from 'next/image';
 

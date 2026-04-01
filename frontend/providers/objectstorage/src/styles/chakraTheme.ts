@@ -1,5 +1,5 @@
 import { defineStyle, defineStyleConfig, extendTheme } from '@chakra-ui/react';
-import { theme as originTheme } from '@sealos/ui';
+import { theme as originTheme } from '@labring/sealos-ui';
 originTheme.font;
 export const theme = extendTheme(originTheme, {
   components: {

@@ -5,17 +5,17 @@ import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
 import { toast } from 'sonner';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter
-} from '@sealos/shadcn-ui/dialog';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Label } from '@sealos/shadcn-ui/label';
-import { Pagination } from '@sealos/shadcn-ui/pagination';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Pagination } from '@labring/sealos-shadcn-ui/pagination';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
@@ -25,8 +25,8 @@ import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { BookOpen, Plus, TriangleAlert } from 'lucide-react';
-import { track } from '@labring/gtm';
-import { useQuotaGuarded } from '@sealos/shared';
+import { track } from '@labring/sealos-gtm-sdk';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import Empty from './empty';
 
 import {

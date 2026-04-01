@@ -4,7 +4,7 @@ import Tip from '@/components/Tip';
 import { DBBackupMethodNameMap, DBTypeEnum, SelectTimeList, WeekSelectList } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { AutoBackupFormType, AutoBackupType } from '@/types/backup';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { convertCronTime, getErrText } from '@/utils/tools';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -20,7 +20,7 @@ import {
   ModalOverlay,
   Switch
 } from '@chakra-ui/react';
-import { MySelect, Tabs, useMessage } from '@sealos/ui';
+import { MySelect, Tabs, useMessage } from '@labring/sealos-ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';

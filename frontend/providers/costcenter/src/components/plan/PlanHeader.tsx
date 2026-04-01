@@ -1,4 +1,10 @@
-import { Button, Separator, Tooltip, TooltipTrigger, TooltipContent } from '@sealos/shadcn-ui';
+import {
+  Button,
+  Separator,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent
+} from '@labring/sealos-shadcn-ui';
 import { CircleCheck, Sparkles, HelpCircle } from 'lucide-react';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import usePlanStore from '@/stores/plan';

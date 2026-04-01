@@ -7,10 +7,10 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@sealos/shadcn-ui/drawer';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Textarea } from '@sealos/shadcn-ui/textarea';
-import { Label } from '@sealos/shadcn-ui/label';
+} from '@labring/sealos-shadcn-ui/drawer';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Textarea } from '@labring/sealos-shadcn-ui/textarea';
+import { Label } from '@labring/sealos-shadcn-ui/label';
 
 const envNameRegex = /^[-._a-zA-Z][-._a-zA-Z0-9]*$/;
 

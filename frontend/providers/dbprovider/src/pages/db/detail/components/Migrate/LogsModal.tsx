@@ -17,7 +17,7 @@ import {
   ModalOverlay,
   useTheme
 } from '@chakra-ui/react';
-import { SealosMenu } from '@sealos/ui';
+import { SealosMenu } from '@labring/sealos-ui';
 import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

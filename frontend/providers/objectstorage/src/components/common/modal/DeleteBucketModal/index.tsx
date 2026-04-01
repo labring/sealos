@@ -16,7 +16,7 @@ import {
   Flex,
   useToast
 } from '@chakra-ui/react';
-import { WarnTriangeIcon } from '@sealos/ui';
+import { WarnTriangeIcon } from '@labring/sealos-ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';

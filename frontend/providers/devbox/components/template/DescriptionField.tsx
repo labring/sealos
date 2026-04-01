@@ -1,8 +1,14 @@
 import { useTranslations } from 'next-intl';
 import { UseFormReturn } from 'react-hook-form';
 
-import { Textarea } from '@sealos/shadcn-ui/textarea';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@sealos/shadcn-ui/form';
+import { Textarea } from '@labring/sealos-shadcn-ui/textarea';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@labring/sealos-shadcn-ui/form';
 
 interface DescriptionFieldProps {
   form: UseFormReturn<any>;

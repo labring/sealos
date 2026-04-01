@@ -5,8 +5,8 @@ import jobIcon from '@/assets/app-icons/job.svg';
 import osIcon from '@/assets/app-icons/objectstorage.svg';
 import sealosIcon from '@/assets/sealos.svg';
 import terminalIcon from '@/assets/app-icons/terminal.svg';
-import { Avatar, AvatarFallback, AvatarImage } from '@sealos/shadcn-ui/avatar';
-import { cn } from '@sealos/shadcn-ui';
+import { Avatar, AvatarFallback, AvatarImage } from '@labring/sealos-shadcn-ui/avatar';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { AppType } from '@/types/app';
 
 export function AppIcon({

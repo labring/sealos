@@ -1,10 +1,16 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@sealos/shadcn-ui';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Label } from '@sealos/shadcn-ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@labring/sealos-shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Label } from '@labring/sealos-shadcn-ui/label';
 import { ProviderType } from '@/types/alert';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useTranslation } from 'next-i18next';
@@ -266,8 +272,8 @@ export function BindDialog({
                   {sendingCode
                     ? t('common:alert_settings.bind.sending')
                     : cooldown > 0
-                      ? t('common:alert_settings.bind.resend', { count: cooldown })
-                      : t('common:alert_settings.bind.send_code')}
+                    ? t('common:alert_settings.bind.resend', { count: cooldown })
+                    : t('common:alert_settings.bind.send_code')}
                 </button>
               </div>
               {valueError && <p className="text-sm leading-5 text-red-600">{valueError}</p>}

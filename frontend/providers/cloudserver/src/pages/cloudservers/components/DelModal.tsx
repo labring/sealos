@@ -13,7 +13,7 @@ import {
 import { useCallback, useState } from 'react';
 import { updateCloudServerStatus } from '@/api/cloudserver';
 import { HandleEnum } from '@/types/cloudserver';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 

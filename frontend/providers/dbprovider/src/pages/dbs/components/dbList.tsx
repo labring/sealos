@@ -29,8 +29,8 @@ import {
   useTheme,
   Badge
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { track } from '@labring/gtm';
+import { useMessage } from '@labring/sealos-ui';
+import { track } from '@labring/sealos-gtm-sdk';
 import {
   ColumnDef,
   FilterFn,
@@ -67,7 +67,7 @@ import {
   ModalFooter
 } from '@chakra-ui/react';
 import { setDBRemark } from '@/api/db';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));

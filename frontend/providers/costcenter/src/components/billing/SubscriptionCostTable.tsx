@@ -1,13 +1,13 @@
-import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
-import { cn } from '@sealos/shadcn-ui';
+import { TableHead, TableRow, TableCell } from '@labring/sealos-shadcn-ui/table';
+import { cn } from '@labring/sealos-shadcn-ui';
 import {
   TableLayout,
   TableLayoutCaption,
   TableLayoutContent,
   TableLayoutHeadRow,
   TableLayoutBody
-} from '@sealos/shadcn-ui/table-layout';
-import { Badge } from '@sealos/shadcn-ui/badge';
+} from '@labring/sealos-shadcn-ui/table-layout';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
 import { useTranslation } from 'next-i18next';
 import { formatMoney } from '@/utils/format';
 import CurrencySymbol from '../CurrencySymbol';

@@ -1,6 +1,6 @@
 import SealosCoinImage from '@/assets/sealos_coin.png';
 import useEnvStore from '@/stores/env';
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useTranslation } from 'next-i18next';
 import Image from 'next/image';
 import { DetailedHTMLProps, HTMLAttributes } from 'react';
@@ -21,7 +21,7 @@ export default function CurrencySymbol({
       ? useRealCurrency
         ? 'cny'
         : 'shellCoin'
-      : (forcedType ?? defaultCurrencyType);
+      : forcedType ?? defaultCurrencyType;
 
   return currencyType === 'shellCoin' ? (
     <span

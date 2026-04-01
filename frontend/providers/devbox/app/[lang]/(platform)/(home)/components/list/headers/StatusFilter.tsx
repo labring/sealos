@@ -10,7 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@sealos/shadcn-ui/dropdown-menu';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
 import DevboxStatusTag from '@/components/StatusTag';
 import { Polygon } from '@/components/Polygon';
 
@@ -68,9 +68,7 @@ export const StatusFilter = memo<StatusFilterProps>(
                 const value = option.value as DevboxStatusEnum;
                 const isSelected = statusFilter.includes(value);
                 onStatusFilterChange(
-                  isSelected
-                    ? statusFilter.filter((v) => v !== value)
-                    : [...statusFilter, value]
+                  isSelected ? statusFilter.filter((v) => v !== value) : [...statusFilter, value]
                 );
               }}
             >

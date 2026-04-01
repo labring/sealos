@@ -5,8 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter
-} from '@sealos/shadcn-ui/dialog';
-import { Button } from '@sealos/shadcn-ui/button';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
 import { ResponseCode } from '@/types/response';
 import { sealosApp } from '@labring/sealos-desktop-sdk/app';

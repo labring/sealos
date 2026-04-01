@@ -13,14 +13,14 @@ import {
 } from 'lucide-react';
 
 import { AppListItemType } from '@/types/app';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@sealos/shadcn-ui/dropdown-menu';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
 import type { AppTableMeta } from '@/components/apps/appList';
 
 export const Actions = memo<CellContext<AppListItemType, unknown>>(

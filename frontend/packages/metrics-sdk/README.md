@@ -1,4 +1,4 @@
-# sealos-metrics-sdk
+# @labring/sealos-metrics-sdk
 
 Chinese documentation: README.zh-CN.md
 
@@ -15,7 +15,7 @@ Unified TypeScript SDK for Sealos metrics monitoring. Directly queries Victoria 
 ## Installation
 
 ```bash
-pnpm add sealos-metrics-sdk
+pnpm add @labring/sealos-metrics-sdk
 ```
 
 ## Architecture
@@ -39,7 +39,7 @@ MetricsClient (SDK)
 ### Basic Setup
 
 ```typescript
-import { MetricsClient } from 'sealos-metrics-sdk';
+import { MetricsClient } from '@labring/sealos-metrics-sdk';
 
 const client = new MetricsClient({
   kubeconfig: kubeconfigString
@@ -204,8 +204,8 @@ const result = await client.minio.query({
 ```typescript
 // app/api/metrics/launchpad/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { MetricsClient } from 'sealos-metrics-sdk';
-import type { LaunchpadMetricType } from 'sealos-metrics-sdk';
+import { MetricsClient } from '@labring/sealos-metrics-sdk';
+import type { LaunchpadMetricType } from '@labring/sealos-metrics-sdk';
 import { getKubeconfig } from '@/utils/auth';
 
 export async function POST(req: NextRequest) {

@@ -15,8 +15,8 @@ import {
   ModalHeader,
   ModalOverlay
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { track } from '@labring/gtm';
+import { useMessage } from '@labring/sealos-ui';
+import { track } from '@labring/sealos-gtm-sdk';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sealosApp } from '@labring/sealos-desktop-sdk/app';

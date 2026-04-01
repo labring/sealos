@@ -18,7 +18,7 @@ pnpm install react-hook-form sonner
   //...
   "dependencies": {
     // ...
-    "@sealos/shadcn-ui": "workspace:^" // <== Add this
+    "@labring/sealos-shadcn-ui": "workspace:^" // <== Add this
   }
 }
 ```
@@ -42,10 +42,10 @@ Import this file in your root layout / app root component.
 /* global.css */
 
 /* Tailwind CSS, default theme, common utilities/components and required plugins */
-@import '@sealos/shadcn-ui/shadcn.css';
+@import '@labring/sealos-shadcn-ui/shadcn.css';
 
 /* UI components search path */
-@import '@sealos/shadcn-ui/styles.css';
+@import '@labring/sealos-shadcn-ui/styles.css';
 
 /* theme override, plugins, utilities, other styles, etc. */
 /* ... */
@@ -57,15 +57,15 @@ Import this file in your root layout / app root component.
 
 ```js
 // Both are recommended import styles
-import { Button } from '@sealos/shadcn-ui';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 ```
 
 ### `cn` utility
 
 ```js
 // Easier tailwind-merge and clsx
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 ```
 
 ## Developing this package

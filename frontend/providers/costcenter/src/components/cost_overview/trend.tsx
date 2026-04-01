@@ -2,7 +2,7 @@ import placeholderImage from '@/assets/chart_placeholder.svg';
 import Notfound from '@/components/notFound';
 import request from '@/service/request';
 import { Box, Divider, Flex, Heading, Img } from '@chakra-ui/react';
-import { Separator } from '@sealos/shadcn-ui/separator';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 import { useQuery } from '@tanstack/react-query';
 import { subDays } from 'date-fns';
 import { useTranslation } from 'next-i18next';

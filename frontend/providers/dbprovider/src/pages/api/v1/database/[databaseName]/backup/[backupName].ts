@@ -9,7 +9,7 @@ import type { DBEditType } from '@/types/db';
 import { storageFormatToGi } from '@/utils/tools';
 import { customAlphabet } from 'nanoid';
 import z from 'zod';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 8);
 const restoreBodySchema = z.object({
   replicas: z.number().min(1).optional()

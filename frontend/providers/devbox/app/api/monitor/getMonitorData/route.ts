@@ -5,7 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { monitorFetch } from '@/services/monitorFetch';
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
-import type { LaunchpadQueryParams, LaunchpadQueryResult } from 'sealos-metrics-sdk';
+import type { LaunchpadQueryParams, LaunchpadQueryResult } from '@labring/sealos-metrics-sdk';
 
 const AdapterChartData: Record<
   keyof MonitorQueryKey,
@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
       kubeconfig: kubeconfig
     });
 
-    // One hour of monitoring data
+    / One hour of monitoring data
     const endTime = end ? Number(end) : Date.now();
     const startTime = start ? Number(start) : endTime - 60 * 60 * 1000;
 
@@ -112,9 +112,9 @@ export async function GET(req: NextRequest) {
     };
 
     const result = await monitorFetch(params, kubeconfig).then((res) => {
-      // @ts-ignore
+      / @ts-ignore
       return AdapterChartData[queryKey]
-        ? // @ts-ignore
+        ? / @ts-ignore
           AdapterChartData[queryKey](res as LaunchpadQueryResult)
         : res;
     });

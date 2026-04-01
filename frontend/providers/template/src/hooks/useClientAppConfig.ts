@@ -1,4 +1,4 @@
-import { createClientAppConfigHook } from '@sealos/shared';
+import { createClientAppConfigHook } from '@labring/sealos-shared-sdk';
 import { ClientAppConfig } from '@/types/config';
 
 /**

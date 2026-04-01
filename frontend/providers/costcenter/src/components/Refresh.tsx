@@ -1,5 +1,5 @@
 import { Button, ButtonProps, useToast } from '@chakra-ui/react';
-import { RefreshIcon } from '@sealos/ui';
+import { RefreshIcon } from '@labring/sealos-ui';
 
 export function Refresh({
   onRefresh,

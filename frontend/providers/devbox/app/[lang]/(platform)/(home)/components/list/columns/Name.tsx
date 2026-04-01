@@ -4,8 +4,8 @@ import { PencilLine } from 'lucide-react';
 import { type CellContext } from '@tanstack/react-table';
 
 import { DevboxListItemTypeV2 } from '@/types/devbox';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import { Separator } from '@sealos/shadcn-ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 import { RuntimeIcon } from '@/components/RuntimeIcon';
 
 interface NameProps extends CellContext<DevboxListItemTypeV2, unknown> {
@@ -31,9 +31,7 @@ export const Name = memo<NameProps>(
                 <RuntimeIcon iconId={item.template.templateRepository.iconId} alt={item.id} />
               </div>
               <div className="flex flex-col">
-                <p className="text-sm/5 font-medium">
-                  {item.template.templateRepository.iconId}
-                </p>
+                <p className="text-sm/5 font-medium">{item.template.templateRepository.iconId}</p>
                 <p className="text-xs/5 text-zinc-500">{item.template.name}</p>
               </div>
             </div>
@@ -57,9 +55,7 @@ export const Name = memo<NameProps>(
               </div>
               {item.remark && (
                 <div className="group flex w-[80%] items-center gap-1">
-                  <span className="truncate text-xs font-normal text-zinc-500">
-                    {item.remark}
-                  </span>
+                  <span className="truncate text-xs font-normal text-zinc-500">{item.remark}</span>
                   <PencilLine
                     className="h-4 min-h-4 w-4 min-w-4 cursor-pointer text-neutral-500 opacity-0 transition-opacity group-hover:opacity-100"
                     onClick={() => onEditRemark(item)}

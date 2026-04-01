@@ -20,7 +20,7 @@ import { X } from 'lucide-react';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useEffect } from 'react';
-import { track } from '@labring/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 
 export default function AppMenu() {
   const { t, i18n } = useTranslation();

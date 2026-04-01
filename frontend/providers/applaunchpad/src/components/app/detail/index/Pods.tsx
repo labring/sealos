@@ -6,8 +6,8 @@ import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import type { PodDetailType } from '@/types/app';
 import { CircleHelp, ScrollText, Terminal, FolderOpen } from 'lucide-react';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 import {
   Table,
   TableBody,
@@ -15,14 +15,14 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@sealos/shadcn-ui/table';
+} from '@labring/sealos-shadcn-ui/table';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useCallback, useState } from 'react';
 import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
-import { track } from '@labring/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));

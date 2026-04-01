@@ -15,12 +15,12 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { DeleteIcon } from '@sealos/ui';
+import { DeleteIcon } from '@labring/sealos-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import CustomInput from './Input';
-import { track } from '@labring/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 export default function DissolveTeam({
   nsid,
   ns_uid,

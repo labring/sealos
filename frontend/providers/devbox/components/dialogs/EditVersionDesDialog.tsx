@@ -9,10 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter
-} from '@sealos/shadcn-ui/dialog';
-import { Label } from '@sealos/shadcn-ui/label';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Textarea } from '@sealos/shadcn-ui/textarea';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Textarea } from '@labring/sealos-shadcn-ui/textarea';
 
 import { editDevboxVersion } from '@/api/devbox';
 import { DevboxVersionListItemType } from '@/types/devbox';
@@ -71,9 +71,7 @@ const EditVersionDesDialog = ({ version, onClose, open, onSuccess }: EditVersion
               className="w-[462px]"
               maxLength={500}
             />
-            <div className="mt-1 text-right text-sm text-gray-500">
-              {inputValue.length}/500
-            </div>
+            <div className="mt-1 text-right text-sm text-gray-500">{inputValue.length}/500</div>
           </div>
         </div>
 

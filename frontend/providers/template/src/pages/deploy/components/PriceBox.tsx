@@ -4,7 +4,7 @@ import { useTranslation } from 'next-i18next';
 import { Text } from '@chakra-ui/react';
 import { useUserStore } from '@/store/user';
 import MyIcon from '@/components/Icon';
-import { CurrencySymbol, MyTooltip } from '@sealos/ui';
+import { CurrencySymbol, MyTooltip } from '@labring/sealos-ui';
 import { type ResourceUsage } from '@/utils/usage';
 import { PriceIcon } from '@/components/icons/PriceIcon';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';

@@ -1,4 +1,4 @@
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import type { UseMutationOptions } from '@tanstack/react-query';
 import { useMutation } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';

@@ -28,7 +28,7 @@ import dayjs from 'dayjs';
 import { flatMap } from 'lodash';
 import { getLangStore } from './cookieUtils';
 import { ObjectStorageCR, ObjectStorageItemType } from '@/types/objectStorage';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 export function sortItemsByCreateTime<T extends { createTime: string }>(items: T[]): T[] {
   return items.sort((a, b) => {

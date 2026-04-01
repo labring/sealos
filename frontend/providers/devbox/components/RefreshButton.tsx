@@ -8,9 +8,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@sealos/shadcn-ui/dropdown-menu';
-import { Button } from '@sealos/shadcn-ui/button';
-import { ButtonGroup } from '@sealos/shadcn-ui/button-group';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { ButtonGroup } from '@labring/sealos-shadcn-ui/button-group';
 
 import { useDateTimeStore } from '@/stores/date';
 import { REFRESH_INTERVAL_OPTIONS } from '@/constants/date';

@@ -13,10 +13,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@sealos/shadcn-ui/dialog';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Button } from '@sealos/shadcn-ui/button';
-import { track } from '@labring/gtm';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { track } from '@labring/sealos-gtm-sdk';
 import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 import ErrorModal from '@/components/ErrorModal';
 

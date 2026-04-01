@@ -3,7 +3,7 @@ export async function register() {
     // Dynamic imports - must be inside runtime check
     const { readFileSync } = await import('fs');
     const { readConfig, mountToGlobalThis, prettyPrintErrors } = await import(
-      '@sealos/shared/server/config'
+      '@labring/sealos-shared-sdk/server/config'
     );
     const { AppConfigSchema } = await import('./types/config');
 

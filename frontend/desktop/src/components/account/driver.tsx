@@ -1,10 +1,10 @@
 import { Flex, Text, Box, Center } from '@chakra-ui/react';
-import { driver } from '@sealos/driver';
-import { Config } from '@sealos/driver/src/config';
+import { driver } from '@labring/sealos-driver-sdk';
+import { Config } from '@labring/sealos-driver-sdk/src/config';
 import { X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
 import { useGuideModalStore } from '@/stores/guideModal';
-import { track } from '@labring/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 
 export let currentDriver: any = null;
 

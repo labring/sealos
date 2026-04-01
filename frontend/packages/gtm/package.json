@@ -1,5 +1,5 @@
 {
-  "name": "@labring/gtm",
+  "name": "@labring/sealos-gtm-sdk",
   "publishConfig": {
     "access": "public"
   },

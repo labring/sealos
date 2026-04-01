@@ -1,5 +1,5 @@
 import { I18nCommonKey } from '@/types/i18next';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { addHours, format, set, startOfDay } from 'date-fns';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -12,7 +12,7 @@ dayjs.extend(timezone);
 import yaml from 'js-yaml';
 import ini from 'ini';
 import { DBType, PodDetailType } from '@/types/db';
-import { Quantity, Scale } from '@sealos/shared';
+import { Quantity, Scale } from '@labring/sealos-shared-sdk';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).tz('Asia/Shanghai').format(format);

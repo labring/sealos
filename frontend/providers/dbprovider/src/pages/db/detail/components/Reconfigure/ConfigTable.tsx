@@ -13,7 +13,7 @@ import React, {
   useState
 } from 'react';
 import { useFieldArray, useForm, useWatch } from 'react-hook-form';
-import { MySelect } from '@sealos/ui';
+import { MySelect } from '@labring/sealos-ui';
 
 export interface ConfigItem {
   key: string;

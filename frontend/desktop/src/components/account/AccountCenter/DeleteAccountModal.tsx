@@ -30,7 +30,7 @@ import {
   useDisclosure,
   VStack
 } from '@chakra-ui/react';
-import { InfoCircleIcon, LinkIcon, WarnTriangeIcon } from '@sealos/ui';
+import { InfoCircleIcon, LinkIcon, WarnTriangeIcon } from '@labring/sealos-ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';

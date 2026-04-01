@@ -27,7 +27,7 @@ import {
   MenuItem,
   Icon
 } from '@chakra-ui/react';
-import { CloseIcon, RefreshIcon, useMessage, WarningIcon } from '@sealos/ui';
+import { CloseIcon, RefreshIcon, useMessage, WarningIcon } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import React, {
   forwardRef,
@@ -1143,8 +1143,8 @@ function EnterpriseVerification(
                     banksLoading
                       ? t('common:loading')
                       : banksError
-                        ? t('common:get_code_failed')
-                        : t('common:please_enter_bank_name')
+                      ? t('common:get_code_failed')
+                      : t('common:please_enter_bank_name')
                   }
                   value={searchKeyword || selectedBank}
                   onChange={(e) => {

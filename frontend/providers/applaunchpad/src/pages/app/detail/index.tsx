@@ -8,7 +8,7 @@ import React, { useEffect } from 'react';
 import AppBaseInfo from '@/components/app/detail/index/AppBaseInfo';
 import Pods from '@/components/app/detail/index/Pods';
 import DetailLayout from '@/components/layouts/DetailLayout';
-import { track } from '@labring/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 
 const AppMainInfo = dynamic(() => import('@/components/app/detail/index/AppMainInfo'), {
   ssr: false

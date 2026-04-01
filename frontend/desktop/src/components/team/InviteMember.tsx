@@ -27,9 +27,9 @@ import { getInviteCodeRequest, inviteMemberRequest } from '@/api/namespace';
 import { vaildManage } from '@/utils/tools';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
-import { GroupAddIcon } from '@sealos/ui';
+import { GroupAddIcon } from '@labring/sealos-ui';
 import { useCopyData } from '@/hooks/useCopyData';
-import { track } from '@labring/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 import { needsClipboardWorkaround } from '@/utils/browserDetect';
 
 export default function InviteMember({

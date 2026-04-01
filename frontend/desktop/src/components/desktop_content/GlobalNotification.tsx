@@ -1,6 +1,6 @@
 import { getGlobalNotification } from '@/api/platform';
 import { Alert, AlertIcon, AlertDescription, CloseButton, Box } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { Info, X } from 'lucide-react';
 import { useEffect, memo } from 'react';
 import { useTranslation } from 'react-i18next';

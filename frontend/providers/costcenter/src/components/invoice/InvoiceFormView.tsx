@@ -1,8 +1,14 @@
-import { cn } from '@sealos/shadcn-ui';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
-import { Separator } from '@sealos/shadcn-ui/separator';
+import { cn } from '@labring/sealos-shadcn-ui';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@labring/sealos-shadcn-ui';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 import { useTranslation } from 'next-i18next';
 import { formatMoney } from '@/utils/format';
 import { ArrowLeft } from 'lucide-react';

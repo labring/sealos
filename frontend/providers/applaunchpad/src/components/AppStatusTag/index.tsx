@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'next-i18next';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import type { AppStatusMapType } from '@/types/app';
 import { appStatusMap } from '@/constants/app';
 

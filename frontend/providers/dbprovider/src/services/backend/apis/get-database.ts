@@ -5,7 +5,7 @@ import { KbPgClusterType } from '@/types/cluster';
 import { dbDetailV1Schema } from '@/types/schemas/db';
 import { formatPodTime, storageFormatToNum } from '@/utils/tools';
 import type { V1Pod, V1Service } from '@kubernetes/client-node';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 type DatabaseDetail = z.infer<typeof dbDetailV1Schema>;
 

@@ -8,7 +8,7 @@ import { useState, useCallback } from 'react';
 import type { AppEditType } from '@/types/app';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import dynamic from 'next/dynamic';
-import { WorkspaceQuotaItem } from '@sealos/shared';
+import { WorkspaceQuotaItem } from '@labring/sealos-shared-sdk';
 import { Plus, Trash2, Copy, Check } from 'lucide-react';
 import {
   Card,
@@ -18,23 +18,23 @@ import {
   CardTitle,
   Input,
   Button
-} from '@sealos/shadcn-ui';
-import { Switch } from '@sealos/shadcn-ui/switch';
-import { Label } from '@sealos/shadcn-ui/label';
+} from '@labring/sealos-shadcn-ui';
+import { Switch } from '@labring/sealos-shadcn-ui/switch';
+import { Label } from '@labring/sealos-shadcn-ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
+} from '@labring/sealos-shadcn-ui/select';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@sealos/shadcn-ui/tooltip';
-import { Separator } from '@sealos/shadcn-ui/separator';
+} from '@labring/sealos-shadcn-ui/tooltip';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 

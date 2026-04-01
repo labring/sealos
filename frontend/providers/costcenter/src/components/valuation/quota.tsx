@@ -4,18 +4,18 @@ import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { TableCell, TableRow, TableHead } from '@sealos/shadcn-ui/table';
-import { Progress } from '@sealos/shadcn-ui/progress';
+import { TableCell, TableRow, TableHead } from '@labring/sealos-shadcn-ui/table';
+import { Progress } from '@labring/sealos-shadcn-ui/progress';
 import {
   TableLayout,
   TableLayoutBody,
   TableLayoutCaption,
   TableLayoutContent,
   TableLayoutHeadRow
-} from '@sealos/shadcn-ui/table-layout';
+} from '@labring/sealos-shadcn-ui/table-layout';
 import RegionMenu from '../menu/RegionMenu';
 import NamespaceMenu from '../menu/NamespaceMenu';
-import { Quantity, Scale } from '@sealos/shared';
+import { Quantity, Scale } from '@labring/sealos-shared-sdk';
 import { WorkspaceQuotaResponseSchema } from '@/types/workspace';
 
 export default function Quota() {

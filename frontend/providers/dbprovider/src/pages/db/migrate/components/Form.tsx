@@ -23,7 +23,7 @@ import {
   useDisclosure,
   useTheme
 } from '@chakra-ui/react';
-import { Tabs, useMessage } from '@sealos/ui';
+import { Tabs, useMessage } from '@labring/sealos-ui';
 import 'github-markdown-css/github-markdown-light.css';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';

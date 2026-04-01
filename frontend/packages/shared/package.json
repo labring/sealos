@@ -1,5 +1,5 @@
 {
-  "name": "@sealos/shared",
+  "name": "@labring/sealos-shared-sdk",
   "version": "1.0.0",
   "description": "Shared utilities, types, and components for Sealos frontend applications",
   "license": "ISC",

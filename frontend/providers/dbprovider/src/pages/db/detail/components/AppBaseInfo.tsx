@@ -40,8 +40,8 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { CurrencySymbol, MyTooltip, useMessage } from '@sealos/ui';
-import { track } from '@labring/gtm';
+import { CurrencySymbol, MyTooltip, useMessage } from '@labring/sealos-ui';
+import { track } from '@labring/sealos-gtm-sdk';
 import { useQuery } from '@tanstack/react-query';
 import { pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
@@ -50,7 +50,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { useUserStore } from '@/store/user';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { editPasswordPattern } from '@/types/schemas/password';
 const CopyBox = ({
   value,

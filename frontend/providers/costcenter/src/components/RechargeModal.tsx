@@ -38,7 +38,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useSt
 import useRechargeStore from '@/stores/recharge';
 import { gtmOpenTopup, gtmTopupCheckout } from '@/utils/gtm';
 import { Minus, Plus, Loader, ChevronLeft } from 'lucide-react';
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 
 const StripeForm = (props: {
   tradeNO?: string;

@@ -1,8 +1,14 @@
 'use client';
 
 import { TriangleAlert } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@sealos/shadcn-ui';
-import { Button } from '@sealos/shadcn-ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@labring/sealos-shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
 
 interface DeleteConfirmDialogProps {

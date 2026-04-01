@@ -6,7 +6,7 @@
 
 ```typescript
 // src/hooks/useClientAppConfig.ts
-import { createClientAppConfigHook } from '@sealos/shared';
+import { createClientAppConfigHook } from '@labring/sealos-shared-sdk';
 import { ClientAppConfig } from '@/types/config';
 
 export const useClientAppConfig = createClientAppConfigHook<ClientAppConfig>(['client-app-config']);
@@ -16,7 +16,7 @@ export const useClientAppConfig = createClientAppConfigHook<ClientAppConfig>(['c
 
 ```typescript
 // src/pages/_app.tsx
-import { setupClientAppConfigDefaults } from '@sealos/shared';
+import { setupClientAppConfigDefaults } from '@labring/sealos-shared-sdk';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,7 +33,7 @@ setupClientAppConfigDefaults(queryClient, ['client-app-config']);
 
 ```typescript
 // src/pages/_app.tsx
-import { prefetchClientAppConfig } from '@sealos/shared';
+import { prefetchClientAppConfig } from '@labring/sealos-shared-sdk';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 
 MyApp.getInitialProps = async (context: AppContext) => {
@@ -58,7 +58,7 @@ MyApp.getInitialProps = async (context: AppContext) => {
 
 ```typescript
 // src/pages/_app.tsx
-import { ClientConfigProvider } from '@sealos/shared';
+import { ClientConfigProvider } from '@labring/sealos-shared-sdk';
 
 const MyApp = ({ Component, pageProps, dehydratedState }: AppProps) => {
   return (

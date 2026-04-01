@@ -1,7 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Button, Separator } from '@sealos/shadcn-ui';
-import { Checkbox } from '@sealos/shadcn-ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@sealos/shadcn-ui';
+import { Button, Separator } from '@labring/sealos-shadcn-ui';
+import { Checkbox } from '@labring/sealos-shadcn-ui';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@labring/sealos-shadcn-ui';
 import { SubscriptionPlan } from '@/types/plan';
 import { UpgradePlanCard } from './UpgradePlanCard';
 import usePlanStore from '@/stores/plan';

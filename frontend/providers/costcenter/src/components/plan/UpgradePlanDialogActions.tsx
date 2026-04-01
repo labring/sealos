@@ -1,5 +1,5 @@
-import { Button, Input, Label } from '@sealos/shadcn-ui';
-import { Checkbox } from '@sealos/shadcn-ui';
+import { Button, Input, Label } from '@labring/sealos-shadcn-ui';
+import { Checkbox } from '@labring/sealos-shadcn-ui';
 import { SubscriptionPlan } from '@/types/plan';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';

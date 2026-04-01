@@ -9,7 +9,7 @@ import QueryProvider from '@/components/providers/MyQueryProvider';
 
 import './globals.css';
 import 'react-day-picker/style.css';
-import '@sealos/driver/src/driver.css';
+import '@labring/sealos-driver-sdk/src/driver.css';
 
 export const metadata: Metadata = {
   title: 'Sealos DevBox',

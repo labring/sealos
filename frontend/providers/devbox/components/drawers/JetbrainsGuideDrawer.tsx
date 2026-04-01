@@ -4,15 +4,15 @@ import { useTranslations } from 'next-intl';
 import { ArrowUpRight, OctagonAlert, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
-import { Button } from '@sealos/shadcn-ui/button';
-import { Separator } from '@sealos/shadcn-ui/separator';
-import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
+import { ScrollArea } from '@labring/sealos-shadcn-ui/scroll-area';
 import { SSHConnectionData } from '@/components/IDEButton';
 import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
-import { Stepper, Step, StepIndicator } from '@sealos/shadcn-ui/stepper';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@labring/sealos-shadcn-ui/drawer';
+import { Stepper, Step, StepIndicator } from '@labring/sealos-shadcn-ui/stepper';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { execCommandInDevboxPod } from '@/api/devbox';
 
 interface JetBrainsGuideDrawerProps {

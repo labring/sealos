@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@sealos/shadcn-ui';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@labring/sealos-shadcn-ui';
 import { SubscriptionPlan } from '@/types/plan';
 import { PlansDisplay } from './PlansDisplay';
 import { UpgradePlanDialogActions, UpgradeButton } from './UpgradePlanDialogActions';

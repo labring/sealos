@@ -7,8 +7,8 @@ import { useTranslation } from 'next-i18next';
 import { startDriver, applistDriverObj } from '@/hooks/driver';
 import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
-import { track } from '@labring/gtm';
-import { useQuotaGuarded } from '@sealos/shared';
+import { track } from '@labring/sealos-gtm-sdk';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 
 const Empty = () => {
   const { t } = useTranslation();

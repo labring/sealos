@@ -22,7 +22,7 @@ import {
   useDisclosure,
   useTheme
 } from '@chakra-ui/react';
-import { SealosMenu, useMessage } from '@sealos/ui';
+import { SealosMenu, useMessage } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import React, { useCallback, useEffect, useRef, useState } from 'react';

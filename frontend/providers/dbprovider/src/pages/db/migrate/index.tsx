@@ -10,7 +10,7 @@ import { MigrateForm } from '@/types/migrate';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2MigrateCR } from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
@@ -21,7 +21,7 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import useEnvStore from '@/store/env';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));

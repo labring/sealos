@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { Quantity } from '@sealos/shared';
+import { Quantity } from '@labring/sealos-shared-sdk';
 
 // 1¥=1000000
 export const formatMoney = (money: number) => money / 1000000;

@@ -4,7 +4,7 @@ import YamlCode from '@/components/YamlCode/index';
 import type { QueryType, YamlItemType } from '@/types';
 import { useCopyData } from '@/utils/tools';
 import { Box, Center, Flex, Grid, useTheme } from '@chakra-ui/react';
-import { Tabs } from '@sealos/ui';
+import { Tabs } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useState } from 'react';

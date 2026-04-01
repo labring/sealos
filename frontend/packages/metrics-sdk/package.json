@@ -1,5 +1,5 @@
 {
-  "name": "sealos-metrics-sdk",
+  "name": "@labring/sealos-metrics-sdk",
   "version": "0.1.0",
   "description": "Sealos metrics monitoring SDK",
   "type": "module",

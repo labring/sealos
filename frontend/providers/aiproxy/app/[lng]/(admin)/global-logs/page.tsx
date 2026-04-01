@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Box, Button, Flex, Icon, Input, Text } from '@chakra-ui/react';
-import { CurrencySymbol, MyTooltip } from '@sealos/ui';
+import { CurrencySymbol, MyTooltip } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import { ColumnDef, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
