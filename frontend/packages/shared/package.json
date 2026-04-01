@@ -1,9 +1,11 @@
 {
   "name": "@labring/sealos-shared-sdk",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.0.0",
   "description": "Shared utilities, types, and components for Sealos frontend applications",
   "license": "ISC",
-  "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
