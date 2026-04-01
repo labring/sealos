@@ -383,7 +383,7 @@ export function NetworkSection({
                                     })
                                   }
                                 >
-                                  {t('Custom')}
+                                  {t('Custom Domain')}
                                 </Button>
                               )}
                             </div>
