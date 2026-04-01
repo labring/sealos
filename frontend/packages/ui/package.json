@@ -1,5 +1,6 @@
 {
   "name": "@labring/sealos-ui",
+  "private": true,
   "publishConfig": {
     "access": "public"
   },

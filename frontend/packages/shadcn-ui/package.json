@@ -1,5 +1,6 @@
 {
   "name": "@labring/sealos-shadcn-ui",
+  "private": true,
   "publishConfig": {
     "access": "public"
   },
