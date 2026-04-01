@@ -33,10 +33,10 @@ data:
       realNameAuthEnabled: {{ .Values.desktopConfig.realNameAuthEnabled }}
       realNameReward: {{ .Values.desktopConfig.realNameReward }}
       realNameCallbackUrl: "{{ .Values.desktopConfig.realNameCallbackUrl }}"
-      templateUrl: "{{ .Values.desktopConfig.templateUrl }}"
-      objectstorageUrl: "{{ .Values.desktopConfig.objectstorageUrl }}"
-      applaunchpadUrl: "{{ .Values.desktopConfig.applaunchpadUrl }}"
-      dbproviderUrl: "{{ .Values.desktopConfig.dbproviderUrl }}"
+      templateUrl: "https://template.{{ .Values.desktopConfig.cloudDomain }}"
+      objectstorageUrl: "https://objectstorage.{{ .Values.desktopConfig.cloudDomain }}"
+      applaunchpadUrl: "https://applaunchpad.{{ .Values.desktopConfig.cloudDomain }}"
+      dbproviderUrl: "https://dbprovider.{{ .Values.desktopConfig.cloudDomain }}"
       cfSiteKey: "{{ .Values.desktopConfig.cfSiteKey }}"
 
     database:

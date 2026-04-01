@@ -353,7 +353,7 @@ sealos run desktop-frontend:latest \
 - **OAuth 提供商**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` 及其对应的 `*ClientId`, `*ClientSecret`
 - **功能开关**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **通讯配置**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
-- **URL 配置**: `templateUrl`, `applaunchpadUrl`, `dbproviderUrl`, `objectstorageUrl`, `workorderUrl`
+- **URL 配置**: `workorderUrl`，以及基于 `cloudDomain` 自动生成的服务地址（`template`、`applaunchpad`、`dbprovider`、`objectstorage`）
 - **数据库配置**: `databaseMongodbURI`, `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
 - **团队管理**: `maxTeamCount`, `maxTeamMemberCount`
 

@@ -86,13 +86,9 @@ desktopConfig:
   trackingEnabled: false
   realNameAuthEnabled: false
 
-  # Common URLs (default values)
+  # Common configuration
   realNameReward: 0
   realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
-  templateUrl: "https://template.127.0.0.1.nip.io"
-  objectstorageUrl: "https://objectstorage.127.0.0.1.nip.io"
-  applaunchpadUrl: "https://applaunchpad.127.0.0.1.nip.io"
-  dbproviderUrl: "https://dbprovider.127.0.0.1.nip.io"
   cfSiteKey: ""
 
   # Desktop layout configuration
