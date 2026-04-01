@@ -104,6 +104,7 @@ desktopConfig:
   layoutAiAssistantEnabled: false
   layoutBannerEnabled: false
   layoutAnnouncementEnabled: false
+  layoutDocsUseDocs: false
   authTitle:
     zh: "欢迎来到 Sealos"
     en: "Welcome to Sealos"
