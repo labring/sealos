@@ -78,6 +78,9 @@ data:
           githubStarEnabled: {{ .Values.desktopConfig.layoutGithubStarEnabled }}
           workorderEnabled: {{ .Values.desktopConfig.layoutWorkorderEnabled }}
           accountSettingEnabled: {{ .Values.desktopConfig.layoutAccountSettingEnabled }}
+          {{- if .Values.desktopConfig.layoutDocsUseDocs }}
+          docsUrl: "https://docs.{{ .Values.desktopConfig.cloudDomain }}/docs/"
+          {{- else }}
           docsUrl: "{{ .Values.desktopConfig.layoutDocsUrl }}"
           aiAssistantEnabled: {{ .Values.desktopConfig.layoutAiAssistantEnabled }}
           bannerEnabled: {{ .Values.desktopConfig.layoutBannerEnabled }}
