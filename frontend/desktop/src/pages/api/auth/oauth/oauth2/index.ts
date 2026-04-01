@@ -3,10 +3,8 @@ import { ErrorHandler } from '@/services/backend/middleware/error';
 import { jsonRes } from '@/services/backend/response';
 import { enableOAuth2 } from '@/services/enable';
 import { OAuth2Type, OAuth2UserInfoType } from '@/types/user';
-import { customAlphabet } from 'nanoid';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ProviderType } from 'prisma/global/generated/client';
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 //OAuth2 Support client_secret_post method to obtain token
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -63,7 +61,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
       message: 'Unauthorized'
     });
   const result = (await response.json()) as OAuth2UserInfoType;
-  // console.log('result', result);
+  console.log('oauth2 result', result);
 
   // Support both standard OAuth2 (sub) and SSO360 (id) formats
   const id = result.sub || (result as any).id;
@@ -73,7 +71,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
   const name =
     attributes?.name_path && attributes?.user_name
       ? `${attributes.name_path} ${attributes.user_name}`
-      : result?.nickname || result?.name || nanoid(8);
+      : attributes?.user_name || result?.nickname || result?.name || '';
 
   const avatar_url = result?.picture || '';
 

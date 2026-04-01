@@ -353,7 +353,7 @@ sealos run desktop-frontend:latest \
 - **OAuth providers**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` and their `*ClientId`, `*ClientSecret`
 - **Features**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **Communication**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
-- **URLs**: `templateUrl`, `applaunchpadUrl`, `dbproviderUrl`, `objectstorageUrl`, `workorderUrl`
+- **URLs**: `workorderUrl` and service URLs auto-generated from `cloudDomain` (`template`, `applaunchpad`, `dbprovider`, `objectstorage`)
 - **Database**: `databaseMongodbURI`, `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
 - **Team management**: `maxTeamCount`, `maxTeamMemberCount`
 
