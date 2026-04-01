@@ -4,18 +4,17 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { monitorFetch } from '@/services/monitorFetch';
-import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
-import type { LaunchpadQueryParams, LaunchpadQueryResult } from 'sealos-metrics-sdk';
+import { MonitorDataResult, MonitorQueryKey, MonitorServiceResult } from '@/types/monitor';
 
 const AdapterChartData: Record<
   keyof MonitorQueryKey,
-  (data: LaunchpadQueryResult) => MonitorDataResult[]
+  (data: MonitorServiceResult) => MonitorDataResult[]
 > = {
-  disk: (data: LaunchpadQueryResult) => {
+  disk: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
-      let xData = item.values?.map((value) => value[0]) ?? [];
-      let yData = item.values?.map((value) => (parseFloat(value[1]) * 100).toFixed(2)) ?? [];
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
       return {
         name: name,
         xData: xData,
@@ -24,11 +23,11 @@ const AdapterChartData: Record<
     });
     return newDataArray;
   },
-  cpu: (data: LaunchpadQueryResult) => {
+  cpu: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
-      let xData = item.values?.map((value) => value[0]) ?? [];
-      let yData = item.values?.map((value) => (parseFloat(value[1]) * 100).toFixed(2)) ?? [];
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
       return {
         name: name,
         xData: xData,
@@ -37,11 +36,11 @@ const AdapterChartData: Record<
     });
     return newDataArray;
   },
-  memory: (data: LaunchpadQueryResult) => {
+  memory: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
-      let xData = item.values?.map((value) => value[0]) ?? [];
-      let yData = item.values?.map((value) => (parseFloat(value[1]) * 100).toFixed(2)) ?? [];
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
       return {
         name: name,
         xData: xData,
@@ -50,11 +49,11 @@ const AdapterChartData: Record<
     });
     return newDataArray;
   },
-  average_cpu: (data: LaunchpadQueryResult) => {
+  average_cpu: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
-      let xData = item.values?.map((value) => value[0]) ?? [];
-      let yData = item.values?.map((value) => parseFloat(value[1]).toFixed(2)) ?? [];
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
         name: name,
         xData: xData,
@@ -63,11 +62,11 @@ const AdapterChartData: Record<
     });
     return newDataArray;
   },
-  average_memory: (data: LaunchpadQueryResult) => {
+  average_memory: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
       let name = item.metric.pod;
-      let xData = item.values?.map((value) => value[0]) ?? [];
-      let yData = item.values?.map((value) => parseFloat(value[1]).toFixed(2)) ?? [];
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
         name: name,
         xData: xData,
@@ -100,22 +99,26 @@ export async function GET(req: NextRequest) {
     const endTime = end ? Number(end) : Date.now();
     const startTime = start ? Number(start) : endTime - 60 * 60 * 1000;
 
-    const params: LaunchpadQueryParams = {
+    const params = {
       type: queryKey,
-      podName: queryName,
+      launchPadName: queryName,
       namespace: namespace,
-      range: {
-        start: Math.floor(startTime / 1000),
-        end: Math.floor(endTime / 1000),
-        step: step
-      }
+      start: Math.floor(startTime / 1000),
+      end: Math.floor(endTime / 1000),
+      step: step
     };
 
-    const result = await monitorFetch(params, kubeconfig).then((res) => {
+    const result: MonitorDataResult = await monitorFetch(
+      {
+        url: '/query',
+        params: params
+      },
+      kubeconfig
+    ).then((res) => {
       // @ts-ignore
       return AdapterChartData[queryKey]
         ? // @ts-ignore
-          AdapterChartData[queryKey](res as LaunchpadQueryResult)
+          AdapterChartData[queryKey](res as MonitorDataResult)
         : res;
     });
 
