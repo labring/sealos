@@ -8,7 +8,6 @@ import { getDesktopSessionFromSessionStorage, getSessionFromSessionStorage } fro
 import '@scalar/api-reference-react/style.css';
 
 function ApiDocsContent() {
-  const { env } = useEnvStore();
   const [apiData, setApiData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,10 +48,7 @@ function ApiDocsContent() {
           value: encodeURIComponent(devboxToken || session?.token || '')
         }
       }
-    },
-    cdn: process.env.NEXT_PUBLIC_MOCK_USER
-      ? undefined
-      : `https://devbox.${env.sealosDomain}/scalar/cdn.js`
+    }
   };
 
   return <ApiReferenceReact configuration={config} />;
