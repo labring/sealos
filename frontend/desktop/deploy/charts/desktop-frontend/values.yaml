@@ -40,7 +40,7 @@ desktopConfig:
   # Basic cloud configuration
   cloudDomain: "127.0.0.1.nip.io"
   cloudPort: ""
-  proxyDomain: "127.0.0.1.nip.io"
+  proxyDomain: ""
   regionUID: "randomRegionUID"
   certSecretName: "wildcard-cert"
 
@@ -104,6 +104,7 @@ desktopConfig:
   layoutAiAssistantEnabled: false
   layoutBannerEnabled: false
   layoutAnnouncementEnabled: false
+  layoutDocsUseDocs: false
   authTitle:
     zh: "欢迎来到 Sealos"
     en: "Welcome to Sealos"
