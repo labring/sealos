@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       data: 'success edit devbox version description'
     });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       error: err

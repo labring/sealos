@@ -124,6 +124,7 @@ export async function GET(req: NextRequest) {
       data: result
     });
   } catch (error) {
+    console.log(error);
     return jsonRes({
       code: 500,
       error: error

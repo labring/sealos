@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
 
     return jsonRes({ data: adaptedVersions });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       message: err?.message || 'Internal server error',
