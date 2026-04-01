@@ -1,30 +1,15 @@
 import { QuantityParseError } from './errors';
-import { Scale as ScaleConst, type Format, type Scale } from './types';
+import {
+  Scale as ScaleConst,
+  type BinaryScale,
+  type DecimalFormat,
+  type Format,
+  type Scale
+} from './types';
 
-/**
- * Options for formatting a quantity string for display purposes.
- *
- * This is separate from `toString()` which strictly follows Kubernetes canonicalization.
- * Use `formatForDisplay()` for user-facing output where readability and precision control are needed.
- */
-export type QuantityDisplayOptions = {
-  /**
-   * Suffix category to use when formatting.
-   *
-   * - When omitted, uses the remembered `Quantity.format` from parsing.
-   * - For BinarySI, scale values are interpreted as base-1024 exponents (Ki=10, Mi=20, Gi=30, etc.).
-   * - For DecimalSI/DecimalExponent, scale values are base-10 exponents.
-   */
-  format?: Format;
-  /**
-   * Output scaling strategy.
-   *
-   * - `"auto"`: automatically select the most readable scale (e.g., 256.1Mi or 1.1Gi).
-   * - `"canonical"`: use Kubernetes canonicalization (same as `toString()`).
-   * - `"preserve"`: preserve parsed suffix category (best-effort, numeric part still canonicalized).
-   * - `Scale`: force a specific scale. For BinarySI, this maps to base-1024 exponents.
-   */
-  scale?: Scale | 'auto' | 'canonical' | 'preserve';
+type QuantityDisplayMode = 'auto' | 'canonical' | 'preserve';
+
+type QuantityDisplayCommonOptions = {
   /**
    * When forcing a specific `scale`, whether to round to an integer mantissa
    * using Kubernetes semantics (ceil away from 0). Defaults to `false`.
@@ -39,6 +24,73 @@ export type QuantityDisplayOptions = {
    */
   digits?: number;
 };
+
+type QuantityDisplayCanonicalOptions = QuantityDisplayCommonOptions & {
+  format?: Format;
+  scale: 'canonical';
+};
+
+type QuantityDisplayAutoOptions = QuantityDisplayCommonOptions & {
+  /**
+   * Suffix category to use when formatting.
+   *
+   * - When omitted and `scale` is also omitted, uses the remembered `Quantity.format` from parsing.
+   * - When omitted but `scale` is provided, the scale type selects the format family:
+   *   `Scale` => decimal, `BinaryScale` => BinarySI.
+   */
+  format?: Format;
+  /**
+   * Output scaling strategy.
+   *
+   * - `"auto"`: automatically select the most readable scale (e.g., 256.1Mi or 1.1Gi).
+   * - `"preserve"`: preserve parsed suffix category (best-effort, numeric part still canonicalized).
+   */
+  scale?: Exclude<QuantityDisplayMode, 'canonical'>;
+};
+
+type QuantityDisplayDecimalOptions = QuantityDisplayCommonOptions & {
+  format: DecimalFormat;
+  scale?: Scale | QuantityDisplayMode;
+};
+
+type QuantityDisplayBinaryOptions = QuantityDisplayCommonOptions & {
+  format: 'BinarySI';
+  scale?: BinaryScale | QuantityDisplayMode;
+};
+
+type QuantityDisplayInferredDecimalOptions = QuantityDisplayCommonOptions & {
+  format?: undefined;
+  scale: Scale;
+};
+
+type QuantityDisplayInferredBinaryOptions = QuantityDisplayCommonOptions & {
+  format?: undefined;
+  scale: BinaryScale;
+};
+
+type QuantityDisplayTypedOptions =
+  | QuantityDisplayCanonicalOptions
+  | QuantityDisplayDecimalOptions
+  | QuantityDisplayBinaryOptions
+  | QuantityDisplayInferredDecimalOptions
+  | QuantityDisplayInferredBinaryOptions;
+
+/**
+ * Options for formatting a quantity string for display purposes.
+ *
+ * This is separate from `toString()` which strictly follows Kubernetes canonicalization.
+ * Use `formatForDisplay()` for user-facing output where readability and precision control are needed.
+ *
+ * When `format` is provided, `scale` must use the matching family:
+ * - `BinarySI` => `BinaryScale`
+ * - `DecimalSI` / `DecimalExponent` => `Scale`
+ *
+ * When `format` is omitted and a numeric scale is provided, the scale type selects the format family.
+ * At runtime, branded scales are plain numbers, so BinarySI auto-inference recognizes the exported
+ * `BinaryScale` exponents (`10 | 20 | 30 | 40 | 50 | 60`). Use an explicit `format` for overlapping
+ * custom decimal exponents.
+ */
+export type QuantityDisplayOptions = QuantityDisplayAutoOptions | QuantityDisplayTypedOptions;
 
 const MAX_INT64: bigint = (1n << 63n) - 1n;
 
@@ -486,6 +538,25 @@ const parseFromParts = (parts: ParsedParts): { value: bigint; scale: number; for
 const DECIMAL_SI_EXPONENTS: readonly number[] = [-9, -6, -3, 0, 3, 6, 9, 12, 15, 18] as const;
 const BINARY_SI_BITS: readonly number[] = [0, 10, 20, 30, 40, 50, 60] as const;
 
+const isBinaryScaleValue = (scale: unknown): scale is BinaryScale => {
+  if (typeof scale !== 'number') return false;
+  switch (scale) {
+    case 10:
+    case 20:
+    case 30:
+    case 40:
+    case 50:
+    case 60:
+      return true;
+    default:
+      return false;
+  }
+};
+
+const resolveDecimalDisplayFormat = (fallbackFormat: Format): DecimalFormat => {
+  return fallbackFormat === 'DecimalExponent' ? 'DecimalExponent' : 'DecimalSI';
+};
+
 const clampToDecimalSIExponent = (exp: number): number => {
   // Snap to multiples of 3 and clamp into [-9, 18]
   let e = Math.trunc(exp / 3) * 3;
@@ -548,6 +619,15 @@ const buildMantissaRationalForBinary = (
   }
   // valueScale < 0 => value / 10^-valueScale
   return { numer: value, denom: two * pow10BigInt(-valueScale) };
+};
+
+const binaryScaledInt = (
+  value: bigint,
+  valueScale: number,
+  targetBits: number
+): { q: bigint; exact: boolean } => {
+  const r = buildMantissaRationalForBinary(value, valueScale, targetBits);
+  return divRoundAwayFromZero(r.numer, r.denom);
 };
 
 const roundedAbsScaled = (numer: bigint, denom: bigint, digits: number): bigint => {
@@ -783,9 +863,21 @@ export class Quantity {
    * - `round`: `false`
    * - `digits`: `2`
    *
+   * If `format` is provided, `scale` must use the matching family:
+   * - `BinarySI` => `BinaryScale`
+   * - `DecimalSI` / `DecimalExponent` => `Scale`
+   *
+   * If `format` is omitted and a numeric scale is provided, the scale type selects the
+   * format family (`Scale` => decimal, `BinaryScale` => BinarySI).
+   * Because branded scales are numbers at runtime, omitting `format` with a custom decimal exponent
+   * equal to a BinarySI exponent (10/20/30/40/50/60) is ambiguous; pass `format` explicitly there.
+   *
    * @param options - Display formatting options; all have defaults and can be omitted
    * @returns Formatted string suitable for UI display
    */
+  formatForDisplay(): string;
+  formatForDisplay(options: QuantityDisplayTypedOptions): string;
+  formatForDisplay(options: QuantityDisplayAutoOptions): string;
   formatForDisplay(options?: QuantityDisplayOptions): string {
     const opts = options ?? {};
     const scaleOpt = opts.scale ?? 'auto';
@@ -798,7 +890,13 @@ export class Quantity {
 
     if (this.#value === 0n) return '0';
 
-    const format: Format = opts.format ?? this.format;
+    const format: Format =
+      opts.format ??
+      (typeof scaleOpt === 'string'
+        ? this.format
+        : isBinaryScaleValue(scaleOpt)
+        ? 'BinarySI'
+        : resolveDecimalDisplayFormat(this.format));
     const roundInt = opts.round === true;
 
     const digits: number = roundInt ? 0 : opts.digits ?? 2;
@@ -818,8 +916,10 @@ export class Quantity {
       if (typeof scaleOpt === 'string') {
         // 'auto' | 'preserve'
         bits = chooseAutoBinaryBits(absValue, this.#scale);
-      } else {
+      } else if (isBinaryScaleValue(scaleOpt)) {
         bits = Number(scaleOpt);
+      } else {
+        throw new TypeError('BinarySI display requires BinaryScale when forcing a scale');
       }
       bits = clampToBinarySIBits(bits);
 
@@ -849,6 +949,8 @@ export class Quantity {
     if (typeof scaleOpt === 'string') {
       // 'auto' | 'preserve'
       exp10 = chooseAutoDecimalExponent(absValue, this.#scale);
+    } else if (isBinaryScaleValue(scaleOpt)) {
+      throw new TypeError(`${format} display requires decimal Scale when forcing a scale`);
     } else {
       exp10 = Number(scaleOpt);
     }
@@ -943,6 +1045,17 @@ export class Quantity {
    */
   milliValue(): bigint {
     return this.scaledValue(ScaleConst.Milli);
+  }
+
+  /**
+   * Return the value of `ceilAwayFromZero(q / 2^scale)` using BinarySI semantics,
+   * but returned as `bigint` to avoid JS overflow.
+   *
+   * This mirrors `scaledValue()` for explicit base-1024 unit conversion.
+   */
+  scaledBinaryValue(scale: BinaryScale): bigint {
+    const { q } = binaryScaledInt(this.#value, this.#scale, Number(scale));
+    return q;
   }
 
   /**
