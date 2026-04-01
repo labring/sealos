@@ -21,10 +21,12 @@ export async function POST(req: NextRequest) {
 
     const newYamlList = generateYamlList(newFormData, {
       devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE!,
+      runtimeClassName: process.env.DEVBOX_RUNTIME_CLASS_NAME!,
       ingressSecret: process.env.INGRESS_SECRET!
     });
     const oldYamlList = generateYamlList(oldFormData, {
       devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE!,
+      runtimeClassName: process.env.DEVBOX_RUNTIME_CLASS_NAME!,
       ingressSecret: process.env.INGRESS_SECRET!
     });
 
