@@ -40,7 +40,7 @@ async function testContainerReady(
           resolve(false);
         });
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.log(error);
         resolve(false);
       });
