@@ -1,7 +1,5 @@
 # Default values for account controller helm chart.
 
-replicaCount: 1
-
 image: ghcr.io/labring/sealos-account-controller:latest
 imagePullPolicy: Always
 
@@ -31,47 +29,42 @@ service:
   webhook:
     port: 443
 
-resources:
-  limits:
-    cpu: 1000m
-    memory: 1024Mi
-  requests:
-    cpu: 100m
-    memory: 64Mi
-
 env:
   accountNamespace: sealos-system
   userNamespace: user-system
   whitelist: "licenses.License.license.sealos.io/v1,notifications.Notification.notification.sealos.io/v1,payments.Payment.account.sealos.io/v1,billingrecordqueries.BillingRecordQuery.account.sealos.io/v1,billinginfoqueries.BillingInfoQuery.account.sealos.io/v1,pricequeries.PriceQuery.account.sealos.io/v1"
 
+# ============================================================================
+# Auto-configured values (from sealos-system/sealos-config ConfigMap)
+# ============================================================================
+# The following accountEnv values are automatically fetched from the
+# sealos-system/sealos-config ConfigMap by the entrypoint script and will
+# override any values set here. These are provided as reference defaults.
+#
+# To override these auto-configured values, use HELM_OPTIONS or modify the
+# sealos-config ConfigMap directly.
+# ============================================================================
+
 accountEnv:
-  approachingDeletionPeriod: "345600"
-  imminentDeletionPeriod: "259200"
-  finalDeletionPeriod: "604800"
-  debtDetectionCycleSeconds: "1800"
-  osAdminSecret: ""
-  osInternalEndpoint: ""
-  osNamespace: "objectstorage-system"
-  mongoURI: "mongodb://mongo:27017/resources"
-  localCockroachURI: ""
-  globalCockroachURI: ""
-  trafficMongoURI: ""
-  localRegion: ""
-  cloudDomain: "cloud.sealos.io"
-  cloudPort: ""
-  accountApiJwtSecret: "secret"
-  baseBalance: "5000000"
-  quotaLimitsCpu: "16"
-  quotaLimitsMemory: "64Gi"
-  quotaLimitsStorage: "200Gi"
-  quotaLimitsGpu: "8"
-  quotaLimitsPods: "20"
-  quotaLimitsNodePorts: "10"
-  quotaObjectStorageSize: "20Gi"
-  quotaObjectStorageBucket: "20"
-  limitRangeEphemeralStorage: "0"
-  rewardProcessing: "false"
-  whitelistKubernetesHosts: ""
+  # Basic cloud configuration (auto-configured from sealos-config)
+  cloudDomain: "cloud.sealos.io"  # Auto-fetched from sealos-config.cloudDomain
+  cloudPort: ""                   # Auto-fetched from sealos-config.cloudPort
+  localRegion: ""                 # Auto-fetched from sealos-config.regionUID
+
+  # Database connections (auto-configured from sealos-config)
+  mongoURI: "mongodb://mongo:27017/resources"  # Auto-fetched from sealos-config.databaseMongodbURI
+  globalCockroachURI: ""                      # Auto-fetched from sealos-config.databaseGlobalCockroachdbURI
+  localCockroachURI: ""                       # Auto-fetched from sealos-config.databaseLocalCockroachdbURI
+  trafficMongoURI: ""                         # Auto-fetched from sealos-config.databaseMongodbURI
+
+  # Authentication secrets (auto-configured from sealos-config)
+  accountApiJwtSecret: "secret"  # Auto-fetched from sealos-config.jwtInternal
+
+  # Kubernetes API whitelist (auto-generated from cloudDomain)
+  whitelistKubernetesHosts: ""  # Auto-generated: https://${cloudDomain}:6443
+
+# End of auto-configured values
+# ============================================================================
 
 # ConfigMap 合并策略: preserve 保留旧值, overwrite 覆盖旧值
 accountEnvMergeStrategy: "overwrite"
