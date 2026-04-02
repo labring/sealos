@@ -1,11 +1,8 @@
 # Default values for user controller helm chart.
 
-replicaCount: 1
-
 image: ghcr.io/labring/sealos-user-controller:latest
 
 imagePullSecrets: []
-nameOverride: ""
 fullnameOverride: "user"
 
 serviceAccount:
@@ -33,17 +30,6 @@ service:
   webhook:
     port: 443
 
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 10m
-    memory: 64Mi
-
-cloudAPIServerDomain: 127.0.0.1.nip.io
-cloudAPIServerPort: "6443"
-
 livenessProbe:
   httpGet:
     path: /healthz
@@ -57,6 +43,11 @@ readinessProbe:
     port: 8081
   initialDelaySeconds: 5
   periodSeconds: 10
+
+# Cloud API server configuration
+# cloudAPIServerDomain is auto-configured by entrypoint.sh from sealos-config ConfigMap
+cloudAPIServerDomain: 127.0.0.1.nip.io
+cloudAPIServerPort: "6443"
 
 metrics:
   # Enable metrics endpoint
