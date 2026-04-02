@@ -35,44 +35,44 @@ sealos run desktop-frontend:latest \
 
 ```yaml
 desktopConfig:
-  cloudDomain: "cloud.example.com"          # 云域名
-  cloudPort: ""                              # 云端口（默认 443）
-  regionUID: "region-123"                    # 区域 UID
-  certSecretName: "wildcard-cert"            # TLS 证书 Secret 名称
+  cloudDomain: 'cloud.example.com' # 云域名
+  cloudPort: '' # 云端口（默认 443）
+  regionUID: 'region-123' # 区域 UID
+  certSecretName: 'wildcard-cert' # TLS 证书 Secret 名称
 ```
 
 ### 2. 数据库配置
 
 ```yaml
 desktopConfig:
-  databaseMongodbURI: "mongodb://user:pass@mongodb:27017"
-  databaseGlobalCockroachdbURI: "postgres://user:pass@cockroachdb:26257"
-  databaseLocalCockroachdbURI: "postgres://user:pass@cockroachdb-local:26257"
+  databaseMongodbURI: 'mongodb://user:pass@mongodb:27017'
+  databaseGlobalCockroachdbURI: 'postgres://user:pass@cockroachdb:26257'
+  databaseLocalCockroachdbURI: 'postgres://user:pass@cockroachdb-local:26257'
 ```
 
 ### 3. 认证配置
 
 ```yaml
 desktopConfig:
-  passwordSalt: "your-random-salt"           # 密码哈希盐
-  jwtInternal: "your-jwt-internal-key"       # 内部 JWT 密钥
-  jwtRegional: "your-jwt-regional-key"       # 区域 JWT 密钥
-  jwtGlobal: "your-jwt-global-key"           # 全局 JWT 密钥
+  passwordSalt: 'your-random-salt' # 密码哈希盐
+  jwtInternal: 'your-jwt-internal-key' # 内部 JWT 密钥
+  jwtRegional: 'your-jwt-regional-key' # 区域 JWT 密钥
+  jwtGlobal: 'your-jwt-global-key' # 全局 JWT 密钥
 ```
 
 ### 4. 计费配置
 
 ```yaml
 desktopConfig:
-  billingUrl: "http://account-service.account-system.svc:2333"
-  billingToken: "your-billing-token"
+  billingUrl: 'http://account-service.account-system.svc:2333'
+  billingToken: 'your-billing-token'
 ```
 
 ### 5. 货币和语言配置
 
 ```yaml
 desktopConfig:
-  version: "en"                               # UI 版本: "cn" 或 "en"
+  version: 'en' # UI 版本: "cn" 或 "en"
   # forcedLanguage 和 currencySymbol 会根据 version 自动配置:
   # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
   # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
@@ -82,27 +82,28 @@ desktopConfig:
 
 ```yaml
 desktopConfig:
-  gtmId: "GTM-XXXXXXXX"                       # GTM ID
+  gtmId: 'GTM-XXXXXXXX' # GTM ID
 ```
 
 ### 7. Discord 配置
 
 ```yaml
 desktopConfig:
-  discordInviteLink: "https://discord.gg/sealos"
+  discordInviteLink: 'https://discord.gg/sealos'
 ```
 
 ### 8. 功能开关
 
 ```yaml
 desktopConfig:
-  guideEnabled: false                         # 启用用户引导
-  apiEnabled: false                           # 启用 API 访问
-  rechargeEnabled: false                      # 启用充值功能
-  enterpriseRealNameAuthEnabled: false        # 启用企业实名认证
-  trackingEnabled: false                      # 启用追踪/统计
-  realNameAuthEnabled: false                  # 启用实名认证
-  licenseCheckEnabled: false                  # 启用 License 检查
+  guideEnabled: false # 启用用户引导
+  apiEnabled: false # 启用 API 访问
+  rechargeEnabled: false # 启用充值功能
+  enterpriseRealNameAuthEnabled: false # 启用企业实名认证
+  trackingEnabled: false # 启用追踪/统计
+  realNameAuthEnabled: false # 启用实名认证
+  licenseCheckEnabled: false # 启用 License 检查
+  passwordEnabled: true # 启用密码登录
 ```
 
 ### 9. Common URLs 配置
@@ -110,8 +111,8 @@ desktopConfig:
 ```yaml
 desktopConfig:
   realNameReward: 0
-  realNameCallbackUrl: "https://cloud.example.org/api/account/callback"
-  cfSiteKey: ""
+  realNameCallbackUrl: 'https://cloud.example.org/api/account/callback'
+  cfSiteKey: ''
 ```
 
 `templateUrl`, `applaunchpadUrl`, `dbproviderUrl`, and `objectstorageUrl` are generated automatically from `cloudDomain`.
@@ -120,20 +121,20 @@ desktopConfig:
 
 ```yaml
 desktopConfig:
-  layoutTitle: "Sealos Cloud"                  # 平台标题
-  layoutLogo: "/logo.svg"                      # Logo 路径
-  layoutBackgroundImage: "/images/bg-light.svg" # 背景图片
-  customerServiceURL: ""                       # 客服 URL
-  layoutDocsUrl: "https://sealos.run/docs/Intro/" # 文档 URL
+  layoutTitle: 'Sealos Cloud' # 平台标题
+  layoutLogo: '/logo.svg' # Logo 路径
+  layoutBackgroundImage: '/images/bg-light.svg' # 背景图片
+  customerServiceURL: '' # 客服 URL
+  layoutDocsUrl: 'https://sealos.run/docs/Intro/' # 文档 URL
 ```
 
 ### 11. Meta 标签配置
 
 ```yaml
 desktopConfig:
-  metaTitle: "Sealos Cloud"
-  metaDescription: "Sealos Cloud"
-  metaKeywords: "Sealos Cloud"
+  metaTitle: 'Sealos Cloud'
+  metaDescription: 'Sealos Cloud'
+  metaKeywords: 'Sealos Cloud'
 ```
 
 ### 12. GitHub OAuth 配置
@@ -141,9 +142,9 @@ desktopConfig:
 ```yaml
 desktopConfig:
   githubEnabled: true
-  githubClientId: "your-github-client-id"
-  githubClientSecret: "your-github-client-secret"
-  githubProxyAddress: ""                       # 代理地址（可选）
+  githubClientId: 'your-github-client-id'
+  githubClientSecret: 'your-github-client-secret'
+  githubProxyAddress: '' # 代理地址（可选）
 ```
 
 ### 13. 微信 OAuth 配置
@@ -151,9 +152,9 @@ desktopConfig:
 ```yaml
 desktopConfig:
   wechatEnabled: true
-  wechatClientId: "your-wechat-app-id"
-  wechatClientSecret: "your-wechat-app-secret"
-  wechatProxyAddress: ""                       # 代理地址（可选）
+  wechatClientId: 'your-wechat-app-id'
+  wechatClientSecret: 'your-wechat-app-secret'
+  wechatProxyAddress: '' # 代理地址（可选）
 ```
 
 ### 14. Google OAuth 配置
@@ -161,9 +162,9 @@ desktopConfig:
 ```yaml
 desktopConfig:
   googleEnabled: true
-  googleClientId: "your-google-client-id.apps.googleusercontent.com"
-  googleClientSecret: "your-google-client-secret"
-  googleProxyAddress: ""                       # 代理地址（可选）
+  googleClientId: 'your-google-client-id.apps.googleusercontent.com'
+  googleClientSecret: 'your-google-client-secret'
+  googleProxyAddress: '' # 代理地址（可选）
 ```
 
 ### 15. 通用 OAuth2 配置
@@ -171,13 +172,13 @@ desktopConfig:
 ```yaml
 desktopConfig:
   oauth2Enabled: true
-  oauth2CallbackUrl: "https://cloud.example.com/callback"
-  oauth2ClientId: "your-oauth2-client-id"
-  oauth2ClientSecret: "your-oauth2-client-secret"
-  oauth2AuthUrl: "https://oauth2.example.com/oauth2/auth"
-  oauth2TokenUrl: "https://oauth2.example.com/oauth2/token"
-  oauth2UserInfoUrl: "https://oauth2.example.com/oauth2/userinfo"
-  oauth2ProxyAddress: ""                       # 代理地址（可选）
+  oauth2CallbackUrl: 'https://cloud.example.com/callback'
+  oauth2ClientId: 'your-oauth2-client-id'
+  oauth2ClientSecret: 'your-oauth2-client-secret'
+  oauth2AuthUrl: 'https://oauth2.example.com/oauth2/auth'
+  oauth2TokenUrl: 'https://oauth2.example.com/oauth2/token'
+  oauth2UserInfoUrl: 'https://oauth2.example.com/oauth2/userinfo'
+  oauth2ProxyAddress: '' # 代理地址（可选）
 ```
 
 ### 16. 验证码配置（Cloudflare Turnstile）
@@ -185,8 +186,8 @@ desktopConfig:
 ```yaml
 desktopConfig:
   turnstileEnabled: true
-  turnstileSiteKey: "your-turnstile-site-key"
-  turnstileSecretKey: "your-turnstile-secret-key"
+  turnstileSiteKey: 'your-turnstile-site-key'
+  turnstileSecretKey: 'your-turnstile-secret-key'
 ```
 
 ### 17. 阿里云验证码配置
@@ -194,11 +195,11 @@ desktopConfig:
 ```yaml
 desktopConfig:
   aliCaptchaEnabled: true
-  aliCaptchaEndpoint: "https://captcha.aliyuncs.com"
-  aliCaptchaSceneId: "your-scene-id"
-  aliCaptchaPrefix: "your-prefix"
-  aliCaptchaAccessKeyID: "your-access-key-id"
-  aliCaptchaAccessKeySecret: "your-access-key-secret"
+  aliCaptchaEndpoint: 'https://captcha.aliyuncs.com'
+  aliCaptchaSceneId: 'your-scene-id'
+  aliCaptchaPrefix: 'your-prefix'
+  aliCaptchaAccessKeyID: 'your-access-key-id'
+  aliCaptchaAccessKeySecret: 'your-access-key-secret'
 ```
 
 ### 18. 短信配置（阿里云）
@@ -207,11 +208,11 @@ desktopConfig:
 desktopConfig:
   smsEnabled: true
   smsAliEnabled: true
-  smsAliEndpoint: "https://dysmsapi.aliyuncs.com"
-  smsAliTemplateCode: "SMS_123456789"
-  smsAliSignName: "YourSignName"
-  smsAliAccessKeyID: "your-access-key-id"
-  smsAliAccessKeySecret: "your-access-key-secret"
+  smsAliEndpoint: 'https://dysmsapi.aliyuncs.com'
+  smsAliTemplateCode: 'SMS_123456789'
+  smsAliSignName: 'YourSignName'
+  smsAliAccessKeyID: 'your-access-key-id'
+  smsAliAccessKeySecret: 'your-access-key-secret'
 ```
 
 ### 19. 邮件配置
@@ -219,49 +220,49 @@ desktopConfig:
 ```yaml
 desktopConfig:
   emailEnabled: true
-  emailHost: "smtp.example.com"
+  emailHost: 'smtp.example.com'
   emailPort: 587
-  emailUser: "noreply@example.com"
-  emailPassword: "your-email-password"
-  emailLanguage: "en"
+  emailUser: 'noreply@example.com'
+  emailPassword: 'your-email-password'
+  emailLanguage: 'en'
 ```
 
 ### 20. 追踪配置（Umami）
 
 ```yaml
 desktopConfig:
-  trackingWebsiteId: "your-website-id"
-  trackingHostUrl: "https://umami.example.com"
-  trackingScriptUrl: "https://umami.example.com/script.js"
+  trackingWebsiteId: 'your-website-id'
+  trackingHostUrl: 'https://umami.example.com'
+  trackingScriptUrl: 'https://umami.example.com/script.js'
 ```
 
 ### 21. 实名认证 OSS 配置
 
 ```yaml
 desktopConfig:
-  realNameOSSAccessKey: "your-oss-access-key"
-  realNameOSSAccessKeySecret: "your-oss-secret-key"
-  realNameOSSEndpoint: "oss-cn-hangzhou.aliyuncs.com"
+  realNameOSSAccessKey: 'your-oss-access-key'
+  realNameOSSAccessKeySecret: 'your-oss-secret-key'
+  realNameOSSEndpoint: 'oss-cn-hangzhou.aliyuncs.com'
   realNameOSSSSL: true
   realNameOSSPort: 443
-  realNameOSSRealNameBucket: "realname-bucket"
-  realNameOSSEnterpriseRealNameBucket: "enterprise-realname-bucket"
+  realNameOSSRealNameBucket: 'realname-bucket'
+  realNameOSSEnterpriseRealNameBucket: 'enterprise-realname-bucket'
 ```
 
 ### 22. 工作订单和云虚拟机配置
 
 ```yaml
 desktopConfig:
-  workorderUrl: "https://workorder.example.com"
-  cloudVirtualMachineUrl: "https://cloudvirtualmachine.example.com"
+  workorderUrl: 'https://workorder.example.com'
+  cloudVirtualMachineUrl: 'https://cloudvirtualmachine.example.com'
 ```
 
 ### 23. 团队管理配置
 
 ```yaml
 desktopConfig:
-  maxTeamCount: 10                             # 最大团队数
-  maxTeamMemberCount: 100                      # 每个团队最大成员数
+  maxTeamCount: 10 # 最大团队数
+  maxTeamMemberCount: 100 # 每个团队最大成员数
 ```
 
 ## 使用示例

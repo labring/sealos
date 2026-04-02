@@ -82,9 +82,15 @@ data:
           docsUrl: "https://docs.{{ .Values.desktopConfig.cloudDomain }}/docs/"
           {{- else }}
           docsUrl: "{{ .Values.desktopConfig.layoutDocsUrl }}"
-          aiAssistantEnabled: {{ .Values.desktopConfig.layoutAiAssistantEnabled }}
-          bannerEnabled: {{ .Values.desktopConfig.layoutBannerEnabled }}
-          announcementEnabled: {{ .Values.desktopConfig.layoutAnnouncementEnabled }}
+          {{- end }}
+          aiAssistantEnabled: false
+          bannerEnabled: false
+          subscriptionEnabled: false
+          guestModeEnabled: false
+          emailAlertEnabled: false
+          phoneAlertEnabled: false
+          announcementEnabled: false
+          kcRotationEnabled: {{ .Values.desktopConfig.kcRotationEnabled }}
       auth:
         callbackURL: "https://{{ .Values.desktopConfig.cloudDomain }}{{ if .Values.desktopConfig.cloudPort }}:{{ .Values.desktopConfig.cloudPort }}{{ end }}/callback"
         signUpEnabled: {{ .Values.desktopConfig.signUpEnabled }}
@@ -176,7 +182,6 @@ data:
     tracking:
       websiteId: "{{ .Values.desktopConfig.trackingWebsiteId }}"
       hostUrl: {{ if .Values.desktopConfig.trackingHostUrl }}"{{ .Values.desktopConfig.trackingHostUrl }}"{{ else if .Values.desktopConfig.trackingEnabled }}"https://umami.sealos.run"{{ else }}""{{ end }}
-
     realNameOSS:
       accessKey: "{{ .Values.desktopConfig.realNameOSSAccessKey }}"
       accessKeySecret: "{{ .Values.desktopConfig.realNameOSSAccessKeySecret }}"
