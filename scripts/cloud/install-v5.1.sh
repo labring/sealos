@@ -72,6 +72,27 @@ choose_image() {
   fi
 }
 
+create_and_copy_bundle() {
+  local bundle_path output_dir
+  info "Creating image rootfs path via: sealos create ${image} --short"
+  bundle_path="$("${sealos_bin}" create "${image}" --short | tail -n1 | tr -d '\r')"
+  if [[ -z "${bundle_path}" ]]; then
+    error "failed to get bundle path from sealos create"
+  fi
+  if [[ ! -d "${bundle_path}" ]]; then
+    error "bundle path does not exist or is not a directory: ${bundle_path}"
+  fi
+
+  output_dir="/root/sealos-oss-${SEALOS_OSS_VERSION}"
+  if [[ -e "${output_dir}" ]]; then
+    error "output directory already exists: ${output_dir}. Please delete it and rerun this script."
+  fi
+  mkdir -p "${output_dir}"
+  info "Copying bundle contents from ${bundle_path} to ${output_dir}"
+  cp -a "${bundle_path}/." "${output_dir}/"
+  info "Bundle copy completed: ${output_dir}"
+}
+
 main() {
   detect_platform
   info "Detected platform: ${os}/${arch}"
@@ -80,6 +101,7 @@ main() {
   info "Pulling image: ${image}"
   "${sealos_bin}" pull "${image}"
   info "Image pull completed"
+  create_and_copy_bundle
 }
 
 main "$@"
