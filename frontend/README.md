@@ -99,12 +99,10 @@ make push-images DOCKER_USERNAME=<your_account> IMAGE_TAG=<tag>
 Refer to other apps to add some configuration.
 
 1. .github/workflows/frontends.yml
-2. deploy/cloud/init.sh
-3. deploy/cloud/scripts/init.sh
-4. frontend/providers/app/deploy/manifests/appcr.yaml.tmpl
-5. frontend/providers/app/deploy/manifests/deploy.yaml
-6. frontend/providers/app/deploy/manifests/ingress.yaml.tmpl
-7. makefile
+2. frontend/providers/app/deploy/manifests/appcr.yaml.tmpl
+3. frontend/providers/app/deploy/manifests/deploy.yaml
+4. frontend/providers/app/deploy/manifests/ingress.yaml.tmpl
+5. makefile
 
 ## multiple namespaces
 
