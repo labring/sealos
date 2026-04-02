@@ -91,6 +91,78 @@ create_and_copy_bundle() {
   info "Copying bundle contents from ${bundle_path} to ${output_dir}"
   cp -a "${bundle_path}/." "${output_dir}/"
   info "Bundle copy completed: ${output_dir}"
+  bundle_output_dir="${output_dir}"
+}
+
+run_default_install() {
+  if [[ -z "${bundle_output_dir:-}" ]]; then
+    error "bundle output directory is empty"
+  fi
+  if [[ ! -f "${bundle_output_dir}/sealos-oss.sh" ]]; then
+    error "missing installer script: ${bundle_output_dir}/sealos-oss.sh"
+  fi
+  chmod +x "${bundle_output_dir}/sealos-oss.sh"
+  info "Running default install: ./sealos-oss.sh install --default"
+  (
+    cd "${bundle_output_dir}"
+    ./sealos-oss.sh install --default
+  )
+}
+
+list_unready_pods() {
+  kubectl get pods -A --no-headers 2>/dev/null | awk '
+    NF < 4 { next }
+    {
+      ready = $3
+      status = $4
+      split(ready, arr, "/")
+      ready_ok = (arr[1] == arr[2])
+      if (status == "Running") {
+        if (!ready_ok) print $0
+      } else if (status == "Completed" || status == "Succeeded") {
+        next
+      } else {
+        print $0
+      }
+    }'
+}
+
+wait_for_pods_ready() {
+  local timeout_sec interval_sec deadline unready
+  timeout_sec="${SEALOS_POD_READY_TIMEOUT:-1800}"
+  interval_sec="${SEALOS_POD_READY_INTERVAL:-10}"
+  deadline=$((SECONDS + timeout_sec))
+
+  if ! command -v kubectl >/dev/null 2>&1; then
+    error "kubectl is not installed, cannot check pod status"
+  fi
+
+  info "Waiting for all pods to be ready (timeout: ${timeout_sec}s, interval: ${interval_sec}s)"
+  while true; do
+    unready="$(list_unready_pods || true)"
+    if [[ -z "${unready}" ]]; then
+      info "All pods are ready"
+      break
+    fi
+
+    if (( SECONDS >= deadline )); then
+      error "timeout waiting for pods to be ready. Unready pods:\n${unready}"
+    fi
+
+    info "Pods are not ready yet, retrying in ${interval_sec}s"
+    sleep "${interval_sec}"
+  done
+}
+
+run_info() {
+  if [[ -z "${bundle_output_dir:-}" ]]; then
+    error "bundle output directory is empty"
+  fi
+  info "Running info command: ./sealos-oss.sh info"
+  (
+    cd "${bundle_output_dir}"
+    ./sealos-oss.sh info
+  )
 }
 
 main() {
@@ -102,6 +174,9 @@ main() {
   "${sealos_bin}" pull "${image}"
   info "Image pull completed"
   create_and_copy_bundle
+  run_default_install
+  wait_for_pods_ready
+  run_info
 }
 
 main "$@"
