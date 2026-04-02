@@ -44,11 +44,13 @@ export default function TrendChart({
   source,
   title,
   dimesion,
+  valueFormatter,
   styles,
   ...echartsProps
 }: {
   title: string;
   dimesion: string;
+  valueFormatter?: (value: number) => string;
   styles: {
     areaColor: string;
     lineColor: string;
@@ -80,6 +82,11 @@ export default function TrendChart({
       min: 'dataMin',
       max: 'dataMax',
       type: 'value',
+      axisLabel: valueFormatter
+        ? {
+            formatter: (value: number) => valueFormatter(value)
+          }
+        : undefined,
       splitLine: {
         lineStyle: {
           type: 'dashed',
@@ -116,6 +123,14 @@ export default function TrendChart({
     },
     tooltip: {
       trigger: 'axis',
+      formatter: (params: any) => {
+        const item = Array.isArray(params) ? params[0] : params;
+        const rawValue = Array.isArray(item?.value) ? Number(item.value[1]) : Number(item?.value);
+        const displayValue =
+          valueFormatter && Number.isFinite(rawValue) ? valueFormatter(rawValue) : rawValue;
+
+        return `${item?.axisValueLabel || ''}<br/>${item?.marker || ''}${title}: ${displayValue}`;
+      },
       position(point: any, _params: any, dom: any, _rect: any, size: any) {
         let xPos = point[0];
         let yPos = point[1];
