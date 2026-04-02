@@ -12,10 +12,8 @@ export type SystemEnvResponse = {
   SHOW_DOCUMENT: boolean;
   CurrencySymbol: 'shellCoin' | 'cny' | 'usd';
   STORAGE_MAX_SIZE: number;
-  CLIENT_DOMAIN_NAME: string;
-  GATEWAY_DOMAIN_NAME: string;
-  MANAGED_DB_ENABLED: string;
-  CHAT2DB_AES_KEY: string;
+  WHODB_ENABLED: string;
+  WHODB_AES_KEY: string;
   MIGRATION_JOB_CPU_REQUIREMENT: number;
   MIGRATION_JOB_MEMORY_REQUIREMENT: number;
   DUMPIMPORT_JOB_CPU_REQUIREMENT: number;
@@ -44,10 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       SHOW_DOCUMENT: process.env.SHOW_DOCUMENT === 'true',
       CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd',
       STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300,
-      CLIENT_DOMAIN_NAME: process.env.CLIENT_DOMAIN_NAME || '',
-      GATEWAY_DOMAIN_NAME: process.env.GATEWAY_DOMAIN_NAME || '',
-      MANAGED_DB_ENABLED: process.env.MANAGED_DB_ENABLED || '',
-      CHAT2DB_AES_KEY: process.env.CHAT2DB_AES_KEY || '',
+      WHODB_ENABLED: process.env.WHODB_ENABLED || '',
+      WHODB_AES_KEY: process.env.WHODB_AES_KEY || '',
       MIGRATION_JOB_CPU_REQUIREMENT: Number(process.env.MIGRATION_JOB_CPU_REQUIREMENT ?? 0),
       MIGRATION_JOB_MEMORY_REQUIREMENT: Number(process.env.MIGRATION_JOB_MEMORY_REQUIREMENT ?? 0),
       DUMPIMPORT_JOB_CPU_REQUIREMENT: Number(process.env.DUMPIMPORT_JOB_CPU_REQUIREMENT ?? 0),
