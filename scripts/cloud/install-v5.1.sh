@@ -15,6 +15,12 @@ info() {
   echo -e "\033[36m INFO [$flag] >> $* \033[0m"
 }
 
+warn() {
+  local flag
+  flag="$(timestamp)"
+  echo -e "\033[33m WARN [$flag] >> $* \033[0m"
+}
+
 error() {
   local flag
   flag="$(timestamp)"
@@ -95,6 +101,7 @@ create_and_copy_bundle() {
 }
 
 run_default_install() {
+  local install_rc
   if [[ -z "${bundle_output_dir:-}" ]]; then
     error "bundle output directory is empty"
   fi
@@ -103,10 +110,17 @@ run_default_install() {
   fi
   chmod +x "${bundle_output_dir}/sealos-oss.sh"
   info "Running default install: ./sealos-oss.sh install --default"
-  (
+  install_rc=0
+  if ! (
+    # `yes | cmd` will often make `yes` exit with SIGPIPE when cmd stops reading.
+    # Disable pipefail in this subshell to use cmd's exit code only.
+    set +o pipefail
     cd "${bundle_output_dir}"
     yes y | ./sealos-oss.sh install --default
-  )
+  ); then
+    install_rc=$?
+    warn "install command exited with code ${install_rc}, continuing to wait for pods and run info"
+  fi
 }
 
 list_unready_pods() {
