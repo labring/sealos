@@ -105,7 +105,7 @@ run_default_install() {
   info "Running default install: ./sealos-oss.sh install --default"
   (
     cd "${bundle_output_dir}"
-    ./sealos-oss.sh install --default
+    yes y | ./sealos-oss.sh install --default
   )
 }
 
