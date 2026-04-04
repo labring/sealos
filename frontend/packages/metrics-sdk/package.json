@@ -1,5 +1,8 @@
 {
-  "name": "sealos-metrics-sdk",
+  "name": "@labring/sealos-metrics-sdk",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "0.1.0",
   "description": "Sealos metrics monitoring SDK",
   "type": "module",

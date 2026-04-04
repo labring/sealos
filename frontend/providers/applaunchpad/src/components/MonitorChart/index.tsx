@@ -4,9 +4,9 @@ import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
 import dayjs from 'dayjs';
 import { LineStyleMap, NetworkLineStyleMap } from '@/constants/monitor';
-import { Button } from '@sealos/shadcn-ui/button';
-import { cn } from '@sealos/shadcn-ui';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { cn } from '@labring/sealos-shadcn-ui';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 import { useTranslation } from 'next-i18next';
 
 type MonitorChartProps = React.HTMLAttributes<HTMLDivElement> & {

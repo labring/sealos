@@ -2,15 +2,15 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'next-i18next';
 import { CURRENCY } from '@/store/static';
 import { useUserStore } from '@/store/user';
-import { CurrencySymbol } from '@sealos/ui';
+import { CurrencySymbol } from '@labring/sealos-ui';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@sealos/shadcn-ui/tooltip';
+} from '@labring/sealos-shadcn-ui/tooltip';
 import { HelpCircle, Cpu, MemoryStick, HardDrive, HdmiPort, CircuitBoard } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@labring/sealos-shadcn-ui/card';
 
 const PriceBox = ({
   cpu,

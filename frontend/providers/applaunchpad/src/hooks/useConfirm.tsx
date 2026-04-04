@@ -5,8 +5,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle
-} from '@sealos/shadcn-ui/alert-dialog';
-import { Button } from '@sealos/shadcn-ui/button';
+} from '@labring/sealos-shadcn-ui/alert-dialog';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
 import { TriangleAlert } from 'lucide-react';
 

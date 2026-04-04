@@ -11,7 +11,7 @@ import {
   ErrorCode,
   buildErrorBody,
   buildValidationErrorBody
-} from '@sealos/shared/server/v2alpha';
+} from '@labring/sealos-shared-sdk/server/v2alpha';
 
 export { ErrorType, ErrorCode, buildErrorBody, buildValidationErrorBody };
 export type {
@@ -19,9 +19,13 @@ export type {
   ErrorCodeType,
   ApiErrorResponse,
   ApiErrorDetails
-} from '@sealos/shared/server/v2alpha';
+} from '@labring/sealos-shared-sdk/server/v2alpha';
 
-import type { ErrorTypeValue, ErrorCodeType, ApiErrorDetails } from '@sealos/shared/server/v2alpha';
+import type {
+  ErrorTypeValue,
+  ErrorCodeType,
+  ApiErrorDetails
+} from '@labring/sealos-shared-sdk/server/v2alpha';
 
 // ============================================================================
 // OpenAPI schemas — local, built with this provider's zod (v4 + zod-openapi v5)

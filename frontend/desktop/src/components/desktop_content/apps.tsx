@@ -20,7 +20,7 @@ import {
   FlexProps
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import {
   DragEventHandler,
   MouseEvent,

@@ -1,16 +1,16 @@
 import { TAppSource } from '@/types/app';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { TriangleAlert } from 'lucide-react';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@sealos/shadcn-ui/dialog';
+} from '@labring/sealos-shadcn-ui/dialog';
 
 const UpdateModal = ({
   isOpen,

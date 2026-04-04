@@ -3,7 +3,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 import { useDevboxStore } from '@/stores/devbox';
 import { versionSchema, versionErrorEnum } from '@/utils/validate';
@@ -24,14 +24,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter
-} from '@sealos/shadcn-ui/dialog';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Label } from '@sealos/shadcn-ui/label';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Textarea } from '@sealos/shadcn-ui/textarea';
-import { Checkbox } from '@sealos/shadcn-ui/checkbox';
-import { Separator } from '@sealos/shadcn-ui/separator';
-import { track } from '@sealos/gtm';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Textarea } from '@labring/sealos-shadcn-ui/textarea';
+import { Checkbox } from '@labring/sealos-shadcn-ui/checkbox';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
+import { track } from '@labring/sealos-gtm-sdk';
 
 interface ReleaseDialogProps {
   devbox: Omit<DevboxListItemTypeV2, 'template'>;

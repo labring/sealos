@@ -10,11 +10,11 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle
-} from '@sealos/shadcn-ui/drawer';
-import { Button } from '@sealos/shadcn-ui/button';
-import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
-import { Stepper, Step, StepIndicator } from '@sealos/shadcn-ui/stepper';
+} from '@labring/sealos-shadcn-ui/drawer';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { ScrollArea } from '@labring/sealos-shadcn-ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@labring/sealos-shadcn-ui/tabs';
+import { Stepper, Step, StepIndicator } from '@labring/sealos-shadcn-ui/stepper';
 
 import {
   macosAndLinuxScriptsTemplate,

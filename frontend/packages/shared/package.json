@@ -1,9 +1,11 @@
 {
-  "name": "@sealos/shared",
+  "name": "@labring/sealos-shared-sdk",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.0.0",
   "description": "Shared utilities, types, and components for Sealos frontend applications",
   "license": "ISC",
-  "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -45,7 +47,7 @@
     "picocolors": "^1.1.1",
     "react": "^18.0 || ^19.0 || ^19.0.0-rc",
     "react-dom": "^18.0 || ^19.0 || ^19.0.0-rc",
-    "sealos-desktop-sdk": "workspace:*",
+    "@labring/sealos-desktop-sdk": "workspace:*",
     "zod": "^3 || ^4",
     "zustand": "^4 || ^5"
   },
@@ -82,7 +84,7 @@
       "optional": false,
       "description": "Required for frontend code"
     },
-    "sealos-desktop-sdk": {
+    "@labring/sealos-desktop-sdk": {
       "optional": false,
       "description": "Required for frontend code"
     },
@@ -114,7 +116,7 @@
     "picocolors": "^1.1.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "sealos-desktop-sdk": "workspace:*",
+    "@labring/sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.9.3",
     "zod": "^4.3.5",
     "zustand": "^4.5.6"

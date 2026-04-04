@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { shutdownDevbox } from '@/api/devbox';
 import { DevboxDetailTypeV2, DevboxListItemTypeV2, ShutdownModeType } from '@/types/devbox';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
@@ -15,11 +15,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@sealos/shadcn-ui/dialog';
-import { Label } from '@sealos/shadcn-ui/label';
-import { Button } from '@sealos/shadcn-ui/button';
-import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
-import { track } from '@sealos/gtm';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { RadioGroup, RadioGroupItem } from '@labring/sealos-shadcn-ui/radio-group';
+import { track } from '@labring/sealos-gtm-sdk';
 
 const BALANCE_NOT_ENOUGH = 402;
 const FORBIDDEN_CREATE_APP = 403;

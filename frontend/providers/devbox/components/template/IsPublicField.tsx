@@ -1,8 +1,14 @@
 import { useTranslations } from 'next-intl';
 import { UseFormReturn } from 'react-hook-form';
 
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@sealos/shadcn-ui/form';
-import { Switch } from '@sealos/shadcn-ui/switch';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@labring/sealos-shadcn-ui/form';
+import { Switch } from '@labring/sealos-shadcn-ui/switch';
 
 interface IsPublicFieldProps {
   form: UseFormReturn<any>;

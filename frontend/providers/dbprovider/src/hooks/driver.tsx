@@ -1,11 +1,11 @@
 import { useGuideStore } from '@/store/guide';
 import { Flex, Text, Box, Center, Image } from '@chakra-ui/react';
-import { driver } from '@sealos/driver';
-import { Config } from '@sealos/driver/src/config';
-import { track } from '@sealos/gtm';
+import { driver } from '@labring/sealos-driver-sdk';
+import { Config } from '@labring/sealos-driver-sdk/src/config';
+import { track } from '@labring/sealos-gtm-sdk';
 import { CircleCheckBig, X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 let currentDriver: any = null;
 

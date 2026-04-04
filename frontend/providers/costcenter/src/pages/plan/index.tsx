@@ -31,7 +31,7 @@ import { useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import jsyaml from 'js-yaml';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useRouter } from 'next/router';
-import { Skeleton } from '@sealos/shadcn-ui';
+import { Skeleton } from '@labring/sealos-shadcn-ui';
 import { UpgradePlanDialog } from '@/components/plan/UpgradePlanDialog';
 import { gtmSubscribeCheckout, gtmSubscribeSuccess } from '@/utils/gtm';
 import { openInNewWindow } from '@/utils/windowUtils';

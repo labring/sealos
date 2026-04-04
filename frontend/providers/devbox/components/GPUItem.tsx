@@ -2,10 +2,10 @@ import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { GpuType } from '@/types/user';
 import { usePriceStore } from '@/stores/price';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 
 const GPUItem = ({ gpu, className }: { gpu?: GpuType; className?: string }) => {
   const t = useTranslations();

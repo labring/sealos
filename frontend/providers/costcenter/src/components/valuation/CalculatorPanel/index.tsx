@@ -3,14 +3,14 @@ import { PricePayload } from '../PriceTablePanel';
 import { PRICE_CYCLE_SCALE } from '@/pages/valuation';
 import useEnvStore from '@/stores/env';
 import { formatMoney } from '@/utils/format';
-import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@labring/sealos-shadcn-ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
+} from '@labring/sealos-shadcn-ui/select';
 import produce from 'immer';
 import { useTranslation } from 'next-i18next';
 import React, { useMemo, useState } from 'react';

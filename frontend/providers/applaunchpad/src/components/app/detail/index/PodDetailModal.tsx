@@ -8,17 +8,17 @@ import { useLoading } from '@/hooks/useLoading';
 import { streamFetch } from '@/services/streamFetch';
 import { useToast } from '@/hooks/useToast';
 import { downLoadBold } from '@/utils/tools';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@sealos/shadcn-ui/dialog';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@labring/sealos-shadcn-ui/drawer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@labring/sealos-shadcn-ui/dialog';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+} from '@labring/sealos-shadcn-ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 import { Sparkles, CircleAlert, CircleHelp, Download, LineChart, FileClock } from 'lucide-react';
 import { default as AnsiUp } from 'ansi_up';
 import Empty from './empty';

@@ -5,7 +5,7 @@ import useSessionStore from '@/stores/session';
 import { ROLE_LIST, UserRole } from '@/types/team';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { Button, Flex, Image, Text, VStack } from '@chakra-ui/react';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 import { dehydrate, QueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { isString } from 'lodash';
 import type { NextPage } from 'next';

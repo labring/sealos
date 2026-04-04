@@ -32,18 +32,18 @@ import {
   X,
   TriangleAlert
 } from 'lucide-react';
-import { Pagination } from '@sealos/shadcn-ui/pagination';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Switch } from '@sealos/shadcn-ui/switch';
+import { Pagination } from '@labring/sealos-shadcn-ui/pagination';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@labring/sealos-shadcn-ui/drawer';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Switch } from '@labring/sealos-shadcn-ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
+} from '@labring/sealos-shadcn-ui/select';
 import {
   Table,
   TableBody,
@@ -51,9 +51,9 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@sealos/shadcn-ui/table';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import { Separator } from '@sealos/shadcn-ui/separator';
+} from '@labring/sealos-shadcn-ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -61,9 +61,9 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator
-} from '@sealos/shadcn-ui/breadcrumb';
-import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
-import { Label } from '@sealos/shadcn-ui/label';
+} from '@labring/sealos-shadcn-ui/breadcrumb';
+import { Popover, PopoverContent, PopoverTrigger } from '@labring/sealos-shadcn-ui/popover';
+import { Label } from '@labring/sealos-shadcn-ui/label';
 
 const PodFile = ({
   isOpen,

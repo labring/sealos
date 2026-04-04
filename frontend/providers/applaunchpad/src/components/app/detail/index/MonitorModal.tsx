@@ -1,7 +1,7 @@
 import PodLineChart from '@/components/PodLineChart';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@sealos/shadcn-ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@labring/sealos-shadcn-ui/dialog';
 import { useTranslation } from 'next-i18next';
 
 const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => void }) => {

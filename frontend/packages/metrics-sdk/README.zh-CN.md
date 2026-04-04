@@ -1,4 +1,4 @@
-# sealos-metrics-sdk 使用文档
+# @labring/sealos-metrics-sdk 使用文档
 
 Sealos 的统一 TypeScript 监控 SDK，用于**直接查询 Victoria Metrics**，并通过 kubeconfig 进行 **Kubernetes 权限校验**。适合在服务端（Node/Next.js API Route）使用，不建议在浏览器端直接调用。
 
@@ -32,7 +32,7 @@ Sealos 的统一 TypeScript 监控 SDK，用于**直接查询 Victoria Metrics**
 ## 安装
 
 ```bash
-pnpm add sealos-metrics-sdk
+pnpm add @labring/sealos-metrics-sdk
 ```
 
 > 注意：`@kubernetes/client-node` 是 peerDependencies，请在宿主项目中安装对应版本。
@@ -40,7 +40,7 @@ pnpm add sealos-metrics-sdk
 ## 快速开始
 
 ```ts
-import { MetricsClient } from 'sealos-metrics-sdk';
+import { MetricsClient } from '@labring/sealos-metrics-sdk';
 
 const client = new MetricsClient({
   kubeconfig: kubeconfigString,
@@ -147,7 +147,7 @@ interface TimeRange {
 > 时间戳建议使用秒级。如果你传入毫秒，可用 `toSeconds` 进行转换：
 
 ```ts
-import { toSeconds, getTimeRange } from 'sealos-metrics-sdk';
+import { toSeconds, getTimeRange } from '@labring/sealos-metrics-sdk';
 
 const { start, end } = getTimeRange(1); // 最近 1 小时
 const startSec = toSeconds(Date.now());
@@ -283,8 +283,8 @@ const data = await client.raw.query({
 ```ts
 // app/api/metrics/launchpad/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { MetricsClient } from 'sealos-metrics-sdk';
-import type { LaunchpadMetricType } from 'sealos-metrics-sdk';
+import { MetricsClient } from '@labring/sealos-metrics-sdk';
+import type { LaunchpadMetricType } from '@labring/sealos-metrics-sdk';
 import { getKubeconfig } from '@/utils/auth';
 
 export async function POST(req: NextRequest) {

@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types/api';
 import { useTranslation } from 'react-i18next';
-import { Quantity } from '@sealos/shared';
+import { Quantity } from '@labring/sealos-shared-sdk';
 
 export interface AppBillingDrawerProps {
   open: boolean;

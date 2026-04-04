@@ -1,6 +1,6 @@
 import { Calculator, ChartPie, Dock, ReceiptText, LucideIcon, TicketMinus } from 'lucide-react';
 import useEnvStore from '@/stores/env';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
 import Link from 'next/link';
 import { useRouter } from 'next/router';

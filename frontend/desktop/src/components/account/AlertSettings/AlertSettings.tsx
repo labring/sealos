@@ -8,10 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription
-} from '@sealos/shadcn-ui';
-import { Checkbox } from '@sealos/shadcn-ui';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Badge } from '@sealos/shadcn-ui/badge';
+} from '@labring/sealos-shadcn-ui';
+import { Checkbox } from '@labring/sealos-shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import { BindDialog } from './BindDialog';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

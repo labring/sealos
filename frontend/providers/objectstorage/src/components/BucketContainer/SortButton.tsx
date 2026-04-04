@@ -1,5 +1,5 @@
 import { Button, ButtonProps, Tooltip, VStack } from '@chakra-ui/react';
-import { SortPolygonDownIcon, SortPolygonUpIcon } from '@sealos/ui';
+import { SortPolygonDownIcon, SortPolygonUpIcon } from '@labring/sealos-ui';
 import { SortDirection } from '@tanstack/react-table';
 import { useTranslation } from 'next-i18next';
 

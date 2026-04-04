@@ -8,7 +8,7 @@ import { APPTYPE, TApp } from '@/types';
 import { I18nCommonKey } from '@/types/i18next';
 import { Box, Center, Flex, Image, useBreakpointValue } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { MouseEvent, useContext, useMemo, useRef, useState } from 'react';
 import { useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';

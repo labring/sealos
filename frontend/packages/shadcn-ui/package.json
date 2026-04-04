@@ -1,5 +1,9 @@
 {
-  "name": "@sealos/shadcn-ui",
+  "name": "@labring/sealos-shadcn-ui",
+  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.0.0",
   "scripts": {},
   "license": "ISC",

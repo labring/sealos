@@ -12,12 +12,12 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useDBOperation } from '@/hooks/useDBOperation';
 import type { DBDetailType } from '@/types/db';
 import { Box, Button, Flex, Skeleton, useDisclosure } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState, useEffect } from 'react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
 import {
   ThemeAppearance,

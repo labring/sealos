@@ -1,4 +1,4 @@
-import { Button, Tooltip, TooltipTrigger, TooltipContent } from '@sealos/shadcn-ui';
+import { Button, Tooltip, TooltipTrigger, TooltipContent } from '@labring/sealos-shadcn-ui';
 import { displayMoney, formatMoney } from '@/utils/format';
 import GiftCode from '@/components/cost_overview/components/GiftCode';
 import { useTranslation } from 'next-i18next';

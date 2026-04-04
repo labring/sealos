@@ -1,5 +1,5 @@
 import * as yaml from 'js-yaml';
-import type { SessionV1 as Session } from 'sealos-desktop-sdk/*';
+import type { SessionV1 as Session } from '@labring/sealos-desktop-sdk/*';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 

@@ -31,7 +31,7 @@ import { formatBytes } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import DeleteBucketModal from '../common/modal/DeleteBucketModal';
 import useSessionStore from '@/store/session';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { useEffect } from 'react';
 
 function MoreMenu({ bucket }: { bucket: TBucket }) {

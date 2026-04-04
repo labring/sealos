@@ -4,8 +4,8 @@ import { CheckIcon } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import { useState, useEffect } from 'react';
 import BoringAvatar from 'boring-avatars';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { cn } from '@sealos/shadcn-ui';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { getPlanBackgroundClass } from '@/utils/styling';
 import { useConfigStore } from '@/stores/config';
 

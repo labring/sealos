@@ -1,12 +1,12 @@
 import { toast } from 'sonner';
 import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 import { useUserStore } from '@/stores/user';
 import { DevboxListItemTypeV2, DevboxDetailTypeV2 } from '@/types/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 import { DevboxStatusEnum } from '@/constants/devbox';
 import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 

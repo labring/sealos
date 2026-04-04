@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import styles from './index.module.scss';
 import { getEnv } from '@/api/terminal';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { useState } from 'react';
 
 type ServiceEnv = {

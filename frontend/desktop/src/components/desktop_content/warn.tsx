@@ -1,5 +1,5 @@
 import { Flex, Center, Text } from '@chakra-ui/react';
-import { WarnTriangleIcon } from '@sealos/ui';
+import { WarnTriangleIcon } from '@labring/sealos-ui';
 import { EmptyIcon } from '../icons';
 import { blurBackgroundStyles } from './index';
 import { useTranslation } from 'next-i18next';

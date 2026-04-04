@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp, Network as NetworkIcon } from 'lucide-react';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useRouter } from '@/i18n';
 import { useEnvStore } from '@/stores/env';
 import { useCopyData } from '@/utils/tools';
@@ -18,10 +18,10 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@sealos/shadcn-ui/table';
-import { Button } from '@sealos/shadcn-ui/button';
-import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+} from '@labring/sealos-shadcn-ui/table';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { ScrollArea } from '@labring/sealos-shadcn-ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 
 export const ProtocolList = [{ value: 'HTTP', label: 'https://', inline: 'http://' }];
 

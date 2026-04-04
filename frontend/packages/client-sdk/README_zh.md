@@ -15,13 +15,13 @@
 
 ```bash
 # 使用 npm
-npm install @zjy365/sealos-desktop-sdk
+npm install @zjy365/@labring/sealos-desktop-sdk
 
 # 使用 pnpm
-pnpm add @zjy365/sealos-desktop-sdk
+pnpm add @zjy365/@labring/sealos-desktop-sdk
 
 # 使用 yarn
-yarn add @zjy365/sealos-desktop-sdk
+yarn add @zjy365/@labring/sealos-desktop-sdk
 ```
 
 ## 🚀 快速开始
@@ -29,7 +29,7 @@ yarn add @zjy365/sealos-desktop-sdk
 ### Desktop 端（主应用）
 
 ```typescript
-import { createMasterAPP } from '@zjy365/sealos-desktop-sdk/master';
+import { createMasterAPP } from '@zjy365/@labring/sealos-desktop-sdk/master';
 
 useEffect(() => {
   // 配置允许的域名（生产环境建议使用具体域名）
@@ -42,7 +42,7 @@ useEffect(() => {
 ### App 端（子应用）
 
 ```typescript
-import { createSealosApp, sealosApp } from '@zjy365/sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from '@zjy365/@labring/sealos-desktop-sdk';
 
 useEffect(() => {
   // 初始化 SDK

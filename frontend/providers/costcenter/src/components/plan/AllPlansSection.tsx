@@ -1,5 +1,12 @@
-import { Avatar, AvatarFallback, cn, TableCell, TableHead, TableRow } from '@sealos/shadcn-ui';
-import { Badge } from '@sealos/shadcn-ui/badge';
+import {
+  Avatar,
+  AvatarFallback,
+  cn,
+  TableCell,
+  TableHead,
+  TableRow
+} from '@labring/sealos-shadcn-ui';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   TableLayout,
@@ -7,7 +14,7 @@ import {
   TableLayoutHeadRow,
   TableLayoutBody,
   TableLayoutContent
-} from '@sealos/shadcn-ui/table-layout';
+} from '@labring/sealos-shadcn-ui/table-layout';
 import {
   getWorkspaceSubscriptionList,
   getPaymentList,
@@ -21,13 +28,13 @@ import { getPlanBackgroundClass } from './PlanHeader';
 import usePlanStore from '@/stores/plan';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@sealos/shadcn-ui/dropdown-menu';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
 import { BadgeX, MoreHorizontal } from 'lucide-react';
 import CancelPlanModal from './CancelPlanModal';
 import { useCustomToast } from '@/hooks/useCustomToast';

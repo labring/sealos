@@ -12,15 +12,15 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@sealos/shadcn-ui/table';
+} from '@labring/sealos-shadcn-ui/table';
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@sealos/shadcn-ui/drawer';
-import { Button } from '@sealos/shadcn-ui/button';
+} from '@labring/sealos-shadcn-ui/drawer';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import DeleteTemplateVersionDialog from '@/components/dialogs/DeleteTemplateVersionDialog';
 
 import { listTemplate } from '@/api/template';

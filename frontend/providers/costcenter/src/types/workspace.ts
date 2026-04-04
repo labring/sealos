@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { QuantitySchema } from '@sealos/shared';
+import { QuantitySchema } from '@labring/sealos-shared-sdk';
 
 export const WorkspaceQuotaRequestSchema = z.object({
   regionUid: z.string(),

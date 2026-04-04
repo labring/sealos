@@ -34,8 +34,8 @@ import { toast } from 'sonner';
 import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
-import { track } from '@sealos/gtm';
-import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@sealos/shared';
+import { track } from '@labring/sealos-gtm-sdk';
+import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@labring/sealos-shared-sdk';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 

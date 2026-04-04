@@ -20,10 +20,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@sealos/shadcn-ui/dropdown-menu';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
 import IDEButton from '@/components/IDEButton';
-import { Button } from '@sealos/shadcn-ui/button';
-import { track } from '@sealos/gtm';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { track } from '@labring/sealos-gtm-sdk';
 
 interface ActionsProps extends CellContext<DevboxListItemTypeV2, unknown> {
   onOpenRelease: (item: DevboxListItemTypeV2) => void;

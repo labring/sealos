@@ -31,7 +31,7 @@ import {
   Thead,
   Tr
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import {
   ColumnDef,

@@ -1,4 +1,4 @@
-# @sealos/gtm
+# @labring/sealos-gtm-sdk
 
 Google Tag Manager integration for Sealos applications with full TypeScript support.
 
@@ -13,7 +13,7 @@ Google Tag Manager integration for Sealos applications with full TypeScript supp
 ## Installation
 
 ```bash
-pnpm add @sealos/gtm
+pnpm add @labring/sealos-gtm-sdk
 ```
 
 ## Quick Start
@@ -24,7 +24,7 @@ Add GTM component to your `_app.tsx`:
 
 ```tsx
 // pages/_app.tsx
-import { GTMScript } from '@sealos/gtm';
+import { GTMScript } from '@labring/sealos-gtm-sdk';
 import type { AppProps } from 'next/app';
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -45,7 +45,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
 ```tsx
 // app/layout.tsx
-import { GTMScript } from '@sealos/gtm';
+import { GTMScript } from '@labring/sealos-gtm-sdk';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -69,7 +69,7 @@ If you need more control, configure in `_document.tsx`:
 
 ```tsx
 // pages/_document.tsx
-import { getGTMScripts, getDataLayerScript } from '@sealos/gtm';
+import { getGTMScripts, getDataLayerScript } from '@labring/sealos-gtm-sdk';
 import Document, { DocumentContext, Head, Html, Main, NextScript } from 'next/document';
 import Script from 'next/script';
 
@@ -126,7 +126,7 @@ NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX
 ### Simple Tracking (Vercel Analytics Style)
 
 ```tsx
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 
 // Simple event tracking
 track('module_open', { module: 'devbox' });
@@ -142,7 +142,7 @@ track('deployment_create', {
 ### All Event Types
 
 ```tsx
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 
 // Module events
 track('module_open', { module: 'devbox' });
@@ -183,7 +183,7 @@ track('error_occurred', { module: 'devbox', error_code: 'NAME_ALREADY_IN_USE' })
 ### TypeScript Support
 
 ```tsx
-import { track, GTMEvent, DeploymentCreateEvent } from '@sealos/gtm';
+import { track, GTMEvent, DeploymentCreateEvent } from '@labring/sealos-gtm-sdk';
 
 // Type-safe event tracking
 const event: DeploymentCreateEvent = {
@@ -199,7 +199,7 @@ track(event);
 ### Configuration
 
 ```tsx
-import { configureGTM } from '@sealos/gtm';
+import { configureGTM } from '@labring/sealos-gtm-sdk';
 
 // Configure debugging and enable/disable tracking
 configureGTM({

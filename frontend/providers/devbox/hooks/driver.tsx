@@ -1,11 +1,11 @@
-import { driver } from '@sealos/driver';
+import { driver } from '@labring/sealos-driver-sdk';
 import { X, CircleCheckBig } from 'lucide-react';
-import { Config } from '@sealos/driver/src/config';
-import { track } from '@sealos/gtm';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { Config } from '@labring/sealos-driver-sdk/src/config';
+import { track } from '@labring/sealos-gtm-sdk';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 import { useGuideStore } from '@/stores/guide';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 
 let currentDriver: any = null;
 

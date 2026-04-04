@@ -1,6 +1,6 @@
 import { SubscriptionPlan } from '@/types/plan';
 import { CircleCheck } from 'lucide-react';
-import { Badge } from '@sealos/shadcn-ui/badge';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
 import { formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';

@@ -15,7 +15,7 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useState } from 'react';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 
 const DelModal = dynamic(() => import('@/pages/job/detail/components/DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));

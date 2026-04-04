@@ -3,7 +3,7 @@ import { DateRange } from 'react-day-picker';
 import { useQuery } from '@tanstack/react-query';
 import { getRechargeBillingList } from '@/api/billing';
 import OrderListView, { OrderListRow } from './OrderListView';
-import { Badge } from '@sealos/shadcn-ui/badge';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
 import { useTranslation } from 'next-i18next';
 
 interface OrderListProps {

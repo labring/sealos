@@ -1,5 +1,8 @@
 {
-  "name": "sealos-mcp-sdk",
+  "name": "@labring/sealos-mcp-sdk",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "0.1.1",
   "description": "sealos mcp sdk for OpenAPI integration with MCP",
   "type": "module",

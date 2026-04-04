@@ -44,7 +44,7 @@ dayjs.extend(timezone);
 import type { BackupItemType } from '../types/db';
 import z from 'zod';
 import { dbDetailSchema, dbEditSchema, dbTypeSchema } from '@/types/schemas/db';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 export const getDBSource = (
   db: KbPgClusterType

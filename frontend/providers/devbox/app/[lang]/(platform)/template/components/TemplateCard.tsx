@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Ellipsis, GitFork, PencilLine, Trash2 } from 'lucide-react';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useRouter } from '@/i18n';
 import { listTemplate } from '@/api/template';
 import { useGuideStore } from '@/stores/guide';
@@ -19,18 +19,18 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
+} from '@labring/sealos-shadcn-ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@sealos/shadcn-ui/dropdown-menu';
-import { Card } from '@sealos/shadcn-ui/card';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import { Skeleton } from '@sealos/shadcn-ui/skeleton';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
+import { Card } from '@labring/sealos-shadcn-ui/card';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
+import { Skeleton } from '@labring/sealos-shadcn-ui/skeleton';
 
 import TemplateVersionControlDrawer from '@/components/drawers/TemplateVersionControlDrawer';
 import EditTemplateRepositoryDrawer from '@/components/drawers/EditTemplateRepositoryDrawer';

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { monitorFetch } from '@/services/monitorFetch';
-import type { LaunchpadQueryResult } from 'sealos-metrics-sdk';
+import type { LaunchpadQueryResult } from '@labring/sealos-metrics-sdk';
 import { sendError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
 
 export const dynamic = 'force-dynamic';
@@ -39,7 +39,7 @@ function toSeconds(value: number, defaultValue: number): number {
   if (!Number.isFinite(value)) {
     return defaultValue;
   }
-  // Guard for millisecond inputs (e.g. Date.now())
+  / Guard for millisecond inputs (e.g. Date.now())
   if (Math.abs(value) > 1e12) {
     return Math.floor(value / 1000);
   }

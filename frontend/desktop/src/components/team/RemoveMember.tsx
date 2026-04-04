@@ -15,7 +15,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { InvitedStatus } from '@/types/team';
 import useSessionStore from '@/stores/session';
-import { CancelIcon, DeleteIcon } from '@sealos/ui';
+import { CancelIcon, DeleteIcon } from '@labring/sealos-ui';
 import { removeMemberRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
@@ -57,8 +57,8 @@ export default function RemoveMember({
     status === InvitedStatus.Inviting
       ? t('common:cancel')
       : selfUserCrUid === targetUserCrUid
-        ? t('common:quit')
-        : t('common:remove');
+      ? t('common:quit')
+      : t('common:remove');
   const removeTips =
     selfUserCrUid === targetUserCrUid
       ? t('common:quit_workspace_tips')

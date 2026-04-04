@@ -1,5 +1,5 @@
 import { Flex, Icon, Text } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 
 export default function Assistant() {

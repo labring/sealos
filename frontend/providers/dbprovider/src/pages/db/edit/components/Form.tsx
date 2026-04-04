@@ -12,14 +12,14 @@ import {
   WeekSelectList
 } from '@/constants/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
-import { resourcePropertyMap } from '@sealos/shared';
+import { resourcePropertyMap } from '@labring/sealos-shared-sdk';
 import useEnvStore from '@/store/env';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
 import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
-import { type WorkspaceQuotaItem } from '@sealos/shared';
+import { type WorkspaceQuotaItem } from '@labring/sealos-shared-sdk';
 import { distributeResources } from '@/utils/database';
 import { getAddonList } from '@/api/platform';
 import { useQuery } from '@tanstack/react-query';
@@ -54,12 +54,12 @@ import {
   Tr,
   useTheme
 } from '@chakra-ui/react';
-import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
+import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 function ResourcesDistributeTable({ data }: { data: Parameters<typeof distributeResources>[0] }) {
   const resources = distributeResources(data);

@@ -1,5 +1,8 @@
 {
-  "name": "@sealos/driver",
+  "name": "@labring/sealos-driver-sdk",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.0.0",
   "description": "",
   "main": "./src/driver.ts",

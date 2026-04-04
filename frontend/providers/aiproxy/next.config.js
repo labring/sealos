@@ -6,7 +6,12 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: false,
   compress: true,
-  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver', '@sealos/shared'],
+  transpilePackages: [
+    '@labring/sealos-ui',
+    '@labring/sealos-desktop-sdk',
+    '@labring/sealos-driver-sdk',
+    '@labring/sealos-shared-sdk',
+  ],
   experimental: {
     // this includes files from the monorepo base two directories up
     outputFileTracingRoot: path.join(__dirname, '../../'),

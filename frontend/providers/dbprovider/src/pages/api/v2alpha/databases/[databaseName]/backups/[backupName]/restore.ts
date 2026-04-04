@@ -14,7 +14,7 @@ import {
   ErrorType,
   ErrorCode
 } from '@/types/v2alpha/error';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 8);
 

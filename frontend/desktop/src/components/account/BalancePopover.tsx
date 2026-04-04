@@ -13,13 +13,20 @@ import useSessionStore from '@/stores/session';
 import { useSubscriptionStore } from '@/stores/subscription';
 import { useMemo, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
-import { Tooltip, Button, cn, Separator, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui';
+import {
+  Tooltip,
+  Button,
+  cn,
+  Separator,
+  TooltipContent,
+  TooltipTrigger
+} from '@labring/sealos-shadcn-ui';
 import { WorkspaceSubscription } from '@/types/plan';
 import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
 import { getAmount } from '@/api/auth';
 import { formatMoney } from '@/utils/format';
-import { CurrencySymbol } from '@sealos/ui';
+import { CurrencySymbol } from '@labring/sealos-ui';
 import { useConfigStore } from '@/stores/config';
 import { useTranslation } from 'next-i18next';
 

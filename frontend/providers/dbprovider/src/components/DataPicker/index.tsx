@@ -21,7 +21,7 @@ import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker'
 import 'react-day-picker/dist/style.css';
 import useDateTimeStore from '@/store/date';
 import { parseTimeRange, formatTimeRange } from '@/utils/timeRange';
-import { MySelect } from '@sealos/ui';
+import { MySelect } from '@labring/sealos-ui';
 import MyIcon from '../Icon';
 import { Calendar } from 'lucide-react';
 

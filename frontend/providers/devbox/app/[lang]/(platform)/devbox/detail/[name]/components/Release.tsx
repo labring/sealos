@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useEnvStore } from '@/stores/env';
@@ -36,18 +36,18 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@sealos/shadcn-ui/table';
+} from '@labring/sealos-shadcn-ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@sealos/shadcn-ui/dropdown-menu';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Loading } from '@sealos/shadcn-ui/loading';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Loading } from '@labring/sealos-shadcn-ui/loading';
 import DevboxStatusTag from '@/components/StatusTag';
-import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { ScrollArea } from '@labring/sealos-shadcn-ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import EditVersionDesModal from '@/components/dialogs/EditVersionDesDialog';
 import CreateTemplateDrawer from '@/components/drawers/CreateTemplateDrawer';

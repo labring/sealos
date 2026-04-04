@@ -18,7 +18,7 @@ import {
   Thead,
   Tr
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -225,8 +225,8 @@ const Pods = ({
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
-                        ? `${app[col.dataIndex]}`
-                        : '-'}
+                      ? `${app[col.dataIndex]}`
+                      : '-'}
                   </Td>
                 ))}
               </Tr>

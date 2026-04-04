@@ -11,9 +11,9 @@ import { DevboxStatusEnum } from '@/constants/devbox';
 import { useControlDevbox } from '@/hooks/useControlDevbox';
 
 import IDEButton from '@/components/IDEButton';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import DevboxStatusTag from '@/components/StatusTag';
-import { ButtonGroup } from '@sealos/shadcn-ui/button-group';
+import { ButtonGroup } from '@labring/sealos-shadcn-ui/button-group';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
 import SimpleShutdownDialog from '@/components/dialogs/SimpleShutdownDialog';
 import DeleteDevboxModal from '@/components/dialogs/DeleteDevboxDialog';

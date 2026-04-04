@@ -10,11 +10,11 @@ import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
 import { getAppMonitorData, getNetworkMonitorData } from '@/api/app';
 import { LineChart } from 'lucide-react';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 import { generatePvcNameRegex } from '@/utils/tools';
 import { parseTimeRange } from '@/utils/timeRange';
-import { Skeleton } from '@sealos/shadcn-ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { Skeleton } from '@labring/sealos-shadcn-ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@labring/sealos-shadcn-ui/tabs';
 import { useRouter } from 'next/router';
 
 const getPaddedAxisMax = (value: { max: number }) => {

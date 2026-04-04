@@ -9,10 +9,10 @@ import AppStatusTag from '@/components/AppStatusTag';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'next-i18next';
 import UpdateModal from './UpdateModal';
-import { Button } from '@sealos/shadcn-ui/button';
-import { ButtonGroup } from '@sealos/shadcn-ui/button-group';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { ButtonGroup } from '@labring/sealos-shadcn-ui/button-group';
 import { ArrowLeft, Play, Pause, PencilLine, RotateCw, Trash2 } from 'lucide-react';
-import { Skeleton } from '@sealos/shadcn-ui/skeleton';
+import { Skeleton } from '@labring/sealos-shadcn-ui/skeleton';
 
 const DelModal = dynamic(() => import('./DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));

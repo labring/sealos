@@ -19,7 +19,7 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { ExpanMoreIcon } from '@sealos/ui';
+import { ExpanMoreIcon } from '@labring/sealos-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';

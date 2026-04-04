@@ -25,7 +25,7 @@ import 'cronstrue/locales/en';
 import cronParser from 'cron-parser';
 import { getLangStore } from './cookieUtils';
 import { getJobEvents, getJobPodList } from '@/api/job';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 export const adaptCronJobList = (job: V1CronJob): CronJobListItemType => {
   const LANG_KEY = getLangStore() === 'en' ? 'en' : 'zh_CN';

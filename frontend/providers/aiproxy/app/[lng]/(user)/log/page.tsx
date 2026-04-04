@@ -12,7 +12,7 @@ import {
   Text,
   useDisclosure,
 } from '@chakra-ui/react';
-import { CurrencySymbol, MySelect, MyTooltip } from '@sealos/ui';
+import { CurrencySymbol, MySelect, MyTooltip } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import { createColumnHelper, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import dynamic from 'next/dynamic';

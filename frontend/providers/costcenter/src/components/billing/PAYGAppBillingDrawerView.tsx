@@ -1,12 +1,12 @@
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
-import { Pagination } from '@sealos/shadcn-ui/pagination';
-import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { Skeleton } from '@sealos/shadcn-ui/skeleton';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@labring/sealos-shadcn-ui/drawer';
+import { Pagination } from '@labring/sealos-shadcn-ui/pagination';
+import { DateRangePicker } from '@labring/sealos-shadcn-ui/date-range-picker';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
+import { Skeleton } from '@labring/sealos-shadcn-ui/skeleton';
 import { ArrowUpRight } from 'lucide-react';
-import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
-import { cn } from '@sealos/shadcn-ui';
+import { TableHead, TableRow, TableCell } from '@labring/sealos-shadcn-ui/table';
+import { cn } from '@labring/sealos-shadcn-ui';
 import {
   TableLayout,
   TableLayoutCaption,
@@ -14,7 +14,7 @@ import {
   TableLayoutHeadRow,
   TableLayoutBody,
   TableLayoutFooter
-} from '@sealos/shadcn-ui/table-layout';
+} from '@labring/sealos-shadcn-ui/table-layout';
 import {
   useReactTable,
   getCoreRowModel,
@@ -28,7 +28,7 @@ import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { formatMoney } from '@/utils/format';
 import CurrencySymbol from '../CurrencySymbol';
-import { Quantity } from '@sealos/shared';
+import { Quantity } from '@labring/sealos-shared-sdk';
 
 type PAYGBillingDetail = {
   appName: string;

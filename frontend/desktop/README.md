@@ -133,7 +133,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     "react-draggable": "^4.4.5",
     "react-i18next": "^12.2.0",
     "sass": "^1.62.0",
-    "sealos-desktop-sdk": "^0.1.12",
+    "@labring/sealos-desktop-sdk": "^0.1.12",
     "typescript": "5.0.4",
     "zustand": "^4.3.7"
   },

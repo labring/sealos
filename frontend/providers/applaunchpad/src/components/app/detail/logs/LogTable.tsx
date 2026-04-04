@@ -14,10 +14,10 @@ import { formatTime } from '@/utils/tools';
 import { LogsFormData } from '@/pages/app/detail/logs';
 import { UseFormReturn } from 'react-hook-form';
 import { useLogStore } from '@/store/logStore';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Checkbox } from '@sealos/shadcn-ui/checkbox';
-import { cn } from '@sealos/shadcn-ui';
-import { Separator } from '@sealos/shadcn-ui/separator';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Checkbox } from '@labring/sealos-shadcn-ui/checkbox';
+import { cn } from '@labring/sealos-shadcn-ui';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 
 interface FieldItem {
   value: string;

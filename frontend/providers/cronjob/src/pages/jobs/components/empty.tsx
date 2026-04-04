@@ -5,7 +5,7 @@ import styles from './empty.module.scss';
 import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
 import useEnvStore from '@/store/env';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 
 const Empty = () => {
   const { t } = useTranslation();

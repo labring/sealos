@@ -45,7 +45,7 @@ import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
 import { lauchpadRemarkKey } from '@/constants/account';
 import { getInitData } from '@/api/platform';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 

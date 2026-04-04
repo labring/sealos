@@ -5,12 +5,12 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@sealos/shadcn-ui/tooltip';
-import { Progress } from '@sealos/shadcn-ui/progress';
-import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
+} from '@labring/sealos-shadcn-ui/tooltip';
+import { Progress } from '@labring/sealos-shadcn-ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@labring/sealos-shadcn-ui/card';
 import { Cpu, MemoryStick, HardDrive, CircuitBoard, HdmiPort, ArrowUpDown } from 'lucide-react';
 
-import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
+import { useUserQuota, resourcePropertyMap } from '@labring/sealos-shared-sdk';
 
 const iconMap: Record<string, React.ReactNode> = {
   cpu: <Cpu className="h-5 w-5" />,

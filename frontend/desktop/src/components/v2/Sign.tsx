@@ -8,7 +8,7 @@ import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { OauthProvider } from '@/types/user';
 import Link from 'next/link';
-import { WechatIcon } from '@sealos/ui';
+import { WechatIcon } from '@labring/sealos-ui';
 import { gtmLoginStart } from '@/utils/gtm';
 import UsernamePasswordSignin from './UsernamePasswordSignin';
 import { EmailSigninForm } from './EmailSigninForm';

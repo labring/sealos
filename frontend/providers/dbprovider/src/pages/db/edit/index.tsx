@@ -24,8 +24,8 @@ import {
   ModalFooter,
   Button
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { track } from '@sealos/gtm';
+import { useMessage } from '@labring/sealos-ui';
+import { track } from '@labring/sealos-gtm-sdk';
 import { useQuery } from '@tanstack/react-query';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
@@ -43,7 +43,7 @@ import { getDBSecret } from '@/api/db';
 import type { BackupItemType } from '@/types/db';
 import { getBackups, deleteBackup } from '@/api/backup';
 import StopBackupModal from '../detail/components/StopBackupModal';
-import { resourcePropertyMap, useUserQuota, useQuotaGuarded } from '@sealos/shared';
+import { resourcePropertyMap, useUserQuota, useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { distributeResources } from '@/utils/database';
 import MyIcon from '@/components/Icon';
 import useEnvStore from '@/store/env';

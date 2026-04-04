@@ -12,7 +12,7 @@ import { KBDevboxTypeV2 } from '@/types/k8s';
 import { devboxDB } from '@/services/db/init';
 import { calculateUptime, parseTemplateConfig } from '@/utils/tools';
 import { UpdateDevboxRequestSchema, DeleteDevboxRequestSchema, nanoid } from './schema';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 //need really realtime use force-dynamic
 export const dynamic = 'force-dynamic';

@@ -1,5 +1,11 @@
 import React from 'react';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@sealos/shadcn-ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableRow
+} from '@labring/sealos-shadcn-ui/table';
 import Image from 'next/image';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';

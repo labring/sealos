@@ -1,5 +1,5 @@
-import { Button, cn } from '@sealos/shadcn-ui';
-import { Badge } from '@sealos/shadcn-ui/badge';
+import { Button, cn } from '@labring/sealos-shadcn-ui';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
 import { CircleCheck } from 'lucide-react';
 import { SubscriptionPlan } from '@/types/plan';
 import usePlanStore from '@/stores/plan';

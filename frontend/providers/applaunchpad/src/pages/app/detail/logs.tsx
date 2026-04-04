@@ -16,7 +16,7 @@ import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
 import { downLoadBold, formatTime } from '@/utils/tools';
 import { useLogStore } from '@/store/logStore';
 import { useRouter } from 'next/router';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 
 export interface JsonFilterItem {
   key: string;

@@ -7,8 +7,8 @@ import { useFormContext } from 'react-hook-form';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { useEnvStore } from '@/stores/env';
 
-import { Label } from '@sealos/shadcn-ui/label';
-import { Slider } from '@sealos/shadcn-ui/slider';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Slider } from '@labring/sealos-shadcn-ui/slider';
 
 export default function Memory() {
   const t = useTranslations();
@@ -27,8 +27,8 @@ export default function Memory() {
     }
 
     try {
-      const memoryList = env.memorySlideMarkList.split(',').map(v => Number(v.trim()));
-      return memoryList.map(memory => ({ label: String(memory), value: memory * 1024 }));
+      const memoryList = env.memorySlideMarkList.split(',').map((v) => Number(v.trim()));
+      return memoryList.map((memory) => ({ label: String(memory), value: memory * 1024 }));
     } catch (error) {
       console.error('Failed to parse memory list from env:', error);
       return [

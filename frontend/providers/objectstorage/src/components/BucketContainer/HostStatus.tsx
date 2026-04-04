@@ -13,17 +13,17 @@ import {
   Text
 } from '@chakra-ui/react';
 import MoreIcon from '@/components/Icons/MoreIcon';
-import { WebHostIcon } from '@sealos/ui';
+import { WebHostIcon } from '@labring/sealos-ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useOssStore } from '@/store/ossStore';
 import { closeHost, getHostStatus, openHost, checkPermission } from '@/api/bucket';
 import { useMemo, useState } from 'react';
 import { isArray } from 'lodash';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { useToast } from '@/hooks/useToast';
 import useSessionStore from '@/store/session';
 import useEnvStore from '@/store/env';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { ResponseCode } from '@/types/response';
 import ErrorModal from '../ErrorModal';
 

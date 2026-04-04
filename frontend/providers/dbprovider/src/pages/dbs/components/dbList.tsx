@@ -29,8 +29,8 @@ import {
   useTheme,
   Badge
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { track } from '@sealos/gtm';
+import { useMessage } from '@labring/sealos-ui';
+import { track } from '@labring/sealos-gtm-sdk';
 import {
   ColumnDef,
   FilterFn,
@@ -53,7 +53,7 @@ import { generateLoginUrl } from '@/services/chat2db/user';
 import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
 import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 import {
   Modal,
@@ -67,7 +67,7 @@ import {
   ModalFooter
 } from '@chakra-ui/react';
 import { setDBRemark } from '@/api/db';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));

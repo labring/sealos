@@ -21,21 +21,21 @@ import type { AppContext, AppInitialProps, AppProps } from 'next/app';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress';
 import { useEffect, useState, useCallback } from 'react';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 import 'react-day-picker/dist/style.css';
 import '@/styles/tailwind.css';
 import 'nprogress/nprogress.css';
-import '@sealos/driver/src/driver.css';
+import '@labring/sealos-driver-sdk/src/driver.css';
 import Head from 'next/head';
 import App from 'next/app';
 const fs = require('fs');
 import * as yaml from 'js-yaml';
 import type { AppConfigType } from '@/types';
 import Script from 'next/script';
-import { GTMScript } from '@sealos/gtm';
-import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
-import { QuotaGuardProvider } from '@sealos/shared';
+import { GTMScript } from '@labring/sealos-gtm-sdk';
+import { InsufficientQuotaDialog, type SupportedLang } from '@labring/sealos-shared-sdk/shadcn';
+import { QuotaGuardProvider } from '@labring/sealos-shared-sdk';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());

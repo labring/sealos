@@ -20,7 +20,7 @@ import {
   ModalHeader,
   ModalOverlay
 } from '@chakra-ui/react';
-import { RangeInput, useMessage } from '@sealos/ui';
+import { RangeInput, useMessage } from '@labring/sealos-ui';
 import { useMutation } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';

@@ -1,5 +1,5 @@
 import useSessionStore from '@/store/session';
-import { SessionV1 } from 'sealos-desktop-sdk/*';
+import { SessionV1 } from '@labring/sealos-desktop-sdk/*';
 
 // edge
 export const getUserKubeConfig = () => {

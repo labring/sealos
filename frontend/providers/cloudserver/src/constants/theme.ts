@@ -1,5 +1,5 @@
 import { extendTheme } from '@chakra-ui/react';
-import { theme as sealosTheme } from '@sealos/ui';
+import { theme as sealosTheme } from '@labring/sealos-ui';
 
 export const theme = extendTheme(sealosTheme, {
   styles: {

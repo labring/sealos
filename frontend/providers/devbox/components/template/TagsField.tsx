@@ -5,10 +5,21 @@ import { useQuery } from '@tanstack/react-query';
 import { listTag } from '@/api/template';
 import { Tag, TagType } from '@/prisma/generated/client';
 
-import { Checkbox } from '@sealos/shadcn-ui/checkbox';
-import { Separator } from '@sealos/shadcn-ui/separator';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@sealos/shadcn-ui/form';
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@sealos/shadcn-ui/select';
+import { Checkbox } from '@labring/sealos-shadcn-ui/checkbox';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@labring/sealos-shadcn-ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectTrigger,
+  SelectValue
+} from '@labring/sealos-shadcn-ui/select';
 
 interface TagsFieldProps {
   form: UseFormReturn<any>;

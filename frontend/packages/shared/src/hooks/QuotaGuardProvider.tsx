@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useMemo } from 'react';
-import type { SessionV1 } from 'sealos-desktop-sdk';
-import type { sealosApp as defaultSealosApp } from 'sealos-desktop-sdk/app';
+import type { SessionV1 } from '@labring/sealos-desktop-sdk';
+import type { sealosApp as defaultSealosApp } from '@labring/sealos-desktop-sdk/app';
 
 export type UseQuotaGuardedConfig = {
   getSession: () => SessionV1 | null;

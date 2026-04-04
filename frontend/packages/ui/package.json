@@ -1,5 +1,9 @@
 {
-  "name": "@sealos/ui",
+  "name": "@labring/sealos-ui",
+  "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "1.0.0",
   "description": "",
   "main": "./src/index.ts",
