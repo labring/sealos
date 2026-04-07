@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useRouter } from '@/i18n';
@@ -56,6 +57,7 @@ const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemp
   type FormData = z.infer<typeof formSchema>;
 
   const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       version: '',
@@ -74,18 +76,12 @@ const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemp
 
   const onSubmit = async (data: FormData) => {
     try {
-      const result = formSchema.safeParse(data);
-      if (!result.success) {
-        toast.error(result.error.issues[0]?.message || t('create_failed'));
-        return;
-      }
-
       await mutation.mutateAsync({
-        templateRepositoryName: result.data.name,
-        version: result.data.version,
-        isPublic: result.data.isPublic,
-        description: result.data.description,
-        tagUidList: result.data.tags.map((tag) => tag.value),
+        templateRepositoryName: data.name,
+        version: data.version,
+        isPublic: data.isPublic,
+        description: data.description,
+        tagUidList: data.tags.map((tag) => tag.value),
         devboxReleaseName
       });
 

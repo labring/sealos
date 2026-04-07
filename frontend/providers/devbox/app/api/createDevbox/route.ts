@@ -13,7 +13,6 @@ import {
 } from '@/utils/json2Yaml';
 import { RequestSchema } from './schema';
 import { KBDevboxTypeV2 } from '@/types/k8s';
-import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,22 +57,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const config = Config();
+    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT, NFS_STORAGE_CLASS_NAME } =
+      process.env;
 
     // Create PVC first (if volumes exist)
-    const pvc = json2PVC(devboxForm, config.devbox.resources.storageClassNfs);
+    const pvc = json2PVC(devboxForm, NFS_STORAGE_CLASS_NAME || 'nfs-csi');
 
     // Create ConfigMap (if configMaps exist)
     const configMap = json2ConfigMap(devboxForm);
 
     // Create Devbox, Service, and Ingress
-    const devbox = json2Devbox(
-      devboxForm,
-      String(config.devbox.features.affinityScheduling),
-      config.devbox.resources.storageLimit
-    );
+    const devbox = json2Devbox(devboxForm, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT);
     const service = json2Service(devboxForm);
-    const ingress = json2Ingress(devboxForm, config.devbox.userDomain.secretName);
+    const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string);
 
     // Apply all YAMLs in order: PVC -> ConfigMap -> Devbox -> Service -> Ingress
     const yamlList = [pvc, configMap, devbox, service, ingress].filter((yaml) => yaml !== '');

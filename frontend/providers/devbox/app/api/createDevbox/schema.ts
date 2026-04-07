@@ -1,7 +1,6 @@
 import 'zod-openapi/extend';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
-import { Config } from '@/config';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const GpuSchema = z
@@ -36,9 +35,13 @@ const NetworkSchema = (devboxName: string) =>
     openPublicDomain: z.boolean().default(true).openapi({
       description: 'Open public domain'
     }),
-    publicDomain: z.string().optional().default('').openapi({
-      description: 'Public domain, no need to fill in'
-    }),
+    publicDomain: z
+      .string()
+      .optional()
+      .default(`${nanoid()}.${process.env.INGRESS_DOMAIN}`)
+      .openapi({
+        description: 'Public domain, no need to fill in'
+      }),
     customDomain: z.string().optional().default('').openapi({
       description: 'Custom domain, no need to fill in'
     })
@@ -144,19 +147,9 @@ export const RequestSchema = z
     }
   )
   .transform((data) => {
-    const defaultPublicDomain = `${nanoid()}.${Config().devbox.userDomain.domain}`;
     return {
       ...data,
-      networks: data.networks.map((network: any) => {
-        const parsedNetwork = NetworkSchema(data.name).parse(network);
-        if (!parsedNetwork.publicDomain) {
-          return {
-            ...parsedNetwork,
-            publicDomain: defaultPublicDomain
-          };
-        }
-        return parsedNetwork;
-      })
+      networks: data.networks.map((network: any) => NetworkSchema(data.name).parse(network))
     };
   });
 

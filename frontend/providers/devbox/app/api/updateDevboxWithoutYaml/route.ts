@@ -9,25 +9,23 @@ import { getK8s } from '@/services/backend/kubernetes';
 import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
 import { generateYamlList } from '@/utils/json2Yaml';
 import { patchYamlList } from '@/utils/tools';
-import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const config = Config();
     const { oldFormData, newFormData } = (await req.json()) as {
       oldFormData: DevboxEditTypeV2;
       newFormData: DevboxEditTypeV2;
     };
 
     const newYamlList = generateYamlList(newFormData, {
-      devboxAffinityEnable: String(config.devbox.features.affinityScheduling),
-      ingressSecret: config.devbox.userDomain.secretName
+      devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE!,
+      ingressSecret: process.env.INGRESS_SECRET!
     });
     const oldYamlList = generateYamlList(oldFormData, {
-      devboxAffinityEnable: String(config.devbox.features.affinityScheduling),
-      ingressSecret: config.devbox.userDomain.secretName
+      devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE!,
+      ingressSecret: process.env.INGRESS_SECRET!
     });
 
     const parsedNewYamlList = newYamlList.map((item) => item.value);

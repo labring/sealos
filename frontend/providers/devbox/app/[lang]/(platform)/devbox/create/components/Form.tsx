@@ -22,7 +22,7 @@ import AdvancedConfig from './AdvancedConfig';
 import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { useEnvStore } from '@/stores/env';
 
 interface FormProps {
   isEdit: boolean;
@@ -35,9 +35,10 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
   const searchParams = useSearchParams();
   const t = useTranslations();
   const { watch } = useFormContext<DevboxEditTypeV2>();
-  const appConfig = useClientAppConfig();
+  const { env } = useEnvStore();
 
   const formValues = watch();
+  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
   const requirements = useMemo(() => {
     const currentGpuAmount = formValues.gpu?.amount || 0;
     const oldGpuAmount = oldDevboxData?.gpu?.amount || 0;
@@ -213,7 +214,7 @@ const Form = ({ isEdit, countGpuInventory, oldDevboxData }: FormProps) => {
         </div>
 
         {/* Advanced Configurations */}
-        {appConfig.devbox.features.advancedSettings && <AdvancedConfig />}
+        {showAdvancedConfig && <AdvancedConfig />}
       </div>
     </div>
   );

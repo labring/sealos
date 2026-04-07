@@ -1,3 +1,1 @@
-import { Config } from '@/config';
-
-export const getRegionUid = () => Config().cloud.regionUid;
+export const getRegionUid = () => process.env.REGION_UID || '';

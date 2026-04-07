@@ -4,11 +4,11 @@ import { Copy, Download, Settings } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { cn } from '@sealos/shadcn-ui';
+import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
 import { useDevboxStore } from '@/stores/devbox';
 import { getTemplateConfig } from '@/api/template';
 import { downLoadBlob, parseTemplateConfig, useCopyData } from '@/utils/tools';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import GPUItem from '@/components/GPUItem';
 import { Button } from '@sealos/shadcn-ui/button';
@@ -21,7 +21,7 @@ const Basic = () => {
   const t = useTranslations();
   const { copyData } = useCopyData();
 
-  const appConfig = useClientAppConfig();
+  const { env } = useEnvStore();
   const { sourcePrice } = usePriceStore();
   const { devboxDetail } = useDevboxStore();
 
@@ -41,9 +41,9 @@ const Basic = () => {
       userName: devboxDetail?.sshConfig?.sshUser as string,
       token: devboxDetail?.sshConfig?.token as string,
       workingDir: config.workingDir,
-      host: appConfig.devbox.runtime.sshDomain,
+      host: env.sshDomain,
       port: devboxDetail?.sshPort.toString(),
-      configHost: `${appConfig.devbox.runtime.sshDomain}_${appConfig.devbox.runtime.defaultNamespace}_${devboxDetail?.name}`
+      configHost: `${env.sshDomain}_${env.namespace}_${devboxDetail?.name}`
     });
 
     setOnOpenSsHConnect(true);
@@ -52,8 +52,8 @@ const Basic = () => {
     devboxDetail?.templateUid,
     devboxDetail?.sshPort,
     devboxDetail?.templateRepositoryName,
-    appConfig.devbox.runtime.sshDomain,
-    appConfig.devbox.runtime.defaultNamespace,
+    env.sshDomain,
+    env.namespace,
     devboxDetail?.sshConfig?.sshUser,
     devboxDetail?.sshConfig?.sshPrivateKey,
     devboxDetail?.sshConfig?.token
@@ -61,13 +61,13 @@ const Basic = () => {
 
   const sshConnectCommand = useMemo(
     () =>
-      `ssh -i ${appConfig.devbox.runtime.sshDomain}_${appConfig.devbox.runtime.defaultNamespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${appConfig.devbox.runtime.sshDomain} -p ${devboxDetail?.sshPort}`,
+      `ssh -i ${env.sshDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sshDomain} -p ${devboxDetail?.sshPort}`,
     [
       devboxDetail?.name,
       devboxDetail?.sshConfig?.sshUser,
       devboxDetail?.sshPort,
-      appConfig.devbox.runtime.sshDomain,
-      appConfig.devbox.runtime.defaultNamespace
+      env.sshDomain,
+      env.namespace
     ]
   );
 
@@ -78,7 +78,7 @@ const Basic = () => {
         items: [
           {
             title: t('image_info'),
-            value: `${appConfig.devbox.runtime.registryHost}/${appConfig.devbox.runtime.defaultNamespace}/${devboxDetail?.name}`
+            value: `${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`
           }
         ]
       },
@@ -115,8 +115,8 @@ const Basic = () => {
     devboxDetail?.memory,
     devboxDetail?.gpu,
     devboxDetail?.name,
-    appConfig.devbox.runtime.registryHost,
-    appConfig.devbox.runtime.defaultNamespace,
+    env.registryAddr,
+    env.namespace,
     sourcePrice?.gpu,
     t
   ]);
@@ -180,7 +180,7 @@ const Basic = () => {
                   downLoadBlob(
                     devboxDetail?.sshConfig?.sshPrivateKey as string,
                     'application/octet-stream',
-                    `${appConfig.devbox.runtime.sshDomain}_${appConfig.devbox.runtime.defaultNamespace}_${devboxDetail?.name}`
+                    `${env.sshDomain}_${env.namespace}_${devboxDetail?.name}`
                   )
                 }
               >

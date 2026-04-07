@@ -2,7 +2,6 @@ import type { NextRequest } from 'next/server';
 import { customAlphabet } from 'nanoid';
 import crypto from 'crypto';
 import { jsonRes } from '@/services/backend/response';
-import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,10 +105,12 @@ export async function POST(request: NextRequest) {
       }
 
       // Verify the signature using the same format as the challenge endpoint
+      const secret =
+        process.env.DEVBOX_DOMAIN_CHALLENGE_SECRET || 'default-dev-secret-change-in-production';
 
       const signatureData = `${challengeData.host}:${challengeData.token}:${challengeData.timestamp}:${challengeData.service}:${challengeData.isProxy}`;
       const expectedSignature = crypto
-        .createHmac('sha256', Config().devbox.security.domainChallengeSecret)
+        .createHmac('sha256', secret)
         .update(signatureData)
         .digest('hex');
 

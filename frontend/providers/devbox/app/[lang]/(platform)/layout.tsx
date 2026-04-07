@@ -10,7 +10,7 @@ import { useLocale } from 'next-intl';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 
 import { initUser } from '@/api/template';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { useEnvStore } from '@/stores/env';
 import { useUserStore } from '@/stores/user';
 import { useConfirm } from '@/hooks/useConfirm';
 import { usePriceStore } from '@/stores/price';
@@ -33,7 +33,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   });
   const queryClient = useQueryClient();
 
-  const appConfig = useClientAppConfig();
+  const { setEnv, env } = useEnvStore();
   const { loadUserDebt, setSession } = useUserStore();
   const { setSourcePrice } = usePriceStore();
   const { setScreenWidth, setLastRoute, setInitialized } = useGlobalStore();
@@ -61,15 +61,13 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
           setInit(true);
           setInitialized(true);
         }
-        queryClient.removeQueries({
-          predicate: (query) => query.queryKey[0] !== 'client-app-config'
-        });
+        queryClient.clear();
       } catch (err) {
         console.log('devbox: app is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           cleanSession();
           openConfirm(() => {
-            window.open(`https://${appConfig.cloud.domain}`, '_self');
+            window.open(`https://${env.sealosDomain}`, '_self');
           })();
         }
       }
@@ -82,6 +80,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     if (!init) return;
     setSourcePrice();
     loadUserDebt();
+    setEnv();
     const changeI18n = async (data: any) => {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;

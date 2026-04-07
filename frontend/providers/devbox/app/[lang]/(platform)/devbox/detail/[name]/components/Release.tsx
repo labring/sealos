@@ -16,6 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { useEnvStore } from '@/stores/env';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
@@ -53,7 +54,6 @@ import CreateTemplateDrawer from '@/components/drawers/CreateTemplateDrawer';
 import CreateOrUpdateDrawer from '@/components/drawers/CreateOrUpdateDrawer';
 import UpdateTemplateDrawer from '@/components/drawers/UpdateTemplateDrawer';
 import DeployDevboxDrawer from '@/components/drawers/DeployDevboxDrawer';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -63,7 +63,7 @@ const Release = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenEdit, setIsOpenEdit] = useState(false);
 
-  const appConfig = useClientAppConfig();
+  const { env } = useEnvStore();
   const { devboxDetail: devbox, devboxVersionList, setDevboxVersionList } = useDevboxStore();
 
   const [initialized, setInitialized] = useState(false);
@@ -125,17 +125,17 @@ const Release = () => {
       const releaseCommand = config.releaseCommand.join(' ');
       const { cpu, memory, networks, name, gpu, configMaps, volumes, envs } = devbox;
       const newNetworks = networks
-        .filter((network) => network.port !== appConfig.devbox.runtime.webidePort)
+        .filter((network) => network.port !== env.webIdePort)
         .map((network) => {
           return {
             port: network.port,
             appProtocol: network.protocol,
             protocol: 'TCP',
             openPublicDomain: network.openPublicDomain,
-            domain: appConfig.devbox.userDomain.domain
+            domain: env.ingressDomain
           };
         });
-      const imageName = `${appConfig.devbox.runtime.registryHost}/${appConfig.devbox.runtime.defaultNamespace}/${devbox.name}:${version.tag}`;
+      const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`;
 
       const transformData = {
         appName: `${name}-release-${nanoid()}`,
@@ -152,7 +152,7 @@ const Release = () => {
                   protocol: 'TCP',
                   appProtocol: 'HTTP',
                   openPublicDomain: false,
-                  domain: appConfig.devbox.userDomain.domain
+                  domain: env.ingressDomain
                 }
               ],
         runCMD: releaseCommand,
@@ -173,7 +173,7 @@ const Release = () => {
             path: vol.path,
             value: vol.size,
             storageType: 'remote',
-            storageClassName: appConfig.devbox.resources.storageClassNfs
+            storageClassName: env.nfsStorageClassName
           })) || [],
         envs:
           envs?.map((env) => ({
@@ -206,11 +206,11 @@ const Release = () => {
     },
     [
       devbox,
-      appConfig.devbox.userDomain.domain,
-      appConfig.devbox.runtime.defaultNamespace,
-      appConfig.devbox.runtime.registryHost,
-      appConfig.devbox.runtime.webidePort,
-      appConfig.devbox.resources.storageClassNfs
+      env.ingressDomain,
+      env.namespace,
+      env.registryAddr,
+      env.webIdePort,
+      env.nfsStorageClassName
     ]
   );
 

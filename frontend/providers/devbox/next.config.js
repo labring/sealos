@@ -29,7 +29,6 @@ const nextConfig = {
     '@sealos/shared'
   ],
   experimental: {
-    instrumentationHook: true,
     // this includes files from the monorepo base two directories up
     outputFileTracingRoot: path.join(__dirname, '../../')
   },

@@ -5,18 +5,18 @@ import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 
 import { DevboxEditTypeV2 } from '@/types/devbox';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { useEnvStore } from '@/stores/env';
 
 import { Label } from '@sealos/shadcn-ui/label';
 import { Slider } from '@sealos/shadcn-ui/slider';
 
 export default function Memory() {
   const t = useTranslations();
-  const appConfig = useClientAppConfig();
+  const { env } = useEnvStore();
   const { watch, setValue } = useFormContext<DevboxEditTypeV2>();
 
   const MemorySlideMarkList = useMemo(() => {
-    if (!appConfig.devbox.resources.memoryMarks.length) {
+    if (!env.memorySlideMarkList) {
       return [
         { label: '2', value: 2048 },
         { label: '4', value: 4096 },
@@ -27,10 +27,8 @@ export default function Memory() {
     }
 
     try {
-      return appConfig.devbox.resources.memoryMarks.map((memory) => ({
-        label: String(memory),
-        value: memory * 1024
-      }));
+      const memoryList = env.memorySlideMarkList.split(',').map((v) => Number(v.trim()));
+      return memoryList.map((memory) => ({ label: String(memory), value: memory * 1024 }));
     } catch (error) {
       console.error('Failed to parse memory list from env:', error);
       return [
@@ -41,7 +39,7 @@ export default function Memory() {
         { label: '32', value: 32768 }
       ];
     }
-  }, [appConfig.devbox.resources.memoryMarks]);
+  }, [env.memorySlideMarkList]);
 
   const currentValue = watch('memory');
   const currentIndex = MemorySlideMarkList.findIndex((item) => item.value === currentValue);

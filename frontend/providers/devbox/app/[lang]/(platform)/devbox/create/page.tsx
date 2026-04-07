@@ -18,6 +18,7 @@ import { createDevbox, updateDevbox } from '@/api/devbox';
 import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
 import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox';
 
+import { useEnvStore } from '@/stores/env';
 import { useIDEStore } from '@/stores/ide';
 import { usePriceStore } from '@/stores/price';
 import { useGuideStore } from '@/stores/guide';
@@ -25,7 +26,6 @@ import { useDevboxStore } from '@/stores/devbox';
 import { useQuotaGuarded } from '@sealos/shared';
 import { useDevboxOperation } from '@/hooks/useDevboxOperation';
 import ErrorModal from '@/components/ErrorModal';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import Form from './components/Form';
 import Yaml from './components/Yaml';
@@ -41,7 +41,7 @@ const DevboxCreatePage = () => {
   const searchParams = useSearchParams();
   const { executeOperation, errorModalState, closeErrorModal } = useDevboxOperation();
 
-  const appConfig = useClientAppConfig();
+  const { env } = useEnvStore();
   const { addDevboxIDE } = useIDEStore();
   const { setDevboxDetail, setStartedTemplate, startedTemplate } = useDevboxStore();
   const { sourcePrice, setSourcePrice } = usePriceStore();
@@ -115,24 +115,14 @@ const DevboxCreatePage = () => {
     [templateListQuery.data?.templateList]
   );
 
-  const yamlEnv = useMemo(
-    () => ({
-      devboxAffinityEnable: String(appConfig.devbox.features.affinityScheduling),
-      storageLimit: appConfig.devbox.resources.storageLimit,
-      ingressSecret: appConfig.devbox.userDomain.secretName,
-      nfsStorageClassName: appConfig.devbox.resources.storageClassNfs
-    }),
-    [appConfig]
-  );
-
-  const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, yamlEnv);
+  const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env);
 
   // update yamlList every time yamlList change
   const debouncedUpdateYaml = useMemo(
     () =>
-      debounce((data: DevboxEditTypeV2, yamlEnv) => {
+      debounce((data: DevboxEditTypeV2, env) => {
         try {
-          const newYamlList = generateYamlList(data, yamlEnv);
+          const newYamlList = generateYamlList(data, env);
           setYamlList(newYamlList);
         } catch (error) {
           console.error('Failed to generate yaml:', error);
@@ -153,14 +143,14 @@ const DevboxCreatePage = () => {
   useEffect(() => {
     const subscription = formHook.watch((value) => {
       if (value) {
-        debouncedUpdateYaml(value as DevboxEditTypeV2, yamlEnv);
+        debouncedUpdateYaml(value as DevboxEditTypeV2, env);
       }
     });
     return () => {
       subscription.unsubscribe();
       debouncedUpdateYaml.cancel();
     };
-  }, [debouncedUpdateYaml, yamlEnv, formHook]);
+  }, [debouncedUpdateYaml, env, formHook]);
 
   const { refetch: refetchPrice } = useQuery(['init-price'], setSourcePrice, {
     enabled: !!sourcePrice?.gpu,
@@ -175,7 +165,7 @@ const DevboxCreatePage = () => {
         return null;
       }
       setIsLoading(true);
-      return setDevboxDetail(devboxName, appConfig.cloud.domain);
+      return setDevboxDetail(devboxName, env.sealosDomain);
     },
     {
       onSuccess(res) {
@@ -183,8 +173,8 @@ const DevboxCreatePage = () => {
           return;
         }
         oldDevboxEditData.current = res;
-        formOldYamls.current = generateYamlList(res, yamlEnv);
-        crOldYamls.current = generateYamlList(res, yamlEnv) as DevboxKindsType[];
+        formOldYamls.current = generateYamlList(res, env);
+        crOldYamls.current = generateYamlList(res, env) as DevboxKindsType[];
         formHook.reset(res);
       },
       onError(err) {
@@ -216,7 +206,7 @@ const DevboxCreatePage = () => {
 
     // update
     if (isEdit) {
-      const yamlList = generateYamlList(formData, yamlEnv);
+      const yamlList = generateYamlList(formData, env);
       setYamlList(yamlList);
       const parsedNewYamlList = yamlList.map((item) => item.value);
       const parsedOldYamlList = formOldYamls.current.map((item) => item.value);

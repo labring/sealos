@@ -6,9 +6,9 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import { nanoid } from '@/utils/tools';
+import { useEnvStore } from '@/stores/env';
 import { ProtocolList } from '@/constants/devbox';
 import { DevboxEditTypeV2, ProtocolType } from '@/types/devbox';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import {
   Select,
@@ -34,7 +34,7 @@ export default function Network({
 }: React.HTMLAttributes<HTMLDivElement> & { isEdit: boolean }) {
   const { register, getValues, control } = useFormContext<DevboxEditTypeV2>();
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
-  const appConfig = useClientAppConfig();
+  const { env } = useEnvStore();
 
   const {
     fields: networks,
@@ -115,8 +115,7 @@ export default function Network({
           {/* Port List */}
           {networks.map((network, i) => {
             const isReservedPort =
-              appConfig.devbox.features.webide &&
-              network.port === appConfig.devbox.runtime.webidePort;
+              env.enableWebideFeature === 'true' && network.port === env.webIdePort;
             return (
               <div key={network.id} className="flex w-full flex-col gap-3">
                 <div className="guide-network-configuration flex w-full items-center gap-4">
@@ -155,10 +154,8 @@ export default function Network({
                               return !isDuplicate || t('The port number cannot be repeated');
                             },
                             reservedPort: (value) => {
-                              if (value === appConfig.devbox.runtime.webidePort) {
-                                return t('port_reserved', {
-                                  port: appConfig.devbox.runtime.webidePort
-                                });
+                              if (value === env.webIdePort) {
+                                return t('port_reserved', { port: env.webIdePort });
                               }
                               return true;
                             }
@@ -190,8 +187,7 @@ export default function Network({
                                 protocol: network.protocol || ('HTTP' as ProtocolType),
                                 openPublicDomain: checked,
                                 publicDomain:
-                                  network.publicDomain ||
-                                  `${nanoid()}.${appConfig.devbox.userDomain.domain}`
+                                  network.publicDomain || `${nanoid()}.${env.ingressDomain}`
                               });
                             }}
                           />

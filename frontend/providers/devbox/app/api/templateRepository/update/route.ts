@@ -6,14 +6,13 @@ import { getRegionUid } from '@/utils/env';
 import { updateTemplateRepositorySchema } from '@/utils/validate';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { Config } from '@/config';
 export async function POST(req: NextRequest) {
   try {
     const headerList = req.headers;
     const queryRaw = await req.json();
-    const imageHub = Config().devbox.runtime.registryHost;
+    const imageHub = process.env.REGISTRY_ADDR;
     if (!imageHub) {
-      console.log('devbox.runtime.registryHost is not set');
+      console.log('IMAGE_HUB is not set');
       return jsonRes({
         code: 500
       });

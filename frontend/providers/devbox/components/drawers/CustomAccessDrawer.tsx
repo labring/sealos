@@ -15,7 +15,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 
 import { postAuthCname, postAuthDomainChallenge } from '@/api/platform';
 import { useRequest } from '@/hooks/useRequest';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { useEnvStore } from '@/stores/env';
 
 export type CustomAccessDrawerParams = {
   publicDomain: string;
@@ -30,7 +30,7 @@ const CustomAccessDrawer = ({
 }: CustomAccessDrawerParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
   const ref = useRef<HTMLInputElement>(null);
   const t = useTranslations();
-  const appConfig = useClientAppConfig();
+  const { env } = useEnvStore();
 
   const { mutate: authDomain, isLoading } = useRequest({
     mutationFn: async () => {
@@ -39,10 +39,7 @@ const CustomAccessDrawer = ({
         return '';
       }
 
-      if (
-        val.endsWith(`.${appConfig.devbox.userDomain.domain}`) ||
-        val.endsWith(`.${appConfig.cloud.domain}`)
-      ) {
+      if (val.endsWith(`.${env.ingressDomain}`) || val.endsWith(`.${env.sealosDomain}`)) {
         toast.error(t('cannot_use_internal_domain'));
         throw new Error('Cannot use internal domain');
       }

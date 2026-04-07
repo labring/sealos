@@ -7,7 +7,6 @@ import { KBDevboxReleaseType } from '@/types/k8s';
 import { json2DevboxRelease } from '@/utils/json2Yaml';
 import { adaptDevboxVersionListItem } from '@/utils/adapt';
 import { RequestSchema } from './schema';
-import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,11 +42,11 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
       return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
     });
 
-    const registryHost = Config().devbox.runtime.registryHost;
+    const { REGISTRY_ADDR } = process.env;
 
     const versionsWithImage = adaptedVersions.map((version) => ({
       ...version,
-      image: `${registryHost}/${namespace}/${version.devboxName}:${version.tag}`
+      image: `${REGISTRY_ADDR}/${namespace}/${version.devboxName}:${version.tag}`
     }));
 
     return jsonRes({ data: versionsWithImage });
@@ -134,7 +133,9 @@ export async function POST(req: NextRequest, { params }: { params: { name: strin
     });
     await applyYamlList([devboxYaml], 'create');
 
-    const imageName = `${Config().devbox.runtime.registryHost}/${namespace}/${devboxName}:${releaseForm.tag}`;
+    const { REGISTRY_ADDR } = process.env;
+
+    const imageName = `${REGISTRY_ADDR}/${namespace}/${devboxName}:${releaseForm.tag}`;
 
     return jsonRes({
       data: {

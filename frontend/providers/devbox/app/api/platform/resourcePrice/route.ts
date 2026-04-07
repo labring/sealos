@@ -4,7 +4,6 @@ import { CoreV1Api } from '@kubernetes/client-node';
 import { jsonRes } from '@/services/backend/response';
 import { userPriceType } from '@/types/user';
 import { K8sApiDefault } from '@/services/backend/kubernetes';
-import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,16 +48,14 @@ const valuationMap: Record<string, number> = {
 
 export async function GET(req: NextRequest) {
   try {
-    const config = Config();
+    const { ACCOUNT_URL, SEALOS_DOMAIN, GPU_ENABLE } = process.env;
+    const baseUrl = ACCOUNT_URL ? ACCOUNT_URL : `https://account-api.${SEALOS_DOMAIN}`;
 
     const getResourcePrice = async () => {
       try {
-        const res = await fetch(
-          `${config.devbox.components.billing.url}/account/v1alpha1/properties`,
-          {
-            method: 'POST'
-          }
-        );
+        const res = await fetch(`${baseUrl}/account/v1alpha1/properties`, {
+          method: 'POST'
+        });
 
         const data: ResourcePriceType = await res.clone().json();
 
@@ -70,13 +67,13 @@ export async function GET(req: NextRequest) {
 
     const [priceResponse, gpuNodes] = await Promise.all([
       getResourcePrice() as Promise<ResourcePriceType['data']['properties']>,
-      config.devbox.features.gpu ? getGpuNode() : Promise.resolve([])
+      GPU_ENABLE === 'true' ? getGpuNode() : Promise.resolve([])
     ]);
 
     const data: userPriceType = {
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
-      gpu: config.devbox.features.gpu ? countGpuSource(priceResponse, gpuNodes) : undefined
+      gpu: GPU_ENABLE === 'true' ? countGpuSource(priceResponse, gpuNodes) : undefined
     };
 
     return jsonRes({

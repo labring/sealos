@@ -14,13 +14,11 @@ import {
 import { json2DevboxRelease } from '@/utils/json2Yaml';
 import { ReleaseAndDeployDevboxRequestSchema } from './schema';
 import { z } from 'zod';
-import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const config = Config();
     const body = await req.json();
     const validatedBody = ReleaseAndDeployDevboxRequestSchema.parse(body);
     const { devboxName, tag, releaseDes, devboxUid, cpu = 200, memory = 128 } = validatedBody;
@@ -222,14 +220,14 @@ export async function POST(req: NextRequest) {
           openPublicDomain: !!ingressInfo?.openPublicDomain,
           publicDomain: ingressInfo?.publicDomain || `${devboxName}-${nanoid()}`,
           customDomain: ingressInfo?.customDomain || '',
-          domain: config.devbox.userDomain.domain,
+          domain: process.env.INGRESS_DOMAIN || '',
           appProtocol: 'HTTP'
         };
       }) || [];
 
     // 6. deploy app
     const appName = `${devboxName}-release-${nanoid()}`;
-    const image = `${config.devbox.runtime.registryHost}/${namespace}/${devboxName}:${tag}`;
+    const image = `${process.env.REGISTRY_ADDR}/${namespace}/${devboxName}:${tag}`;
 
     const formData = {
       appForm: {
@@ -255,7 +253,7 @@ export async function POST(req: NextRequest) {
                   publicDomain: '',
                   openPublicDomain: true,
                   customDomain: '',
-                  domain: config.devbox.userDomain.domain,
+                  domain: process.env.INGRESS_DOMAIN || '',
                   appProtocol: 'HTTP'
                 }
               ],
@@ -280,7 +278,7 @@ export async function POST(req: NextRequest) {
     };
 
     const fetchResponse = await fetch(
-      config.devbox.components.appLaunchpad.url + '/api/v1alpha/createApp',
+      `https://applaunchpad.${process.env.SEALOS_DOMAIN}/api/v1alpha/createApp`,
       {
         method: 'POST',
         headers: {

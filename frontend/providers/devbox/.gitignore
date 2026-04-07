@@ -37,5 +37,4 @@ next-env.d.ts
 
 prisma/generated
 
-data/*
-!data/config.example.yaml
+!.env.template

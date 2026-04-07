@@ -1,31 +1,14 @@
 import { McpHandler } from 'sealos-mcp-sdk';
 import path from 'path';
-import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
-let cachedHandler: ReturnType<typeof McpHandler> | null = null;
+const region = process.env.FORCED_LANGUAGE || 'en';
+const fileName = region === 'en' ? 'devbox.json' : 'devbox-zh.json';
 
-function getHandler() {
-  if (cachedHandler) return cachedHandler;
+const handler = McpHandler(
+  path.join(process.cwd(), 'public', fileName),
+  'http://devbox-frontend.devbox-frontend.svc.cluster.local:3000'
+);
 
-  const region = Config().devbox.mcp.forcedLanguage || 'en';
-  const fileName = region === 'en' ? 'devbox.json' : 'devbox-zh.json';
-  cachedHandler = McpHandler(
-    path.join(process.cwd(), 'public', fileName),
-    'http://devbox-frontend.devbox-frontend.svc.cluster.local:3000'
-  );
-  return cachedHandler;
-}
-
-export async function GET(request: Request) {
-  return getHandler()(request);
-}
-
-export async function POST(request: Request) {
-  return getHandler()(request);
-}
-
-export async function DELETE(request: Request) {
-  return getHandler()(request);
-}
+export { handler as GET, handler as POST, handler as DELETE };

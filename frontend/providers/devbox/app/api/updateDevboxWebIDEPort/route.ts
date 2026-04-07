@@ -8,7 +8,6 @@ import { RequestSchema } from './schema';
 import { devboxKey } from '@/constants/devbox';
 import { PatchUtils, V1Ingress } from '@kubernetes/client-node';
 import { nanoid, str2Num } from '@/utils/tools';
-import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +31,15 @@ export async function POST(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     });
 
+    const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
+
+    if (!INGRESS_SECRET || !INGRESS_DOMAIN) {
+      return jsonRes({
+        code: 500,
+        message: 'INGRESS_SECRET or INGRESS_DOMAIN is not configured'
+      });
+    }
+
     const label = `${devboxKey}=${devboxName}`;
     const existingIngressesResponse = await k8sNetworkingApp
       .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
@@ -47,7 +55,7 @@ export async function POST(req: NextRequest) {
     );
 
     const networkName = existingIngress?.metadata?.name || `${devboxName}-${nanoid()}`;
-    const publicDomain = `${nanoid()}.${Config().devbox.userDomain.domain}`;
+    const publicDomain = `${nanoid()}.${INGRESS_DOMAIN}`;
     const portName = `webide-${port}`;
 
     const network = {
@@ -158,10 +166,7 @@ export async function POST(req: NextRequest) {
       { headers: { 'Content-Type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
     );
 
-    const ingressYaml = json2Ingress(
-      { name: devboxName, networks: [network] },
-      Config().devbox.userDomain.secretName
-    );
+    const ingressYaml = json2Ingress({ name: devboxName, networks: [network] }, INGRESS_SECRET);
     if (ingressYaml) {
       await applyYamlList([ingressYaml], existingIngress ? 'replace' : 'create');
     }

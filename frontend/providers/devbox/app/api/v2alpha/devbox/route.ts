@@ -12,7 +12,6 @@ import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
 import { parseTemplateConfig } from '@/utils/tools';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
-import { Config } from '@/config';
 import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
 
 export const dynamic = 'force-dynamic';
@@ -313,12 +312,11 @@ async function createPortsAndNetworks(
     return [];
   }
 
+  const { INGRESS_SECRET, INGRESS_DOMAIN } = process.env;
   const serviceManager = new ServiceManager(k8sCore, namespace, applyYamlList);
-  const ingressManager = new IngressManager(
-    applyYamlList,
-    Config().devbox.userDomain.secretName,
-    Config().devbox.userDomain.domain
-  );
+  const ingressManager = INGRESS_SECRET
+    ? new IngressManager(applyYamlList, INGRESS_SECRET, INGRESS_DOMAIN!)
+    : null;
 
   try {
     await serviceManager.ensureServiceWithPorts(devboxName, ports);
@@ -554,7 +552,7 @@ export async function POST(req: NextRequest) {
     }
 
     const resourceConfig = convertResourceConfig(devboxForm.quota);
-    const config = Config();
+    const { DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT } = process.env;
     const devbox = json2Devbox(
       {
         ...devboxForm,
@@ -565,8 +563,8 @@ export async function POST(req: NextRequest) {
         networks: [],
         env: devboxForm.env || []
       },
-      String(config.devbox.features.affinityScheduling),
-      config.devbox.resources.storageLimit
+      DEVBOX_AFFINITY_ENABLE,
+      STORAGE_LIMIT
     );
 
     await Promise.all([

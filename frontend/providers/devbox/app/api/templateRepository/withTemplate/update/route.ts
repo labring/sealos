@@ -4,13 +4,12 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
 import { ERROR_ENUM } from '@/services/error';
-import { getRetagSvcClient } from '@/services/retag';
+import { retagSvcClient } from '@/services/retag';
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import { getRegionUid } from '@/utils/env';
 import { updateTemplateSchema } from '@/utils/validate';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { Config } from '@/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +17,9 @@ export async function POST(req: NextRequest) {
   try {
     const headerList = req.headers;
     const queryRaw = await req.json();
-    const imageHub = Config().devbox.runtime.registryHost;
+    const imageHub = process.env.REGISTRY_ADDR;
     if (!imageHub) {
-      console.log('devbox.runtime.registryHost is not set');
+      console.log('REGISTRY_ADDR is not set');
       return jsonRes({
         code: 500
       });
@@ -107,7 +106,7 @@ export async function POST(req: NextRequest) {
       original: originalImage,
       target: tagretImage
     };
-    const retagResult = await getRetagSvcClient().post('/tag', retagbody, {
+    const retagResult = await retagSvcClient.post('/tag', retagbody, {
       headers: {
         Authorization: token
       }

@@ -5,11 +5,11 @@ import { CircleHelp, Network as NetworkIcon } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
+import { useEnvStore } from '@/stores/env';
 import { useCopyData } from '@/utils/tools';
 import { checkReady } from '@/api/platform';
 import { NetworkType } from '@/types/devbox';
 import { useDevboxStore } from '@/stores/devbox';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 import {
   Table,
@@ -30,7 +30,7 @@ const Network = () => {
   const t = useTranslations();
   const router = useRouter();
 
-  const appConfig = useClientAppConfig();
+  const { env } = useEnvStore();
   const { copyData } = useCopyData();
   const { devboxDetail } = useDevboxStore();
 
@@ -105,7 +105,7 @@ const Network = () => {
         const protocolPrefix =
           ProtocolList.find((p) => p.value === item.protocol)?.inline || 'http://';
         const prefix = item.openPublicDomain ? protocolPrefix : 'http://';
-        const address = `${prefix}${devboxDetail?.name}.${appConfig.devbox.runtime.defaultNamespace}.svc.cluster.local:${item.port}`;
+        const address = `${prefix}${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -252,10 +252,7 @@ const Network = () => {
               {devboxDetail.networks
                 .filter(
                   (network) =>
-                    !(
-                      appConfig.devbox.features.webide &&
-                      network.port === appConfig.devbox.runtime.webidePort
-                    )
+                    !(env.enableWebideFeature === 'true' && network.port === env.webIdePort)
                 )
                 .map((network, index) => (
                   <TableRow key={`${network.port}-${index}`}>

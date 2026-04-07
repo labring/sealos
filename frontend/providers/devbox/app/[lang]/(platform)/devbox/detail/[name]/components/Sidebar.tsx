@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { LayoutDashboard, LineChart, Settings } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
-import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { useEnvStore } from '@/stores/env';
 
 export type TabValue = 'overview' | 'monitor' | 'logs' | 'advancedConfig';
 
@@ -13,9 +13,9 @@ interface SidebarProps {
 
 const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
   const t = useTranslations();
-  const appConfig = useClientAppConfig();
+  const { env } = useEnvStore();
 
-  const showAdvancedConfig = appConfig.devbox.features.advancedSettings;
+  const showAdvancedConfig = env.enableAdvancedConfig === 'true';
 
   const allTabs = [
     {
