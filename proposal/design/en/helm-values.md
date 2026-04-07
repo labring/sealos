@@ -322,6 +322,8 @@ HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 ## Example Dir Structure
 
 ```text
+/root/.sealos/cloud/values/
+                                globals.yaml
 /root/.sealos/cloud/values/core/
 								desktop-values.yaml
 								costcenter-values.yaml
@@ -334,6 +336,16 @@ HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 								resources-controller-values.yaml
 								user-controller-values.yaml
 								account-service-values.yaml
+/root/.sealos/cloud/values/apps/
+                                aiproxy/
+                                    backend-values.yaml		
+                                    frontend-values.yaml	
+
+/root/.sealos/cloud/values/default/
+                                sealos-offline/
+                                    apiproxy.yaml
+                                    docs.yaml
+                                    gitea.yaml
 ```
 
 Only the front end uses <name>-values.yaml, and the variable configurations of other modules can be placed in the same directory for easy management and maintenance.

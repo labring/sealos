@@ -195,6 +195,7 @@ export async function POST(req: NextRequest) {
       }
     });
   } catch (err: any) {
+    console.log(err);
     if (err instanceof z.ZodError) {
       return jsonRes({
         code: 400,

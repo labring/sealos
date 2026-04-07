@@ -83,6 +83,7 @@ export async function GET(req: NextRequest) {
       data
     });
   } catch (error) {
+    console.log(error);
     return jsonRes({ code: 500, message: 'get price error' });
   }
 }

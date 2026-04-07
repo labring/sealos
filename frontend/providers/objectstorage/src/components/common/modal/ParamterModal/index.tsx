@@ -9,8 +9,6 @@ import {
   ModalOverlay,
   useDisclosure,
   ButtonProps,
-  SimpleGrid,
-  Box,
   IconButton,
   HStack,
   Spinner,
@@ -20,15 +18,16 @@ import {
 } from '@chakra-ui/react';
 import ListIcon from '@/components/Icons/ListIcon';
 import { initUser } from '@/api/bucket';
-import { QueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { QueryKey } from '@/consts';
 import { useCopyData } from '@/utils/tools';
 import CopyIcon from '@/components/Icons/CopyIcon';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo } from 'react';
 import UpdateSecretKeyModal from '../UpdateSecretKeyModal';
 import useSessionStore from '@/store/session';
 import { useOssStore } from '@/store/ossStore';
+
 export default function ParamterModal({ ...styles }: ButtonProps) {
   const { onOpen, onClose, isOpen } = useDisclosure();
   const { copyData } = useCopyData();
@@ -61,20 +60,20 @@ export default function ParamterModal({ ...styles }: ButtonProps) {
     } else {
       setIsUpdating(true);
     }
-  }, [miniouser.data]);
+  }, [miniouser.data, miniouser.isSuccess, setIsUpdating, setSecret]);
 
   const accessKey = secret?.CONSOLE_ACCESS_KEY || '';
   const secretKey = secret?.CONSOLE_SECRET_KEY || '';
-  const internal = secret?.internal || '';
-  const external = secret?.external || '';
-  const itemList: { key: string; value: string }[] = useMemo(
+  const internal = secret?.internal ? `http://${secret?.internal}` : '';
+  const external = secret?.external ? `https://${secret?.external}` : '';
+  const itemList: { key: string; value: string; copyOnClick?: boolean }[] = useMemo(
     () => [
       { key: 'Access Key', value: accessKey },
       { key: 'Secret Key', value: secretKey },
-      { key: 'Internal', value: internal },
-      { key: 'External', value: external }
+      { key: 'Internal', value: internal, copyOnClick: true },
+      { key: 'External', value: external, copyOnClick: true }
     ],
-    [secret]
+    [accessKey, external, internal, secretKey]
   );
   return (
     <>
@@ -112,15 +111,40 @@ export default function ParamterModal({ ...styles }: ButtonProps) {
                   columnGap={'60px'}
                 >
                   {itemList.map((item) => (
-                    <>
-                      <GridItem key={item.key}>
+                    <Fragment key={item.key}>
+                      <GridItem>
                         <Text>{item.key}</Text>
                       </GridItem>
                       <GridItem>
                         <HStack gap="9px" color={'grayModern.700'}>
-                          <Text textOverflow={'ellipsis'} whiteSpace={'nowrap'} overflow={'hidden'}>
-                            {item.value}
-                          </Text>
+                          {item.copyOnClick ? (
+                            <Text
+                              as={'button'}
+                              type={'button'}
+                              color={'brightBlue.600'}
+                              fontSize={'14px'}
+                              textOverflow={'ellipsis'}
+                              whiteSpace={'nowrap'}
+                              overflow={'hidden'}
+                              textDecoration={'underline'}
+                              cursor={'pointer'}
+                              textAlign={'left'}
+                              onClick={() => {
+                                copyData(item.value);
+                              }}
+                              title={item.value}
+                            >
+                              {item.value}
+                            </Text>
+                          ) : (
+                            <Text
+                              textOverflow={'ellipsis'}
+                              whiteSpace={'nowrap'}
+                              overflow={'hidden'}
+                            >
+                              {item.value}
+                            </Text>
+                          )}
                           <IconButton
                             aria-label={'copy'}
                             variant={'white-bg-icon'}
@@ -133,7 +157,7 @@ export default function ParamterModal({ ...styles }: ButtonProps) {
                           {'Secret Key' === item.key && <UpdateSecretKeyModal />}
                         </HStack>
                       </GridItem>
-                    </>
+                    </Fragment>
                   ))}
                 </Grid>
                 <Button

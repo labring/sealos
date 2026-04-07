@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
         }
       });
     } catch (usageError) {
+      console.log(usageError);
       // Log the error but don't fail the devbox creation
       console.error('Failed to increment template usage count:', usageError);
     }
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest) {
       data: 'success create devbox'
     });
   } catch (err: any) {
+    console.log(err);
     const isAlreadyExists = err?.body?.reason === 'AlreadyExists' || err?.statusCode === 409;
 
     if (isAlreadyExists) {

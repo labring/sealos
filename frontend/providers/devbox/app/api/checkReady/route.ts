@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
       data: checkResults
     });
   } catch (error: any) {
+    console.log(error);
     return jsonRes({
       code: 500,
       error: error?.message

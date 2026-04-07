@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     if (!onlyIngress) {
       const patchData: any = { spec: { state: shutdownMode } };
 
-      if (shutdownMode === 'Shutdown') {
+      if (shutdownMode === 'Shutdown' || 'Paused') {
         patchData.spec.network = { type: 'SSHGate' };
       }
 
@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
       data: onlyIngress ? 'success pause ingress' : 'success shutdown devbox'
     });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: err?.statusCode || err?.response?.statusCode || 500,
       error: err

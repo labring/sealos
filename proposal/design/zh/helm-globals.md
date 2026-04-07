@@ -70,39 +70,64 @@
 
 ```yaml
 globals:
-  version: v1alpha1
-
+  version: "zh"
+  
+  isKylin10: false
+  database: "default" #ob/default
+  
+  
   feature_gates:
     gpu_hami: false
+    gpu: false
     online_ide: true
     import_ide: false
     gitea_template: false
     nfs: false
-
+    offline: false
+    
   feature_configs:
-    gpu_hami:
-      webui_config_map: hami-webui-config
-      namespace: sealos-system
-
-    online_ide:
-      startup_config_map: devbox-startup
-      registry_config_map: devbox-config
-      namespace: sealos-system
-
-    import_ide:
-      enabled_sources: ["git", "tar", "registry"]
-      max_package_size_mb: 2048
-
-    gitea_template:
-      endpoint: ""
-      org: "templates"
-      repo: "sealos-templates"
-      branch: "main"
+    gpu_hami: {}
+    gpu: {}
+    online_ide: {}
+    import_ide: {}
+    gitea_template: {}
+    
+    objectStorage:
+      size: 10Gi
+    
+    s3:
+      # - s3 (Amazon Simple Storage Service)
+      # - oss (Alibaba Cloud Object Storage Service)
+      # - cos (Tencent Cloud Object Storage)
+      # - gcs (Google Cloud Storage)
+      # - obs (Huawei Cloud Object Storage)
+      # - minio, and other S3-compatible services.
+      provider: "s3"
+      bucket: ""
+      access_key: ""
+      secret_key: ""
+      region: ""
+      region_endpoint: ""
+    
+    backup:
+      useObjectStorage: false
+      bucket: "sealos-file-backup"
+      access_key: ""
+      secret_key: ""
+      region: ""
+      region_endpoint: ""
 
     nfs:
       storage_class: "nfs-client"
-      provisioner: ""
+      address: "nfsserver:30060"
       mount_options: []
+    
+    offline:
+      dnsmasq: false
+      location: "/data/nginx"
+
+    kb:
+      version: 0.8
 ```
 
 ## 5. 模块读取顺序与优先级（统一口径）
@@ -112,7 +137,8 @@ globals:
 1. `charts/<module>/values.yaml`
 2. `/root/.sealos/cloud/values/globals.yaml`
 3. `/root/.sealos/cloud/values/apps/<module>/*-values.yaml`（可选）
-4. `/root/.sealos/cloud/values/core/<module>-values.yaml`
+4. `/root/.sealos/cloud/values/default/<module>/*-values.yaml`（可选）
+5. `/root/.sealos/cloud/values/core/<module>-values.yaml`
 
 ### 5.2 生效优先级（高到低）
 

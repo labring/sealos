@@ -99,7 +99,9 @@ export const Actions = memo<ActionsProps>(
               <PencilLine className="h-4 w-4 text-neutral-500" />
               {t('update')}
             </DropdownMenuItem>
-            {(item.status.value === 'Stopped' || item.status.value === 'Shutdown') && (
+            {(item.status.value === 'Stopped' ||
+              item.status.value === 'Shutdown' ||
+              item.status.value === 'Paused') && (
               <DropdownMenuItem
                 className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
                 onClick={() => onStartDevbox(item)}
@@ -108,22 +110,24 @@ export const Actions = memo<ActionsProps>(
                 {t('start')}
               </DropdownMenuItem>
             )}
-            {item.status.value !== 'Stopped' && item.status.value !== 'Shutdown' && (
-              <DropdownMenuItem
-                className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
-                onClick={() => onRestartDevbox(item)}
-              >
-                <IterationCw className="h-4 w-4 text-neutral-500" />
-                {t('restart')}
-              </DropdownMenuItem>
-            )}
+            {item.status.value !== 'Stopped' &&
+              item.status.value !== 'Shutdown' &&
+              item.status.value !== 'Paused' && (
+                <DropdownMenuItem
+                  className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
+                  onClick={() => onRestartDevbox(item)}
+                >
+                  <IterationCw className="h-4 w-4 text-neutral-500" />
+                  {t('restart')}
+                </DropdownMenuItem>
+              )}
             {item.status.value === 'Running' && (
               <DropdownMenuItem
                 className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
                 onClick={() => onOpenShutdown(item)}
               >
                 <Pause className="h-4 w-4 text-neutral-500" />
-                {t('shutdown')}
+                {t('pause')}
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />

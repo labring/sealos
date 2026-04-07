@@ -63,6 +63,13 @@ function AppContent({
   pageProps: AppProps['pageProps'];
   customScripts: ComponentProps<typeof Script>[];
 }) {
+  const standaloneAllowedPaths = new Set(['/api-docs', '/api/v2alpha/docs', '/doc/v2alpha']);
+
+  const normalizePath = (path: string) => {
+    const [pathname] = path.split(/[?#]/);
+    return pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
+  };
+
   const router = useRouter();
   const { i18n } = useTranslation();
   const clientConfig = useClientAppConfig();
@@ -89,7 +96,11 @@ function AppContent({
         console.log('app init success');
       } catch (err) {
         console.log('App is not running in desktop');
-        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+        const currentPath =
+          typeof window !== 'undefined' ? normalizePath(window.location.pathname) : '';
+        const allowStandaloneAccess = standaloneAllowedPaths.has(currentPath);
+
+        if (!process.env.NEXT_PUBLIC_MOCK_USER && !allowStandaloneAccess) {
           openConfirm(() => {
             window.open(`https://${clientConfig.desktopDomain}`, '_self');
           })();

@@ -104,6 +104,7 @@ const findOrCreateUser = async (regionUid: string, namespaceId: string) => {
       }
       throw new Error('Failed to find or create user');
     } catch (error) {
+      console.log(error);
       console.error('Error in findOrCreateUser transaction:', error);
       throw new Error('Failed to find or create user');
     }
@@ -136,6 +137,7 @@ export async function POST(req: NextRequest) {
       })
     });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       error: err

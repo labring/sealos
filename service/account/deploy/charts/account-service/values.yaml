@@ -19,14 +19,14 @@ podLabels: {}
 
 podSecurityContext: {}
   # runAsNonRoot: true
-  # runAsUser: 1000
+# runAsUser: 1000
 
 securityContext: {}
   # allowPrivilegeEscalation: false
   # capabilities:
   #   drop:
   #   - ALL
-  # readOnlyRootFilesystem: true
+# readOnlyRootFilesystem: true
 
 service:
   type: ClusterIP
@@ -78,6 +78,17 @@ paymentSecretName: payment-secret
 
 # ConfigMap for region info
 regionInfoConfigMapName: region-info
+
+# ============================================================================
+# Auto-configured Ingress values (from sealos-system/sealos-config ConfigMap)
+# ============================================================================
+# The following ingress values are automatically fetched from the
+# sealos-system/sealos-config ConfigMap by the entrypoint script and will
+# override any values set here. These are provided as reference defaults.
+#
+# To override these auto-configured values, use HELM_OPTIONS or modify the
+# sealos-config ConfigMap directly.
+# ============================================================================
 
 # Ingress configuration
 ingress:

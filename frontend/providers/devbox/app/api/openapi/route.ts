@@ -2921,6 +2921,7 @@ export async function GET(request: Request) {
     const openApiDoc = tmpOpenApiDocument(domain);
     return NextResponse.json(openApiDoc);
   } catch (error) {
+    console.log(error);
     console.error('Error generating OpenAPI document:', error);
     return NextResponse.json({ error: 'Failed to generate API documentation' }, { status: 500 });
   }

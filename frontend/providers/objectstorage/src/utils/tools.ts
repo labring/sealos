@@ -1,5 +1,6 @@
-import { Authority } from '@/consts';
+import { Authority, type TBucket } from '@/consts';
 import { useToast } from '@/hooks/useToast';
+import { Quantity } from '@sealos/shared';
 import { useTranslation } from 'next-i18next';
 
 /**
@@ -61,6 +62,35 @@ export const inAuthority = (val: unknown): boolean =>
 export const formatMoney = (money: number) => money / 1000000;
 export const deFormatMoney = (money: number) => money * 1000000;
 export const displayMoney = (money: number) => money.toFixed(2);
+
+export function formatBytesForDisplay(bytes: number | string, digits = 2): string {
+  const value = Number(bytes);
+
+  if (!Number.isFinite(value) || value < 0) {
+    return '0B';
+  }
+
+  const display = Quantity.fromJSON(value).formatForDisplay({
+    format: 'BinarySI',
+    digits
+  });
+
+  return `${display}B`;
+}
+
+export function formatCountForDisplay(value: number | string): string {
+  const normalized = Number(value);
+  if (!Number.isFinite(normalized)) return '0';
+  return new Intl.NumberFormat().format(normalized);
+}
+
+export function isBucketNameTaken(
+  bucketName: string,
+  bucketList: Pick<TBucket, 'name' | 'crName'>[]
+): boolean {
+  return bucketList.some((bucket) => bucket.crName === bucketName || bucket.name === bucketName);
+}
+
 export function formatBytes(
   bytes: number,
   decimals = 2

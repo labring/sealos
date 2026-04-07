@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
       return jsonRes({ data: result.data });
     }
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       error: err

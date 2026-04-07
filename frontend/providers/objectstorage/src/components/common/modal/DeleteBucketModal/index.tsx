@@ -115,8 +115,13 @@ export default function DeleteBucketModal({
                     return;
                   }
                   executeOperation(() => deleteBucket({ bucketName }), {
-                    onSuccess: () => {
-                      queryClient.invalidateQueries([QueryKey.bucketList]);
+                    onSuccess: async () => {
+                      queryClient.removeQueries({
+                        queryKey: [QueryKey.minioFileList],
+                        exact: false
+                      });
+                      await queryClient.invalidateQueries([QueryKey.bucketList]);
+                      await queryClient.invalidateQueries([QueryKey.bucketInfo]);
                       onClose();
                     },
                     successMessage: 'Delete successfully'

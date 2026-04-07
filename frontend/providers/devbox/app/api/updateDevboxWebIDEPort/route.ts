@@ -35,7 +35,10 @@ export async function POST(req: NextRequest) {
     const label = `${devboxKey}=${devboxName}`;
     const existingIngressesResponse = await k8sNetworkingApp
       .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
-      .catch(() => null);
+      .catch((error) => {
+        console.log(error);
+        return null;
+      });
     const existingIngresses = existingIngressesResponse?.body.items || [];
 
     const existingIngress = existingIngresses.find(
@@ -169,6 +172,7 @@ export async function POST(req: NextRequest) {
       }
     });
   } catch (err: any) {
+    console.log(err);
     console.error('WebIDE port update error:', err);
 
     return jsonRes({

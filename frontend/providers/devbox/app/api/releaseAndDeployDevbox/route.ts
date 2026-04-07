@@ -186,8 +186,14 @@ export async function POST(req: NextRequest) {
     const [ingressesResponse, serviceResponse] = await Promise.all([
       k8sNetworkingApp
         .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
-        .catch(() => null),
-      k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null)
+        .catch((error) => {
+          console.log(error);
+          return null;
+        }),
+      k8sCore.readNamespacedService(devboxName, namespace, undefined).catch((error) => {
+        console.log(error);
+        return null;
+      })
     ]);
     const ingresses = ingressesResponse?.body.items || [];
     const service = serviceResponse?.body;
