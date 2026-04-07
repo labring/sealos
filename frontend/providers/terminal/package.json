@@ -31,8 +31,8 @@
     "nanoid": "^4.0.2",
     "next": "13.5.9",
     "next-i18next": "^15.3.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
     "react-i18next": "^14.1.2",
     "@sealos/shared": "workspace:^",
     "sealos-desktop-sdk": "workspace:*",
@@ -43,8 +43,8 @@
     "@types/js-yaml": "^4.0.6",
     "@types/lodash": "^4.14.199",
     "@types/node": "18.15.5",
-    "@types/react": "18.3.27",
-    "@types/react-dom": "18.3.7",
+    "@types/react": "18.2.37",
+    "@types/react-dom": "18.0.10",
     "sass": "^1.68.0"
   }
 }
