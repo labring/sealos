@@ -381,7 +381,7 @@ const PodDetailModal = ({
             <div className="relative flex flex-col max-h-[430px] bg-white rounded-2xl px-6 py-6 h-full col-span-5 border-[0.5px] border-zinc-200 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <span className="font-semibold text-base h-9 flex items-center">{t('Events')}</span>
-                {events.length > 0 && SHOW_EVENT_ANALYZE && (
+                {events.length > 0 && config.components.eventAnalysis.enabled && (
                   <Button
                     variant="outline"
                     className="ml-3 h-9 hover:bg-zinc-50 flex items-center"
