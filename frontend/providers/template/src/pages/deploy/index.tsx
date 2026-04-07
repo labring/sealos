@@ -22,10 +22,10 @@ import ReadMe from './components/ReadMe';
 import { generateYamlData, getTemplateInputDefaultValues } from '@/utils/template';
 import { getResourceUsage } from '@/utils/usage';
 import Head from 'next/head';
-import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { useSystemConfigStore } from '@/store/config';
+import { useToast } from '@/hooks/useToast';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -46,7 +46,7 @@ export default function EditApp({
   initTemplateData: TemplateSourceType;
 }) {
   const { t, i18n } = useTranslation();
-  const { message: toast } = useMessage();
+  const { toast } = useToast();
   const router = useRouter();
   const { copyData } = useCopyData();
   const { templateName } = router.query as QueryType;
