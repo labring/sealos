@@ -144,12 +144,7 @@ export const memoryFormatToGi = (memory: string | number = '0'): string => {
  * @deprecated We need to migrate all resource representations to Quantity (in the near future).
  */
 export const storageFormatToNum = (storage = '0') => {
-  return (
-    Math.round(
-      (Number(Quantity.fromJSON(storage).withFormat('BinarySI').scaledValue(Scale.Mega)) / 1024) *
-        100
-    ) / 100
-  );
+  return Math.round((Number(Quantity.fromJSON(storage).value()) / 1024 / 1024 / 1024) * 100) / 100;
 };
 
 /**
@@ -161,11 +156,11 @@ export const storageFormatToNum = (storage = '0') => {
  * @deprecated We need to migrate all resource representations to Quantity (in the near future).
  */
 export const storageFormatToGi = (value: string | undefined, defaultValue: number = 0): number => {
-  return (
-    Math.round(
-      (Number(Quantity.fromJSON(value).withFormat('BinarySI').scaledValue(Scale.Mega)) / 1024) * 100
-    ) / 100
-  );
+  try {
+    return Math.round((Number(Quantity.fromJSON(value).value()) / 1024 / 1024 / 1024) * 100) / 100;
+  } catch {
+    return defaultValue;
+  }
 };
 
 /**
