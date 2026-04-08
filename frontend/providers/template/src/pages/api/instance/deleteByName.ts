@@ -40,6 +40,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // ! after adopting StatefulSet `persistentVolumeClaimRetentionPolicy` in templates.
       await legacyDeletePersistentVolumeClaimsOnly(k8s, instanceName);
       await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+    } else {
+      await legacyDeleteInstanceAll(k8s, instanceName);
+      await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
     }
 
     return jsonRes(res, { message: `Instance "${instanceName}" deleted successfully` });

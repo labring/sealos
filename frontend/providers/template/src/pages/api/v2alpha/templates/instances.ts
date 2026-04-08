@@ -1,6 +1,10 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
+import {
+  generateYamlList,
+  handleTemplateToInstanceYaml,
+  parseTemplateString
+} from '@/utils/json-yaml';
 import { mapValues, reduce } from 'lodash';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetTemplateByName } from '../../getTemplateSource';
@@ -261,48 +265,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const _defaults = mapValues(dataSource.defaults || {}, (value) => value?.value ?? '');
     _defaults['app_name'] = trimmedName;
 
-    // Replace Instance metadata.name with user-provided name
-    // The appYaml contains Instance YAML with default random name, we need to update it
+    // Rebuild the prepended Instance document without parsing unresolved template conditionals
+    // from the rest of the manifest body.
     let updatedAppYaml: string;
     try {
-      const yamlDocs = JsYaml.loadAll(appYaml).filter((doc) => doc);
-      if (yamlDocs.length === 0) {
+      const firstDocSeparatorIndex = appYaml.search(/^---\s*$/m);
+      if (firstDocSeparatorIndex === -1) {
         return sendError(res, {
           status: 500,
           type: ErrorType.INTERNAL_ERROR,
           code: ErrorCode.INTERNAL_ERROR,
-          message: 'Failed to parse template YAML: no valid documents found.'
+          message: 'Failed to process template YAML: app manifest body not found.'
         });
       }
 
-      let instanceFound = false;
-      const updatedDocs = yamlDocs.map((doc: any) => {
-        if (doc?.kind === 'Instance' && doc?.apiVersion === 'app.sealos.io/v1') {
-          instanceFound = true;
-          // Update Instance name to use user-provided name
-          return {
-            ...doc,
-            metadata: {
-              ...doc.metadata,
-              name: trimmedName
-            }
-          };
-        }
-        return doc;
-      });
-
-      if (!instanceFound) {
-        return sendError(res, {
-          status: 500,
-          type: ErrorType.INTERNAL_ERROR,
-          code: ErrorCode.INTERNAL_ERROR,
-          message: 'Failed to process template: Instance resource not found in template YAML.'
-        });
-      }
-
-      updatedAppYaml = updatedDocs.map((doc) => JsYaml.dump(doc)).join('---\n');
+      const instanceYaml = handleTemplateToInstanceYaml(templateYaml, trimmedName);
+      const manifestBody = appYaml.slice(firstDocSeparatorIndex);
+      updatedAppYaml = `${JsYaml.dump(instanceYaml)}\n${manifestBody}`;
     } catch (yamlErr: any) {
-      console.error('Failed to update Instance name in YAML:', yamlErr);
+      console.error('Failed to rebuild Instance YAML:', yamlErr);
       return sendError(res, {
         status: 500,
         type: ErrorType.INTERNAL_ERROR,
