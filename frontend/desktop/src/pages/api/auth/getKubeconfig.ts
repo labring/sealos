@@ -4,6 +4,7 @@ import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
 import { verifyAccessToken, verifyAppToken } from '@/services/backend/auth';
 
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
+import { withEncodedKubeconfig } from '@/services/backend/kubeconfigEncoding';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -20,9 +21,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonRes(res, {
       code: 200,
       message: 'Successfully',
-      data: {
+      data: withEncodedKubeconfig({
         kubeconfig
-      }
+      })
     });
   } catch (err) {
     console.log(err);
