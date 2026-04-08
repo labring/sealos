@@ -46,7 +46,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           nsUID: regionUser.workspaceUid,
           userID: regionUser.userCrName
         },
-        kubeconfig: data.kubeconfig
+        kubeconfig: data.kubeconfig,
+        encodedKubeconfig: data.encodedKubeconfig
       },
       code: 200,
       message: 'Successfully'

@@ -8,6 +8,7 @@ import { AccessTokenPayload } from '@/types/token';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
 import { generateAccessToken, generateAppToken } from '@/services/backend/auth';
 import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
+import { withEncodedKubeconfig } from '@/services/backend/kubeconfigEncoding';
 import { v4 } from 'uuid';
 import { HttpStatusCode } from 'axios';
 import { userInfo } from 'node:os';
@@ -37,6 +38,7 @@ export async function getRegionToken({
   userId: string;
 }): Promise<{
   kubeconfig: string;
+  encodedKubeconfig: string;
   token: string;
   appToken: string;
 } | null> {
@@ -332,11 +334,11 @@ export async function getRegionToken({
   }, 3);
   if (!result) return null;
   const { kubeconfig, payload } = result;
-  return {
+  return withEncodedKubeconfig({
     kubeconfig,
     token: generateAccessToken(payload),
     appToken: generateAppToken(payload)
-  };
+  });
 }
 
 export async function initRegionToken({
@@ -351,6 +353,7 @@ export async function initRegionToken({
   workspaceName: string;
 }): Promise<{
   kubeconfig: string;
+  encodedKubeconfig: string;
   token: string;
   appToken: string;
 } | null> {
@@ -557,9 +560,9 @@ export async function initRegionToken({
   }
 
   const { kubeconfig, payload } = result;
-  return {
+  return withEncodedKubeconfig({
     kubeconfig,
     token: generateAccessToken(payload),
     appToken: generateAppToken(payload)
-  };
+  });
 }
