@@ -1,11 +1,17 @@
 import { Box, Flex, useToast } from '@chakra-ui/react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Authority, FormSchema, QueryKey, bucketConfigQueryParam } from '@/consts';
-import { inAuthority } from '@/utils/tools';
+import { inAuthority, isBucketNameTaken } from '@/utils/tools';
 import ConfigHeader from '@/components/buckConfig/ConfigHeader';
 import ConfigMain from '@/components/buckConfig/Configmain';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { QueryClient, dehydrate, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  QueryClient,
+  dehydrate,
+  useMutation,
+  useQuery,
+  useQueryClient
+} from '@tanstack/react-query';
 import { createBucket, listBucket } from '@/api/bucket';
 import { useRouter } from 'next/router';
 import useSessionStore from '@/store/session';
@@ -27,6 +33,9 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   const { executeOperation, errorModalState, closeErrorModal } = useStorageOperation();
   const toast = useToast();
   const { t } = useTranslation(['common', 'bucket']);
+  const bucketListQuery = useQuery([QueryKey.bucketList, session], listBucket, {
+    enabled: !!session
+  });
 
   const mutation = useMutation({
     mutationFn: createBucket,
@@ -49,7 +58,23 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
 
   const submitForm = () => {
     methods.handleSubmit(
-      (data) => {
+      async (data) => {
+        const latestBucketList =
+          bucketListQuery.data?.list ||
+          ((await client.fetchQuery([QueryKey.bucketList, session], listBucket))?.list ?? []);
+
+        if (isBucketNameTaken(data.bucketName, latestBucketList)) {
+          toast({
+            title: t('bucket:bucketCreateFailed'),
+            description: t('app_already_exists'),
+            status: 'error',
+            duration: 5000,
+            isClosable: true,
+            position: 'top'
+          });
+          return;
+        }
+
         executeOperation(
           () =>
             mutation.mutateAsync({

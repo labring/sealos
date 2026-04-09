@@ -321,6 +321,8 @@ HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 ## 目录示例
 
 ```text
+/root/.sealos/cloud/values/
+                                globals.yaml
 /root/.sealos/cloud/values/core/
 								desktop-values.yaml
 								costcenter-values.yaml
@@ -333,6 +335,17 @@ HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 								resources-controller-values.yaml
 								user-controller-values.yaml
 								account-service-values.yaml
+/root/.sealos/cloud/values/apps/
+                                aiproxy/
+                                    backend-values.yaml		
+                                    frontend-values.yaml	
+
+/root/.sealos/cloud/values/default/
+                                sealos-offline/
+                                    apiproxy.yaml
+                                    docs.yaml
+                                    gitea.yaml
+                                    					
 ```
 
 只有前端使用 <name>-values.yaml, 其他模块的可变配置可以放在同一目录下，便于管理和维护。
