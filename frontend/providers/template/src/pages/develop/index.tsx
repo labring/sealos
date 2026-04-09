@@ -15,7 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { debounce, has, isObject } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import ErrorModal from '../deploy/components/ErrorModal';
 import BreadCrumbHeader from './components/BreadCrumbHeader';
@@ -32,7 +32,6 @@ export default function Develop() {
   const { Loading, setIsLoading } = useLoading();
   const [errorMessage, setErrorMessage] = useState('');
   const { applySuccess, applyError } = editModeMap(false);
-  const SuccessfulDryRun = useRef(false);
   const { insideCloud, setInsideCloud } = useCachedStore();
   const { data: platformEnvs } = useQuery(
     ['getPlatformEnvs'],
@@ -114,9 +113,6 @@ export default function Develop() {
         yamlList.map((item) => item.value),
         'dryrun'
       );
-      if (result.length > 0) {
-        SuccessfulDryRun.current = true;
-      }
       toast({
         title: t(applySuccess),
         status: 'success',
@@ -168,7 +164,7 @@ export default function Develop() {
   const formalApply = async () => {
     setIsLoading(true);
     try {
-      if (yamlList.length !== 0 && SuccessfulDryRun.current) {
+      if (yamlList.length !== 0) {
         const result: string[] = await postDeployApp(yamlList.map((item) => item.value));
         toast({
           title: t('Deployment successful, please go to My Application to view') || ' ',
@@ -185,7 +181,7 @@ export default function Develop() {
     <Flex flexDirection={'column'} p={'0px 34px 20px 34px '} h="100vh" maxW={'1440px'} mx="auto">
       <BreadCrumbHeader
         applyCb={() => formHook.handleSubmit(submitSuccess, submitError)()}
-        isShowBtn={SuccessfulDryRun.current}
+        isShowBtn={true}
         applyFormalCb={formalApply}
       />
       <Flex
