@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       return jsonRes({});
     }
   } catch (error) {
+    console.log(error);
     return jsonRes({
       code: 500,
       error

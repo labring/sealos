@@ -111,12 +111,10 @@ desktopConfig:
 desktopConfig:
   realNameReward: 0
   realNameCallbackUrl: 'https://cloud.example.org/api/account/callback'
-  templateUrl: 'https://template.example.org'
-  applaunchpadUrl: 'https://applaunchpad.example.org'
-  dbproviderUrl: 'https://dbprovider.example.org'
-  objectstorageUrl: 'https://objectstorage.example.org'
   cfSiteKey: ''
 ```
+
+`templateUrl`、`applaunchpadUrl`、`dbproviderUrl` 和 `objectstorageUrl` 会根据 `cloudDomain` 自动生成。
 
 ### 10. 桌面布局配置
 

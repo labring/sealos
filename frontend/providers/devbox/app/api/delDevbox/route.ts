@@ -100,6 +100,7 @@ export async function DELETE(req: NextRequest) {
           name
         );
       } catch (err) {
+        console.log(err);
         console.warn('Failed to delete an item, ignoring:', plural, name, err);
       }
     };
@@ -112,6 +113,7 @@ export async function DELETE(req: NextRequest) {
       try {
         await deleteFunc();
       } catch (err) {
+        console.log(err);
         console.warn('Failed to delete an item, ignoring:', resourceType, name, err);
       }
     };
@@ -167,6 +169,7 @@ export async function DELETE(req: NextRequest) {
       data: 'success delete devbox'
     });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       message: err?.message || 'Internal server error',

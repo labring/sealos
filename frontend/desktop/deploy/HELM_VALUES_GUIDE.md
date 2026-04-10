@@ -103,6 +103,7 @@ desktopConfig:
   trackingEnabled: false # 启用追踪/统计
   realNameAuthEnabled: false # 启用实名认证
   licenseCheckEnabled: false # 启用 License 检查
+  passwordEnabled: true # 启用密码登录
 ```
 
 ### 9. Common URLs 配置
@@ -111,12 +112,10 @@ desktopConfig:
 desktopConfig:
   realNameReward: 0
   realNameCallbackUrl: 'https://cloud.example.org/api/account/callback'
-  templateUrl: 'https://template.example.org'
-  applaunchpadUrl: 'https://applaunchpad.example.org'
-  dbproviderUrl: 'https://dbprovider.example.org'
-  objectstorageUrl: 'https://objectstorage.example.org'
   cfSiteKey: ''
 ```
+
+`templateUrl`, `applaunchpadUrl`, `dbproviderUrl`, and `objectstorageUrl` are generated automatically from `cloudDomain`.
 
 ### 10. 桌面布局配置
 
