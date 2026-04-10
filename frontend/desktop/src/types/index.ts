@@ -1,6 +1,5 @@
 import { Umami } from '@umami/node';
 import { Cron } from 'croner';
-import { type MongoClient } from 'mongodb';
 import { Transporter } from 'nodemailer';
 import SMTPPool from 'nodemailer/lib/smtp-pool';
 import { type AppConfigType } from './system';
@@ -16,7 +15,6 @@ export * from './system';
 export * from './tools';
 export * from './loginFailureMesage';
 declare global {
-  var mongodb: MongoClient | null;
   var AppConfig: AppConfigType;
   var commitCroner: Cron | undefined;
   var finishCroner: Cron | undefined;

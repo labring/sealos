@@ -190,9 +190,6 @@ importers:
       minio:
         specifier: ^7.1.3
         version: 7.1.3
-      mongodb:
-        specifier: ^5.9.0
-        version: 5.9.1
       nanoid:
         specifier: ^4.0.2
         version: 4.0.2
@@ -13715,7 +13712,7 @@ packages:
       '@typescript-eslint/scope-manager': 5.62.0
       '@typescript-eslint/types': 5.62.0
       '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.9.3)
-      debug: 4.3.6
+      debug: 4.4.1
       eslint: 8.38.0
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -16741,6 +16738,7 @@ packages:
         optional: true
     dependencies:
       ms: 2.1.2
+    dev: true
 
   /debug@4.4.1:
     resolution: {integrity: sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==}
@@ -18732,7 +18730,7 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
     dependencies:
-      array-includes: 3.1.8
+      array-includes: 3.1.7
       array.prototype.flatmap: 1.3.2
       array.prototype.tosorted: 1.1.2
       doctrine: 2.1.0
@@ -18742,9 +18740,9 @@ packages:
       jsx-ast-utils: 3.3.5
       minimatch: 3.1.2
       object.entries: 1.1.7
-      object.fromentries: 2.0.8
+      object.fromentries: 2.0.7
       object.hasown: 1.1.3
-      object.values: 1.2.0
+      object.values: 1.1.7
       prop-types: 15.8.1
       resolve: 2.0.0-next.5
       semver: 6.3.1
@@ -18807,7 +18805,7 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
     dependencies:
-      array-includes: 3.1.8
+      array-includes: 3.1.7
       array.prototype.flatmap: 1.3.2
       array.prototype.tosorted: 1.1.2
       doctrine: 2.1.0
@@ -18817,9 +18815,9 @@ packages:
       jsx-ast-utils: 3.3.5
       minimatch: 3.1.2
       object.entries: 1.1.7
-      object.fromentries: 2.0.8
+      object.fromentries: 2.0.7
       object.hasown: 1.1.3
-      object.values: 1.2.0
+      object.values: 1.1.7
       prop-types: 15.8.1
       resolve: 2.0.0-next.5
       semver: 6.3.1
@@ -18832,7 +18830,7 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
     dependencies:
-      array-includes: 3.1.8
+      array-includes: 3.1.7
       array.prototype.flatmap: 1.3.2
       array.prototype.tosorted: 1.1.2
       doctrine: 2.1.0
@@ -18842,9 +18840,9 @@ packages:
       jsx-ast-utils: 3.3.5
       minimatch: 3.1.2
       object.entries: 1.1.7
-      object.fromentries: 2.0.8
+      object.fromentries: 2.0.7
       object.hasown: 1.1.3
-      object.values: 1.2.0
+      object.values: 1.1.7
       prop-types: 15.8.1
       resolve: 2.0.0-next.5
       semver: 6.3.1
@@ -25198,7 +25196,6 @@ packages:
       call-bind: 1.0.5
       define-properties: 1.2.1
       es-abstract: 1.22.3
-    dev: false
 
   /object.values@1.2.0:
     resolution: {integrity: sha512-yBYjY9QX2hnRmZHAjG/f13MzmBzxzYgQhFrke06TTyKY5zSTEqkOeukBzIdVA3j3ulu8Qa3MbVFShV7T2RmGtQ==}

@@ -47,6 +47,55 @@ model UserWorkspace {
   @@index([userCrUid])
 }
 
+model VerificationCodes {
+  uid          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid      String?  @db.Uuid
+  scenario     String
+  providerType String
+  providerId   String
+  code         String
+  flowToken    String?  @unique
+  expiresAt    DateTime @db.Timestamptz(3)
+  metadata     Json
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([scenario, providerType, providerId])
+  @@index([expiresAt])
+  @@index([scenario, code])
+  @@index([scenario, providerType, providerId, expiresAt])
+}
+
+model OAuthVerifications {
+  uid        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider   String
+  scenario   String
+  providerId String?
+  code       String
+  expiresAt  DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([provider, code])
+  @@index([provider, providerId])
+  @@index([expiresAt])
+}
+
+model WorkspaceInvitations {
+  uid            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  workspaceUid   String   @db.Uuid
+  inviterUid     String   @db.Uuid
+  inviterCrUid   String   @db.Uuid
+  role           Role
+  invitationCode String   @unique
+  expiresAt      DateTime @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([workspaceUid, inviterUid, inviterCrUid, role])
+  @@index([expiresAt])
+}
+
 enum JoinStatus {
   INVITED
   IN_WORKSPACE

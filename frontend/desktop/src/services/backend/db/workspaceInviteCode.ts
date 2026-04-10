@@ -1,21 +1,35 @@
-import { connectToDatabase } from './mongodb';
+import { prisma } from './init';
 import { UserRole } from '@/types/team';
+import { Role } from 'prisma/region/generated/client';
+import { UserRoleToRole, roleToUserRole } from '@/utils/tools';
 
 type TWorkspace_invite_link = {
   role: UserRole;
-  code: string; // unique
+  code: string;
   workspaceUid: string;
   createdAt: Date;
   inviterUid: string;
   inviterCrUid: string;
 };
 
-async function connectToUserCollection() {
-  const client = await connectToDatabase();
-  const collection = client.db().collection<TWorkspace_invite_link>('workspace_invite_links');
-  await collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 30 });
-  await collection.createIndex({ code: 1 }, { unique: true });
-  return collection;
+const WORKSPACE_INVITATION_EXPIRE_MS = 30 * 60 * 1000;
+
+function toInviteLink(record: {
+  role: Role;
+  invitationCode: string;
+  workspaceUid: string;
+  createdAt: Date;
+  inviterUid: string;
+  inviterCrUid: string;
+}): TWorkspace_invite_link {
+  return {
+    role: roleToUserRole(record.role),
+    code: record.invitationCode,
+    workspaceUid: record.workspaceUid,
+    createdAt: record.createdAt,
+    inviterUid: record.inviterUid,
+    inviterCrUid: record.inviterCrUid
+  };
 }
 
 export async function addOrUpdateInviteCode({
@@ -25,25 +39,30 @@ export async function addOrUpdateInviteCode({
   workspaceUid,
   inviterCrUid
 }: Omit<TWorkspace_invite_link, 'createdAt'>) {
-  const codes = await connectToUserCollection();
-  const result = await codes.updateOne(
-    {
-      inviterCrUid,
-      inviterUid,
-      role,
-      workspaceUid
-    },
-    {
-      $set: {
-        code,
-        createdAt: new Date()
+  const prismaRole = UserRoleToRole(role);
+
+  return prisma.workspaceInvitations.upsert({
+    where: {
+      workspaceUid_inviterUid_inviterCrUid_role: {
+        workspaceUid,
+        inviterUid,
+        inviterCrUid,
+        role: prismaRole
       }
     },
-    {
-      upsert: true
+    create: {
+      workspaceUid,
+      inviterUid,
+      inviterCrUid,
+      role: prismaRole,
+      invitationCode: code,
+      expiresAt: new Date(Date.now() + WORKSPACE_INVITATION_EXPIRE_MS)
+    },
+    update: {
+      invitationCode: code,
+      expiresAt: new Date(Date.now() + WORKSPACE_INVITATION_EXPIRE_MS)
     }
-  );
-  return result;
+  });
 }
 
 export async function getInviteCode({
@@ -52,20 +71,45 @@ export async function getInviteCode({
   workspaceUid,
   inviterCrUid
 }: Omit<TWorkspace_invite_link, 'createdAt' | 'code'>) {
-  const codes = await connectToUserCollection();
-  const result = await codes.findOne({
-    inviterUid,
-    inviterCrUid,
-    workspaceUid,
-    role
+  const result = await prisma.workspaceInvitations.findFirst({
+    where: {
+      inviterUid,
+      inviterCrUid,
+      workspaceUid,
+      role: UserRoleToRole(role),
+      expiresAt: {
+        gt: new Date()
+      }
+    }
   });
-  return result;
+
+  return result
+    ? toInviteLink({
+        role: result.role,
+        invitationCode: result.invitationCode,
+        workspaceUid: result.workspaceUid,
+        createdAt: result.createdAt,
+        inviterUid: result.inviterUid,
+        inviterCrUid: result.inviterCrUid
+      })
+    : null;
 }
 
 export async function findInviteCode(code: string) {
-  const codes = await connectToUserCollection();
-  const result = await codes.findOne({
-    code
+  const result = await prisma.workspaceInvitations.findUnique({
+    where: {
+      invitationCode: code
+    }
   });
-  return result;
+
+  if (!result || result.expiresAt <= new Date()) return null;
+
+  return toInviteLink({
+    role: result.role,
+    invitationCode: result.invitationCode,
+    workspaceUid: result.workspaceUid,
+    createdAt: result.createdAt,
+    inviterUid: result.inviterUid,
+    inviterCrUid: result.inviterCrUid
+  });
 }

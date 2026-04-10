@@ -40,7 +40,6 @@ data:
       cfSiteKey: "{{ .Values.desktopConfig.cfSiteKey }}"
 
     database:
-      mongodbURI: "{{ .Values.desktopConfig.databaseMongodbURI }}"
       globalCockroachdbURI: "{{ .Values.desktopConfig.databaseGlobalCockroachdbURI }}"
       regionalCockroachdbURI: "{{ .Values.desktopConfig.databaseLocalCockroachdbURI }}"
 

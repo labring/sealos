@@ -31,8 +31,9 @@ The Helm Chart uses two values files to manage configuration:
 Contains default Helm Chart configurations that should not be modified.
 
 **Content**:
+
 - **Infrastructure configurations**: Image, service account, probes, ingress, scheduling, etc.
-- **Auto-configured reference values**: cloudDomain, jwtInternal, databaseMongodbURI, etc. (automatically fetched from ConfigMap, values here are for reference only)
+- **Auto-configured reference values**: cloudDomain, jwtInternal, databaseGlobalCockroachdbURI, etc. (automatically fetched from ConfigMap, values here are for reference only)
 
 **Modification**: ❌ Do not modify
 
@@ -41,6 +42,7 @@ Contains default Helm Chart configurations that should not be modified.
 Contains user-customizable configurations.
 
 **Content**:
+
 - Resource limits and requests
 - Feature flags
 - OAuth providers (GitHub, Google, WeChat, etc.)
@@ -129,7 +131,6 @@ For detailed documentation, see [VALUES_FILES_GUIDE.md](./VALUES_FILES_GUIDE.md)
 | `CLOUD_PORT`                      | `""`            | Override cloud port (auto from sealos-config)    |
 | `CERT_SECRET_NAME`                | `wildcard-cert` | TLS certificate secret name                      |
 | `REGION_UID`                      | `""`            | Override region UID (auto from sealos-config)    |
-| `DATABASE_MONGODB_URI`            | `""`            | Override MongoDB URI (auto from sealos-config)   |
 | `DATABASE_GLOBAL_COCKROACHDB_URI` | `""`            | Override global DB URI (auto from sealos-config) |
 | `DATABASE_LOCAL_COCKROACHDB_URI`  | `""`            | Override local DB URI (auto from sealos-config)  |
 | `PASSWORD_SALT`                   | `""`            | Override password salt (auto from sealos-config) |
@@ -149,7 +150,6 @@ The following values are **automatically retrieved** from the `sealos-system/sea
 | `jwtRegional`                  | `desktopConfig.jwtRegional`                  | Regional JWT secret    |
 | `jwtGlobal`                    | `desktopConfig.jwtGlobal`                    | Global JWT secret      |
 | `regionUID`                    | `desktopConfig.regionUID`                    | Region UID             |
-| `databaseMongodbURI`           | `desktopConfig.databaseMongodbURI`           | MongoDB connection URI |
 | `databaseGlobalCockroachdbURI` | `desktopConfig.databaseGlobalCockroachdbURI` | Global CockroachDB URI |
 | `databaseLocalCockroachdbURI`  | `desktopConfig.databaseLocalCockroachdbURI`  | Local CockroachDB URI  |
 | `passwordSalt`                 | `desktopConfig.passwordSalt`                 | Password hash salt     |
@@ -198,7 +198,6 @@ common:
   cfSiteKey: ''
 
 database:
-  mongodbURI: 'mongodb://...'
   globalCockroachdbURI: 'postgres://...'
   regionalCockroachdbURI: 'postgres://...'
 
@@ -308,13 +307,13 @@ Add `additionalAllowedOriginsPrefixes` in `values-custom.yaml`:
 
 ```yaml
 desktopConfig:
-  cloudDomain: "cloud.example.com"
+  cloudDomain: 'cloud.example.com'
 
   # Add additional allowedOrigins subdomains
   # Only provide the subdomain part, system will add https:// and .{cloudDomain}
   additionalAllowedOriginsPrefixes:
-    - "my-custom-app"
-    - "another-service"
+    - 'my-custom-app'
+    - 'another-service'
 ```
 
 ### Result
@@ -324,22 +323,24 @@ The generated `allowedOrigins` will include:
 ```yaml
 allowedOrigins:
   # Default origins...
-  - "https://sealaf.cloud.example.com"
+  - 'https://sealaf.cloud.example.com'
   # Additional custom origins
-  - "https://my-custom-app.cloud.example.com"
-  - "https://another-service.cloud.example.com"
+  - 'https://my-custom-app.cloud.example.com'
+  - 'https://another-service.cloud.example.com'
 ```
 
 ### Usage Examples
 
 **Via values file:**
+
 ```yaml
 additionalAllowedOriginsPrefixes:
-  - "custom-app"
-  - "analytics-service"
+  - 'custom-app'
+  - 'analytics-service'
 ```
 
 **Via Helm --set:**
+
 ```bash
 helm upgrade -i desktop-frontend ./charts/desktop-frontend \
   --set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app" \
@@ -347,6 +348,7 @@ helm upgrade -i desktop-frontend ./charts/desktop-frontend \
 ```
 
 **Via environment variable:**
+
 ```bash
 export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app"'
 ./desktop-frontend-entrypoint.sh
@@ -447,7 +449,7 @@ sealos run desktop-frontend:latest \
 - **Features**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **Communication**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
 - **URLs**: `workorderUrl` and service URLs auto-generated from `cloudDomain` (`template`, `applaunchpad`, `dbprovider`, `objectstorage`)
-- **Database**: `databaseMongodbURI`, `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
+- **Database**: `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
 - **Team management**: `maxTeamCount`, `maxTeamMemberCount`
 
 For 60+ configurable parameters across 23 categories, see [HELM_VALUES_GUIDE.md](HELM_VALUES_GUIDE.md).
@@ -457,7 +459,7 @@ For 60+ configurable parameters across 23 categories, see [HELM_VALUES_GUIDE.md]
 ```bash
 sealos run desktop-frontend:latest \
   -e AUTO_CONFIG_ENABLED=false \
-  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=cloud.example.com --set desktopConfig.databaseMongodbURI=mongodb://..."
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=cloud.example.com --set desktopConfig.databaseLocalCockroachdbURI=postgres://..."
 ```
 
 ### Custom Helm Options
