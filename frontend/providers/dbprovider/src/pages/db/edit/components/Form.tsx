@@ -771,7 +771,8 @@ const Form = ({
                   max={20}
                   step={
                     getValues('dbType') === DBTypeEnum.mongodb ||
-                    getValues('dbType') === DBTypeEnum.mysql
+                    getValues('dbType') === DBTypeEnum.mysql ||
+                    getValues('dbType') === DBTypeEnum.polardbx
                       ? 2
                       : 1
                   }
@@ -788,9 +789,13 @@ const Form = ({
                       }
                     });
                     const dbType = getValues('dbType');
-                    const oddVal = val % 2 === 0 ? val + 1 : val;
+                    const oddVal = Math.min(val % 2 === 0 ? val + 1 : val, 19);
                     const replicasValue =
-                      dbType === DBTypeEnum.mongodb || dbType === DBTypeEnum.mysql ? oddVal : val;
+                      dbType === DBTypeEnum.mongodb ||
+                      dbType === DBTypeEnum.mysql ||
+                      dbType === DBTypeEnum.polardbx
+                        ? oddVal
+                        : val;
                     setValue('replicas', isNaN(replicasValue) ? 1 : replicasValue);
                   }}
                 />
@@ -827,6 +832,16 @@ const Form = ({
                       borderRadius={'md'}
                     />
                   )}
+                {getValues('dbType') === DBTypeEnum.polardbx && (
+                  <Tip
+                    ml={4}
+                    icon={<InfoOutlineIcon />}
+                    text={t('polardbx_replica_rule_tip')}
+                    size="sm"
+                    borderRadius={'md'}
+                    maxWidth={360}
+                  />
+                )}
               </Flex>
 
               <FormControl isInvalid={!!errors.storage} paddingTop={1}>

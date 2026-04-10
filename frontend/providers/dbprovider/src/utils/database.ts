@@ -24,6 +24,7 @@ export const validatePolarDBXResources = (data: {
   cpu: number;
   memory: number;
   storage: number;
+  replicas: number;
 }) => {
   if (data.dbType !== DBTypeEnum.polardbx) {
     return;
@@ -37,6 +38,10 @@ export const validatePolarDBXResources = (data: {
 
   if (data.storage < POLARDBX_MIN_STORAGE) {
     throw new Error('PolarDB-X requires at least 3Gi storage');
+  }
+
+  if (data.replicas % 2 === 0) {
+    throw new Error('PolarDB-X replicas must be odd numbers; even replica counts cannot start');
   }
 };
 
