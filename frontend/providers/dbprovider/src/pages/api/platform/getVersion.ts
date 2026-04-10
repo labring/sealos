@@ -21,6 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [DBTypeEnum.postgresql]: [],
       [DBTypeEnum.mongodb]: [],
       [DBTypeEnum.mysql]: [],
+      [DBTypeEnum.polardbx]: [],
       [DBTypeEnum.redis]: [],
       [DBTypeEnum.kafka]: [],
       [DBTypeEnum.qdrant]: [],
@@ -48,6 +49,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (clusterDefinitionRef === 'mysql' || clusterDefinitionRef === 'apecloud-mysql') {
         db = DBTypeEnum.mysql;
+      } else if (clusterDefinitionRef === 'polardbx') {
+        db = DBTypeEnum.polardbx;
       } else {
         db = clusterDefinitionRef as `${DBTypeEnum}`;
       }

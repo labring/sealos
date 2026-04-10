@@ -194,9 +194,20 @@ const DBList = ({
   );
 
   const { getDataSourceId, setDataSourceId } = useDBStore();
+  const supportManageData = useCallback(
+    (dbType: string) => ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(dbType),
+    []
+  );
 
   const handleManageData = useCallback(
     async (db: DBListItemType) => {
+      if (!supportManageData(db.dbType)) {
+        return toast({
+          title: 'Manage data is not supported for this database type',
+          status: 'warning'
+        });
+      }
+
       try {
         const orgId = '34';
         const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
@@ -326,7 +337,7 @@ const DBList = ({
         });
       }
     },
-    [router, t, toast, getDataSourceId, setDataSourceId, SystemEnv]
+    [router, t, toast, getDataSourceId, setDataSourceId, SystemEnv, supportManageData]
   );
 
   const globalFilterFn: FilterFn<DBListItemType> = (row, columnId, filterValue) => {
@@ -512,7 +523,7 @@ const DBList = ({
         header: () => t('operation'),
         cell: ({ row }) => (
           <Flex key={row.id}>
-            {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
+            {SystemEnv.MANAGED_DB_ENABLED === 'true' && supportManageData(row.original.dbType) && (
               <Button
                 mr={'10px'}
                 size={'sm'}

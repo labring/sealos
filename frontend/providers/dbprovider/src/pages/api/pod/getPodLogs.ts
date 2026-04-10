@@ -34,6 +34,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   const containerName = DBBackupPolicyNameMap[dbType];
+  if (!containerName) {
+    throw new Error(`Logs are not supported for database type: ${dbType}`);
+  }
   console.log(containerName, 'containerName');
 
   if (!stream) {

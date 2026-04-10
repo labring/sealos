@@ -18,7 +18,15 @@ import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
 import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
-import { distributeResources } from '@/utils/database';
+import {
+  distributeResources,
+  POLARDBX_MIN_COMPONENT_CPU,
+  POLARDBX_MIN_COMPONENT_MEMORY,
+  POLARDBX_MIN_CPU,
+  POLARDBX_MIN_MEMORY,
+  POLARDBX_MIN_STORAGE,
+  POLARDBX_GMS_MAX_STORAGE
+} from '@/utils/database';
 import { getAddonList } from '@/api/platform';
 import type { AddonItem } from '@/pages/api/getAddonList';
 import { useQuery } from '@tanstack/react-query';
@@ -70,6 +78,10 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
     [DBTypeEnum.postgresql, t('occupy', { comp: 'PostgreSQL', num: '100%' })],
     [DBTypeEnum.mongodb, t('occupy', { comp: 'MongoDB', num: '100%' })],
     [DBTypeEnum.mysql, t('occupy', { comp: 'MySQL', num: '100%' })],
+    [
+      DBTypeEnum.polardbx,
+      t('polardbx_resource_distribution_summary', { gmsStorage: POLARDBX_GMS_MAX_STORAGE })
+    ],
     [DBTypeEnum.redis, `${t('occupy', { comp: 'Redis', num: '100%' })}, ${t('ha_desc')}`],
     [DBTypeEnum.kafka, `Controller, broker, exporter, server${t('each', { perc: '25%' })}`],
     [
@@ -333,6 +345,14 @@ const Form = ({
         break;
       case DBTypeEnum.milvus:
         [minStorageChange, minCPU, minMemory] = [3, 2, 2];
+        break;
+      case DBTypeEnum.polardbx:
+        [minStorageChange, minCPU, minMemory, specialUse] = [
+          1,
+          POLARDBX_MIN_CPU / POLARDBX_MIN_COMPONENT_CPU,
+          POLARDBX_MIN_MEMORY / POLARDBX_MIN_COMPONENT_MEMORY,
+          POLARDBX_MIN_STORAGE
+        ];
         break;
       default:
         break;
@@ -889,6 +909,22 @@ const Form = ({
                       borderRadius={'md'}
                       height={'fit-content'}
                       maxWidth={310}
+                      maxHeight={'100%'}
+                    />
+                  )}
+                  {getValues('dbType') === DBTypeEnum.polardbx && (
+                    <Tip
+                      ml={4}
+                      icon={<InfoOutlineIcon />}
+                      text={t('polardbx_resource_rule_tip', {
+                        minCpu: POLARDBX_MIN_CPU / POLARDBX_MIN_COMPONENT_CPU,
+                        minMemory: POLARDBX_MIN_MEMORY / POLARDBX_MIN_COMPONENT_MEMORY,
+                        gmsStorage: POLARDBX_GMS_MAX_STORAGE
+                      })}
+                      size="sm"
+                      borderRadius={'md'}
+                      height={'fit-content'}
+                      maxWidth={360}
                       maxHeight={'100%'}
                     />
                   )}

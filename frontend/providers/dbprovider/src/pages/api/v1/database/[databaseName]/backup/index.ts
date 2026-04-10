@@ -89,15 +89,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const backupName = `${databaseName}-backup-${nanoid()}`;
 
       // Create backup policy name based on database type
-      const backupPolicyName = `${databaseName}-${DBBackupPolicyNameMap[dbType as DBTypeEnum]}-backup-policy`;
+      const backupPolicySuffix = DBBackupPolicyNameMap[dbType as DBTypeEnum];
       const backupMethod = DBBackupMethodNameMap[dbType as DBTypeEnum];
 
-      if (!backupMethod) {
+      if (!backupPolicySuffix || !backupMethod) {
         return jsonRes(res, {
           code: 400,
           message: `Unsupported database type: ${dbType}`
         });
       }
+
+      const backupPolicyName = `${databaseName}-${backupPolicySuffix}-backup-policy`;
 
       // Generate backup YAML
       const backupYaml = json2ManualBackup({

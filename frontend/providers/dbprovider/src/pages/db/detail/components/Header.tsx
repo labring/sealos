@@ -16,7 +16,7 @@ import { track } from '@sealos/gtm';
 import { i18n, useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { Dispatch, useCallback, useState, useEffect } from 'react';
+import React, { Dispatch, useCallback, useState, useEffect, useMemo } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
 import {
@@ -75,6 +75,10 @@ const Header = ({
 
   const [loading, setLoading] = useState(false);
   const { getDataSourceId, setDataSourceId } = useDBStore();
+  const supportManageData = useMemo(
+    () => ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(db.dbType),
+    [db.dbType]
+  );
   const { SystemEnv } = useEnvStore();
 
   const handleRestartApp = useCallback(async () => {
@@ -154,6 +158,13 @@ const Header = ({
   }, [db, t, toast]);
 
   const handleManageData = useCallback(async () => {
+    if (!supportManageData) {
+      return toast({
+        title: 'Manage data is not supported for this database type',
+        status: 'warning'
+      });
+    }
+
     try {
       const orgId = '34';
       const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
@@ -284,7 +295,7 @@ const Header = ({
         status: 'error'
       });
     }
-  }, [toast, router, getDataSourceId, setDataSourceId, t, SystemEnv]);
+  }, [toast, router, getDataSourceId, setDataSourceId, t, SystemEnv, supportManageData]);
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
@@ -459,7 +470,7 @@ const Header = ({
           )}
         </Flex>
 
-        {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
+        {SystemEnv.MANAGED_DB_ENABLED === 'true' && supportManageData && (
           <Button
             display={'flex'}
             height={'40px'}

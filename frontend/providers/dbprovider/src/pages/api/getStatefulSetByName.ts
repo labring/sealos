@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('name is empty');
     }
 
-    const dbTypeMap = {
+    const dbTypeMap: Partial<Record<DBType, { key: string }>> = {
       [DBTypeEnum.postgresql]: {
         key: 'postgresql'
       },
@@ -26,6 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       [DBTypeEnum.mysql]: {
         key: 'mysql'
+      },
+      [DBTypeEnum.polardbx]: {
+        key: 'cn'
       },
       [DBTypeEnum.redis]: {
         key: 'redis'
@@ -53,7 +56,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     };
 
-    const temp = `${name}-${dbTypeMap[dbType].key}`;
+    const target = dbTypeMap[dbType];
+    if (!target) {
+      throw new Error(`StatefulSet lookup is not supported for database type: ${dbType}`);
+    }
+
+    const temp = `${name}-${target.key}`;
 
     jsonRes(res, {
       data: await GetStatefulSetByName({ name: temp, req })

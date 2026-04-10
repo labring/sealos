@@ -11,6 +11,35 @@ const base = {
   hostKey: 'host'
 };
 
+export const POLARDBX_MIN_COMPONENT_CPU = 1000;
+export const POLARDBX_MIN_COMPONENT_MEMORY = 1024;
+export const POLARDBX_MIN_STORAGE = 3;
+export const POLARDBX_GMS_MAX_STORAGE = 3;
+export const POLARDBX_COMPONENT_COUNT = 4;
+export const POLARDBX_MIN_CPU = POLARDBX_MIN_COMPONENT_CPU * POLARDBX_COMPONENT_COUNT;
+export const POLARDBX_MIN_MEMORY = POLARDBX_MIN_COMPONENT_MEMORY * POLARDBX_COMPONENT_COUNT;
+
+export const validatePolarDBXResources = (data: {
+  dbType: DBType;
+  cpu: number;
+  memory: number;
+  storage: number;
+}) => {
+  if (data.dbType !== DBTypeEnum.polardbx) {
+    return;
+  }
+
+  if (data.cpu < POLARDBX_MIN_CPU || data.memory < POLARDBX_MIN_MEMORY) {
+    throw new Error(
+      'PolarDB-X requires at least 4C and 4Gi so every component instance keeps at least 1C and 1Gi'
+    );
+  }
+
+  if (data.storage < POLARDBX_MIN_STORAGE) {
+    throw new Error('PolarDB-X requires at least 3Gi storage');
+  }
+};
+
 export const dbTypeMap = {
   [DBTypeEnum.postgresql]: {
     ...base,
@@ -21,6 +50,10 @@ export const dbTypeMap = {
     connectKey: 'mongodb'
   },
   [DBTypeEnum.mysql]: {
+    ...base,
+    connectKey: 'mysql'
+  },
+  [DBTypeEnum.polardbx]: {
     ...base,
     connectKey: 'mysql'
   },
@@ -196,6 +229,15 @@ export function distributeResources(data: {
     return allocateCM(cpu * percent, memory * percent);
   }
 
+  function getPolardbxReplicaMap(replicas: number) {
+    return {
+      gms: 1,
+      dn: replicas,
+      cn: 1,
+      cdc: 1
+    } as const;
+  }
+
   //
 
   switch (dbType) {
@@ -216,6 +258,46 @@ export function distributeResources(data: {
         [dbComponents[0]]: {
           cpuMemory: getPercentResource(1),
           storage: data.storage
+        }
+      };
+    case DBTypeEnum.polardbx:
+      const polardbxSharedCpu = POLARDBX_MIN_COMPONENT_CPU;
+      const polardbxSharedMemory = POLARDBX_MIN_COMPONENT_MEMORY;
+      const polardbxReplicaMap = getPolardbxReplicaMap(data.replicas);
+      const gmsStorage = Math.min(data.storage, POLARDBX_GMS_MAX_STORAGE);
+      const dnStorage = Math.max(data.storage - POLARDBX_GMS_MAX_STORAGE, 0);
+
+      return {
+        gms: {
+          cpuMemory: allocateCM(polardbxSharedCpu, polardbxSharedMemory),
+          storage: gmsStorage,
+          other: {
+            replicas: polardbxReplicaMap.gms
+          }
+        },
+        dn: {
+          cpuMemory: allocateCM(
+            Math.max(cpu - polardbxSharedCpu * 3, polardbxSharedCpu),
+            Math.max(memory - polardbxSharedMemory * 3, polardbxSharedMemory)
+          ),
+          storage: dnStorage,
+          other: {
+            replicas: polardbxReplicaMap.dn
+          }
+        },
+        cn: {
+          cpuMemory: allocateCM(polardbxSharedCpu, polardbxSharedMemory),
+          storage: 0,
+          other: {
+            replicas: polardbxReplicaMap.cn
+          }
+        },
+        cdc: {
+          cpuMemory: allocateCM(polardbxSharedCpu, polardbxSharedMemory),
+          storage: 0,
+          other: {
+            replicas: polardbxReplicaMap.cdc
+          }
         }
       };
     case DBTypeEnum.redis:

@@ -26,6 +26,7 @@ export let DBVersionMap: DBVersionMapType = {
     { id: 'ac-mysql-8.0.30-1', label: 'ac-mysql-8.0.30-1' },
     { id: 'mysql-5.7.42', label: 'mysql-5.7.42' }
   ],
+  [DBTypeEnum.polardbx]: [{ id: 'polardbx-v2.3', label: 'polardbx-v2.3' }],
   [DBTypeEnum.redis]: [{ id: 'redis-7.0.6', label: 'redis-7.0.6' }],
   [DBTypeEnum.kafka]: [{ id: 'kafka-3.3.2', label: 'kafka-3.3.2' }],
   [DBTypeEnum.qdrant]: [{ id: 'qdrant-1.5.0', label: 'qdrant-1.5.0' }],
