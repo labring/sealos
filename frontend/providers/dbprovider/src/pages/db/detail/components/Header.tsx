@@ -329,17 +329,23 @@ const Header = ({
               alignItems={'center'}
               gap={'8px'}
               borderRadius={'8px'}
-              background={'#0A0A0A'}
+              border={'1px solid #E4E4E7'}
+              background={'#FFF'}
               boxShadow={'0 1px 2px 0 rgba(0, 0, 0, 0.05)'}
               isLoading={loading}
               isDisabled={db.status.value !== 'Running'}
               onClick={handleManageData}
-              leftIcon={<Settings size={16} color="#FFF" />}
-              color={'#FFF'}
+              leftIcon={<Settings size={16} color="#71717A" />}
+              color={'#18181B'}
               fontFamily={'Geist, sans-serif'}
               fontSize={'14px'}
               fontWeight={'500'}
               lineHeight={'20px'}
+              _hover={{
+                color: '#FFF',
+                bg: '#000',
+                '& svg': { color: '#FFF' }
+              }}
             >
               {t('manage_data')}
             </Button>

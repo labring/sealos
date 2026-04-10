@@ -398,7 +398,7 @@ const DBList = ({
         id: 'actions',
         header: () => t('operation'),
         cell: ({ row }) => (
-          <Flex key={row.id}>
+          <Flex key={row.id} justifyContent={'flex-end'}>
             {SystemEnv.WHODB_ENABLED === 'true' &&
               WHODB_SUPPORTED_TYPES.has(row.original.dbType) && (
                 <Button
