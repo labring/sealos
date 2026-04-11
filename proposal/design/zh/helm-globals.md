@@ -85,16 +85,23 @@ globals:
     nfs: false
     offline: false
     
-  feature_configs:
+  featureConfigs:
     gpuHami: {}
     gpu: {}
     onlineIde: {}
     importCode: {}
     giteaTemplate: {}
-    
+
+    database:
+      type: cockroachdb
+    localDatabase:
+      uri: ""
+    globalDatabase:
+      uri: ""
+      
     objectStorage:
       size: 10Gi
-    
+      
     s3:
       # - s3 (Amazon Simple Storage Service)
       # - oss (Alibaba Cloud Object Storage Service)
