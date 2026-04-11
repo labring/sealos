@@ -23,7 +23,8 @@ export async function register() {
         common: {
           guideEnabled: false,
           apiEnabled: false,
-          gpuEnabled: false
+          gpuEnabled: false,
+          networkStorageEnabled: false
         },
         launchpad: {
           infrastructure: {

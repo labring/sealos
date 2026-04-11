@@ -102,3 +102,8 @@ export const setAppRemark = (payload: {
   remark: string;
   kind: 'deployment' | 'statefulset';
 }) => POST('/api/remark', payload);
+
+export const getSharePVCs = () =>
+  GET<{ name: string; storageClassName: string; capacity: string; phase: string }[]>(
+    '/api/listSharePVCs'
+  );

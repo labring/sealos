@@ -3,6 +3,7 @@ cloud:
   port: ""
   regionUID: "thisiaregionuid"
   certSecretName: "wildcard-cert"
+  proxyDomain: "127.0.0.1.nip.io"
   allowedOrigins:
     - "https://applaunchpad.127.0.0.1.nip.io"
     - "https://dbprovider.127.0.0.1.nip.io"
@@ -12,30 +13,54 @@ cloud:
     - "https://template.127.0.0.1.nip.io"
     - "https://terminal.127.0.0.1.nip.io"
 common:
-  enterpriseSupportingMaterials: ""
   enterpriseRealNameAuthEnabled: false
   realNameAuthEnabled: false
+  realNameReward: 0
+  realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
   guideEnabled: false
   apiEnabled: false
   rechargeEnabled: false
   cfSiteKey: ""
+  templateUrl: "https://template.127.0.0.1.nip.io"
+  objectstorageUrl: "https://objectstorage.127.0.0.1.nip.io"
+  applaunchpadUrl: "https://applaunchpad.127.0.0.1.nip.io"
+  dbproviderUrl: "https://dbprovider.127.0.0.1.nip.io"
+  trackingEnabled: false
 database:
   mongodbURI: "thisismongodburi"
   globalCockroachdbURI: "thisisglobalcockroachdburi"
   regionalCockroachdbURI: "thisisregionalcockroachdburi"
 desktop:
   layout:
+    version: "en"
     title: "Sealos Cloud"
-    logo: "/logo.png"
-    backgroundImage: "/images/bg-blue.svg"
-    discordInviteLink: "https://discord.gg/"
+    logo: "/logo.svg"
+    backgroundImage: "/images/bg-light.svg"
+    authTitle:
+      zh: "欢迎来到 Sealos"
+      en: "Welcome to Sealos"
+    authBackgroundImage:
+      zh: "/images/bg-light.svg"
+      en: "/images/bg-light.svg"
     meta:
       title: "Sealos Cloud"
       description: "Sealos Cloud"
       keywords: "Sealos Cloud"
       scripts: []
+      noscripts: []
+    customerServiceURL: ""
+    discordInviteLink: ""
+    forcedLanguage: "en"
+    currencySymbol: "usd"
+    protocol:
+      serviceProtocol:
+        zh: "https://sealos.io/zh-Hans/docs/msa/terms-of-service"
+        en: "https://sealos.io/docs/msa/terms-of-service"
+      privateProtocol:
+        zh: "https://sealos.io/zh-Hans/docs/msa/privacy-policy"
+        en: "https://sealos.io/docs/msa/privacy-policy"
     common:
-      githubStarEnabled: false
+      githubStarEnabled: true
       workorderEnabled: false
       accountSettingEnabled: true
       docsUrl: "https://sealos.run/docs/Intro/"
@@ -44,47 +69,99 @@ desktop:
       announcementEnabled: false
     gtmId: null
   auth:
-    proxyAddress: ""
+    billingToken: ""
     callbackURL: "https://127.0.0.1.nip.io/callback"
-    signUpEnabled: "true"
+    signUpEnabled: true
     baiduToken: ""
-    invite:
-      enabled: "false"
+    bingAd:
+      tenant: ""
+      clientId: ""
+      clientSecret: ""
+      refreshToken: ""
+      developerToken: ""
+      customerId: 0
+      customerAccountId: 0
+      conversionName: ""
     jwt:
       internal: "thisisinternaljwt"
       regional: "thisisregionaljwt"
       global: "thisisglobaljwt"
+    billingUrl: "http://account-service.account-system.svc:2333"
+    workorderUrl: ""
+    cloudVitrualMachineUrl: ""
+    invite:
+      enabled: false
+      lafSecretKey: ""
+      lafBaseURL: ""
     idp:
       password:
-        enabled: "true"
+        enabled: true
         salt: "thisispasswordsalt"
-#        github:
-#          enabled: "{{ .githubEnabled }}"
-#          clientId: "{{ .githubClientID }}"
-#          clientSecret: "{{ .githubClientSecret }}"
-#        wechat:
-#          enabled: "{{ .wechatEnabled }}"
-#          clientId: "{{ .wechatClientID }}"
-#          clientSecret: "{{ .wechatClientSecret }}"
-#        sms:
-#          ali:
-#            enabled: "{{ .smsEnabled }}"
-#            endpoint: "{{ .aliSmsEndpoint }}"
-#            signName: "{{ .aliSmsSignName }}"
-#            accessKeyId: "{{ .aliAccessKeyID }}"
-#            accessKeySecret: "{{ .aliAccessKeySecret }}"
-#        oauth2:
-#          enabled: "{{ .oauth2Enabled }}"
-#          callbackURL: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback"
-#          clientId: "{{ .oauth2ClientId }}"
-#          clientSecret: "{{ .oauth2ClientSecret }}"
-#          authURL: "{{ .oauth2AuthURL }}"
-#          tokenURL: "{{ .oauth2TokenURL }}"
-#          userInfoURL: "{{ .oauth2UserInfoURL }}"
+      github:
+        enabled: false
+        proxyAddress: ""
+        clientID: ""
+        clientSecret: ""
+      wechat:
+        enabled: false
+        proxyAddress: ""
+        clientID: ""
+        clientSecret: ""
+      google:
+        enabled: false
+        proxyAddress: ""
+        clientID: ""
+        clientSecret: ""
+      oauth2:
+        enabled: false
+        pkce: false
+        callbackURL: ""
+        clientID: ""
+        proxyAddress: ""
+        clientSecret: ""
+        authURL: ""
+        tokenURL: ""
+        userInfoURL: ""
+        displayName: ""
+      sms:
+        enabled: false
+        ali:
+          enabled: false
+          endpoint: ""
+          templateCode: ""
+          signName: ""
+          accessKeyID: ""
+          accessKeySecret: ""
+      email:
+        enabled: false
+        host: ""
+        port: 0
+        user: ""
+        password: ""
+        language: ""
+    captcha:
+      ali:
+        enabled: false
+        sceneId: ""
+        prefix: ""
+        endpoint: ""
+        accessKeyID: ""
+        accessKeySecret: ""
+      turnstile:
+        enabled: false
+        siteKey: ""
+        secretKey: ""
+  teamManagement:
+    maxTeamCount: 0
+    maxTeamMemberCount: 0
+tracking:
+  websiteId: ""
+  hostUrl: ""
 realNameOSS:
   accessKey: ""
   accessKeySecret: ""
   endpoint: ""
+  ssl: false
+  port: 0
   realNameBucket: ""
   enterpriseRealNameBucket: ""
-  ssl: true

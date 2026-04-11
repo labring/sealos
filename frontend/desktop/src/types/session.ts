@@ -41,6 +41,7 @@ export type ApiSession = {
   };
   // 帮忙导出用的
   kubeconfig: KubeConfig;
+  encodedKubeconfig: string;
 };
 export type JWTPayload = {
   kubeconfig: KubeConfig;

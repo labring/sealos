@@ -39,6 +39,7 @@ export type AppConfigType = {
     guideEnabled: boolean;
     apiEnabled: boolean;
     gpuEnabled: boolean;
+    networkStorageEnabled: boolean;
   };
   launchpad: {
     infrastructure: {
@@ -106,4 +107,5 @@ export type EnvResponse = {
   PVC_STORAGE_MAX: number;
   GPU_ENABLED: boolean;
   LOG_ENABLED: boolean;
+  NETWORK_STORAGE_ENABLED: boolean;
 };

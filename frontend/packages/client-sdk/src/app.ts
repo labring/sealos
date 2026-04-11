@@ -1,6 +1,12 @@
 import { v4 } from 'uuid';
 import { API_NAME } from './constants';
-import { AppMessageType, AppSendMessageType, MasterReplyMessageType, SessionV1 } from './types';
+import {
+  AppMessageType,
+  AppSendMessageType,
+  MasterReplyMessageType,
+  SessionV1,
+  WorkspaceQuotaItem
+} from './types';
 import { isBrowser } from './utils';
 
 class ClientSDK {
@@ -104,6 +110,23 @@ class ClientSDK {
     return this.sendMessageToMaster(API_NAME.GET_LANGUAGE);
   }
 
+  getWorkspaceQuota(): Promise<{ quota: WorkspaceQuotaItem[] }> {
+    return this.sendMessageToMaster(API_NAME.GET_WORKSPACE_QUOTA);
+  }
+
+  getHostConfig(): Promise<{
+    cloud: {
+      domain: string;
+      port: string;
+      regionUid: string;
+    };
+    features: {
+      subscription: boolean;
+    };
+  }> {
+    return this.sendMessageToMaster(API_NAME.GET_HOST_CONFIG);
+  }
+
   /**
    * run master EventBus
    */
@@ -155,6 +178,9 @@ class ClientSDK {
   }
 }
 
+/**
+ * @deprecated - You really should not use sealosApp directly anymore. We will migrate to a React Context based approach in the near future.
+ */
 export let sealosApp: ClientSDK;
 
 export const createSealosApp = () => {

@@ -5,6 +5,8 @@ import { enablePassword } from '@/services/enable';
 import { getGlobalToken } from '@/services/backend/globalAuth';
 import { AuthError } from '@/services/backend/errors';
 import { ProviderType } from 'prisma/global/generated/client';
+import { initRegionToken } from '@/services/backend/regionAuth';
+import { getRegionUid } from '@/services/enable';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
@@ -41,10 +43,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 401,
         message: 'Unauthorized'
       });
+
+    // Auto init region for new users so callers can directly use regionToken API
+    if (data.needInit && data.user) {
+      try {
+        await initRegionToken({
+          userUid: data.user.userUid,
+          userId: data.user.userId,
+          regionUid: getRegionUid(),
+          workspaceName: 'My Workspace'
+        });
+      } catch (e) {
+        console.error('Auto init region failed:', e);
+      }
+    }
+
     return jsonRes(res, {
       data: {
         token: data.token,
-        needInit: data.needInit
+        needInit: false
       },
       code: 200,
       message: 'Successfully'

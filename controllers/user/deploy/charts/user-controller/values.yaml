@@ -1,0 +1,64 @@
+# Default values for user controller helm chart.
+
+image: ghcr.io/labring/sealos-user-controller:latest
+
+imagePullSecrets: []
+fullnameOverride: "user"
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: "user-controller-manager"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+
+securityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+service:
+  metrics:
+    port: 8443
+  webhook:
+    port: 443
+
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8081
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8081
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+# Cloud API server configuration
+# cloudAPIServerDomain is auto-configured by entrypoint.sh from sealos-config ConfigMap
+cloudAPIServerDomain: 127.0.0.1.nip.io
+cloudAPIServerPort: "6443"
+
+metrics:
+  # Enable metrics endpoint
+  enabled: false
+  # Path to the metrics certificate
+  certPath: /tmp/k8s-metrics-server/metrics-certs
+  secretName: metrics-server-cert
+
+nodeSelector: {}
+
+tolerations: []
+
+# If no affinity is provided a default podAntiAffinity is used to spread controllers.
+affinity: {}

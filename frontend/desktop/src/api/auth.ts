@@ -17,10 +17,18 @@ import { ValueOf } from '@/types/tools';
 import { type AxiosInstance } from 'axios';
 import { ProviderType } from 'prisma/global/generated/client';
 
+type EncodedKubeconfigResponse = {
+  kubeconfig: string;
+  encodedKubeconfig: string;
+};
+
+type RegionTokenResponse = EncodedKubeconfigResponse & {
+  token: string;
+  appToken: string;
+};
+
 export const _getRegionToken = (request: AxiosInstance) => () =>
-  request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
-    '/api/auth/regionToken'
-  );
+  request.post<any, ApiResp<RegionTokenResponse>>('/api/auth/regionToken');
 
 export const getRegionToken = _getRegionToken(request);
 
@@ -230,10 +238,7 @@ export const _EmailSignUpCheck = (request: AxiosInstance) => (data: IEmailCheckP
   request.post<never, ApiResp<any>>('/api/auth/email/signUp/check', data);
 
 export const _initRegionToken = (request: AxiosInstance) => (data: InitRegionTokenParams) =>
-  request.post<typeof data, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
-    '/api/auth/initRegionToken',
-    data
-  );
+  request.post<typeof data, ApiResp<RegionTokenResponse>>('/api/auth/initRegionToken', data);
 
 export const EmailSignIn = _EmailSignIn(request);
 export const EmailSignUp = _EmailSignUp(request);
@@ -274,7 +279,7 @@ export const getBanksListRequest = _getBanksListRequest(request);
 export const getAmount = _getAmount(request);
 
 export const _rotateKubeconfig = (request: AxiosInstance) => () =>
-  request.post<never, ApiResp<{ kubeconfig: string }>>('/api/auth/rotateKubeconfig');
+  request.post<never, ApiResp<EncodedKubeconfigResponse>>('/api/auth/rotateKubeconfig');
 
 export const rotateKubeconfig = _rotateKubeconfig(request);
 

@@ -24,14 +24,6 @@ export const memoryFormatToMi = (memory: string) => {
   return Number(value.toFixed(2));
 };
 
-export const storageQuantityToMi = (quantity: string) => {
-  if (!quantity || quantity === '0') return 0;
-  const s = String(quantity).trim();
-  if (/[KMGT]i/i.test(s)) return memoryFormatToMi(s);
-  if (/^\d+\.?\d*$/.test(s)) return Number((parseFloat(s) / (1024 * 1024)).toFixed(2));
-  return memoryFormatToMi(s);
-};
-
 /**
  * cpu format
  */
@@ -47,9 +39,6 @@ export const cpuFormatToM = (cpu: string) => {
     value = value / 1000;
   } else if (/m/gi.test(cpu)) {
     value = value;
-  } else if (/k/gi.test(cpu)) {
-    // k means 1000 cores, convert to millicores: 1k = 1000 * 1000m = 1000000m
-    value = value * 1000 * 1000;
   } else {
     value = value * 1000;
   }

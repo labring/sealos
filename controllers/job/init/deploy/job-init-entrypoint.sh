@@ -1,6 +1,6 @@
 #!/bin/bash
 # job-init Helm 部署入口，负责安装/升级初始化 Job 资源。
-set -ex
+set -e
 
 HELM_OPTS=${HELM_OPTS:-""}
 RELEASE_NAME=${RELEASE_NAME:-"job-init"}
@@ -103,4 +103,18 @@ if kubectl -n "${RELEASE_NAMESPACE}" get job "${JOB_NAME}" >/dev/null 2>&1; then
   kubectl -n "${RELEASE_NAMESPACE}" delete job "${JOB_NAME}" --ignore-not-found --wait=true
 fi
 
-helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" "${HELM_SET_ARGS[@]}" ${HELM_OPTS}
+# Prepare values files
+SERVICE_NAME="job-init"
+USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+
+# Copy user values template if not exists
+if [ ! -f "${USER_VALUES_PATH}" ]; then
+  mkdir -p "$(dirname "${USER_VALUES_PATH}")"
+  cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-values.yaml" "${USER_VALUES_PATH}"
+fi
+
+helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" \
+  -f "./charts/${SERVICE_NAME}/values.yaml" \
+  -f "${USER_VALUES_PATH}" \
+  "${HELM_SET_ARGS[@]}" \
+  ${HELM_OPTS}

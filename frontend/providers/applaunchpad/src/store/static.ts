@@ -16,6 +16,7 @@ export let DOWNLOAD_LIMIT = 100;
 export let PVC_STORAGE_MAX = 20;
 export let GPU_ENABLED = false;
 export let LOG_ENABLED = false;
+export let NETWORK_STORAGE_ENABLED = false;
 
 export const loadInitData = async () => {
   try {
@@ -36,6 +37,7 @@ export const loadInitData = async () => {
     PVC_STORAGE_MAX = res.PVC_STORAGE_MAX;
     GPU_ENABLED = res.GPU_ENABLED;
     LOG_ENABLED = res.LOG_ENABLED;
+    NETWORK_STORAGE_ENABLED = res.NETWORK_STORAGE_ENABLED;
 
     return {
       SEALOS_DOMAIN,

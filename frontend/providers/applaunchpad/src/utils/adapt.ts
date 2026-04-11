@@ -395,6 +395,12 @@ export const adaptAppDetail = async (
     ? JSON.parse(remoteStoresJson).map((s: { name: string }) => s.name)
     : [];
 
+  // Get network store names from annotations to filter them out
+  const networkStoresJson = appDeploy?.metadata?.annotations?.networkStores;
+  const networkStoreNames: string[] = networkStoresJson
+    ? JSON.parse(networkStoresJson).map((s: { name: string }) => s.name)
+    : [];
+
   const getFilteredVolumeMounts = () => {
     const volumeMounts = appDeploy?.spec?.template?.spec?.containers?.[0]?.volumeMounts || [];
     const storeNames =
@@ -407,6 +413,7 @@ export const adaptAppDetail = async (
         !configMapVolumeNames.includes(mount.name) &&
         !storeNames.includes(mount.name) &&
         !remoteStoreNames.includes(mount.name) &&
+        !networkStoreNames.includes(mount.name) &&
         // Filter out shared-memory volume mount
         mount.name !== 'shared-memory'
     );
@@ -415,8 +422,9 @@ export const adaptAppDetail = async (
   const getFilteredVolumes = () => {
     return (
       appDeploy?.spec?.template?.spec?.volumes?.filter((volume) => {
-        // Filter out remote stores
+        // Filter out remote stores and network stores
         if (remoteStoreNames.includes(volume.name)) return false;
+        if (networkStoreNames.includes(volume.name)) return false;
         // Filter out shared-memory volume (emptyDir with Memory medium)
         if (volume.name === 'shared-memory' && volume.emptyDir?.medium === 'Memory') return false;
         // Filter out configMap volumes
@@ -589,6 +597,11 @@ export const adaptAppDetail = async (
 
       return [...localStores, ...remoteStores];
     })(),
+    networkStoreList: (() => {
+      const networkStoresJson = appDeploy?.metadata?.annotations?.networkStores;
+      if (!networkStoresJson) return [];
+      return JSON.parse(networkStoresJson) as AppEditType['networkStoreList'];
+    })(),
     volumeMounts: getFilteredVolumeMounts(),
     volumes: getFilteredVolumes(),
     kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
@@ -620,6 +633,7 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'configMapList',
     'secret',
     'storeList',
+    'networkStoreList',
     'gpu',
     'labels',
     'kind',
