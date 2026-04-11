@@ -1,14 +1,14 @@
-# Sealos 横向配置职责分层（ConfigMap 与 globals）
+# Sealos 横向配置职责分层（ConfigMap 与 global）
 
 ## 0. 结论先行
 
 你当前思路可以明确拆成两条线：
 
 1. `ConfigMap`：解决 `entrypoint.sh` 的运行时读取与自动注入问题。
-2. `globals.yaml`：解决 Helm values 的横向聚合与统一开关问题。
+2. `global.yaml`：解决 Helm values 的横向聚合与统一开关问题。
 
 这两条线不是替代关系，而是分层关系：
-- `globals.yaml` 负责“声明式聚合”。
+- `global.yaml` 负责“声明式聚合”。
 - `ConfigMap` 负责“运行时注入/发现”。
 
 ## 1. 问题定义
@@ -36,26 +36,26 @@
 - `objectstorage-config`：对象存储账号入口
 - `sealos-cloud-admin`：初始化管理员密码存储
 
-### 2.2 globals 层（Helm Values Aggregation Layer）
+### 2.2 global 层（Helm Values Aggregation Layer）
 
 目标：聚合横向 feature 配置，统一多模块开关与默认参数。
 
 典型方式：
-1. 维护 `/root/.sealos/cloud/values/globals.yaml`。
-2. 安装脚本通过 `yq` 解析 `globals.yaml`。
+1. 维护 `/root/.sealos/cloud/values/global.yaml`。
+2. 安装脚本通过 `yq` 解析 `global.yaml`。
 3. 将结果与模块 values 合并后传给 Helm。
 
 ## 3. 你当前内容总结
 
 ### 3.1 关键设计点
 
-1. 引入统一 `globals` 文件承载横向 feature。
+1. 引入统一 `global` 文件承载横向 feature。
 2. feature 开关与参数分离：`feature_gates` + `feature_configs`。
 3. 首批 feature：`gpu_hami`、`online_ide`、`import_ide`、`gitea_template`、`nfs`。
 
 ### 3.2 路径约定（你补充的方向）
 
-1. 全局配置：`/root/.sealos/cloud/values/globals.yaml`
+1. 全局配置：`/root/.sealos/cloud/values/global.yaml`
 2. 模块覆盖：`/root/.sealos/cloud/values/core/<module>-values.yaml`
 3. 应用级扩展：`/root/.sealos/cloud/values/apps/devbox/xxx.yaml`
 
@@ -63,13 +63,13 @@
 
 1. SA 依赖和 ENV 依赖需要拆开治理（避免耦合在同一个聚合块）。
 2. `sealos-config` 用法需要形成统一约定（字段、覆盖关系、回退逻辑）。
-3. 安装脚本需显式依赖 `yq`，用于解析 `globals.yaml`。
+3. 安装脚本需显式依赖 `yq`，用于解析 `global.yaml`。
 4. Chart 命名/路径需要规范化，避免多种命名并存带来的维护成本。
 
-## 4. `globals.yaml` 草案（第一版）
+## 4. `global.yaml` 草案（第一版）
 
 ```yaml
-globals:
+global:
   version: "zh"
   isKylin10: false
   
@@ -139,7 +139,7 @@ globals:
 ### 5.1 加载顺序（执行顺序，前低后高）
 
 1. `charts/<module>/values.yaml`
-2. `/root/.sealos/cloud/values/globals.yaml`
+2. `/root/.sealos/cloud/values/global.yaml`
 3. `/root/.sealos/cloud/values/apps/<module>/*-values.yaml`（可选）
 4. `/root/.sealos/cloud/values/default/<module>/*-values.yaml`（可选）
 5. `/root/.sealos/cloud/values/core/<module>-values.yaml`
@@ -149,12 +149,12 @@ globals:
 1. `HELM_OPTIONS/--set/--set-string`
 2. `/root/.sealos/cloud/values/core/<module>-values.yaml`
 3. `/root/.sealos/cloud/values/apps/<module>/*-values.yaml`
-4. `/root/.sealos/cloud/values/globals.yaml`
+4. `/root/.sealos/cloud/values/global.yaml`
 5. `charts/<module>/values.yaml`
 
 ### 5.3 Feature 判定规则
 
-1. 先判定 `globals.feature_gates.<feature>`。
+1. 先判定 `global.feature_gates.<feature>`。
 2. 当值为 `false` 时，忽略该 feature 的 `feature_configs` 与模块私有同名开关。
 3. 当值为 `true` 时，再读取该 feature 配置并合并到模块 values。
 
@@ -175,20 +175,20 @@ varJwtRegional=$(kubectl get configmap sealos-config -n sealos-system -o jsonpat
 varJwtGlobal=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtGlobal}')
 ```
 
-示例 B：使用 `yq` 读取 `globals` 参数（`yq` 路径：`~/.sealos/cloud/bin/yq`）
+示例 B：使用 `yq` 读取 `global` 参数（`yq` 路径：`~/.sealos/cloud/bin/yq`）
 
 ```bash
 YQ_BIN="${HOME}/.sealos/cloud/bin/yq"
-GLOBALS_FILE="/root/.sealos/cloud/values/globals.yaml"
+GLOBALS_FILE="/root/.sealos/cloud/values/global.yaml"
 
-# 读取开关：globals.feature_gates.gpu_hami
-gpuHamiEnabled=$("${YQ_BIN}" e -r '.globals.feature_gates.gpu_hami // false' "${GLOBALS_FILE}")
+# 读取开关：global.feature_gates.gpu_hami
+gpuHamiEnabled=$("${YQ_BIN}" e -r '.global.feature_gates.gpu_hami // false' "${GLOBALS_FILE}")
 
-# 读取参数：globals.feature_configs.nfs.storage_class
-nfsStorageClass=$("${YQ_BIN}" e -r '.globals.feature_configs.nfs.storage_class // "nfs-client"' "${GLOBALS_FILE}")
+# 读取参数：global.feature_configs.nfs.storage_class
+nfsStorageClass=$("${YQ_BIN}" e -r '.global.feature_configs.nfs.storage_class // "nfs-client"' "${GLOBALS_FILE}")
 
-# 读取参数：globals.feature_configs.online_ide.startup_config_map
-onlineIDEStartupCM=$("${YQ_BIN}" e -r '.globals.feature_configs.online_ide.startup_config_map // "devbox-startup"' "${GLOBALS_FILE}")
+# 读取参数：global.feature_configs.online_ide.startup_config_map
+onlineIDEStartupCM=$("${YQ_BIN}" e -r '.global.feature_configs.online_ide.startup_config_map // "devbox-startup"' "${GLOBALS_FILE}")
 ```
 
 ## 6. Chart 命名规范（建议）
