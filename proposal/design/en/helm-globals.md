@@ -71,30 +71,37 @@ Typical flow:
 ```yaml
 globals:
   version: "zh"
-
+  
   isKylin10: false
   database: "default" #ob/default
-
-
-  feature_gates:
-    gpu_hami: false
+  
+  
+  featureGates:
+    gpuHami: false
     gpu: false
-    online_ide: true
-    import_ide: false
-    gitea_template: false
+    onlineIde: true
+    importCode: false
+    giteaTemplate: false
     nfs: false
     offline: false
-
+    
   feature_configs:
-    gpu_hami: {}
+    gpuHami: {}
     gpu: {}
-    online_ide: {}
-    import_ide: {}
-    gitea_template: {}
+    onlineIde: {}
+    importCode: {}
+    giteaTemplate: {}
 
+    database:
+      type: cockroachdb
+    localDatabase:
+      uri: ""
+    globalDatabase:
+      uri: ""
+      
     objectStorage:
       size: 10Gi
-
+    
     s3:
       # - s3 (Amazon Simple Storage Service)
       # - oss (Alibaba Cloud Object Storage Service)
@@ -104,24 +111,24 @@ globals:
       # - minio, and other S3-compatible services.
       provider: "s3"
       bucket: ""
-      access_key: ""
-      secret_key: ""
+      accessKey: ""
+      secretKey: ""
       region: ""
       region_endpoint: ""
-
+    
     backup:
       useObjectStorage: false
       bucket: "sealos-file-backup"
-      access_key: ""
-      secret_key: ""
+      accessKey: ""
+      secretKey: ""
       region: ""
       region_endpoint: ""
 
     nfs:
-      storage_class: "nfs-client"
+      storageClass: "nfs-client"
       address: "nfsserver:30060"
-      mount_options: []
-
+      mountOptions: []
+    
     offline:
       dnsmasq: false
       location: "/data/nginx"
