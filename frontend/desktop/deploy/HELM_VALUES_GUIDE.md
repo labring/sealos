@@ -45,7 +45,6 @@ desktopConfig:
 
 ```yaml
 desktopConfig:
-  databaseMongodbURI: 'mongodb://user:pass@mongodb:27017'
   databaseGlobalCockroachdbURI: 'postgres://user:pass@cockroachdb:26257'
   databaseLocalCockroachdbURI: 'postgres://user:pass@cockroachdb-local:26257'
 ```
@@ -316,6 +315,7 @@ sealos run desktop-frontend:latest \
 ```
 
 **提示**:
+
 - 所有配置统一通过 `HELM_OPTIONS` 传递
 - 对于超长配置，建议创建部署脚本
 

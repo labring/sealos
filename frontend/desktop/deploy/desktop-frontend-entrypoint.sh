@@ -64,7 +64,6 @@ if [ "$AUTO_CONFIG_ENABLED" = "true" ]; then
   SEALOS_JWT_REGIONAL=$(get_cm_value sealos-system sealos-config jwtRegional)
   SEALOS_JWT_GLOBAL=$(get_cm_value sealos-system sealos-config jwtGlobal)
   SEALOS_REGION_UID=$(get_cm_value sealos-system sealos-config regionUID)
-  SEALOS_DATABASE_MONGODB_URI=$(get_cm_value sealos-system sealos-config databaseMongodbURI)
   SEALOS_DATABASE_GLOBAL_COCKROACHDB_URI=$(get_cm_value sealos-system sealos-config databaseGlobalCockroachdbURI)
   SEALOS_DATABASE_LOCAL_COCKROACHDB_URI=$(get_cm_value sealos-system sealos-config databaseLocalCockroachdbURI)
   SEALOS_PASSWORD_SALT=$(get_cm_value sealos-system sealos-config passwordSalt)
@@ -84,7 +83,6 @@ if [ "$AUTO_CONFIG_ENABLED" = "true" ]; then
   [ -n "$SEALOS_JWT_REGIONAL" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.jwtRegional=$SEALOS_JWT_REGIONAL"
   [ -n "$SEALOS_JWT_GLOBAL" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.jwtGlobal=$SEALOS_JWT_GLOBAL"
   [ -n "$SEALOS_REGION_UID" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.regionUID=$SEALOS_REGION_UID"
-  [ -n "$SEALOS_DATABASE_MONGODB_URI" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.databaseMongodbURI=$SEALOS_DATABASE_MONGODB_URI"
   [ -n "$SEALOS_DATABASE_GLOBAL_COCKROACHDB_URI" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.databaseGlobalCockroachdbURI=$SEALOS_DATABASE_GLOBAL_COCKROACHDB_URI"
   [ -n "$SEALOS_DATABASE_LOCAL_COCKROACHDB_URI" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.databaseLocalCockroachdbURI=$SEALOS_DATABASE_LOCAL_COCKROACHDB_URI"
   [ -n "$SEALOS_PASSWORD_SALT" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.passwordSalt=$SEALOS_PASSWORD_SALT"

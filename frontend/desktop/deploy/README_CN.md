@@ -31,8 +31,9 @@ Helm Chart 使用两个 values 文件来管理配置：
 包含 Helm Chart 的默认配置，不应修改。
 
 **内容**:
+
 - **基础设施配置**: 镜像、服务账号、探针、Ingress、调度等
-- **自动配置参考值**: cloudDomain、jwtInternal、databaseMongodbURI 等（从 ConfigMap 自动获取，此处的值仅作为参考）
+- **自动配置参考值**: cloudDomain、jwtInternal、databaseGlobalCockroachdbURI 等（从 ConfigMap 自动获取，此处的值仅作为参考）
 
 **是否修改**: ❌ 不建议修改
 
@@ -41,6 +42,7 @@ Helm Chart 使用两个 values 文件来管理配置：
 包含需要用户手动配置的自定义选项。
 
 **内容**:
+
 - 资源限制和请求
 - 功能开关
 - OAuth 提供商（GitHub、Google、微信等）
@@ -129,7 +131,6 @@ Helm Chart 使用两个 values 文件来管理配置：
 | `CLOUD_PORT`                      | `""`            | 覆盖云端口（自动从 sealos-config 获取）         |
 | `CERT_SECRET_NAME`                | `wildcard-cert` | TLS 证书 Secret 名称                            |
 | `REGION_UID`                      | `""`            | 覆盖区域 UID（自动从 sealos-config 获取）       |
-| `DATABASE_MONGODB_URI`            | `""`            | 覆盖 MongoDB URI（自动从 sealos-config 获取）   |
 | `DATABASE_GLOBAL_COCKROACHDB_URI` | `""`            | 覆盖全局数据库 URI（自动从 sealos-config 获取） |
 | `DATABASE_LOCAL_COCKROACHDB_URI`  | `""`            | 覆盖本地数据库 URI（自动从 sealos-config 获取） |
 | `PASSWORD_SALT`                   | `""`            | 覆盖密码盐（自动从 sealos-config 获取）         |
@@ -149,7 +150,6 @@ Helm Chart 使用两个 values 文件来管理配置：
 | `jwtRegional`                  | `desktopConfig.jwtRegional`                  | 区域 JWT 密钥        |
 | `jwtGlobal`                    | `desktopConfig.jwtGlobal`                    | 全局 JWT 密钥        |
 | `regionUID`                    | `desktopConfig.regionUID`                    | 区域 UID             |
-| `databaseMongodbURI`           | `desktopConfig.databaseMongodbURI`           | MongoDB 连接 URI     |
 | `databaseGlobalCockroachdbURI` | `desktopConfig.databaseGlobalCockroachdbURI` | 全局 CockroachDB URI |
 | `databaseLocalCockroachdbURI`  | `desktopConfig.databaseLocalCockroachdbURI`  | 本地 CockroachDB URI |
 | `passwordSalt`                 | `desktopConfig.passwordSalt`                 | 密码哈希盐           |
@@ -198,7 +198,6 @@ common:
   cfSiteKey: ''
 
 database:
-  mongodbURI: 'mongodb://...'
   globalCockroachdbURI: 'postgres://...'
   regionalCockroachdbURI: 'postgres://...'
 
@@ -308,13 +307,13 @@ Desktop Frontend 支持在 `allowedOrigins` 列表中添加自定义的子域名
 
 ```yaml
 desktopConfig:
-  cloudDomain: "cloud.example.com"
+  cloudDomain: 'cloud.example.com'
 
   # 添加额外的 allowedOrigins 子域名
   # 只需传入子域名部分，系统会自动添加 https:// 和 .{cloudDomain}
   additionalAllowedOriginsPrefixes:
-    - "my-custom-app"
-    - "another-service"
+    - 'my-custom-app'
+    - 'another-service'
 ```
 
 ### 生成的结果
@@ -324,22 +323,24 @@ desktopConfig:
 ```yaml
 allowedOrigins:
   # 默认的 origins...
-  - "https://sealaf.cloud.example.com"
+  - 'https://sealaf.cloud.example.com'
   # 额外的自定义 origins
-  - "https://my-custom-app.cloud.example.com"
-  - "https://another-service.cloud.example.com"
+  - 'https://my-custom-app.cloud.example.com'
+  - 'https://another-service.cloud.example.com'
 ```
 
 ### 使用示例
 
 **通过 values 文件：**
+
 ```yaml
 additionalAllowedOriginsPrefixes:
-  - "custom-app"
-  - "analytics-service"
+  - 'custom-app'
+  - 'analytics-service'
 ```
 
 **通过 Helm --set 参数：**
+
 ```bash
 helm upgrade -i desktop-frontend ./charts/desktop-frontend \
   --set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app" \
@@ -347,6 +348,7 @@ helm upgrade -i desktop-frontend ./charts/desktop-frontend \
 ```
 
 **通过环境变量：**
+
 ```bash
 export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app"'
 ./desktop-frontend-entrypoint.sh
@@ -447,7 +449,7 @@ sealos run desktop-frontend:latest \
 - **功能开关**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **通讯配置**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
 - **URL 配置**: `workorderUrl`，以及基于 `cloudDomain` 自动生成的服务地址（`template`、`applaunchpad`、`dbprovider`、`objectstorage`）
-- **数据库配置**: `databaseMongodbURI`, `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
+- **数据库配置**: `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
 - **团队管理**: `maxTeamCount`, `maxTeamMemberCount`
 
 查看 23 个分类共 60+ 可配置参数，请参阅 [HELM_VALUES_GUIDE_CN.md](HELM_VALUES_GUIDE_CN.md)。
@@ -458,7 +460,7 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest \
   -e AUTO_CONFIG_ENABLED=false \
   -e CLOUD_DOMAIN=cloud.example.com \
-  -e DATABASE_MONGODB_URI=mongodb://...
+  -e DATABASE_LOCAL_COCKROACHDB_URI=postgres://...
 ```
 
 ### 自定义 Helm 选项

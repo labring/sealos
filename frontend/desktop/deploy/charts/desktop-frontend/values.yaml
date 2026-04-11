@@ -53,7 +53,6 @@ desktopConfig:
     - "license"
 
   # Database connections (auto-configured from sealos-config)
-  databaseMongodbURI: ""               # Auto-fetched from sealos-config.databaseMongodbURI
   databaseGlobalCockroachdbURI: ""     # Auto-fetched from sealos-config.databaseGlobalCockroachdbURI
   databaseLocalCockroachdbURI: ""      # Auto-fetched from sealos-config.databaseLocalCockroachdbURI
 

@@ -6,7 +6,7 @@
 #   - cloudDomain, cloudPort, regionUID
 #   - jwtInternal, jwtRegional, jwtGlobal
 #   - passwordSalt
-#   - databaseMongodbURI, databaseGlobalCockroachdbURI, databaseLocalCockroachdbURI
+#   - databaseGlobalCockroachdbURI, databaseLocalCockroachdbURI
 #
 # See values-auto.yaml for reference values and documentation.
 

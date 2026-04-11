@@ -45,7 +45,6 @@ desktopConfig:
 
 ```yaml
 desktopConfig:
-  databaseMongodbURI: "mongodb://user:pass@mongodb:27017"
   databaseGlobalCockroachdbURI: "postgres://user:pass@cockroachdb:26257"
   databaseLocalCockroachdbURI: "postgres://user:pass@cockroachdb-local:26257"
 ```

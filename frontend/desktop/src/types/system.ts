@@ -36,7 +36,6 @@ export type CommonClientConfigType = DeepRequired<
   >
 >;
 export type DatabaseConfigType = {
-  mongodbURI: string;
   globalCockroachdbURI: string;
   regionalCockroachdbURI: string;
 };
