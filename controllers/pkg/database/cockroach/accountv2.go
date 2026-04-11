@@ -118,6 +118,40 @@ func isCockroachDatabase(db *gorm.DB) bool {
 	return strings.Contains(strings.ToLower(version), "cockroachdb")
 }
 
+func buildGenRandomUUIDFallbackSQL() string {
+	return `DO $$
+BEGIN
+	CREATE OR REPLACE FUNCTION gen_random_uuid()
+	RETURNS uuid
+	AS 'SELECT uuid_generate_v4();'
+	LANGUAGE SQL;
+EXCEPTION
+	WHEN undefined_function THEN NULL;
+END
+$$`
+}
+
+func ensurePostgresExtensions(db *gorm.DB) error {
+	if db == nil || isCockroachDatabase(db) {
+		return nil
+	}
+
+	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS pgcrypto`).Error; err != nil {
+		if uuidErr := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; uuidErr != nil {
+			return fmt.Errorf(
+				"failed to enable pgcrypto extension: %w; failed to enable uuid-ossp extension: %v",
+				err,
+				uuidErr,
+			)
+		}
+		if fallbackErr := db.Exec(buildGenRandomUUIDFallbackSQL()).Error; fallbackErr != nil {
+			return fmt.Errorf("failed to install gen_random_uuid fallback: %w", fallbackErr)
+		}
+	}
+
+	return nil
+}
+
 func (c *Cockroach) CreateUser(
 	oAuth *types.OauthProvider,
 	regionUserCr *types.RegionUserCr,
@@ -2025,6 +2059,13 @@ func (c *Cockroach) transferAccount(
 }
 
 func (c *Cockroach) createTables() error {
+	if err := ensurePostgresExtensions(c.DB); err != nil {
+		return err
+	}
+	if err := ensurePostgresExtensions(c.Localdb); err != nil {
+		return err
+	}
+
 	err := CreateTableIfNotExist(
 		c.DB,
 		types.Account{},
