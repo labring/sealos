@@ -152,6 +152,75 @@ func ensurePostgresExtensions(db *gorm.DB) error {
 	return nil
 }
 
+func postgresUUIDDefaultExpr(db *gorm.DB) string {
+	if db == nil || isCockroachDatabase(db) {
+		return "gen_random_uuid()"
+	}
+
+	var exists bool
+	if err := db.Raw(`
+		SELECT EXISTS (
+			SELECT 1
+			FROM pg_proc
+			WHERE proname = 'gen_random_uuid'
+		)
+	`).Scan(&exists).Error; err == nil && exists {
+		return "gen_random_uuid()"
+	}
+
+	return "uuid_generate_v4()"
+}
+
+func ensureColumnUUIDDefault(db *gorm.DB, tableName, columnName string) error {
+	if db == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(tableName) || !db.Migrator().HasColumn(tableName, columnName) {
+		return nil
+	}
+
+	defaultExpr := postgresUUIDDefaultExpr(db)
+	sql := fmt.Sprintf(
+		`ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s`,
+		quoteTableName(tableName),
+		quoteIdentifier(columnName),
+		defaultExpr,
+	)
+	if err := db.Exec(sql).Error; err != nil {
+		return fmt.Errorf("failed to set default for %s.%s: %w", tableName, columnName, err)
+	}
+	return nil
+}
+
+func ensureLegacyUUIDDefaults(c *Cockroach) error {
+	specs := []struct {
+		db        *gorm.DB
+		tableName string
+		column    string
+	}{
+		{db: c.DB, tableName: types.User{}.TableName(), column: "uid"},
+		{db: c.DB, tableName: types.Region{}.TableName(), column: "uid"},
+		{db: c.DB, tableName: types.OauthProvider{}.TableName(), column: "uid"},
+		{db: c.Localdb, tableName: types.RegionUserCr{}.TableName(), column: "uid"},
+		{db: c.Localdb, tableName: types.Workspace{}.TableName(), column: "uid"},
+		{db: c.Localdb, tableName: types.UserWorkspace{}.TableName(), column: "uid"},
+	}
+
+	for i := range specs {
+		if err := ensureColumnUUIDDefault(specs[i].db, specs[i].tableName, specs[i].column); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func ensureUUID(uuidPtr *uuid.UUID) {
+	if uuidPtr != nil && *uuidPtr == uuid.Nil {
+		*uuidPtr = uuid.New()
+	}
+}
+
 func (c *Cockroach) CreateUser(
 	oAuth *types.OauthProvider,
 	regionUserCr *types.RegionUserCr,
@@ -159,6 +228,12 @@ func (c *Cockroach) CreateUser(
 	workspace *types.Workspace,
 	userWorkspace *types.UserWorkspace,
 ) error {
+	ensureUUID(&oAuth.UID)
+	ensureUUID(&regionUserCr.UID)
+	ensureUUID(&user.UID)
+	ensureUUID(&workspace.UID)
+	ensureUUID(&userWorkspace.UID)
+
 	findUser, findRegionUserCr, findUserWorkspace := &types.User{}, &types.RegionUserCr{}, &types.UserWorkspace{}
 	if errors.Is(
 		c.DB.Where(&types.User{Nickname: user.Nickname}).First(findUser).Error,
@@ -2106,6 +2181,9 @@ func (c *Cockroach) createTables() error {
 	err = CreateTableIfNotExist(c.Localdb, types.WorkspaceSubscriptionPlan{}, types.ProductPrice{})
 	if err != nil {
 		return fmt.Errorf("failed to create table in local db: %w", err)
+	}
+	if err := ensureLegacyUUIDDefaults(c); err != nil {
+		return fmt.Errorf("failed to repair legacy uuid defaults: %w", err)
 	}
 	return nil
 }
