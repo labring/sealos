@@ -89,7 +89,14 @@ globals:
     onlineIde: {}
     importCode: {}
     giteaTemplate: {}
-    
+
+    database:
+      type: cockroachdb
+    localDatabase:
+      uri: ""
+    globalDatabase:
+      uri: ""
+      
     objectStorage:
       size: 10Gi
     
