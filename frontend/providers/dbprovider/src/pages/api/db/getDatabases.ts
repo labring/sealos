@@ -18,7 +18,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       dbType: DBTypeEnum;
     };
 
-    const firstPodName = `${dbName}-${DBBackupPolicyNameMap[dbType]}-0`;
+    const componentName = DBBackupPolicyNameMap[dbType];
+    if (!componentName) {
+      throw new Error(`Listing databases is not supported for database type: ${dbType}`);
+    }
+
+    const firstPodName = `${dbName}-${componentName}-0`;
 
     const { username, password, host, port } = await fetchDBSecret(
       k8sCore,
@@ -52,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const result = await kubefs.execCommand(
       namespace,
       firstPodName,
-      DBBackupPolicyNameMap[dbType],
+      componentName,
       showDatabaseCommand.get(dbType)!,
       false
     );

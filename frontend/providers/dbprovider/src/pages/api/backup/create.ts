@@ -42,12 +42,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     //   `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`
     // )) as { body: any };
 
-    const backupPolicyName = `${dbName}-${DBBackupPolicyNameMap[dbType]}-backup-policy`;
+    const backupPolicySuffix = DBBackupPolicyNameMap[dbType];
     const backupMethod = DBBackupMethodNameMap[dbType];
 
-    if (!backupPolicyName) {
-      throw new Error('Cannot find backup policy');
+    if (!backupPolicySuffix || !backupMethod) {
+      throw new Error(`Backup is not supported for database type: ${dbType}`);
     }
+
+    const backupPolicyName = `${dbName}-${backupPolicySuffix}-backup-policy`;
 
     const backupCr = json2ManualBackup({
       name: backupName,

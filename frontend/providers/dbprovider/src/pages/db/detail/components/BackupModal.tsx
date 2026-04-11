@@ -162,10 +162,15 @@ const BackupModal = ({
         return `${data.minute} * * * *`;
       })();
 
+      const backupMethod = DBBackupMethodNameMap[dbType];
+      if (!backupMethod) {
+        throw new Error(`Backup is not supported for database type: ${dbType}`);
+      }
+
       const autoBackup = {
         enabled: data.start,
         cronExpression: convertCronTime(cron, -8),
-        method: DBBackupMethodNameMap[dbType],
+        method: backupMethod,
         retentionPeriod: `${data.saveTime}${data.saveType}`,
         repoName: ''
       };

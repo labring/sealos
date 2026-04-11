@@ -16,6 +16,7 @@ import { BackupSupportedDBTypeList } from '@/constants/db';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
 import { getScore } from '@/utils/tools';
+import { validatePolarDBXResources } from '@/utils/database';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -25,6 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       backupInfo?: BackupItemType;
     };
     console.log('api createDB dbForm', dbForm);
+    validatePolarDBXResources(dbForm);
 
     const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)

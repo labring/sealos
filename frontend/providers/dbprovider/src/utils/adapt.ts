@@ -47,6 +47,23 @@ import type { BackupItemType } from '../types/db';
 import z from 'zod';
 import { dbDetailSchema, dbEditSchema, dbTypeSchema } from '@/types/schemas/db';
 
+const getDisplayReplicas = (
+  dbType: DBType,
+  componentSpecs: KubeBlockClusterSpec['componentSpecs']
+) => {
+  if (dbType === 'polardbx') {
+    return componentSpecs.find((comp) => String(comp.name) === 'cn')?.replicas || 1;
+  }
+
+  const displayComponentName = dbType === 'apecloud-mysql' ? 'mysql' : dbType;
+
+  return (
+    componentSpecs.find((comp) => String(comp.name) === displayComponentName)?.replicas ||
+    componentSpecs?.[0]?.replicas ||
+    1
+  );
+};
+
 export const getDBSource = (
   db: KbPgClusterType
 ): {
@@ -123,7 +140,7 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
       .tz('Asia/Shanghai')
       .format('YYYY/MM/DD HH:mm'),
     ...calcTotalResource(db.spec.componentSpecs),
-    replicas: db.spec?.componentSpecs.find((comp) => comp.name === dbType)?.replicas || 1,
+    replicas: getDisplayReplicas(dbType, db.spec.componentSpecs),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
@@ -149,7 +166,7 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     dbType: dbType,
     dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
     dbName: db.metadata?.name || 'db name',
-    replicas: db.spec?.componentSpecs?.[0]?.replicas || 1,
+    replicas: getDisplayReplicas(dbType, db.spec.componentSpecs),
     ...calcTotalResource(db.spec.componentSpecs),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
@@ -180,6 +197,11 @@ export const convertBackupFormToSpec = (data: {
   autoBackup?: AutoBackupFormType;
   dbType: DBType;
 }): KbPgClusterType['spec']['backup'] => {
+  const backupMethod = DBBackupMethodNameMap[data.dbType];
+  if (!backupMethod) {
+    throw new Error(`Backup is not supported for database type: ${data.dbType}`);
+  }
+
   const cron = (() => {
     if (data.autoBackup?.type === 'week') {
       if (!data.autoBackup?.week?.length) {
@@ -198,7 +220,7 @@ export const convertBackupFormToSpec = (data: {
   return {
     enabled: data.autoBackup?.start ?? false,
     cronExpression: convertCronTime(cron, -8),
-    method: DBBackupMethodNameMap[data.dbType],
+    method: backupMethod,
     retentionPeriod: `${data.autoBackup?.saveTime}${data.autoBackup?.saveType}`,
     repoName: '',
     pitrEnabled: false
