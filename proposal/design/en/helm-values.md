@@ -323,7 +323,7 @@ HELM_ARGS="$HELM_ARGS -f /root/.sealos/cloud/values/core/desktop-values.yaml"
 
 ```text
 /root/.sealos/cloud/values/
-                                globals.yaml
+                                global.yaml
 /root/.sealos/cloud/values/core/
 								desktop-values.yaml
 								costcenter-values.yaml
