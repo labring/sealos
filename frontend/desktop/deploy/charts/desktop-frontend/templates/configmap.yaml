@@ -12,7 +12,7 @@ data:
       port: "{{ .Values.desktopConfig.cloudPort }}"
       regionUID: "{{ .Values.desktopConfig.regionUID }}"
       certSecretName: "{{ .Values.desktopConfig.certSecretName }}"
-      proxyDomain: "{{ .Values.desktopConfig.proxyDomain | default .Values.desktopConfig.cloudDomain }}"
+      proxyDomain: "{{ .Values.desktopConfig.proxyDomain }}"
       allowedOrigins:
 {{- if .Values.desktopConfig.allowedAllOrigins }}
         - "*"
