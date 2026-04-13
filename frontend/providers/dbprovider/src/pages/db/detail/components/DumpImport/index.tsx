@@ -120,7 +120,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           const res = await applyDumpCR({
             ...data,
             dbName: db?.dbName!,
-            dbType: db?.dbType as 'postgresql' | 'mongodb' | 'apecloud-mysql',
+            dbType: db?.dbType as 'postgresql' | 'mongodb' | 'apecloud-mysql' | 'mysql',
             databaseExist: databases!.includes(getValues('databaseName')),
             fileName: result[0]
           });

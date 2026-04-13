@@ -17,6 +17,8 @@ const convertToDBTypeEnum = (dbType: SupportReconfigureDBType): DBTypeEnum => {
       return DBTypeEnum.mongodb;
     case 'apecloud-mysql':
       return DBTypeEnum.mysql;
+    case 'mysql':
+      return DBTypeEnum.notapemysql;
     case 'redis':
       return DBTypeEnum.redis;
     default:

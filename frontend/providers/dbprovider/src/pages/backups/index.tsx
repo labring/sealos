@@ -8,7 +8,7 @@ import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import useEnvStore from '@/store/env';
-import { BackupItemType, DBDetailType } from '@/types/db';
+import { BackupItemType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { ResponseCode } from '@/types/response';
 import { serviceSideProps } from '@/utils/i18n';
@@ -65,27 +65,11 @@ export default function Backups() {
     content: t('confirm_delete_the_backup')
   });
 
-  const [db, setDb] = useState<DBDetailType>();
   const [errorModalState, setErrorModalState] = useState<{
     isOpen: boolean;
     errorCode?: number;
     errorMessage?: string;
   }>({ isOpen: false });
-
-  const loadDBDetail = useCallback(
-    async (dbName: string) => {
-      try {
-        const res = await getDBByName({ name: dbName });
-        setDb(res);
-      } catch (err) {
-        toast({
-          title: getErrText(err),
-          status: 'error'
-        });
-      }
-    },
-    [toast]
-  );
 
   const { data, refetch, isLoading } = useQuery(['getBackupList'], getBackups, {
     onSuccess: (data) => {
@@ -184,7 +168,6 @@ export default function Backups() {
                 <Button
                   variant={'square'}
                   onClick={() => {
-                    loadDBDetail(row.original.dbName);
                     setBackupInfo(row.original);
                   }}
                 >
@@ -373,8 +356,8 @@ export default function Backups() {
         )}
       </Box>
       <ConfirmDelChild />
-      {!!backupInfo?.name && db && (
-        <RestoreModal db={db} backupInfo={backupInfo} onClose={() => setBackupInfo(undefined)} />
+      {!!backupInfo?.name && (
+        <RestoreModal backupInfo={backupInfo} onClose={() => setBackupInfo(undefined)} />
       )}
       {errorModalState.isOpen && (
         <ErrorModal
