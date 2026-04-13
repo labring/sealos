@@ -17,10 +17,14 @@ import { adaptEvents } from '@/utils/adapt';
 import { json2BasicOps } from '@/utils/json2Yaml';
 import { TFile } from '@/utils/kubeFileSystem';
 import { LogResult } from '@/utils/logParsers/LogParser';
-import { V1ObjectMeta, V1Service, V1StatefulSet } from '@kubernetes/client-node';
+import { V1ObjectMeta, V1Service } from '@kubernetes/client-node';
 import { AxiosRequestConfig } from 'axios';
 import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 import { EditPasswordReq } from '@/pages/api/db/editPassword';
+import type {
+  ResolveDBConnectTargetParams,
+  ResolveDBConnectTargetResponse
+} from '@/utils/database';
 import { RequiredByKeys } from '@/utils/tools';
 
 export const getMyDBList = () => GET<DBListItemType[]>('/api/getDBList');
@@ -114,15 +118,8 @@ export const getDBServiceByName = (name: string) =>
 
 export const delDBServiceByName = (name: string) => DELETE('/api/delServiceByName', { name });
 
-/**
- * kb 0.9 StatefulSets have all been changed to instancesets
- * @param name
- * @param dbType
- * @returns
- * @deprecated
- */
-export const getDBStatefulSetByName = (name: string, dbType: DBType) =>
-  GET<V1StatefulSet>(`/api/getStatefulSetByName?name=${name}&dbType=${dbType}`);
+export const resolveDBConnectTarget = (payload: ResolveDBConnectTargetParams) =>
+  GET<ResolveDBConnectTargetResponse>(`/api/resolveDBConnectTarget`, payload);
 
 export const adapterMongoHaConfig = (payload: { name: string }) =>
   POST('/api/adapter/mongodb', payload);

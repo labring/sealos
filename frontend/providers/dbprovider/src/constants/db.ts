@@ -11,6 +11,7 @@ import {
 } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
+import type { SecretResponse } from '@/pages/api/getSecretByName';
 
 export const crLabelKey = 'sealos-db-provider-cr';
 export const CloudMigraionLabel = 'sealos-db-provider-cr-migrate';
@@ -287,6 +288,52 @@ export const DBBackupMethodNameMap = {
   [DBTypeEnum.milvus]: 'milvus',
   [DBTypeEnum.pulsar]: 'pulsar',
   [DBTypeEnum.clickhouse]: 'clickhouse'
+};
+
+export type DBExecInfo = {
+  component: DBComponentsName;
+  container: DBComponentsName;
+  getCommand: (secret: SecretResponse) => string | string[];
+};
+
+export type DBExecInfoEntry = DBExecInfo | null;
+
+export const DBExecInfoMap: Record<DBType, DBExecInfoEntry> = {
+  [DBTypeEnum.postgresql]: {
+    component: 'postgresql',
+    container: 'postgresql',
+    getCommand: (secret: SecretResponse) => `psql '${secret.connection}'`
+  },
+  [DBTypeEnum.mongodb]: {
+    component: 'mongodb',
+    container: 'mongodb',
+    getCommand: (secret: SecretResponse) => `mongosh '${secret.connection}'`
+  },
+  [DBTypeEnum.mysql]: {
+    component: 'mysql',
+    container: 'mysql',
+    getCommand: (secret: SecretResponse) =>
+      `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`
+  },
+  [DBTypeEnum.notapemysql]: {
+    component: 'mysql',
+    container: 'mysql',
+    getCommand: (secret: SecretResponse) =>
+      `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`
+  },
+  [DBTypeEnum.redis]: {
+    component: 'redis',
+    container: 'redis',
+    getCommand: (secret: SecretResponse) =>
+      `redis-cli -u redis://${secret.username}:${secret.password}@${secret.host}:${secret.port}`
+  },
+  [DBTypeEnum.kafka]: null,
+  [DBTypeEnum.qdrant]: null,
+  [DBTypeEnum.nebula]: null,
+  [DBTypeEnum.weaviate]: null,
+  [DBTypeEnum.milvus]: null,
+  [DBTypeEnum.pulsar]: null,
+  [DBTypeEnum.clickhouse]: null
 };
 
 export const defaultDBEditValue: DBEditType = {
