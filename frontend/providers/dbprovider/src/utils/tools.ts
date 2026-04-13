@@ -12,7 +12,7 @@ dayjs.extend(timezone);
 import yaml from 'js-yaml';
 import ini from 'ini';
 import { DBType, PodDetailType } from '@/types/db';
-import { BinaryScale, Quantity, Scale } from '@sealos/shared';
+import { BinaryScale, Quantity } from '@sealos/shared';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).tz('Asia/Shanghai').format(format);
@@ -172,9 +172,7 @@ export const storageFormatToGi = (value: string | undefined, defaultValue: numbe
  * @deprecated We need to migrate all resource representations to Quantity (in the near future).
  */
 export const printMemory = (val: number) => {
-  return Quantity.newScaledQuantity(BigInt(val), Scale.Mega)
-    .withFormat('BinarySI')
-    .formatForDisplay();
+  return Quantity.newBinaryScaledQuantity(BigInt(val), BinaryScale.Mebi).formatForDisplay();
 };
 
 /**
