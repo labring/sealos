@@ -81,8 +81,8 @@ spec:
               value: {{ .registryAddr }}
             - name: DEVBOX_AFFINITY_ENABLE
               value: 'true'
-            - name: METRICS_URL
-              value: {{ default "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus" .metricsUrl }}
+            - name: MONITOR_URL
+              value: http://launchpad-monitor.sealos.svc.cluster.local:8428
             - name: ACCOUNT_URL
               value: http://account-service.account-system.svc.cluster.local:2333
             - name: ROOT_RUNTIME_NAMESPACE
@@ -95,6 +95,8 @@ spec:
               value: 'false'
             - name: STORAGE_LIMIT
               value: 10Gi # default is 10Gi
+            - name: DEVBOX_RUNTIME_CLASS_NAME
+              value: devbox-runtime
             - name: RETAG_SVC_URL
               value: http://devbox-service.devbox-system.svc.cluster.local:8092
             - name: JWT_SECRET
