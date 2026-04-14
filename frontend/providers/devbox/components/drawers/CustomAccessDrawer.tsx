@@ -78,11 +78,11 @@ const CustomAccessDrawer = ({
         </DrawerHeader>
         <div className="px-4 py-2">
           <div className="mb-2 font-semibold">CNAME</div>
-          <div className="flex h-9 items-center rounded-lg border bg-zinc-50 px-4 select-all">
+          <div className="flex h-9 select-all items-center rounded-lg border bg-zinc-50 px-4">
             {publicDomain}
           </div>
 
-          <div className="mt-7 mb-2 font-semibold">{t('Custom Domain')}</div>
+          <div className="mb-2 mt-7 font-semibold">{t('Custom Domain')}</div>
           <Input
             ref={ref}
             defaultValue={customDomain}

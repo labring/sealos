@@ -12,7 +12,7 @@ dayjs.extend(timezone);
 import yaml from 'js-yaml';
 import ini from 'ini';
 import { DBType, PodDetailType } from '@/types/db';
-import { Quantity, Scale } from '@sealos/shared';
+import { BinaryScale, Quantity } from '@sealos/shared';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).tz('Asia/Shanghai').format(format);
@@ -131,8 +131,7 @@ export const cpuFormatToC = (cpu: string | number = '0'): string => {
  */
 export const memoryFormatToGi = (memory: string | number = '0'): string => {
   return Quantity.fromJSON(memory).formatForDisplay({
-    scale: Scale.Giga,
-    format: 'BinarySI',
+    scale: BinaryScale.Gibi,
     round: false,
     digits: 3
   });
@@ -145,10 +144,7 @@ export const memoryFormatToGi = (memory: string | number = '0'): string => {
  */
 export const storageFormatToNum = (storage = '0') => {
   return (
-    Math.round(
-      (Number(Quantity.fromJSON(storage).withFormat('BinarySI').scaledValue(Scale.Mega)) / 1024) *
-        100
-    ) / 100
+    Math.round(Number(Quantity.fromJSON(storage).scaledBinaryValue(BinaryScale.Gibi)) * 100) / 100
   );
 };
 
@@ -161,11 +157,13 @@ export const storageFormatToNum = (storage = '0') => {
  * @deprecated We need to migrate all resource representations to Quantity (in the near future).
  */
 export const storageFormatToGi = (value: string | undefined, defaultValue: number = 0): number => {
-  return (
-    Math.round(
-      (Number(Quantity.fromJSON(value).withFormat('BinarySI').scaledValue(Scale.Mega)) / 1024) * 100
-    ) / 100
-  );
+  try {
+    return (
+      Math.round(Number(Quantity.fromJSON(value).scaledBinaryValue(BinaryScale.Gibi)) * 100) / 100
+    );
+  } catch {
+    return defaultValue;
+  }
 };
 
 /**
@@ -174,9 +172,7 @@ export const storageFormatToGi = (value: string | undefined, defaultValue: numbe
  * @deprecated We need to migrate all resource representations to Quantity (in the near future).
  */
 export const printMemory = (val: number) => {
-  return Quantity.newScaledQuantity(BigInt(val), Scale.Mega)
-    .withFormat('BinarySI')
-    .formatForDisplay();
+  return Quantity.newBinaryScaledQuantity(BigInt(val), BinaryScale.Mebi).formatForDisplay();
 };
 
 /**
@@ -458,7 +454,8 @@ export const getScore = (dbType: DBType, cpu: number, memory: number) => {
   if (
     dbType === DBTypeEnum.postgresql ||
     dbType === DBTypeEnum.mongodb ||
-    dbType === DBTypeEnum.mysql
+    dbType === DBTypeEnum.mysql ||
+    dbType === DBTypeEnum.notapemysql
   ) {
     score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
   } else if (dbType === DBTypeEnum.redis) {

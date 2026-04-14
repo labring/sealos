@@ -452,7 +452,7 @@ const PublicTemplate = ({
   return (
     <div className="flex h-[calc(100vh-200px)] gap-3">
       {/* left sidebar */}
-      <div className="flex w-50 flex-shrink-0 flex-col items-start gap-1">
+      <div className="w-50 flex flex-shrink-0 flex-col items-start gap-1">
         <ScrollArea className="flex h-[calc(100vh-200px)] w-full flex-col gap-1 pr-2">
           <div className="flex flex-col gap-1">
             {/* Official Picks */}
@@ -709,7 +709,7 @@ const PublicTemplate = ({
         )}
 
         {viewMode !== 'overview' && (
-          <div className="flex items-center justify-between gap-2.5 pt-2 pr-2 text-sm/5 text-zinc-500">
+          <div className="flex items-center justify-between gap-2.5 pr-2 pt-2 text-sm/5 text-zinc-500">
             <span>{t('Total') + ': ' + pageQueryBody.totalItems}</span>
             <div className="flex items-center gap-3">
               <Pagination

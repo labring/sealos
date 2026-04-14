@@ -11,7 +11,7 @@ const LiveMonitoring = () => {
   const { devboxDetail } = useDevboxStore();
 
   return (
-    <div className="flex h-50 flex-col items-start gap-5 rounded-xl border-[0.5px] bg-white p-6 shadow-xs">
+    <div className="h-50 shadow-xs flex flex-col items-start gap-5 rounded-xl border-[0.5px] bg-white p-6">
       {/* title */}
       <div className="flex w-full items-center justify-between">
         <span className="text-lg/7 font-medium">{t('live_monitoring')}</span>
@@ -22,7 +22,7 @@ const LiveMonitoring = () => {
       </div>
       {/* chart */}
       <div className="flex min-h-[100px] w-full gap-5">
-        <div className="flex w-[18vw] flex-shrink-0 flex-grow-1 flex-col gap-2">
+        <div className="flex-grow-1 flex w-[18vw] flex-shrink-0 flex-col gap-2">
           <span className="text-sm/5 text-zinc-700">
             {t('cpu')}:&nbsp;
             {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1] || '0'}%
@@ -34,7 +34,7 @@ const LiveMonitoring = () => {
             className="w-full"
           />
         </div>
-        <div className="flex w-[18vw] flex-shrink-0 flex-grow-1 flex-col gap-2">
+        <div className="flex-grow-1 flex w-[18vw] flex-shrink-0 flex-col gap-2">
           <span className="text-sm/5 text-zinc-700">
             {t('memory')}:&nbsp;
             {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1] || '0'}%

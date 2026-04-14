@@ -4,11 +4,17 @@ import {
   editPassword,
   getDBSecret,
   getDBServiceByName,
-  getDBStatefulSetByName
+  resolveDBConnectTarget
 } from '@/api/db';
 import FormControl from '@/components/FormControl';
 import MyIcon from '@/components/Icon';
-import { DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
+import {
+  DBExecInfoMap,
+  DBStatusEnum,
+  DBTypeEnum,
+  DBTypeSecretMap,
+  defaultDBDetail
+} from '@/constants/db';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
 import useEnvStore from '@/store/env';
 import { useGuideStore } from '@/store/guide';
@@ -161,20 +167,29 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }
   }, [applistCompleted, detailCompleted, router?.query?.guide, t]);
 
-  const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
-      (item) => item === db?.dbType
-    );
-  }, [db?.dbType]);
+  const supportsExternalNetwork = useMemo(() => {
+    return !![
+      'postgresql',
+      'mongodb',
+      'apecloud-mysql',
+      'mysql',
+      'redis',
+      'milvus',
+      'kafka',
+      'clickhouse'
+    ].find((item) => item === db.dbType);
+  }, [db.dbType]);
 
-  const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
-    ['getDBStatefulSetByName', db.dbName, db.dbType],
-    () => getDBStatefulSetByName(db.dbName, db.dbType),
-    {
-      retry: 2,
-      enabled: !!db.dbName && !!db.dbType
+  const directConnectExecInfo = DBExecInfoMap[db.dbType];
+  const directConnectState = useMemo(() => {
+    if (directConnectExecInfo == null) {
+      return 'hidden' as const;
     }
-  );
+
+    return db.status.value === DBStatusEnum.Running ? ('enabled' as const) : ('disabled' as const);
+  }, [db.status.value, directConnectExecInfo]);
+  const isDirectConnectVisible = directConnectState !== 'hidden';
+  const isDirectConnectDisabled = directConnectState === 'disabled';
 
   const { data: secret, refetch: refetchSecret } = useQuery(
     ['getDBSecret', db.dbName, db.dbType],
@@ -187,7 +202,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           })
         : null,
     {
-      enabled: !!db.dbName && !!db.dbType
+      enabled: supportsExternalNetwork
     }
   );
 
@@ -195,7 +210,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     ['getDBService', db.dbName, db.dbType],
     () => (db.dbName ? getDBServiceByName(`${db.dbName}-export`) : null),
     {
-      enabled: !!db.dbName && !!db.dbType,
+      // enabled: supportsExternalNetwork,
       retry: 3,
       onSuccess(data) {
         setIsChecked(!!data);
@@ -270,56 +285,74 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     [db]
   );
 
-  const onclickConnectDB = useCallback(() => {
-    if (!secret) return;
-    const commandMap = {
-      [DBTypeEnum.postgresql]: `psql '${secret.connection}'`,
-      [DBTypeEnum.mongodb]: `mongosh '${secret.connection}'`,
-      [DBTypeEnum.mysql]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
-      [DBTypeEnum.redis]: `redis-cli -u redis://${secret.username}:${secret.password}@${secret.host}:${secret.port}`,
-      [DBTypeEnum.kafka]: ``,
-      [DBTypeEnum.qdrant]: ``,
-      [DBTypeEnum.nebula]: ``,
-      [DBTypeEnum.weaviate]: ``,
-      [DBTypeEnum.milvus]: ``,
-      [DBTypeEnum.clickhouse]: ``,
-      [DBTypeEnum.pulsar]: ``
-    };
+  const onclickConnectDB = useCallback(async () => {
+    if (!secret || !directConnectExecInfo || directConnectState !== 'enabled') return;
+    const ns = session?.user?.nsid;
+    if (!ns) return;
 
-    const defaultCommand = commandMap[db.dbType];
+    try {
+      const { podName: pod } = await resolveDBConnectTarget({
+        dbName: db.dbName,
+        dbType: db.dbType,
+        component: directConnectExecInfo.component
+      });
+      const commandValue = directConnectExecInfo.getCommand(secret);
+      const command = Array.isArray(commandValue) ? commandValue : ['sh', '-lc', commandValue];
 
-    track({
-      event: 'deployment_action',
-      module: 'database',
-      event_type: 'terminal_open',
-      context: 'app'
-    } as any);
+      track({
+        event: 'deployment_action',
+        module: 'database',
+        event_type: 'terminal_open',
+        context: 'app'
+      } as any);
 
-    sealosApp.runEvents('openDesktopApp', {
-      appKey: 'system-terminal',
-      query: {
-        defaultCommand
-      },
-      messageData: { type: 'new terminal', command: defaultCommand }
-    });
-  }, [db.dbType, secret]);
+      sealosApp.runEvents('openDesktopApp', {
+        appKey: 'system-terminal',
+        pathname: '/exec',
+        query: {
+          ns,
+          pod,
+          container: directConnectExecInfo.container,
+          command: JSON.stringify(command)
+        },
+        messageData: {
+          type: 'InternalAppCall',
+          ns,
+          pod,
+          container: directConnectExecInfo.container,
+          command
+        }
+      });
+    } catch (error) {
+      toast({
+        title: error instanceof Error ? error.message : String(error),
+        status: 'error'
+      });
+    }
+  }, [
+    db.dbName,
+    db.dbType,
+    directConnectExecInfo,
+    directConnectState,
+    secret,
+    session?.user?.nsid,
+    toast
+  ]);
 
   const refetchAll = useCallback(() => {
-    refetchDBStatefulSet();
     refetchSecret();
     refetchService();
-  }, [refetchDBStatefulSet, refetchSecret, refetchService]);
+  }, [refetchSecret, refetchService]);
 
   const openNetWorkService = useCallback(async () => {
     try {
-      console.log({ dbStatefulSet, db });
-      if (!dbStatefulSet || !db) {
+      if (!db) {
         return toast({
           title: 'Missing Parameters',
           status: 'error'
         });
       }
-      const yaml = json2NetworkService({ dbDetail: db, dbStatefulSet: dbStatefulSet });
+      const yaml = json2NetworkService({ dbDetail: db, dbCluster: db?.cluster });
       await applyYamlList([yaml], 'create');
       onClose();
       setIsChecked(true);
@@ -334,7 +367,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         status: 'error'
       });
     }
-  }, [onClose, refetchAll, db, dbStatefulSet, t, toast]);
+  }, [onClose, refetchAll, db, t, toast]);
 
   const closeNetWorkService = async () => {
     try {
@@ -650,7 +683,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
               </Center>
 
-              {!['milvus', 'kafka'].includes(db.dbType) && (
+              {isDirectConnectVisible && (
                 <Center
                   className="driver-detail-terminal-button"
                   gap={'6px'}
@@ -660,20 +693,29 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   border="1px solid #DFE2EA"
                   borderRadius={'md'}
                   px="8px"
-                  cursor={'pointer'}
+                  cursor={isDirectConnectDisabled ? 'not-allowed' : 'pointer'}
                   fontWeight={'bold'}
-                  onClick={() => onclickConnectDB()}
-                  _hover={{
-                    color: 'brightBlue.600'
-                  }}
+                  opacity={isDirectConnectDisabled ? 0.4 : 1}
+                  aria-disabled={isDirectConnectDisabled}
+                  onClick={isDirectConnectDisabled ? undefined : () => void onclickConnectDB()}
+                  _hover={
+                    isDirectConnectDisabled
+                      ? undefined
+                      : {
+                          color: 'brightBlue.600'
+                        }
+                  }
                 >
                   <MyIcon name="terminal" w="16px" h="16px" />
                   {t('direct_connection')}
                 </Center>
               )}
-              {[DBTypeEnum.mysql, DBTypeEnum.postgresql, DBTypeEnum.mongodb].includes(
-                db.dbType as DBTypeEnum
-              ) && (
+              {[
+                DBTypeEnum.mysql,
+                DBTypeEnum.notapemysql,
+                DBTypeEnum.postgresql,
+                DBTypeEnum.mongodb
+              ].includes(db.dbType as DBTypeEnum) && (
                 <Center
                   className="driver-detail-terminal-button"
                   gap={'6px'}
@@ -701,7 +743,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             </HStack>
           </Flex>
 
-          {!['milvus', 'kafka'].includes(db.dbType) && (
+          {!['milvus'].includes(db.dbType) && (
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
               {Object.entries(baseSecret).map(([name, value]) => (
                 <Box key={name} flex={1}>
@@ -739,7 +781,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 ml="12px"
                 size="md"
                 isChecked={isChecked}
-                isDisabled={!supportConnectDB}
+                isDisabled={!supportsExternalNetwork}
                 onChange={(e) => {
                   if (isChecked) {
                     closeNetWorkService();

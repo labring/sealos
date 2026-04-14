@@ -1,12 +1,6 @@
 import { KubeBlockClusterTerminationPolicy } from './cluster';
 import { DBType } from './db';
 
-export enum InternetMigrationTemplate {
-  postgresql = 'apecloud-pg2pg',
-  mongodb = 'apecloud-mongo2mongo',
-  mysql = 'apecloud-mysql2mysql'
-}
-
 export type InternetMigrationCR = {
   apiVersion: 'datamigration.apecloud.io/v1alpha1';
   kind: 'MigrationTask';
@@ -127,7 +121,7 @@ export interface MigrateItemType {
 
 export type DumpForm = {
   dbName: string;
-  dbType: Extract<DBType, 'apecloud-mysql' | 'postgresql' | 'mongodb'>;
+  dbType: Extract<DBType, 'apecloud-mysql' | 'mysql' | 'postgresql' | 'mongodb'>;
   fileName: string;
   databaseName: string;
   tableName: string;

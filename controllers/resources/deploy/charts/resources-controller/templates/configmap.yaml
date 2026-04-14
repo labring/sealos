@@ -7,17 +7,30 @@ metadata:
     control-plane: controller-manager
     {{- include "resources.labels" . | nindent 4 }}
 data:
-  MONGO_URI: {{ .Values.configmap.mongoURI | quote }}
-  TRAFFIC_MONGO_URI: {{ .Values.configmap.trafficMongoURI | quote }}
-  TRAFFICS_SERVICE_CONNECT_ADDRESS: {{ .Values.configmap.trafficsServiceConnectAddress | quote }}
-  MINIO_ENDPOINT: {{ .Values.configmap.minioEndpoint | quote }}
-  MINIO_AK: {{ .Values.configmap.minioAK | quote }}
-  MINIO_SK: {{ .Values.configmap.minioSK | quote }}
-  MINIO_METRICS_ADDR: {{ .Values.configmap.minioMetricsAddr | quote }}
-  MINIO_METRICS_SECURE: {{ .Values.configmap.minioMetricsSecure | quote }}
-  PROM_URL: {{ .Values.configmap.promURL | quote }}
-  OBJECT_STORAGE_INSTANCE: {{ .Values.configmap.objectStorageInstance | quote }}
-  ENABLE_AUTO_RESOURCE_QUOTA: {{ .Values.configmap.enableAutoResourceQuota | quote }}
-  CONCURRENT_LIMIT: {{ .Values.configmap.concurrentLimit | quote }}
-  EPHEMERAL_STORAGE_CHARGE_THRESHOLD: {{ .Values.configmap.ephemeralStorageChargeThreshold | quote }}
-  LIMIT_QUOTA_EXPANSION_CYCLE: {{ .Values.configmap.limitQuotaExpansionCycle | quote }}
+  {{- $data := dict
+      "MONGO_URI" .Values.configmap.mongoURI
+      "TRAFFIC_MONGO_URI" .Values.configmap.trafficMongoURI
+      "TRAFFICS_SERVICE_CONNECT_ADDRESS" .Values.configmap.trafficsServiceConnectAddress
+      "MINIO_ENDPOINT" .Values.configmap.minioEndpoint
+      "MINIO_AK" .Values.configmap.minioAK
+      "MINIO_SK" .Values.configmap.minioSK
+      "MINIO_METRICS_ADDR" .Values.configmap.minioMetricsAddr
+      "MINIO_METRICS_SECURE" .Values.configmap.minioMetricsSecure
+      "PROM_URL" .Values.configmap.promURL
+      "OBJECT_STORAGE_INSTANCE" .Values.configmap.objectStorageInstance
+      "ENABLE_AUTO_RESOURCE_QUOTA" .Values.configmap.enableAutoResourceQuota
+      "CONCURRENT_LIMIT" .Values.configmap.concurrentLimit
+      "EPHEMERAL_STORAGE_CHARGE_THRESHOLD" .Values.configmap.ephemeralStorageChargeThreshold
+      "LIMIT_QUOTA_EXPANSION_CYCLE" .Values.configmap.limitQuotaExpansionCycle
+  -}}
+  {{- if eq (default "overwrite" .Values.configmapMergeStrategy) "preserve" }}
+  {{- $existing := (lookup "v1" "ConfigMap" .Release.Namespace .Values.configmap.name) }}
+  {{- if $existing }}
+  {{- range $k, $v := $existing.data }}
+  {{- $_ := set $data $k $v }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+  {{- range $k, $v := $data }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}

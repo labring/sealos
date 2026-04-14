@@ -6,6 +6,25 @@
  */
 export type Format = 'DecimalExponent' | 'BinarySI' | 'DecimalSI';
 
+export type DecimalFormat = Exclude<Format, 'BinarySI'>;
+
+export type BinaryScaleExponent = 10 | 20 | 30 | 40 | 50 | 60;
+
+declare const binaryScaleBrand: unique symbol;
+
+/** Base-1024 scale used by BinarySI quantities (Kibi=2^10, Mebi=2^20, Gibi=2^30, ...). */
+export type BinaryScale = number & { readonly [binaryScaleBrand]: unique symbol };
+
+/** Common base-1024 scales used by BinarySI quantities. */
+export const BinaryScale = {
+  Kibi: 10 as BinaryScale,
+  Mebi: 20 as BinaryScale,
+  Gibi: 30 as BinaryScale,
+  Tebi: 40 as BinaryScale,
+  Pebi: 50 as BinaryScale,
+  Exbi: 60 as BinaryScale
+} as const;
+
 /** From Kubernetes: 10^scale */
 export type Scale = number & { readonly __brand: unique symbol };
 

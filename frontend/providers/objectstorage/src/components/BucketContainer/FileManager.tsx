@@ -45,7 +45,7 @@ import { GetObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { useToast } from '@/hooks/useToast';
 import { useCallback, useDeferredValue, useEffect, useMemo, useState, useTransition } from 'react';
 import ArrowDownSLineIcon from '../Icons/ArrowDownSLineIcon';
-import { formatBytes, useCopyData } from '@/utils/tools';
+import { formatBytesForDisplay, useCopyData } from '@/utils/tools';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { format } from 'date-fns';
 import DeleteFileModal from '../common/modal/DeleteFileModal';
@@ -361,7 +361,7 @@ export default function FileManager({ ...styles }: FlexProps) {
           const file = props.row.original;
           return (
             <Text color={'grayModern.600'}>
-              {file.isDir ? '--' : formatBytes(file.Size || 0).toString()}
+              {file.isDir ? '--' : formatBytesForDisplay(file.Size || 0)}
             </Text>
           );
         },

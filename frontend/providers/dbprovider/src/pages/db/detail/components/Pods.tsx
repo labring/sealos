@@ -152,9 +152,13 @@ const Pods = ({
   ];
 
   if (
-    [DBTypeEnum.postgresql, DBTypeEnum.mongodb, DBTypeEnum.mysql, DBTypeEnum.redis].includes(
-      dbType as DBTypeEnum
-    )
+    [
+      DBTypeEnum.postgresql,
+      DBTypeEnum.mongodb,
+      DBTypeEnum.mysql,
+      DBTypeEnum.notapemysql,
+      DBTypeEnum.redis
+    ].includes(dbType as DBTypeEnum)
   ) {
     columns.splice(2, 0, {
       title: 'ms_node',

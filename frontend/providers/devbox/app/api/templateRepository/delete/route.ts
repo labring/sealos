@@ -55,6 +55,7 @@ export async function DELETE(req: NextRequest) {
       }
     });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       error: err
