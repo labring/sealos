@@ -454,94 +454,88 @@ const DBList = ({
                 </Button>
               }
               menuList={[
-                ...(row.original.status.value === DBStatusEnum.Stopped
-                  ? [
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'continue'} w={'16px'} />
-                            <Box ml={2}>{t('Continue')}</Box>
-                          </>
-                        ),
-                        onClick: () => {
-                          track({
-                            event: 'deployment_update',
-                            module: 'database',
-                            context: 'app'
-                          });
-                          handleStartApp(row.original);
-                        }
-                      }
-                    ]
-                  : [
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'change'} w={'16px'} />
-                            <Box ml={2}>{t('update')}</Box>
-                          </>
-                        ),
-                        onClick: () => {
-                          track('module_view', {
-                            module: 'database',
-                            view_name: 'edit_form',
-                            app_name: row.original.name
-                          });
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'continue'} w={'16px'} />
+                      <Box ml={2}>{t('Continue')}</Box>
+                    </>
+                  ),
+                  onClick: () => {
+                    track({
+                      event: 'deployment_update',
+                      module: 'database',
+                      context: 'app'
+                    });
+                    handleStartApp(row.original);
+                  },
+                  isDisabled: row.original.status.value !== DBStatusEnum.Stopped
+                },
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'change'} w={'16px'} />
+                      <Box ml={2}>{t('update')}</Box>
+                    </>
+                  ),
+                  onClick: () => {
+                    track('module_view', {
+                      module: 'database',
+                      view_name: 'edit_form',
+                      app_name: row.original.name
+                    });
 
-                          if (
-                            row.original.source.hasSource &&
-                            row.original.source.sourceType === 'sealaf'
-                          ) {
-                            setUpdateAppName(row.original.name);
-                            onOpenUpdateModal();
-                          } else {
-                            router.push(`/db/edit?name=${row.original.name}`);
-                          }
-                        },
-                        isDisabled:
-                          row.original.status.value === 'Updating' &&
-                          !row.original.isDiskSpaceOverflow
-                      },
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'restart'} width={'16px'} />
-                            <Box ml={2}>{t('Restart')}</Box>
-                          </>
-                        ),
-                        onClick: () => {
-                          track({
-                            event: 'deployment_update',
-                            module: 'database',
-                            context: 'app'
-                          });
-                          handleRestartApp(row.original);
-                        },
-                        isDisabled: row.original.status.value === 'Updating'
-                      }
-                    ]),
-                ...(row.original.status.value === DBStatusEnum.Running
-                  ? [
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'pause'} w={'16px'} />
-                            <Box ml={2}>{t('Pause')}</Box>
-                          </>
-                        ),
-                        onClick: onOpenPause(() => {
-                          track({
-                            event: 'deployment_shutdown',
-                            module: 'database',
-                            context: 'app',
-                            type: 'normal'
-                          });
-                          handlePauseApp(row.original);
-                        })
-                      }
-                    ]
-                  : []),
-
+                    if (
+                      row.original.source.hasSource &&
+                      row.original.source.sourceType === 'sealaf'
+                    ) {
+                      setUpdateAppName(row.original.name);
+                      onOpenUpdateModal();
+                    } else {
+                      router.push(`/db/edit?name=${row.original.name}`);
+                    }
+                  },
+                  isDisabled:
+                    row.original.status.value === DBStatusEnum.Stopped ||
+                    (row.original.status.value === 'Updating' && !row.original.isDiskSpaceOverflow)
+                },
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'restart'} width={'16px'} />
+                      <Box ml={2}>{t('Restart')}</Box>
+                    </>
+                  ),
+                  onClick: () => {
+                    track({
+                      event: 'deployment_update',
+                      module: 'database',
+                      context: 'app'
+                    });
+                    handleRestartApp(row.original);
+                  },
+                  isDisabled:
+                    row.original.status.value === DBStatusEnum.Stopped ||
+                    row.original.status.value === 'Updating'
+                },
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'pause'} w={'16px'} />
+                      <Box ml={2}>{t('Pause')}</Box>
+                    </>
+                  ),
+                  onClick: onOpenPause(() => {
+                    track({
+                      event: 'deployment_shutdown',
+                      module: 'database',
+                      context: 'app',
+                      type: 'normal'
+                    });
+                    handlePauseApp(row.original);
+                  }),
+                  isDisabled: row.original.status.value !== DBStatusEnum.Running
+                },
                 {
                   child: (
                     <>
