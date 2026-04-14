@@ -450,5 +450,18 @@
   "refresh_kubeconfig": "刷新 Kubeconfig",
   "kubeconfig_rotating": "正在刷新 Kubeconfig...",
   "kubeconfig_rotated_successfully": "Kubeconfig 刷新成功",
-  "kubeconfig_rotation_failed": "Kubeconfig 刷新失败"
+  "kubeconfig_rotation_failed": "Kubeconfig 刷新失败",
+  "delete_account_subscription_warning_title": "警告：",
+  "delete_account_subscription_warning": "您的账号中发现了仍在生效的订阅和资源。我们建议您先前往 Cost Center 取消订阅，并先删除当前资源。如果您已经确认无误，也可以继续直接注销账号，相关工作空间和订阅届时将一并被取消：",
+  "delete_account_open_cost_center": "打开费用中心",
+  "delete_account_delete_immediately": "立即注销",
+  "delete_account_pending_title": "账号注销处理中",
+  "delete_account_pending_description": "我们已经开始注销您的账号。请保持此窗口开启，等待最终结果。",
+  "delete_account_pending_hint": "注销成功后，系统将自动为您退出登录。",
+  "delete_account_success_title": "账号已成功注销",
+  "delete_account_success_description": "您的账号注销流程已成功完成。",
+  "delete_account_success_hint": "正在为您退出登录…",
+  "delete_account_failed_description": "账号注销未能完成，请查看下方失败的工作空间。",
+  "delete_account_failed_hint": "系统在注销账号前取消工作空间订阅失败。",
+  "delete_account_failed_no_details": "未返回工作空间失败详情。"
 }

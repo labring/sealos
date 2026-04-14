@@ -1,20 +1,26 @@
+import {
+  cancelWorkspaceSubscription,
+  shouldCancelWorkspaceSubscription
+} from '@/services/backend/billing/workspaceSubscription';
 import { CronJobStatus } from '@/services/backend/cronjob/index';
 import { getRegionUid } from '@/services/enable';
 import { DeleteUserEvent } from '@/types/db/event';
-import { TransactionStatus, TransactionType } from 'prisma/global/generated/client';
+import {
+  DeleteUserFailedWorkspace,
+  serializeDeleteUserFailureReason
+} from '@/types/response/deleteUser';
+import { TransactionStatus, TransactionType, UserStatus } from 'prisma/global/generated/client';
 import { Role } from 'prisma/region/generated/client';
 import { globalPrisma, prisma } from '../db/init';
 import { setUserDelete, setUserWorkspaceLock as setWorkspaceLock } from '../kubernetes/admin';
 
 export class DeleteUserCrJob implements CronJobStatus {
   private userUid = '';
+  private userId = '';
   transactionType = TransactionType.DELETE_USER;
   UNIT_TIMEOUT = 3000;
   COMMIT_TIMEOUT = 30000;
-  constructor(
-    private transactionUid: string,
-    private infoUid: string
-  ) {}
+  constructor(private transactionUid: string, private infoUid: string) {}
   async init() {
     const infoUid = this.infoUid;
     const info = await globalPrisma.deleteUserTransactionInfo.findUnique({
@@ -25,6 +31,17 @@ export class DeleteUserCrJob implements CronJobStatus {
     if (!info) throw new Error('the transaction info not found');
 
     this.userUid = info.userUid;
+
+    const user = await globalPrisma.user.findUnique({
+      where: {
+        uid: this.userUid
+      },
+      select: {
+        id: true
+      }
+    });
+    if (!user) throw new Error('the user not found');
+    this.userId = user.id;
   }
   async unit() {
     await this.init();
@@ -54,12 +71,20 @@ export class DeleteUserCrJob implements CronJobStatus {
       });
       return;
       // throw new Error('the userCR not found');
-    } // lock owner workspace
-    const workspaceList = userCr.userWorkspace
+    }
+
+    const ownerWorkspaces = userCr.userWorkspace
       .filter((item) => item.role === Role.OWNER)
       .map((item) => item.workspace);
+
+    const failedWorkspaces = await this.cancelOwnerWorkspaceSubscriptions(ownerWorkspaces);
+    if (failedWorkspaces.length > 0) {
+      await this.markDeleteFailure(failedWorkspaces);
+      return;
+    }
+
     await Promise.all(
-      workspaceList.map(async (workspace) => {
+      ownerWorkspaces.map(async (workspace) => {
         await setWorkspaceLock(workspace.id);
         // kick out all user workspace except owner
         await prisma.userWorkspace.updateMany({
@@ -87,7 +112,7 @@ export class DeleteUserCrJob implements CronJobStatus {
     );
 
     // kick off self from other workspace, igonre rolebinding
-    const clearResult = await prisma.userWorkspace.updateMany({
+    await prisma.userWorkspace.updateMany({
       where: {
         userCrUid: userCr.uid,
         role: {
@@ -161,5 +186,85 @@ export class DeleteUserCrJob implements CronJobStatus {
         }
       })
     ]);
+  }
+
+  private async cancelOwnerWorkspaceSubscriptions(
+    ownerWorkspaces: Array<{ uid: string; id: string; displayName: string }>
+  ) {
+    const settledResults = await Promise.allSettled(
+      ownerWorkspaces.map(async (workspace) => {
+        const shouldCancel = await shouldCancelWorkspaceSubscription({
+          userUid: this.userUid,
+          userId: this.userId,
+          workspaceId: workspace.id
+        });
+
+        if (!shouldCancel) {
+          return workspace;
+        }
+        await cancelWorkspaceSubscription({
+          userUid: this.userUid,
+          userId: this.userId,
+          workspaceId: workspace.id
+        });
+        return workspace;
+      })
+    );
+
+    return settledResults.reduce<DeleteUserFailedWorkspace[]>((acc, result, index) => {
+      if (result.status === 'fulfilled') return acc;
+
+      const workspace = ownerWorkspaces[index];
+      const message =
+        result.reason instanceof Error && result.reason.message
+          ? result.reason.message
+          : 'delete workspace subscription error calling billing service';
+      acc.push({
+        workspaceUid: workspace.uid,
+        workspaceName: workspace.displayName,
+        action: 'subscription-cancel',
+        message
+      });
+      return acc;
+    }, []);
+  }
+
+  private async markDeleteFailure(failedWorkspaces: DeleteUserFailedWorkspace[]) {
+    await globalPrisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: {
+          uid: this.userUid
+        },
+        data: {
+          status: UserStatus.NORMAL_USER
+        }
+      });
+
+      await tx.precommitTransaction.update({
+        where: {
+          uid: this.transactionUid
+        },
+        data: {
+          status: TransactionStatus.ERROR
+        }
+      });
+
+      await tx.errorPreCommitTransaction.upsert({
+        where: {
+          transactionUid: this.transactionUid
+        },
+        update: {
+          reason: serializeDeleteUserFailureReason({
+            failedWorkspaces
+          })
+        },
+        create: {
+          transactionUid: this.transactionUid,
+          reason: serializeDeleteUserFailureReason({
+            failedWorkspaces
+          })
+        }
+      });
+    });
   }
 }

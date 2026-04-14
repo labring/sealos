@@ -458,5 +458,18 @@
   "refresh_kubeconfig": "Refresh Kubeconfig",
   "kubeconfig_rotating": "Rotating Kubeconfig...",
   "kubeconfig_rotated_successfully": "Kubeconfig refreshed successfully",
-  "kubeconfig_rotation_failed": "Failed to refresh Kubeconfig"
+  "kubeconfig_rotation_failed": "Failed to refresh Kubeconfig",
+  "delete_account_subscription_warning_title": "Warning:",
+  "delete_account_subscription_warning": "Active subscriptions and resources were found in your account. We recommend canceling subscriptions in the Cost Center and removing your current work first. Alternatively, if you have confirmed everything, you can proceed to delete your account directly, and the related workspace & subscription will be canceled meanwhile:",
+  "delete_account_open_cost_center": "Open Cost Center",
+  "delete_account_delete_immediately": "Delete Immediately",
+  "delete_account_pending_title": "Account deletion is in progress",
+  "delete_account_pending_description": "We have started deleting your account. Keep this window open while we wait for the final result.",
+  "delete_account_pending_hint": "You will be signed out automatically after the deletion succeeds.",
+  "delete_account_success_title": "Account deleted successfully",
+  "delete_account_success_description": "Your account deletion has finished successfully.",
+  "delete_account_success_hint": "Signing you out now…",
+  "delete_account_failed_description": "We could not finish deleting your account. Review the failed workspaces below.",
+  "delete_account_failed_hint": "Workspace subscription cancellation failed before account deletion could finish.",
+  "delete_account_failed_no_details": "No workspace failure details were returned."
 }
