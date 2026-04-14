@@ -137,7 +137,8 @@ const BackupSchema = z.strictObject({
  * Alert service configuration (server-side only).
  */
 const AlertSchema = z.strictObject({
-  url: z.string().describe('Database alert service URL')
+  url: z.string().describe('Database alert service URL'),
+  secret: z.string().describe('Database alert service secret')
 });
 
 /**

@@ -23,6 +23,7 @@ dbprovider:
       url: http://database-monitor.sealos.svc.cluster.local:9090
     alerting:
       url: http://database-alert-service.sealos.svc.cluster.local:8000
+      secret: your-alerting-secret
     billing:
       url: http://account-service.account-system.svc:2333
       secret: your-billing-secret

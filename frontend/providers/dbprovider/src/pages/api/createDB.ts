@@ -276,8 +276,8 @@ export async function notifyDatabaseAlertApi({
   databaseName: string;
   replicas: number;
 }) {
-  const databaseAlertUrl = process.env.DATABASE_ALERT_URL;
-  const databaseAlertKey = process.env.DATABASE_ALERT_KEY;
+  const databaseAlertUrl = Config().dbprovider.components.alerting.url;
+  const databaseAlertKey = Config().dbprovider.components.alerting.secret;
   if (!databaseAlertUrl || !databaseAlertKey) {
     return;
   }
