@@ -7,11 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest",
-    "test:watch": "vitest watch",
-    "test:ci": "vitest run",
+    "test": "vitest --project unit",
+    "test:watch": "vitest --project unit --watch",
+    "test:ci": "vitest run --project unit",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
-    "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
+    "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk",
+    "test:components": "vitest --project components",
+    "test:components:ci": "vitest run --project components"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
@@ -75,6 +77,9 @@
     "svg-inline-loader": "^0.8.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.12",
-    "webpack-bundle-analyzer": "^4.9.1"
+    "webpack-bundle-analyzer": "^4.9.1",
+    "@playwright/test": "^1.58.1",
+    "@vitest/browser": "4.0.15",
+    "@vitest/browser-playwright": "4.0.15"
   }
 }

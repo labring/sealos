@@ -7,12 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest",
-    "test:watch": "vitest watch",
-    "test:ci": "vitest run",
+    "test": "vitest --project unit",
+    "test:watch": "vitest --project unit --watch",
+    "test:ci": "vitest run --project unit",
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:components": "vitest --project components",
+    "test:components:ci": "vitest run --project components"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
@@ -76,6 +78,9 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.12"
+    "vitest": "^4.0.12",
+    "@playwright/test": "^1.58.1",
+    "@vitest/browser": "4.0.15",
+    "@vitest/browser-playwright": "4.0.15"
   }
 }

@@ -23,6 +23,7 @@
 
     // JSX
     "jsx": "react-jsx",
+    "types": ["node", "vitest/globals"],
 
     // Some stricter flags
     "strict": true,
@@ -34,6 +35,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": ["src/**/*", "src-server/**/*"],
+  "include": ["src/**/*", "src-server/**/*", "__tests__/**/*.ts", "__tests__/**/*.tsx"],
   "exclude": ["node_modules", "dist"]
 }

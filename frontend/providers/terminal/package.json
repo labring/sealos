@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest",
-    "test:watch": "vitest watch",
-    "test:ci": "vitest run"
+    "test": "vitest --project unit",
+    "test:watch": "vitest --project unit --watch",
+    "test:ci": "vitest run --project unit",
+    "test:components": "vitest --project components",
+    "test:components:ci": "vitest run --project components"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
@@ -46,14 +48,17 @@
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
     "@types/js-yaml": "^4.0.6",
     "@types/lodash": "^4.14.199",
     "@types/node": "18.15.5",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser-playwright": "4.0.15",
     "sass": "^1.68.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.12"
+    "vitest": "^4.0.12",
+    "@vitest/browser": "4.0.15"
   }
 }

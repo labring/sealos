@@ -7,12 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest",
-    "test:watch": "vitest watch",
-    "test:ci": "vitest run",
+    "test": "vitest --project unit",
+    "test:watch": "vitest --project unit --watch",
+    "test:ci": "vitest run --project unit",
     "gen:global": "prisma generate --schema ./prisma/global/schema.prisma",
     "gen:region": "prisma generate --schema ./prisma/region/schema.prisma",
-    "postinstall": "pnpm gen:global && pnpm gen:region"
+    "postinstall": "pnpm gen:global && pnpm gen:region",
+    "test:components": "vitest --project components",
+    "test:components:ci": "vitest run --project components"
   },
   "dependencies": {
     "@alicloud/captcha20230305": "1.1.3",
@@ -105,6 +107,10 @@
     "dotenv-cli": "^7.3.0",
     "prettier": "^2.8.8",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.12"
+    "vitest": "^4.0.12",
+    "@playwright/test": "^1.58.1",
+    "@vitest/browser": "4.0.15",
+    "@vitest/browser-playwright": "4.0.15",
+    "@vitejs/plugin-react": "^5.1.1"
   }
 }
