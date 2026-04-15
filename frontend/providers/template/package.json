@@ -6,7 +6,10 @@
     "dev": "pnpm run config:gen-json-schema && next dev",
     "build": "next build",
     "start": "next start",
-    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json"
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:ci": "vitest run"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
@@ -85,10 +88,13 @@
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@types/react-syntax-highlighter": "^15.5.7",
+    "@vitejs/plugin-react": "^5.1.1",
     "eslint": "8.33.0",
     "eslint-config-next": "13.5.9",
     "prettier": "^2.8.8",
     "svg-inline-loader": "^0.8.2",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.12"
   }
 }

@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:ci": "vitest run",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
   },
@@ -66,9 +69,12 @@
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@types/react-syntax-highlighter": "^15.5.7",
+    "@vitejs/plugin-react": "^5.1.1",
     "eslint": "8.33.0",
     "eslint-config-next": "13.1.6",
     "svg-inline-loader": "^0.8.2",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.12",
     "webpack-bundle-analyzer": "^4.9.1"
   }
 }

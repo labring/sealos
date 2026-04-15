@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:ci": "vitest run"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
@@ -48,6 +51,9 @@
     "@types/node": "18.15.5",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
-    "sass": "^1.68.0"
+    "@vitejs/plugin-react": "^5.1.1",
+    "sass": "^1.68.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.12"
   }
 }
