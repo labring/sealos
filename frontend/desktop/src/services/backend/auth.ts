@@ -283,7 +283,11 @@ export const callBillingService = async (
   }
 
   const billingToken = generateBillingToken(payload);
-  const regionDomain = global.AppConfig.cloud.domain;
+  const regionDomain = body.regionDomain || global.AppConfig.cloud.domain;
+  const requestBody = {
+    ...body,
+    regionDomain
+  };
 
   const response = await fetch(`${billingUrl}${endpoint}`, {
     method: 'POST',
@@ -291,13 +295,26 @@ export const callBillingService = async (
       Authorization: `Bearer ${billingToken}`,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({
-      ...body,
-      regionDomain
-    })
+    body: JSON.stringify(requestBody)
   });
-  if (!response.ok) {
-    throw new Error('Failed to call billing service');
+
+  const responseText = await response.text();
+  let responseData: unknown = responseText;
+
+  try {
+    responseData = responseText ? JSON.parse(responseText) : null;
+  } catch {
+    responseData = responseText;
   }
-  return response.json();
+
+  if (!response.ok) {
+    console.error('[billing] request:error', {
+      endpoint,
+      status: response.status,
+      body: requestBody,
+      response: responseData
+    });
+    throw new Error(`Failed to call billing service: ${endpoint} (${response.status})`);
+  }
+  return responseData;
 };

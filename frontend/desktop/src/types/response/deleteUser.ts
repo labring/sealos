@@ -18,16 +18,13 @@ export type DeleteUserFailure = {
 
 export type DeleteUserFailedWorkspace = DeleteUserFailure;
 
-export type DeleteUserInitiateResponse = {
-  deleteId: string;
-  status: typeof DELETE_USER_EXECUTION_STATUS.PENDING;
-};
-
 export type DeleteUserFinalStatusResponse = {
   deleteId: string;
   status: DeleteUserExecutionStatus;
   failedWorkspaces?: DeleteUserFailure[];
 };
+
+export type DeleteUserInitiateResponse = DeleteUserFinalStatusResponse;
 
 export const DELETE_USER_FLOW_STATUS = DELETE_USER_EXECUTION_STATUS;
 
@@ -40,9 +37,23 @@ enum _DELETE_USERSTATUS {
 export const DELETE_USER_STATUS = Object.assign({}, _DELETE_USERSTATUS, RESPONSE_MESSAGE);
 export type DELETE_USER_STATUS = typeof DELETE_USER_STATUS;
 
-export const buildDeleteUserPendingResult = (deleteId: string): DeleteUserInitiateResponse => ({
+export const buildDeleteUserPendingResult = (deleteId: string): DeleteUserFinalStatusResponse => ({
   deleteId,
   status: DELETE_USER_EXECUTION_STATUS.PENDING
+});
+
+export const buildDeleteUserSuccessResult = (deleteId: string): DeleteUserFinalStatusResponse => ({
+  deleteId,
+  status: DELETE_USER_EXECUTION_STATUS.SUCCESS
+});
+
+export const buildDeleteUserFailedResult = (
+  failedWorkspaces: DeleteUserFailure[],
+  deleteId = ''
+): DeleteUserFinalStatusResponse => ({
+  deleteId,
+  status: DELETE_USER_EXECUTION_STATUS.FAILED,
+  failedWorkspaces
 });
 
 export type DeleteUserFailureReason = {

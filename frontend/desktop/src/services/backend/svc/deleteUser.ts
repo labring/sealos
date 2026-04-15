@@ -1,18 +1,23 @@
 import { DeleteUserEvent } from '@/types/db/event';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
 import {
+  buildDeleteUserFailedResult,
   buildDeleteUserPendingResult,
+  buildDeleteUserSuccessResult,
   DELETE_USER_EXECUTION_STATUS,
   DELETE_USER_STATUS,
+  DeleteUserFailedWorkspace,
   DeleteUserFinalStatusResponse,
   parseDeleteUserFailureReason
 } from '@/types/response/deleteUser';
 import { OnceTokenPayload } from '@/types/token';
 import { NextApiResponse } from 'next';
 import { TransactionStatus, TransactionType, UserStatus } from 'prisma/global/generated/client';
+import { Role } from 'prisma/region/generated/client';
 import { v4 } from 'uuid';
+import { cancelWorkspaceSubscription } from '../billing/workspaceSubscription';
 import { verifyRegionalJwt } from '../auth';
-import { globalPrisma } from '../db/init';
+import { globalPrisma, prisma } from '../db/init';
 import { jsonRes } from '../response';
 
 const ACTIVE_DELETE_TRANSACTION_STATUSES = [
@@ -164,12 +169,67 @@ const enqueueDeleteUserTransaction = async (userUid: string): Promise<string> =>
   }
 };
 
-const respondPendingDeleteUser = (res: NextApiResponse, txUid: string) =>
+const respondDeleteUser = (res: NextApiResponse, result: DeleteUserFinalStatusResponse) =>
   jsonRes(res, {
     message: DELETE_USER_STATUS.RESULT_SUCCESS,
     code: 200,
-    data: buildDeleteUserPendingResult(txUid)
+    data: result
   });
+
+const getOwnerWorkspaces = async (userUid: string) => {
+  const userCr = await prisma.userCr.findUnique({
+    where: { userUid },
+    include: {
+      userWorkspace: {
+        include: {
+          workspace: true
+        }
+      }
+    }
+  });
+
+  if (!userCr) return [];
+
+  return userCr.userWorkspace
+    .filter((item) => item.role === Role.OWNER)
+    .map((item) => item.workspace);
+};
+
+const cancelOwnerWorkspaceSubscriptionsBeforeDelete = async (props: {
+  userUid: string;
+  userId: string;
+}): Promise<DeleteUserFailedWorkspace[]> => {
+  const ownerWorkspaces = await getOwnerWorkspaces(props.userUid);
+
+  const settledResults = await Promise.allSettled(
+    ownerWorkspaces.map(async (workspace) => {
+      await cancelWorkspaceSubscription({
+        userUid: props.userUid,
+        userId: props.userId,
+        workspaceId: workspace.id
+      });
+      return workspace;
+    })
+  );
+
+  return settledResults.reduce<DeleteUserFailedWorkspace[]>((acc, result, index) => {
+    if (result.status === 'fulfilled') return acc;
+
+    const workspace = ownerWorkspaces[index];
+    const message =
+      result.reason instanceof Error && result.reason.message
+        ? result.reason.message
+        : 'delete workspace subscription error calling billing service';
+
+    acc.push({
+      workspaceUid: workspace.uid,
+      workspaceName: workspace.displayName,
+      action: 'subscription-cancel',
+      message
+    });
+    return acc;
+  }, []);
+};
 
 export const getDeleteUserStatusByTxUid = async (
   userUid: string,
@@ -216,7 +276,7 @@ export const getDeleteUserStatusByTxUid = async (
     };
   }
 
-  return buildDeleteUserPendingResult(deleteId);
+  return buildDeleteUserSuccessResult(deleteId);
 };
 
 export const deleteUserSvc = (userUid: string) => async (res: NextApiResponse) => {
@@ -240,8 +300,20 @@ export const deleteUserSvc = (userUid: string) => async (res: NextApiResponse) =
       code: 404
     });
 
+  const failedWorkspaces = await cancelOwnerWorkspaceSubscriptionsBeforeDelete({
+    userUid,
+    userId: user.id
+  });
+  if (failedWorkspaces.length > 0) {
+    console.error('[deleteUser] subscription-cancel:failed-before-enqueue', {
+      userUid,
+      failedWorkspaces
+    });
+    return respondDeleteUser(res, buildDeleteUserFailedResult(failedWorkspaces));
+  }
+
   const txUid = await enqueueDeleteUserTransaction(userUid);
-  return respondPendingDeleteUser(res, txUid);
+  return respondDeleteUser(res, buildDeleteUserSuccessResult(txUid));
 };
 export const forceDeleteUserSvc =
   (userUid: string, code: string) => async (res: NextApiResponse) => {
@@ -275,6 +347,19 @@ export const forceDeleteUserSvc =
         message: RESOURCE_STATUS.OAUTHPROVIDER_NOT_FOUND,
         code: 404
       });
+
+    const failedWorkspaces = await cancelOwnerWorkspaceSubscriptionsBeforeDelete({
+      userUid,
+      userId: user.id
+    });
+    if (failedWorkspaces.length > 0) {
+      console.error('[deleteUser] force subscription-cancel:failed-before-enqueue', {
+        userUid,
+        failedWorkspaces
+      });
+      return respondDeleteUser(res, buildDeleteUserFailedResult(failedWorkspaces));
+    }
+
     const txUid = await enqueueDeleteUserTransaction(userUid);
-    return respondPendingDeleteUser(res, txUid);
+    return respondDeleteUser(res, buildDeleteUserSuccessResult(txUid));
   };
