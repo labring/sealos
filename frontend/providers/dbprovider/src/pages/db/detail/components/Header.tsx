@@ -20,7 +20,6 @@ import React, { Dispatch, useCallback, useState, useEffect } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
 import { WHODB_SUPPORTED_TYPES } from '@/constants/whodb';
-import { encryptCbcBrowser } from '@/utils/encrypt';
 import { ConnectionInfo } from './AppBaseInfo';
 import { getLangStore } from '@/utils/cookieUtils';
 import { getDBSecret } from '@/api/db';
@@ -105,11 +104,6 @@ const Header = ({
         return toast({ title: 'Connection info not ready', status: 'error' });
       }
 
-      const credential = await encryptCbcBrowser(
-        JSON.stringify({ username: conn.username, password: conn.password }),
-        SystemEnv.WHODB_AES_KEY!
-      );
-
       const currentLang = getLangStore() || 'zh';
 
       sealosApp.runEvents('openDesktopApp', {
@@ -118,7 +112,6 @@ const Header = ({
           dbType: db.dbType,
           host: conn.host,
           port: String(conn.port),
-          credential,
           theme: 'light',
           lang: currentLang
         }

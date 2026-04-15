@@ -13,7 +13,6 @@ export type SystemEnvResponse = {
   CurrencySymbol: 'shellCoin' | 'cny' | 'usd';
   STORAGE_MAX_SIZE: number;
   WHODB_ENABLED: string;
-  WHODB_AES_KEY: string;
   MIGRATION_JOB_CPU_REQUIREMENT: number;
   MIGRATION_JOB_MEMORY_REQUIREMENT: number;
   DUMPIMPORT_JOB_CPU_REQUIREMENT: number;
@@ -43,7 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd',
       STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300,
       WHODB_ENABLED: process.env.WHODB_ENABLED || '',
-      WHODB_AES_KEY: process.env.WHODB_AES_KEY || '',
       MIGRATION_JOB_CPU_REQUIREMENT: Number(process.env.MIGRATION_JOB_CPU_REQUIREMENT ?? 0),
       MIGRATION_JOB_MEMORY_REQUIREMENT: Number(process.env.MIGRATION_JOB_MEMORY_REQUIREMENT ?? 0),
       DUMPIMPORT_JOB_CPU_REQUIREMENT: Number(process.env.DUMPIMPORT_JOB_CPU_REQUIREMENT ?? 0),

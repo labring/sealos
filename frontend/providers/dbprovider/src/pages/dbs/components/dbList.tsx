@@ -39,7 +39,6 @@ import {
   useReactTable
 } from '@tanstack/react-table';
 import { WHODB_SUPPORTED_TYPES } from '@/constants/whodb';
-import { encryptCbcBrowser } from '@/utils/encrypt';
 import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
@@ -190,11 +189,6 @@ const DBList = ({
           return toast({ title: 'Connection info not ready', status: 'error' });
         }
 
-        const credential = await encryptCbcBrowser(
-          JSON.stringify({ username: conn.username, password: conn.password }),
-          SystemEnv.WHODB_AES_KEY!
-        );
-
         const currentLang = getLangStore() || i18n?.language || 'zh';
 
         sealosApp.runEvents('openDesktopApp', {
@@ -203,7 +197,6 @@ const DBList = ({
             dbType: db.dbType,
             host: conn.host,
             port: String(conn.port),
-            credential,
             theme: 'light',
             lang: currentLang
           }

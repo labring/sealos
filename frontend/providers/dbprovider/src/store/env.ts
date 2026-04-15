@@ -24,7 +24,6 @@ const useEnvStore = create<EnvState>()(
       CurrencySymbol: 'shellCoin',
       STORAGE_MAX_SIZE: 300,
       WHODB_ENABLED: '',
-      WHODB_AES_KEY: '',
       MIGRATION_JOB_CPU_REQUIREMENT: 2000,
       MIGRATION_JOB_MEMORY_REQUIREMENT: 4096,
       DUMPIMPORT_JOB_CPU_REQUIREMENT: 300,
