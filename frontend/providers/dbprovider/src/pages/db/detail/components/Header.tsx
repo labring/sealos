@@ -109,6 +109,7 @@ const Header = ({
       sealosApp.runEvents('openDesktopApp', {
         appKey: 'system-whodb',
         query: {
+          resourceName: db.dbName,
           dbType: db.dbType,
           host: conn.host,
           port: String(conn.port),

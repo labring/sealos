@@ -194,6 +194,7 @@ const DBList = ({
         sealosApp.runEvents('openDesktopApp', {
           appKey: 'system-whodb',
           query: {
+            resourceName: db.name,
             dbType: db.dbType,
             host: conn.host,
             port: String(conn.port),
