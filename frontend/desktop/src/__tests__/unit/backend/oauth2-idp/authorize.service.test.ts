@@ -1,23 +1,23 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DeviceGrantStatus } from 'prisma/global/generated/client';
-import { OAuth2HttpError } from '@/services/backend/oauth2/errors';
 
-jest.mock('@/services/backend/db/init', () => ({
+vi.mock('@/services/backend/db/init', () => ({
   globalPrisma: {
     oAuthDeviceGrant: {
-      findFirst: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn()
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn()
     },
     oAuthUserConsent: {
-      findFirst: jest.fn(),
-      upsert: jest.fn()
+      findFirst: vi.fn(),
+      upsert: vi.fn()
     },
-    $transaction: jest.fn()
+    $transaction: vi.fn()
   }
 }));
 
-jest.mock('@/services/enable', () => ({
-  enableOAuth2Idp: jest.fn(() => true)
+vi.mock('@/services/enable', () => ({
+  enableOAuth2Idp: vi.fn(() => true)
 }));
 
 import { getAuthorizeContext, submitAuthorizeDecision } from '@/services/backend/oauth2/service';
@@ -61,7 +61,7 @@ const buildGrant = (status: DeviceGrantStatus) => ({
 
 describe('oauth2 authorize service', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('getAuthorizeContext returns invalid_grant for unknown request', async () => {
@@ -71,7 +71,7 @@ describe('oauth2 authorize service', () => {
       getAuthorizeContext({
         request_id: '550e8400-e29b-41d4-a716-446655440000'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'invalid_grant'
     });
   });
@@ -86,7 +86,7 @@ describe('oauth2 authorize service', () => {
       getAuthorizeContext({
         request_id: '550e8400-e29b-41d4-a716-446655440000'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'expired_token'
     });
   });
@@ -120,7 +120,7 @@ describe('oauth2 authorize service', () => {
         decision: 'approve',
         userUid: 'user-uid'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'invalid_grant'
     });
   });
@@ -136,7 +136,7 @@ describe('oauth2 authorize service', () => {
         decision: 'approve',
         userUid: 'user-uid'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'invalid_grant'
     });
   });

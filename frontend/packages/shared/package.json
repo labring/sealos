@@ -33,7 +33,9 @@
   "scripts": {
     "build": "exit 0",
     "lint": "eslint src src-server --ext .ts,.tsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:components": "vitest --project components",
+    "test:components:ci": "vitest run --project components"
   },
   "peerDependencies": {
     "@chakra-ui/icons": "^2",
@@ -103,6 +105,9 @@
     "@types/node": "^20.7.1",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser": "4.0.15",
+    "@vitest/browser-playwright": "4.0.15",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.0",
@@ -116,6 +121,8 @@
     "react-dom": "18.3.1",
     "sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.9.3",
+    "playwright": "^1.55.0",
+    "vitest": "^4.0.12",
     "zod": "^4.3.5",
     "zustand": "^4.5.6"
   }

@@ -4,8 +4,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "__tests__/**/*.ts", "__tests__/**/*.tsx"],
   "extends": "../../tsconfig.web.json"
 }

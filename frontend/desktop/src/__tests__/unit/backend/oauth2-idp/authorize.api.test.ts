@@ -1,12 +1,13 @@
+import { beforeEach, describe, expect, it, vi, type MockedFunction } from 'vitest';
 import { OAuth2HttpError } from '@/services/backend/oauth2/errors';
 
-jest.mock('@/services/backend/oauth2/auth', () => ({
-  resolveOAuth2AuthUser: jest.fn()
+vi.mock('@/services/backend/oauth2/auth', () => ({
+  resolveOAuth2AuthUser: vi.fn()
 }));
 
-jest.mock('@/services/backend/oauth2/service', () => ({
-  getAuthorizeContext: jest.fn(),
-  submitAuthorizeDecision: jest.fn()
+vi.mock('@/services/backend/oauth2/service', () => ({
+  getAuthorizeContext: vi.fn(),
+  submitAuthorizeDecision: vi.fn()
 }));
 
 import contextHandler from '@/pages/api/auth/oauth2/authorize/context';
@@ -14,13 +15,11 @@ import decisionHandler from '@/pages/api/auth/oauth2/authorize/decision';
 import { resolveOAuth2AuthUser } from '@/services/backend/oauth2/auth';
 import { getAuthorizeContext, submitAuthorizeDecision } from '@/services/backend/oauth2/service';
 
-const mockResolveOAuth2AuthUser = resolveOAuth2AuthUser as jest.MockedFunction<
+const mockResolveOAuth2AuthUser = resolveOAuth2AuthUser as MockedFunction<
   typeof resolveOAuth2AuthUser
 >;
-const mockGetAuthorizeContext = getAuthorizeContext as jest.MockedFunction<
-  typeof getAuthorizeContext
->;
-const mockSubmitAuthorizeDecision = submitAuthorizeDecision as jest.MockedFunction<
+const mockGetAuthorizeContext = getAuthorizeContext as MockedFunction<typeof getAuthorizeContext>;
+const mockSubmitAuthorizeDecision = submitAuthorizeDecision as MockedFunction<
   typeof submitAuthorizeDecision
 >;
 
@@ -29,25 +28,25 @@ const createMockRes = () => {
     headers: {},
     statusCode: 200,
     body: undefined,
-    setHeader: jest.fn((name: string, value: string) => {
+    setHeader: vi.fn((name: string, value: string) => {
       res.headers[name] = value;
     }),
-    status: jest.fn((code: number) => {
+    status: vi.fn((code: number) => {
       res.statusCode = code;
       return res;
     }),
-    json: jest.fn((payload: unknown) => {
+    json: vi.fn((payload: unknown) => {
       res.body = payload;
       return res;
     }),
-    end: jest.fn(() => res)
+    end: vi.fn(() => res)
   };
   return res;
 };
 
 describe('oauth2 authorize context api handler', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('returns 405 for non-GET method and still sets no-store headers', async () => {
@@ -98,7 +97,7 @@ describe('oauth2 authorize context api handler', () => {
 
 describe('oauth2 authorize decision api handler', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('returns 405 for non-POST method and still sets no-store headers', async () => {
