@@ -306,9 +306,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@18.15.11)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
 
   packages/client-sdk:
     dependencies:
@@ -557,9 +554,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@20.17.32)(@vitest/browser-playwright@4.0.15)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
 
   packages/shared:
     devDependencies:
@@ -638,9 +632,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@20.17.32)(@vitest/browser-playwright@4.0.15)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
       zod:
         specifier: ^4.3.5
         version: 4.3.5
@@ -916,9 +907,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@20.10.0)(@vitest/browser-playwright@4.0.15)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
 
   providers/applaunchpad:
     dependencies:
@@ -1567,9 +1555,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@18.15.5)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
 
   providers/cronjob:
     dependencies:
@@ -1760,9 +1745,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
       webpack-bundle-analyzer:
         specifier: ^4.9.1
         version: 4.10.1
@@ -2001,9 +1983,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
       webpack-bundle-analyzer:
         specifier: ^4.9.1
         version: 4.10.1
@@ -2888,9 +2867,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@20.10.0)(@vitest/browser-playwright@4.0.15)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
 
   providers/template:
     dependencies:
@@ -3150,9 +3126,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
 
   providers/terminal:
     dependencies:
@@ -3289,9 +3262,6 @@ importers:
       vitest:
         specifier: ^4.0.12
         version: 4.0.15(@types/node@18.15.5)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
-      vitest-browser-react:
-        specifier: ^1.0.1
-        version: 1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15)
 
 packages:
 
@@ -28923,30 +28893,6 @@ packages:
       tinyglobby: 0.2.15
     optionalDependencies:
       fsevents: 2.3.3
-    dev: true
-
-  /vitest-browser-react@1.0.1(@types/react-dom@18.3.7)(@types/react@18.3.27)(@vitest/browser@4.0.15)(react-dom@18.3.1)(react@18.3.1)(vitest@4.0.15):
-    resolution: {integrity: sha512-LqiGFCdknrbMoSDWXTCTrPsED3SvdIXIgYOOZyYUNj2dkJusW2eF6NENOlBlxwq+FBQqzNK1X59b+b03pXFpAQ==}
-    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
-    peerDependencies:
-      '@types/react': ^18.0.0 || ^19.0.0
-      '@types/react-dom': ^18.0.0 || ^19.0.0
-      '@vitest/browser': ^2.1.0 || ^3.0.0 || ^4.0.0-0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-      vitest: ^2.1.0 || ^3.0.0 || ^4.0.0-0
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-      '@types/react-dom':
-        optional: true
-    dependencies:
-      '@types/react': 18.3.27
-      '@types/react-dom': 18.3.7(@types/react@18.3.27)
-      '@vitest/browser': 4.0.15(vite@7.2.6)(vitest@4.0.15)
-      react: 18.3.1
-      react-dom: 18.3.1(react@18.3.1)
-      vitest: 4.0.15(@types/node@18.15.11)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
     dev: true
 
   /vitest@4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(sass@1.69.5):
