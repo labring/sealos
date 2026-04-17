@@ -1,4 +1,4 @@
-import { pauseDBByName, restartDB, startDBByName, getDBSecret } from '@/api/db';
+import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import { CustomMenu } from '@/components/BaseTable/customMenu';
 import DBStatusTag from '@/components/DBStatusTag';
@@ -179,16 +179,6 @@ const DBList = ({
   const handleManageData = useCallback(
     async (db: DBListItemType) => {
       try {
-        const conn = await getDBSecret({
-          dbName: db.name,
-          dbType: db.dbType,
-          mock: false
-        });
-
-        if (!conn) {
-          return toast({ title: 'Connection info not ready', status: 'error' });
-        }
-
         const currentLang = getLangStore() || i18n?.language || 'zh';
 
         sealosApp.runEvents('openDesktopApp', {
@@ -196,8 +186,6 @@ const DBList = ({
           query: {
             resourceName: db.name,
             dbType: db.dbType,
-            host: conn.host,
-            port: String(conn.port),
             theme: 'light',
             lang: currentLang
           }

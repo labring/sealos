@@ -22,7 +22,6 @@ import UpdateModal from './UpdateModal';
 import { WHODB_SUPPORTED_TYPES } from '@/constants/whodb';
 import { ConnectionInfo } from './AppBaseInfo';
 import { getLangStore } from '@/utils/cookieUtils';
-import { getDBSecret } from '@/api/db';
 import useEnvStore from '@/store/env';
 import { ArrowLeft, Trash2, Settings } from 'lucide-react';
 const DelModal = dynamic(() => import('./DelModal'));
@@ -94,16 +93,6 @@ const Header = ({
 
   const handleManageData = useCallback(async () => {
     try {
-      const conn = await getDBSecret({
-        dbName: db.dbName,
-        dbType: db.dbType,
-        mock: false
-      });
-
-      if (!conn) {
-        return toast({ title: 'Connection info not ready', status: 'error' });
-      }
-
       const currentLang = getLangStore() || 'zh';
 
       sealosApp.runEvents('openDesktopApp', {
@@ -111,8 +100,6 @@ const Header = ({
         query: {
           resourceName: db.dbName,
           dbType: db.dbType,
-          host: conn.host,
-          port: String(conn.port),
           theme: 'light',
           lang: currentLang
         }
