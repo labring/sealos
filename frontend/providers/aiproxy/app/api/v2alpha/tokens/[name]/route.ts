@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ErrorCode, ErrorType, sendError, sendValidationError } from '@/lib/v2alpha/error'
 import { findTokenByName } from '@/lib/v2alpha/tokens'
 import { ApiProxyBackendResp } from '@/types/api.d'
-import { TokenInfo } from '@/types/user/token'
 import { kcOrAppTokenAuthDecoded } from '@/utils/backend/auth'
 
 import { tokenNameParamSchema } from './schema'
