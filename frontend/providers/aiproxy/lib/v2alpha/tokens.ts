@@ -54,3 +54,67 @@ export async function findTokenByName(name: string, group: string): Promise<Toke
 
   return result.data?.tokens?.find((tokenInfo) => tokenInfo.name === name) ?? null
 }
+
+/**
+ * Set a token's status via the backend /status endpoint.
+ * 1 = enabled, 2 = disabled. Throws on transport/config/business errors.
+ */
+export async function updateTokenStatusInBackend(
+  id: number,
+  group: string,
+  status: 1 | 2
+): Promise<void> {
+  const baseUrl = global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
+  if (!baseUrl) {
+    throw new Error('Backend service URL is not configured')
+  }
+
+  const authKey = global.AppConfig?.auth.aiProxyBackendKey
+  if (!authKey) {
+    throw new Error('Backend auth key is not configured')
+  }
+
+  const url = new URL(`/api/token/${group}/${id}/status`, baseUrl)
+
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: authKey,
+    },
+    body: JSON.stringify({ status }),
+    cache: 'no-store',
+  })
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const result: ApiProxyBackendResp = await response.json()
+  if (!result.success) {
+    throw new Error(result.message || 'Failed to update token status')
+  }
+}
+
+export type SetStatusResult = 'not_found' | 'no_change' | 'changed'
+
+/**
+ * Resolve a token by name, short-circuit if it is already in the target state,
+ * otherwise flip its status. Returns a discriminated result so callers can
+ * map each case to the appropriate HTTP response.
+ */
+export async function setTokenStatus(
+  name: string,
+  group: string,
+  targetStatus: 1 | 2
+): Promise<SetStatusResult> {
+  const token = await findTokenByName(name, group)
+  if (!token) {
+    return 'not_found'
+  }
+  if (token.status === targetStatus) {
+    return 'no_change'
+  }
+  await updateTokenStatusInBackend(token.id, group, targetStatus)
+  return 'changed'
+}
