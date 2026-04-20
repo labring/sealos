@@ -618,6 +618,223 @@ Key points:
           },
         },
       },
+      '/tokens/{name}/enable': {
+        post: {
+          tags: ['Mutation'],
+          summary: 'Enable a token',
+          description: `Enables an API token by its exact name. Enabled tokens (status=1) can be used to call AI services.
+
+Key points:
+- Matching is **exact and case-sensitive**
+- **Idempotent**: if the token is already enabled, returns \`204\` without calling the backend
+- State change takes effect immediately for subsequent API calls
+- Returns \`404\` if no token with this exact name exists`,
+          operationId: 'enableToken',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Exact token name to enable (case-sensitive, 1–100 characters).',
+              schema: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 100,
+                example: 'my-api-token',
+              },
+            },
+          ],
+          responses: {
+            '204': {
+              description: 'Token enabled successfully, or already enabled (no content).',
+            },
+            '400': {
+              description: 'Bad request - invalid token name',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
+                  examples: {
+                    validation_error: {
+                      summary: 'Token name fails validation',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid token name.',
+                        [{ field: 'name', message: 'Token name is required' }]
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '401': {
+              description: 'Unauthorized - invalid or missing authentication',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
+                  examples: {
+                    unauthorized: {
+                      summary: 'Authentication failed',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Unauthorized, please login again.',
+                        'Auth: Token is missing'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '404': {
+              description: 'Token not found',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError404Schema(), { target: 'openApi3' }),
+                  examples: {
+                    not_found: {
+                      summary: 'No token with this exact name exists',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'The specified token does not exist.'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
+                  examples: {
+                    server_error: {
+                      summary: 'Server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to enable token.',
+                        'HTTP error! status: 502'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/tokens/{name}/disable': {
+        post: {
+          tags: ['Mutation'],
+          summary: 'Disable a token',
+          description: `Disables an API token by its exact name. Disabled tokens (status=2) are rejected when used to call AI services, but their history and quota records are preserved.
+
+Key points:
+- Matching is **exact and case-sensitive**
+- **Idempotent**: if the token is already disabled, returns \`204\` without calling the backend
+- State change takes effect immediately — in-flight requests using this token will fail
+- Returns \`404\` if no token with this exact name exists
+- Disabled tokens still appear in \`GET /tokens\` listings (with \`status: 2\`); use \`DELETE /tokens/{name}\` for permanent removal`,
+          operationId: 'disableToken',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              required: true,
+              description: 'Exact token name to disable (case-sensitive, 1–100 characters).',
+              schema: {
+                type: 'string',
+                minLength: 1,
+                maxLength: 100,
+                example: 'my-api-token',
+              },
+            },
+          ],
+          responses: {
+            '204': {
+              description: 'Token disabled successfully, or already disabled (no content).',
+            },
+            '400': {
+              description: 'Bad request - invalid token name',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError400Schema(), { target: 'openApi3' }),
+                  examples: {
+                    validation_error: {
+                      summary: 'Token name fails validation',
+                      value: createErrorExample(
+                        ErrorType.VALIDATION_ERROR,
+                        ErrorCode.INVALID_PARAMETER,
+                        'Invalid token name.',
+                        [{ field: 'name', message: 'Token name is required' }]
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '401': {
+              description: 'Unauthorized - invalid or missing authentication',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError401Schema(), { target: 'openApi3' }),
+                  examples: {
+                    unauthorized: {
+                      summary: 'Authentication failed',
+                      value: createErrorExample(
+                        ErrorType.AUTHENTICATION_ERROR,
+                        ErrorCode.AUTHENTICATION_REQUIRED,
+                        'Unauthorized, please login again.',
+                        'Auth: Token is missing'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '404': {
+              description: 'Token not found',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError404Schema(), { target: 'openApi3' }),
+                  examples: {
+                    not_found: {
+                      summary: 'No token with this exact name exists',
+                      value: createErrorExample(
+                        ErrorType.RESOURCE_ERROR,
+                        ErrorCode.NOT_FOUND,
+                        'The specified token does not exist.'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: zodToJsonSchema(createError500Schema(), { target: 'openApi3' }),
+                  examples: {
+                    server_error: {
+                      summary: 'Server error',
+                      value: createErrorExample(
+                        ErrorType.INTERNAL_ERROR,
+                        ErrorCode.INTERNAL_ERROR,
+                        'Failed to disable token.',
+                        'HTTP error! status: 502'
+                      ),
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     },
     // Root-level security: either credential type is accepted (OR semantics)
     security: [{ sealosAppToken: [] }, { kubeconfigAuth: [] }],
