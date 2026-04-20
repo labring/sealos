@@ -193,8 +193,7 @@ export async function fetchDBSecret(
       );
 
       return {
-        // ! Username override for clickhouse
-        username: dbType === 'clickhouse' ? 'default' : username,
+        username: username,
         password,
         secret
       };
