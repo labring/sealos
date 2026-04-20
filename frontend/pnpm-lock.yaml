@@ -772,8 +772,8 @@ importers:
         specifier: ^9.0.8
         version: 9.0.8(react@18.3.1)
       echarts:
-        specifier: ^5.4.3
-        version: 5.4.3
+        specifier: ^5.6.0
+        version: 5.6.0
       framer-motion:
         specifier: ^10.16.4
         version: 10.16.5(react-dom@18.3.1)(react@18.3.1)
@@ -986,8 +986,8 @@ importers:
         specifier: ^5.6.1
         version: 5.6.1
       echarts:
-        specifier: ^5.4.3
-        version: 5.4.3
+        specifier: ^5.6.0
+        version: 5.6.0
       fast-json-patch:
         specifier: ^3.1.1
         version: 3.1.1
@@ -17575,6 +17575,13 @@ packages:
       zrender: 5.4.4
     dev: false
 
+  /echarts@5.6.0:
+    resolution: {integrity: sha512-oTbVTsXfKuEhxftHqL5xprgLoc0k7uScAwtryCgWF6hPYFLRwOUHiFmHGCBKP5NPFNkDVopOieyUqYGH8Fa3kA==}
+    dependencies:
+      tslib: 2.3.0
+      zrender: 5.6.1
+    dev: false
+
   /ee-first@1.0.3:
     resolution: {integrity: sha512-1q/3kz+ZwmrrWpJcCCrBZ3JnBzB1BMA5EVW9nxnIP1LxDZ16Cqs9VdolqLWlExet1vU+bar3WSkAa4/YrA9bIw==}
     dev: false
@@ -29443,6 +29450,12 @@ packages:
 
   /zrender@5.4.4:
     resolution: {integrity: sha512-0VxCNJ7AGOMCWeHVyTrGzUgrK4asT4ml9PEkeGirAkKNYXYzoPJCLvmyfdoOXcjTHPs10OZVMfD1Rwg16AZyYw==}
+    dependencies:
+      tslib: 2.3.0
+    dev: false
+
+  /zrender@5.6.1:
+    resolution: {integrity: sha512-OFXkDJKcrlx5su2XbzJvj/34Q3m6PvyCZkVPHGYpcCJ52ek4U/ymZyfuV1nKE23AyBJ51E/6Yr0mhZ7xGTO4ag==}
     dependencies:
       tslib: 2.3.0
     dev: false

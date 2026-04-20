@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { PodDetailType, PodEvent } from '@/types/app';
-import PodLineChart from '@/components/PodLineChart';
 import { MOCK_PODS } from '@/mock/apps';
 import { getPodEvents, getPodLogs } from '@/api/app';
 import { useQuery } from '@tanstack/react-query';
