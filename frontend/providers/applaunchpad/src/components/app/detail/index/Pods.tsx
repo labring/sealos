@@ -1,5 +1,4 @@
 import { restartPodByName } from '@/api/app';
-import PodLineChart from '@/components/PodLineChart';
 import { PodStatusEnum } from '@/constants/app';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
