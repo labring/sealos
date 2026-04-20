@@ -1,6 +1,19 @@
 {
   "extends": "next/core-web-vitals",
+  "parserOptions": {
+    "project": ["./tsconfig.json"]
+  },
+  "plugins": ["@typescript-eslint"],
   "rules": {
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/no-misused-promises": [
+      "error",
+      {
+        "checksVoidReturn": {
+          "attributes": false
+        }
+      }
+    ],
     // Consistently import navigation APIs from `@/i18n`
     "no-restricted-imports": [
       "error",
