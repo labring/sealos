@@ -44,7 +44,14 @@ export const runTransactionjob = async () => {
   let transactionDetail = await globalPrisma.transactionDetail.findFirst({
     where: {
       regionUid,
-      status: TransactionStatus.READY
+      status: TransactionStatus.READY,
+      precommitTransaction: {
+        is: {
+          status: {
+            in: [TransactionStatus.READY, TransactionStatus.RUNNING]
+          }
+        }
+      }
     },
     include: {
       precommitTransaction: true
@@ -61,6 +68,13 @@ export const runTransactionjob = async () => {
         status: TransactionStatus.RUNNING,
         updatedAt: {
           lte: dayjs().subtract(TIMEOUT, 'ms').toDate()
+        },
+        precommitTransaction: {
+          is: {
+            status: {
+              in: [TransactionStatus.READY, TransactionStatus.RUNNING]
+            }
+          }
         }
       },
       orderBy: {
@@ -130,13 +144,24 @@ export const runTransactionjob = async () => {
     return;
   }
   await job.unit();
+  const latestTransaction = await globalPrisma.precommitTransaction.findUnique({
+    where: {
+      uid: transactionDetail.transactionUid
+    },
+    select: {
+      status: true
+    }
+  });
   await globalPrisma.transactionDetail.update({
     where: {
       uid: transactionDetail.uid,
       status: TransactionStatus.RUNNING
     },
     data: {
-      status: TransactionStatus.FINISH
+      status:
+        latestTransaction?.status === TransactionStatus.ERROR
+          ? TransactionStatus.ERROR
+          : TransactionStatus.FINISH
     }
   });
 };
