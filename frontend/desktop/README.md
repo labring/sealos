@@ -140,7 +140,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
   "devDependencies": {
     "@types/js-yaml": "^4.0.5",
     "@types/lodash": "^4.14.194",
-    "@types/node": "18.15.11",
+    "@types/node": "^24",
     "@types/nprogress": "^0.2.0",
     "@types/react": "18.0.37",
     "@types/react-dom": "18.0.11"

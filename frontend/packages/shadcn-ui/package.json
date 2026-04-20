@@ -35,7 +35,7 @@
     "tw-animate-css": "^1.3.4"
   },
   "devDependencies": {
-    "@types/node": "^20.7.1",
+    "@types/node": "^24",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@vitejs/plugin-react": "^5.1.1",

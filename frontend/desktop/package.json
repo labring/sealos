@@ -97,7 +97,7 @@
     "@types/jsonwebtoken": "^9.0.3",
     "@types/lodash": "^4.14.199",
     "@types/minio": "^7.1.1",
-    "@types/node": "18.15.11",
+    "@types/node": "^24",
     "@types/nodemailer": "^6.4.15",
     "@types/nprogress": "^0.2.1",
     "@types/react": "18.3.27",

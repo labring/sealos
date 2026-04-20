@@ -82,7 +82,7 @@
     "@types/js-yaml": "^4.0.6",
     "@types/lodash": "^4.14.199",
     "@types/multer": "^1.4.10",
-    "@types/node": "18.13.0",
+    "@types/node": "^24",
     "@types/nprogress": "^0.2.1",
     "@types/papaparse": "^5.3.15",
     "@types/react": "18.3.27",

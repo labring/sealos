@@ -57,7 +57,7 @@
     "@rollup/plugin-typescript": "^11.1.4",
     "@types/js-cookie": "^3.0.4",
     "@types/js-yaml": "^4.0.6",
-    "@types/node": "^20.7.1",
+    "@types/node": "^24",
     "@types/uuid": "^9.0.4",
     "rollup": "2.79.1",
     "rollup-plugin-copy": "^3.5.0",
