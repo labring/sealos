@@ -78,10 +78,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-RUN apk add curl \
-  && apk add ca-certificates \
-  && update-ca-certificates \
-  && apk add --no-cache dumb-init
+# OpenSSL: https://github.com/prisma/prisma/discussions/19341#discussioncomment-11521367
+RUN apk add curl openssl ca-certificates dumb-init --no-cache \
+  && update-ca-certificates
 
 ARG name
 ARG path
