@@ -254,19 +254,19 @@ export default function ExecTerminalRuntime(props: ExecTerminalRuntimeProps) {
         const streams = await connectTerminalStreams({
           client: {
             baseUrl: agentBaseUrl,
-            wsPath: props.wsPath,
-            ticketPath: props.ticketPath
+            wsPath: props.wsPath
           },
-          ticketRequest: {
-            kubeconfig: props.kubeconfig,
-            namespace: props.namespace,
-            pod: props.pod,
-            container: props.container,
-            command: props.command
-          },
+
           connect: {
             initialSize: { cols: activeTerm.cols, rows: activeTerm.rows },
-            ticketInQuery: props.ticketInQuery
+            kubeconfig: props.kubeconfig,
+            target: {
+              namespace: props.namespace,
+              pod: props.pod,
+              container: props.container,
+              command: props.command
+            },
+            authInMessage: false
           },
           signal: abortController.signal
         });
