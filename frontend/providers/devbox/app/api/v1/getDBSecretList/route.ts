@@ -105,8 +105,8 @@ export async function GET(req: NextRequest) {
         error: 'Unauthorized'
       });
     }
-    const devboxName = payload.devboxName;
-    const namespace = payload.namespace;
+    const lookupDevboxName = payload.devboxName;
+    const lookupNamespace = payload.namespace;
 
     const { k8sCore, k8sCustomObjects } = await getK8s({
       kubeconfig:
@@ -114,19 +114,21 @@ export async function GET(req: NextRequest) {
       useDefaultConfig: process.env.NODE_ENV !== 'development'
     });
 
-    const response = await k8sCore.readNamespacedSecret(devboxName, namespace);
+    const response = await k8sCore.readNamespacedSecret(lookupDevboxName, lookupNamespace);
 
     const jwtSecret = Buffer.from(
       response.body.data?.['SEALOS_DEVBOX_JWT_SECRET'] as string,
       'base64'
     ).toString('utf-8');
 
-    if (!verifyToken(token, jwtSecret)) {
+    const verifiedPayload = verifyToken(token, jwtSecret);
+    if (!verifiedPayload) {
       return jsonRes({
         code: 401,
         error: 'Unauthorized'
       });
     }
+    const { namespace } = verifiedPayload;
 
     const clustersResult = await k8sCustomObjects.listNamespacedCustomObject(
       'apps.kubeblocks.io',
@@ -203,9 +205,12 @@ export async function GET(req: NextRequest) {
       }
     });
   } catch (err: any) {
-    return jsonRes({
-      code: 500,
-      error: err
-    });
+    if (err?.response?.statusCode === 404) {
+      return jsonRes({
+        code: 401,
+        error: 'Unauthorized'
+      });
+    }
+    return jsonRes({ code: 500, error: 'Internal Server Error' });
   }
 }
