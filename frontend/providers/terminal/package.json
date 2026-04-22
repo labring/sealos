@@ -22,7 +22,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "0.18.0",
-    "@labring/sealos-tty-client": "^0.0.2",
+    "@labring/sealos-tty-client": "^0.1.0",
     "@sealos/shared": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "@xterm/addon-fit": "^0.11.0",
@@ -55,10 +55,10 @@
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser": "4.0.15",
     "@vitest/browser-playwright": "4.0.15",
     "sass": "^1.68.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.12",
-    "@vitest/browser": "4.0.15"
+    "vitest": "^4.0.12"
   }
 }
