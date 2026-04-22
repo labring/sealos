@@ -4,7 +4,6 @@ import { serviceSideProps } from '@/utils/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import Header, { MonitorTab } from '@/components/Monitor/Header';
-import MonitorChart from '@/components/MonitorChart';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
@@ -15,7 +14,12 @@ import { generatePvcNameRegex } from '@/utils/tools';
 import { parseTimeRange } from '@/utils/timeRange';
 import { Skeleton } from '@sealos/shadcn-ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
+
+const MonitorChart = dynamic(() => import('@/components/MonitorChart'), {
+  ssr: false
+});
 
 const getPaddedAxisMax = (value: { max: number }) => {
   const rawMax = value?.max ?? 0;
