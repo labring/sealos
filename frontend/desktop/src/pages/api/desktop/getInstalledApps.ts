@@ -90,7 +90,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         key,
         ...item.spec,
         representativeMeta: getRepresentativeMeta(key, item.metadata.annotations),
-        displayType: 'normal',
+        // Respect workspace app displayType from CR (hidden/more/normal).
+        displayType: item.spec.displayType || 'normal',
         creationTimestamp: item.metadata.creationTimestamp
       };
     });
