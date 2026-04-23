@@ -185,7 +185,7 @@ export default function Home(): React.JSX.Element {
       {
         header: t('nsManager.accessed_at'),
         accessorFn: (row) => {
-          if (row.accessed_at && row.accessed_at < 0) {
+          if (!row.accessed_at || row.accessed_at <= 0) {
             return t('key.unused');
           }
 
