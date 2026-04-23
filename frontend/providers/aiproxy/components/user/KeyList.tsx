@@ -298,7 +298,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
       cell: (info) => {
         const timestamp = info.getValue();
 
-        if (timestamp && timestamp < 0) {
+        if (!timestamp || timestamp <= 0) {
           return (
             <Text
               color="grayModern.500"
