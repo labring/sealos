@@ -6,7 +6,12 @@
     "dev": "pnpm run config:gen-json-schema && next dev",
     "build": "next build",
     "start": "next start",
-    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json"
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json",
+    "test": "vitest --project unit",
+    "test:watch": "vitest --project unit --watch",
+    "test:ci": "vitest run --project unit",
+    "test:components": "vitest --project components",
+    "test:components:ci": "vitest run --project components"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
@@ -75,6 +80,7 @@
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
     "@svgr/webpack": "^6.5.1",
     "@types/js-cookie": "^3.0.4",
     "@types/js-yaml": "^4.0.6",
@@ -85,10 +91,15 @@
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@types/react-syntax-highlighter": "^15.5.7",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser-playwright": "4.0.15",
     "eslint": "8.33.0",
     "eslint-config-next": "13.5.9",
     "prettier": "^2.8.8",
     "svg-inline-loader": "^0.8.2",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.12",
+    "@vitest/browser": "4.0.15"
   }
 }

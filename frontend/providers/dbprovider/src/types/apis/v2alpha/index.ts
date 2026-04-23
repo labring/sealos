@@ -516,6 +516,7 @@ export const document = createDocument({
                       'postgresql',
                       'mongodb',
                       'apecloud-mysql',
+                      'mysql',
                       'redis',
                       'kafka',
                       'qdrant',

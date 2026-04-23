@@ -176,6 +176,23 @@ const capToMaxAllowed = (
   return { value: value < 0n ? -MAX_INT64 : MAX_INT64, scale: 0, capped: true };
 };
 
+const normalizeConstructedQuantity = (
+  value: bigint,
+  scale: number
+): { value: bigint; scale: number } => {
+  const rounded = roundToMinScale(value, scale, -9);
+  const capped = capToMaxAllowed(rounded.value, rounded.scale);
+  return normalizeDecimal(capped.value, capped.scale);
+};
+
+const normalizeConstructedBinaryScaledQuantity = (
+  value: bigint,
+  scale: BinaryScale
+): { value: bigint; scale: number } => {
+  const capped = capToMaxAllowed(value * pow2BigInt(Number(scale)), 0);
+  return normalizeDecimal(capped.value, capped.scale);
+};
+
 const compareAmounts = (
   aValue: bigint,
   aScale: number,
@@ -797,9 +814,8 @@ export class Quantity {
    * The value will be capped to the Kubernetes max magnitude if needed.
    */
   static newQuantity(value: bigint, format: Format): Quantity {
-    const normalized = normalizeDecimal(value, 0);
-    const capped = capToMaxAllowed(normalized.value, normalized.scale);
-    return new Quantity(capped.value, capped.scale, format);
+    const normalized = normalizeConstructedQuantity(value, 0);
+    return new Quantity(normalized.value, normalized.scale, format);
   }
 
   /**
@@ -809,23 +825,33 @@ export class Quantity {
    * capped to the Kubernetes max magnitude if needed.
    */
   static newMilliQuantity(milliValue: bigint, format: Format): Quantity {
-    const rounded = roundToMinScale(milliValue, -3, -9);
-    const capped = capToMaxAllowed(rounded.value, rounded.scale);
-    const normalized = normalizeDecimal(capped.value, capped.scale);
+    const normalized = normalizeConstructedQuantity(milliValue, -3);
     return new Quantity(normalized.value, normalized.scale, format);
   }
 
   /**
-   * Create a DecimalSI quantity representing `value * 10^scale`.
+   * Create a decimal quantity representing `value * 10^scale`.
    *
    * The value will be rounded up to the minimum representable scale (nano) and
    * capped to the Kubernetes max magnitude if needed.
    */
-  static newScaledQuantity(value: bigint, scale: Scale): Quantity {
-    const rounded = roundToMinScale(value, Number(scale), -9);
-    const capped = capToMaxAllowed(rounded.value, rounded.scale);
-    const normalized = normalizeDecimal(capped.value, capped.scale);
-    return new Quantity(normalized.value, normalized.scale, 'DecimalSI');
+  static newScaledQuantity(
+    value: bigint,
+    scale: Scale,
+    format: DecimalFormat = 'DecimalSI'
+  ): Quantity {
+    const normalized = normalizeConstructedQuantity(value, Number(scale));
+    return new Quantity(normalized.value, normalized.scale, format);
+  }
+
+  /**
+   * Create a BinarySI quantity representing `value * 2^scale`.
+   *
+   * This mirrors `scaledBinaryValue()` for the constructor side of the API.
+   */
+  static newBinaryScaledQuantity(value: bigint, scale: BinaryScale): Quantity {
+    const normalized = normalizeConstructedBinaryScaledQuantity(value, scale);
+    return new Quantity(normalized.value, normalized.scale, 'BinarySI');
   }
 
   private constructor(value: bigint, scale: number, format: Format) {

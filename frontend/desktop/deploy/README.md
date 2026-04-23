@@ -31,6 +31,7 @@ The Helm Chart uses two values files to manage configuration:
 Contains default Helm Chart configurations that should not be modified.
 
 **Content**:
+
 - **Infrastructure configurations**: Image, service account, probes, ingress, scheduling, etc.
 - **Auto-configured reference values**: cloudDomain, jwtInternal, databaseMongodbURI, etc. (automatically fetched from ConfigMap, values here are for reference only)
 
@@ -41,6 +42,7 @@ Contains default Helm Chart configurations that should not be modified.
 Contains user-customizable configurations.
 
 **Content**:
+
 - Resource limits and requests
 - Feature flags
 - OAuth providers (GitHub, Google, WeChat, etc.)
@@ -308,13 +310,13 @@ Add `additionalAllowedOriginsPrefixes` in `values-custom.yaml`:
 
 ```yaml
 desktopConfig:
-  cloudDomain: "cloud.example.com"
+  cloudDomain: 'cloud.example.com'
 
   # Add additional allowedOrigins subdomains
   # Only provide the subdomain part, system will add https:// and .{cloudDomain}
   additionalAllowedOriginsPrefixes:
-    - "my-custom-app"
-    - "another-service"
+    - 'my-custom-app'
+    - 'another-service'
 ```
 
 ### Result
@@ -324,22 +326,24 @@ The generated `allowedOrigins` will include:
 ```yaml
 allowedOrigins:
   # Default origins...
-  - "https://sealaf.cloud.example.com"
+  - 'https://sealaf.cloud.example.com'
   # Additional custom origins
-  - "https://my-custom-app.cloud.example.com"
-  - "https://another-service.cloud.example.com"
+  - 'https://my-custom-app.cloud.example.com'
+  - 'https://another-service.cloud.example.com'
 ```
 
 ### Usage Examples
 
 **Via values file:**
+
 ```yaml
 additionalAllowedOriginsPrefixes:
-  - "custom-app"
-  - "analytics-service"
+  - 'custom-app'
+  - 'analytics-service'
 ```
 
 **Via Helm --set:**
+
 ```bash
 helm upgrade -i desktop-frontend ./charts/desktop-frontend \
   --set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app" \
@@ -347,6 +351,7 @@ helm upgrade -i desktop-frontend ./charts/desktop-frontend \
 ```
 
 **Via environment variable:**
+
 ```bash
 export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app"'
 ./desktop-frontend-entrypoint.sh

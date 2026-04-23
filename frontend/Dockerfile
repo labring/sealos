@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM node:20.4.0-alpine AS base
+FROM node:20.20.2-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 WORKDIR /app
@@ -78,10 +78,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-RUN apk add curl \
-  && apk add ca-certificates \
-  && update-ca-certificates \
-  && apk add --no-cache dumb-init
+# OpenSSL: https://github.com/prisma/prisma/discussions/19341#discussioncomment-11521367
+RUN apk add curl openssl ca-certificates dumb-init --no-cache \
+  && update-ca-certificates
 
 ARG name
 ARG path

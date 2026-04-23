@@ -31,6 +31,7 @@ Helm Chart 使用两个 values 文件来管理配置：
 包含 Helm Chart 的默认配置，不应修改。
 
 **内容**:
+
 - **基础设施配置**: 镜像、服务账号、探针、Ingress、调度等
 - **自动配置参考值**: cloudDomain、jwtInternal、databaseMongodbURI 等（从 ConfigMap 自动获取，此处的值仅作为参考）
 
@@ -41,6 +42,7 @@ Helm Chart 使用两个 values 文件来管理配置：
 包含需要用户手动配置的自定义选项。
 
 **内容**:
+
 - 资源限制和请求
 - 功能开关
 - OAuth 提供商（GitHub、Google、微信等）
@@ -308,13 +310,13 @@ Desktop Frontend 支持在 `allowedOrigins` 列表中添加自定义的子域名
 
 ```yaml
 desktopConfig:
-  cloudDomain: "cloud.example.com"
+  cloudDomain: 'cloud.example.com'
 
   # 添加额外的 allowedOrigins 子域名
   # 只需传入子域名部分，系统会自动添加 https:// 和 .{cloudDomain}
   additionalAllowedOriginsPrefixes:
-    - "my-custom-app"
-    - "another-service"
+    - 'my-custom-app'
+    - 'another-service'
 ```
 
 ### 生成的结果
@@ -324,22 +326,24 @@ desktopConfig:
 ```yaml
 allowedOrigins:
   # 默认的 origins...
-  - "https://sealaf.cloud.example.com"
+  - 'https://sealaf.cloud.example.com'
   # 额外的自定义 origins
-  - "https://my-custom-app.cloud.example.com"
-  - "https://another-service.cloud.example.com"
+  - 'https://my-custom-app.cloud.example.com'
+  - 'https://another-service.cloud.example.com'
 ```
 
 ### 使用示例
 
 **通过 values 文件：**
+
 ```yaml
 additionalAllowedOriginsPrefixes:
-  - "custom-app"
-  - "analytics-service"
+  - 'custom-app'
+  - 'analytics-service'
 ```
 
 **通过 Helm --set 参数：**
+
 ```bash
 helm upgrade -i desktop-frontend ./charts/desktop-frontend \
   --set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app" \
@@ -347,6 +351,7 @@ helm upgrade -i desktop-frontend ./charts/desktop-frontend \
 ```
 
 **通过环境变量：**
+
 ```bash
 export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app"'
 ./desktop-frontend-entrypoint.sh

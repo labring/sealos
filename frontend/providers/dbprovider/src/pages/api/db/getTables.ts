@@ -34,6 +34,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         ['mysql', `-u${username}`, `-p${password}`, databaseName, '-e SHOW TABLES;']
       ],
       [
+        DBTypeEnum.notapemysql,
+        ['mysql', `-u${username}`, `-p${password}`, databaseName, '-e SHOW TABLES;']
+      ],
+      [
         DBTypeEnum.postgresql,
         [
           'psql',
@@ -45,13 +49,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       [
         DBTypeEnum.mongodb,
         [
-          'mongo',
-          '--quiet',
-          `-u${username}`,
-          `-p${password}`,
+          'mongosh',
           databaseName,
+          '-u',
+          username,
+          '-p',
+          password,
+          '--authenticationDatabase',
+          'admin',
+          '--quiet',
           '--eval',
-          'db.getCollectionNames();'
+          'db.getCollectionNames().forEach(function(coll) {print(coll);})'
         ]
       ]
     ]);
@@ -75,17 +83,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       case DBTypeEnum.mysql:
         tableList = result.split('\n').slice(1, -1);
         break;
+      case DBTypeEnum.notapemysql:
+        tableList = result.split('\n').slice(1, -1);
+        break;
       case DBTypeEnum.postgresql:
         if (result.split('\n').length >= 3) {
           tableList = result.replaceAll(' ', '').split('\n').slice(2, -3);
         }
         break;
       case DBTypeEnum.mongodb:
-        if (result.includes('[')) {
-          tableList = result.slice(3, -4).split('", "');
-        } else if (result.includes('Error: ')) {
-          throw new Error('failed!');
-        }
+        tableList = result.split('\n').filter((item) => item.length > 0);
         break;
       default:
         break;

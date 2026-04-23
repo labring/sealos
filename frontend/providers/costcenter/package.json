@@ -6,7 +6,12 @@
     "dev": "next dev --port 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest --project unit",
+    "test:watch": "vitest --project unit --watch",
+    "test:ci": "vitest run --project unit",
+    "test:components": "vitest --project components",
+    "test:components:ci": "vitest run --project components"
   },
   "dependencies": {
     "@alicloud/dysmsapi20170525": "^2.0.24",
@@ -71,9 +76,15 @@
     "@types/nprogress": "^0.2.1",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "^5.1.1",
     "eslint": "8.36.0",
     "eslint-config-next": "13.5.9",
     "prettier": "^2.8.8",
-    "sass": "^1.68.0"
+    "sass": "^1.68.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.12",
+    "@playwright/test": "^1.58.1",
+    "@vitest/browser": "4.0.15",
+    "@vitest/browser-playwright": "4.0.15"
   }
 }

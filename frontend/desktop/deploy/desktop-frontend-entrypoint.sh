@@ -137,7 +137,7 @@ fi
 
 # Prepare values files
 SERVICE_NAME="desktop-frontend"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+USER_VALUES_PATH="/root/.sealos/cloud/values/core/desktop-values.yaml"
 
 # Copy user values template if not exists
 if [ ! -f "${USER_VALUES_PATH}" ]; then

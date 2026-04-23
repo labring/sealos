@@ -154,15 +154,19 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    execPromise.finally(async () => {
-      processStream.end();
-      processStream.destroy();
-      if (!isStreamClosed) {
-        isStreamClosed = true;
-        await writer.close();
-      }
-      console.log('execPromise end');
-    });
+    void execPromise
+      .finally(async () => {
+        processStream.end();
+        processStream.destroy();
+        if (!isStreamClosed) {
+          isStreamClosed = true;
+          await writer.close();
+        }
+        console.log('execPromise end');
+      })
+      .catch((error) => {
+        console.error('execPromise cleanup error:', error);
+      });
 
     req.signal.addEventListener('abort', async () => {
       console.log('Connection aborted by client');
@@ -171,11 +175,13 @@ export async function POST(req: NextRequest) {
         isStreamClosed = true;
         await writer.close();
       }
-      execCommand(k8sExec, namespace, podName, containerName, [
+      void execCommand(k8sExec, namespace, podName, containerName, [
         '/bin/sh',
         '-c',
         `rm -rf ${idePath}`
-      ]);
+      ]).catch((error) => {
+        console.error('abort cleanup command failed:', error);
+      });
     });
 
     return new Response(readable, {
