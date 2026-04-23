@@ -21,6 +21,7 @@ export interface Env {
   ingressSecret: string;
   registryAddr: string;
   devboxAffinityEnable: string;
+  runtimeClassName: string;
   namespace: string;
   rootRuntimeNamespace: string;
   ingressDomain: string;

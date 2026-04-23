@@ -1,61 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { ErrorCode, ErrorType, sendError, sendValidationError } from '@/lib/v2alpha/error'
+import { findTokenByName } from '@/lib/v2alpha/tokens'
 import { ApiProxyBackendResp } from '@/types/api.d'
-import { TokenInfo } from '@/types/user/token'
 import { kcOrAppTokenAuthDecoded } from '@/utils/backend/auth'
 
 import { tokenNameParamSchema } from './schema'
 
 export const dynamic = 'force-dynamic'
-
-type TokenSearchResponse = {
-  tokens: TokenInfo[]
-  total: number
-}
-
-async function findTokenByName(name: string, group: string): Promise<TokenInfo | null> {
-  const baseUrl = global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
-  if (!baseUrl) {
-    throw new Error('Backend service URL is not configured')
-  }
-
-  const authKey = global.AppConfig?.auth.aiProxyBackendKey
-  if (!authKey) {
-    throw new Error('Backend auth key is not configured')
-  }
-
-  const url = new URL(`/api/token/${group}/search`, baseUrl)
-  url.searchParams.append('name', name)
-  // Use a large per_page to ensure all tokens matching the (potentially fuzzy)
-  // name query are returned so that client-side exact filtering can find the target.
-  url.searchParams.append('per_page', '100')
-
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: authKey,
-    },
-    cache: 'no-store',
-  })
-
-  if (response.status === 404) {
-    return null
-  }
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
-  }
-
-  const result: ApiProxyBackendResp<TokenSearchResponse> = await response.json()
-
-  if (!result.success) {
-    throw new Error(result.message || 'Failed to search token')
-  }
-
-  return result.data?.tokens?.find((tokenInfo) => tokenInfo.name === name) ?? null
-}
 
 async function deleteTokenInBackend(name: string, group: string): Promise<void> {
   const baseUrl = global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy

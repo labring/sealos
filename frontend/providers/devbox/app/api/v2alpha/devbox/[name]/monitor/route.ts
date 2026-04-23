@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { monitorFetch } from '@/services/monitorFetch';
-import type { LaunchpadQueryResult } from 'sealos-metrics-sdk';
 import { sendError, ErrorType, ErrorCode } from '@/app/api/v2alpha/api-error';
+import { MonitorServiceResult } from '@/types/monitor';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +46,7 @@ function toSeconds(value: number, defaultValue: number): number {
   return Math.floor(value);
 }
 
-function collectAveragedSeries(data: LaunchpadQueryResult | null | undefined): Map<number, number> {
+function collectAveragedSeries(data: MonitorServiceResult | null | undefined): Map<number, number> {
   const bucket = new Map<number, { total: number; count: number }>();
 
   if (!data?.data?.result) {
@@ -84,8 +84,8 @@ function collectAveragedSeries(data: LaunchpadQueryResult | null | undefined): M
 }
 
 function mergeMonitorSeries(
-  cpuData: LaunchpadQueryResult | null | undefined,
-  memoryData: LaunchpadQueryResult | null | undefined
+  cpuData: MonitorServiceResult | null | undefined,
+  memoryData: MonitorServiceResult | null | undefined
 ): MonitorDataPoint[] {
   const cpuSeries = collectAveragedSeries(cpuData);
   const memorySeries = collectAveragedSeries(memoryData);
@@ -123,7 +123,7 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
     }
 
     const kubeconfig = await authSession(headerList);
-    const { namespace, k8sCore } = await getK8s({
+    const { namespace } = await getK8s({
       kubeconfig
     });
 
@@ -148,34 +148,38 @@ export async function GET(req: NextRequest, { params }: { params: { name: string
       });
     }
 
-    const requestParamsWithoutType = {
-      podName: devboxName,
+    const requestParams = {
+      launchPadName: devboxName,
       namespace,
-      range: {
-        start: startTime,
-        end: endTime,
-        step
-      }
+      start: startTime,
+      end: endTime,
+      step
     };
     const [cpuResult, memoryResult] = await Promise.all([
       monitorFetch(
         {
-          ...requestParamsWithoutType,
-          type: 'average_cpu'
+          url: '/query',
+          params: {
+            ...requestParams,
+            type: 'average_cpu'
+          }
         },
         kubeconfig
       ),
       monitorFetch(
         {
-          ...requestParamsWithoutType,
-          type: 'average_memory'
+          url: '/query',
+          params: {
+            ...requestParams,
+            type: 'average_memory'
+          }
         },
         kubeconfig
       )
     ]);
     const mergedData = mergeMonitorSeries(
-      cpuResult as LaunchpadQueryResult,
-      memoryResult as LaunchpadQueryResult
+      cpuResult as MonitorServiceResult,
+      memoryResult as MonitorServiceResult
     );
     return NextResponse.json(mergedData);
   } catch (err: any) {

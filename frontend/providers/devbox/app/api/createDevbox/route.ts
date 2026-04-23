@@ -57,8 +57,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT, NFS_STORAGE_CLASS_NAME } =
-      process.env;
+    const {
+      INGRESS_SECRET,
+      DEVBOX_AFFINITY_ENABLE,
+      STORAGE_LIMIT,
+      DEVBOX_RUNTIME_CLASS_NAME,
+      NFS_STORAGE_CLASS_NAME
+    } = process.env;
 
     // Create PVC first (if volumes exist)
     const pvc = json2PVC(devboxForm, NFS_STORAGE_CLASS_NAME || 'nfs-csi');
@@ -67,7 +72,12 @@ export async function POST(req: NextRequest) {
     const configMap = json2ConfigMap(devboxForm);
 
     // Create Devbox, Service, and Ingress
-    const devbox = json2Devbox(devboxForm, DEVBOX_AFFINITY_ENABLE, STORAGE_LIMIT);
+    const devbox = json2Devbox(
+      devboxForm,
+      DEVBOX_AFFINITY_ENABLE,
+      STORAGE_LIMIT,
+      DEVBOX_RUNTIME_CLASS_NAME
+    );
     const service = json2Service(devboxForm);
     const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string);
 

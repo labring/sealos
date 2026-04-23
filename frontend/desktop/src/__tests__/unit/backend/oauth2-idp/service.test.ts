@@ -1,37 +1,37 @@
+import { beforeEach, describe, expect, it, vi, type MockedFunction } from 'vitest';
 import { DeviceGrantStatus, OAuthClientType } from 'prisma/global/generated/client';
-import { OAuth2HttpError } from '@/services/backend/oauth2/errors';
 import { createHash } from 'crypto';
 
-jest.mock('@/services/backend/db/init', () => ({
+vi.mock('@/services/backend/db/init', () => ({
   globalPrisma: {
     oAuthClient: {
-      findUnique: jest.fn()
+      findUnique: vi.fn()
     },
     oAuthDeviceGrant: {
-      create: jest.fn(),
-      findFirst: jest.fn(),
-      findUnique: jest.fn(),
-      update: jest.fn()
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn()
     },
     oAuthUserConsent: {
-      findFirst: jest.fn(),
-      upsert: jest.fn()
+      findFirst: vi.fn(),
+      upsert: vi.fn()
     },
     user: {
-      findUnique: jest.fn()
+      findUnique: vi.fn()
     },
-    $transaction: jest.fn()
+    $transaction: vi.fn()
   }
 }));
 
-jest.mock('@/services/backend/auth', () => ({
-  generateOAuth2AccessToken: jest.fn(() => 'mock-access-token'),
-  generateOAuth2RefreshToken: jest.fn(() => 'mock-refresh-token'),
-  verifyOAuth2RefreshToken: jest.fn()
+vi.mock('@/services/backend/auth', () => ({
+  generateOAuth2AccessToken: vi.fn(() => 'mock-access-token'),
+  generateOAuth2RefreshToken: vi.fn(() => 'mock-refresh-token'),
+  verifyOAuth2RefreshToken: vi.fn()
 }));
 
-jest.mock('@/services/enable', () => ({
-  enableOAuth2Idp: jest.fn(() => true)
+vi.mock('@/services/enable', () => ({
+  enableOAuth2Idp: vi.fn(() => true)
 }));
 
 import {
@@ -43,7 +43,7 @@ import { globalPrisma } from '@/services/backend/db/init';
 import { verifyOAuth2RefreshToken } from '@/services/backend/auth';
 
 const mockPrisma = globalPrisma as any;
-const mockVerifyOAuth2RefreshToken = verifyOAuth2RefreshToken as jest.MockedFunction<
+const mockVerifyOAuth2RefreshToken = verifyOAuth2RefreshToken as MockedFunction<
   typeof verifyOAuth2RefreshToken
 >;
 
@@ -84,7 +84,7 @@ const buildGrant = (status: DeviceGrantStatus, lastPollAt?: Date) => ({
 
 describe('oauth2 service', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('creates device authorization grant', async () => {
@@ -114,7 +114,7 @@ describe('oauth2 service', () => {
         device_code: 'device',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'authorization_pending'
     });
   });
@@ -132,7 +132,7 @@ describe('oauth2 service', () => {
         device_code: 'device',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'slow_down'
     });
   });
@@ -150,7 +150,7 @@ describe('oauth2 service', () => {
         device_code: 'device',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'expired_token'
     });
   });
@@ -166,7 +166,7 @@ describe('oauth2 service', () => {
         device_code: 'device',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'access_denied'
     });
   });
@@ -204,7 +204,7 @@ describe('oauth2 service', () => {
         device_code: 'device',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'expired_token'
     });
   });
@@ -221,7 +221,7 @@ describe('oauth2 service', () => {
         device_code: 'device',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'unauthorized_client'
     });
   });
@@ -235,7 +235,7 @@ describe('oauth2 service', () => {
         device_code: 'device',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'invalid_client'
     });
   });
@@ -250,7 +250,7 @@ describe('oauth2 service', () => {
         client_id: 'client-1',
         client_secret: 'wrong-secret'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'invalid_client'
     });
   });
@@ -287,7 +287,7 @@ describe('oauth2 service', () => {
         refresh_token: 'invalid-refresh-token',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'invalid_grant'
     });
   });
@@ -308,7 +308,7 @@ describe('oauth2 service', () => {
         refresh_token: 'valid-refresh-token',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'invalid_grant'
     });
   });
@@ -325,7 +325,7 @@ describe('oauth2 service', () => {
         refresh_token: 'valid-refresh-token',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'unauthorized_client'
     });
   });
@@ -339,7 +339,7 @@ describe('oauth2 service', () => {
         refresh_token: 'valid-refresh-token',
         client_id: 'client-1'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'invalid_client'
     });
   });
@@ -354,7 +354,7 @@ describe('oauth2 service', () => {
         client_id: 'client-1',
         client_secret: 'wrong-secret'
       })
-    ).rejects.toMatchObject<Partial<OAuth2HttpError>>({
+    ).rejects.toMatchObject({
       error: 'invalid_client'
     });
   });

@@ -7,10 +7,64 @@ import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
+import type { KBDevboxTypeV2 } from '@/types/k8s';
 import { generateYamlList } from '@/utils/json2Yaml';
 import { patchYamlList } from '@/utils/tools';
 
 export const dynamic = 'force-dynamic';
+
+const preserveExistingRuntimeClassName = async ({
+  jsonPatch,
+  k8sCustomObjects,
+  namespace
+}: {
+  jsonPatch: Record<string, any>;
+  k8sCustomObjects: any;
+  namespace: string;
+}) => {
+  const devboxName = jsonPatch?.metadata?.name;
+  if (
+    !devboxName ||
+    !jsonPatch?.spec ||
+    !Object.prototype.hasOwnProperty.call(jsonPatch.spec, 'runtimeClassName')
+  ) {
+    return jsonPatch;
+  }
+
+  try {
+    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha2',
+      namespace,
+      'devboxes',
+      devboxName
+    )) as { body: KBDevboxTypeV2 };
+
+    const existingRuntimeClassName = devboxBody?.spec?.runtimeClassName;
+
+    if (existingRuntimeClassName === undefined) {
+      const { runtimeClassName: _runtimeClassName, ...restSpec } = jsonPatch.spec;
+      return {
+        ...jsonPatch,
+        spec: restSpec
+      };
+    }
+
+    return {
+      ...jsonPatch,
+      spec: {
+        ...jsonPatch.spec,
+        runtimeClassName: existingRuntimeClassName
+      }
+    };
+  } catch (error: any) {
+    infoLog('preserve runtimeClassName failed, fallback to patch payload', {
+      name: devboxName,
+      error: error?.message
+    });
+    return jsonPatch;
+  }
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,10 +75,12 @@ export async function POST(req: NextRequest) {
 
     const newYamlList = generateYamlList(newFormData, {
       devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE!,
+      runtimeClassName: process.env.DEVBOX_RUNTIME_CLASS_NAME!,
       ingressSecret: process.env.INGRESS_SECRET!
     });
     const oldYamlList = generateYamlList(oldFormData, {
       devboxAffinityEnable: process.env.DEVBOX_AFFINITY_ENABLE!,
+      runtimeClassName: process.env.DEVBOX_RUNTIME_CLASS_NAME!,
       ingressSecret: process.env.INGRESS_SECRET!
     });
 
@@ -73,16 +129,21 @@ export async function POST(req: NextRequest) {
       }
     > = {
       [YamlKindEnum.Devbox]: {
-        patch: (jsonPatch: Object) => {
+        patch: async (jsonPatch: Record<string, any>) => {
           // @ts-ignore
           const name = jsonPatch?.metadata?.name;
+          const safePatch = await preserveExistingRuntimeClassName({
+            jsonPatch,
+            k8sCustomObjects,
+            namespace
+          });
           return k8sCustomObjects.patchNamespacedCustomObject(
             'devbox.sealos.io',
             'v1alpha2',
             namespace,
             'devboxes',
             name,
-            jsonPatch,
+            safePatch,
             undefined,
             undefined,
             undefined,
