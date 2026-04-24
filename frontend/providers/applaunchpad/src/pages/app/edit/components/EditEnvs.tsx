@@ -13,6 +13,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { AppEditType } from '@/types/app';
+import { parseDotenvEnvs, stringifyDotenvEnvs } from '@/utils/dotenvEnv';
 
 const EditEnvs = ({
   defaultEnv = [],
@@ -20,46 +21,21 @@ const EditEnvs = ({
   onClose
 }: {
   defaultEnv: AppEditType['envs'];
-  successCb: (e: { key: string; value: string }[]) => void;
+  successCb: (e: AppEditType['envs']) => void;
   onClose: () => void;
 }) => {
   const { t } = useTranslation();
   const [inputVal, setInputVal] = useState(
-    defaultEnv
-      .filter((item) => !item.valueFrom) // Only env that is not valuefrom can be edited
-      .map((item) => `${item.key}=${item.value}`)
-      .join('\n')
+    stringifyDotenvEnvs(
+      defaultEnv
+        .filter((item) => !item.valueFrom) // Only env that is not valuefrom can be edited
+        .map((item) => ({ key: item.key, value: item.value }))
+        .filter((item) => item.key)
+    )
   );
 
   const onSubmit = useCallback(() => {
-    const lines = inputVal.split('\n').filter((item) => item);
-    const result = lines
-      .map((str) => {
-        // replace special symbol
-        str = str.trim();
-        if (/^-\s*/.test(str)) {
-          str = str.replace(/^-\s*/, '');
-        }
-        if (str.includes('=')) {
-          const i = str.indexOf('=');
-          return [str.slice(0, i), str.slice(i + 1)];
-        } else if (str.includes(':')) {
-          const i = str.indexOf(':');
-          return [str.slice(0, i), str.slice(i + 1)];
-        }
-        return '';
-      })
-      .filter((item) => item)
-      .map((item) => {
-        // remove quotation
-        const key = item[0].replace(/^['"]|['"]$/g, '').trim();
-        const value = item[1].replace(/^['"]|['"]$/g, '').trim();
-
-        return {
-          key,
-          value
-        };
-      });
+    const result = parseDotenvEnvs(inputVal);
 
     // concat valueFrom env
     successCb([...defaultEnv.filter((item) => item.valueFrom), ...result]);
@@ -77,11 +53,12 @@ const EditEnvs = ({
             {t('Environment Variables')}
           </Box>
           <Textarea
-            whiteSpace={'pre-wrap'}
+            whiteSpace={'pre'}
             h={'350px'}
             maxH={'100%'}
             value={inputVal}
             resize={'both'}
+            wrap={'off'}
             placeholder={t('Env Placeholder') || ''}
             overflowX={'auto'}
             onChange={(e) => setInputVal(e.target.value)}
