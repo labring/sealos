@@ -68,6 +68,14 @@ RUN if [ "$name" = "desktop" ]; then \
     fi; \
 fi
 RUN if [ "$name" = "devbox" ]; then \
+    if [ -d "./providers/devbox/prisma/cockroach/migrations" ]; then \
+        mkdir -p ./providers/devbox/.next/standalone/providers/devbox/prisma/cockroach && \
+        cp -r ./providers/devbox/prisma/cockroach/migrations ./providers/devbox/.next/standalone/providers/devbox/prisma/cockroach/; \
+    fi; \
+    if [ -d "./providers/devbox/prisma/postgresql/migrations" ]; then \
+        mkdir -p ./providers/devbox/.next/standalone/providers/devbox/prisma/postgresql && \
+        cp -r ./providers/devbox/prisma/postgresql/migrations ./providers/devbox/.next/standalone/providers/devbox/prisma/postgresql/; \
+    fi; \
     if [ -d "./providers/devbox/prisma/migrations" ]; then \
         mkdir -p ./providers/devbox/.next/standalone/providers/devbox/prisma && \
         cp -r ./providers/devbox/prisma/migrations ./providers/devbox/.next/standalone/providers/devbox/prisma/; \
