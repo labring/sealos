@@ -1,0 +1,20 @@
+{{- if .Values.app.enabled }}
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: {{ .Values.app.name }}
+  namespace: {{ .Values.app.namespace }}
+spec:
+  data:
+    desc: Devbox
+    url: {{ printf "https://%s" (include "devbox-frontend.externalHost" .) | quote }}
+  icon: {{ printf "https://%s/logo.svg" (include "devbox-frontend.externalHost" .) | quote }}
+  i18n:
+    zh:
+      name: Devbox
+    zh-Hans:
+      name: Devbox
+  name: {{ .Values.app.name }}
+  type: {{ .Values.app.type }}
+  displayType: {{ .Values.app.displayType }}
+{{- end }}
