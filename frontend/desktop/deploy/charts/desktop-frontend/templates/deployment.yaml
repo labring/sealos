@@ -27,6 +27,12 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
+      {{- $globalPrismaSchema := "/app/desktop/prisma/global/schema.prisma" }}
+      {{- $regionPrismaSchema := "/app/desktop/prisma/region/schema.prisma" }}
+      {{- if eq .Values.global.featureConfigs.database.type "postgresql" }}
+      {{- $globalPrismaSchema = "/app/desktop/prisma/providers/postgresql/global/schema.prisma" }}
+      {{- $regionPrismaSchema = "/app/desktop/prisma/providers/postgresql/region/schema.prisma" }}
+      {{- end }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -37,13 +43,16 @@ spec:
       initContainers:
         - name: init-database
           image: "{{ .Values.image }}"
+          env:
+            - name: PRISMA_DB_PROVIDER
+              value: "{{ .Values.global.featureConfigs.database.type }}"
           command: ["/bin/sh", "-c"]
           args:
             - |
               export REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"')
               export GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"')
-              prisma migrate deploy --schema /app/desktop/prisma/global/schema.prisma
-              prisma migrate deploy --schema /app/desktop/prisma/region/schema.prisma
+              prisma migrate deploy --schema {{ $globalPrismaSchema }}
+              prisma migrate deploy --schema {{ $regionPrismaSchema }}
           volumeMounts:
             - mountPath: /app/data/config.yaml
               name: desktop-frontend-volume
@@ -52,6 +61,9 @@ spec:
         - name: {{ include "desktop.name" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: PRISMA_DB_PROVIDER
+              value: "{{ .Values.global.featureConfigs.database.type }}"
           command: ["/bin/sh", "-c"]
           args:
             - |

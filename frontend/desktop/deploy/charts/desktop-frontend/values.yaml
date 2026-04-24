@@ -1,5 +1,10 @@
 # Default values for desktop frontend helm chart.
-
+global:
+  featureConfigs:
+    database:
+      # Database backend for Prisma migrations.
+      # Supported values: cockroachdb, postgresql
+      type: cockroachdb
 image: ghcr.io/labring/sealos-desktop-frontend:latest
 imagePullPolicy: IfNotPresent
 
