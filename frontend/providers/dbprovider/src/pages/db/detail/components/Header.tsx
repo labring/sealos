@@ -19,7 +19,7 @@ import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState, useEffect } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
-import { WHODB_SUPPORTED_TYPES } from '@/constants/whodb';
+import { DATAFLOW_APP_KEY, DATAFLOW_SUPPORTED_TYPES } from '@/constants/dataflow';
 import { ConnectionInfo } from './AppBaseInfo';
 import { getLangStore } from '@/utils/cookieUtils';
 import useEnvStore from '@/store/env';
@@ -96,7 +96,7 @@ const Header = ({
       const currentLang = getLangStore() || 'zh';
 
       sealosApp.runEvents('openDesktopApp', {
-        appKey: 'system-whodb',
+        appKey: DATAFLOW_APP_KEY,
         query: {
           resourceName: db.dbName,
           dbType: db.dbType,
@@ -108,7 +108,7 @@ const Header = ({
       console.error('handleManageData error:', error);
       toast({ title: t('manage_data_redirect_failed'), status: 'error' });
     }
-  }, [toast, t, SystemEnv, db.dbName, db.dbType]);
+  }, [toast, t, db.dbName, db.dbType]);
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
@@ -301,7 +301,7 @@ const Header = ({
             )}
           </Flex>
 
-          {SystemEnv.WHODB_ENABLED === 'true' && WHODB_SUPPORTED_TYPES.has(db.dbType) && (
+          {SystemEnv.DATAFLOW_ENABLED === 'true' && DATAFLOW_SUPPORTED_TYPES.has(db.dbType) && (
             <Button
               display={'flex'}
               height={'40px'}

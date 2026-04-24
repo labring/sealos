@@ -1,5 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
+import { resolveDataflowEnabled } from '@/constants/dataflow';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type SystemEnvResponse = {
@@ -12,7 +13,7 @@ export type SystemEnvResponse = {
   SHOW_DOCUMENT: boolean;
   CurrencySymbol: 'shellCoin' | 'cny' | 'usd';
   STORAGE_MAX_SIZE: number;
-  WHODB_ENABLED: string;
+  DATAFLOW_ENABLED: string;
   MIGRATION_JOB_CPU_REQUIREMENT: number;
   MIGRATION_JOB_MEMORY_REQUIREMENT: number;
   DUMPIMPORT_JOB_CPU_REQUIREMENT: number;
@@ -41,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       SHOW_DOCUMENT: process.env.SHOW_DOCUMENT === 'true',
       CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd',
       STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300,
-      WHODB_ENABLED: process.env.WHODB_ENABLED || '',
+      DATAFLOW_ENABLED: resolveDataflowEnabled(),
       MIGRATION_JOB_CPU_REQUIREMENT: Number(process.env.MIGRATION_JOB_CPU_REQUIREMENT ?? 0),
       MIGRATION_JOB_MEMORY_REQUIREMENT: Number(process.env.MIGRATION_JOB_MEMORY_REQUIREMENT ?? 0),
       DUMPIMPORT_JOB_CPU_REQUIREMENT: Number(process.env.DUMPIMPORT_JOB_CPU_REQUIREMENT ?? 0),

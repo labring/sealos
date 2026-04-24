@@ -38,7 +38,7 @@ import {
   getFilteredRowModel,
   useReactTable
 } from '@tanstack/react-table';
-import { WHODB_SUPPORTED_TYPES } from '@/constants/whodb';
+import { DATAFLOW_APP_KEY, DATAFLOW_SUPPORTED_TYPES } from '@/constants/dataflow';
 import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
@@ -182,7 +182,7 @@ const DBList = ({
         const currentLang = getLangStore() || i18n?.language || 'zh';
 
         sealosApp.runEvents('openDesktopApp', {
-          appKey: 'system-whodb',
+          appKey: DATAFLOW_APP_KEY,
           query: {
             resourceName: db.name,
             dbType: db.dbType,
@@ -195,7 +195,7 @@ const DBList = ({
         toast({ title: t('manage_data_redirect_failed'), status: 'error' });
       }
     },
-    [toast, t, SystemEnv]
+    [toast, t]
   );
 
   const globalFilterFn: FilterFn<DBListItemType> = (row, columnId, filterValue) => {
@@ -381,8 +381,8 @@ const DBList = ({
         header: () => t('operation'),
         cell: ({ row }) => (
           <Flex key={row.id} justifyContent={'flex-end'}>
-            {SystemEnv.WHODB_ENABLED === 'true' &&
-              WHODB_SUPPORTED_TYPES.has(row.original.dbType) && (
+            {SystemEnv.DATAFLOW_ENABLED === 'true' &&
+              DATAFLOW_SUPPORTED_TYPES.has(row.original.dbType) && (
                 <Button
                   mr={'10px'}
                   size={'sm'}
@@ -544,7 +544,7 @@ const DBList = ({
       t,
       onOpenRemarkModal,
       alerts,
-      SystemEnv?.WHODB_ENABLED,
+      SystemEnv?.DATAFLOW_ENABLED,
       onOpenPause,
       handleManageData,
       router,
