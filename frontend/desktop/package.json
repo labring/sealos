@@ -14,7 +14,15 @@
     "test:ci": "jest --runInBand",
     "gen:global": "prisma generate --schema ./prisma/global/schema.prisma",
     "gen:region": "prisma generate --schema ./prisma/region/schema.prisma",
-    "postinstall": "pnpm gen:global && pnpm gen:region"
+    "test:components": "vitest --project components",
+    "test:components:ci": "vitest run --project components",
+    "gen:global:postgresql": "prisma generate --schema ./prisma/providers/postgresql/global/schema.prisma",
+    "gen:region:postgresql": "prisma generate --schema ./prisma/providers/postgresql/region/schema.prisma",
+    "gen:postgresql": "pnpm gen:global:postgresql && pnpm gen:region:postgresql",
+    "gen:all": "pnpm gen:global && pnpm gen:region && pnpm gen:global:postgresql && pnpm gen:region:postgresql",
+    "migrate:deploy:global:postgresql": "prisma migrate deploy --schema ./prisma/providers/postgresql/global/schema.prisma",
+    "migrate:deploy:region:postgresql": "prisma migrate deploy --schema ./prisma/providers/postgresql/region/schema.prisma",
+    "postinstall": "pnpm gen:all"
   },
   "dependencies": {
     "@alicloud/captcha20230305": "1.1.3",
