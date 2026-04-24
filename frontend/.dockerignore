@@ -5,7 +5,8 @@
 **/README.md
 **/.next/
 **/.git/
-**/.env.local
+**/.env
+**/.env.*
 **/config.yaml
 **/.vscode/
 **/.yalc/

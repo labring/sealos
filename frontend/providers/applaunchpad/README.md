@@ -51,7 +51,6 @@
 │   ├── styles
 │   ├── types
 │   └── utils
-├── Dockerfile
 ├── Makefile
 ├── README.md
 ├── next-env.d.ts
