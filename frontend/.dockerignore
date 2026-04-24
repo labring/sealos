@@ -3,6 +3,10 @@
 **/npm-debug.log
 **/README.md
 **/.env.local
+**/.next/
+**/.git/
+**/.env
+**/.env.*
 **/config.yaml
 **/.vscode/
 **/.yalc/
