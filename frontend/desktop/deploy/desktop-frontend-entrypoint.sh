@@ -149,7 +149,7 @@ GLOBALS_FILE="/root/.sealos/cloud/values/global.yaml"
 if [ -f "${GLOBALS_FILE}" ]; then
   echo "Merging global values from ${GLOBALS_FILE} into user values..."
   HELM_ARGS="$HELM_ARGS -f ${GLOBALS_FILE}"
-if
+fi
 
 # Deploy Helm chart
 echo "Deploying Helm chart..."
