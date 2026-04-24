@@ -64,6 +64,22 @@ desktopConfig:
   jwtRegional: ""                  # Auto-fetched from sealos-config.jwtRegional
   jwtGlobal: ""                    # Auto-fetched from sealos-config.jwtGlobal
 
+  # Render-safe defaults for nested layout fields. CI/sealos build may render
+  # the chart with only this base values file loaded.
+  authTitle:
+    zh: "欢迎来到 Sealos"
+    en: "Welcome to Sealos"
+  authBackgroundImage:
+    zh: "/images/bg-light.svg"
+    en: "/images/bg-light.svg"
+  protocol:
+    serviceProtocol:
+      zh: https://sealos.io/zh-Hans/docs/msa/terms-of-service
+      en: https://sealos.io/docs/msa/terms-of-service
+    privateProtocol:
+      zh: https://sealos.io/zh-Hans/docs/msa/privacy-policy
+      en: https://sealos.io/docs/msa/privacy-policy
+
 # End of auto-configured values
 # ============================================================================
 
