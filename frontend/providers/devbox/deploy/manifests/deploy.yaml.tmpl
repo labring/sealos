@@ -41,23 +41,34 @@ spec:
           env:
           - name: DATABASE_URL
             value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
+          - name: DATABASE_PROVIDER
+            value: "{{ default "cockroachdb" .databaseProvider }}"
           command:
           - sh
           - -c
           args:
           - |-
             cd /app/providers/devbox
-            MIGRATION="20260125094114_add_template_repository_kind"
-            HAS_MIGRATION=$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM _prisma_migrations WHERE migration_name='${MIGRATION}' AND rolled_back_at IS NULL LIMIT 1;")
-            if [ "$HAS_MIGRATION" = "1" ]; then
-              prisma migrate deploy
-              exit 0
+            DB_PROVIDER="${DATABASE_PROVIDER:-cockroachdb}"
+            SCHEMA_PATH="./prisma/cockroach/schema.prisma"
+            if [ "$DB_PROVIDER" = "postgresql" ] || [ "$DB_PROVIDER" = "postgres" ] || [ "$DB_PROVIDER" = "pg" ]; then
+              SCHEMA_PATH="./prisma/postgresql/schema.prisma"
+              HAS_UUID_FN=$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM pg_proc WHERE proname='gen_random_uuid' LIMIT 1;")
+              if [ "$HAS_UUID_FN" != "1" ]; then
+                psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE OR REPLACE FUNCTION public.gen_random_uuid() RETURNS uuid LANGUAGE SQL VOLATILE AS $func$ SELECT md5(random()::text || clock_timestamp()::text || txid_current()::text)::uuid; $func$;'
+              fi
+              MIGRATION="20260125094114_add_template_repository_kind"
+              HAS_MIGRATION=$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM _prisma_migrations WHERE migration_name='${MIGRATION}' AND rolled_back_at IS NULL LIMIT 1;")
+              if [ "$HAS_MIGRATION" = "1" ]; then
+                prisma migrate deploy --schema "$SCHEMA_PATH"
+                exit 0
+              fi
+              HAS_ENUM=$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname IN ('TemplateRepositoryKind','template_repository_kind') AND e.enumlabel = 'SERVICE' LIMIT 1;")
+              if [ "$HAS_ENUM" = "1" ]; then
+                prisma migrate resolve --schema "$SCHEMA_PATH" --applied "$MIGRATION"
+              fi
             fi
-            HAS_ENUM=$(psql "$DATABASE_URL" -tAc "SELECT 1 FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname IN ('TemplateRepositoryKind','template_repository_kind') AND e.enumlabel = 'SERVICE' LIMIT 1;")
-            if [ "$HAS_ENUM" = "1" ]; then
-              prisma migrate resolve --applied "$MIGRATION"
-            fi
-            prisma migrate deploy
+            prisma migrate deploy --schema "$SCHEMA_PATH"
       containers:
         - name: devbox-frontend
           env:
@@ -105,6 +116,8 @@ spec:
               value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
             - name: DATABASE_URL
               value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
+            - name: DATABASE_PROVIDER
+              value: "{{ default "cockroachdb" .databaseProvider }}"
             - name: ENABLE_IMPORT_FEATURE
               value: 'false'
             - name: ENABLE_WEBIDE_FEATURE
