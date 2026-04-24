@@ -1150,7 +1150,9 @@ const Form = ({
                                         </span>
                                       </TooltipTrigger>
                                       <TooltipContent side="bottom" className="rounded-xl">
-                                        <p className="max-w-xs break-all">{valText}</p>
+                                        <p className="max-w-xs whitespace-pre-wrap break-words">
+                                          {valText}
+                                        </p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
