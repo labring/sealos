@@ -1,4 +1,4 @@
-import { pauseDBByName, restartDB, startDBByName, getDBSecret } from '@/api/db';
+import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import { CustomMenu } from '@/components/BaseTable/customMenu';
 import DBStatusTag from '@/components/DBStatusTag';
@@ -38,19 +38,11 @@ import {
   getFilteredRowModel,
   useReactTable
 } from '@tanstack/react-table';
-import {
-  ThemeAppearance,
-  PrimaryColorsType,
-  LangType,
-  yowantLayoutConfig,
-  mapDBType
-} from '@/constants/chat2db';
+import { DATAFLOW_APP_KEY, DATAFLOW_SUPPORTED_TYPES } from '@/constants/dataflow';
 import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { generateLoginUrl } from '@/services/chat2db/user';
-import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
 import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
 import { sealosApp } from 'sealos-desktop-sdk/app';
@@ -184,143 +176,26 @@ const DBList = ({
     [executeOperation, refetchApps, t]
   );
 
-  const { getDataSourceId, setDataSourceId } = useDBStore();
-
   const handleManageData = useCallback(
     async (db: DBListItemType) => {
       try {
-        const orgId = '34';
-        const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
-        const userStr = typeof window !== 'undefined' ? localStorage.getItem('session') : null;
-        const userObj = userStr ? JSON.parse(userStr) : null;
-        const userId = userObj?.user.id;
-        const userNS = userObj?.user.nsid;
-        const userKey = `${userId}/${userNS}`;
+        const currentLang = getLangStore() || i18n?.language || 'zh';
 
-        try {
-          const conn = await getDBSecret({
-            dbName: db.name,
+        sealosApp.runEvents('openDesktopApp', {
+          appKey: DATAFLOW_APP_KEY,
+          query: {
+            resourceName: db.name,
             dbType: db.dbType,
-            mock: false
-          });
-
-          if (!conn) {
-            return toast({
-              title: 'Connection info not ready',
-              status: 'error'
-            });
+            theme: 'light',
+            lang: currentLang
           }
-
-          const { host, port, connection, username, password } = conn;
-
-          let connectionUrl = connection;
-          switch (db.dbType) {
-            case 'mongodb':
-              connectionUrl = `mongodb://${host}:${port}`;
-              break;
-            case 'apecloud-mysql':
-              connectionUrl = `jdbc:mysql://${host}:${port}`;
-              break;
-            case 'mysql':
-              connectionUrl = `jdbc:mysql://${host}:${port}`;
-              break;
-            case 'postgresql':
-              connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
-              break;
-            case 'redis':
-              connectionUrl = `jdbc:redis://${host}:${port}`;
-              break;
-            default:
-              // keep original connection
-              break;
-          }
-
-          const payload = {
-            alias: db.name,
-            environmentId: 2 as 1 | 2,
-            storageType: 'CLOUD' as 'LOCAL' | 'CLOUD',
-            host: host,
-            port: String(port),
-            user: username,
-            password: password,
-            url: connectionUrl,
-            type: mapDBType(db.dbType)
-          };
-
-          let currentDataSourceId = getDataSourceId(db.name);
-          if (!currentDataSourceId) {
-            try {
-              const res = await syncDatasourceFirst(payload, userKey);
-              currentDataSourceId = res?.data;
-              if (currentDataSourceId) {
-                setDataSourceId(db.name, currentDataSourceId);
-              }
-            } catch (err: any) {
-              if (err?.data) {
-                currentDataSourceId = err.data;
-                if (currentDataSourceId) {
-                  setDataSourceId(db.name, currentDataSourceId);
-                }
-              } else {
-                throw err;
-              }
-            }
-          } else {
-            try {
-              const syncPayload = {
-                ...payload,
-                id: currentDataSourceId
-              };
-              await syncDatasource(syncPayload, userKey);
-            } catch (err) {}
-          }
-
-          if (!currentDataSourceId) {
-            throw new Error('Failed to get or create datasource ID');
-          }
-
-          const currentLang = getLangStore() || i18n?.language || 'zh';
-          const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
-
-          const baseUrl = await generateLoginUrl({
-            userId,
-            userNS,
-            orgId,
-            secretKey,
-            ui: {
-              theme: ThemeAppearance.Light,
-              primaryColor: PrimaryColorsType.bw,
-              language: chat2dbLanguage,
-              hideAvatar: yowantLayoutConfig.hideAvatar
-            }
-          });
-
-          const chat2dbUrl = new URL(baseUrl);
-          chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
-
-          sealosApp.runEvents('openDesktopApp', {
-            appKey: 'system-chat2db',
-            pathname: '',
-            query: {
-              url: chat2dbUrl.toString()
-            }
-          });
-        } catch (err) {
-          console.error('chat2db redirect failed:', err);
-          toast({
-            title: t('chat2db_redirect_failed'),
-            status: 'error'
-          });
-        }
+        });
       } catch (error) {
         console.error('handleManageData error:', error);
-        toast({
-          title: 'Failed to manage data',
-          status: 'error'
-        });
+        toast({ title: t('manage_data_redirect_failed'), status: 'error' });
       }
     },
-    [router, t, toast, getDataSourceId, setDataSourceId, SystemEnv]
+    [toast, t]
   );
 
   const globalFilterFn: FilterFn<DBListItemType> = (row, columnId, filterValue) => {
@@ -328,13 +203,6 @@ const DBList = ({
     const name = row.original.name.toLowerCase();
     const remark = (row.original.remark || '').toLowerCase();
     return name.includes(searchTerm) || remark.includes(searchTerm);
-  };
-
-  const getDBLabel = (dbType: string) => {
-    if (dbType === 'apecloud-mysql' || dbType === 'mysql') {
-      return 'MySQL';
-    }
-    return DBTypeList.find((i) => i.id === dbType)?.label || dbType;
   };
 
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
@@ -454,7 +322,7 @@ const DBList = ({
               alt={row.original.id}
               src={`/images/${row.original.dbType}.svg`}
             />
-            {getDBLabel(row.original.dbType)}
+            {DBTypeList.find((i) => i.id === row.original.dbType)?.label}
           </Flex>
         )
       },
@@ -512,22 +380,23 @@ const DBList = ({
         id: 'actions',
         header: () => t('operation'),
         cell: ({ row }) => (
-          <Flex key={row.id}>
-            {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
-              <Button
-                mr={'10px'}
-                size={'sm'}
-                h={'32px'}
-                bg={'grayModern.150'}
-                color={'grayModern.900'}
-                _hover={{ color: 'brightBlue.600' }}
-                leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
-                onClick={() => handleManageData(row.original)}
-                isDisabled={row.original.status.value !== DBStatusEnum.Running}
-              >
-                {t('manage_data')}
-              </Button>
-            )}
+          <Flex key={row.id} justifyContent={'flex-end'}>
+            {SystemEnv.DATAFLOW_ENABLED === 'true' &&
+              DATAFLOW_SUPPORTED_TYPES.has(row.original.dbType) && (
+                <Button
+                  mr={'10px'}
+                  size={'sm'}
+                  h={'32px'}
+                  bg={'grayModern.150'}
+                  color={'grayModern.900'}
+                  _hover={{ color: 'brightBlue.600' }}
+                  leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
+                  onClick={() => handleManageData(row.original)}
+                  isDisabled={row.original.status.value !== DBStatusEnum.Running}
+                >
+                  {t('manage_data')}
+                </Button>
+              )}
 
             <Button
               mr={'4px'}
@@ -567,94 +436,88 @@ const DBList = ({
                 </Button>
               }
               menuList={[
-                ...(row.original.status.value === DBStatusEnum.Stopped
-                  ? [
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'continue'} w={'16px'} />
-                            <Box ml={2}>{t('Continue')}</Box>
-                          </>
-                        ),
-                        onClick: () => {
-                          track({
-                            event: 'deployment_update',
-                            module: 'database',
-                            context: 'app'
-                          });
-                          handleStartApp(row.original);
-                        }
-                      }
-                    ]
-                  : [
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'change'} w={'16px'} />
-                            <Box ml={2}>{t('update')}</Box>
-                          </>
-                        ),
-                        onClick: () => {
-                          track('module_view', {
-                            module: 'database',
-                            view_name: 'edit_form',
-                            app_name: row.original.name
-                          });
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'continue'} w={'16px'} />
+                      <Box ml={2}>{t('Continue')}</Box>
+                    </>
+                  ),
+                  onClick: () => {
+                    track({
+                      event: 'deployment_update',
+                      module: 'database',
+                      context: 'app'
+                    });
+                    handleStartApp(row.original);
+                  },
+                  isDisabled: row.original.status.value !== DBStatusEnum.Stopped
+                },
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'change'} w={'16px'} />
+                      <Box ml={2}>{t('update')}</Box>
+                    </>
+                  ),
+                  onClick: () => {
+                    track('module_view', {
+                      module: 'database',
+                      view_name: 'edit_form',
+                      app_name: row.original.name
+                    });
 
-                          if (
-                            row.original.source.hasSource &&
-                            row.original.source.sourceType === 'sealaf'
-                          ) {
-                            setUpdateAppName(row.original.name);
-                            onOpenUpdateModal();
-                          } else {
-                            router.push(`/db/edit?name=${row.original.name}`);
-                          }
-                        },
-                        isDisabled:
-                          row.original.status.value === 'Updating' &&
-                          !row.original.isDiskSpaceOverflow
-                      },
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'restart'} width={'16px'} />
-                            <Box ml={2}>{t('Restart')}</Box>
-                          </>
-                        ),
-                        onClick: () => {
-                          track({
-                            event: 'deployment_update',
-                            module: 'database',
-                            context: 'app'
-                          });
-                          handleRestartApp(row.original);
-                        },
-                        isDisabled: row.original.status.value === 'Updating'
-                      }
-                    ]),
-                ...(row.original.status.value === DBStatusEnum.Running
-                  ? [
-                      {
-                        child: (
-                          <>
-                            <MyIcon name={'pause'} w={'16px'} />
-                            <Box ml={2}>{t('Pause')}</Box>
-                          </>
-                        ),
-                        onClick: onOpenPause(() => {
-                          track({
-                            event: 'deployment_shutdown',
-                            module: 'database',
-                            context: 'app',
-                            type: 'normal'
-                          });
-                          handlePauseApp(row.original);
-                        })
-                      }
-                    ]
-                  : []),
-
+                    if (
+                      row.original.source.hasSource &&
+                      row.original.source.sourceType === 'sealaf'
+                    ) {
+                      setUpdateAppName(row.original.name);
+                      onOpenUpdateModal();
+                    } else {
+                      router.push(`/db/edit?name=${row.original.name}`);
+                    }
+                  },
+                  isDisabled:
+                    row.original.status.value === DBStatusEnum.Stopped ||
+                    (row.original.status.value === 'Updating' && !row.original.isDiskSpaceOverflow)
+                },
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'restart'} width={'16px'} />
+                      <Box ml={2}>{t('Restart')}</Box>
+                    </>
+                  ),
+                  onClick: () => {
+                    track({
+                      event: 'deployment_update',
+                      module: 'database',
+                      context: 'app'
+                    });
+                    handleRestartApp(row.original);
+                  },
+                  isDisabled:
+                    row.original.status.value === DBStatusEnum.Stopped ||
+                    row.original.status.value === 'Updating'
+                },
+                {
+                  child: (
+                    <>
+                      <MyIcon name={'pause'} w={'16px'} />
+                      <Box ml={2}>{t('Pause')}</Box>
+                    </>
+                  ),
+                  onClick: onOpenPause(() => {
+                    track({
+                      event: 'deployment_shutdown',
+                      module: 'database',
+                      context: 'app',
+                      type: 'normal'
+                    });
+                    handlePauseApp(row.original);
+                  }),
+                  isDisabled: row.original.status.value !== DBStatusEnum.Running
+                },
                 {
                   child: (
                     <>
@@ -681,7 +544,7 @@ const DBList = ({
       t,
       onOpenRemarkModal,
       alerts,
-      SystemEnv?.MANAGED_DB_ENABLED,
+      SystemEnv?.DATAFLOW_ENABLED,
       onOpenPause,
       handleManageData,
       router,
