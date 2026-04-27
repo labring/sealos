@@ -33,8 +33,9 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
   const { executeOperation, errorModalState, closeErrorModal } = useStorageOperation();
   const toast = useToast();
   const { t } = useTranslation(['common', 'bucket']);
+  const bucketConfigMode = bucketName ? 'edit' : 'create';
   const bucketListQuery = useQuery([QueryKey.bucketList, session], listBucket, {
-    enabled: !!session
+    enabled: !!session && bucketConfigMode === 'create'
   });
 
   const mutation = useMutation({
@@ -60,10 +61,12 @@ const EditApp = ({ bucketName, bucketPolicy }: bucketConfigQueryParam) => {
     methods.handleSubmit(
       async (data) => {
         const latestBucketList =
-          bucketListQuery.data?.list ||
-          ((await client.fetchQuery([QueryKey.bucketList, session], listBucket))?.list ?? []);
+          bucketConfigMode === 'create'
+            ? bucketListQuery.data?.list ||
+              ((await client.fetchQuery([QueryKey.bucketList, session], listBucket))?.list ?? [])
+            : [];
 
-        if (isBucketNameTaken(data.bucketName, latestBucketList)) {
+        if (bucketConfigMode === 'create' && isBucketNameTaken(data.bucketName, latestBucketList)) {
           toast({
             title: t('bucket:bucketCreateFailed'),
             description: t('app_already_exists'),
