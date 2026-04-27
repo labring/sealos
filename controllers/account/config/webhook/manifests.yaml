@@ -44,6 +44,14 @@ webhooks:
       resources:
         - '*'
     - apiGroups:
+        - apps.kubeblocks.io
+      apiVersions:
+        - v1alpha1
+      operations:
+        - CREATE
+      resources:
+        - opsrequests
+    - apiGroups:
         - account.sealos.io
       apiVersions:
         - v1

@@ -18,6 +18,7 @@ package v1
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -33,6 +34,8 @@ import (
 	"gorm.io/gorm"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -55,6 +58,7 @@ const (
 var logger = logf.Log.WithName("debt-resource")
 
 //+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=false,failurePolicy=ignore,groups="*",resources=*,verbs=create;update;delete,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None,timeoutSeconds=10
+//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=false,failurePolicy=ignore,groups=apps.kubeblocks.io,resources=opsrequests,verbs=create,versions=v1alpha1,name=kbstartops.debt.sealos.io,admissionReviewVersions=v1,sideEffects=None,timeoutSeconds=10
 // +kubebuilder:object:generate=false
 
 type DebtValidate struct {
@@ -75,6 +79,9 @@ func (d *DebtValidate) Handle(ctx context.Context, req admission.Request) admiss
 	// skip delete request (删除quota资源除外)
 	if req.Operation == admissionv1.Delete && !strings.Contains(getGVRK(req), "quotas") {
 		return admission.Allowed("")
+	}
+	if resp, handled := d.handleKubeBlocksStartDebtGuard(ctx, req); handled {
+		return resp
 	}
 
 	for _, g := range req.UserInfo.Groups {
@@ -139,6 +146,77 @@ func (d *DebtValidate) Handle(ctx context.Context, req admission.Request) admiss
 	}
 	logger.V(1).Info("pass ", "req.Namespace", req.Namespace)
 	return admission.ValidationResponse(true, "")
+}
+
+func (d *DebtValidate) handleKubeBlocksStartDebtGuard(
+	ctx context.Context,
+	req admission.Request,
+) (admission.Response, bool) {
+	if hasPrivilegedDebtBypass(req.UserInfo.Groups) || !isKBStartOpsRequest(req) {
+		return admission.Response{}, false
+	}
+	if !d.hasDebtLimit0Quota(ctx, req.Namespace) {
+		return admission.Response{}, false
+	}
+	logger.Info(
+		"blocked Start OpsRequest in debt-suspended namespace",
+		"namespace",
+		req.Namespace,
+		"name",
+		req.Name,
+		"resource",
+		req.Resource.Resource,
+	)
+	return admission.Denied(
+		fmt.Sprintf(
+			code.MessageFormat,
+			code.InsufficientBalance,
+			"database start is not allowed: namespace is under debt suspension",
+		),
+	), true
+}
+
+func hasPrivilegedDebtBypass(groups []string) bool {
+	for _, g := range groups {
+		if g == mastersGroup || g == kubeSystemGroup {
+			return true
+		}
+	}
+	return false
+}
+
+func isKBStartOpsRequest(req admission.Request) bool {
+	if req.Kind.Group != "apps.kubeblocks.io" || req.Kind.Kind != "OpsRequest" {
+		return false
+	}
+	if req.Resource.Resource != "opsrequests" || req.Operation != admissionv1.Create {
+		return false
+	}
+	obj := &unstructured.Unstructured{}
+	if err := json.Unmarshal(req.Object.Raw, &obj.Object); err != nil {
+		return false
+	}
+	opsType, found, err := unstructured.NestedString(obj.Object, "spec", "type")
+	return err == nil && found && opsType == "Start"
+}
+
+func (d *DebtValidate) hasDebtLimit0Quota(ctx context.Context, namespace string) bool {
+	if namespace == "" {
+		return false
+	}
+	quota := &corev1.ResourceQuota{}
+	err := d.Client.Get(ctx, types.NamespacedName{
+		Name:      debtLimit0QuotaName,
+		Namespace: namespace,
+	}, quota)
+	if err == nil {
+		return true
+	}
+	if apierrors.IsNotFound(err) {
+		return false
+	}
+	logger.Error(err, "failed to get debt-limit0 quota", "namespace", namespace)
+	return false
 }
 
 func getGVRK(req admission.Request) string {
