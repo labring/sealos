@@ -13,6 +13,10 @@ function escapeShellArg(arg: string): string {
   return `'${arg.replace(/'/g, "'\\''")}'`;
 }
 
+export function normalizeStartupCommand(command: string): string {
+  return command.replace(/\r\n?/g, '\n');
+}
+
 export function generateGitImportCommand(options: GitImportCommandOptions): string {
   const {
     gitUrl,
@@ -22,7 +26,7 @@ export function generateGitImportCommand(options: GitImportCommandOptions): stri
   } = options;
 
   const escapedGitUrl = escapeShellArg(gitUrl);
-  const escapedStartupCommand = startupCommand.replace(/'/g, "'\\''");
+  const escapedStartupCommand = normalizeStartupCommand(startupCommand).replace(/'/g, "'\\''");
 
   if (isPrivate && token) {
     const escapedToken = token.replace(/'/g, "'\\''");
@@ -93,6 +97,7 @@ echo "Git import completed successfully"
 
 export function generateLocalImportCommand(options: LocalImportCommandOptions): string {
   const { startupCommand = 'echo "No startup command specified"' } = options;
+  const normalizedStartupCommand = normalizeStartupCommand(startupCommand);
 
   return `
 set -e
@@ -101,7 +106,7 @@ cat > /home/devbox/project/entrypoint.sh << 'ENTRYPOINT_EOF'
 #!/bin/bash
 set -e
 cd /home/devbox/project
-${startupCommand}
+${normalizedStartupCommand}
 ENTRYPOINT_EOF
 chown devbox:devbox /home/devbox/project/entrypoint.sh
 chmod +x /home/devbox/project/entrypoint.sh
