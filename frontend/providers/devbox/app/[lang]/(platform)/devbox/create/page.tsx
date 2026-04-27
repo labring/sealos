@@ -17,7 +17,9 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { generateYamlList } from '@/utils/json2Yaml';
 import { createDevbox, updateDevbox } from '@/api/devbox';
 import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
-import { defaultDevboxEditValueV2, editModeMap, GpuAmountMarkList } from '@/constants/devbox';
+import type { GpuInventoryModel, GpuInventorySpec, GpuPodConfig } from '@/types/gpu';
+import type { SourcePrice } from '@/types/static';
+import { defaultDevboxEditValueV2, editModeMap, gpuTypeAnnotationKey } from '@/constants/devbox';
 
 import { useEnvStore } from '@/stores/env';
 import { useIDEStore } from '@/stores/ide';
@@ -34,6 +36,91 @@ import { track } from '@sealos/gtm';
 import { listTemplate } from '@/api/template';
 import { z } from 'zod';
 
+const normalizeText = (value?: string) => value?.trim().replace(/\s+/g, '').toLowerCase() || '';
+type GpuPriceItem = NonNullable<SourcePrice['gpu']>[number];
+
+const isSameRecord = (lhs?: Record<string, string>, rhs?: Record<string, string>) => {
+  const left = lhs || {};
+  const right = rhs || {};
+  const leftEntries = Object.entries(left).sort(([a], [b]) => a.localeCompare(b));
+  const rightEntries = Object.entries(right).sort(([a], [b]) => a.localeCompare(b));
+  if (leftEntries.length !== rightEntries.length) return false;
+  return leftEntries.every(
+    ([key, value], index) => rightEntries[index]?.[0] === key && rightEntries[index]?.[1] === value
+  );
+};
+
+const isSamePodConfig = (left?: GpuPodConfig, right?: GpuPodConfig) =>
+  isSameRecord(left?.annotations, right?.annotations) &&
+  isSameRecord(left?.resources?.limits, right?.resources?.limits);
+
+const buildGpuInventoryFromPrice = (gpuPriceList?: SourcePrice['gpu']): GpuInventoryModel[] => {
+  if (!gpuPriceList || gpuPriceList.length === 0) return [];
+
+  const modelMap = new Map<string, GpuInventoryModel>();
+
+  gpuPriceList.forEach((item: GpuPriceItem) => {
+    const model = item.model || item.annotationType;
+    if (!model) return;
+
+    const specType = item.specType || 'GPU';
+    const specValue = item.specValue || (specType === 'GPU' ? 'full' : '');
+    const specMemory = item.specMemory || `${Math.max(item.vm || 0, 0)}GB`;
+    if (!specValue || !specMemory) return;
+
+    const stock = Math.max(
+      Number(item.stock ?? item.available ?? item.count ?? 0),
+      0
+    );
+    const podConfig =
+      item.podConfig ||
+      (item.annotationType
+        ? {
+            annotations: {
+              [gpuTypeAnnotationKey]: item.annotationType
+            }
+          }
+        : undefined);
+
+    const nextSpec: GpuInventorySpec = {
+      type: specType,
+      value: specValue,
+      memory: specMemory,
+      stock,
+      ...(podConfig ? { podConfig } : {})
+    };
+
+    const existingModel = modelMap.get(model);
+    if (!existingModel) {
+      modelMap.set(model, {
+        model,
+        displayName: item.displayName || item.name,
+        icon: item.icon,
+        specs: [nextSpec]
+      });
+      return;
+    }
+
+    const existingSpecIndex = existingModel.specs.findIndex(
+      (spec) => spec.type === nextSpec.type && spec.value === nextSpec.value
+    );
+    if (existingSpecIndex < 0) {
+      existingModel.specs.push(nextSpec);
+      return;
+    }
+
+    const existingSpec = existingModel.specs[existingSpecIndex];
+    existingModel.specs[existingSpecIndex] = {
+      ...existingSpec,
+      ...nextSpec,
+      stock: Math.max(existingSpec.stock || 0, nextSpec.stock || 0),
+      podConfig: existingSpec.podConfig || nextSpec.podConfig
+    };
+  });
+
+  return Array.from(modelMap.values()).filter((item) => item.specs.length > 0);
+};
+
 const DevboxCreatePage = () => {
   const router = useRouter();
   const t = useTranslations();
@@ -47,7 +134,6 @@ const DevboxCreatePage = () => {
 
   const crOldYamls = useRef<DevboxKindsType[]>([]);
   const formOldYamls = useRef<YamlItemType[]>([]);
-  const oldDevboxEditData = useRef<DevboxEditTypeV2>();
 
   const [isLoading, setIsLoading] = useState(false);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
@@ -101,10 +187,6 @@ const DevboxCreatePage = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);
-  const maxGpuAmount = useMemo(
-    () => GpuAmountMarkList[GpuAmountMarkList.length - 1]?.value ?? 4,
-    []
-  );
 
   useEffect(() => {
     if (isEdit) return;
@@ -140,6 +222,44 @@ const DevboxCreatePage = () => {
     () => templateListQuery.data?.templateList || [],
     [templateListQuery.data?.templateList]
   );
+  const gpuInventoryData = useMemo(
+    () => buildGpuInventoryFromPrice(sourcePrice?.gpu),
+    [sourcePrice?.gpu]
+  );
+
+  const findSelectedGpuSpec = useCallback(
+    (gpu?: DevboxEditTypeV2['gpu']) => {
+      if (!gpu) return undefined as
+        | {
+            model: GpuInventoryModel;
+            spec: GpuInventorySpec;
+          }
+        | undefined;
+
+      const selectedModel =
+        (gpu.model && gpuInventoryData.find((item) => item.model === gpu.model)) ||
+        gpuInventoryData.find((item) =>
+          item.specs.some(
+            (spec) =>
+              normalizeText(spec.podConfig?.annotations?.[gpuTypeAnnotationKey]) ===
+              normalizeText(gpu.type)
+          )
+        );
+      if (!selectedModel) return undefined;
+
+      const selectedSpec =
+        selectedModel.specs.find(
+          (spec) => spec.type === gpu.specType && spec.value === gpu.specValue
+        ) ||
+        (gpu.podConfig
+          ? selectedModel.specs.find((spec) => isSamePodConfig(spec.podConfig, gpu.podConfig))
+          : undefined);
+      if (!selectedSpec) return undefined;
+
+      return { model: selectedModel, spec: selectedSpec };
+    },
+    [gpuInventoryData]
+  );
 
   const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env);
 
@@ -155,31 +275,6 @@ const DevboxCreatePage = () => {
         }
       }, 300),
     []
-  );
-
-  const countGpuInventory = useCallback(
-    (type?: string) => {
-      if (!type) return 0;
-      const gpuItems = sourcePrice?.gpu?.filter((item) => item.annotationType === type) || [];
-      const available = gpuItems.reduce((sum, item) => sum + (item.available || 0), 0);
-      const total = gpuItems.reduce((sum, item) => sum + (item.count || 0), 0);
-
-      if (!isEdit) {
-        return available;
-      }
-
-      const originalGpu = oldDevboxEditData.current?.gpu;
-      if (!originalGpu || originalGpu.type !== type) {
-        return available;
-      }
-
-      const calculatedAvailable = available + (originalGpu.amount || 0);
-
-      // prevent calculated available from exceeding total inventory
-      // this handles cases where backend's available already includes current devbox's resources
-      return Math.min(calculatedAvailable, total);
-    },
-    [isEdit, sourcePrice?.gpu]
   );
 
   useEffect(() => {
@@ -214,7 +309,6 @@ const DevboxCreatePage = () => {
         if (!res) {
           return;
         }
-        oldDevboxEditData.current = res;
         formOldYamls.current = generateYamlList(res, env);
         crOldYamls.current = generateYamlList(res, env) as DevboxKindsType[];
         formHook.reset(res);
@@ -236,19 +330,50 @@ const DevboxCreatePage = () => {
     setIsLoading(true);
     try {
       // gpu inventory check
-      if (formData.gpu?.type) {
-        if (formData.gpu?.amount > maxGpuAmount) {
-          return toast.warning(t('Gpu amount over max Tip', { max: maxGpuAmount }));
+      if ((formData.gpu?.model || formData.gpu?.type) && gpuInventoryData.length > 0) {
+        const selectedGpu = findSelectedGpuSpec(formData.gpu);
+        const selectedSpec = selectedGpu?.spec;
+        const selectedStock = selectedSpec?.stock ?? formData.gpu?.stock ?? 0;
+        const selectedSpecType = selectedSpec?.type ?? formData.gpu?.specType;
+        const selectedPodConfig = selectedSpec?.podConfig ?? formData.gpu?.podConfig;
+        const selectedLimits = selectedPodConfig?.resources?.limits;
+
+        if (!selectedPodConfig || !selectedLimits || Object.keys(selectedLimits).length === 0) {
+          return toast.warning(t('gpu_spec_invalid'));
         }
 
-        const inventory = countGpuInventory(formData.gpu?.type);
-        if (formData.gpu?.amount > inventory) {
+        if (selectedStock <= 0) {
           return toast.warning(
             t('Gpu under inventory Tip', {
-              gputype: formData.gpu.type
+              gputype: formData.gpu?.model || formData.gpu?.type || 'GPU'
             })
           );
         }
+
+        const amount = selectedSpecType === 'GPU' ? Math.max(formData.gpu?.amount || 1, 1) : 1;
+        if (selectedSpecType === 'GPU' && amount > selectedStock) {
+          return toast.warning(
+            t('Gpu under inventory Tip', {
+              gputype: formData.gpu?.model || formData.gpu?.type || 'GPU'
+            })
+          );
+        }
+
+        formData.gpu = {
+          ...formData.gpu,
+          model: selectedGpu?.model.model || formData.gpu?.model,
+          type:
+            selectedPodConfig.annotations?.[gpuTypeAnnotationKey] ||
+            formData.gpu?.type ||
+            formData.gpu?.model ||
+            '',
+          amount,
+          specType: selectedSpecType,
+          specValue: selectedSpec?.value || formData.gpu?.specValue,
+          specMemory: selectedSpec?.memory || formData.gpu?.specMemory,
+          stock: selectedStock,
+          podConfig: selectedPodConfig
+        };
       }
 
       // update
@@ -355,7 +480,7 @@ const DevboxCreatePage = () => {
           />
           <div className="w-full px-5 pt-10 pb-30 md:px-10 lg:px-20">
             {tabType === 'form' ? (
-              <Form isEdit={isEdit} countGpuInventory={countGpuInventory} />
+              <Form isEdit={isEdit} gpuInventory={gpuInventoryData} />
             ) : (
               <Yaml yamlList={yamlList} />
             )}

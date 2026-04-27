@@ -73,7 +73,9 @@ request.interceptors.request.use(
     const devboxToken = getSessionFromSessionStorage();
 
     _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
-    _headers['Authorization-Bearer'] = encodeURIComponent(devboxToken || session?.token || '');
+    if (!_headers['Authorization-Bearer']) {
+      _headers['Authorization-Bearer'] = encodeURIComponent(devboxToken || session?.token || '');
+    }
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
     }
