@@ -33,8 +33,12 @@ spec:
             - containerPort: 3000
               protocol: TCP
           env:
-            - name: MONITOR_URL
-              value: http://object-storage-monitor.objectstorage-system.svc.cluster.local:9090/q
+            - name: METRICS_URL
+              value: {{ default "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus" .metricsUrl }}
+            - name: OBJECT_STORAGE_INSTANCE
+              value: {{ default "object-storage.objectstorage-system.svc.cluster.local:80" .objectStorageInstance }}
+            - name: WHITELIST_KUBERNETES_HOSTS
+              value: "{{ .whitelistKubernetesHosts }}"
             - name: APP_LAUNCHPAD_URL
               value: http://applaunchpad-frontend.applaunchpad-frontend.svc.cluster.local:3000/api/v1alpha
           resources:
