@@ -153,8 +153,8 @@ export default function RunTimeLog({
         podName === ''
           ? dbPods[0]?.podName
           : Array.isArray(podName) && podName.length > 0
-            ? podName[0]
-            : undefined;
+          ? podName[0]
+          : undefined;
       if (!targetPodName) return [];
 
       return await getLogFiles({
