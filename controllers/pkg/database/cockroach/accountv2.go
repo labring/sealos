@@ -55,6 +55,172 @@ const (
 	EnvBaseBalance = "BASE_BALANCE"
 )
 
+func quoteIdentifier(name string) string {
+	return `"` + strings.ReplaceAll(name, `"`, `""`) + `"`
+}
+
+func quoteTableName(tableName string) string {
+	return quoteIdentifier(tableName)
+}
+
+func alterTableAddColumnSQL(tableName, columnDef string) string {
+	return fmt.Sprintf(`ALTER TABLE %s ADD COLUMN %s;`, quoteTableName(tableName), columnDef)
+}
+
+func createEnumTypeSQL(typeName string, values []string) string {
+	quotedValues := make([]string, 0, len(values))
+	for i := range values {
+		quotedValues = append(quotedValues, fmt.Sprintf("'%s'", strings.ReplaceAll(values[i], `'`, `''`)))
+	}
+	return fmt.Sprintf(
+		`CREATE TYPE IF NOT EXISTS %s AS ENUM (%s)`,
+		quoteIdentifier(typeName),
+		strings.Join(quotedValues, ", "),
+	)
+}
+
+func alterEnumAddValueSQL(typeName, value string) string {
+	return fmt.Sprintf(
+		`ALTER TYPE %s ADD VALUE IF NOT EXISTS '%s'`,
+		quoteIdentifier(typeName),
+		strings.ReplaceAll(value, `'`, `''`),
+	)
+}
+
+func createEnumTypeSQLForPostgres(typeName string, values []string) string {
+	quotedValues := make([]string, 0, len(values))
+	for i := range values {
+		quotedValues = append(quotedValues, fmt.Sprintf("'%s'", strings.ReplaceAll(values[i], `'`, `''`)))
+	}
+	return fmt.Sprintf(
+		`DO $$
+BEGIN
+	CREATE TYPE %s AS ENUM (%s);
+EXCEPTION
+	WHEN duplicate_object THEN NULL;
+END
+$$`,
+		quoteIdentifier(typeName),
+		strings.Join(quotedValues, ", "),
+	)
+}
+
+func isCockroachDatabase(db *gorm.DB) bool {
+	if db == nil {
+		return false
+	}
+
+	var version string
+	if err := db.Raw(`SELECT version()`).Scan(&version).Error; err != nil {
+		return false
+	}
+
+	return strings.Contains(strings.ToLower(version), "cockroachdb")
+}
+
+func buildGenRandomUUIDFallbackSQL() string {
+	return `DO $$
+BEGIN
+	CREATE OR REPLACE FUNCTION gen_random_uuid()
+	RETURNS uuid
+	AS 'SELECT uuid_generate_v4();'
+	LANGUAGE SQL;
+EXCEPTION
+	WHEN undefined_function THEN NULL;
+END
+$$`
+}
+
+func ensurePostgresExtensions(db *gorm.DB) error {
+	if db == nil || isCockroachDatabase(db) {
+		return nil
+	}
+
+	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS pgcrypto`).Error; err != nil {
+		if uuidErr := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; uuidErr != nil {
+			return fmt.Errorf(
+				"failed to enable pgcrypto extension: %w; failed to enable uuid-ossp extension: %v",
+				err,
+				uuidErr,
+			)
+		}
+		if fallbackErr := db.Exec(buildGenRandomUUIDFallbackSQL()).Error; fallbackErr != nil {
+			return fmt.Errorf("failed to install gen_random_uuid fallback: %w", fallbackErr)
+		}
+	}
+
+	return nil
+}
+
+func postgresUUIDDefaultExpr(db *gorm.DB) string {
+	if db == nil || isCockroachDatabase(db) {
+		return "gen_random_uuid()"
+	}
+
+	var exists bool
+	if err := db.Raw(`
+		SELECT EXISTS (
+			SELECT 1
+			FROM pg_proc
+			WHERE proname = 'gen_random_uuid'
+		)
+	`).Scan(&exists).Error; err == nil && exists {
+		return "gen_random_uuid()"
+	}
+
+	return "uuid_generate_v4()"
+}
+
+func ensureColumnUUIDDefault(db *gorm.DB, tableName, columnName string) error {
+	if db == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(tableName) || !db.Migrator().HasColumn(tableName, columnName) {
+		return nil
+	}
+
+	defaultExpr := postgresUUIDDefaultExpr(db)
+	sql := fmt.Sprintf(
+		`ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s`,
+		quoteTableName(tableName),
+		quoteIdentifier(columnName),
+		defaultExpr,
+	)
+	if err := db.Exec(sql).Error; err != nil {
+		return fmt.Errorf("failed to set default for %s.%s: %w", tableName, columnName, err)
+	}
+	return nil
+}
+
+func ensureLegacyUUIDDefaults(c *Cockroach) error {
+	specs := []struct {
+		db        *gorm.DB
+		tableName string
+		column    string
+	}{
+		{db: c.DB, tableName: types.User{}.TableName(), column: "uid"},
+		{db: c.DB, tableName: types.Region{}.TableName(), column: "uid"},
+		{db: c.DB, tableName: types.OauthProvider{}.TableName(), column: "uid"},
+		{db: c.Localdb, tableName: types.RegionUserCr{}.TableName(), column: "uid"},
+		{db: c.Localdb, tableName: types.Workspace{}.TableName(), column: "uid"},
+		{db: c.Localdb, tableName: types.UserWorkspace{}.TableName(), column: "uid"},
+	}
+
+	for i := range specs {
+		if err := ensureColumnUUIDDefault(specs[i].db, specs[i].tableName, specs[i].column); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func ensureUUID(uuidPtr *uuid.UUID) {
+	if uuidPtr != nil && *uuidPtr == uuid.Nil {
+		*uuidPtr = uuid.New()
+	}
+}
+
 func (c *Cockroach) CreateUser(
 	oAuth *types.OauthProvider,
 	regionUserCr *types.RegionUserCr,
@@ -62,6 +228,12 @@ func (c *Cockroach) CreateUser(
 	workspace *types.Workspace,
 	userWorkspace *types.UserWorkspace,
 ) error {
+	ensureUUID(&oAuth.UID)
+	ensureUUID(&regionUserCr.UID)
+	ensureUUID(&user.UID)
+	ensureUUID(&workspace.UID)
+	ensureUUID(&userWorkspace.UID)
+
 	findUser, findRegionUserCr, findUserWorkspace := &types.User{}, &types.RegionUserCr{}, &types.UserWorkspace{}
 	if errors.Is(
 		c.DB.Where(&types.User{Nickname: user.Nickname}).First(findUser).Error,
@@ -1962,6 +2134,13 @@ func (c *Cockroach) transferAccount(
 }
 
 func (c *Cockroach) createTables() error {
+	if err := ensurePostgresExtensions(c.DB); err != nil {
+		return err
+	}
+	if err := ensurePostgresExtensions(c.Localdb); err != nil {
+		return err
+	}
+
 	err := CreateTableIfNotExist(
 		c.DB,
 		types.Account{},
@@ -2003,30 +2182,53 @@ func (c *Cockroach) createTables() error {
 	if err != nil {
 		return fmt.Errorf("failed to create table in local db: %w", err)
 	}
+	if err := ensureLegacyUUIDDefaults(c); err != nil {
+		return fmt.Errorf("failed to repair legacy uuid defaults: %w", err)
+	}
 	return nil
 }
 
 func (c *Cockroach) InitTables() error {
+	createEnumSQL := createEnumTypeSQLForPostgres
+	if isCockroachDatabase(c.DB) {
+		createEnumSQL = createEnumTypeSQL
+	}
+
 	enumTypes := []string{
-		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'PAUSED', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION', 'DELETED')`,
-		`CREATE TYPE IF NOT EXISTS subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed', 'deleted')`,
-		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'unpaid', 'paid', 'no_need', 'failed', 'expired', 'canceled')`,
-		`CREATE TYPE IF NOT EXISTS workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired')`,
-		`CREATE TYPE IF NOT EXISTS subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed', 'canceled')`,
+		createEnumSQL(
+			"subscription_status",
+			[]string{"NORMAL", "PAUSED", "DEBT", "DEBT_PRE_DELETION", "DEBT_FINAL_DELETION", "DELETED"},
+		),
+		createEnumSQL(
+			"subscription_operator",
+			[]string{"created", "upgraded", "downgraded", "canceled", "renewed", "deleted"},
+		),
+		createEnumSQL(
+			"subscription_pay_status",
+			[]string{"pending", "unpaid", "paid", "no_need", "failed", "expired", "canceled"},
+		),
+		createEnumSQL(
+			"workspace_traffic_status",
+			[]string{"active", "exhausted", "used_up", "expired"},
+		),
+		createEnumSQL(
+			"subscription_transaction_status",
+			[]string{"completed", "pending", "processing", "failed", "canceled"},
+		),
 	}
 	// subscription_pay_status 如果不存在canceled 状态，则添加
 	enumTypes = append(
 		enumTypes,
-		`ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'canceled'`,
+		alterEnumAddValueSQL("subscription_pay_status", "canceled"),
 	)
 	enumTypes = append(
 		enumTypes,
-		`ALTER TYPE subscription_pay_status ADD VALUE IF NOT EXISTS 'unpaid'`,
+		alterEnumAddValueSQL("subscription_pay_status", "unpaid"),
 	)
 	enumTypes = append(
 		enumTypes,
-		`ALTER TYPE subscription_transaction_status ADD VALUE IF NOT EXISTS 'canceled'`,
-		`ALTER TYPE subscription_operator ADD VALUE IF NOT EXISTS 'resumed'`,
+		alterEnumAddValueSQL("subscription_transaction_status", "canceled"),
+		alterEnumAddValueSQL("subscription_operator", "resumed"),
 	)
 	for _, query := range enumTypes {
 		err := c.DB.Exec(query).Error
@@ -2186,10 +2388,7 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.Payment{}, `activityType`) {
 		fmt.Println("add column activityType")
 		tableName := types.Payment{}.TableName()
-		err := c.DB.Exec(
-			`ALTER TABLE "?" ADD COLUMN "activityType" TEXT;`,
-			gorm.Expr(tableName),
-		).Error
+		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"activityType" TEXT`)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column activityType: %w", err)
 		}
@@ -2197,10 +2396,7 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.Payment{}, "workspace_subscription_id") {
 		fmt.Println("add column workspace_subscription_id")
 		tableName := types.Payment{}.TableName()
-		err := c.DB.Exec(
-			`ALTER TABLE "?" ADD COLUMN "workspace_subscription_id" uuid;`,
-			gorm.Expr(tableName),
-		).Error
+		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"workspace_subscription_id" uuid`)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column workspace_subscription_id: %w", err)
 		}
@@ -2208,10 +2404,7 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.PaymentOrder{}, "workspace_subscription_id") {
 		fmt.Println("add column workspace_subscription_id to PaymentOrder")
 		tableName := types.PaymentOrder{}.TableName()
-		err := c.DB.Exec(
-			`ALTER TABLE "?" ADD COLUMN "workspace_subscription_id" uuid;`,
-			gorm.Expr(tableName),
-		).Error
+		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"workspace_subscription_id" uuid`)).Error
 		if err != nil {
 			return fmt.Errorf(
 				"failed to add column workspace_subscription_id to PaymentOrder: %w",
@@ -2222,7 +2415,7 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.Payment{}, "stripe") {
 		fmt.Println("add column stripe to Payment")
 		tableName := types.Payment{}.TableName()
-		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "stripe" JSON;`, gorm.Expr(tableName)).Error
+		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"stripe" JSON`)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column stripe to Payment: %w", err)
 		}
@@ -2230,7 +2423,7 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.PaymentOrder{}, "stripe") {
 		fmt.Println("add column stripe to Payment")
 		tableName := types.PaymentOrder{}.TableName()
-		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "stripe" JSON;`, gorm.Expr(tableName)).Error
+		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"stripe" JSON`)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column stripe to Payment: %w", err)
 		}
@@ -2238,10 +2431,7 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.WorkspaceSubscriptionPlan{}, "ai_quota") {
 		fmt.Println("add column ai_quota to WorkspaceSubscriptionPlan")
 		tableName := types.WorkspaceSubscriptionPlan{}.TableName()
-		err := c.DB.Exec(
-			`ALTER TABLE "?" ADD COLUMN "ai_quota" bigint NOT NULL DEFAULT 0;`,
-			gorm.Expr(tableName),
-		).Error
+		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"ai_quota" bigint NOT NULL DEFAULT 0`)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column ai_quota to WorkspaceSubscriptionPlan: %w", err)
 		}
@@ -2249,10 +2439,7 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.Localdb.Migrator().HasColumn(&types.WorkspaceSubscriptionPlan{}, "ai_quota") {
 		fmt.Println("add column ai_quota to WorkspaceSubscriptionPlan")
 		tableName := types.WorkspaceSubscriptionPlan{}.TableName()
-		err := c.Localdb.Exec(
-			`ALTER TABLE "?" ADD COLUMN "ai_quota" bigint NOT NULL DEFAULT 0;`,
-			gorm.Expr(tableName),
-		).Error
+		err := c.Localdb.Exec(alterTableAddColumnSQL(tableName, `"ai_quota" bigint NOT NULL DEFAULT 0`)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column ai_quota to WorkspaceSubscriptionPlan: %w", err)
 		}
@@ -2296,8 +2483,7 @@ func (c *Cockroach) migrateColumns() error {
 		fmt.Println("add table `Credits` column updated_at")
 		tableName := types.Credits{}.TableName()
 		err := c.DB.Exec(
-			`ALTER TABLE "?" ADD COLUMN "updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;`,
-			gorm.Expr(tableName),
+			alterTableAddColumnSQL(tableName, `"updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`),
 		).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column updated_at: %w", err)
@@ -2307,8 +2493,7 @@ func (c *Cockroach) migrateColumns() error {
 		fmt.Println("add table `Account` column updated_at")
 		tableName := types.Account{}.TableName()
 		err := c.DB.Exec(
-			`ALTER TABLE "?" ADD COLUMN "updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;`,
-			gorm.Expr(tableName),
+			alterTableAddColumnSQL(tableName, `"updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`),
 		).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column updated_at: %w", err)
@@ -2317,7 +2502,7 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.Corporate{}, `type`) {
 		fmt.Println("add table `Corporate` column type")
 		tableName := types.Corporate{}.TableName()
-		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "type" TEXT;`, gorm.Expr(tableName)).Error
+		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"type" TEXT`)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column type: %w", err)
 		}
