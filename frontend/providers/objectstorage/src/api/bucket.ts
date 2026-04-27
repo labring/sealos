@@ -2,7 +2,6 @@ import { Authority, QuotaData, TBucket, UserSecretData } from '@/consts';
 import request from '@/services/request';
 import { AxiosInstance } from 'axios';
 import { ApiResp } from '@/services/backend/response';
-import { EnvResponse } from '@/pages/api/env';
 
 export const _createBucket =
   (request: AxiosInstance) => (data: { bucketName: string; bucketPolicy: Authority }) =>
@@ -46,7 +45,3 @@ export const closeHost = _closeHost(request);
 export const _checkPermission = (request: AxiosInstance) => (data: { bucketName: string }) =>
   request.get<any, ApiResp<string>>(`/api/platform/checkPermission?bucketName=${data.bucketName}`);
 export const checkPermission = _checkPermission(request);
-
-export function getEnv() {
-  return request.get<any, EnvResponse>('/api/env');
-}

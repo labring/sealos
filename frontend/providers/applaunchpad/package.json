@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm run config:gen-json-schema && next dev",
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -69,7 +70,7 @@
     "sealos-desktop-sdk": "workspace:*",
     "sonner": "^2.0.0",
     "typescript": "^5.2.2",
-    "zod": "^3.23.8",
+    "zod": "^4.3.5",
     "zod-openapi": "^4.2.4",
     "zustand": "^4.4.1"
   },

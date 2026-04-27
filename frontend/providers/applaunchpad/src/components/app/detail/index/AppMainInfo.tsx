@@ -2,12 +2,11 @@ import PodLineChart from '@/components/PodLineChart';
 import PodPieChart from '@/components/PodPieChart';
 import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
-import { DOMAIN_PORT } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData, generatePvcNameRegex } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MonitorModal from './MonitorModal';
@@ -17,7 +16,7 @@ import { getAppMonitorData, getNetworkMonitorData } from '@/api/app';
 import { useGuideStore } from '@/store/guide';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
 import ICPStatus from './ICPStatus';
-import { CircleHelpIcon, Copy, Settings2 } from 'lucide-react';
+import { CircleHelpIcon, Copy } from 'lucide-react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { Button } from '@sealos/shadcn-ui/button';
@@ -25,6 +24,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
+  const config = useClientAppConfig();
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
 
@@ -197,7 +197,9 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             ? `${appProtocol?.label}${
                 network.customDomain
                   ? network.customDomain
-                  : `${network.publicDomain}.${network.domain}${DOMAIN_PORT}`
+                  : `${network.publicDomain}.${network.domain}${
+                      config.port !== undefined ? `:${config.port}` : ''
+                    }`
               }`
             : '',
           customDomain: network.openPublicDomain ? network.customDomain : null,
@@ -205,7 +207,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           port: network.port
         };
       }),
-    [app]
+    [app, config.port]
   );
 
   const retryCount = useRef(0);

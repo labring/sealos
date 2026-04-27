@@ -3,6 +3,7 @@ import { jsonRes } from '@/services/backend/response';
 import { customAlphabet } from 'nanoid';
 import crypto from 'crypto';
 import { queryA, queryAAAA } from '@/services/dns-resolver';
+import { Config } from '@/config';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16);
 
@@ -142,9 +143,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Verify the signature using the same format as the challenge endpoint
-      const secret =
-        global.AppConfig?.launchpad?.domainChallengeSecret ||
-        'default-dev-secret-change-in-production';
+      const secret = Config().launchpad.domainChallengeSecret;
 
       const signatureData = `${challengeData.host}:${challengeData.token}:${challengeData.timestamp}:${challengeData.service}:${challengeData.isProxy}`;
       const expectedSignature = crypto

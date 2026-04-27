@@ -14,6 +14,7 @@ module.exports = (phase, { defaultConfig }) => {
       reactStrictMode: false,
       i18n,
       experimental: {
+        instrumentationHook: true,
         outputFileTracingRoot: path.join(__dirname, '../../')
       },
       webpack(config, { isServer }) {
@@ -78,6 +79,7 @@ module.exports = (phase, { defaultConfig }) => {
     return {
       i18n,
       experimental: {
+        instrumentationHook: true,
         outputFileTracingRoot: path.join(__dirname, '../../')
       },
       output: 'standalone',

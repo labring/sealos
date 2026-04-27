@@ -16,7 +16,7 @@ import {
   defaultDBDetail
 } from '@/constants/db';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useGuideStore } from '@/store/guide';
 import { SOURCE_PRICE } from '@/store/static';
 import type { DBDetailType, DBType } from '@/types/db';
@@ -120,7 +120,7 @@ export interface ConnectionInfo {
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
   const [showSecret, setShowSecret] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -222,7 +222,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   );
 
   const externalNetWork = useMemo(() => {
-    const host = `${SystemEnv?.domain}`;
+    const host = `${config.domain}`;
     const port = service?.spec?.ports?.[0]?.nodePort?.toString() || '';
     let connection = `${DBTypeSecretMap[db.dbType]?.connectKey}://${secret?.username}:${
       secret?.password
@@ -241,7 +241,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       port,
       connection
     };
-  }, [db, secret, service, SystemEnv]);
+  }, [db, secret, service, config.domain]);
 
   const [baseSecret, otherSecret] = useMemo(
     () => [pick(secret, ['username', 'password']), pick(secret, ['host', 'port', 'connection'])],
@@ -465,7 +465,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
                 <Text mr={'8px'}>{SOURCE_PRICE.nodeports.toFixed(3)}</Text>
                 <CurrencySymbol
-                  type={SystemEnv.CurrencySymbol}
+                  type={config.currencySymbol}
                   shellCoin={{
                     mr: '2px',
                     w: '20px',

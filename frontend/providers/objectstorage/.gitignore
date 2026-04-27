@@ -35,3 +35,6 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.template
+
+data/*
+!data/config.example.yaml

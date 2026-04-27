@@ -107,7 +107,7 @@ const PriceBox = (props: ResourceUsage) => {
               )}
             </Flex>
             <Flex ml={'auto'} minW={'45px'} alignItems={'center'} gap={'4px'} whiteSpace={'nowrap'}>
-              <CurrencySymbol type={clientAppConfig.currencySymbolType} />
+              <CurrencySymbol type={clientAppConfig.currencySymbol} />
               {item.value}
             </Flex>
           </Flex>

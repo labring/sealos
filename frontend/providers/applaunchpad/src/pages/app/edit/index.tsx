@@ -36,12 +36,16 @@ import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
 import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@sealos/shared';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
-export const formData2Yamls = (data: AppEditType) => [
+export const formData2Yamls = (
+  data: AppEditType,
+  userDomains: { name: string; secretName: string }[]
+) => [
   {
     filename: 'service.yaml',
     value: json2Service(data)
@@ -67,7 +71,7 @@ export const formData2Yamls = (data: AppEditType) => [
     ? [
         {
           filename: 'ingress.yaml',
-          value: json2Ingress(data)
+          value: json2Ingress(data, userDomains)
         }
       ]
     : []),
@@ -99,6 +103,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { screenWidth, formSliderListConfig } = useGlobalStore();
+  const config = useClientAppConfig();
   const { userSourcePrice, loadUserSourcePrice } = useUserStore();
   const { title, applyBtnText, applyConfirmTitle, applyMessage, applySuccess, applyError } =
     editModeMap(!!appName);
@@ -252,12 +257,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (data.networks?.[index]) {
           data.networks[index].customDomain = customDomain;
         }
-        const ingressYaml = json2Ingress(data);
+        const ingressYaml = json2Ingress(data, config.userDomains);
         setIsLoading(true);
         postDeployApp([ingressYaml], 'replace')
           .then(() => {
             toast.success(t('Deployment Successful'));
-            formOldYamls.current = formData2Yamls(data);
+            formOldYamls.current = formData2Yamls(data, config.userDomains);
           })
           .catch((err) => {
             toast.error(getErrText(err));
@@ -299,14 +304,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (!res) return;
         console.log(res, 'init res');
         oldAppEditData.current = res;
-        formOldYamls.current = formData2Yamls(res);
+        formOldYamls.current = formData2Yamls(res, config.userDomains);
         crOldYamls.current = res.crYamlList;
 
         setExistingStores(res.storeList);
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
-        setYamlList(formData2Yamls(realTimeForm.current));
+        setYamlList(formData2Yamls(realTimeForm.current, config.userDomains));
       },
       onError(err) {
         toast.error(String(err));
@@ -320,7 +325,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   useEffect(() => {
     if (tabType === 'yaml') {
       try {
-        setYamlList(formData2Yamls(realTimeForm.current));
+        setYamlList(formData2Yamls(realTimeForm.current, config.userDomains));
       } catch (error) {}
     }
   }, [router.query.name, tabType]);
@@ -429,7 +434,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const doSubmit = useCallback(() => {
     formHook.handleSubmit(async (data) => {
-      const parseYamls = formData2Yamls(data);
+      const parseYamls = formData2Yamls(data, config.userDomains);
       setYamlList(parseYamls);
 
       // gpu inventory check

@@ -21,11 +21,10 @@ import { useMemo, useState } from 'react';
 import { isArray } from 'lodash';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useToast } from '@/hooks/useToast';
-import useSessionStore from '@/store/session';
-import useEnvStore from '@/store/env';
 import { useQuotaGuarded } from '@sealos/shared';
 import { ResponseCode } from '@/types/response';
 import ErrorModal from '../ErrorModal';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 enum HostStatusType {
   Running,
@@ -37,8 +36,7 @@ export function HostStatus() {
   const { t } = useTranslation(['common', 'bucket']);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { SystemEnv } = useEnvStore();
-  const { session } = useSessionStore();
+  const appConfig = useClientAppConfig();
   const [errorModalState, setErrorModalState] = useState<{
     isOpen: boolean;
     errorCode?: number;
@@ -129,8 +127,8 @@ export function HostStatus() {
   const handleOpenHosting = useQuotaGuarded(
     {
       requirements: {
-        cpu: SystemEnv.HOSTING_POD_CPU_REQUIREMENT,
-        memory: SystemEnv.HOSTING_POD_MEMORY_REQUIREMENT,
+        cpu: appConfig.objectStorage.resources.hostingPodCpuMilliCores,
+        memory: appConfig.objectStorage.resources.hostingPodMemoryMiB,
         traffic: true
       },
       immediate: false,
@@ -178,7 +176,7 @@ export function HostStatus() {
                 py="6px"
                 minW={'100px'}
                 onClick={() => {
-                  const name = `static-host-${currentBucket?.name}`;
+                  const name = `${appConfig.objectStorage.hosting.appNamePrefix}-${currentBucket?.name}`;
                   const temp = { appName: name };
                   const tempFormDataStr = encodeURIComponent(JSON.stringify(temp));
                   sealosApp.runEvents('openDesktopApp', {

@@ -7,7 +7,6 @@ import Sidebar from '@/components/Sidebar';
 import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
-import useEnvStore from '@/store/env';
 import { BackupItemType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { ResponseCode } from '@/types/response';
@@ -53,12 +52,10 @@ const operationIconStyles = {
 
 export default function Backups() {
   const { t } = useTranslation();
-  const router = useRouter();
   const [globalFilter, setGlobalFilter] = useState('');
   const [backupInfo, setBackupInfo] = useState<BackupItemType>();
-  const { SystemEnv } = useEnvStore();
   const { message: toast } = useMessage();
-  const { Loading, setIsLoading } = useLoading();
+  const { setIsLoading } = useLoading();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const { openConfirm: openConfirmDel, ConfirmChild: ConfirmDelChild } = useConfirm({
@@ -71,7 +68,7 @@ export default function Backups() {
     errorMessage?: string;
   }>({ isOpen: false });
 
-  const { data, refetch, isLoading } = useQuery(['getBackupList'], getBackups, {
+  const { data, refetch } = useQuery(['getBackupList'], getBackups, {
     onSuccess: (data) => {
       if (data.length > 0 && Object.keys(expandedGroups).length === 0) {
         const firstDbName = data[0].dbName;

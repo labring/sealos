@@ -21,7 +21,7 @@ import { CostPanel } from '@/components/billing/CostPanel';
 import { AppBillingDrawer } from '@/components/billing/PAYGAppBillingDrawer';
 import { PaymentRecord } from '@/types/plan';
 import { getWorkspacesConsumptions } from '@/api/billing';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import RechargePanel from '@/components/billing/RechargePanel';
 
 /**
@@ -37,7 +37,7 @@ function Billing() {
     setRegion,
     setNamespace
   } = useBillingStore();
-  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
+  const config = useClientAppConfig();
 
   const { startTime, endTime } = useOverviewStore();
 
@@ -416,7 +416,7 @@ function Billing() {
             {t('common:billing_page.billing')}
           </TabsTrigger>
 
-          {subscriptionEnabled ? (
+          {config.features.subscriptionEnabled ? (
             <TabsTrigger variant="cleanUnderline" value="trends">
               {t('common:billing_page.cost_and_revenue_trends')}
             </TabsTrigger>
@@ -445,7 +445,9 @@ function Billing() {
                 totalCost={displayCost}
                 className="w-full"
               >
-                {subscriptionEnabled && <SubscriptionCostTable data={subscriptionData} />}
+                {config.features.subscriptionEnabled && (
+                  <SubscriptionCostTable data={subscriptionData} />
+                )}
 
                 {selectedRegion && (
                   <PAYGCostTable
@@ -476,13 +478,13 @@ function Billing() {
           </div>
         </TabsContent>
 
-        {!subscriptionEnabled && (
+        {!config.features.subscriptionEnabled && (
           <TabsContent value="recharge" className="h-full overflow-hidden">
             <RechargePanel />
           </TabsContent>
         )}
 
-        {subscriptionEnabled && (
+        {config.features.subscriptionEnabled && (
           <TabsContent value="trends" className="flex flex-col gap-4 overflow-auto">
             <OverviewTrend />
             <TrendOverviewBar />

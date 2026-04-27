@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { PodDetailType, PodEvent } from '@/types/app';
-import PodLineChart from '@/components/PodLineChart';
 import { MOCK_PODS } from '@/mock/apps';
 import { getPodEvents, getPodLogs } from '@/api/app';
 import { useQuery } from '@tanstack/react-query';
@@ -25,8 +24,8 @@ import Empty from './empty';
 
 import styles from '@/components/app/detail/index/index.module.scss';
 import { useTranslation } from 'next-i18next';
-import { useRouter } from 'next/router';
-import { SHOW_EVENT_ANALYZE } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { useRouter } from 'next/navigation';
 
 interface SinceItem {
   key: 'streaming_logs' | 'within_5_minute' | 'within_1_hour' | 'within_1_day' | 'terminated_logs';
@@ -65,6 +64,7 @@ const PodDetailModal = ({
   const logsController = useRef<AbortController | null>(null);
   const { Loading } = useLoading();
   const { toast } = useToast();
+  const config = useClientAppConfig();
   const [events, setEvents] = useState<PodEvent[]>([]);
   const [eventAnalysesText, setEventAnalysesText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -381,7 +381,7 @@ const PodDetailModal = ({
             <div className="relative flex flex-col max-h-[430px] bg-white rounded-2xl px-6 py-6 h-full col-span-5 border-[0.5px] border-zinc-200 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <span className="font-semibold text-base h-9 flex items-center">{t('Events')}</span>
-                {events.length > 0 && SHOW_EVENT_ANALYZE && (
+                {events.length > 0 && config.components.eventAnalysis.enabled && (
                   <Button
                     variant="outline"
                     className="ml-3 h-9 hover:bg-zinc-50 flex items-center"

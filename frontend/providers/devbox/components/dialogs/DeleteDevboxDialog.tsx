@@ -89,7 +89,7 @@ const DeleteDevboxDialog = ({
             {t.rich('please_enter_devbox_name_confirm', {
               name: devbox.name,
               strong: (chunks) => (
-                <span className="select-all font-medium text-zinc-900">{chunks}</span>
+                <span className="font-medium text-zinc-900 select-all">{chunks}</span>
               )
             })}
           </span>

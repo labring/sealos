@@ -4,11 +4,11 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApplicationProtocolType } from '@/types/app';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { appName } = req.query as { appName: string };
-    const port = global.AppConfig.cloud.port;
     if (!appName) {
       throw new Error('appName is empty');
     }
@@ -45,7 +45,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const fetchUrl = `https://${host}`;
         const protocol =
           ProtocolList.find((item) => item.value === backendProtocol)?.label || 'https://';
-        const url = `${protocol}${host}${port ? `${port}` : ''}`;
+        const portSuffix = Config().cloud.port !== undefined ? `:${Config().cloud.port}` : '';
+        const url = `${protocol}${host}${portSuffix}`;
 
         try {
           const response = await fetch(fetchUrl);
