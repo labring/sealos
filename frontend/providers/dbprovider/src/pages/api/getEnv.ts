@@ -1,5 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
+import { resolveDataflowEnabled } from '@/constants/dataflow';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type SystemEnvResponse = {
@@ -12,10 +13,7 @@ export type SystemEnvResponse = {
   SHOW_DOCUMENT: boolean;
   CurrencySymbol: 'shellCoin' | 'cny' | 'usd';
   STORAGE_MAX_SIZE: number;
-  CLIENT_DOMAIN_NAME: string;
-  GATEWAY_DOMAIN_NAME: string;
-  MANAGED_DB_ENABLED: string;
-  CHAT2DB_AES_KEY: string;
+  DATAFLOW_ENABLED: string;
 };
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -38,10 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       SHOW_DOCUMENT: process.env.SHOW_DOCUMENT === 'true',
       CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd',
       STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300,
-      CLIENT_DOMAIN_NAME: process.env.CLIENT_DOMAIN_NAME || '',
-      GATEWAY_DOMAIN_NAME: process.env.GATEWAY_DOMAIN_NAME || '',
-      MANAGED_DB_ENABLED: process.env.MANAGED_DB_ENABLED || '',
-      CHAT2DB_AES_KEY: process.env.CHAT2DB_AES_KEY || ''
+      DATAFLOW_ENABLED: resolveDataflowEnabled()
     }
   });
 }

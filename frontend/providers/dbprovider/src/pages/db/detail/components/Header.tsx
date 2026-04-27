@@ -1,39 +1,20 @@
-import {
-  delDBServiceByName,
-  pauseDBByName,
-  restartDB,
-  startDBByName,
-  type DatabaseAlertItem
-} from '@/api/db';
+import { pauseDBByName, restartDB, startDBByName, type DatabaseAlertItem } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
-import MyIcon from '@/components/Icon';
 import { defaultDBDetail } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
-import type { DBDetailType, DBType } from '@/types/db';
-import { Box, Button, Flex, useDisclosure, IconButton, ButtonGroup } from '@chakra-ui/react';
+import type { DBDetailType } from '@/types/db';
+import { Box, Button, Flex, useDisclosure } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
-import { i18n, useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { Dispatch, useCallback, useState, useEffect, useMemo } from 'react';
+import React, { Dispatch, useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
-import {
-  ThemeAppearance,
-  PrimaryColorsType,
-  LangType,
-  yowantLayoutConfig,
-  mapDBType
-} from '@/constants/chat2db';
+import { DATAFLOW_APP_KEY, DATAFLOW_SUPPORTED_TYPES } from '@/constants/dataflow';
 import { ConnectionInfo } from './AppBaseInfo';
-import { generateLoginUrl } from '@/services/chat2db/user';
-import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
-import { dbTypeMap } from '@/utils/database';
-import { error } from 'console';
-import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
-import { getDBSecret } from '@/api/db';
 import useEnvStore from '@/store/env';
 import { ArrowLeft, Trash2, Settings } from 'lucide-react';
 const DelModal = dynamic(() => import('./DelModal'));
@@ -74,11 +55,6 @@ const Header = ({
   });
 
   const [loading, setLoading] = useState(false);
-  const { getDataSourceId, setDataSourceId } = useDBStore();
-  const supportManageData = useMemo(
-    () => ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(db.dbType),
-    [db.dbType]
-  );
   const { SystemEnv } = useEnvStore();
 
   const handleRestartApp = useCallback(async () => {
@@ -158,144 +134,23 @@ const Header = ({
   }, [db, t, toast]);
 
   const handleManageData = useCallback(async () => {
-    if (!supportManageData) {
-      return toast({
-        title: 'Manage data is not supported for this database type',
-        status: 'warning'
-      });
-    }
-
     try {
-      const orgId = '34';
-      const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
-      const userStr = localStorage.getItem('session');
-      const userObj = userStr ? JSON.parse(userStr) : null;
-      const userId = userObj?.user.id;
-      const userNS = userObj?.user.nsid;
-      const userKey = `${userId}/${userNS}`;
+      const currentLang = getLangStore() || 'zh';
 
-      try {
-        const conn = await getDBSecret({
-          dbName: db.dbName,
+      sealosApp.runEvents('openDesktopApp', {
+        appKey: DATAFLOW_APP_KEY,
+        query: {
+          resourceName: db.dbName,
           dbType: db.dbType,
-          mock: false
-        });
-
-        if (!conn) {
-          return toast({
-            title: 'Connection info not ready',
-            status: 'error'
-          });
+          theme: 'light',
+          lang: currentLang
         }
-
-        const { host, port, connection, username, password } = conn;
-
-        let connectionUrl = connection;
-        switch (db.dbType) {
-          case 'mongodb':
-            connectionUrl = `mongodb://${host}:${port}`;
-            break;
-          case 'apecloud-mysql':
-            connectionUrl = `jdbc:mysql://${host}:${port}`;
-            break;
-          case 'postgresql':
-            connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
-            break;
-          case 'redis':
-            connectionUrl = `jdbc:redis://${host}:${port}`;
-            break;
-          default:
-            break;
-        }
-
-        const payload = {
-          alias: db.dbName,
-          environmentId: 2 as 1 | 2,
-          storageType: 'CLOUD' as 'LOCAL' | 'CLOUD',
-          host: host,
-          port: String(port),
-          user: username,
-          password: password,
-          url: connectionUrl,
-          type: mapDBType(db.dbType)
-        };
-
-        let currentDataSourceId = getDataSourceId(db.dbName);
-
-        if (!currentDataSourceId) {
-          try {
-            const res = await syncDatasourceFirst(payload, userKey);
-            currentDataSourceId = res?.data;
-            if (currentDataSourceId) {
-              setDataSourceId(db.dbName, currentDataSourceId);
-            }
-          } catch (err: any) {
-            if (err?.data) {
-              currentDataSourceId = err.data;
-              if (currentDataSourceId) {
-                setDataSourceId(db.dbName, currentDataSourceId);
-              }
-            } else {
-              throw err;
-            }
-          }
-        } else {
-          try {
-            const syncPayload = {
-              ...payload,
-              id: currentDataSourceId
-            };
-            await syncDatasource(syncPayload, userKey);
-          } catch (err) {
-            console.error('sync datasource:', JSON.stringify(err));
-          }
-        }
-
-        if (!currentDataSourceId) {
-          throw new Error('Failed to get or create datasource ID');
-        }
-
-        const currentLang = getLangStore() || i18n?.language || 'zh';
-        const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
-
-        const baseUrl = await generateLoginUrl({
-          userId,
-          userNS,
-          orgId,
-          secretKey,
-          ui: {
-            theme: ThemeAppearance.Light,
-            primaryColor: PrimaryColorsType.bw,
-            language: chat2dbLanguage,
-            hideAvatar: yowantLayoutConfig.hideAvatar
-          }
-        });
-
-        const chat2dbUrl = new URL(baseUrl);
-        chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
-
-        sealosApp.runEvents('openDesktopApp', {
-          appKey: 'system-chat2db',
-          pathname: '',
-          query: {
-            url: chat2dbUrl.toString()
-          }
-        });
-      } catch (error) {
-        console.error('chat2db redirect failed:', error);
-        toast({
-          title: t('chat2db_redirect_failed'),
-          status: 'error'
-        });
-      }
+      });
     } catch (error) {
       console.error('handleManageData error:', error);
-      toast({
-        title: 'Failed to manage data',
-        status: 'error'
-      });
+      toast({ title: t('manage_data_redirect_failed'), status: 'error' });
     }
-  }, [toast, router, getDataSourceId, setDataSourceId, t, SystemEnv, supportManageData]);
+  }, [toast, t, db.dbName, db.dbType]);
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
@@ -470,7 +325,7 @@ const Header = ({
           )}
         </Flex>
 
-        {SystemEnv.MANAGED_DB_ENABLED === 'true' && supportManageData && (
+        {SystemEnv.DATAFLOW_ENABLED === 'true' && DATAFLOW_SUPPORTED_TYPES.has(db.dbType) && (
           <Button
             display={'flex'}
             height={'40px'}
@@ -479,17 +334,23 @@ const Header = ({
             alignItems={'center'}
             gap={'8px'}
             borderRadius={'8px'}
-            background={'#0A0A0A'}
+            border={'1px solid #E4E4E7'}
+            background={'#FFF'}
             boxShadow={'0 1px 2px 0 rgba(0, 0, 0, 0.05)'}
             isLoading={loading}
             isDisabled={db.status.value !== 'Running'}
             onClick={handleManageData}
-            leftIcon={<Settings size={16} color="#FFF" />}
-            color={'#FFF'}
+            leftIcon={<Settings size={16} color="#71717A" />}
+            color={'#18181B'}
             fontFamily={'Geist, sans-serif'}
             fontSize={'14px'}
             fontWeight={'500'}
             lineHeight={'20px'}
+            _hover={{
+              color: '#FFF',
+              bg: '#000',
+              '& svg': { color: '#FFF' }
+            }}
           >
             {t('manage_data')}
           </Button>
