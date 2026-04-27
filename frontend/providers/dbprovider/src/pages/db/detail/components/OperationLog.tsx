@@ -20,6 +20,19 @@ import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { Fragment } from 'react';
 
+export const formatOperationLogNameLabel = (
+  configuration: RequiredByKeys<OpsRequestItemType, 'configurations'>['configurations'][number],
+  t: (key: I18nCommonKey) => string
+) => {
+  const translatedParameterName = t(configuration.parameterName as I18nCommonKey);
+
+  if (!configuration.componentName) {
+    return translatedParameterName;
+  }
+
+  return `${configuration.componentName} ${translatedParameterName}`;
+};
+
 export default function OperationLog({ db }: { db?: DBDetailType }) {
   const { t } = useTranslation();
 
@@ -62,7 +75,7 @@ export default function OperationLog({ db }: { db?: DBDetailType }) {
       title: 'name',
       key: 'name',
       render: (item, configIndex) => (
-        <Box>{t(item.configurations[configIndex].parameterName as I18nCommonKey)}</Box>
+        <Box>{formatOperationLogNameLabel(item.configurations[configIndex], t)}</Box>
       )
     },
     {
@@ -151,8 +164,8 @@ export default function OperationLog({ db }: { db?: DBDetailType }) {
                             {col.render
                               ? col.render(app, configIndex)
                               : col.dataIndex
-                              ? `${app[col.dataIndex]}`
-                              : '-'}
+                                ? `${app[col.dataIndex]}`
+                                : '-'}
                           </Td>
                         ))}
                       </Tr>
