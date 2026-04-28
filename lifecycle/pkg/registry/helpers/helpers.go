@@ -17,6 +17,7 @@ package helpers
 import (
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/labring/image-cri-shim/pkg/types"
 
@@ -64,6 +65,21 @@ func GetRegistryInfo(execer exec.Interface, rootfs, defaultRegistry string) *v1b
 	}
 	logger.Debug("show registry info, IP: %s, Domain: %s, Data: %s", readConfig.IP, readConfig.Domain, readConfig.Data)
 	return readConfig
+}
+
+// WaitRegistryReady waits until the registry endpoint is reachable from host.
+func WaitRegistryReady(execer exec.Interface, host, domain, port string) error {
+	registryAddr := fmt.Sprintf("%s:%s", domain, port)
+	logger.Info("waiting for registry %s to be ready on %s", registryAddr, host)
+	cmd := fmt.Sprintf(`registry_host=%s; registry_port=%s; if ! command -v bash >/dev/null 2>&1 || ! command -v timeout >/dev/null 2>&1; then exit 1; fi; i=0; while [ "$i" -lt 120 ]; do if timeout 1 bash -c '</dev/tcp/'"$registry_host"'/'"$registry_port" >/dev/null 2>&1; then exit 0; fi; i=$((i + 1)); sleep 1; done; exit 1`, shellQuote(domain), shellQuote(port))
+	if err := execer.CmdAsync(host, cmd); err != nil {
+		return fmt.Errorf("registry %s is not ready on %s: %w", registryAddr, host, err)
+	}
+	return nil
+}
+
+func shellQuote(s string) string {
+	return "'" + strings.ReplaceAll(s, "'", `'"'"'`) + "'"
 }
 
 func GetImageCRIShimInfo(execer exec.Interface, config, defaultIP string) *types.Config {
