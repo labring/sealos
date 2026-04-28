@@ -56,6 +56,10 @@ func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
 	if version == "" {
 		version = k.getKubeVersion()
 	}
+	registry := helpers.GetRegistryInfo(k.execer, k.pathResolver.RootFSPath(), k.cluster.GetRegistryIPAndPort())
+	if err := helpers.WaitRegistryReady(k.execer, hostAndPort, registry.Domain, registry.Port); err != nil {
+		return err
+	}
 	type Images struct {
 		Images []string `json:"images"`
 	}
@@ -69,7 +73,6 @@ func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
 		return fmt.Errorf("unmarshal kubeadm images list failed, json: %s, error: %s", listJson, err.Error())
 	}
 	var newImageList []string
-	registry := helpers.GetRegistryInfo(k.execer, k.pathResolver.RootFSPath(), k.cluster.GetRegistryIPAndPort())
 	for _, image := range images.Images {
 		image = strings.TrimSpace(image)
 		if image == "" {
