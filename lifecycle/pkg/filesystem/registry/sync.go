@@ -70,21 +70,6 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 		return nil
 	}
 	logger.Info("trying default http mode to sync images to hosts %v", hosts)
-	// run `sealctl registry serve` to start a temporary registry
-	for i := range hosts {
-		cmdCtx, cancel := context.WithCancel(ctx)
-		// defer cancel async commands
-		defer cancel()
-		go func(ctx context.Context, host string) {
-			logger.Debug("running temporary registry on host %s", host)
-			if err := s.execer.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
-				// ignore expected signal killed error when context cancel
-				if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "context canceled") {
-					logger.Error(err)
-				}
-			}
-		}(cmdCtx, hosts[i])
-	}
 
 	type syncOption struct {
 		target string
@@ -92,21 +77,39 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 	}
 
 	syncOptionChan := make(chan *syncOption, len(hosts))
-	go func() {
-		for i := range hosts {
-			go func(target string) {
-				probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
-				defer cancel()
-				ep := sync.ParseRegistryAddress(trimPortStr(target), defaultTemporaryPort)
-				if err := httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep); err != nil {
-					logger.Warn("cannot connect to remote temporary registry %s: %v, fallback using ssh mode instead", ep, err)
-					syncOptionChan <- &syncOption{target: target, typ: sshMode}
-				} else {
-					syncOptionChan <- &syncOption{target: ep, typ: httpMode}
-				}
-			}(hosts[i])
+	// run `sealctl registry serve` to start a temporary registry
+	for i := range hosts {
+		registryServeCommand, ok := s.getRegistryServeCommand(hosts[i], defaultTemporaryPort)
+		if !ok {
+			logger.Debug("remote temporary registry is unsupported on host %s, fallback using ssh mode instead", hosts[i])
+			syncOptionChan <- &syncOption{target: hosts[i], typ: sshMode}
+			continue
 		}
-	}()
+
+		cmdCtx, cancel := context.WithCancel(ctx)
+		// defer cancel async commands
+		defer cancel()
+		go func(ctx context.Context, host string) {
+			logger.Debug("running temporary registry on host %s", host)
+			if err := s.execer.CmdAsyncWithContext(ctx, host, registryServeCommand); err != nil {
+				// ignore expected signal killed error when context cancel
+				if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "context canceled") {
+					logger.Error(err)
+				}
+			}
+		}(cmdCtx, hosts[i])
+		go func(target string) {
+			probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+			defer cancel()
+			ep := sync.ParseRegistryAddress(trimPortStr(target), defaultTemporaryPort)
+			if err := httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep); err != nil {
+				logger.Warn("cannot connect to remote temporary registry %s: %v, fallback using ssh mode instead", ep, err)
+				syncOptionChan <- &syncOption{target: target, typ: sshMode}
+			} else {
+				syncOptionChan <- &syncOption{target: ep, typ: httpMode}
+			}
+		}(hosts[i])
+	}
 
 	eg, _ := errgroup.WithContext(ctx)
 	for i := 0; i < len(hosts); i++ {
@@ -140,12 +143,32 @@ func trimPortStr(s string) string {
 	return s
 }
 
-func getRegistryServeCommand(pathResolver constants.PathResolver, port string) string {
-	return fmt.Sprintf(
-		"%[1]s registry serve filesystem --port %[2]s --disable-logging=true %[3]s >/dev/null 2>&1 || "+
-			"%[1]s registry serve filesystem -p %[2]s --disable-logging=true %[3]s >/dev/null 2>&1 || "+
-			"PORT=%[2]s %[1]s registry serve filesystem --disable-logging=true %[3]s >/dev/null 2>&1 || true",
-		pathResolver.RootFSSealctlPath(), port, pathResolver.RootFSRegistryPath(),
+func (s *impl) getRegistryServeCommand(host, port string) (string, bool) {
+	output, err := s.execer.Cmd(host, getRegistryServeProbeCommand(s.pathResolver, port))
+	if err != nil {
+		logger.Debug("failed to probe remote temporary registry on host %s: %v", host, err)
+		return "", false
+	}
+
+	switch strings.TrimSpace(string(output)) {
+	case "--port":
+		return getRegistryServeCommand(s.pathResolver, port, "--port"), true
+	case "-p":
+		return getRegistryServeCommand(s.pathResolver, port, "-p"), true
+	default:
+		return "", false
+	}
+}
+
+func getRegistryServeProbeCommand(pathResolver constants.PathResolver, port string) string {
+	return fmt.Sprintf("if %[1]s registry serve filesystem --port %[2]s --help >/dev/null 2>&1; then printf -- '--port'; elif %[1]s registry serve filesystem -p %[2]s --help >/dev/null 2>&1; then printf -- '-p'; fi",
+		pathResolver.RootFSSealctlPath(), port,
+	)
+}
+
+func getRegistryServeCommand(pathResolver constants.PathResolver, port, portFlag string) string {
+	return fmt.Sprintf("%s registry serve filesystem %s %s %s >/dev/null 2>&1",
+		pathResolver.RootFSSealctlPath(), portFlag, port, pathResolver.RootFSRegistryPath(),
 	)
 }
 
