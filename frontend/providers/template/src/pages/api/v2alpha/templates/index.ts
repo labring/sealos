@@ -1,9 +1,8 @@
 import { TemplateType } from '@/types/app';
-import { findTopKeyWords } from '@/utils/template';
+import { getCategorySlugs, parseTemplateCategories } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { getCachedTemplates } from './templateCache';
-import { Config } from '@/config';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -26,10 +25,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Use shared cache instead of directly reading templates
+    const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
     const cacheResult = getCachedTemplates(
       jsonPath,
-      Config().template.cdnHost,
-      Config().template.excludedCategories,
+      process.env.CDN_URL,
+      configuredCategories,
       language
     );
     const templates = cacheResult.data;
@@ -54,14 +54,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     });
 
-    const categories = templates.map((item: TemplateType) =>
-      item.spec?.categories ? item.spec.categories : []
-    );
-    const topKeys = findTopKeyWords(categories, Config().template.sidebarMenuCount);
+    const menuKeys = getCategorySlugs(configuredCategories);
 
     // Add menuKeys as response header if needed
-    if (topKeys.length > 0) {
-      res.setHeader('X-Menu-Keys', topKeys.join(','));
+    if (menuKeys.length > 0) {
+      res.setHeader('X-Menu-Keys', menuKeys.join(','));
     }
 
     // Return templates array directly

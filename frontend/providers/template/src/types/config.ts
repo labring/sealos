@@ -135,6 +135,20 @@ const FeaturesSchema = z
 export type FeaturesConfig = z.infer<typeof FeaturesSchema>;
 
 /**
+ * Template category schema.
+ * Defines the app-owned sidebar categories and their labels.
+ */
+const TemplateCategorySchema = z
+  .object({
+    slug: z.string().describe('Slug for identifying the category'),
+    i18n: z.record(z.string(), z.string()).describe('Category label translations')
+  })
+  .strict()
+  .describe('A template category item');
+
+export type TemplateCategory = z.infer<typeof TemplateCategorySchema>;
+
+/**
  * Cloud configuration schema.
  * Used for Kubernetes and cloud platform integration.
  */
@@ -165,14 +179,9 @@ const TemplateSchema = z
       .describe(
         'CDN hostname used to replace GitHub raw URLs for template icons and README files (e.g., "cdn.jsdelivr.net")'
       ),
-    excludedCategories: z
-      .array(z.string())
-      .describe('Template categories to exclude from listing and API responses'),
-    sidebarMenuCount: z
-      .number()
-      .int()
-      .nonnegative()
-      .describe('Maximum number of category items to display in sidebar navigation menu'),
+    categories: z
+      .array(TemplateCategorySchema)
+      .describe('Template categories to show in the sidebar'),
     desktopDomain: z
       .string()
       .describe(
@@ -209,6 +218,7 @@ export const ClientAppConfigSchema = z
   .object({
     brandName: z.string(),
     carousel: CarouselSchema,
+    categories: z.array(TemplateCategorySchema),
     showAuthor: z.boolean(),
     currencySymbolType: z.enum(['shellCoin', 'cny', 'usd']),
     desktopDomain: z.string()

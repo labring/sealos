@@ -5,7 +5,9 @@ import { useCachedStore } from '@/store/cached';
 import { useSystemConfigStore } from '@/store/config';
 import { useSearchStore } from '@/store/search';
 import { SystemConfigType, TemplateType } from '@/types/app';
+import type { TemplateCategory } from '@/types/config';
 import { serviceSideProps } from '@/utils/i18n';
+import { getCategoryLabel } from '@/utils/template';
 import { compareFirstLanguages, formatStarNumber } from '@/utils/tools';
 import {
   Avatar,
@@ -57,6 +59,11 @@ export default function AppList({
     staleTime: 10 * 60 * 1000,
     retry: 3
   });
+
+  const categoryBySlug = useMemo(
+    () => new Map((data?.categories ?? []).map((category) => [category.slug, category])),
+    [data?.categories]
+  );
 
   const filterData = useMemo(() => {
     const typeFilteredResults = data?.templates?.filter((item: TemplateType) => {
@@ -259,19 +266,22 @@ export default function AppList({
                       gap={'20px'}
                     >
                       <Flex alignItems={'center'} gap={'10px'} overflow={'hidden'}>
-                        {item?.spec?.categories?.map((i) => (
-                          <Tag
-                            flexShrink={0}
-                            key={i}
-                            bg="#F4F4F7"
-                            border={'1px solid #E8EBF0'}
-                            fontSize={'10px'}
-                            color={'5A646E'}
-                            fontWeight={400}
-                          >
-                            {t(`SideBar.${i}`)}
-                          </Tag>
-                        ))}
+                        {item?.spec?.categories
+                          ?.map((slug) => categoryBySlug.get(slug))
+                          .filter((category): category is TemplateCategory => Boolean(category))
+                          .map((category) => (
+                            <Tag
+                              flexShrink={0}
+                              key={category.slug}
+                              bg="#F4F4F7"
+                              border={'1px solid #E8EBF0'}
+                              fontSize={'10px'}
+                              color={'5A646E'}
+                              fontWeight={400}
+                            >
+                              {getCategoryLabel(category, i18n.language)}
+                            </Tag>
+                          ))}
                       </Flex>
                       <Center
                         cursor={'pointer'}
