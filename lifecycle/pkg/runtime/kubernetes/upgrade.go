@@ -48,6 +48,8 @@ const (
 	writeKubeadmConfig = `cat > %s << EOF
 %s
 EOF`
+
+	kubeletConfigPath = "/var/lib/kubelet/config.yaml"
 )
 
 func (k *KubeadmRuntime) upgradeCluster(version string) error {
@@ -71,12 +73,16 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 		upgradeNodes = append(upgradeNodes, node)
 	}
 	logger.Info("start to upgrade other control-planes and worker nodes")
-	return k.upgradeOtherNodes(upgradeNodes, version)
+	return k.upgradeOtherNodes(conversion, upgradeNodes, version)
 }
 
 func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig, version string) error {
 	master0ip := k.getMaster0IP()
 	sver := semver.MustParse(version)
+	if err := k.syncKubeletConfig(master0ip, conversion); err != nil {
+		return err
+	}
+
 	if gte(sver, V1260) {
 		if err := k.changeCRIVersion(master0ip); err != nil {
 			return err
@@ -147,9 +153,13 @@ func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig
 	return k.tryUncordonNode(master0ip, master0Name)
 }
 
-func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
+func (k *KubeadmRuntime) upgradeOtherNodes(conversion *types.ConvertedKubeadmConfig, ips []string, version string) error {
 	sver := semver.MustParse(version)
 	for _, ip := range ips {
+		if err := k.syncKubeletConfig(ip, conversion); err != nil {
+			return err
+		}
+
 		if gte(sver, V1260) {
 			if err := k.changeCRIVersion(ip); err != nil {
 				return err
@@ -210,6 +220,16 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 		}
 	}
 	return nil
+}
+
+func (k *KubeadmRuntime) syncKubeletConfig(ip string, conversion *types.ConvertedKubeadmConfig) error {
+	kubeletConfig, err := yaml.MarshalConfigs(&conversion.KubeletConfiguration)
+	if err != nil {
+		logger.Error("failed to encode KubeletConfiguration: %s", err)
+		return err
+	}
+	logger.Info("sync kubelet config to node %s", ip)
+	return k.sshCmdAsync(ip, fmt.Sprintf(writeKubeadmConfig, kubeletConfigPath, string(kubeletConfig)))
 }
 
 func (k *KubeadmRuntime) autoUpdateConfig(version string) (*types.ConvertedKubeadmConfig, error) {

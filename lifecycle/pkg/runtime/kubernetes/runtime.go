@@ -15,11 +15,14 @@
 package kubernetes
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/Masterminds/semver/v3"
+	coreV1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
@@ -181,16 +184,55 @@ func (k *KubeadmRuntime) Upgrade(version string) error {
 		return err
 	}
 	if v0.Equal(v1) {
-		logger.Info("skip upgrade because of same version")
-		return nil
-	}
-
-	if v0.GreaterThan(v1) {
-		return fmt.Errorf("cannot apply an older version %s than %s", version, currVersion)
-	}
-	if v0.Minor()+1 < v1.Minor() {
-		return fmt.Errorf("cannot be upgraded across more than one major releases, %s -> %s", currVersion, version)
+		needUpgrade, err := k.nodeVersionsNeedUpgrade(v1)
+		if err != nil {
+			logger.Warn("failed to check node kubelet versions: %s", err.Error())
+			logger.Info("skip upgrade because of same version")
+			return nil
+		}
+		if !needUpgrade {
+			logger.Info("skip upgrade because of same version")
+			return nil
+		}
+		logger.Info("continue upgrade because some node kubelet versions or readiness states are not aligned with %s", version)
+	} else {
+		if v0.GreaterThan(v1) {
+			return fmt.Errorf("cannot apply an older version %s than %s", version, currVersion)
+		}
+		if v0.Minor()+1 < v1.Minor() {
+			return fmt.Errorf("cannot be upgraded across more than one major releases, %s -> %s", currVersion, version)
+		}
 	}
 
 	return k.upgradeCluster(version)
+}
+
+func (k *KubeadmRuntime) nodeVersionsNeedUpgrade(targetVersion *semver.Version) (bool, error) {
+	client, err := k.getKubeInterface()
+	if err != nil {
+		return false, err
+	}
+	nodes, err := client.Kubernetes().CoreV1().Nodes().List(context.TODO(), metaV1.ListOptions{})
+	if err != nil {
+		return false, err
+	}
+	for _, node := range nodes.Items {
+		kubeletVersion := node.Status.NodeInfo.KubeletVersion
+		nodeVersion, err := semver.NewVersion(kubeletVersion)
+		if err != nil {
+			logger.Warn("failed to parse kubelet version %q of node %s: %s", kubeletVersion, node.Name, err.Error())
+			return true, nil
+		}
+		if !nodeVersion.Equal(targetVersion) {
+			logger.Info("node %s kubelet version %s does not match target %s", node.Name, kubeletVersion, targetVersion.Original())
+			return true, nil
+		}
+		for _, condition := range node.Status.Conditions {
+			if condition.Type == coreV1.NodeReady && condition.Status == coreV1.ConditionUnknown {
+				logger.Info("node %s ready condition is unknown, continue upgrade recovery", node.Name)
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
