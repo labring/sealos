@@ -141,7 +141,10 @@ func trimPortStr(s string) string {
 }
 
 func getRegistryServeCommand(pathResolver constants.PathResolver, port string) string {
-	return fmt.Sprintf("%s registry serve filesystem -p %s --disable-logging=true %s",
+	return fmt.Sprintf(
+		"%[1]s registry serve filesystem --port %[2]s --disable-logging=true %[3]s >/dev/null 2>&1 || "+
+			"%[1]s registry serve filesystem -p %[2]s --disable-logging=true %[3]s >/dev/null 2>&1 || "+
+			"PORT=%[2]s %[1]s registry serve filesystem --disable-logging=true %[3]s >/dev/null 2>&1 || true",
 		pathResolver.RootFSSealctlPath(), port, pathResolver.RootFSRegistryPath(),
 	)
 }

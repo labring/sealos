@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	upgradeApplyCmd = "kubeadm upgrade apply %s --certificate-renewal=false --yes"
+	upgradeApplyCmd = "kubeadm upgrade apply %s --certificate-renewal=false --yes --ignore-preflight-errors=SystemVerification,ControlPlaneNodesReady"
 	upgradeNodeCmd  = "kubeadm upgrade node --certificate-renewal=false --skip-phases preflight"
 	//drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
 	cordonNodeCmd   = "kubectl cordon %s"
@@ -79,7 +79,7 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig, version string) error {
 	master0ip := k.getMaster0IP()
 	sver := semver.MustParse(version)
-	if err := k.syncKubeletConfig(master0ip, conversion); err != nil {
+	if err := k.syncKubeletConfig(master0ip, conversion, version); err != nil {
 		return err
 	}
 
@@ -156,7 +156,7 @@ func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig
 func (k *KubeadmRuntime) upgradeOtherNodes(conversion *types.ConvertedKubeadmConfig, ips []string, version string) error {
 	sver := semver.MustParse(version)
 	for _, ip := range ips {
-		if err := k.syncKubeletConfig(ip, conversion); err != nil {
+		if err := k.syncKubeletConfig(ip, conversion, version); err != nil {
 			return err
 		}
 
@@ -222,8 +222,8 @@ func (k *KubeadmRuntime) upgradeOtherNodes(conversion *types.ConvertedKubeadmCon
 	return nil
 }
 
-func (k *KubeadmRuntime) syncKubeletConfig(ip string, conversion *types.ConvertedKubeadmConfig) error {
-	kubeletConfig, err := yaml.MarshalConfigs(&conversion.KubeletConfiguration)
+func (k *KubeadmRuntime) syncKubeletConfig(ip string, conversion *types.ConvertedKubeadmConfig, version string) error {
+	kubeletConfig, err := marshalKubeletConfigForVersion(conversion.KubeletConfiguration, version)
 	if err != nil {
 		logger.Error("failed to encode KubeletConfiguration: %s", err)
 		return err
@@ -283,7 +283,7 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) (*types.ConvertedKubea
 		return nil, err
 	}
 
-	newKubeletData, err := yaml.MarshalConfigs(&conversion.KubeletConfiguration)
+	newKubeletData, err := marshalKubeletConfigForVersion(conversion.KubeletConfiguration, version)
 	if err != nil {
 		logger.Error("failed to encode KubeletConfiguration: %s", err)
 		return nil, err
@@ -296,6 +296,48 @@ func (k *KubeadmRuntime) autoUpdateConfig(version string) (*types.ConvertedKubea
 	}
 
 	return conversion, nil
+}
+
+func marshalKubeletConfigForVersion(config interface{}, version string) ([]byte, error) {
+	kubeletConfig, err := yaml.MarshalConfigs(config)
+	if err != nil {
+		return nil, err
+	}
+	return sanitizeKubeletConfigForVersion(kubeletConfig, version)
+}
+
+func sanitizeKubeletConfigForVersion(kubeletConfig []byte, version string) ([]byte, error) {
+	sver, err := semver.NewVersion(version)
+	if err != nil {
+		return nil, err
+	}
+	if gte(sver, V1300) {
+		return kubeletConfig, nil
+	}
+
+	config, err := yaml.UnmarshalToMap(kubeletConfig)
+	if err != nil {
+		return nil, err
+	}
+	delete(config, "containerRuntimeEndpoint")
+	delete(config, "imageMaximumGCAge")
+	deleteNestedMapKey(config, "logging", "options", "text")
+	return yaml.Marshal(config)
+}
+
+func deleteNestedMapKey(data map[string]interface{}, keys ...string) {
+	if len(keys) == 0 {
+		return
+	}
+	current := data
+	for _, key := range keys[:len(keys)-1] {
+		next, ok := current[key].(map[string]interface{})
+		if !ok {
+			return
+		}
+		current = next
+	}
+	delete(current, keys[len(keys)-1])
 }
 
 func (k *KubeadmRuntime) sshCmdAsyncSeq(host string, cmds ...string) error {
@@ -371,7 +413,7 @@ func (k *KubeadmRuntime) changeCRIVersion(ip string) error {
 
 func (k *KubeadmRuntime) changeKubeletExtraArgs(ip string) error {
 	return k.sshCmdAsyncSeq(ip,
-		`FILE="/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"; if [ -f "$FILE" ]; then sed -i 's/\(--container-runtime=\|--pod-infra-container-image=\)\([^ ]*\)\?//g' "$FILE"; fi`,
+		`for FILE in /etc/systemd/system/kubelet.service.d/10-kubeadm.conf /var/lib/kubelet/kubelet-flags.env /var/lib/kubelet/kubeadm-flags.env; do if [ -f "$FILE" ]; then sed -i -E 's#(^|[[:space:]"])-endpoint=#\1--container-runtime-endpoint=#g; s#(^|[[:space:]"])--container-runtime(=[^[:space:]"]*)?([[:space:]"]|$)#\1\3#g; s#(^|[[:space:]"])--pod-infra-container-image(=[^[:space:]"]*)?([[:space:]"]|$)#\1\3#g' "$FILE"; fi; done`,
 		"systemctl daemon-reload",
 		"systemctl restart kubelet",
 	)

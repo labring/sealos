@@ -163,7 +163,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 
 func getRenderCommand(binary string, target string) string {
 	// skip if sealctl doesn't has subcommand render
-	return fmt.Sprintf("%s render --debug=%v --clear %s 2>/dev/null || true", binary,
+	return fmt.Sprintf("%s render --debug=%v --clear %s >/dev/null 2>&1 || true", binary,
 		logger.IsDebugMode(),
 		strings.Join([]string{
 			filepath.Join(target, constants.EtcDirName),
