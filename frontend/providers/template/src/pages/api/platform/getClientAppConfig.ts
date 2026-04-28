@@ -9,6 +9,7 @@ export function getClientAppConfigServer() {
     brandName: fullConfig.template.ui.brandName,
     desktopDomain: fullConfig.template.desktopDomain,
     currencySymbolType: fullConfig.template.ui.currencySymbolType,
+    categories: fullConfig.template.categories,
     showAuthor: fullConfig.template.features.showAuthor,
     carousel: fullConfig.template.ui.carousel
   });
