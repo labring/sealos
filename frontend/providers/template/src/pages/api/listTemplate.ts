@@ -1,6 +1,11 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
-import { findTopKeyWords } from '@/utils/template';
+import {
+  filterConfiguredCategorySlugs,
+  getCategorySlugs,
+  parseTemplateCategories
+} from '@/utils/template';
+import type { TemplateCategory } from '@/types/config';
 import { parseGithubUrl } from '@/utils/tools';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -18,29 +23,30 @@ export function replaceRawWithCDN(url: string, cdnUrl: string) {
 }
 
 export const readTemplates = (
-  jsonPath: string,
+  jsonData: string,
   cdnUrl?: string,
-  blacklistedCategories?: string[],
+  configuredCategories: TemplateCategory[] = [],
   language?: string
 ): TemplateType[] => {
-  const jsonData = fs.readFileSync(jsonPath, 'utf8');
   const _templates: TemplateType[] = JSON.parse(jsonData);
 
   const templates = _templates
-    .filter((item) => {
-      const isBlacklisted =
-        blacklistedCategories &&
-        blacklistedCategories.some((category) =>
-          (item?.spec?.categories ?? []).map((c) => c.toLowerCase()).includes(category)
-        );
-      return !item?.spec?.draft && !isBlacklisted;
-    })
+    .filter((item) => !item?.spec?.draft)
     .map((item) => {
-      if (!!cdnUrl) {
-        item.spec.readme = replaceRawWithCDN(item.spec.readme, cdnUrl);
-        item.spec.icon = replaceRawWithCDN(item.spec.icon, cdnUrl);
+      const spec = {
+        ...item.spec,
+        categories: filterConfiguredCategorySlugs(item.spec.categories, configuredCategories)
+      };
+
+      if (cdnUrl) {
+        spec.readme = replaceRawWithCDN(spec.readme, cdnUrl);
+        spec.icon = replaceRawWithCDN(spec.icon, cdnUrl);
       }
-      return item;
+
+      return {
+        ...item,
+        spec
+      };
     })
     .filter((item) => {
       if (!language) return true;
@@ -56,6 +62,14 @@ export const readTemplates = (
   return templates;
 };
 
+export const readTemplatesFromFile = (
+  jsonPath: string,
+  cdnUrl?: string,
+  configuredCategories: TemplateCategory[] = [],
+  language?: string
+): TemplateType[] =>
+  readTemplates(fs.readFileSync(jsonPath, 'utf8'), cdnUrl, configuredCategories, language);
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = req.query.language as string;
 
@@ -63,10 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const cdnUrl = process.env.CDN_URL;
   const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-  const blacklistedCategories = process.env.BLACKLIST_CATEGORIES
-    ? process.env.BLACKLIST_CATEGORIES.split(',')
-    : [];
-  const menuCount = Number(process.env.SIDEBAR_MENU_COUNT) || 10;
+  const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
 
   try {
     if (!global.updateRepoCronJob) {
@@ -88,15 +99,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await fetch(`${baseurl}/api/updateRepo`);
     }
 
-    const templates = readTemplates(jsonPath, cdnUrl, blacklistedCategories, language);
+    const templates = readTemplatesFromFile(jsonPath, cdnUrl, configuredCategories, language);
 
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
     console.log(`[${timestamp}] language: ${language}, templates count: ${templates.length}`);
 
-    const categories = templates.map((item) => (item.spec?.categories ? item.spec.categories : []));
-    const topKeys = findTopKeyWords(categories, menuCount);
+    const menuKeys = getCategorySlugs(configuredCategories).join(',');
 
-    jsonRes(res, { data: { templates: templates, menuKeys: topKeys.join(',') }, code: 200 });
+    jsonRes(res, {
+      data: { templates: templates, menuKeys, categories: configuredCategories },
+      code: 200
+    });
   } catch (error) {
     jsonRes(res, { code: 500, data: 'api listTemplate error', error: error });
   }

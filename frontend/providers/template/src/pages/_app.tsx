@@ -82,6 +82,7 @@ const MyApp = ({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
       if (lastLang !== newLang && i18n?.changeLanguage) {
         i18n.changeLanguage(newLang);
         setLangStore(newLang);
+        initSystemConfig(newLang);
         setRefresh((state) => !state);
       }
     };
