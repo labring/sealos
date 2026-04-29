@@ -74,3 +74,17 @@ logging:
 		t.Fatalf("expected kubelet config for v1.30.0 to be unchanged:\n%s", got)
 	}
 }
+
+func TestUpgradeApplyCommandIgnoresHealthCheckJob(t *testing.T) {
+	got := upgradeApplyCmd
+	for _, want := range []string{
+		"--ignore-preflight-errors=",
+		"SystemVerification",
+		"ControlPlaneNodesReady",
+		"CreateJob",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("upgrade apply command %q does not contain %q", got, want)
+		}
+	}
+}
