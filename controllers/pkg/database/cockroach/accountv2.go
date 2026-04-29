@@ -55,6 +55,172 @@ const (
 	EnvBaseBalance = "BASE_BALANCE"
 )
 
+func quoteIdentifier(name string) string {
+	return `"` + strings.ReplaceAll(name, `"`, `""`) + `"`
+}
+
+func quoteTableName(tableName string) string {
+	return quoteIdentifier(tableName)
+}
+
+func alterTableAddColumnSQL(tableName, columnDef string) string {
+	return fmt.Sprintf(`ALTER TABLE %s ADD COLUMN %s;`, quoteTableName(tableName), columnDef)
+}
+
+func createEnumTypeSQL(typeName string, values []string) string {
+	quotedValues := make([]string, 0, len(values))
+	for i := range values {
+		quotedValues = append(quotedValues, fmt.Sprintf("'%s'", strings.ReplaceAll(values[i], `'`, `''`)))
+	}
+	return fmt.Sprintf(
+		`CREATE TYPE IF NOT EXISTS %s AS ENUM (%s)`,
+		quoteIdentifier(typeName),
+		strings.Join(quotedValues, ", "),
+	)
+}
+
+func alterEnumAddValueSQL(typeName, value string) string {
+	return fmt.Sprintf(
+		`ALTER TYPE %s ADD VALUE IF NOT EXISTS '%s'`,
+		quoteIdentifier(typeName),
+		strings.ReplaceAll(value, `'`, `''`),
+	)
+}
+
+func createEnumTypeSQLForPostgres(typeName string, values []string) string {
+	quotedValues := make([]string, 0, len(values))
+	for i := range values {
+		quotedValues = append(quotedValues, fmt.Sprintf("'%s'", strings.ReplaceAll(values[i], `'`, `''`)))
+	}
+	return fmt.Sprintf(
+		`DO $$
+BEGIN
+	CREATE TYPE %s AS ENUM (%s);
+EXCEPTION
+	WHEN duplicate_object THEN NULL;
+END
+$$`,
+		quoteIdentifier(typeName),
+		strings.Join(quotedValues, ", "),
+	)
+}
+
+func isCockroachDatabase(db *gorm.DB) bool {
+	if db == nil {
+		return false
+	}
+
+	var version string
+	if err := db.Raw(`SELECT version()`).Scan(&version).Error; err != nil {
+		return false
+	}
+
+	return strings.Contains(strings.ToLower(version), "cockroachdb")
+}
+
+func buildGenRandomUUIDFallbackSQL() string {
+	return `DO $$
+BEGIN
+	CREATE OR REPLACE FUNCTION gen_random_uuid()
+	RETURNS uuid
+	AS 'SELECT uuid_generate_v4();'
+	LANGUAGE SQL;
+EXCEPTION
+	WHEN undefined_function THEN NULL;
+END
+$$`
+}
+
+func ensurePostgresExtensions(db *gorm.DB) error {
+	if db == nil || isCockroachDatabase(db) {
+		return nil
+	}
+
+	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS pgcrypto`).Error; err != nil {
+		if uuidErr := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; uuidErr != nil {
+			return fmt.Errorf(
+				"failed to enable pgcrypto extension: %w; failed to enable uuid-ossp extension: %v",
+				err,
+				uuidErr,
+			)
+		}
+		if fallbackErr := db.Exec(buildGenRandomUUIDFallbackSQL()).Error; fallbackErr != nil {
+			return fmt.Errorf("failed to install gen_random_uuid fallback: %w", fallbackErr)
+		}
+	}
+
+	return nil
+}
+
+func postgresUUIDDefaultExpr(db *gorm.DB) string {
+	if db == nil || isCockroachDatabase(db) {
+		return "gen_random_uuid()"
+	}
+
+	var exists bool
+	if err := db.Raw(`
+		SELECT EXISTS (
+			SELECT 1
+			FROM pg_proc
+			WHERE proname = 'gen_random_uuid'
+		)
+	`).Scan(&exists).Error; err == nil && exists {
+		return "gen_random_uuid()"
+	}
+
+	return "uuid_generate_v4()"
+}
+
+func ensureColumnUUIDDefault(db *gorm.DB, tableName, columnName string) error {
+	if db == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(tableName) || !db.Migrator().HasColumn(tableName, columnName) {
+		return nil
+	}
+
+	defaultExpr := postgresUUIDDefaultExpr(db)
+	sql := fmt.Sprintf(
+		`ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s`,
+		quoteTableName(tableName),
+		quoteIdentifier(columnName),
+		defaultExpr,
+	)
+	if err := db.Exec(sql).Error; err != nil {
+		return fmt.Errorf("failed to set default for %s.%s: %w", tableName, columnName, err)
+	}
+	return nil
+}
+
+func ensureLegacyUUIDDefaults(c *Cockroach) error {
+	specs := []struct {
+		db        *gorm.DB
+		tableName string
+		column    string
+	}{
+		{db: c.DB, tableName: types.User{}.TableName(), column: "uid"},
+		{db: c.DB, tableName: types.Region{}.TableName(), column: "uid"},
+		{db: c.DB, tableName: types.OauthProvider{}.TableName(), column: "uid"},
+		{db: c.Localdb, tableName: types.RegionUserCr{}.TableName(), column: "uid"},
+		{db: c.Localdb, tableName: types.Workspace{}.TableName(), column: "uid"},
+		{db: c.Localdb, tableName: types.UserWorkspace{}.TableName(), column: "uid"},
+	}
+
+	for i := range specs {
+		if err := ensureColumnUUIDDefault(specs[i].db, specs[i].tableName, specs[i].column); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func ensureUUID(uuidPtr *uuid.UUID) {
+	if uuidPtr != nil && *uuidPtr == uuid.Nil {
+		*uuidPtr = uuid.New()
+	}
+}
+
 func (c *Cockroach) CreateUser(
 	oAuth *types.OauthProvider,
 	regionUserCr *types.RegionUserCr,
@@ -62,6 +228,12 @@ func (c *Cockroach) CreateUser(
 	workspace *types.Workspace,
 	userWorkspace *types.UserWorkspace,
 ) error {
+	ensureUUID(&oAuth.UID)
+	ensureUUID(&regionUserCr.UID)
+	ensureUUID(&user.UID)
+	ensureUUID(&workspace.UID)
+	ensureUUID(&userWorkspace.UID)
+
 	findUser, findRegionUserCr, findUserWorkspace := &types.User{}, &types.RegionUserCr{}, &types.UserWorkspace{}
 	if errors.Is(
 		c.DB.Where(&types.User{Nickname: user.Nickname}).First(findUser).Error,
