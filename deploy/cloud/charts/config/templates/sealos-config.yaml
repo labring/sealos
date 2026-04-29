@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sealos-config
-  namespace: sealos-system
-data: {{- toYaml .Values.config | nindent 2 }}
