@@ -47,7 +47,7 @@ const ConfigMapDrawer = ({
     }
 
     const pathPattern = /^[0-9a-zA-Z_/][0-9a-zA-Z_/.-]*[0-9a-zA-Z_/]$/;
-    if (!pathPattern.test(path)) {
+    if (!pathPattern.test(path) || path.endsWith('/') || path.split('/').includes('..')) {
       return t('file_name_invalid_format');
     }
 

@@ -132,9 +132,17 @@ export const RequestSchema = z
       .array(
         z.object({
           id: z.string().optional(),
-          path: z.string().refine((path) => path.startsWith('/'), {
-            message: 'ConfigMap path must be an absolute path starting with "/"'
-          }),
+          path: z
+            .string()
+            .refine((path) => path.startsWith('/'), {
+              message: 'ConfigMap path must be an absolute path starting with "/"'
+            })
+            .refine((path) => !path.endsWith('/'), {
+              message: 'ConfigMap path must include a file name'
+            })
+            .refine((path) => !path.split('/').includes('..'), {
+              message: 'ConfigMap path cannot contain ".." segments'
+            }),
           content: z.string()
         })
       )
