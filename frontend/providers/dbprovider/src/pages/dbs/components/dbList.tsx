@@ -388,23 +388,25 @@ const DBList = ({
         id: 'actions',
         header: () => t('operation'),
         cell: ({ row }) => (
-          <Flex key={row.id}>
-            {SystemEnv.DATAFLOW_ENABLED === 'true' &&
-              DATAFLOW_SUPPORTED_TYPES.has(row.original.dbType) && (
-                <Button
-                  mr={'10px'}
-                  size={'sm'}
-                  h={'32px'}
-                  bg={'grayModern.150'}
-                  color={'grayModern.900'}
-                  _hover={{ color: 'brightBlue.600' }}
-                  leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
-                  onClick={() => handleManageData(row.original)}
-                  isDisabled={row.original.status.value !== DBStatusEnum.Running}
-                >
-                  {t('manage_data')}
-                </Button>
-              )}
+          <Flex key={row.id} justifyContent={'flex-end'}>
+            {SystemEnv.DATAFLOW_ENABLED === 'true' && (
+              <Button
+                mr={'10px'}
+                size={'sm'}
+                h={'32px'}
+                bg={'grayModern.150'}
+                color={'grayModern.900'}
+                _hover={{ color: 'brightBlue.600' }}
+                leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
+                onClick={() => handleManageData(row.original)}
+                isDisabled={
+                  row.original.status.value !== DBStatusEnum.Running ||
+                  !DATAFLOW_SUPPORTED_TYPES.has(row.original.dbType)
+                }
+              >
+                {t('manage_data')}
+              </Button>
+            )}
 
             <Button
               mr={'4px'}
