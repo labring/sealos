@@ -10,7 +10,7 @@ import {
   getCachedTemplateDetail,
   setCachedTemplateDetail
 } from './templateCache';
-import { Config } from '@/config';
+import { parseTemplateCategories } from '@/utils/template';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 // estimate min—max equality
@@ -128,7 +128,12 @@ async function handleTemplateDetails(
         message: 'Templates catalog not found.'
       });
     }
-    getCachedTemplates(jsonPath, Config().template.cdnHost, [], language);
+    getCachedTemplates(
+      jsonPath,
+      process.env.CDN_URL,
+      parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
+      language
+    );
     const template = getTemplateFromCache(templateName);
 
     if (!template) {

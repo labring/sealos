@@ -38,7 +38,7 @@ export default function SideBar() {
                 fontSize={'14px'}
                 fontWeight={500}
               >
-                {t(item.value)}
+                {item.id === 'applications' ? t(item.value) : item.value}
               </Text>
             </Flex>
           );

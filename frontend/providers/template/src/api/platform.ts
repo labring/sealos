@@ -1,6 +1,7 @@
 import { EnvResponse } from '@/types/index';
 import { GET } from '@/services/request';
 import { SystemConfigType, TemplateType } from '@/types/app';
+import type { TemplateCategory } from '@/types/config';
 import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
 import { getUserSession } from '@/utils/user';
 import useSessionStore from '@/store/session';
@@ -8,9 +9,12 @@ import useSessionStore from '@/store/session';
 export const updateRepo = () => GET('/api/updateRepo');
 
 export const getTemplates = (language?: string) =>
-  GET<{ templates: TemplateType[]; menuKeys: string }>('/api/listTemplate', {
-    language
-  });
+  GET<{ templates: TemplateType[]; menuKeys: string; categories: TemplateCategory[] }>(
+    '/api/listTemplate',
+    {
+      language
+    }
+  );
 
 export const getPlatformEnv = (
   { insideCloud }: { insideCloud: boolean } = { insideCloud: false }

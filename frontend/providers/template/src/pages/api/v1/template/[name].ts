@@ -4,9 +4,9 @@ import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
-import { readTemplates } from '../../listTemplate';
+import { readTemplatesFromFile } from '../../listTemplate';
 import { GetTemplateByName } from '../../getTemplateSource';
-import { Config } from '@/config';
+import { parseTemplateCategories } from '@/utils/template';
 
 function simplifyResourceValue(
   resource: { min: number; max: number },
@@ -49,7 +49,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const templates = readTemplates(jsonPath, Config().template.cdnHost, [], language);
+    const templates = readTemplatesFromFile(
+      jsonPath,
+      process.env.CDN_URL,
+      parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
+      language
+    );
     const template = templates.find((t) => t.metadata.name === templateName);
 
     if (!template) {
