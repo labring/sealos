@@ -1,6 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
-import { resolveDataflowEnabled } from '@/constants/dataflow';
+import { resolveDataflowEnabled } from '@/services/backend/dataflow';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type SystemEnvResponse = {
@@ -31,6 +31,8 @@ process.on('uncaughtException', (err) => {
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const DATAFLOW_ENABLED = await resolveDataflowEnabled();
+
   jsonRes<SystemEnvResponse>(res, {
     data: {
       domain: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
@@ -42,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       SHOW_DOCUMENT: process.env.SHOW_DOCUMENT === 'true',
       CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd',
       STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300,
-      DATAFLOW_ENABLED: resolveDataflowEnabled(),
+      DATAFLOW_ENABLED,
       MIGRATION_JOB_CPU_REQUIREMENT: Number(process.env.MIGRATION_JOB_CPU_REQUIREMENT ?? 0),
       MIGRATION_JOB_MEMORY_REQUIREMENT: Number(process.env.MIGRATION_JOB_MEMORY_REQUIREMENT ?? 0),
       DUMPIMPORT_JOB_CPU_REQUIREMENT: Number(process.env.DUMPIMPORT_JOB_CPU_REQUIREMENT ?? 0),
