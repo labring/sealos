@@ -1,0 +1,64 @@
+# Default values for applaunchpad frontend helm chart.
+
+image: ghcr.io/labring/sealos-applaunchpad-frontend:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+fullnameOverride: "applaunchpad-frontend"
+
+replicaCount: 1
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+ingress:
+  className: nginx
+  host: ""
+  annotations: {}
+
+# cloudDomain, cloudPort, httpPort, disableHttps and certSecretName are auto-configured by entrypoint.sh from sealos-config.
+applaunchpadConfig:
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  httpPort: ""
+  disableHttps: false
+  certSecretName: "wildcard-cert"
+  monitorUrl: "http://launchpad-monitor.sealos.svc.cluster.local:8428"
+  billingUrl: "http://account-service.account-system.svc:2333"
+  logUrl: ""
+  tlsRejectUnauthorized: "1"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - applaunchpad-frontend
+          topologyKey: "kubernetes.io/hostname"
