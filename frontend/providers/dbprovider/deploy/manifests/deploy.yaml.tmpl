@@ -44,8 +44,10 @@ spec:
               value: {{ .cloudDomain }}
             - name: SEALOS_PORT
               value: "{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
-            - name: MONITOR_URL
-              value: {{ .monitorUrl }}
+            - name: METRICS_URL
+              value: {{ default "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc.cluster.local:8481/select/0/prometheus" .metricsUrl }}
+            - name: WHITELIST_KUBERNETES_HOSTS
+              value: "{{ .whitelistKubernetesHosts }}"
             - name: MINIO_URL
               value: {{ .minioUrl }}
             - name: MINIO_ACCESS_KEY
