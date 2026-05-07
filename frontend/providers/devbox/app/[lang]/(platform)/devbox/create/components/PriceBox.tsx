@@ -107,7 +107,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
 
   return (
     <Card className={cn('guide-cost', className)}>
-      <CardHeader className="flex h-13 items-center gap-2 border-b-1 border-zinc-100">
+      <CardHeader className="flex h-[52px] items-center gap-2 border-b border-zinc-100">
         <span className="font-medium">{t('estimated_price')}</span>
         <span className="font-medium text-zinc-400">{t('daily')}</span>
       </CardHeader>
@@ -117,7 +117,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
             key={item?.label}
             className={cn(
               'flex h-12 items-center justify-between px-5 py-6',
-              index !== priceList.length - 1 && 'border-b-1 border-zinc-100'
+              index !== priceList.length - 1 && 'border-b border-zinc-100'
             )}
           >
             <div className="flex h-full items-center gap-2 text-zinc-900">

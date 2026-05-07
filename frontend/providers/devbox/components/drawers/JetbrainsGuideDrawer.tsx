@@ -212,7 +212,7 @@ const JetBrainsGuideDrawer = ({ open, onClose, jetbrainsGuideData }: JetBrainsGu
                       {ideType.label}
                     </span>
                     {recommendIDE === ideType && (
-                      <div className="absolute top-1.5 left-0 rounded-r bg-blue-100 px-1 py-0.25 text-xs text-blue-600">
+                      <div className="absolute top-1.5 left-0 rounded-r bg-blue-100 px-1 py-px text-xs text-blue-600">
                         {t('recommend')}
                       </div>
                     )}

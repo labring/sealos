@@ -59,7 +59,7 @@ const tabsTriggerVariants = cva(
           'dark:text-muted-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground'
         ],
         underline: [
-          'border-b-1 border-transparent border-b-zinc-200',
+          'border-b border-transparent border-b-zinc-200',
           'data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground'
         ],
         ghost: [

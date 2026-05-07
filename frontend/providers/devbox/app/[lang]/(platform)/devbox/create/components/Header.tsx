@@ -65,7 +65,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
           {t('driver.create_app_header')}
         </div>
       )}
-      <div className="flex h-24 w-full items-center justify-between self-stretch border-b-1 px-10 py-8">
+      <div className="flex h-24 w-full items-center justify-between self-stretch border-b px-10 py-8">
         {/* left side */}
         <div className="flex cursor-pointer items-center">
           <div
@@ -83,7 +83,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
           </Button>
           <Button
             className={cn(
-              'driver-deploy-button h-10 min-w-30',
+              'driver-deploy-button h-10 min-w-[120px]',
               isClientSide && !guideConfigDevbox && 'outline-2 outline-offset-2 outline-blue-600'
             )}
             onClick={applyCb}
@@ -91,7 +91,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
             {t(applyBtnText)}
           </Button>
           {isClientSide && !guideConfigDevbox && (
-            <div className="absolute top-34 right-18 z-[1000] w-[250px] rounded-xl bg-blue-600 p-4 text-white">
+            <div className="absolute top-[136px] right-[72px] z-[1000] w-[250px] rounded-xl bg-blue-600 p-4 text-white">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold">{t('driver.configure_devbox')}</p>
                 <div

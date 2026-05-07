@@ -67,7 +67,7 @@
   },
   "devDependencies": {
     "@svgr/webpack": "^6.5.1",
-    "@tailwindcss/postcss": "^4.1.10",
+    "autoprefixer": "^10.4.21",
     "@types/ini": "^4.1.1",
     "@types/js-cookie": "^3.0.4",
     "@types/js-yaml": "^4.0.9",
@@ -84,7 +84,8 @@
     "postcss": "^8",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",
-    "tailwindcss": "^4.1.10",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5"
   }
 }

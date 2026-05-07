@@ -13,7 +13,6 @@ import { ALL_TIME_START_DATE } from '@/utils/timeRange';
 import DatePicker from '@/components/DatePicker';
 import MonitorChart from '@/components/MonitorChart';
 import { RefreshButton } from '@/components/RefreshButton';
-import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
 
 const Monitor = () => {
   const params = useParams();
@@ -22,7 +21,9 @@ const Monitor = () => {
   const { devboxDetail, loadDetailMonitorData } = useDevboxStore();
   const isRunning = devboxDetail?.status.value === DevboxStatusEnum.Running;
   const showGpuMonitor = !!devboxDetail?.gpu && (devboxDetail.gpu.amount || 0) > 0;
-  const chartWrapperClass = 'h-[220px] p-8';
+  const chartWrapperClass = 'flex-1 min-h-[220px] p-8';
+  const monitorCardClass =
+    'flex min-h-[320px] w-full flex-1 justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs';
 
   const gpuMemoryMaxValue = useMemo(() => {
     const values =
@@ -77,7 +78,7 @@ const Monitor = () => {
   return (
     <div className="flex h-full flex-1 min-h-0 flex-col items-start gap-2">
       {/* title */}
-      <div className="flex w-full items-center justify-between rounded-xl border-[0.5px] bg-white p-6 shadow-xs">
+      <div className="flex w-full shrink-0 items-center justify-between rounded-xl border-[0.5px] bg-white p-6 shadow-xs">
         <div className="flex items-center gap-4">
           <span className="text-lg/7 font-medium">{t('filter')}</span>
           <DatePicker onClose={handleRefresh} showAllTime={false} />
@@ -88,11 +89,11 @@ const Monitor = () => {
           {dayjs().format('HH:mm')}
         </span>
       </div>
-      <ScrollArea className="w-full flex-1 min-h-0 pr-1">
-        <div className="flex w-full flex-col gap-2 pb-1">
+      <div className="min-h-0 w-full flex-1 overflow-y-auto pr-1">
+        <div className="flex h-full min-h-full w-full flex-col gap-2">
           {/* CPU */}
-          <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-            <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+          <div className={monitorCardClass}>
+            <div className="flex h-full shrink-0 grow flex-col gap-2">
               <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
                 <span>{t('cpu')}</span>
                 <span>{devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%</span>
@@ -110,8 +111,8 @@ const Monitor = () => {
             </div>
           </div>
           {/* Memory */}
-          <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-            <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+          <div className={monitorCardClass}>
+            <div className="flex h-full shrink-0 grow flex-col gap-2">
               <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
                 <span>{t('memory')}</span>
                 <span>
@@ -133,8 +134,8 @@ const Monitor = () => {
           {showGpuMonitor && (
             <>
               {/* GPU */}
-              <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-                <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+              <div className={monitorCardClass}>
+                <div className="flex h-full shrink-0 grow flex-col gap-2">
                   <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
                     <span>{t('gpu_usage')}</span>
                     <span>
@@ -154,8 +155,8 @@ const Monitor = () => {
                 </div>
               </div>
               {/* GPU Memory */}
-              <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-                <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+              <div className={monitorCardClass}>
+                <div className="flex h-full shrink-0 grow flex-col gap-2">
                   <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
                     <span>{t('gpu_memory')}</span>
                     <span>
@@ -182,7 +183,7 @@ const Monitor = () => {
             </>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 };

@@ -155,7 +155,7 @@ const TemplateCard = ({
               {/* name */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="max-w-27 cursor-pointer truncate font-medium">
+                  <span className="max-w-[108px] cursor-pointer truncate font-medium">
                     {templateRepositoryName}
                   </span>
                 </TooltipTrigger>
@@ -262,7 +262,7 @@ const TemplateCard = ({
         {/* bottom */}
         <div className="borer-t w-full border-zinc-100">
           <Select value={selectedVersion} onValueChange={setSelectedVersion}>
-            <SelectTrigger className="w-full rounded-t-none rounded-b-xl border-x-0 border-t-1 border-b-0 text-sm text-zinc-900">
+            <SelectTrigger className="w-full rounded-t-none rounded-b-xl border-x-0 border-t border-b-0 text-sm text-zinc-900">
               <SelectValue placeholder={t('select_version')} />
             </SelectTrigger>
             <SelectContent>

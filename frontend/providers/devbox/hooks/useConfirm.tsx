@@ -35,7 +35,7 @@ export const useConfirm = ({
     ConfirmChild: useCallback(
       () => (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent className="top-[20%] w-[400px]">
+          <DialogContent placement="top" className="w-[400px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-1.5">
                 <TriangleAlert className="h-4 w-4 text-yellow-600" />

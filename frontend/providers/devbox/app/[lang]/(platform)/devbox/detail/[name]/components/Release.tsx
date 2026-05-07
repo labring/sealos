@@ -261,7 +261,7 @@ const Release = () => {
         title: t('version_number'),
         key: 'tag',
         render: (item: DevboxVersionListItemType) => (
-          <div className="max-w-50 truncate text-zinc-900">{item.tag}</div>
+          <div className="max-w-[200px] truncate text-zinc-900">{item.tag}</div>
         )
       },
       {
@@ -283,7 +283,7 @@ const Release = () => {
           <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="max-w-50 cursor-pointer truncate">{item.description}</span>
+                <span className="max-w-[200px] cursor-pointer truncate">{item.description}</span>
               </TooltipTrigger>
               <TooltipContent className="max-w-[300px] break-words whitespace-pre-wrap">
                 <p>{item.description}</p>
@@ -356,7 +356,7 @@ const Release = () => {
   if (!initialized || isLoading) return <Loading />;
 
   return (
-    <div className="flex h-[40%] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="flex h-[25%] flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-4 shadow-xs">
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">

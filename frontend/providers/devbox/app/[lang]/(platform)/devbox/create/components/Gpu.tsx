@@ -137,7 +137,7 @@ export default function Gpu({
 
   return (
     <div className="flex items-start gap-10">
-      <Label className="w-15 font-medium text-gray-900">{t('gpu')}</Label>
+      <Label className="w-[60px] font-medium text-gray-900">{t('gpu')}</Label>
       <div className="flex flex-col gap-4">
         <Select
           value={selectedGpuOptionKey}

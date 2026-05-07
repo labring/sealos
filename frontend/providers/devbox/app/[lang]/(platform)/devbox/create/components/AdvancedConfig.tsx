@@ -127,7 +127,7 @@ export default function AdvancedConfig({
             <div className="overflow-hidden rounded-lg border border-zinc-200">
               {/* Table Header */}
               <div className="flex border-b border-zinc-200 bg-zinc-50">
-                <div className="w-50 border-r border-zinc-200 px-3 py-2">
+                <div className="w-[200px] border-r border-zinc-200 px-3 py-2">
                   <span className="text-sm font-semibold text-zinc-500">{t('key')}</span>
                 </div>
                 <div className="flex-1 px-3 py-2">
@@ -143,7 +143,7 @@ export default function AdvancedConfig({
                     idx % 2 === 1 ? 'bg-zinc-50' : ''
                   }`}
                 >
-                  <div className="w-50 border-r border-zinc-200 px-3 py-2">
+                  <div className="w-[200px] border-r border-zinc-200 px-3 py-2">
                     <span className="truncate text-sm">{env.key}</span>
                   </div>
                   <div className="flex-1 px-3 py-2">

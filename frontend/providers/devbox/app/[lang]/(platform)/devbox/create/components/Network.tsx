@@ -130,7 +130,7 @@ export default function Network({
                         {t('Container Port')}
                       </span>
                       <Input
-                        className="h-10 w-25"
+                        className="h-10 w-[100px]"
                         type="number"
                         min={1}
                         max={65535}
@@ -213,7 +213,7 @@ export default function Network({
                                 });
                               }}
                             >
-                              <SelectTrigger className="w-27 rounded-r-none">
+                              <SelectTrigger className="w-[108px] rounded-r-none">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -224,7 +224,7 @@ export default function Network({
                                 ))}
                               </SelectContent>
                             </Select>
-                            <div className="flex h-10 flex-shrink-0 flex-grow-1 items-center rounded-r-md border border-l-0 px-3 py-2">
+                            <div className="flex h-10 shrink-0 grow items-center rounded-r-md border border-l-0 px-3 py-2">
                               <div className="mr-2 min-w-64 flex-1 truncate text-sm/5 text-muted-foreground select-all">
                                 {network.customDomain
                                   ? network.customDomain
@@ -298,7 +298,7 @@ export default function Network({
 const AppendNetworksButton = ({ ...props }: React.ComponentPropsWithoutRef<typeof Button>) => {
   const t = useTranslations();
   return (
-    <Button className="w-25 rounded-lg bg-white" variant="outline" {...props}>
+    <Button className="w-[100px] rounded-lg bg-white" variant="outline" {...props}>
       <Plus className="h-4 w-4 text-neutral-500" />
       {t('Add Port')}
     </Button>

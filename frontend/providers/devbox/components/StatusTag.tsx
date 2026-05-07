@@ -21,7 +21,7 @@ const StatusTag = ({ status, isShutdown = false, className }: StatusTagProps) =>
     <div className="flex flex-shrink-0 items-center">
       <div className={'guide-status-tag flex h-5 items-center gap-2'}>
         <div
-          className="aspect-square h-2 w-2 rounded-xs"
+          className="aspect-square h-2 w-2 rounded-[2px]"
           style={{ backgroundColor: status.dotColor }}
         />
         <div className="flex flex-col">

@@ -83,7 +83,7 @@ ${t('remaining')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
 
   return (
     <Card className={cn('guide-cost', className)}>
-      <CardHeader className="flex h-13 items-center gap-2 border-b-1 border-zinc-100">
+      <CardHeader className="flex h-[52px] items-center gap-2 border-b border-zinc-100">
         <span className="font-medium">{t('resource_quota')}</span>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -102,7 +102,7 @@ ${t('remaining')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
             key={item.type}
             className={cn(
               'flex h-12 items-center justify-between px-5',
-              index !== quotaList.length - 1 && 'border-b-1 border-zinc-100'
+              index !== quotaList.length - 1 && 'border-b border-zinc-100'
             )}
           >
             <div className="flex items-center gap-2 text-zinc-900">
@@ -112,7 +112,7 @@ ${t('remaining')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex h-full cursor-pointer items-center">
-                  <Progress value={(item.used / item.limit) * 100} className="h-1 w-30" />
+                  <Progress value={(item.used / item.limit) * 100} className="h-1 w-[120px]" />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" sideOffset={10}>

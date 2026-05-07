@@ -269,18 +269,18 @@ const DevboxList = ({
                   <TooltipContent
                     side="bottom"
                     align="start"
-                    className="mr-25 flex w-fit max-w-60 flex-col gap-2 p-4 text-sm/5"
+                    className="mr-[100px] flex w-fit max-w-60 flex-col gap-2 p-4 text-sm/5"
                   >
                     <div>
                       <div className="flex w-full gap-2">
-                        <span className="min-w-15 text-zinc-600">{t('name')}</span>
+                        <span className="min-w-[60px] text-zinc-600">{t('name')}</span>
                         <span className="break-all text-zinc-900">{item.name}</span>
                       </div>
                       {!!item.remark && (
                         <>
                           <Separator className="bg-zinc-100" />
                           <div className="flex w-full gap-2">
-                            <span className="min-w-15 text-zinc-600">{t('remark')}</span>
+                            <span className="min-w-[60px] text-zinc-600">{t('remark')}</span>
                             <div className="break-all text-zinc-900">{item.remark}</div>
                           </div>
                         </>
@@ -506,7 +506,7 @@ const DevboxList = ({
                   status={item.status}
                   runtimeType={item.template.templateRepository.iconId as string}
                   leftButtonProps={{
-                    className: 'border-r-1 w-36 rounded-r-none px-2'
+                    className: 'w-36 rounded-r-none border-r px-2'
                   }}
                 />
                 <Button
@@ -664,7 +664,7 @@ const DevboxList = ({
               <div
                 key={header.id}
                 style={{ width: header.getSize() }}
-                className="flex-shrink-0 flex-grow-1"
+                className="shrink-0 grow"
               >
                 {flexRender(header.column.columnDef.header, header.getContext())}
               </div>
@@ -684,7 +684,7 @@ const DevboxList = ({
                   <div
                     key={cell.id}
                     style={{ width: cell.column.getSize() }}
-                    className="flex-shrink-0 flex-grow-1"
+                    className="shrink-0 grow"
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </div>
