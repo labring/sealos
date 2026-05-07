@@ -116,7 +116,9 @@ export default function ExecPage(props: ServiceEnv) {
 }
 
 export async function getServerSideProps() {
-  const postMessageSite = 'https://' + process.env?.SITE;
+  const site = process.env?.SITE ?? '';
+  const postMessageSite = /^https?:\/\//.test(site) ? site : 'https://' + site;
+
   return {
     props: {
       site: postMessageSite

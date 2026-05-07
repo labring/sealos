@@ -8,6 +8,8 @@ COPY manifests manifests
 ENV certSecretName="wildcard-cert"
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV cloudPort=""
+ENV httpPort=""
+ENV disableHttps="false"
 ENV ttydImage="docker.io/labring4docker/terminal:1.25.1-5"
 ENV keepalived="30m"
 
