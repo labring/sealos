@@ -26,11 +26,7 @@ import type { AppEditType } from '@/types/app';
 import { appDeployKey } from '@/constants/app';
 
 class PortError extends Error {
-  constructor(
-    message: string,
-    public code: number = 500,
-    public details?: any
-  ) {
+  constructor(message: string, public code: number = 500, public details?: any) {
     super(message);
     this.name = 'PortError';
   }
@@ -270,7 +266,9 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
     );
 
     if (hasIngressPorts) {
-      const ingressYaml = json2Ingress(appEditData);
+      const ingressYaml = json2Ingress(appEditData, {
+        disableHttps: !!global.AppConfig?.cloud?.disableHttps
+      });
       if (ingressYaml.trim()) {
         yamlList.push(ingressYaml);
       }
@@ -391,7 +389,9 @@ async function updateStorage(
       );
 
       if (hasIngressPorts) {
-        const ingressYaml = json2Ingress(updatedAppData);
+        const ingressYaml = json2Ingress(updatedAppData, {
+          disableHttps: !!global.AppConfig?.cloud?.disableHttps
+        });
         if (ingressYaml.trim()) {
           yamlList.push(ingressYaml);
         }

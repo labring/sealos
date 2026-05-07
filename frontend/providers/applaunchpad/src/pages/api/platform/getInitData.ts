@@ -33,6 +33,8 @@ export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
   return {
     SEALOS_DOMAIN: AppConfig.cloud.domain,
     DOMAIN_PORT: AppConfig.cloud.port?.toString() || '',
+    HTTP_PORT: AppConfig.cloud.httpPort?.toString() || '',
+    DISABLE_HTTPS: !!AppConfig.cloud.disableHttps,
     INFRASTRUCTURE_PROVIDER: AppConfig.launchpad.infrastructure.provider,
     REQUIRES_DOMAIN_REG: AppConfig.launchpad.infrastructure.requiresDomainReg,
     DOMAIN_REG_QUERY_LINK: AppConfig.launchpad.infrastructure.domainRegQueryLink,

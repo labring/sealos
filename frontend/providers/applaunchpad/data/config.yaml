@@ -2,6 +2,8 @@ cloud:
   domain: 127.0.0.1.nip.io
   desktopDomain: 127.0.0.1.nip.io
   port: ''
+  httpPort: ''
+  disableHttps: false
   userDomains:
     - name: 127.0.0.1.nip.io
       secretName: wildcard-cert

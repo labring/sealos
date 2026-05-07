@@ -12,6 +12,8 @@ export async function register() {
         cloud: {
           domain: 'cloud.sealos.io',
           port: '',
+          httpPort: '',
+          disableHttps: false,
           userDomains: [
             {
               name: 'cloud.sealos.io',

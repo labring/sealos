@@ -15,6 +15,8 @@ data:
     cloud:
       domain: {{ .cloudDomain }}
       port: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+      httpPort: {{ if .httpPort }}:{{ .httpPort }}{{ end }}
+      disableHttps: {{ .disableHttps }}
       desktopDomain: {{ .cloudDomain }}
       userDomains: 
         - name: {{ .cloudDomain }}
