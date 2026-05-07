@@ -1,12 +1,13 @@
+import { Config } from '@/config';
 import { createDatabaseSchemas } from '@/types/apis';
 import { getK8s } from '../kubernetes';
 import { z } from 'zod';
-import { BackupSupportedDBTypeList, DBTypeEnum } from '@/constants/db';
+import { BackupSupportedDBTypeList } from '@/constants/db';
 import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster, json2ParameterConfig } from '@/utils/json2Yaml';
-import { DBEditType, EditType } from '@/types/db';
+import { DBEditType } from '@/types/db';
 import { getScore } from '@/utils/tools';
 
 const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
@@ -115,7 +116,7 @@ export async function createDatabase(
 
   const account = json2Account(rawDbForm);
   const cluster = json2CreateCluster(rawDbForm, undefined, {
-    storageClassName: process.env.STORAGE_CLASSNAME
+    storageClassName: Config().dbprovider.storage.forcedClassName ?? undefined
   });
 
   console.log('Generated cluster config preview:', {

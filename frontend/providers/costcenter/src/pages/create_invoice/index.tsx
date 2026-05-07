@@ -12,7 +12,7 @@ import useInvoiceStore from '@/stores/invoce';
 import { InvoicePayload } from '@/types/invoice';
 import { OrderListRow } from '@/components/invoice/OrderListView';
 import { InvoiceDownloadModal } from '@/components/invoice/InvoiceDownloadModal';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { NoSubscriptionOrderList } from '@/components/invoice/NoSubscriptionOrderList';
 
 function Invoice() {
@@ -25,7 +25,7 @@ function Invoice() {
   const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
+  const config = useClientAppConfig();
 
   const [processState, setProcessState] = useState(0);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -45,7 +45,7 @@ function Invoice() {
               <TabsTrigger variant="cleanUnderline" value="listing">
                 {t('common:orders.order_list')}
               </TabsTrigger>
-              {!subscriptionEnabled && (
+              {!config.features.subscriptionEnabled && (
                 <TabsTrigger variant="cleanUnderline" value="history">
                   {t('common:orders.invoice_history')}
                 </TabsTrigger>
@@ -53,7 +53,7 @@ function Invoice() {
             </TabsList>
 
             <TabsContent value="listing">
-              {subscriptionEnabled ? (
+              {config.features.subscriptionEnabled ? (
                 <WithSubscriptionOrderList
                   dateRange={dateRange}
                   onDateRangeChange={setDateRange}
@@ -86,7 +86,7 @@ function Invoice() {
               )}
             </TabsContent>
 
-            {!subscriptionEnabled && (
+            {!config.features.subscriptionEnabled && (
               <TabsContent value="history">
                 <InvoiceHistory
                   dateRange={historyDateRange}

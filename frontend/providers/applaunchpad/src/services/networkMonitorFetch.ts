@@ -2,6 +2,8 @@
  * Network Monitor Service - network request count monitor
  */
 
+import { Config } from '@/config';
+
 export type NetworkMonitorQueryType =
   | 'network_service_request_count'
   | 'network_service_request_percent';
@@ -71,9 +73,7 @@ export const networkMonitorFetch = async (
   params: NetworkMonitorQueryParams,
   kubeconfig: string
 ): Promise<NetworkMonitorServiceResponse> => {
-  const domain =
-    global.AppConfig.launchpad.components.monitor.url ||
-    'http://launchpad-monitor.sealos.svc.cluster.local:8428';
+  const domain = Config().launchpad.components.monitoring.url;
 
   // build URL query parameters
   const queryParams = new URLSearchParams();

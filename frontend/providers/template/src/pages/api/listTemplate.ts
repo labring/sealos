@@ -1,6 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
-import { findTopKeyWords } from '@/utils/template';
+import { filterConfiguredCategorySlugs, getCategorySlugs } from '@/utils/template';
+import type { TemplateCategory } from '@/types/config';
 import { parseGithubUrl } from '@/utils/common';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -19,29 +20,30 @@ export function replaceRawWithCDN(url: string, cdnUrl: string) {
 }
 
 export const readTemplates = (
-  jsonPath: string,
+  jsonData: string,
   cdnUrl?: string,
-  blacklistedCategories?: string[],
+  configuredCategories: TemplateCategory[] = [],
   language?: string
 ): TemplateType[] => {
-  const jsonData = fs.readFileSync(jsonPath, 'utf8');
   const _templates: TemplateType[] = JSON.parse(jsonData);
 
   const templates = _templates
-    .filter((item) => {
-      const isBlacklisted =
-        blacklistedCategories &&
-        blacklistedCategories.some((category) =>
-          (item?.spec?.categories ?? []).map((c) => c.toLowerCase()).includes(category)
-        );
-      return !item?.spec?.draft && !isBlacklisted;
-    })
+    .filter((item) => !item?.spec?.draft)
     .map((item) => {
-      if (!!cdnUrl) {
-        item.spec.readme = replaceRawWithCDN(item.spec.readme, cdnUrl);
-        item.spec.icon = replaceRawWithCDN(item.spec.icon, cdnUrl);
+      const spec = {
+        ...item.spec,
+        categories: filterConfiguredCategorySlugs(item.spec.categories, configuredCategories)
+      };
+
+      if (cdnUrl) {
+        spec.readme = replaceRawWithCDN(spec.readme, cdnUrl);
+        spec.icon = replaceRawWithCDN(spec.icon, cdnUrl);
       }
-      return item;
+
+      return {
+        ...item,
+        spec
+      };
     })
     .filter((item) => {
       if (!language) return true;
@@ -56,6 +58,14 @@ export const readTemplates = (
 
   return templates;
 };
+
+export const readTemplatesFromFile = (
+  jsonPath: string,
+  cdnUrl?: string,
+  configuredCategories: TemplateCategory[] = [],
+  language?: string
+): TemplateType[] =>
+  readTemplates(fs.readFileSync(jsonPath, 'utf8'), cdnUrl, configuredCategories, language);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = req.query.language as string;
@@ -84,20 +94,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await fetch(`${baseurl}/api/updateRepo`);
     }
 
-    const templates = readTemplates(
+    const config = Config();
+    const templates = readTemplatesFromFile(
       jsonPath,
-      Config().template.cdnHost,
-      Config().template.excludedCategories,
+      config.template.cdnHost,
+      config.template.categories,
       language
     );
 
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
     console.log(`[${timestamp}] language: ${language}, templates count: ${templates.length}`);
 
-    const categories = templates.map((item) => (item.spec?.categories ? item.spec.categories : []));
-    const topKeys = findTopKeyWords(categories, Config().template.sidebarMenuCount);
+    const menuKeys = getCategorySlugs(config.template.categories).join(',');
 
-    jsonRes(res, { data: { templates: templates, menuKeys: topKeys.join(',') }, code: 200 });
+    jsonRes(res, { data: { templates: templates, menuKeys }, code: 200 });
   } catch (error) {
     jsonRes(res, { code: 500, data: 'api listTemplate error', error: error });
   }

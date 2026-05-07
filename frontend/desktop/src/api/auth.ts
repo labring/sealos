@@ -9,7 +9,11 @@ import { ApiResp, Region } from '@/types';
 import { AdClickData } from '@/types/adClick';
 import { BIND_STATUS } from '@/types/response/bind';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
-import { DELETE_USER_STATUS } from '@/types/response/deleteUser';
+import {
+  DELETE_USER_STATUS,
+  DeleteUserFinalStatusResponse,
+  DeleteUserInitiateResponse
+} from '@/types/response/deleteUser';
 import { EnterpriseAuthInfo, PAYMENTSTATUS } from '@/types/response/enterpriseRealName';
 import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { UNBIND_STATUS } from '@/types/response/unbind';
@@ -145,7 +149,7 @@ export const _mergeUser =
     request.post<any, ApiResp<USER_MERGE_STATUS>>('/api/auth/mergeUser', data);
 
 export const _deleteUser = (request: AxiosInstance) => () =>
-  request<never, ApiResp<RESOURCE_STATUS>>('/api/auth/delete');
+  request.post<never, ApiResp<DeleteUserInitiateResponse>>('/api/auth/delete');
 export const _checkRemainResource = (request: AxiosInstance) => () =>
   request<
     never,
@@ -154,7 +158,16 @@ export const _checkRemainResource = (request: AxiosInstance) => () =>
   >('/api/auth/delete/checkAllResource');
 
 export const _forceDeleteUser = (request: AxiosInstance) => (data: { code: string }) =>
-  request.post<never, ApiResp<DELETE_USER_STATUS>>('/api/auth/delete/force', data);
+  request.post<typeof data, ApiResp<DeleteUserInitiateResponse, DELETE_USER_STATUS>>(
+    '/api/auth/delete/force',
+    data
+  );
+
+export const _getDeleteUserStatus = (request: AxiosInstance) => (deleteId: string) =>
+  request<never, ApiResp<DeleteUserFinalStatusResponse>>('/api/auth/delete/status', {
+    method: 'GET',
+    params: { deleteId }
+  });
 
 export const _faceAuthGenerateQRcodeUriRequest = (request: AxiosInstance) => () =>
   request.get<any, ApiResp<{ url: string; bizToken: string }>>(
@@ -262,6 +275,7 @@ export const mergeUserRequest = _mergeUser(request);
 export const deleteUserRequest = _deleteUser(request);
 export const checkRemainResource = _checkRemainResource(request);
 export const forceDeleteUser = _forceDeleteUser(request);
+export const getDeleteUserStatus = _getDeleteUserStatus(request);
 export const enterpriseRealNameAuthPaymentRequest = _enterpriseRealNameAuthPaymentRequest(request);
 export const enterpriseRealNameAuthVerifyRequest = _enterpriseRealNameAuthVerifyRequest(request);
 export const enterpriseRealNameAuthInfoRequest = _enterpriseRealNameAuthInfoRequest(request);

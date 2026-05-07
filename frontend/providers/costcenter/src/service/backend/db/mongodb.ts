@@ -1,6 +1,7 @@
+import { Config } from '@/config';
 import { MongoClient } from 'mongodb';
 export async function connectToDatabase() {
-  const uri = global.AppConfig.costCenter.invoice.mongo.uri;
+  const uri = Config().costCenter.invoice.mongo.uri;
   if (global.mongodb) {
     return global.mongodb;
   }

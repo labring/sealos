@@ -2,13 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'next-i18next';
 import { useRequest } from '@/hooks/useRequest';
 import { postAuthCname, postAuthDomainChallenge } from '@/api/platform';
-import {
-  DOMAIN_BINDING_DOCUMENTATION_LINK,
-  DOMAIN_REG_QUERY_LINK,
-  INFRASTRUCTURE_PROVIDER,
-  REQUIRES_DOMAIN_REG,
-  SEALOS_USER_DOMAINS
-} from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import NextLink from 'next/link';
 import { BookOpen, CheckCircle, Copy, Loader2 } from 'lucide-react';
 import { DomainNotBoundModal } from './DomainNotBoundModal';
@@ -50,6 +44,7 @@ const CustomAccessModal = ({
 }: CustomAccessModalParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
+  const config = useClientAppConfig();
 
   const [notBoundOpen, setNotBoundOpen] = useState(false);
 
@@ -77,7 +72,7 @@ const CustomAccessModal = ({
     const normalizedDomain = domain.toLowerCase().trim();
 
     // Check against all user domains
-    for (const userDomain of SEALOS_USER_DOMAINS) {
+    for (const userDomain of config.userDomains) {
       const userDomainLower = userDomain.name.toLowerCase();
       if (
         normalizedDomain === userDomainLower ||
@@ -205,12 +200,12 @@ const CustomAccessModal = ({
               </h3>
 
               {/* Tips */}
-              {REQUIRES_DOMAIN_REG ? (
+              {config.infrastructure.requiresIcpReg ? (
                 <div className="space-y-2 mb-4">
                   <p className="text-sm text-zinc-600">
                     {t('domain_requires_registration_tip_1')}
                     <span className="font-semibold">
-                      {t('infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.name')}
+                      {t('infrastructure.providers.' + config.infrastructure.provider + '.name')}
                     </span>
                     {t('domain_requires_registration_tip_2')}
                   </p>
@@ -220,7 +215,9 @@ const CustomAccessModal = ({
                       target="_blank"
                       className="text-sm text-blue-600 hover:underline"
                       href={t(
-                        'infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.domain_reg_link'
+                        'infrastructure.providers.' +
+                          config.infrastructure.provider +
+                          '.domain_reg_link'
                       )}
                     >
                       {t('domain_registration_provider_link_text')}
@@ -231,7 +228,7 @@ const CustomAccessModal = ({
                     <NextLink
                       target="_blank"
                       className="text-sm text-blue-600 hover:underline"
-                      href={DOMAIN_REG_QUERY_LINK}
+                      href={config.infrastructure.icpRegQueryLink}
                     >
                       {t('domain_registration_query_link_text')}
                     </NextLink>
@@ -406,10 +403,10 @@ const CustomAccessModal = ({
                 </div>
 
                 {/* Refer to docs */}
-                {DOMAIN_BINDING_DOCUMENTATION_LINK && (
+                {config.infrastructure.domainBindingDocumentationLink && (
                   <NextLink
                     target="_blank"
-                    href={DOMAIN_BINDING_DOCUMENTATION_LINK}
+                    href={config.infrastructure.domainBindingDocumentationLink}
                     className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline"
                   >
                     <BookOpen className="w-4 h-4" />

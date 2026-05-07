@@ -10,7 +10,10 @@
     "ts-lint": "tsc --noEmit",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk",
-    "gen-client": "prisma generate --schema ./prisma/schema.prisma",
+    "gen-client": "prisma generate --schema ./prisma/cockroach/schema.prisma && prisma generate --schema ./prisma/postgresql/schema.prisma",
+    "migrate:deploy:cockroach": "prisma migrate deploy --schema ./prisma/cockroach/schema.prisma",
+    "migrate:deploy:postgresql": "prisma migrate deploy --schema ./prisma/postgresql/schema.prisma",
+    "migrate:resolve:postgresql": "prisma migrate resolve --schema ./prisma/postgresql/schema.prisma",
     "postinstall": "pnpm gen-client",
     "ui": "pnpm dlx shadcn@latest add",
     "prettier": "prettier --write ."

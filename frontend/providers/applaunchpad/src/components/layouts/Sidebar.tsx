@@ -1,6 +1,6 @@
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { LOG_ENABLED } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { LayoutDashboard, LineChart, FileClock, Cog } from 'lucide-react';
 
 export const ROUTES = {
@@ -13,6 +13,8 @@ export const ROUTES = {
 export default function Sidebar() {
   const { t } = useTranslation();
   const router = useRouter();
+  const config = useClientAppConfig();
+  const logEnabled = config.components.logging.enabled;
 
   const siderbarMap = [
     {
@@ -37,7 +39,7 @@ export default function Sidebar() {
       ),
       path: ROUTES.MONITOR
     },
-    ...(LOG_ENABLED
+    ...(logEnabled
       ? [
           {
             label: t('Log'),

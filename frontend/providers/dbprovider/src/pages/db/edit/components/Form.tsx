@@ -13,7 +13,7 @@ import {
 } from '@/constants/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
 import { resourcePropertyMap } from '@sealos/shared';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
@@ -196,7 +196,7 @@ const Form = ({
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
   const router = useRouter();
   const { name } = router.query as QueryType;
   const theme = useTheme();
@@ -267,9 +267,9 @@ const Form = ({
   };
 
   const supportBackup = useMemo(
-    () => SystemEnv.BACKUP_ENABLED && BackupSupportedDBTypeList.includes(getValues('dbType')),
+    () => config.backupEnabled && BackupSupportedDBTypeList.includes(getValues('dbType')),
     //eslint-disable-next-line react-hooks/exhaustive-deps
-    [getValues('dbType'), SystemEnv.BACKUP_ENABLED]
+    [getValues('dbType'), config.backupEnabled]
   );
 
   const [dbType, dbVersion] = watch(['dbType', 'dbVersion']);
@@ -948,11 +948,11 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label w={100}>{t('storage')}</Label>
                   <MyTooltip
-                    label={`${t('storage_range')}${minStorage}~${SystemEnv.STORAGE_MAX_SIZE} Gi`}
+                    label={`${t('storage_range')}${minStorage}~${config.storageMaxSize} Gi`}
                   >
                     <NumberInput
                       w={'180px'}
-                      max={SystemEnv.STORAGE_MAX_SIZE}
+                      max={config.storageMaxSize}
                       min={minStorage}
                       step={minStorageChange}
                       position={'relative'}
@@ -985,12 +985,13 @@ const Form = ({
                             message: `${t('storage_min')}${minStorage} Gi`
                           },
                           max: {
-                            value: SystemEnv.STORAGE_MAX_SIZE,
-                            message: `${t('storage_max')}${SystemEnv.STORAGE_MAX_SIZE} Gi`
-                          }
+                            value: config.storageMaxSize,
+                            message: `${t('storage_max')}${config.storageMaxSize} Gi`
+                          },
+                          valueAsNumber: true
                         })}
                         min={minStorage}
-                        max={SystemEnv.STORAGE_MAX_SIZE}
+                        max={config.storageMaxSize}
                         borderRadius={'md'}
                         borderColor={'#E8EBF0'}
                         bg={'#F7F8FA'}

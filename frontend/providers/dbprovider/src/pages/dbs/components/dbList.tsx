@@ -10,7 +10,7 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDBOperation } from '@/hooks/useDBOperation';
 import UpdateModal from '@/pages/db/detail/components/UpdateModal';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
@@ -26,13 +26,11 @@ import {
   InputGroup,
   Text,
   useDisclosure,
-  useTheme,
   Popover,
   PopoverArrow,
   PopoverBody,
   PopoverContent,
-  PopoverTrigger,
-  Badge
+  PopoverTrigger
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
@@ -48,7 +46,6 @@ import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
@@ -81,15 +78,9 @@ const DBList = ({
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
   const { message: toast } = useMessage();
-  const theme = useTheme();
   const router = useRouter();
-  const {
-    executeOperation,
-    loading: operationLoading,
-    errorModalState,
-    closeErrorModal
-  } = useDBOperation();
-  const { SystemEnv } = useEnvStore();
+  const { executeOperation, errorModalState, closeErrorModal } = useDBOperation();
+  const config = useClientAppConfig();
   const {
     isOpen: isOpenUpdateModal,
     onOpen: onOpenUpdateModal,
@@ -223,6 +214,13 @@ const DBList = ({
     return name.includes(searchTerm) || remark.includes(searchTerm);
   };
 
+  const getDBLabel = (dbType: string) => {
+    if (dbType === 'apecloud-mysql' || dbType === 'mysql') {
+      return 'MySQL';
+    }
+    return DBTypeList.find((i) => i.id === dbType)?.label || dbType;
+  };
+
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
     () => [
       {
@@ -340,7 +338,7 @@ const DBList = ({
               alt={row.original.id}
               src={`/images/${row.original.dbType}.svg`}
             />
-            {DBTypeList.find((i) => i.id === row.original.dbType)?.label}
+            {getDBLabel(row.original.dbType)}
           </Flex>
         )
       },
@@ -416,7 +414,7 @@ const DBList = ({
 
           return (
             <Flex key={row.id} justifyContent={'flex-end'}>
-              {SystemEnv.DATAFLOW_ENABLED === 'true' &&
+              {config.dataflowEnabled &&
                 (manageDataDisabledReason ? (
                   <Popover trigger="hover" placement="top" openDelay={200}>
                     <PopoverTrigger>
@@ -593,7 +591,7 @@ const DBList = ({
       t,
       onOpenRemarkModal,
       alerts,
-      SystemEnv?.DATAFLOW_ENABLED,
+      config.dataflowEnabled,
       getManageDataDisabledReason,
       onOpenPause,
       handleManageData,

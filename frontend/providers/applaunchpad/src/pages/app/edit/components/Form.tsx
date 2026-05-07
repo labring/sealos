@@ -3,7 +3,7 @@ import MyIcon from '@/components/Icon';
 import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useGlobalStore } from '@/store/global';
-import { PVC_STORAGE_MAX } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
@@ -78,6 +78,7 @@ const Form = ({
   if (!formHook) return null;
   const { t } = useTranslation();
   const { formSliderListConfig } = useGlobalStore();
+  const config = useClientAppConfig();
   const { userSourcePrice } = useUserStore();
   const router = useRouter();
   const { name } = router.query as QueryType;
@@ -1150,7 +1151,9 @@ const Form = ({
                                         </span>
                                       </TooltipTrigger>
                                       <TooltipContent side="bottom" className="rounded-xl">
-                                        <p className="max-w-xs break-all">{valText}</p>
+                                        <p className="max-w-xs whitespace-pre-wrap break-words">
+                                          {valText}
+                                        </p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
@@ -1363,7 +1366,7 @@ const Form = ({
             // left quota - this one
             storageQuotaLeft + (storeList.find((item) => item.id === storeEdit.id)?.value ?? 0),
             // But not exceed the size cap
-            PVC_STORAGE_MAX
+            config.pvcStorageMax
           )}
           listNames={storeList
             .filter((item) => item.id !== storeEdit.id)

@@ -1,10 +1,11 @@
+import { Config } from '@/config';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   try {
-    if (!global.AppConfig.costCenter.recharge.enabled) {
+    if (!Config().costCenter.recharge.enabled) {
       throw new Error('recharge is not enabled');
     }
     const client = await makeAPIClientByHeader(req, resp);

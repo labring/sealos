@@ -1,10 +1,4 @@
-import {
-  delDBServiceByName,
-  pauseDBByName,
-  restartDB,
-  startDBByName,
-  type DatabaseAlertItem
-} from '@/api/db';
+import { pauseDBByName, restartDB, startDBByName, type DatabaseAlertItem } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { defaultDBDetail } from '@/constants/db';
@@ -16,22 +10,19 @@ import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { Dispatch, useCallback, useState, useEffect } from 'react';
+import React, { Dispatch, useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
 import { DATAFLOW_APP_KEY, DATAFLOW_SUPPORTED_TYPES } from '@/constants/dataflow';
 import { ConnectionInfo } from './AppBaseInfo';
 import { getLangStore } from '@/utils/cookieUtils';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { ArrowLeft, Trash2, Settings } from 'lucide-react';
 const DelModal = dynamic(() => import('./DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const Header = ({
   db = defaultDBDetail,
-  conn,
-  isLargeScreen = true,
-  setShowSlider,
   alerts = {},
   isLoading = false
 }: {
@@ -65,7 +56,7 @@ const Header = ({
   });
 
   const { executeOperation, loading, errorModalState, closeErrorModal } = useDBOperation();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const handleRestartApp = useCallback(async () => {
     await executeOperation(() => restartDB(db), {
@@ -301,7 +292,7 @@ const Header = ({
             )}
           </Flex>
 
-          {SystemEnv.DATAFLOW_ENABLED === 'true' && DATAFLOW_SUPPORTED_TYPES.has(db.dbType) && (
+          {config.dataflowEnabled && DATAFLOW_SUPPORTED_TYPES.has(db.dbType) && (
             <Button
               display={'flex'}
               height={'40px'}

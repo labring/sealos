@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "next dev",
+    "dev": "pnpm run config:gen-json-schema && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -13,6 +13,7 @@
     "test:components": "vitest --project components",
     "test:components:ci": "vitest run --project components",
     "typecheck": "tsc --noEmit",
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
   },

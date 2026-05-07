@@ -9,7 +9,7 @@ import MyIcon from '@/components/Icon';
 import { useSelectFile } from '@/hooks/useSelectFile';
 import { MOCK_APP_DETAIL, MOCK_PODS } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
-import { UPLOAD_LIMIT } from '@/store/static';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import type { PodDetailType } from '@/types/app';
 import { TFile } from '@/utils/kubeFileSystem';
 import { formatSize, formatTime } from '@/utils/tools';
@@ -82,6 +82,7 @@ const PodFile = ({
 }) => {
   const { t } = useTranslation();
   const { appDetail = MOCK_APP_DETAIL } = useAppStore();
+  const config = useClientAppConfig();
   const [storeDetail, setStoreDetail] = useState<{
     name: string;
     path: string;
@@ -360,7 +361,7 @@ const PodFile = ({
     setIsUploadLoading(true);
     try {
       const filteredFiles = files.filter((file) => {
-        if (file.size > UPLOAD_LIMIT * 1024 * 1024) {
+        if (file.size > config.fileManager.uploadLimit * 1024 * 1024) {
           toast.info(t('File is too large tip', { name: file.name }));
           return false;
         }

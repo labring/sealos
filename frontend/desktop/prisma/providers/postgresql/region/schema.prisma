@@ -1,0 +1,109 @@
+generator regionClient {
+  provider      = "prisma-client-js"
+  output        = "./generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("REGION_DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Workspace {
+  uid           String          @id @default(uuid()) @db.Uuid
+  id            String          @unique
+  displayName   String
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+  userWorkspace UserWorkspace[]
+}
+
+model UserCr {
+  uid           String          @id @default(uuid()) @db.Uuid
+  crName        String          @unique
+  userUid       String          @unique @db.Uuid
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+  userWorkspace UserWorkspace[]
+}
+
+model UserWorkspace {
+  uid          String     @id @default(uuid()) @db.Uuid
+  alias        String?
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+  workspaceUid String     @db.Uuid
+  userCrUid    String     @db.Uuid
+  handlerUid   String?    @db.Uuid
+  role         Role       @default(DEVELOPER)
+  status       JoinStatus
+  isPrivate    Boolean
+  joinAt       DateTime?  @db.Timestamptz(3)
+  userCr       UserCr     @relation(fields: [userCrUid], references: [uid])
+  workspace    Workspace  @relation(fields: [workspaceUid], references: [uid])
+
+  @@unique([workspaceUid, userCrUid])
+  @@index([userCrUid])
+}
+
+model VerificationCodes {
+  uid          String   @id @default(uuid()) @db.Uuid
+  userUid      String?  @db.Uuid
+  scenario     String
+  providerType String
+  providerId   String
+  code         String
+  flowToken    String?  @unique
+  expiresAt    DateTime @db.Timestamptz(3)
+  metadata     Json
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([scenario, providerType, providerId])
+  @@index([expiresAt])
+  @@index([scenario, code])
+  @@index([scenario, providerType, providerId, expiresAt])
+}
+
+model OAuthVerifications {
+  uid        String   @id @default(uuid()) @db.Uuid
+  provider   String
+  scenario   String
+  providerId String?
+  code       String
+  expiresAt  DateTime @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([provider, code])
+  @@index([provider, providerId])
+  @@index([expiresAt])
+}
+
+model WorkspaceInvitations {
+  uid            String   @id @default(uuid()) @db.Uuid
+  workspaceUid   String   @db.Uuid
+  inviterUid     String   @db.Uuid
+  inviterCrUid   String   @db.Uuid
+  role           Role
+  invitationCode String   @unique
+  expiresAt      DateTime @db.Timestamptz(3)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([workspaceUid, inviterUid, inviterCrUid, role])
+  @@index([expiresAt])
+}
+
+enum JoinStatus {
+  INVITED
+  IN_WORKSPACE
+  NOT_IN_WORKSPACE
+}
+
+enum Role {
+  MANAGER
+  DEVELOPER
+  OWNER
+}

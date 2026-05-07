@@ -2,6 +2,8 @@
  * VictoriaMetrics Service monitor data query service V2
  */
 
+import { Config } from '@/config';
+
 export type MonitorQueryType = 'cpu' | 'memory' | 'average_cpu' | 'average_memory' | 'storage';
 
 export interface MonitorQueryParams {
@@ -55,9 +57,7 @@ export const monitorFetchV2 = async (
   params: MonitorQueryParams,
   kubeconfig: string
 ): Promise<MonitorServiceResponse> => {
-  const domain =
-    global.AppConfig.launchpad.components.monitor.url ||
-    'http://launchpad-monitor.sealos.svc.cluster.local:8428';
+  const domain = Config().launchpad.components.monitoring.url;
 
   // 构建 form-urlencoded body
   const formBody = new URLSearchParams();

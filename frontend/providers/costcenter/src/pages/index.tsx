@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import useEnvStore from '@/stores/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export default function Home() {
   const router = useRouter();
-  const subscriptionEnabled = useEnvStore((state) => state.subscriptionEnabled);
+  const config = useClientAppConfig();
 
   useEffect(() => {
     // Only redirect if we're actually on the root path
@@ -23,14 +23,14 @@ export default function Home() {
         }
       });
 
-      const indexPage = subscriptionEnabled ? '/plan' : '/cost';
+      const indexPage = config.features.subscriptionEnabled ? '/plan' : '/cost';
       const queryString = params.toString();
       const targetUrl = queryString ? `${indexPage}?${queryString}` : indexPage;
 
       // Replace current route to avoid adding to history
       router.replace(targetUrl);
     }
-  }, [router, router.query, subscriptionEnabled]);
+  }, [router, router.query, config.features.subscriptionEnabled]);
 
   // Show minimal loading state while redirecting
   return <div className="flex items-center justify-center min-h-screen"></div>;

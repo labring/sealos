@@ -8,13 +8,11 @@ import { setUserDelete, setUserWorkspaceLock as setWorkspaceLock } from '../kube
 
 export class DeleteUserCrJob implements CronJobStatus {
   private userUid = '';
+  private userId = '';
   transactionType = TransactionType.DELETE_USER;
   UNIT_TIMEOUT = 3000;
   COMMIT_TIMEOUT = 30000;
-  constructor(
-    private transactionUid: string,
-    private infoUid: string
-  ) {}
+  constructor(private transactionUid: string, private infoUid: string) {}
   async init() {
     const infoUid = this.infoUid;
     const info = await globalPrisma.deleteUserTransactionInfo.findUnique({
@@ -25,6 +23,17 @@ export class DeleteUserCrJob implements CronJobStatus {
     if (!info) throw new Error('the transaction info not found');
 
     this.userUid = info.userUid;
+
+    const user = await globalPrisma.user.findUnique({
+      where: {
+        uid: this.userUid
+      },
+      select: {
+        id: true
+      }
+    });
+    if (!user) throw new Error('the user not found');
+    this.userId = user.id;
   }
   async unit() {
     await this.init();
@@ -54,12 +63,14 @@ export class DeleteUserCrJob implements CronJobStatus {
       });
       return;
       // throw new Error('the userCR not found');
-    } // lock owner workspace
-    const workspaceList = userCr.userWorkspace
+    }
+
+    const ownerWorkspaces = userCr.userWorkspace
       .filter((item) => item.role === Role.OWNER)
       .map((item) => item.workspace);
+
     await Promise.all(
-      workspaceList.map(async (workspace) => {
+      ownerWorkspaces.map(async (workspace) => {
         await setWorkspaceLock(workspace.id);
         // kick out all user workspace except owner
         await prisma.userWorkspace.updateMany({
@@ -87,7 +98,7 @@ export class DeleteUserCrJob implements CronJobStatus {
     );
 
     // kick off self from other workspace, igonre rolebinding
-    const clearResult = await prisma.userWorkspace.updateMany({
+    await prisma.userWorkspace.updateMany({
       where: {
         userCrUid: userCr.uid,
         role: {

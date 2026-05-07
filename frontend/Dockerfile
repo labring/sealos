@@ -54,15 +54,28 @@ ARG path
 
 COPY ${path} ${path}
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --frozen-lockfile --filter=$name install && pnpm --filter=$name run build
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --frozen-lockfile --filter=$name install && \
+    pnpm --filter=$name run build
 
 RUN if [ "$name" = "desktop" ]; then \
     mkdir -p desktop/.next/standalone/desktop/prisma/global && \
     mkdir -p desktop/.next/standalone/desktop/prisma/region && \
     cp -r ./desktop/prisma/global/migrations desktop/.next/standalone/desktop/prisma/global/migrations; \
     cp -r ./desktop/prisma/region/migrations desktop/.next/standalone/desktop/prisma/region/migrations; \
+    if [ -d "./desktop/prisma/providers" ]; then \
+        mkdir -p desktop/.next/standalone/desktop/prisma/providers && \
+        cp -r ./desktop/prisma/providers/* desktop/.next/standalone/desktop/prisma/providers/; \
+    fi; \
 fi
 RUN if [ "$name" = "devbox" ]; then \
+    if [ -d "./providers/devbox/prisma/cockroach/migrations" ]; then \
+        mkdir -p ./providers/devbox/.next/standalone/providers/devbox/prisma/cockroach && \
+        cp -r ./providers/devbox/prisma/cockroach/migrations ./providers/devbox/.next/standalone/providers/devbox/prisma/cockroach/; \
+    fi; \
+    if [ -d "./providers/devbox/prisma/postgresql/migrations" ]; then \
+        mkdir -p ./providers/devbox/.next/standalone/providers/devbox/prisma/postgresql && \
+        cp -r ./providers/devbox/prisma/postgresql/migrations ./providers/devbox/.next/standalone/providers/devbox/prisma/postgresql/; \
+    fi; \
     if [ -d "./providers/devbox/prisma/migrations" ]; then \
         mkdir -p ./providers/devbox/.next/standalone/providers/devbox/prisma && \
         cp -r ./providers/devbox/prisma/migrations ./providers/devbox/.next/standalone/providers/devbox/prisma/; \

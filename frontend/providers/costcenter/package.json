@@ -3,10 +3,11 @@
   "version": "0.1.1",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3001",
+    "dev": "pnpm run config:gen-json-schema && next dev --port 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "config:gen-json-schema": "pnpm --silent dlx tsx -e \"import { z } from 'zod'; import { AppConfigSchema as s } from './src/types/config'; console.log(JSON.stringify(z.toJSONSchema(s)));\" > ./data/config.schema.json",
     "test": "vitest --project unit",
     "test:watch": "vitest --project unit --watch",
     "test:ci": "vitest run --project unit",
