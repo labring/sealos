@@ -40,6 +40,8 @@ resources:
 config:
   cloudDomain: "cloud.sealos.io"
   cloudPort: ""
+  httpPort: ""
+  disableHttps: false
   ingressTLSSecretName: "wildcard-cert-sealos"
 
 livenessProbe:
