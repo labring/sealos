@@ -3,7 +3,7 @@ import {
   DeleteUserFinalStatusResponse,
   DELETE_USER_EXECUTION_STATUS
 } from '@/types/response/deleteUser';
-import { NamespaceDto } from '@/types/team';
+import { NamespaceDto, UserRole } from '@/types/team';
 
 export enum DeleteFlowStep {
   BOOTSTRAP,
@@ -29,11 +29,17 @@ export const buildSubscribedWorkspaceRows = (
   const namespaceNameMap = new Map(
     namespaces.map((namespace) => [namespace.id, namespace.teamName || namespace.id])
   );
+  const ownerNamespaceIds = new Set(
+    namespaces
+      .filter((namespace) => namespace.role === UserRole.Owner)
+      .map((namespace) => namespace.id)
+  );
 
   return plans
     .filter((plan) => {
       const normalizedPlanName = plan.planName?.trim().toUpperCase();
       return (
+        ownerNamespaceIds.has(plan.namespace) &&
         Boolean(normalizedPlanName) &&
         normalizedPlanName !== 'PAYG' &&
         normalizedPlanName !== 'FREE'
