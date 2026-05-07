@@ -4,6 +4,7 @@ import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import type { AppDetailType } from '@/types/app';
+import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import { useCopyData, generatePvcNameRegex } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
@@ -180,9 +181,15 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             inline: `${protocol?.inline}${
               network?.serviceName ? network.serviceName : app.appName
             }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
-            public: `${protocol?.label}${protocol?.value.toLowerCase()}.${network.domain}${
-              network?.nodePort ? `:${network.nodePort}` : ''
-            }`,
+            public: network.nodePort
+              ? buildExternalUrl({
+                  protocol: network.protocol,
+                  host: `${protocol?.value.toLowerCase()}.${network.domain}`,
+                  nodePort: network.nodePort
+                })
+              : `${getExternalProtocol(network.protocol)}://${protocol?.value.toLowerCase()}.${
+                  network.domain
+                }`,
             customDomain: null,
             showReadyStatus: false,
             port: network.port
@@ -194,20 +201,24 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             network?.serviceName ? network.serviceName : app.appName
           }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
           public: network.openPublicDomain
-            ? `${appProtocol?.label}${
-                network.customDomain
+            ? buildExternalUrl({
+                protocol: network.appProtocol,
+                host: network.customDomain
                   ? network.customDomain
-                  : `${network.publicDomain}.${network.domain}${
-                      config.port !== undefined ? `:${config.port}` : ''
-                    }`
-              }`
+                  : `${network.publicDomain}.${network.domain}`,
+                config: {
+                  disableHttps: config.disableHttps,
+                  cloudPort: config.port,
+                  httpPort: config.httpPort
+                }
+              })
             : '',
           customDomain: network.openPublicDomain ? network.customDomain : null,
           showReadyStatus: true,
           port: network.port
         };
       }),
-    [app, config.port]
+    [app, config.disableHttps, config.httpPort, config.port]
   );
 
   const retryCount = useRef(0);

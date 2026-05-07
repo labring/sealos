@@ -18,6 +18,7 @@ import {
   ImageSchema,
   resourceConverters
 } from './schema';
+import { buildExternalUrl } from '@/utils/network-url';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -545,6 +546,12 @@ export function transformFromLegacySchema(
       legacyData.networks?.map((network) => {
         const protocol = network.openNodePort ? network.protocol : network.appProtocol || 'HTTP';
         const protocolLower = protocol.toLowerCase();
+        const appConfig = globalThis.__APP_CONFIG__;
+        const externalAccessConfig = {
+          disableHttps: !!appConfig?.cloud?.disableHttps,
+          cloudPort: appConfig?.cloud?.port,
+          httpPort: appConfig?.cloud?.httpPort
+        };
 
         let privateAddress: string | undefined;
         if (network.serviceName && namespace) {
@@ -555,33 +562,25 @@ export function transformFromLegacySchema(
         let publicAddress: string | undefined;
         if (network.openPublicDomain) {
           if (network.customDomain) {
-            const publicScheme =
-              protocolLower === 'grpc'
-                ? 'grpcs'
-                : protocolLower === 'ws'
-                ? 'wss'
-                : protocolLower === 'udp'
-                ? 'udp'
-                : 'https';
-            publicAddress = `${publicScheme}://${network.customDomain}`;
+            publicAddress = buildExternalUrl({
+              protocol,
+              host: network.customDomain,
+              config: externalAccessConfig
+            });
           } else if (network.publicDomain && network.domain) {
-            const publicScheme =
-              protocolLower === 'grpc'
-                ? 'grpcs'
-                : protocolLower === 'ws'
-                ? 'wss'
-                : protocolLower === 'udp'
-                ? 'udp'
-                : 'https';
-            if (network.openNodePort && network.nodePort) {
-              publicAddress = `${publicScheme}://${network.publicDomain}.${network.domain}:${network.nodePort}`;
-            } else {
-              publicAddress = `${publicScheme}://${network.publicDomain}.${network.domain}`;
-            }
+            publicAddress = buildExternalUrl({
+              protocol,
+              host: `${network.publicDomain}.${network.domain}`,
+              nodePort: network.openNodePort ? network.nodePort : undefined,
+              config: network.openNodePort ? undefined : externalAccessConfig
+            });
           }
         } else if (network.openNodePort && network.nodePort && network.domain) {
-          const publicScheme = protocolLower === 'udp' ? 'udp' : protocolLower;
-          publicAddress = `${publicScheme}://${protocolLower}.${network.domain}:${network.nodePort}`;
+          publicAddress = buildExternalUrl({
+            protocol,
+            host: `${protocolLower}.${network.domain}`,
+            nodePort: network.nodePort
+          });
         }
 
         return {

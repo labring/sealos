@@ -6,6 +6,7 @@ import { UseFormReturn, useFieldArray } from 'react-hook-form';
 import { useCopyData } from '@/utils/tools';
 import { useState, useCallback } from 'react';
 import type { AppEditType } from '@/types/app';
+import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import dynamic from 'next/dynamic';
 import { WorkspaceQuotaItem } from '@sealos/shared';
@@ -212,16 +213,38 @@ export function NetworkSection({
   const getDomainDisplay = useCallback(
     (network: AppEditType['networks'][0]) => {
       if (network.customDomain) {
-        return network.customDomain;
+        return buildExternalUrl({
+          protocol: network.appProtocol,
+          host: network.customDomain,
+          config: {
+            disableHttps: config.disableHttps,
+            cloudPort: config.port,
+            httpPort: config.httpPort
+          }
+        });
       }
       if (network.openNodePort) {
         return network?.nodePort
-          ? `${network.protocol.toLowerCase()}.${network.domain}:${network.nodePort}`
-          : `${network.protocol.toLowerCase()}.${network.domain}:${t('pending_to_allocated')}`;
+          ? buildExternalUrl({
+              protocol: network.protocol,
+              host: `${network.protocol.toLowerCase()}.${network.domain}`,
+              nodePort: network.nodePort
+            })
+          : `${getExternalProtocol(network.protocol)}://${network.protocol.toLowerCase()}.${
+              network.domain
+            }:${t('pending_to_allocated')}`;
       }
-      return `${network.publicDomain}.${network.domain}`;
+      return buildExternalUrl({
+        protocol: network.appProtocol,
+        host: `${network.publicDomain}.${network.domain}`,
+        config: {
+          disableHttps: config.disableHttps,
+          cloudPort: config.port,
+          httpPort: config.httpPort
+        }
+      });
     },
-    [t]
+    [config.disableHttps, config.httpPort, config.port, t]
   );
 
   return (

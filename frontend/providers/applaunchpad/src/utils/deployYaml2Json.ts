@@ -341,12 +341,15 @@ export const json2Service = (data: AppEditType) => {
 
 export const json2Ingress = (
   data: AppEditType,
-  userDomains: { name: string; secretName: string }[]
+  userDomains: { name: string; secretName: string }[],
+  options: {
+    disableHttps?: boolean;
+  } = {}
 ) => {
+  const disableHttps = options.disableHttps ?? false;
   // different protocol annotations
   const map = {
     HTTP: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
       'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
       'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
@@ -356,7 +359,6 @@ export const json2Ingress = (
         'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n'
     },
     GRPC: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'GRPC'
     },
     WS: {
@@ -380,7 +382,7 @@ export const json2Ingress = (
       // Ingress only uses ClusterIP services, not NodePort
       const serviceName = getServiceName(data, false);
 
-      const ingress = {
+      const ingress: any = {
         apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
         metadata: {
@@ -416,15 +418,17 @@ export const json2Ingress = (
                 ]
               }
             }
-          ],
-          tls: [
-            {
-              hosts: [host],
-              secretName
-            }
           ]
         }
       };
+      if (!disableHttps) {
+        ingress.spec.tls = [
+          {
+            hosts: [host],
+            secretName
+          }
+        ];
+      }
       const issuer = {
         apiVersion: 'cert-manager.io/v1',
         kind: 'Issuer',
@@ -474,7 +478,7 @@ export const json2Ingress = (
       };
 
       let resYaml = yaml.dump(ingress);
-      if (network.customDomain) {
+      if (network.customDomain && !disableHttps) {
         resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
       }
       return resYaml;
@@ -489,9 +493,12 @@ export const json2ServiceObjects = (data: AppEditType): object[] => {
 
 export const json2IngressObjects = (
   data: AppEditType,
-  userDomains: { name: string; secretName: string }[]
+  userDomains: { name: string; secretName: string }[],
+  options: {
+    disableHttps?: boolean;
+  } = {}
 ): object[] => {
-  return yamlString2Objects(json2Ingress(data, userDomains));
+  return yamlString2Objects(json2Ingress(data, userDomains, options));
 };
 
 export const json2ConfigMap = (data: AppEditType) => {

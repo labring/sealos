@@ -2,6 +2,8 @@
 cloud:
   domain: cloud.example.io
   port: 443
+  httpPort: 80
+  disableHttps: false
   desktopDomain: cloud.example.io
   userDomains:
     - name: cloud.example.io

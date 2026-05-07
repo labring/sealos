@@ -14,7 +14,9 @@ data:
   config.yaml: |-
     cloud:
       domain: {{ .cloudDomain }}
-      port: {{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+      port: {{ if .cloudPort }}{{ .cloudPort }}{{ else }}443{{ end }}
+      httpPort: {{ if .httpPort }}{{ .httpPort }}{{ else }}80{{ end }}
+      disableHttps: {{ .disableHttps }}
       desktopDomain: {{ .cloudDomain }}
       userDomains: 
         - name: {{ .cloudDomain }}

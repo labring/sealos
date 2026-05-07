@@ -12,6 +12,8 @@ export function getClientAppConfigServer() {
   return validateClientAppConfigOrThrow(ClientAppConfigSchema, {
     domain: fullConfig.cloud.domain,
     port: fullConfig.cloud.port,
+    httpPort: fullConfig.cloud.httpPort,
+    disableHttps: fullConfig.cloud.disableHttps,
     userDomains: fullConfig.cloud.userDomains,
     desktopDomain: fullConfig.cloud.desktopDomain,
     guideEnabled: fullConfig.launchpad.features.guide,

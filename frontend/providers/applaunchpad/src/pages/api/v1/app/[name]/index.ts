@@ -267,7 +267,9 @@ async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: 
     );
 
     if (hasIngressPorts) {
-      const ingressYaml = json2Ingress(appEditData, Config().cloud.userDomains);
+      const ingressYaml = json2Ingress(appEditData, Config().cloud.userDomains, {
+        disableHttps: Config().cloud.disableHttps
+      });
       if (ingressYaml.trim()) {
         yamlList.push(ingressYaml);
       }
@@ -388,7 +390,9 @@ async function updateStorage(
       );
 
       if (hasIngressPorts) {
-        const ingressYaml = json2Ingress(updatedAppData, Config().cloud.userDomains);
+        const ingressYaml = json2Ingress(updatedAppData, Config().cloud.userDomains, {
+          disableHttps: Config().cloud.disableHttps
+        });
         if (ingressYaml.trim()) {
           yamlList.push(ingressYaml);
         }
