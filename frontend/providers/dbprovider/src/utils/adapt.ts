@@ -2,6 +2,7 @@ import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/cons
 import { DB_REMARK_KEY } from '@/constants/db';
 import {
   DBBackupMethodNameMap,
+  DBComponentNameMap,
   DBNameLabel,
   DBPreviousConfigKey,
   DBReconfigStatusMap,
@@ -16,6 +17,7 @@ import type {
   KubeBlockOpsRequestType
 } from '@/types/cluster';
 import type {
+  DBComponentsName,
   DBDetailType,
   DBEditType,
   DBListItemType,
@@ -28,10 +30,12 @@ import type {
 import { InternetMigrationCR, MigrateItemType } from '@/types/migrate';
 import {
   convertCronTime,
+  cpuFormatToC,
   cpuFormatToM,
   decodeFromHex,
   formatPodTime,
   formatTime,
+  memoryFormatToGi,
   memoryFormatToMi,
   storageFormatToNum
 } from '@/utils/tools';
@@ -44,8 +48,6 @@ import { has } from 'lodash';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 import type { BackupItemType } from '../types/db';
-import z from 'zod';
-import { dbDetailSchema, dbEditSchema, dbTypeSchema } from '@/types/schemas/db';
 
 const getDisplayReplicas = (
   dbType: DBType,
@@ -392,6 +394,151 @@ export const adaptMigrateList = (item: InternetMigrationCR): MigrateItemType => 
     status: item.status?.taskStatus,
     startTime: formatTime(item.metadata?.creationTimestamp || ''),
     remark: item.metadata.labels[MigrationRemark] || '-'
+  };
+};
+
+type OpsRequestConfiguration = NonNullable<OpsRequestItemType['configurations']>[number];
+
+const simpleOperationTypes = ['Start', 'Stop', 'Restart'];
+
+const normalizeOperationLogComponentName = (dbType: DBType, rawComponentName: string) => {
+  if (dbType !== 'polardbx') {
+    return rawComponentName;
+  }
+
+  const normalizedComponentName = rawComponentName.replace(/-\d+$/, '');
+
+  return DBComponentNameMap[dbType].includes(normalizedComponentName as DBComponentsName)
+    ? normalizedComponentName
+    : rawComponentName;
+};
+
+const sortOperationLogComponents = <T extends { componentName: string }>(
+  dbType: DBType,
+  components: T[] = []
+) => {
+  const componentOrder = DBComponentNameMap[dbType] || [];
+
+  return [...components].sort((componentA, componentB) => {
+    const logicalNameA = normalizeOperationLogComponentName(dbType, componentA.componentName);
+    const logicalNameB = normalizeOperationLogComponentName(dbType, componentB.componentName);
+    const orderA = componentOrder.indexOf(logicalNameA as (typeof componentOrder)[number]);
+    const orderB = componentOrder.indexOf(logicalNameB as (typeof componentOrder)[number]);
+    const normalizedOrderA = orderA === -1 ? Number.MAX_SAFE_INTEGER : orderA;
+    const normalizedOrderB = orderB === -1 ? Number.MAX_SAFE_INTEGER : orderB;
+
+    if (normalizedOrderA !== normalizedOrderB) {
+      return normalizedOrderA - normalizedOrderB;
+    }
+
+    if (logicalNameA !== logicalNameB) {
+      return logicalNameA.localeCompare(logicalNameB);
+    }
+
+    return componentA.componentName.localeCompare(componentB.componentName);
+  });
+};
+
+const getOperationLogConfigurations = (
+  item: KubeBlockOpsRequestType,
+  dbType: DBType
+): OpsRequestConfiguration[] => {
+  if (simpleOperationTypes.includes(item.spec.type)) {
+    return [{ parameterName: item.spec.type, newValue: '-', oldValue: '-' }];
+  }
+
+  if (item.spec.type === 'VerticalScaling') {
+    return sortOperationLogComponents(dbType, item.spec.verticalScaling).flatMap((newConfig) => {
+      const oldConfig = item.status?.lastConfiguration?.components?.[newConfig.componentName];
+      const changedConfigs: OpsRequestConfiguration[] = [];
+
+      if (oldConfig?.limits?.cpu !== newConfig.limits?.cpu) {
+        changedConfigs.push({
+          componentName: normalizeOperationLogComponentName(dbType, newConfig.componentName),
+          parameterName: `${item.spec.type}CPU`,
+          newValue: cpuFormatToC(newConfig.limits?.cpu) || '-',
+          oldValue: cpuFormatToC(oldConfig?.limits?.cpu) || '-'
+        });
+      }
+
+      if (oldConfig?.limits?.memory !== newConfig.limits?.memory) {
+        changedConfigs.push({
+          componentName: normalizeOperationLogComponentName(dbType, newConfig.componentName),
+          parameterName: `${item.spec.type}Memory`,
+          newValue: memoryFormatToGi(newConfig.limits?.memory) || '-',
+          oldValue: memoryFormatToGi(oldConfig?.limits?.memory) || '-'
+        });
+      }
+
+      return changedConfigs;
+    });
+  }
+
+  if (item.spec.type === 'HorizontalScaling') {
+    return sortOperationLogComponents(dbType, item.spec.horizontalScaling).flatMap((newConfig) => {
+      const oldReplicas =
+        item.status?.lastConfiguration?.components?.[newConfig.componentName]?.replicas;
+
+      if (oldReplicas === newConfig.replicas) {
+        return [];
+      }
+
+      return [
+        {
+          componentName: normalizeOperationLogComponentName(dbType, newConfig.componentName),
+          parameterName: 'HorizontalScaling',
+          newValue: String(newConfig.replicas ?? '-'),
+          oldValue: String(oldReplicas ?? '-')
+        }
+      ];
+    });
+  }
+
+  if (item.spec.type === 'VolumeExpansion') {
+    return sortOperationLogComponents(dbType, item.spec.volumeExpansion).flatMap((newConfig) => {
+      const oldStorage =
+        item.status?.lastConfiguration?.components?.[newConfig.componentName]
+          ?.volumeClaimTemplates?.[0]?.storage;
+      const newStorage = newConfig.volumeClaimTemplates?.[0]?.storage;
+
+      if (oldStorage === newStorage) {
+        return [];
+      }
+
+      return [
+        {
+          componentName: normalizeOperationLogComponentName(dbType, newConfig.componentName),
+          parameterName: 'VolumeExpansion',
+          newValue: String(newStorage ?? '-'),
+          oldValue: String(oldStorage ?? '-')
+        }
+      ];
+    });
+  }
+
+  return [
+    {
+      parameterName: item.spec.type,
+      newValue: '-',
+      oldValue: '-'
+    }
+  ];
+};
+
+export const adaptOperationLog = (
+  item: KubeBlockOpsRequestType,
+  dbType: DBType
+): OpsRequestItemType => {
+  return {
+    id: item.metadata.uid,
+    name: item.metadata.name,
+    status:
+      item.status?.phase && DBReconfigStatusMap[item.status.phase]
+        ? DBReconfigStatusMap[item.status.phase]
+        : DBReconfigStatusMap.Creating,
+    startTime: new Date(item.metadata.creationTimestamp),
+    namespace: item.metadata.namespace,
+    configurations: getOperationLogConfigurations(item, dbType)
   };
 };
 

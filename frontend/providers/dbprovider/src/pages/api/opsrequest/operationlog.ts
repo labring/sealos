@@ -1,129 +1,73 @@
-import { crLabelKey, DBReconfigStatusMap } from '@/constants/db';
+import { crLabelKey, DBNameLabel } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KubeBlockOpsRequestType } from '@/types/cluster';
 import { DBType, OpsRequestItemType } from '@/types/db';
-import { cpuFormatToC, memoryFormatToGi } from '@/utils/tools';
+import { adaptOperationLog } from '@/utils/adapt';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { name } = req.query as {
+    const { name, dbType } = req.query as {
       name: string;
+      dbType: DBType;
     };
 
     const { k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
-    let labelSelector = `app.kubernetes.io/instance=${name},${crLabelKey}=${name}`;
+    const labelSelectors = [`${DBNameLabel}=${name}`, `${crLabelKey}=${name}`] as const;
 
-    const opsrequestsList = (await k8sCustomObjects.listNamespacedCustomObject(
-      'apps.kubeblocks.io',
-      'v1alpha1',
-      namespace,
-      'opsrequests',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      labelSelector
-    )) as {
+    const opsrequestsLists = (await Promise.all(
+      labelSelectors.map((labelSelector) =>
+        k8sCustomObjects.listNamespacedCustomObject(
+          'apps.kubeblocks.io',
+          'v1alpha1',
+          namespace,
+          'opsrequests',
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          labelSelector
+        )
+      )
+    )) as Array<{
       body: {
         items: KubeBlockOpsRequestType[];
       };
-    };
+    }>;
 
-    const opsrequests = opsrequestsList.body.items
-      .map((item) => {
-        const simpleTypes = ['Start', 'Stop', 'Restart'];
+    const mergedOpsrequests = Array.from(
+      opsrequestsLists
+        .flatMap((opsrequestsList) => opsrequestsList.body.items)
+        .reduce<Map<string, KubeBlockOpsRequestType>>((result, item) => {
+          const uid = item.metadata?.uid;
 
-        const configurations = (() => {
-          if (simpleTypes.includes(item.spec.type)) {
-            return [{ parameterName: item.spec.type, newValue: '-', oldValue: '-' }];
+          if (uid && !result.has(uid)) {
+            result.set(uid, item);
           }
 
-          if (item.spec.type === 'VerticalScaling') {
-            const componentName = item.spec?.verticalScaling?.[0]?.componentName!;
-            const oldConfig = item.status?.lastConfiguration?.components?.[componentName];
-            const newConfig = item.spec?.verticalScaling?.[0];
+          return result;
+        }, new Map())
+        .values()
+    ).sort((left, right) => {
+      const leftTime = new Date(left.metadata?.creationTimestamp || 0).getTime();
+      const rightTime = new Date(right.metadata?.creationTimestamp || 0).getTime();
 
-            const changedConfigs = [];
+      if (leftTime !== rightTime) {
+        return leftTime - rightTime;
+      }
 
-            if (oldConfig?.limits?.cpu !== newConfig?.limits?.cpu) {
-              changedConfigs.push({
-                parameterName: item.spec.type + 'CPU',
-                newValue: cpuFormatToC(newConfig?.limits?.cpu) || '-',
-                oldValue: cpuFormatToC(oldConfig?.limits?.cpu) || '-'
-              });
-            }
+      return (left.metadata?.uid || '').localeCompare(right.metadata?.uid || '');
+    });
 
-            if (oldConfig?.limits?.memory !== newConfig?.limits?.memory) {
-              changedConfigs.push({
-                parameterName: item.spec.type + 'Memory',
-                newValue: memoryFormatToGi(newConfig?.limits?.memory) || '-',
-                oldValue: memoryFormatToGi(oldConfig?.limits?.memory) || '-'
-              });
-            }
-
-            return changedConfigs;
-          }
-
-          if (item.spec.type === 'HorizontalScaling') {
-            const componentName = item.spec?.horizontalScaling?.[0]?.componentName!;
-            const oldReplicas =
-              item.status?.lastConfiguration?.components?.[componentName]?.replicas;
-            const newReplicas = item.spec?.horizontalScaling?.[0]?.replicas;
-
-            return [
-              {
-                parameterName: 'HorizontalScaling',
-                newValue: String(newReplicas || '-'),
-                oldValue: String(oldReplicas || '-')
-              }
-            ];
-          }
-
-          if (item.spec.type === 'VolumeExpansion') {
-            const componentName = item.spec?.volumeExpansion?.[0]?.componentName!;
-            const oldStorage =
-              item.status?.lastConfiguration?.components?.[componentName]?.volumeClaimTemplates?.[0]
-                ?.storage;
-            const newStorage = item.spec?.volumeExpansion?.[0]?.volumeClaimTemplates?.[0]?.storage;
-
-            return [
-              {
-                parameterName: 'VolumeExpansion',
-                newValue: String(newStorage || '-'),
-                oldValue: String(oldStorage || '-')
-              }
-            ];
-          }
-
-          return [
-            {
-              parameterName: item.spec.type,
-              newValue: '-',
-              oldValue: '-'
-            }
-          ];
-        })();
-
-        return {
-          id: item.metadata.uid,
-          name: item.metadata.name,
-          status:
-            item.status?.phase && DBReconfigStatusMap[item.status.phase]
-              ? DBReconfigStatusMap[item.status.phase]
-              : DBReconfigStatusMap.Creating,
-          startTime: new Date(item.metadata.creationTimestamp),
-          namespace: item.metadata.namespace,
-          configurations
-        };
-      })
-      .filter((item) => item.configurations.length > 0) as OpsRequestItemType[];
+    const opsrequests = mergedOpsrequests
+      .map((item) => adaptOperationLog(item, dbType))
+      .filter((item) => item.configurations?.length) as OpsRequestItemType[];
 
     jsonRes(res, {
       data: opsrequests
