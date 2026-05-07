@@ -4,11 +4,26 @@ export interface SourcePrice {
   storage: number;
   nodeports: number;
   gpu?: {
+    model?: string;
+    displayName?: {
+      zh?: string;
+      en?: string;
+    };
+    specType?: string;
+    specValue?: string;
+    specMemory?: string;
+    stock?: number;
+    podConfig?: {
+      annotations?: Record<string, string>;
+      resources?: {
+        limits?: Record<string, string>;
+      };
+    };
     annotationType: string;
     price: number;
-    available: number;
-    count: number;
-    vm: number;
+    available?: number;
+    count?: number;
+    vm?: number;
     icon?: string;
     name?: {
       zh?: string;

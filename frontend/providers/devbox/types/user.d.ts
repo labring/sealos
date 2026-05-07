@@ -1,3 +1,5 @@
+import type { GpuPodConfig, GpuSpecType } from './gpu';
+
 export type OAuthToken = {
   readonly access_token: string;
   readonly token_type: string;
@@ -27,11 +29,21 @@ export type userPriceType = {
   storage: number;
   nodeports: number;
   gpu?: {
+    model?: string;
+    displayName?: {
+      zh?: string;
+      en?: string;
+    };
+    specType?: GpuSpecType;
+    specValue?: string;
+    specMemory?: string;
+    stock?: number;
+    podConfig?: GpuPodConfig;
     annotationType: string;
     price: number;
-    available: number;
-    count: number;
-    vm: number;
+    available?: number;
+    count?: number;
+    vm?: number;
     icon?: string;
     name?: {
       zh?: string;
@@ -51,6 +63,12 @@ export type GpuType = {
   manufacturers: string;
   type: string;
   amount: number;
+  model?: string;
+  specType?: GpuSpecType;
+  specValue?: string;
+  specMemory?: string;
+  stock?: number;
+  podConfig?: GpuPodConfig;
   resource?: Record<string, string>;
 };
 

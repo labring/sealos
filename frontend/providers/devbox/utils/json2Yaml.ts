@@ -9,6 +9,84 @@ import { RuntimeNamespaceMap } from '@/types/static';
 
 const GPU_CORES_DEFAULT = 100;
 
+const isPureNumberString = (value: string) => /^-?\d+(\.\d+)?$/.test(value);
+
+const scaleGpuLimitValue = (resourceKey: string, resourceValue: string, amount: number) => {
+  if (amount <= 1) return resourceValue;
+  if (!isPureNumberString(resourceValue)) return resourceValue;
+  if (resourceKey.toLowerCase().includes('percentage')) return resourceValue;
+  return String(Number(resourceValue) * amount);
+};
+
+const getGpuPodConfig = (gpu?: DevboxEditTypeV2['gpu'] | DevboxEditType['gpu']) => {
+  if (!gpu?.podConfig) return undefined;
+  const annotations = gpu.podConfig.annotations || {};
+  const limits = gpu.podConfig.resources?.limits || {};
+  const amount = gpu.specType === 'GPU' ? Math.max(1, gpu.amount || 1) : 1;
+
+  const normalizedAnnotations = Object.entries(annotations).reduce<Record<string, string>>(
+    (acc, [key, value]) => {
+      if (!key || value == null) return acc;
+      acc[key] = String(value);
+      return acc;
+    },
+    {}
+  );
+
+  const normalizedLimits = Object.entries(limits).reduce<Record<string, string>>((acc, [key, value]) => {
+    if (!key || value == null) return acc;
+    const stringValue = String(value);
+    acc[key] = scaleGpuLimitValue(key, stringValue, amount);
+    return acc;
+  }, {});
+
+  if (Object.keys(normalizedAnnotations).length === 0 && Object.keys(normalizedLimits).length === 0) {
+    return undefined;
+  }
+
+  return {
+    ...(Object.keys(normalizedAnnotations).length > 0 ? { annotations: normalizedAnnotations } : {}),
+    ...(Object.keys(normalizedLimits).length > 0
+      ? {
+          resources: {
+            limits: normalizedLimits
+          }
+        }
+      : {})
+  };
+};
+
+const getLegacyGpuConfig = (gpu?: DevboxEditTypeV2['gpu'] | DevboxEditType['gpu']) => {
+  const gpuResourceKeyValue = gpu?.resource?.card;
+  const gpuCoresResourceKeyValue = gpu?.resource?.cores;
+  const hasGpu = !!gpu?.type && !!gpuResourceKeyValue;
+  const hasGpuCores = hasGpu && !!gpuCoresResourceKeyValue;
+
+  return {
+    annotations: hasGpu
+      ? {
+          [gpuTypeAnnotationKey]: gpu?.type || ''
+        }
+      : undefined,
+    limits: {
+      ...(hasGpu ? { [gpuResourceKeyValue as string]: String(gpu?.amount || 0) } : {}),
+      ...(hasGpuCores ? { [gpuCoresResourceKeyValue as string]: String(GPU_CORES_DEFAULT) } : {})
+    }
+  };
+};
+
+const getGpuConfig = (gpu?: DevboxEditTypeV2['gpu'] | DevboxEditType['gpu']) => {
+  const podConfig = getGpuPodConfig(gpu);
+  if (podConfig) {
+    return {
+      annotations: podConfig.annotations,
+      limits: podConfig.resources?.limits || {}
+    };
+  }
+
+  return getLegacyGpuConfig(gpu);
+};
+
 export const json2Devbox = (
   data: DevboxEditType,
   runtimeNamespaceMap: RuntimeNamespaceMap,
@@ -17,15 +95,9 @@ export const json2Devbox = (
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
-  const gpuResourceKeyValue = data.gpu?.resource?.card;
-  const gpuCoresResourceKeyValue = data.gpu?.resource?.cores;
-  const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
-  const hasGpuCores = hasGpu && !!gpuCoresResourceKeyValue;
-  const gpuConfigAnnotation = hasGpu
-    ? {
-        [gpuTypeAnnotationKey]: data.gpu?.type || ''
-      }
-    : undefined;
+  const gpuConfig = getGpuConfig(data.gpu);
+  const gpuLimits = gpuConfig.limits || {};
+  const gpuConfigAnnotation = gpuConfig.annotations;
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
@@ -43,8 +115,7 @@ export const json2Devbox = (
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
-        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {}),
-        ...(hasGpuCores ? { [gpuCoresResourceKeyValue]: GPU_CORES_DEFAULT } : {})
+        ...gpuLimits
       },
       runtimeRef: {
         name: data.runtimeVersion,
@@ -92,15 +163,9 @@ export const json2DevboxV2 = (
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
 ) => {
-  const gpuResourceKeyValue = data.gpu?.resource?.card;
-  const gpuCoresResourceKeyValue = data.gpu?.resource?.cores;
-  const hasGpu = !!data.gpu?.type && !!gpuResourceKeyValue;
-  const hasGpuCores = hasGpu && !!gpuCoresResourceKeyValue;
-  const gpuConfigAnnotation = hasGpu
-    ? {
-        [gpuTypeAnnotationKey]: data.gpu?.type || ''
-      }
-    : undefined;
+  const gpuConfig = getGpuConfig(data.gpu);
+  const gpuLimits = gpuConfig.limits || {};
+  const gpuConfigAnnotation = gpuConfig.annotations;
 
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
@@ -120,8 +185,7 @@ export const json2DevboxV2 = (
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
         memory: `${str2Num(data.memory)}Mi`,
         'ephemeral-storage': `${str2Num(data.storage)}Gi`,
-        ...(hasGpu ? { [gpuResourceKeyValue]: data.gpu?.amount || 0 } : {}),
-        ...(hasGpuCores ? { [gpuCoresResourceKeyValue]: GPU_CORES_DEFAULT } : {})
+        ...gpuLimits
       },
       templateID: data.templateUid,
       image: data.image,
@@ -138,10 +202,11 @@ export const json2DevboxV2 = (
             ...(draftAny.annotations || {}),
             ...gpuConfigAnnotation
           };
-        } else if (draftAny.annotations?.[gpuTypeAnnotationKey]) {
-          // Remove GPU annotation when GPU is not used
-          delete draftAny.annotations[gpuTypeAnnotationKey];
-          // If annotations becomes empty, remove it completely
+        } else if (draftAny.annotations) {
+          // Remove legacy GPU annotation when GPU is not used.
+          if (draftAny.annotations[gpuTypeAnnotationKey]) {
+            delete draftAny.annotations[gpuTypeAnnotationKey];
+          }
           if (Object.keys(draftAny.annotations).length === 0) {
             delete draftAny.annotations;
           }

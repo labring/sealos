@@ -20,6 +20,7 @@ import {
 } from '@/constants/devbox';
 import { PortInfos } from './ingress';
 import { MonitorDataResult } from './monitor';
+import type { GpuPodConfig, GpuSpecType } from './gpu';
 
 export type DevboxStatusValueType = `${DevboxStatusEnum}`;
 export type DevboxReleaseStatusValueType = `${DevboxReleaseStatusEnum}`;
@@ -32,6 +33,12 @@ export type GpuType = {
   manufacturers: string;
   type: string;
   amount: number;
+  model?: string;
+  specType?: GpuSpecType;
+  specValue?: string;
+  specMemory?: string;
+  stock?: number;
+  podConfig?: GpuPodConfig;
   resource?: Record<string, string>;
 };
 export type DevboxToleration = {

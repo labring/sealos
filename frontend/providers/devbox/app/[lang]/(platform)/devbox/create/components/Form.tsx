@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n';
 import { obj2Query } from '@/utils/tools';
 import type { DevboxEditTypeV2 } from '@/types/devbox';
+import type { GpuInventoryModel } from '@/types/gpu';
 
 import Gpu from './Gpu';
 import Cpu from './Cpu';
@@ -25,10 +26,10 @@ import { useEnvStore } from '@/stores/env';
 
 interface FormProps {
   isEdit: boolean;
-  countGpuInventory: (type: string) => number;
+  gpuInventory: GpuInventoryModel[];
 }
 
-const Form = ({ isEdit, countGpuInventory }: FormProps) => {
+const Form = ({ isEdit, gpuInventory }: FormProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations();
@@ -106,7 +107,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         {/* Usage */}
         <div className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8">
           <span className="text-lg/7 font-medium">{t('usage')}</span>
-          <Gpu countGpuInventory={countGpuInventory} />
+          <Gpu gpuInventory={gpuInventory} />
           <Cpu />
           <Memory />
           {showNfs && <NetworkStorage isEdit={isEdit} originalVolumes={originalVolumesRef.current} />}

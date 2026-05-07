@@ -20,7 +20,7 @@ import { IngressListItemType } from '@/types/ingress';
 import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
 
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
-import type { GpuAliasMap } from '@/types/gpu';
+import type { GpuAliasMap, GpuPodConfig } from '@/types/gpu';
 import {
   calculateUptime,
   cpuFormatToM,
@@ -47,6 +47,76 @@ const getGpuResourceInfo = (
   return { amount, resource: matchedAlias?.resource };
 };
 
+const getGpuLimitsFromResource = (resource: Record<string, any> | undefined) => {
+  if (!resource) return {};
+  return Object.entries(resource).reduce<Record<string, string>>((acc, [key, value]) => {
+    if (!/gpu/i.test(key)) return acc;
+    if (value === undefined || value === null) return acc;
+    acc[key] = String(value);
+    return acc;
+  }, {});
+};
+
+const getGpuAmountFromLimits = (limits: Record<string, string>, fallback: number) => {
+  const amount = Number(limits['nvidia.com/gpu'] || 0);
+  if (Number.isFinite(amount) && amount > 0) {
+    return amount;
+  }
+  return fallback;
+};
+
+const inferGpuSpecType = (limits: Record<string, string>) => {
+  const gpuMemoryPercentage = Number(limits['nvidia.com/gpumem-percentage'] || 0);
+  const gpuCoresPercentage = Number(limits['nvidia.com/gpucores'] || 0);
+  if (
+    (Number.isFinite(gpuMemoryPercentage) && gpuMemoryPercentage > 0 && gpuMemoryPercentage < 100) ||
+    (Number.isFinite(gpuCoresPercentage) && gpuCoresPercentage > 0 && gpuCoresPercentage < 100)
+  ) {
+    return 'vGPU';
+  }
+  return Object.keys(limits).length > 0 ? 'GPU' : undefined;
+};
+
+const inferGpuSpecValue = (limits: Record<string, string>, specType?: string) => {
+  if (!specType) return undefined;
+  if (specType === 'GPU') return 'full';
+
+  const gpuMemoryPercentage = Number(limits['nvidia.com/gpumem-percentage'] || 0);
+  const gpuCoresPercentage = Number(limits['nvidia.com/gpucores'] || 0);
+  const percentage =
+    Number.isFinite(gpuMemoryPercentage) && gpuMemoryPercentage > 0
+      ? gpuMemoryPercentage
+      : gpuCoresPercentage;
+  if (!Number.isFinite(percentage) || percentage <= 0) return undefined;
+
+  const denominator = Math.round(100 / percentage);
+  if (!Number.isFinite(denominator) || denominator <= 0) return undefined;
+  return `1/${denominator}`;
+};
+
+const buildGpuPodConfig = (
+  resource: Record<string, any> | undefined,
+  annotations: Record<string, string> | undefined
+): GpuPodConfig | undefined => {
+  const limits = getGpuLimitsFromResource(resource);
+  const nextAnnotations = annotations && Object.keys(annotations).length > 0 ? annotations : undefined;
+
+  if (Object.keys(limits).length === 0 && !nextAnnotations) {
+    return undefined;
+  }
+
+  return {
+    ...(nextAnnotations ? { annotations: nextAnnotations } : {}),
+    ...(Object.keys(limits).length > 0
+      ? {
+          resources: {
+            limits
+          }
+        }
+      : {})
+  };
+};
+
 export const adaptDevboxListItemV2 = (
   [devbox, template]: [
     KBDevboxTypeV2,
@@ -66,6 +136,19 @@ export const adaptDevboxListItemV2 = (
     gpuType,
     gpuAliasMap
   );
+  const gpuAnnotations = gpuType
+    ? {
+        [gpuTypeAnnotationKey]: gpuType
+      }
+    : undefined;
+  const gpuPodConfig = buildGpuPodConfig(
+    devbox.spec.resource as Record<string, any>,
+    gpuAnnotations
+  );
+  const gpuLimits = gpuPodConfig?.resources?.limits || {};
+  const specType = inferGpuSpecType(gpuLimits);
+  const specValue = inferGpuSpecValue(gpuLimits, specType);
+  const amount = getGpuAmountFromLimits(gpuLimits, Number(gpuAmount || 0));
 
   return {
     id: devbox.metadata?.uid || ``,
@@ -82,9 +165,13 @@ export const adaptDevboxListItemV2 = (
     memory: memoryFormatToMi(devbox.spec.resource.memory),
     gpu: gpuType
       ? {
+          model: gpuType,
           type: gpuType,
-          amount: Number(gpuAmount || 0),
+          amount: Number(amount || 0),
           manufacturers: 'nvidia',
+          specType,
+          specValue,
+          podConfig: gpuPodConfig,
           resource: gpuResource
         }
       : undefined,
@@ -228,10 +315,25 @@ export const adaptDevboxDetailV2 = (
       if (!gpuType) {
         return undefined;
       }
+      const gpuAnnotations = {
+        [gpuTypeAnnotationKey]: gpuType
+      };
+      const gpuPodConfig = buildGpuPodConfig(
+        devbox.spec.resource as Record<string, any>,
+        gpuAnnotations
+      );
+      const gpuLimits = gpuPodConfig?.resources?.limits || {};
+      const specType = inferGpuSpecType(gpuLimits);
+      const specValue = inferGpuSpecValue(gpuLimits, specType);
+      const amount = getGpuAmountFromLimits(gpuLimits, Number(gpuAmount || 0));
       return {
+        model: gpuType,
         type: gpuType,
-        amount: Number(gpuAmount || 0),
+        amount: Number(amount || 0),
         manufacturers: 'nvidia',
+        specType,
+        specValue,
+        podConfig: gpuPodConfig,
         resource: gpuResource
       };
     })(),

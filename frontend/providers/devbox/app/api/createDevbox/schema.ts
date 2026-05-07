@@ -43,6 +43,34 @@ const GpuSchema = z
     amount: z.number().default(1).openapi({
       description: 'GPU amount'
     }),
+    model: z.string().optional().openapi({
+      description: 'GPU model'
+    }),
+    specType: z.string().optional().openapi({
+      description: 'GPU spec type, e.g. GPU or vGPU'
+    }),
+    specValue: z.string().optional().openapi({
+      description: 'GPU spec value, e.g. full or 1/2'
+    }),
+    specMemory: z.string().optional().openapi({
+      description: 'GPU memory display text'
+    }),
+    stock: z.number().optional().openapi({
+      description: 'GPU stock snapshot for selected spec'
+    }),
+    podConfig: z
+      .object({
+        annotations: z.record(z.string()).optional(),
+        resources: z
+          .object({
+            limits: z.record(z.string()).optional()
+          })
+          .optional()
+      })
+      .optional()
+      .openapi({
+        description: 'GPU pod config from inventory spec'
+      }),
     resource: z.record(z.string()).optional().openapi({
       description: 'GPU resource map'
     })

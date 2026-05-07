@@ -4,8 +4,10 @@ import { useTranslations } from 'next-intl';
 import { CircuitBoard, Cpu, HardDrive, HdmiPort, MemoryStick } from 'lucide-react';
 
 import { cn } from '@sealos/shadcn-ui';
+import { gpuTypeAnnotationKey } from '@/constants/devbox';
 import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
+import type { DevboxEditTypeV2 } from '@/types/devbox';
 
 import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
 
@@ -21,13 +23,55 @@ interface PriceBoxProps {
     cpu: number;
     memory: number;
     pvcStorage?: number;
-    gpu?: {
-      type: string;
-      amount: number;
-    };
+    gpu?: DevboxEditTypeV2['gpu'];
   }[];
   className?: string;
 }
+
+const normalizeText = (value?: string) => value?.trim().replace(/\s+/g, '').toLowerCase() || '';
+
+const parseGpuFractionFromValue = (value?: string) => {
+  if (!value) return 1;
+  if (value === 'full') return 1;
+  const matched = value.match(/^(\d+)\/(\d+)$/);
+  if (!matched) return 1;
+
+  const numerator = Number(matched[1]);
+  const denominator = Number(matched[2]);
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return 1;
+  return numerator / denominator;
+};
+
+const getGpuSliceMultiplier = (gpu?: DevboxEditTypeV2['gpu']) => {
+  if (!gpu) return 1;
+
+  const limits = gpu.podConfig?.resources?.limits || {};
+  const memoryPercentage = Number(limits['nvidia.com/gpumem-percentage'] || 0);
+  if (Number.isFinite(memoryPercentage) && memoryPercentage > 0) {
+    return memoryPercentage / 100;
+  }
+
+  const coresPercentage = Number(limits['nvidia.com/gpucores'] || 0);
+  if (Number.isFinite(coresPercentage) && coresPercentage > 0) {
+    return coresPercentage / 100;
+  }
+
+  return parseGpuFractionFromValue(gpu.specValue);
+};
+
+const getGpuCardCount = (gpu?: DevboxEditTypeV2['gpu']) => {
+  if (!gpu) return 0;
+  if (gpu.specType !== 'GPU') return 1;
+  return Math.max(gpu.amount || 1, 1);
+};
+
+const getGpuPriceMatchKeys = (gpu?: DevboxEditTypeV2['gpu']) => {
+  if (!gpu) return [];
+  const annotationType = gpu.podConfig?.annotations?.[gpuTypeAnnotationKey];
+  return [gpu.type, gpu.model, annotationType]
+    .map((item) => normalizeText(item))
+    .filter((item, index, arr) => item && arr.indexOf(item) === index);
+};
 
 const PriceBox = ({ components = [], className }: PriceBoxProps) => {
   const t = useTranslations();
@@ -53,10 +97,24 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
       pp = sourcePrice.nodeports * 1 * 24;
 
       gp = (() => {
-        if (!gpu || !gpu.amount) return 0;
-        const item = sourcePrice?.gpu?.find((item) => item.annotationType === gpu.type);
+        if (!gpu) return 0;
+        const keys = getGpuPriceMatchKeys(gpu);
+        const item = sourcePrice?.gpu?.find((priceItem) => {
+          const priceKeys = [
+            priceItem.annotationType,
+            priceItem.model,
+            priceItem.name?.zh,
+            priceItem.name?.en
+          ]
+            .map((entry) => normalizeText(entry))
+            .filter(Boolean);
+          return keys.some((key) => priceKeys.includes(key));
+        });
         if (!item) return 0;
-        return +(item.price * gpu.amount * 24);
+
+        const cardCount = getGpuCardCount(gpu);
+        const sliceMultiplier = getGpuSliceMultiplier(gpu);
+        return +(item.price * cardCount * sliceMultiplier * 24);
       })();
 
       tp = cp + mp + sp + pp + gp;
