@@ -318,6 +318,8 @@
   "lost_file": "File Missing",
   "manage_all_resources": "Manage",
   "manage_data": "Manage Data",
+  "manage_data_disabled_not_running": "Run database first",
+  "manage_data_disabled_unsupported_type": "Type not supported",
   "manual_backup": "Manual Backup",
   "manual_backup_tip": "Tip: Backup during off-peak hours. Avoid DDL operations to prevent locking. Be patient if data size is large. Backup starts 1 min after confirmation.",
   "max_replicas": "Max Replicas: ",

@@ -27,6 +27,11 @@ import {
   Text,
   useDisclosure,
   useTheme,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   Badge
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
@@ -196,6 +201,19 @@ const DBList = ({
       }
     },
     [toast, t]
+  );
+
+  const getManageDataDisabledReason = useCallback(
+    (db: DBListItemType) => {
+      if (!DATAFLOW_SUPPORTED_TYPES.has(db.dbType)) {
+        return t('manage_data_disabled_unsupported_type');
+      }
+      if (db.status.value !== DBStatusEnum.Running) {
+        return t('manage_data_disabled_not_running');
+      }
+      return '';
+    },
+    [t]
   );
 
   const globalFilterFn: FilterFn<DBListItemType> = (row, columnId, filterValue) => {
@@ -379,165 +397,196 @@ const DBList = ({
       {
         id: 'actions',
         header: () => t('operation'),
-        cell: ({ row }) => (
-          <Flex key={row.id} justifyContent={'flex-end'}>
-            {SystemEnv.DATAFLOW_ENABLED === 'true' &&
-              DATAFLOW_SUPPORTED_TYPES.has(row.original.dbType) && (
-                <Button
-                  mr={'10px'}
-                  size={'sm'}
-                  h={'32px'}
-                  bg={'grayModern.150'}
-                  color={'grayModern.900'}
-                  _hover={{ color: 'brightBlue.600' }}
-                  leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
-                  onClick={() => handleManageData(row.original)}
-                  isDisabled={row.original.status.value !== DBStatusEnum.Running}
-                >
-                  {t('manage_data')}
-                </Button>
-              )}
-
+        cell: ({ row }) => {
+          const manageDataDisabledReason = getManageDataDisabledReason(row.original);
+          const manageDataButton = (
             <Button
-              mr={'4px'}
-              height={'32px'}
               size={'sm'}
-              fontSize={'base'}
+              h={'32px'}
               bg={'grayModern.150'}
               color={'grayModern.900'}
               _hover={{ color: 'brightBlue.600' }}
-              leftIcon={<MyIcon name={'detail'} w={'16px'} />}
-              onClick={() => {
-                track('module_view', {
-                  module: 'database',
-                  view_name: 'details',
-                  app_name: row.original.name
-                });
-                router.push(`/db/detail?name=${row.original.name}&dbType=${row.original.dbType}`);
-              }}
+              leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
+              onClick={() => handleManageData(row.original)}
+              isDisabled={!!manageDataDisabledReason}
             >
-              {t('details')}
+              {t('manage_data')}
             </Button>
+          );
 
-            <CustomMenu
-              width={100}
-              Button={
-                <Button
-                  bg={'white'}
-                  _hover={{
-                    bg: 'rgba(17, 24, 36, 0.05)',
-                    color: 'brightBlue.600'
-                  }}
-                  variant={'square'}
-                  w={'32px'}
-                  h={'32px'}
-                >
-                  <MyIcon name={'more'} px={3} />
-                </Button>
-              }
-              menuList={[
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'continue'} w={'16px'} />
-                      <Box ml={2}>{t('Continue')}</Box>
-                    </>
-                  ),
-                  onClick: () => {
-                    track({
-                      event: 'deployment_update',
-                      module: 'database',
-                      context: 'app'
-                    });
-                    handleStartApp(row.original);
-                  },
-                  isDisabled: row.original.status.value !== DBStatusEnum.Stopped
-                },
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'change'} w={'16px'} />
-                      <Box ml={2}>{t('update')}</Box>
-                    </>
-                  ),
-                  onClick: () => {
-                    track('module_view', {
-                      module: 'database',
-                      view_name: 'edit_form',
-                      app_name: row.original.name
-                    });
+          return (
+            <Flex key={row.id} justifyContent={'flex-end'}>
+              {SystemEnv.DATAFLOW_ENABLED === 'true' &&
+                (manageDataDisabledReason ? (
+                  <Popover trigger="hover" placement="top" openDelay={200}>
+                    <PopoverTrigger>
+                      <Box as="span" display="inline-flex" mr={'10px'}>
+                        {manageDataButton}
+                      </Box>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      w={'fit-content'}
+                      maxW={'240px'}
+                      px={'12px'}
+                      py={'8px'}
+                      borderRadius={'6px'}
+                      borderColor={'grayModern.200'}
+                      boxShadow={'0px 8px 24px rgba(17, 24, 36, 0.12)'}
+                      color={'grayModern.700'}
+                      fontSize={'12px'}
+                    >
+                      <PopoverArrow />
+                      <PopoverBody p={0}>{manageDataDisabledReason}</PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <Box as="span" display="inline-flex" mr={'10px'}>
+                    {manageDataButton}
+                  </Box>
+                ))}
 
-                    if (
-                      row.original.source.hasSource &&
-                      row.original.source.sourceType === 'sealaf'
-                    ) {
-                      setUpdateAppName(row.original.name);
-                      onOpenUpdateModal();
-                    } else {
-                      router.push(`/db/edit?name=${row.original.name}`);
-                    }
-                  },
-                  isDisabled:
-                    row.original.status.value === DBStatusEnum.Stopped ||
-                    (row.original.status.value === 'Updating' && !row.original.isDiskSpaceOverflow)
-                },
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'restart'} width={'16px'} />
-                      <Box ml={2}>{t('Restart')}</Box>
-                    </>
-                  ),
-                  onClick: () => {
-                    track({
-                      event: 'deployment_update',
-                      module: 'database',
-                      context: 'app'
-                    });
-                    handleRestartApp(row.original);
-                  },
-                  isDisabled:
-                    row.original.status.value === DBStatusEnum.Stopped ||
-                    row.original.status.value === 'Updating'
-                },
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'pause'} w={'16px'} />
-                      <Box ml={2}>{t('Pause')}</Box>
-                    </>
-                  ),
-                  onClick: onOpenPause(() => {
-                    track({
-                      event: 'deployment_shutdown',
-                      module: 'database',
-                      context: 'app',
-                      type: 'normal'
-                    });
-                    handlePauseApp(row.original);
-                  }),
-                  isDisabled: row.original.status.value !== DBStatusEnum.Running
-                },
-                {
-                  child: (
-                    <>
-                      <MyIcon name={'delete'} w={'16px'} />
-                      <Box ml={2}>{t('Delete')}</Box>
-                    </>
-                  ),
-                  menuItemStyle: {
-                    _hover: {
-                      color: 'red.600',
-                      bg: 'rgba(17, 24, 36, 0.05)'
-                    }
-                  },
-                  onClick: () => setDelAppName(row.original.name),
-                  isDisabled: row.original.status.value === 'Updating'
+              <Button
+                mr={'4px'}
+                height={'32px'}
+                size={'sm'}
+                fontSize={'base'}
+                bg={'grayModern.150'}
+                color={'grayModern.900'}
+                _hover={{ color: 'brightBlue.600' }}
+                leftIcon={<MyIcon name={'detail'} w={'16px'} />}
+                onClick={() => {
+                  track('module_view', {
+                    module: 'database',
+                    view_name: 'details',
+                    app_name: row.original.name
+                  });
+                  router.push(`/db/detail?name=${row.original.name}&dbType=${row.original.dbType}`);
+                }}
+              >
+                {t('details')}
+              </Button>
+
+              <CustomMenu
+                width={100}
+                Button={
+                  <Button
+                    bg={'white'}
+                    _hover={{
+                      bg: 'rgba(17, 24, 36, 0.05)',
+                      color: 'brightBlue.600'
+                    }}
+                    variant={'square'}
+                    w={'32px'}
+                    h={'32px'}
+                  >
+                    <MyIcon name={'more'} px={3} />
+                  </Button>
                 }
-              ]}
-            />
-          </Flex>
-        )
+                menuList={[
+                  {
+                    child: (
+                      <>
+                        <MyIcon name={'continue'} w={'16px'} />
+                        <Box ml={2}>{t('Continue')}</Box>
+                      </>
+                    ),
+                    onClick: () => {
+                      track({
+                        event: 'deployment_update',
+                        module: 'database',
+                        context: 'app'
+                      });
+                      handleStartApp(row.original);
+                    },
+                    isDisabled: row.original.status.value !== DBStatusEnum.Stopped
+                  },
+                  {
+                    child: (
+                      <>
+                        <MyIcon name={'change'} w={'16px'} />
+                        <Box ml={2}>{t('update')}</Box>
+                      </>
+                    ),
+                    onClick: () => {
+                      track('module_view', {
+                        module: 'database',
+                        view_name: 'edit_form',
+                        app_name: row.original.name
+                      });
+
+                      if (
+                        row.original.source.hasSource &&
+                        row.original.source.sourceType === 'sealaf'
+                      ) {
+                        setUpdateAppName(row.original.name);
+                        onOpenUpdateModal();
+                      } else {
+                        router.push(`/db/edit?name=${row.original.name}`);
+                      }
+                    },
+                    isDisabled:
+                      row.original.status.value === DBStatusEnum.Stopped ||
+                      (row.original.status.value === 'Updating' &&
+                        !row.original.isDiskSpaceOverflow)
+                  },
+                  {
+                    child: (
+                      <>
+                        <MyIcon name={'restart'} width={'16px'} />
+                        <Box ml={2}>{t('Restart')}</Box>
+                      </>
+                    ),
+                    onClick: () => {
+                      track({
+                        event: 'deployment_update',
+                        module: 'database',
+                        context: 'app'
+                      });
+                      handleRestartApp(row.original);
+                    },
+                    isDisabled:
+                      row.original.status.value === DBStatusEnum.Stopped ||
+                      row.original.status.value === 'Updating'
+                  },
+                  {
+                    child: (
+                      <>
+                        <MyIcon name={'pause'} w={'16px'} />
+                        <Box ml={2}>{t('Pause')}</Box>
+                      </>
+                    ),
+                    onClick: onOpenPause(() => {
+                      track({
+                        event: 'deployment_shutdown',
+                        module: 'database',
+                        context: 'app',
+                        type: 'normal'
+                      });
+                      handlePauseApp(row.original);
+                    }),
+                    isDisabled: row.original.status.value !== DBStatusEnum.Running
+                  },
+                  {
+                    child: (
+                      <>
+                        <MyIcon name={'delete'} w={'16px'} />
+                        <Box ml={2}>{t('Delete')}</Box>
+                      </>
+                    ),
+                    menuItemStyle: {
+                      _hover: {
+                        color: 'red.600',
+                        bg: 'rgba(17, 24, 36, 0.05)'
+                      }
+                    },
+                    onClick: () => setDelAppName(row.original.name),
+                    isDisabled: row.original.status.value === 'Updating'
+                  }
+                ]}
+              />
+            </Flex>
+          );
+        }
       }
     ],
     [
@@ -545,6 +594,7 @@ const DBList = ({
       onOpenRemarkModal,
       alerts,
       SystemEnv?.DATAFLOW_ENABLED,
+      getManageDataDisabledReason,
       onOpenPause,
       handleManageData,
       router,

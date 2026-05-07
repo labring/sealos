@@ -303,6 +303,8 @@
   "lost_file": "缺少文件",
   "manage_all_resources": "管理所有资源",
   "manage_data": "数据管理",
+  "manage_data_disabled_not_running": "需先运行数据库",
+  "manage_data_disabled_unsupported_type": "不支持该类型",
   "manual_backup": "手动备份",
   "manual_backup_tip": "建议在业务低峰期备份实例。备份期间，请勿执行DDL操作，避免锁表导致备份失败。若数据量较大，花费的时问可能较长，请耐心等待。点击 [开始备份] 后，将在1分钟后开始备份。",
   "max_replicas": "实例数最大为: ",
