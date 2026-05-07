@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "terminal-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "terminal-frontend.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "terminal-frontend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "terminal-frontend.labels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: TTYD_IMAGE
+              value: {{ .Values.terminalConfig.ttydImage | quote }}
+            - name: SITE
+              value: {{ include "terminal-frontend.cloudOrigin" . | quote }}
+            - name: KEEPALIVED
+              value: {{ .Values.terminalConfig.keepalived | quote }}
+          image: {{ .Values.image | quote }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          volumeMounts:
+            - name: terminal-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: terminal-frontend-volume
+          configMap:
+            name: {{ include "terminal-frontend.fullname" . }}-config

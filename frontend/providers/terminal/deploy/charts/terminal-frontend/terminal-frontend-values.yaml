@@ -1,0 +1,16 @@
+# Custom values for terminal frontend helm chart.
+# This file contains user-customizable configurations.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+terminalConfig:
+  ttydImage: "docker.io/labring4docker/terminal:1.25.1-5"
+  keepalived: "30m"
