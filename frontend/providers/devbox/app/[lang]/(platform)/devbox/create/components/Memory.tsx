@@ -47,7 +47,7 @@ export default function Memory() {
 
   return (
     <div className="flex items-start gap-10">
-      <Label className="w-15 font-medium text-gray-900">{t('memory')}</Label>
+      <Label className="w-[60px] font-medium text-gray-900">{t('memory')}</Label>
       <div className="flex flex-1">
         <Slider
           value={[currentIndex !== -1 ? currentIndex : 0]}

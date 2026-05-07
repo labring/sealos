@@ -54,7 +54,7 @@ const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
           <div
             key={tab.value}
             className={cn(
-              'flex w-15 cursor-pointer flex-col items-center gap-1 rounded-lg p-2 text-zinc-500 hover:bg-zinc-100',
+              'flex w-[60px] cursor-pointer flex-col items-center gap-1 rounded-lg p-2 text-zinc-500 hover:bg-zinc-100',
               currentTab === tab.value && 'bg-zinc-100 text-zinc-900'
             )}
             onClick={() => onTabChange(tab.value)}

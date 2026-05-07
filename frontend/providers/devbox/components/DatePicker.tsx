@@ -359,8 +359,8 @@ const DatePicker = ({
             </span>
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-105 p-0" align="start">
-          <div className="flex min-h-100 w-80">
+        <PopoverContent className="w-[420px] p-0" align="start">
+          <div className="flex min-h-[400px] w-80">
             <div className="flex flex-col">
               <DayPicker
                 navLayout="around"
@@ -421,7 +421,7 @@ const DatePicker = ({
                   key={JSON.stringify(item.value)}
                   variant="ghost"
                   className={cn(
-                    'h-9 w-31 justify-start rounded p-2 text-sm font-normal text-zinc-900',
+                    'h-9 w-[124px] justify-start rounded p-2 text-sm font-normal text-zinc-900',
                     recentDate.compareValue === item.compareValue && 'bg-blue-50 text-blue-600'
                   )}
                   onClick={() => handleRecentDateClick(item)}
@@ -484,7 +484,7 @@ const DatePickerInput = ({
     <div className="relative">
       <Input
         className={cn(
-          'h-8 w-30 bg-white pl-2 text-xs text-zinc-900',
+          'h-8 w-[120px] bg-white pl-2 text-xs text-zinc-900',
           error && 'border-red-500 hover:border-red-500',
           showError && 'animate-shake border-red-500 hover:border-red-500'
         )}

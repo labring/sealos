@@ -238,7 +238,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
               </SelectGroup>
             </SelectContent>
           </Select>
-          <div className="h-4 w-0.25 bg-zinc-200" />
+          <div className="h-4 w-px bg-zinc-200" />
           <Button
             variant="ghost"
             size="lg"

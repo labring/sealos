@@ -47,7 +47,7 @@ export default function TemplateDropdown({
           tags={selectedTemplateRepository?.templateRepositoryTags.map((t) => t.tag) || []}
         />
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-100 rounded-xl p-2">
+      <PopoverContent align="start" className="w-[400px] rounded-xl p-2">
         <span className="flex items-center py-1.5 text-xs/4 font-medium text-zinc-500">
           {t('template')}
         </span>

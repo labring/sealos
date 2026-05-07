@@ -92,7 +92,7 @@ const Monitor = () => {
         <div className="flex w-full flex-col gap-2 pb-1">
           {/* CPU */}
           <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-            <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+            <div className="flex shrink-0 grow flex-col gap-2">
               <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
                 <span>{t('cpu')}</span>
                 <span>{devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%</span>
@@ -111,7 +111,7 @@ const Monitor = () => {
           </div>
           {/* Memory */}
           <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-            <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+            <div className="flex shrink-0 grow flex-col gap-2">
               <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
                 <span>{t('memory')}</span>
                 <span>
@@ -134,7 +134,7 @@ const Monitor = () => {
             <>
               {/* GPU */}
               <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-                <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+                <div className="flex shrink-0 grow flex-col gap-2">
                   <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
                     <span>{t('gpu_usage')}</span>
                     <span>
@@ -155,7 +155,7 @@ const Monitor = () => {
               </div>
               {/* GPU Memory */}
               <div className="flex w-full justify-between self-stretch rounded-xl border-[0.5px] bg-white shadow-xs">
-                <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+                <div className="flex shrink-0 grow flex-col gap-2">
                   <div className="flex w-full items-center justify-between border-b border-zinc-100 p-6 text-lg/7 font-medium text-black">
                     <span>{t('gpu_memory')}</span>
                     <span>

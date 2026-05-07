@@ -261,7 +261,7 @@ const Release = () => {
         title: t('version_number'),
         key: 'tag',
         render: (item: DevboxVersionListItemType) => (
-          <div className="max-w-50 truncate text-zinc-900">{item.tag}</div>
+          <div className="max-w-[200px] truncate text-zinc-900">{item.tag}</div>
         )
       },
       {
@@ -283,7 +283,7 @@ const Release = () => {
           <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="max-w-50 cursor-pointer truncate">{item.description}</span>
+                <span className="max-w-[200px] cursor-pointer truncate">{item.description}</span>
               </TooltipTrigger>
               <TooltipContent className="max-w-[300px] break-words whitespace-pre-wrap">
                 <p>{item.description}</p>

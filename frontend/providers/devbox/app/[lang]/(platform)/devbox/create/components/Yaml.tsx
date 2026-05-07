@@ -37,14 +37,14 @@ const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
   return (
     <div className="flex gap-6">
       {/* left side */}
-      <div className="flex min-w-65 flex-col gap-4">
+      <div className="flex min-w-[260px] flex-col gap-4">
         <Tabs defaultValue="yaml" onValueChange={handleTabsChange}>
           <TabsList className="h-11 w-full">
             <TabsTrigger value="form">{t('config_form')}</TabsTrigger>
             <TabsTrigger value="yaml">{t('yaml_file')}</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="flex flex-col rounded-xl border-1 border-zinc-200">
+        <div className="flex flex-col rounded-xl border border-zinc-200">
           {yamlList.map((file, index) => (
             <div
               key={file.filename}
