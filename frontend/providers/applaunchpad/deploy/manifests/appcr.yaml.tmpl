@@ -1,3 +1,9 @@
+{{ $scheme := "https" }}
+{{ $port := .cloudPort }}
+{{ if eq .disableHttps "true" }}
+{{ $scheme = "http" }}
+{{ $port = .httpPort }}
+{{ end }}
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
@@ -6,8 +12,8 @@ metadata:
 spec:
   data:
     desc: App Launchpad
-    url: "https://applaunchpad.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
-  icon: "https://applaunchpad.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+    url: "{{ $scheme }}://applaunchpad.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }}"
+  icon: "{{ $scheme }}://applaunchpad.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }}/logo.svg"
   i18n:
     zh:
       name: 应用管理

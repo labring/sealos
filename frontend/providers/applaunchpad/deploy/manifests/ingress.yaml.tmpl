@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{ $scheme := "https" }}
+{{ $port := .cloudPort }}
+{{ if eq .disableHttps "true" }}
+{{ $scheme = "http" }}
+{{ $port = .httpPort }}
+{{ end }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -19,11 +25,11 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/configuration-snippet: |
       more_clear_headers "X-Frame-Options:";
-      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }}; connect-src * ws: wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' {{ $scheme }}://{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ $scheme }}://*.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }}";
       more_set_headers "X-Xss-Protection: 1; mode=block";
     higress.io/response-header-control-remove: X-Frame-Options
     higress.io/response-header-control-update: |
-      Content-Security-Policy "default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+      Content-Security-Policy "default-src * blob: data: *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }}; connect-src * ws: wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' {{ $scheme }}://{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }} {{ $scheme }}://*.{{ .cloudDomain }}{{ if $port }}:{{ $port }}{{ end }}"
       X-Xss-Protection "1; mode=block"
   name: applaunchpad-frontend
   namespace: applaunchpad-frontend
@@ -39,10 +45,12 @@ spec:
                 name: applaunchpad-frontend
                 port:
                   number: 3000
+{{ if not (eq .disableHttps "true") }}
   tls:
     - hosts:
         - applaunchpad.{{ .cloudDomain }}
       secretName: {{ .certSecretName }}
+{{ end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress

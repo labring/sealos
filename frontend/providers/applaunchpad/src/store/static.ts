@@ -9,6 +9,8 @@ export let REQUIRES_DOMAIN_REG = false;
 export let DOMAIN_REG_QUERY_LINK = '';
 export let DOMAIN_BINDING_DOCUMENTATION_LINK: string | null = null;
 export let DOMAIN_PORT = '';
+export let HTTP_PORT = '';
+export let DISABLE_HTTPS = false;
 export let SHOW_EVENT_ANALYZE = false;
 export let CURRENCY = Coin.shellCoin;
 export let UPLOAD_LIMIT = 50;
@@ -29,6 +31,8 @@ export const loadInitData = async () => {
     DOMAIN_REG_QUERY_LINK = res.DOMAIN_REG_QUERY_LINK;
     DOMAIN_BINDING_DOCUMENTATION_LINK = res.DOMAIN_BINDING_DOCUMENTATION_LINK;
     DOMAIN_PORT = res.DOMAIN_PORT;
+    HTTP_PORT = res.HTTP_PORT;
+    DISABLE_HTTPS = res.DISABLE_HTTPS;
     SHOW_EVENT_ANALYZE = res.SHOW_EVENT_ANALYZE;
     CURRENCY = res.CURRENCY;
     UPLOAD_LIMIT = res.fileMangerConfig.uploadLimit;
@@ -42,6 +46,8 @@ export const loadInitData = async () => {
     return {
       SEALOS_DOMAIN,
       DOMAIN_PORT,
+      HTTP_PORT,
+      DISABLE_HTTPS,
       CURRENCY,
       FORM_SLIDER_LIST_CONFIG: res.FORM_SLIDER_LIST_CONFIG,
       DESKTOP_DOMAIN: res.DESKTOP_DOMAIN,
@@ -59,6 +65,8 @@ export const serverLoadInitData = () => {
   try {
     SEALOS_DOMAIN = global.AppConfig.cloud.domain || 'cloud.sealos.io';
     DOMAIN_PORT = global.AppConfig.cloud.port || '';
+    HTTP_PORT = global.AppConfig.cloud.httpPort || '';
+    DISABLE_HTTPS = !!global.AppConfig.cloud.disableHttps;
     SHOW_EVENT_ANALYZE = global.AppConfig.launchpad.eventAnalyze.enabled;
     SEALOS_USER_DOMAINS = global.AppConfig.cloud.userDomains;
   } catch (error) {}
