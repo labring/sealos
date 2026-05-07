@@ -12,7 +12,8 @@ export function getClientAppConfigServer() {
   return validateClientAppConfigOrThrow(ClientAppConfigSchema, {
     brandName: fullConfig.template.ui.brandName,
     desktopDomain: fullConfig.template.desktopDomain,
-    currencySymbol: fullConfig.template.ui.currencySymbol,
+    currencySymbolType: fullConfig.template.ui.currencySymbolType,
+    categories: fullConfig.template.categories,
     showAuthor: fullConfig.template.features.showAuthor,
     carousel: fullConfig.template.ui.carousel
   });

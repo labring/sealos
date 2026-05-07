@@ -28,8 +28,51 @@ template:
         guide: false
 
     cdnHost: cdn.jsdelivr.net
-    excludedCategories: []
-    sidebarMenuCount: 10
+    categories:
+        - slug: ai
+          i18n:
+              en: AI
+              zh: AI
+        - slug: backend
+          i18n:
+              en: Backend
+              zh: 后端
+        - slug: blog
+          i18n:
+              en: Blog
+              zh: 博客
+        - slug: database
+          i18n:
+              en: Database
+              zh: 数据库
+        - slug: dev-ops
+          i18n:
+              en: DevOps
+              zh: 运维
+        - slug: frontend
+          i18n:
+              en: Frontend
+              zh: 前端
+        - slug: game
+          i18n:
+              en: Games
+              zh: 游戏
+        - slug: low-code
+          i18n:
+              en: Low-Code
+              zh: 低代码
+        - slug: monitor
+          i18n:
+              en: Monitoring
+              zh: 监控
+        - slug: storage
+          i18n:
+              en: Storage
+              zh: 存储
+        - slug: tool
+          i18n:
+              en: Tools
+              zh: 工具
     desktopDomain: ''
     userDomain: ''
     billingUrl: 'http://account-api.example.org'
