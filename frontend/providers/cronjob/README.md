@@ -4,7 +4,6 @@
 
 ```bash
 .
-├── Dockerfile
 ├── Makefile
 ├── README.md
 ├── deploy

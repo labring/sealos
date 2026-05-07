@@ -1,9 +1,9 @@
 # sealos app launchpad
 
 ## project tree
+
 ```bash
 .
-├── Dockerfile
 ├── Makefile
 ├── README.md
 ├── deploy
@@ -38,7 +38,7 @@
 │   │   ├── useLoading.tsx
 │   │   ├── useScreen.ts
 │   │   └── useToast.ts
-│   ├── mock 
+│   ├── mock
 │   ├── pages
 │   │   ├── 404.tsx
 │   │   ├── _app.tsx
