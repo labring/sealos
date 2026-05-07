@@ -359,9 +359,9 @@ const DatePicker = ({
             </span>
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-[420px] p-0" align="start">
-          <div className="flex min-h-[400px] w-80">
-            <div className="flex flex-col">
+        <PopoverContent className="w-[432px] p-0" align="start">
+          <div className="flex min-h-[400px]">
+            <div className="flex min-w-0 flex-1 flex-col">
               <DayPicker
                 navLayout="around"
                 mode="range"
@@ -415,13 +415,13 @@ const DatePicker = ({
             </div>
             <Separator orientation="vertical" className="bg-zinc-100" />
             {/* right date */}
-            <div className="w-full px-2 py-3">
+            <div className="flex w-[148px] shrink-0 flex-col py-3 pl-2 pr-4">
               {recentDateList.map((item) => (
                 <Button
                   key={JSON.stringify(item.value)}
                   variant="ghost"
                   className={cn(
-                    'h-9 w-[124px] justify-start rounded p-2 text-sm font-normal text-zinc-900',
+                    'h-9 w-full justify-start rounded p-2 text-sm font-normal text-zinc-900',
                     recentDate.compareValue === item.compareValue && 'bg-blue-50 text-blue-600'
                   )}
                   onClick={() => handleRecentDateClick(item)}
