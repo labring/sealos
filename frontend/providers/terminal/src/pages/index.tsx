@@ -121,7 +121,8 @@ export default function Index(props: ServiceEnv) {
 
 export async function getServerSideProps() {
   // cloud domain postmessage white list
-  const postMessageSite = 'https://' + process.env?.SITE;
+  const site = process.env?.SITE ?? '';
+  const postMessageSite = /^https?:\/\//.test(site) ? site : 'https://' + site;
 
   return {
     props: {
