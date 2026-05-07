@@ -22,20 +22,16 @@ import {
 import { ConnectionInfo } from './AppBaseInfo';
 import { generateLoginUrl } from '@/services/chat2db/user';
 import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
-import { dbTypeMap } from '@/utils/database';
 import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
 import { getDBSecret } from '@/api/db';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { ArrowLeft, Trash2, Settings } from 'lucide-react';
 const DelModal = dynamic(() => import('./DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const Header = ({
   db = defaultDBDetail,
-  conn,
-  isLargeScreen = true,
-  setShowSlider,
   alerts = {},
   isLoading = false
 }: {
@@ -70,7 +66,7 @@ const Header = ({
 
   const { executeOperation, loading, errorModalState, closeErrorModal } = useDBOperation();
   const { getDataSourceId, setDataSourceId } = useDBStore();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const handleRestartApp = useCallback(async () => {
     await executeOperation(() => restartDB(db), {
@@ -99,7 +95,7 @@ const Header = ({
   const handleManageData = useCallback(async () => {
     try {
       const orgId = '34';
-      const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
+      const secretKey = config.chat2dbAesKey;
       const userStr = localStorage.getItem('session');
       const userObj = userStr ? JSON.parse(userStr) : null;
       const userId = userObj?.user.id;
@@ -198,6 +194,7 @@ const Header = ({
           userNS,
           orgId,
           secretKey,
+          clientDomain: config.chat2dbClientDomainName,
           ui: {
             theme: ThemeAppearance.Light,
             primaryColor: PrimaryColorsType.bw,
@@ -230,7 +227,16 @@ const Header = ({
         status: 'error'
       });
     }
-  }, [toast, getDataSourceId, setDataSourceId, t, SystemEnv, db.dbName, db.dbType, i18n]);
+  }, [
+    toast,
+    getDataSourceId,
+    setDataSourceId,
+    t,
+    config.chat2dbClientDomainName,
+    db.dbName,
+    db.dbType,
+    i18n
+  ]);
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
@@ -423,7 +429,7 @@ const Header = ({
             )}
           </Flex>
 
-          {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
+          {config.chat2dbEnabled && (
             <Button
               display={'flex'}
               height={'40px'}

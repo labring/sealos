@@ -9,6 +9,7 @@
   },
   "include": [
     "next-env.d.ts",
+    "global.d.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     "__tests__/**/*.ts",

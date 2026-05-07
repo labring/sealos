@@ -300,7 +300,7 @@ const Header = ({
               flexShrink={'0'}
               gap={'4px'}
             >
-              <CurrencySymbol type={clientAppConfig.currencySymbolType} />
+              <CurrencySymbol type={clientAppConfig.currencySymbol} />
               {priceList?.[priceList.length - 1]?.value}
               <Text fontSize={'16px'}>/{t('Day')}</Text>
               <MyIcon name="help" width={'16px'} height={'16px'} color={'grayModern.500'}></MyIcon>

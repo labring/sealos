@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'next-i18next';
-import { CURRENCY } from '@/store/static';
+import { Text } from '@chakra-ui/react';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useUserStore } from '@/store/user';
 import { CurrencySymbol } from '@sealos/ui';
 import {
@@ -32,6 +33,7 @@ const PriceBox = ({
 }) => {
   const { t } = useTranslation();
   const { userSourcePrice } = useUserStore();
+  const config = useClientAppConfig();
 
   const priceList = useMemo(() => {
     if (!userSourcePrice) return [];
@@ -112,7 +114,7 @@ const PriceBox = ({
                   item.isTotal ? '!text-blue-600' : ''
                 }`}
               >
-                <CurrencySymbol type={CURRENCY} />
+                <CurrencySymbol type={config.currencySymbol} />
                 <span>{formatPrice(item.price)}</span>
               </div>
             </div>

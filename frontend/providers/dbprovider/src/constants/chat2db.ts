@@ -13,6 +13,7 @@ export interface GenerateLoginUrlOpts {
   userNS: string;
   orgId: string;
   secretKey: string;
+  clientDomain: string;
   ui?: {
     theme?: 'light' | 'dark';
     primaryColor?: string;
@@ -49,52 +50,9 @@ export enum LangType {
   JA_JP = 'ja-JP'
 }
 
-export const urlParamsDefault: IUrlParams = {
-  theme: ThemeAppearance.Light,
-  primaryColor: PrimaryColorsType.purple
-};
-
 export const yowantLayoutConfig: ILayoutState = {
   hideAvatar: true
 };
-
-export const CHAT2DB_BASE_URL = process.env.NEXT_PUBLIC_CHAT2DB_URL || 'https://app.chat2db-ai.com';
-
-export function buildChat2DBUrl(params: Partial<IUrlParams> = {}): string {
-  const finalParams: IUrlParams = {
-    ...urlParamsDefault,
-    ...yowantLayoutConfig,
-    ...params
-  };
-
-  const search = new URLSearchParams();
-  if (finalParams.theme) {
-    search.set('theme', finalParams.theme);
-  }
-  if (finalParams.primaryColor) {
-    search.set('primaryColor', finalParams.primaryColor);
-  }
-  if (finalParams.language) {
-    search.set('language', finalParams.language);
-  }
-  if (typeof finalParams.hideAvatar === 'boolean') {
-    search.set('hideAvatar', String(finalParams.hideAvatar));
-  }
-
-  return `${CHAT2DB_BASE_URL}?${search.toString()}`;
-}
-
-export type Chat2DBMessage =
-  | { type: 'change_theme'; theme: ThemeAppearance }
-  | { type: 'change_primary_color'; primaryColor: PrimaryColorsType }
-  | { type: 'change_language'; language: LangType }
-  | { type: 'change_layout_config'; layoutConfig: ILayoutState };
-
-export interface UserInfo {
-  uid: string;
-  registerType?: string;
-  isAdmin?: boolean;
-}
 
 export type DbType =
   | 'MYSQL'

@@ -3,8 +3,10 @@ import axios from 'axios';
 import { sub } from 'date-fns';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { initK8s } from 'sealos-desktop-sdk/service';
+import { Config } from '@/config';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
+    const config = Config();
     const client = await initK8s({ req });
     const { bucket } = req.body as { bucket?: string };
     if (!bucket) return jsonRes(res, { code: 400, data: { error: 'bucketName is invaild' } });
@@ -20,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const query = queries[i];
       result.push(
         axios({
-          baseURL: process.env.MONITOR_URL!,
+          baseURL: config.objectStorage.components.monitoring.url,
           // responseType: 'stream',
           method: 'GET',
           headers: {

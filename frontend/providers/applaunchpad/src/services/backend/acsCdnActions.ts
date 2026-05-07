@@ -1,13 +1,14 @@
 import { createClient } from './acsApiClient';
+import { Config } from '@/config';
 
 const ICP_STATUSES = ['DomainIsRegistration', 'DomainNotRegistration'] as const;
 
 const apiClient = createClient({
   auth: {
-    accessKeyId: global.AppConfig.launchpad.checkIcpReg.accessKeyID,
-    accessKeySecret: global.AppConfig.launchpad.checkIcpReg.accessKeySecret
+    accessKeyId: Config().launchpad.checkIcpReg.accessKeyID,
+    accessKeySecret: Config().launchpad.checkIcpReg.accessKeySecret
   },
-  host: global.AppConfig.launchpad.checkIcpReg.endpoint,
+  host: Config().launchpad.checkIcpReg.endpoint,
   version: '2018-05-10'
 });
 

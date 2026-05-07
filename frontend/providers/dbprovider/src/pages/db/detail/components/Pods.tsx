@@ -229,8 +229,8 @@ const Pods = ({
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
-                        ? `${app[col.dataIndex]}`
-                        : '-'}
+                      ? `${app[col.dataIndex]}`
+                      : '-'}
                   </Td>
                 ))}
               </Tr>

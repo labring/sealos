@@ -83,7 +83,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
 
   return (
     <Card className={cn('guide-cost', className)}>
-      <CardHeader className="h-13 border-b-1 flex items-center gap-2 border-zinc-100">
+      <CardHeader className="flex h-13 items-center gap-2 border-b-1 border-zinc-100">
         <span className="font-medium">{t('estimated_price')}</span>
         <span className="font-medium text-zinc-400">{t('daily')}</span>
       </CardHeader>

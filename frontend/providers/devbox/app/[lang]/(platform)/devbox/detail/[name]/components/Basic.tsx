@@ -122,9 +122,9 @@ const Basic = () => {
   ]);
 
   return (
-    <div className="shadow-xs flex min-w-[450px] flex-col items-start rounded-xl border-[0.5px] bg-white">
+    <div className="flex min-w-[450px] flex-col items-start rounded-xl border-[0.5px] bg-white shadow-xs">
       {/* top:basic,ssh config*/}
-      <div className="flex-grow-1 flex w-full flex-shrink-0 flex-col items-start gap-4 p-6">
+      <div className="flex w-full flex-shrink-0 flex-grow-1 flex-col items-start gap-4 p-6">
         {/* title */}
         <div className="flex items-center gap-2">
           <div className="text-lg/7 font-medium">{t('basic_info')}</div>

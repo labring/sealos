@@ -1,20 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { initK8s } from 'sealos-desktop-sdk/service';
 import { ApiResp } from '@/services/kubernet';
 import { jsonRes } from '@/services/backend/response';
-import { appLanuchPadClient } from '@/services/request';
-import axios from 'axios';
+import { getAppLaunchpadClient } from '@/services/request';
+import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const client = await initK8s({ req });
+    const config = Config();
+    const appLaunchpadClient = getAppLaunchpadClient();
     const { bucket } = req.body as { bucket?: string };
     if (!bucket) return jsonRes(res, { code: 400, data: { error: 'bucketName is invaild' } });
-    const appName = `static-host-${bucket}`;
+    const appName = `${config.objectStorage.hosting.appNamePrefix}-${bucket}`;
     const headers = {
       Authorization: req.headers.authorization
     };
-    const result = await appLanuchPadClient.get('/getAppByAppName', {
+    const result = await appLaunchpadClient.get('/getAppByAppName', {
       headers,
       params: {
         appName

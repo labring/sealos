@@ -27,8 +27,8 @@ export default function Memory() {
     }
 
     try {
-      const memoryList = env.memorySlideMarkList.split(',').map(v => Number(v.trim()));
-      return memoryList.map(memory => ({ label: String(memory), value: memory * 1024 }));
+      const memoryList = env.memorySlideMarkList.split(',').map((v) => Number(v.trim()));
+      return memoryList.map((memory) => ({ label: String(memory), value: memory * 1024 }));
     } catch (error) {
       console.error('Failed to parse memory list from env:', error);
       return [

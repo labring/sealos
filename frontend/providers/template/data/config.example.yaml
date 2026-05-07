@@ -9,7 +9,7 @@ template:
     ui:
         brandName: Sealos
         forcedLanguage: en
-        currencySymbolType: shellCoin
+        currencySymbol: shellCoin
         meta:
             canonicalUrl: https://template.example.org
             customScripts: []
