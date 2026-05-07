@@ -94,7 +94,7 @@ const UiSchema = z
       .string()
       .optional()
       .describe('Forced language code that overrides user language preference (e.g., "en", "zh")'),
-    currencySymbolType: z
+    currencySymbol: z
       .enum(['shellCoin', 'cny', 'usd'])
       .describe('Currency symbol type displayed in price components (shellCoin/cny/usd)'),
     meta: MetaSchema.describe('SEO meta tags and custom script injection'),
@@ -220,7 +220,7 @@ export const ClientAppConfigSchema = z
     carousel: CarouselSchema,
     categories: z.array(TemplateCategorySchema),
     showAuthor: z.boolean(),
-    currencySymbolType: z.enum(['shellCoin', 'cny', 'usd']),
+    currencySymbol: z.enum(['shellCoin', 'cny', 'usd']),
     desktopDomain: z.string()
   })
   .strict();

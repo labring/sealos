@@ -1,10 +1,13 @@
 import { ApiResp, jsonRes } from '@/services/backend/response';
 import { withErrorHandler } from '@/services/backend/middleware';
-import { appLanuchPadClient } from '@/services/request';
+import { getAppLaunchpadClient } from '@/services/request';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { initK8s } from 'sealos-desktop-sdk/service';
+import { Config } from '@/config';
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const config = Config();
+  const appLaunchpadClient = getAppLaunchpadClient();
   const client = await initK8s({ req });
   const { bucketName } = req.body as { bucketName?: string };
 
@@ -15,7 +18,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
     });
   }
 
-  const name = `static-host-${bucketName}`;
+  const name = `${config.objectStorage.hosting.appNamePrefix}-${bucketName}`;
   const [deleteCrResult, deleteHostResult] = await Promise.allSettled([
     client.k8sCustomObjects.deleteNamespacedCustomObject(
       'objectstorage.sealos.io',
@@ -24,7 +27,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
       'objectstoragebuckets',
       bucketName.replace(client.namespace.replace('ns-', '') + '-', '')
     ),
-    appLanuchPadClient.delete('/delAppByName', {
+    appLaunchpadClient.delete('/delAppByName', {
       headers: {
         Authorization: req.headers.authorization
       },

@@ -3,12 +3,12 @@ import MyIcon from '../Icon';
 
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 
 export default function Sidebar() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const siderbarMap = [
     {
@@ -25,7 +25,7 @@ export default function Sidebar() {
       path: '/dbs'
     },
     {
-      enabled: SystemEnv.BACKUP_ENABLED,
+      enabled: config.backupEnabled,
       label: t('Backup'),
       icon: (
         <MyIcon

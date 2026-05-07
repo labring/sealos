@@ -1,5 +1,5 @@
 import { useDBStore } from '@/store/db';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useGlobalStore } from '@/store/global';
 import { DBType } from '@/types/db';
 import { serviceSideProps } from '@/utils/i18n';
@@ -100,7 +100,7 @@ const AppDetail = ({
   const ReconfigureTableRef = useRef<ComponentRef>(null);
   const router = useRouter();
   const { t } = useTranslation();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const [isSmallScreen] = useMediaQuery('(max-width: 1180px)');
 
@@ -109,7 +109,7 @@ const AppDetail = ({
       dbType
     );
     const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql', 'mysql'].includes(dbType);
-    const BackupSupported = BackupSupportedDBTypeList.includes(dbType) && SystemEnv.BACKUP_ENABLED;
+    const BackupSupported = BackupSupportedDBTypeList.includes(dbType) && config.backupEnabled;
 
     const listNavValue = [
       {
@@ -171,7 +171,7 @@ const AppDetail = ({
       isBackupSupported: BackupSupported,
       listNav: listNavValue
     };
-  }, [SystemEnv.BACKUP_ENABLED, dbType, t]);
+  }, [config.backupEnabled, dbType, t]);
 
   const { message: toast } = useMessage();
   const { screenWidth } = useGlobalStore();

@@ -18,6 +18,7 @@ import {
   sendK8sOperationError,
   sendInternalError
 } from '@/pages/api/v2alpha/k8sContext';
+import { Config } from '@/config';
 
 async function processAppResponse(
   response: PromiseSettledResult<any>[],
@@ -33,8 +34,8 @@ async function processAppResponse(
     .flat() as DeployKindsType[];
 
   const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
-    SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-    SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
+    domain: Config().cloud.domain,
+    userDomains: Config().cloud.userDomains
   });
   const standardizedData = transformFromLegacySchema(appDetailData, undefined, namespace);
   const validatedData = LaunchpadApplicationSchema.parse(standardizedData);

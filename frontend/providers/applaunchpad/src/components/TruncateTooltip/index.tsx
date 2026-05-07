@@ -40,7 +40,9 @@ const TruncateTooltip = ({
           align="center"
           className={cn('rounded-xl break-all', contentClassName)}
         >
-          <p className="text-sm text-zinc-900 font-normal p-2">{content}</p>
+          <p className="text-sm text-zinc-900 font-normal p-2 whitespace-pre-wrap break-words">
+            {content}
+          </p>
         </TooltipContent>
       )}
     </Tooltip>

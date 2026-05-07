@@ -10,7 +10,7 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDBOperation } from '@/hooks/useDBOperation';
 import UpdateModal from '@/pages/db/detail/components/UpdateModal';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
@@ -25,9 +25,7 @@ import {
   InputLeftElement,
   InputGroup,
   Text,
-  useDisclosure,
-  useTheme,
-  Badge
+  useDisclosure
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
@@ -84,15 +82,9 @@ const DBList = ({
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
   const { message: toast } = useMessage();
-  const theme = useTheme();
   const router = useRouter();
-  const {
-    executeOperation,
-    loading: operationLoading,
-    errorModalState,
-    closeErrorModal
-  } = useDBOperation();
-  const { SystemEnv } = useEnvStore();
+  const { executeOperation, errorModalState, closeErrorModal } = useDBOperation();
+  const config = useClientAppConfig();
   const {
     isOpen: isOpenUpdateModal,
     onOpen: onOpenUpdateModal,
@@ -190,7 +182,7 @@ const DBList = ({
     async (db: DBListItemType) => {
       try {
         const orgId = '34';
-        const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
+        const secretKey = config.chat2dbAesKey;
         const userStr = typeof window !== 'undefined' ? localStorage.getItem('session') : null;
         const userObj = userStr ? JSON.parse(userStr) : null;
         const userId = userObj?.user.id;
@@ -287,6 +279,7 @@ const DBList = ({
             userNS,
             orgId,
             secretKey,
+            clientDomain: config.chat2dbClientDomainName,
             ui: {
               theme: ThemeAppearance.Light,
               primaryColor: PrimaryColorsType.bw,
@@ -320,7 +313,14 @@ const DBList = ({
         });
       }
     },
-    [router, t, toast, getDataSourceId, setDataSourceId, SystemEnv]
+    [
+      config.chat2dbAesKey,
+      config.chat2dbClientDomainName,
+      getDataSourceId,
+      toast,
+      setDataSourceId,
+      t
+    ]
   );
 
   const globalFilterFn: FilterFn<DBListItemType> = (row, columnId, filterValue) => {
@@ -513,7 +513,7 @@ const DBList = ({
         header: () => t('operation'),
         cell: ({ row }) => (
           <Flex key={row.id}>
-            {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
+            {config.chat2dbEnabled && (
               <Button
                 mr={'10px'}
                 size={'sm'}
@@ -681,7 +681,7 @@ const DBList = ({
       t,
       onOpenRemarkModal,
       alerts,
-      SystemEnv?.MANAGED_DB_ENABLED,
+      config.chat2dbEnabled,
       onOpenPause,
       handleManageData,
       router,

@@ -7,7 +7,6 @@ import {
   minReplicasKey,
   publicDomainKey
 } from '@/constants/app';
-import { SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
 import { str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
@@ -340,7 +339,10 @@ export const json2Service = (data: AppEditType) => {
     : `${clusterIpYaml}${nodePortYaml}`;
 };
 
-export const json2Ingress = (data: AppEditType) => {
+export const json2Ingress = (
+  data: AppEditType,
+  userDomains: { name: string; secretName: string }[]
+) => {
   // different protocol annotations
   const map = {
     HTTP: {
@@ -373,7 +375,7 @@ export const json2Ingress = (data: AppEditType) => {
 
       const secretName = network.customDomain
         ? network.networkName
-        : SEALOS_USER_DOMAINS.find((domain) => domain.name === network.domain)?.secretName ||
+        : userDomains.find((domain) => domain.name === network.domain)?.secretName ||
           'wildcard-cert';
       // Ingress only uses ClusterIP services, not NodePort
       const serviceName = getServiceName(data, false);
@@ -485,8 +487,11 @@ export const json2ServiceObjects = (data: AppEditType): object[] => {
   return yamlString2Objects(json2Service(data));
 };
 
-export const json2IngressObjects = (data: AppEditType): object[] => {
-  return yamlString2Objects(json2Ingress(data));
+export const json2IngressObjects = (
+  data: AppEditType,
+  userDomains: { name: string; secretName: string }[]
+): object[] => {
+  return yamlString2Objects(json2Ingress(data, userDomains));
 };
 
 export const json2ConfigMap = (data: AppEditType) => {
