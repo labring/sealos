@@ -102,8 +102,8 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     switch (currentTab) {
       case 'overview':
         return (
-          <div className="flex h-full w-full flex-col gap-2">
-            <div className="flex h-[60%] min-h-fit w-full gap-2">
+          <div className="flex h-full min-h-0 w-full flex-col gap-2">
+            <div className="flex h-[60%] min-h-0 w-full gap-2">
               <Basic />
               <div className="flex w-full flex-col gap-2">
                 <LiveMonitoring />

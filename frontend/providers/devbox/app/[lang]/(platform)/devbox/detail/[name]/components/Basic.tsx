@@ -145,24 +145,24 @@ const Basic = () => {
   ]);
 
   return (
-    <div className="flex min-w-[450px] flex-col items-start rounded-xl border-[0.5px] bg-white shadow-xs">
+    <div className="flex h-full min-h-0 min-w-[450px] flex-col items-start overflow-hidden rounded-xl border-[0.5px] bg-white shadow-xs">
       {/* top:basic,ssh config*/}
-      <div className="flex w-full shrink-0 grow flex-col items-start gap-4 p-6">
+      <div className="flex w-full min-h-0 flex-1 flex-col items-start gap-4 p-6">
         {/* title */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <div className="text-lg/7 font-medium">{t('basic_info')}</div>
           <div className="rounded-full border-[0.5px] border-zinc-200 bg-zinc-50 px-2 text-xs/4 text-zinc-700">{`${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`}</div>
         </div>
         {/* basic info */}
-        <div className="flex w-full flex-col items-start gap-4">
-          <div className="flex w-full flex-col items-start gap-5">
+        <div className="flex w-full min-h-0 flex-1 flex-col items-start gap-4">
+          <div className="flex min-h-0 w-full flex-1 flex-col items-start gap-5 overflow-y-auto pr-1">
             {basicInfoItems.map((item, index) => (
               <BasicInfoRow key={index} items={item} />
             ))}
           </div>
-          <Separator className="bg-zinc-100" />
+          <Separator className="shrink-0 bg-zinc-100" />
           {/* ssh config */}
-          <div className="flex w-full flex-col items-start gap-2">
+          <div className="flex w-full shrink-0 flex-col items-start gap-2">
             <div className="flex w-full flex-col items-start gap-1">
               {/* Title */}
               <span className="text-sm text-zinc-500">{t('ssh_config')}</span>
