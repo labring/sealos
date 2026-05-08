@@ -173,6 +173,7 @@ export const json2DevboxV2 = (
             const shortId = cm.id || nanoid();
             const volumeName = `${data.name}-volume-cm-${shortId}`;
             const configMapName = `${data.name}-cm-${shortId}`;
+            const filename = cm.path.split('/').pop() || `config-${shortId}`;
 
             newVolumes.push({
               name: volumeName,
@@ -183,7 +184,8 @@ export const json2DevboxV2 = (
 
             newVolumeMounts.push({
               name: volumeName,
-              mountPath: cm.path
+              mountPath: cm.path,
+              subPath: filename
             });
           });
         }

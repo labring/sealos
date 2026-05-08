@@ -15,7 +15,7 @@ import { patchYamlList } from '@/utils/tools';
 import { normalizeStorageDefaultGi } from '@/utils/storage';
 import { useConfirm } from '@/hooks/useConfirm';
 import { generateYamlList } from '@/utils/json2Yaml';
-import { createDevbox, updateDevbox } from '@/api/devbox';
+import { createDevbox, restartDevbox, updateDevbox } from '@/api/devbox';
 import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
 import { defaultDevboxEditValueV2, editModeMap, GpuAmountMarkList } from '@/constants/devbox';
 
@@ -33,6 +33,17 @@ import { Loading } from '@sealos/shadcn-ui/loading';
 import { track } from '@sealos/gtm';
 import { listTemplate } from '@/api/template';
 import { z } from 'zod';
+
+const normalizeConfigMaps = (configMaps: DevboxEditTypeV2['configMaps'] = []) =>
+  JSON.stringify(
+    configMaps
+      .map((item) => ({
+        id: item.id || '',
+        path: item.path,
+        content: item.content
+      }))
+      .sort((a, b) => `${a.id}:${a.path}`.localeCompare(`${b.id}:${b.path}`))
+  );
 
 const DevboxCreatePage = () => {
   const router = useRouter();
@@ -124,6 +135,13 @@ const DevboxCreatePage = () => {
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
+  });
+  const {
+    openConfirm: openConfigMapRestartConfirm,
+    ConfirmChild: ConfigMapRestartConfirmChild
+  } = useConfirm({
+    content: 'confirm_update_configmap_restart_devbox',
+    confirmText: 'confirm_update_and_restart'
   });
 
   const templateRepositoryUid = formHook.watch('templateRepositoryUid');
@@ -229,6 +247,18 @@ const DevboxCreatePage = () => {
   );
   const { guideConfigDevbox } = useGuideStore();
 
+  const hasConfigMapsChanged = useCallback(
+    (formData: DevboxEditTypeV2) => {
+      if (!isEdit || !oldDevboxEditData.current) return false;
+
+      return (
+        normalizeConfigMaps(oldDevboxEditData.current.configMaps) !==
+        normalizeConfigMaps(formData.configMaps)
+      );
+    },
+    [isEdit]
+  );
+
   const submitSuccess = async (formData: DevboxEditTypeV2) => {
     if (!guideConfigDevbox) {
       return router.push('/devbox/detail/devbox-mock');
@@ -252,6 +282,8 @@ const DevboxCreatePage = () => {
       }
 
       // update
+      const shouldRestartAfterUpdate = isEdit && hasConfigMapsChanged(formData);
+
       if (isEdit) {
         const yamlList = generateYamlList(formData, env);
         setYamlList(yamlList);
@@ -284,6 +316,14 @@ const DevboxCreatePage = () => {
           module: 'devbox',
           context: 'app'
         });
+        if (shouldRestartAfterUpdate) {
+          await restartDevbox({ devboxName: formData.name });
+          track({
+            event: 'deployment_restart',
+            module: 'devbox',
+            context: 'app'
+          });
+        }
       } else {
         await createDevbox(formData);
         track({
@@ -302,7 +342,7 @@ const DevboxCreatePage = () => {
       }
       addDevboxIDE('vscode', formData.name);
 
-      toast.success(t(applySuccess));
+      toast.success(t(shouldRestartAfterUpdate ? 'update_and_restart_success' : applySuccess));
 
       if (sourcePrice?.gpu) {
         refetchPrice();
@@ -348,7 +388,10 @@ const DevboxCreatePage = () => {
             applyBtnText={applyBtnText}
             applyCb={() =>
               formHook.handleSubmit(
-                (data) => openConfirm(() => submitSuccess(data))(),
+                (data) =>
+                  (hasConfigMapsChanged(data) ? openConfigMapRestartConfirm : openConfirm)(
+                    () => submitSuccess(data)
+                  )(),
                 submitError
               )()
             }
@@ -363,6 +406,7 @@ const DevboxCreatePage = () => {
         </div>
       </FormProvider>
       <ConfirmChild />
+      <ConfigMapRestartConfirmChild />
     </>
   );
 };
