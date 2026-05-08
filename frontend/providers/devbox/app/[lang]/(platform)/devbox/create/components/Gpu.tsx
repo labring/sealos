@@ -8,7 +8,7 @@ import { cn } from '@sealos/shadcn-ui';
 import { Label } from '@sealos/shadcn-ui/label';
 import { usePriceStore } from '@/stores/price';
 import { DevboxEditTypeV2 } from '@/types/devbox';
-import { GpuAmountMarkList } from '@/constants/devbox';
+import { GPU_AMOUNT_MAX, GpuAmountMarkList } from '@/constants/devbox';
 import type { SourcePrice } from '@/types/static';
 
 import {
@@ -39,7 +39,7 @@ export default function Gpu({
 
   const selectedGpuType = watch('gpu.type');
   const selectedGpuAmount = watch('gpu.amount');
-  const maxGpuAmount = GpuAmountMarkList[GpuAmountMarkList.length - 1]?.value ?? 4;
+  const maxGpuAmount = GPU_AMOUNT_MAX;
 
   const getGpuDisplayName = (gpu?: GpuPriceItem) => {
     if (!gpu) return '';
@@ -90,8 +90,12 @@ export default function Gpu({
   const selectedGpuTotalCount = selectedGpuType
     ? gpuTotalCountMap[selectedGpuType] || selectedGpu?.count || 0
     : 0;
+  const gpuAmountLimit =
+    selectedGpuType && selectedGpuType !== 'none'
+      ? Math.min(Math.max(0, Math.floor(selectedGpuInventory)), maxGpuAmount)
+      : maxGpuAmount;
   const gpuAmountOptions = useMemo(() => {
-    const options = [...GpuAmountMarkList];
+    const options = GpuAmountMarkList.filter((item) => item.value <= gpuAmountLimit);
 
     if (
       typeof selectedGpuAmount === 'number' &&
@@ -105,9 +109,18 @@ export default function Gpu({
     }
 
     return options.sort((a, b) => a.value - b.value);
-  }, [maxGpuAmount, selectedGpuAmount]);
+  }, [gpuAmountLimit, maxGpuAmount, selectedGpuAmount]);
   const isLegacyGpuAmount =
     typeof selectedGpuAmount === 'number' && selectedGpuAmount > maxGpuAmount;
+
+  useEffect(() => {
+    if (!selectedGpuType || selectedGpuType === 'none') return;
+    if (typeof selectedGpuAmount !== 'number') return;
+    if (selectedGpuAmount > maxGpuAmount || gpuAmountLimit <= 0) return;
+    if (selectedGpuAmount <= gpuAmountLimit) return;
+
+    setValue('gpu.amount', gpuAmountLimit);
+  }, [gpuAmountLimit, maxGpuAmount, selectedGpuAmount, selectedGpuType, setValue]);
 
   useEffect(() => {
     if (!selectedGpuType || selectedGpuType === 'none') {
