@@ -17,7 +17,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { generateYamlList } from '@/utils/json2Yaml';
 import { createDevbox, restartDevbox, updateDevbox } from '@/api/devbox';
 import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
-import { defaultDevboxEditValueV2, editModeMap, GpuAmountMarkList } from '@/constants/devbox';
+import { defaultDevboxEditValueV2, editModeMap, GPU_AMOUNT_MAX } from '@/constants/devbox';
 
 import { useEnvStore } from '@/stores/env';
 import { useIDEStore } from '@/stores/ide';
@@ -112,10 +112,7 @@ const DevboxCreatePage = () => {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);
-  const maxGpuAmount = useMemo(
-    () => GpuAmountMarkList[GpuAmountMarkList.length - 1]?.value ?? 4,
-    []
-  );
+  const maxGpuAmount = GPU_AMOUNT_MAX;
 
   useEffect(() => {
     if (isEdit) return;
@@ -136,13 +133,11 @@ const DevboxCreatePage = () => {
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
-  const {
-    openConfirm: openConfigMapRestartConfirm,
-    ConfirmChild: ConfigMapRestartConfirmChild
-  } = useConfirm({
-    content: 'confirm_update_configmap_restart_devbox',
-    confirmText: 'confirm_update_and_restart'
-  });
+  const { openConfirm: openConfigMapRestartConfirm, ConfirmChild: ConfigMapRestartConfirmChild } =
+    useConfirm({
+      content: 'confirm_update_configmap_restart_devbox',
+      confirmText: 'confirm_update_and_restart'
+    });
 
   const templateRepositoryUid = formHook.watch('templateRepositoryUid');
   const isValidTemplateRepositoryUid = z.string().uuid().safeParse(templateRepositoryUid).success;
@@ -389,14 +384,14 @@ const DevboxCreatePage = () => {
             applyCb={() =>
               formHook.handleSubmit(
                 (data) =>
-                  (hasConfigMapsChanged(data) ? openConfigMapRestartConfirm : openConfirm)(
-                    () => submitSuccess(data)
+                  (hasConfigMapsChanged(data) ? openConfigMapRestartConfirm : openConfirm)(() =>
+                    submitSuccess(data)
                   )(),
                 submitError
               )()
             }
           />
-          <div className="w-full px-5 pt-10 pb-[120px] md:px-10 lg:px-20">
+          <div className="w-full px-5 pb-[120px] pt-10 md:px-10 lg:px-20">
             {tabType === 'form' ? (
               <Form isEdit={isEdit} countGpuInventory={countGpuInventory} />
             ) : (

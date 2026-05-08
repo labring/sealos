@@ -277,9 +277,9 @@ export const podStatusMap = {
   }
 };
 
-export const GpuAmountMarkList = [
-  { label: '1', value: 1 },
-  { label: '2', value: 2 },
-  { label: '3', value: 3 },
-  { label: '4', value: 4 }
-];
+export const GPU_AMOUNT_MAX = 8;
+
+export const GpuAmountMarkList = Array.from({ length: GPU_AMOUNT_MAX }, (_, index) => {
+  const value = index + 1;
+  return { label: String(value), value };
+});
