@@ -120,6 +120,8 @@ spec:
               value: 'false'
             - name: ENABLE_WEBIDE_FEATURE
               value: 'false'
+            - name: ENABLED_IDES
+              value: '{{ default "" .enabledIDEs }}'
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

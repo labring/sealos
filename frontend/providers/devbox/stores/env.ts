@@ -22,6 +22,7 @@ export const defaultEnv: Env = {
   currencySymbol: 'shellCoin',
   enableImportFeature: 'false',
   enableWebideFeature: 'false',
+  enabledIDEs: '',
   enableAdvancedEnvAndConfigmap: 'false',
   enableAdvancedNfs: 'false',
   enableAdvancedSharedMemory: 'false',
