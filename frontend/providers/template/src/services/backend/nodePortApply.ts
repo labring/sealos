@@ -169,8 +169,9 @@ export async function applyWithNodePort(
 
   for (let i = 0; i < resources.length; i++) {
     const obj = resources[i];
-    if (obj?.kind === 'Service' && obj?.metadata?.name) {
-      const mappings = allMappings.filter((mapping) => mapping.serviceName === obj.metadata.name);
+    const serviceName = obj?.metadata?.name;
+    if (obj?.kind === 'Service' && serviceName) {
+      const mappings = allMappings.filter((mapping) => mapping.serviceName === serviceName);
       if (mappings.length > 0) {
         nodePortServices.push({ service: obj, mappings });
       }
