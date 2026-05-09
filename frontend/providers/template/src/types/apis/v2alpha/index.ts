@@ -4,11 +4,13 @@ import * as listTemplateSchemas from './list-template';
 import * as getTemplateSchemas from './get-template';
 import * as createInstanceSchemas from './create-instance';
 import * as deployTemplateSchemas from './deploy-template';
+import * as deleteInstanceSchemas from './delete-instance';
 import {
   createError400Schema,
   createError401Schema,
   createError403Schema,
   createError404Schema,
+  createError405Schema,
   createError409Schema,
   createError422Schema,
   createError500Schema,
@@ -22,6 +24,7 @@ export * as listTemplateSchemas from './list-template';
 export * as getTemplateSchemas from './get-template';
 export * as createInstanceSchemas from './create-instance';
 export * as deployTemplateSchemas from './deploy-template';
+export * as deleteInstanceSchemas from './delete-instance';
 
 export const document = createDocument({
   openapi: '3.1.0',
@@ -758,6 +761,158 @@ export const document = createDocument({
                       ErrorCode.INTERNAL_ERROR,
                       'Failed to create instance.',
                       'Template parsing error'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '503': {
+            description: 'Service Unavailable - Kubernetes cluster temporarily unreachable',
+            content: {
+              'application/json': {
+                schema: createError503Schema(),
+                examples: {
+                  clusterUnavailable: {
+                    summary: 'Cluster unreachable',
+                    value: createErrorExample(
+                      ErrorType.INTERNAL_ERROR,
+                      ErrorCode.SERVICE_UNAVAILABLE,
+                      'Kubernetes cluster is temporarily unavailable.',
+                      'connect ECONNREFUSED 10.0.0.1:6443'
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/templates/instances/{instanceName}': {
+      delete: {
+        tags: ['Mutation'],
+        summary: 'Delete template instance',
+        description:
+          'Deletes a deployed template instance from the user namespace. ' +
+          'Instances created with ownerReferences enabled delete their explicit PVCs first and then delete the Instance so Kubernetes garbage collection removes owned dependents. ' +
+          'Legacy instances without the ownerReferences-ready marker use the comprehensive label-selector cleanup path before deleting the Instance.',
+        operationId: 'deleteInstance',
+        requestParams: {
+          path: deleteInstanceSchemas.pathParams
+        },
+        responses: {
+          '204': {
+            description: 'Instance deleted successfully. No response body.'
+          },
+          '400': {
+            description: 'Bad request - invalid instance name parameter',
+            content: {
+              'application/json': {
+                schema: createError400Schema([ErrorCode.INVALID_PARAMETER]),
+                examples: {
+                  invalidParameter: {
+                    summary: 'Invalid path parameter',
+                    value: createErrorExample(
+                      ErrorType.VALIDATION_ERROR,
+                      ErrorCode.INVALID_PARAMETER,
+                      'Invalid request parameters.',
+                      [{ field: 'instanceName', message: 'Required' }]
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '401': {
+            description: 'Unauthorized - Missing or invalid kubeconfig',
+            content: {
+              'application/json': {
+                schema: createError401Schema(),
+                examples: {
+                  missingAuth: {
+                    summary: 'Missing authentication',
+                    value: createErrorExample(
+                      ErrorType.AUTHENTICATION_ERROR,
+                      ErrorCode.AUTHENTICATION_REQUIRED,
+                      'Invalid or missing kubeconfig.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '403': {
+            description: 'Forbidden - Insufficient permissions',
+            content: {
+              'application/json': {
+                schema: createError403Schema([ErrorCode.PERMISSION_DENIED]),
+                examples: {
+                  insufficientPermissions: {
+                    summary: 'Insufficient privileges to delete resources',
+                    value: createErrorExample(
+                      ErrorType.AUTHORIZATION_ERROR,
+                      ErrorCode.PERMISSION_DENIED,
+                      'Permission denied: insufficient privileges to delete resources.',
+                      'instances.app.sealos.io is forbidden'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '404': {
+            description: 'Not Found - Instance not found',
+            content: {
+              'application/json': {
+                schema: createError404Schema(),
+                examples: {
+                  instanceNotFound: {
+                    summary: 'Instance does not exist',
+                    value: createErrorExample(
+                      ErrorType.RESOURCE_ERROR,
+                      ErrorCode.NOT_FOUND,
+                      "Instance 'my-app-instance' not found."
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '405': {
+            description: 'Method Not Allowed',
+            content: {
+              'application/json': {
+                schema: createError405Schema(),
+                examples: {
+                  methodNotAllowed: {
+                    summary: 'Use DELETE',
+                    value: createErrorExample(
+                      ErrorType.CLIENT_ERROR,
+                      ErrorCode.METHOD_NOT_ALLOWED,
+                      'Method not allowed. Use DELETE.'
+                    )
+                  }
+                }
+              }
+            }
+          },
+          '500': {
+            description: 'Internal Server Error - Kubernetes API error or unexpected failure',
+            content: {
+              'application/json': {
+                schema: createError500Schema([
+                  ErrorCode.KUBERNETES_ERROR,
+                  ErrorCode.INTERNAL_ERROR
+                ]),
+                examples: {
+                  kubernetesError: {
+                    summary: 'Kubernetes API error',
+                    value: createErrorExample(
+                      ErrorType.OPERATION_ERROR,
+                      ErrorCode.KUBERNETES_ERROR,
+                      'Failed to delete instance in Kubernetes.',
+                      'Unexpected error from Kubernetes API'
                     )
                   }
                 }
