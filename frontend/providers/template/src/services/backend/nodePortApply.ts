@@ -28,6 +28,13 @@ type IngressMapping = {
   servicePort: number;
 };
 
+type ApplyWithNodePortResult = {
+  uid: string;
+  appliedKinds: string[];
+  nodePortMap: Record<string, number>;
+  externalURLs: Record<string, string>;
+};
+
 /**
  * Extract host → backend service mappings from an Ingress object.
  */
@@ -116,11 +123,7 @@ export async function applyWithNodePort(
   yamlList: string[],
   mode: ApplyMode,
   nodeIP: string
-): Promise<{
-  appliedKinds: string[];
-  nodePortMap: Record<string, number>;
-  externalURLs: Record<string, string>;
-}> {
+): Promise<ApplyWithNodePortResult> {
   // --- Phase 0: Parse & classify ---
   const resources = parseYamlList(yamlList);
 
@@ -270,7 +273,12 @@ export async function applyWithNodePort(
     if (r.kind) appliedKinds.push(r.kind);
   }
 
-  return { appliedKinds, nodePortMap, externalURLs };
+  return {
+    uid,
+    appliedKinds,
+    nodePortMap,
+    externalURLs
+  };
 }
 
 /**
@@ -282,15 +290,12 @@ async function applyStandardFlow(
   resources: AnyK8sObject[],
   instanceIndex: number,
   mode: ApplyMode
-): Promise<{
-  appliedKinds: string[];
-  nodePortMap: Record<string, number>;
-  externalURLs: Record<string, string>;
-}> {
+): Promise<ApplyWithNodePortResult> {
   if (instanceIndex === -1) {
     const yamlList = resources.map((r) => JsYaml.dump(r));
     const res = await deps.applyYamlList(yamlList, mode);
     return {
+      uid: '',
       appliedKinds: res.map((i: any) => i?.kind).filter(Boolean),
       nodePortMap: {},
       externalURLs: {}
@@ -304,6 +309,7 @@ async function applyStandardFlow(
     const yamlList = resources.map((r) => JsYaml.dump(r));
     const res = await deps.applyYamlList(yamlList, mode);
     return {
+      uid: '',
       appliedKinds: res.map((i: any) => i?.kind).filter(Boolean),
       nodePortMap: {},
       externalURLs: {}
@@ -340,6 +346,7 @@ async function applyStandardFlow(
   }
 
   return {
+    uid,
     appliedKinds: resources.map((r) => r?.kind).filter(Boolean) as string[],
     nodePortMap: {},
     externalURLs: {}
