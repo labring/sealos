@@ -1,5 +1,4 @@
 import * as k8s from '@kubernetes/client-node';
-import { Config } from '@/config';
 import { K8sApi } from './kubernetes';
 
 export const DATAFLOW_APP_NAMESPACE = 'app-system';
@@ -21,7 +20,6 @@ type HealthResponse = {
 type Logger = Pick<Console, 'warn'>;
 
 type ResolveDataflowEnabledOptions = {
-  override?: boolean | null;
   readDataflowApp?: () => Promise<DataflowApp | null>;
   fetchHealth?: (url: string) => Promise<HealthResponse>;
   logger?: Logger;
@@ -76,15 +74,10 @@ const fetchHealthWithTimeout = async (url: string): Promise<HealthResponse> => {
 };
 
 export const resolveDataflowEnabled = async ({
-  override = Config().dbprovider.features.dataflowForceEnabled,
   readDataflowApp = readDataflowAppFromCluster,
   fetchHealth = fetchHealthWithTimeout,
   logger = console
 }: ResolveDataflowEnabledOptions = {}): Promise<boolean> => {
-  if (override !== null) {
-    return override;
-  }
-
   let dataflowApp: DataflowApp | null;
 
   try {

@@ -41,13 +41,7 @@ const CloudSchema = z.strictObject({
 const FeaturesSchema = z.strictObject({
   guide: z.boolean().describe('Whether the interactive guide feature is enabled'),
   showDocument: z.boolean().describe('Whether to show the documentation entry button'),
-  fileImport: z.boolean().describe('Whether the MinIO-based file import feature is enabled'),
-  dataflowForceEnabled: z
-    .boolean()
-    .nullable()
-    .describe(
-      'Dataflow forced switch. true = force on, false = force off, null = auto-detect via K8s CR + health check'
-    )
+  fileImport: z.boolean().describe('Whether the MinIO-based file import feature is enabled')
 });
 
 /**
