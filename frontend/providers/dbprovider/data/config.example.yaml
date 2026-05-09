@@ -9,6 +9,7 @@ dbprovider:
     guide: false
     showDocument: true
     fileImport: false
+    dataflowForceEnabled: null
 
   ui:
     currencySymbol: shellCoin

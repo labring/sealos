@@ -10,7 +10,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 export async function getClientAppConfigServer() {
   const cfg = Config();
-  const dataflowEnabled = (await resolveDataflowEnabled()) === 'true';
+  const dataflowEnabled = await resolveDataflowEnabled();
 
   return validateClientAppConfigOrThrow(ClientAppConfigSchema, {
     domain: cfg.cloud.domain,
