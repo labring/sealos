@@ -25,7 +25,7 @@ export type ApplyWithNodePortDeps = {
 type IngressMapping = {
   host: string;
   serviceName: string;
-  servicePort: number;
+  servicePort: number | string;
 };
 
 type ApplyWithNodePortResult = {
@@ -52,12 +52,29 @@ function extractIngressMappings(ingress: AnyK8sObject): IngressMapping[] {
 
     const backend = paths[0]?.backend;
     const serviceName = backend?.service?.name;
-    const servicePort = backend?.service?.port?.number;
+    const servicePort = backend?.service?.port?.number ?? backend?.service?.port?.name;
     if (serviceName && servicePort) {
       mappings.push({ host, serviceName, servicePort });
     }
   }
   return mappings;
+}
+
+function getMappingKey(mapping: IngressMapping): string {
+  return `${mapping.serviceName}:${mapping.servicePort}`;
+}
+
+function getNodePortServiceName(serviceName: string): string {
+  return `${serviceName}-nodeport`;
+}
+
+function isMappedServicePort(port: any, mappings: IngressMapping[]): boolean {
+  return mappings.some((mapping) => {
+    if (typeof mapping.servicePort === 'number') {
+      return port?.port === mapping.servicePort;
+    }
+    return port?.name === mapping.servicePort;
+  });
 }
 
 /**
@@ -71,7 +88,7 @@ function buildReplacementMap(
 ): [string, string][] {
   const pairs: [string, string][] = [];
   for (const m of mappings) {
-    const nodePort = nodePortMap[m.serviceName];
+    const nodePort = nodePortMap[getMappingKey(m)];
     if (!nodePort) continue;
 
     const target = `http://${nodeIP}:${nodePort}`;
@@ -146,20 +163,17 @@ export async function applyWithNodePort(
     return applyStandardFlow(deps, resources, instanceIndex, mode);
   }
 
-  // Identify which Services need to become NodePort
-  const nodePortServiceNames = new Set(allMappings.map((m) => m.serviceName));
-  const nodePortServices: AnyK8sObject[] = [];
-  const nodePortServiceIndices = new Set<number>();
+  // Identify which Service ports need a dedicated NodePort Service.
+  // The original Service stays intact so internal-only ports are not exposed.
+  const nodePortServices: { service: AnyK8sObject; mappings: IngressMapping[] }[] = [];
 
   for (let i = 0; i < resources.length; i++) {
     const obj = resources[i];
-    if (
-      obj?.kind === 'Service' &&
-      obj?.metadata?.name &&
-      nodePortServiceNames.has(obj.metadata.name)
-    ) {
-      nodePortServices.push(obj);
-      nodePortServiceIndices.add(i);
+    if (obj?.kind === 'Service' && obj?.metadata?.name) {
+      const mappings = allMappings.filter((mapping) => mapping.serviceName === obj.metadata.name);
+      if (mappings.length > 0) {
+        nodePortServices.push({ service: obj, mappings });
+      }
     }
   }
 
@@ -190,34 +204,65 @@ export async function applyWithNodePort(
   const instanceOwnerRef =
     instanceName && uid ? generateInstanceOwnerReference(instanceName, uid)[0] : null;
 
-  // Convert Services to NodePort type and apply
+  // Create dedicated NodePort Services with only the ports referenced by Ingress backends.
   const nodePortMap: Record<string, number> = {};
-  for (const svc of nodePortServices) {
-    const meta = ensureMetadata(svc);
-    meta.namespace = deps.namespace;
+  for (const { service: svc, mappings } of nodePortServices) {
+    const sourceMeta = ensureMetadata(svc);
+    const sourcePorts = Array.isArray(svc.spec?.ports) ? svc.spec.ports : [];
+    const mappedPorts = sourcePorts.filter((port: any) => isMappedServicePort(port, mappings));
+    if (mappedPorts.length === 0) continue;
 
-    // Convert to NodePort type (unless already NodePort)
-    if (!svc.spec) svc.spec = {};
-    if (svc.spec.type !== 'NodePort') {
-      svc.spec.type = 'NodePort';
-    }
+    const nodePortServiceName = getNodePortServiceName(sourceMeta.name!);
+    const metadata: AnyK8sObject['metadata'] = {
+      name: nodePortServiceName,
+      namespace: deps.namespace
+    };
+    if (sourceMeta.labels) metadata.labels = sourceMeta.labels;
+    if (sourceMeta.annotations) metadata.annotations = sourceMeta.annotations;
+
+    const nodePortService: AnyK8sObject = {
+      apiVersion: svc.apiVersion || 'v1',
+      kind: 'Service',
+      metadata,
+      spec: {
+        type: 'NodePort',
+        selector: svc.spec?.selector,
+        ports: mappedPorts.map((port: any) => {
+          const { nodePort, ...rest } = port;
+          return rest;
+        })
+      }
+    };
+    const meta = ensureMetadata(nodePortService);
 
     // Inject owner reference
-    if (instanceOwnerRef && shouldInjectOwnerReferences(svc)) {
+    if (instanceOwnerRef && shouldInjectOwnerReferences(nodePortService)) {
       meta.ownerReferences = addOrReplaceOwnerReference(meta.ownerReferences, instanceOwnerRef);
     }
 
-    await deps.applyYamlList([JsYaml.dump(svc)], mode);
+    await deps.applyYamlList([JsYaml.dump(nodePortService)], mode);
 
     // Read back the Service to get the assigned NodePort
-    const svcName = meta.name!;
-    const { body: svcBody } = await deps.k8sCore.readNamespacedService(svcName, deps.namespace);
+    const { body: svcBody } = await deps.k8sCore.readNamespacedService(
+      nodePortServiceName,
+      deps.namespace
+    );
     const ports = svcBody?.spec?.ports;
     if (Array.isArray(ports)) {
       for (const port of ports) {
-        if (port.nodePort) {
-          nodePortMap[svcName] = port.nodePort;
-          break;
+        if (!port.nodePort) continue;
+        for (const mapping of mappings) {
+          const matchesMapping =
+            typeof mapping.servicePort === 'number'
+              ? port.port === mapping.servicePort
+              : port.name === mapping.servicePort;
+          if (matchesMapping) {
+            nodePortMap[getMappingKey(mapping)] = port.nodePort;
+            nodePortMap[nodePortServiceName] = port.nodePort;
+            if (!nodePortMap[mapping.serviceName]) {
+              nodePortMap[mapping.serviceName] = port.nodePort;
+            }
+          }
         }
       }
     }
@@ -229,7 +274,7 @@ export async function applyWithNodePort(
   // Build external URL map for response
   const externalURLs: Record<string, string> = {};
   for (const m of allMappings) {
-    const np = nodePortMap[m.serviceName];
+    const np = nodePortMap[getMappingKey(m)];
     if (np) {
       externalURLs[m.host] = `http://${nodeIP}:${np}`;
     }
@@ -240,7 +285,6 @@ export async function applyWithNodePort(
   for (let i = 0; i < resources.length; i++) {
     if (i === instanceIndex) continue;
     if (isIngressObject(resources[i])) continue;
-    if (nodePortServiceIndices.has(i)) continue;
     remaining.push(resources[i]);
   }
 
@@ -266,7 +310,7 @@ export async function applyWithNodePort(
   // Collect all applied kinds
   const appliedKinds: string[] = [];
   if (instance?.kind) appliedKinds.push(instance.kind);
-  for (const svc of nodePortServices) {
+  for (const { service: svc } of nodePortServices) {
     if (svc.kind) appliedKinds.push(svc.kind);
   }
   for (const r of remaining) {
