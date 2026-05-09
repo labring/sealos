@@ -43,6 +43,7 @@ export async function GET(req: NextRequest) {
           | 'usd',
         enableImportFeature: process.env.ENABLE_IMPORT_FEATURE || defaultEnv.enableImportFeature,
         enableWebideFeature: process.env.ENABLE_WEBIDE_FEATURE || defaultEnv.enableWebideFeature,
+        enabledIDEs: process.env.ENABLED_IDES || defaultEnv.enabledIDEs,
         enableAdvancedEnvAndConfigmap:
           process.env.ENABLE_ADVANCED_CONFIG === 'true'
             ? 'true'
