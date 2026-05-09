@@ -1,5 +1,6 @@
 import { pauseDBByName, restartDB, startDBByName, type DatabaseAlertItem } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
+import MyIcon from '@/components/Icon';
 import { defaultDBDetail } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDBOperation } from '@/hooks/useDBOperation';
@@ -12,19 +13,9 @@ import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
-import {
-  ThemeAppearance,
-  PrimaryColorsType,
-  LangType,
-  yowantLayoutConfig,
-  mapDBType
-} from '@/constants/chat2db';
+import { DATAFLOW_APP_KEY, DATAFLOW_SUPPORTED_TYPES } from '@/constants/dataflow';
 import { ConnectionInfo } from './AppBaseInfo';
-import { generateLoginUrl } from '@/services/chat2db/user';
-import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
-import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
-import { getDBSecret } from '@/api/db';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { ArrowLeft, Trash2, Settings } from 'lucide-react';
 const DelModal = dynamic(() => import('./DelModal'));
@@ -42,7 +33,7 @@ const Header = ({
   alerts: Record<string, DatabaseAlertItem>;
   isLoading?: boolean;
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const { message: toast } = useMessage();
   const {
@@ -65,7 +56,6 @@ const Header = ({
   });
 
   const { executeOperation, loading, errorModalState, closeErrorModal } = useDBOperation();
-  const { getDataSourceId, setDataSourceId } = useDBStore();
   const config = useClientAppConfig();
 
   const handleRestartApp = useCallback(async () => {
@@ -94,149 +84,22 @@ const Header = ({
 
   const handleManageData = useCallback(async () => {
     try {
-      const orgId = '34';
-      const secretKey = config.chat2dbAesKey;
-      const userStr = localStorage.getItem('session');
-      const userObj = userStr ? JSON.parse(userStr) : null;
-      const userId = userObj?.user.id;
-      const userNS = userObj?.user.nsid;
-      const userKey = `${userId}/${userNS}`;
+      const currentLang = getLangStore() || 'zh';
 
-      try {
-        const conn = await getDBSecret({
-          dbName: db.dbName,
+      sealosApp.runEvents('openDesktopApp', {
+        appKey: DATAFLOW_APP_KEY,
+        query: {
+          resourceName: db.dbName,
           dbType: db.dbType,
-          mock: false
-        });
-
-        if (!conn) {
-          return toast({
-            title: 'Connection info not ready',
-            status: 'error'
-          });
+          theme: 'light',
+          lang: currentLang
         }
-
-        const { host, port, connection, username, password } = conn;
-
-        let connectionUrl = connection;
-        switch (db.dbType) {
-          case 'mongodb':
-            connectionUrl = `mongodb://${host}:${port}`;
-            break;
-          case 'apecloud-mysql':
-            connectionUrl = `jdbc:mysql://${host}:${port}`;
-            break;
-          case 'mysql':
-            connectionUrl = `jdbc:mysql://${host}:${port}`;
-            break;
-          case 'postgresql':
-            connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
-            break;
-          case 'redis':
-            connectionUrl = `jdbc:redis://${host}:${port}`;
-            break;
-          default:
-            break;
-        }
-
-        const payload = {
-          alias: db.dbName,
-          environmentId: 2 as 1 | 2,
-          storageType: 'CLOUD' as 'LOCAL' | 'CLOUD',
-          host: host,
-          port: String(port),
-          user: username,
-          password: password,
-          url: connectionUrl,
-          type: mapDBType(db.dbType)
-        };
-
-        let currentDataSourceId = getDataSourceId(db.dbName);
-
-        if (!currentDataSourceId) {
-          try {
-            const res = await syncDatasourceFirst(payload, userKey);
-            currentDataSourceId = res?.data;
-            if (currentDataSourceId) {
-              setDataSourceId(db.dbName, currentDataSourceId);
-            }
-          } catch (err: any) {
-            if (err?.data) {
-              currentDataSourceId = err.data;
-              if (currentDataSourceId) {
-                setDataSourceId(db.dbName, currentDataSourceId);
-              }
-            } else {
-              throw err;
-            }
-          }
-        } else {
-          try {
-            const syncPayload = {
-              ...payload,
-              id: currentDataSourceId
-            };
-            await syncDatasource(syncPayload, userKey);
-          } catch (err) {
-            console.error('sync datasource:', JSON.stringify(err));
-          }
-        }
-
-        if (!currentDataSourceId) {
-          throw new Error('Failed to get or create datasource ID');
-        }
-
-        const currentLang = getLangStore() || i18n?.language || 'zh';
-        const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
-
-        const baseUrl = await generateLoginUrl({
-          userId,
-          userNS,
-          orgId,
-          secretKey,
-          clientDomain: config.chat2dbClientDomainName,
-          ui: {
-            theme: ThemeAppearance.Light,
-            primaryColor: PrimaryColorsType.bw,
-            language: chat2dbLanguage,
-            hideAvatar: yowantLayoutConfig.hideAvatar
-          }
-        });
-
-        const chat2dbUrl = new URL(baseUrl);
-        chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
-
-        sealosApp.runEvents('openDesktopApp', {
-          appKey: 'system-chat2db',
-          pathname: '',
-          query: {
-            url: chat2dbUrl.toString()
-          }
-        });
-      } catch (error) {
-        console.error('chat2db redirect failed:', error);
-        toast({
-          title: t('chat2db_redirect_failed'),
-          status: 'error'
-        });
-      }
+      });
     } catch (error) {
       console.error('handleManageData error:', error);
-      toast({
-        title: 'Failed to manage data',
-        status: 'error'
-      });
+      toast({ title: t('manage_data_redirect_failed'), status: 'error' });
     }
-  }, [
-    toast,
-    getDataSourceId,
-    setDataSourceId,
-    t,
-    config.chat2dbClientDomainName,
-    db.dbName,
-    db.dbType,
-    i18n
-  ]);
+  }, [toast, t, db.dbName, db.dbType]);
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
@@ -429,7 +292,7 @@ const Header = ({
             )}
           </Flex>
 
-          {config.chat2dbEnabled && (
+          {config.dataflowEnabled && DATAFLOW_SUPPORTED_TYPES.has(db.dbType) && (
             <Button
               display={'flex'}
               height={'40px'}
@@ -438,17 +301,23 @@ const Header = ({
               alignItems={'center'}
               gap={'8px'}
               borderRadius={'8px'}
-              background={'#0A0A0A'}
+              border={'1px solid #E4E4E7'}
+              background={'#FFF'}
               boxShadow={'0 1px 2px 0 rgba(0, 0, 0, 0.05)'}
               isLoading={loading}
               isDisabled={db.status.value !== 'Running'}
               onClick={handleManageData}
-              leftIcon={<Settings size={16} color="#FFF" />}
-              color={'#FFF'}
+              leftIcon={<Settings size={16} color="#71717A" />}
+              color={'#18181B'}
               fontFamily={'Geist, sans-serif'}
               fontSize={'14px'}
               fontWeight={'500'}
               lineHeight={'20px'}
+              _hover={{
+                color: '#FFF',
+                bg: '#000',
+                '& svg': { color: '#FFF' }
+              }}
             >
               {t('manage_data')}
             </Button>

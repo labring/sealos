@@ -33,8 +33,7 @@ enum TabEnum {
   DataImport = 'dataImport',
   ErrorLog = 'errorLog',
   Overview = 'overview',
-  OperationLog = 'operationLog',
-  chat2db = 'chat2db'
+  OperationLog = 'operationLog'
 }
 
 const OverviewSkeleton = () => {

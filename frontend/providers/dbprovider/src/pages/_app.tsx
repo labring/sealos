@@ -27,7 +27,6 @@ import {
   setupClientAppConfigDefaults
 } from '@sealos/shared';
 import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
-import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
 
@@ -274,6 +273,7 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
     }
 
     const qc = new QueryClient();
+    const { getClientAppConfigServer } = await import('@/pages/api/platform/getClientAppConfig');
     await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
     dehydratedState = dehydrate(qc);
   }
