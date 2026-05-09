@@ -156,17 +156,17 @@ export async function applyWithInstanceOwnerReferences(
   deps: ApplyWithInstanceOwnerReferencesDeps,
   yamlList: string[],
   mode: ApplyMode
-): Promise<{ appliedKinds: string[] }> {
+): Promise<{ appliedKinds: string[]; appliedResources: any[] }> {
   if (mode === 'dryrun') {
     const res = await deps.applyYamlList(yamlList, 'dryrun');
-    return { appliedKinds: res.map((i: any) => i?.kind).filter(Boolean) };
+    return { appliedKinds: res.map((i: any) => i?.kind).filter(Boolean), appliedResources: res };
   }
 
   const resources = parseYamlList(yamlList);
   const instanceIndex = resources.findIndex((r) => isInstanceObject(r));
   if (instanceIndex === -1) {
     const res = await deps.applyYamlList(yamlList, mode);
-    return { appliedKinds: res.map((i: any) => i?.kind).filter(Boolean) };
+    return { appliedKinds: res.map((i: any) => i?.kind).filter(Boolean), appliedResources: res };
   }
 
   const instance = resources[instanceIndex] as InstanceObject;
@@ -174,7 +174,7 @@ export async function applyWithInstanceOwnerReferences(
   const instanceName = instanceMeta.name;
   if (!instanceName) {
     const res = await deps.applyYamlList(yamlList, mode);
-    return { appliedKinds: res.map((i: any) => i?.kind).filter(Boolean) };
+    return { appliedKinds: res.map((i: any) => i?.kind).filter(Boolean), appliedResources: res };
   }
 
   instanceMeta.namespace = deps.namespace;
@@ -182,7 +182,7 @@ export async function applyWithInstanceOwnerReferences(
   labels[ownerReferencesKey] = ownerReferencesReadyValue;
 
   // 1) apply Instance first
-  await deps.applyYamlList([JsYaml.dump(instance)], mode);
+  const instanceResources = await deps.applyYamlList([JsYaml.dump(instance)], mode);
 
   // 2) read UID
   const uid = await readInstanceUid(deps.k8sCustomObjects, deps.namespace, instanceName);
@@ -202,10 +202,11 @@ export async function applyWithInstanceOwnerReferences(
   }
 
   // 4) apply dependents — rollback Instance on failure so cascade deletes all dependents
+  let dependentResourcesResult: any[] = [];
   if (dependentResources.length > 0) {
     const dependentYamlList = dependentResources.map((r) => JsYaml.dump(r));
     try {
-      await deps.applyYamlList(dependentYamlList, mode);
+      dependentResourcesResult = await deps.applyYamlList(dependentYamlList, mode);
     } catch (error) {
       try {
         await deps.k8sCustomObjects.deleteNamespacedCustomObject(
@@ -222,5 +223,8 @@ export async function applyWithInstanceOwnerReferences(
     }
   }
 
-  return { appliedKinds: resources.map((r) => r?.kind).filter(Boolean) as string[] };
+  return {
+    appliedKinds: resources.map((r) => r?.kind).filter(Boolean) as string[],
+    appliedResources: [...instanceResources, ...dependentResourcesResult]
+  };
 }
