@@ -13,7 +13,7 @@ export type SystemEnvResponse = {
   SHOW_DOCUMENT: boolean;
   CurrencySymbol: 'shellCoin' | 'cny' | 'usd';
   STORAGE_MAX_SIZE: number;
-  DATAFLOW_ENABLED: string;
+  DATAFLOW_ENABLED: boolean;
 };
 
 process.on('unhandledRejection', (reason, promise) => {

@@ -325,7 +325,7 @@ const Header = ({
           )}
         </Flex>
 
-        {SystemEnv.DATAFLOW_ENABLED === 'true' && DATAFLOW_SUPPORTED_TYPES.has(db.dbType) && (
+        {SystemEnv.DATAFLOW_ENABLED && DATAFLOW_SUPPORTED_TYPES.has(db.dbType) && (
           <Button
             display={'flex'}
             height={'40px'}

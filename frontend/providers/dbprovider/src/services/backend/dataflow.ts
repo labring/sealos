@@ -6,8 +6,6 @@ export const DATAFLOW_APP_NAME = 'dataflow';
 export const DATAFLOW_HEALTH_URL_ANNOTATION = 'dataflow.sealos.io/health-url';
 export const DATAFLOW_HEALTH_TIMEOUT_MS = 1200;
 
-type DataflowEnv = Partial<Record<'DATAFLOW_ENABLED' | 'WHODB_ENABLED', string>>;
-
 type DataflowApp = {
   metadata?: {
     annotations?: Record<string, string>;
@@ -22,24 +20,9 @@ type HealthResponse = {
 type Logger = Pick<Console, 'warn'>;
 
 type ResolveDataflowEnabledOptions = {
-  env?: DataflowEnv;
   readDataflowApp?: () => Promise<DataflowApp | null>;
   fetchHealth?: (url: string) => Promise<HealthResponse>;
   logger?: Logger;
-};
-
-const normalizeOverride = (value: string | undefined): string | null => {
-  const normalized = value?.trim().toLowerCase();
-
-  if (normalized === 'true') {
-    return 'true';
-  }
-
-  if (normalized === 'false') {
-    return '';
-  }
-
-  return null;
 };
 
 const isNotFoundError = (error: any) =>
@@ -47,9 +30,6 @@ const isNotFoundError = (error: any) =>
   error?.statusCode === 404 ||
   error?.body?.code === 404 ||
   error?.body?.reason === 'NotFound';
-
-const getOverride = (env: DataflowEnv) =>
-  normalizeOverride(env.DATAFLOW_ENABLED) ?? normalizeOverride(env.WHODB_ENABLED);
 
 const readDataflowAppFromCluster = async (): Promise<DataflowApp | null> => {
   const kc = K8sApi();
@@ -94,28 +74,21 @@ const fetchHealthWithTimeout = async (url: string): Promise<HealthResponse> => {
 };
 
 export const resolveDataflowEnabled = async ({
-  env = process.env as DataflowEnv,
   readDataflowApp = readDataflowAppFromCluster,
   fetchHealth = fetchHealthWithTimeout,
   logger = console
-}: ResolveDataflowEnabledOptions = {}) => {
-  const override = getOverride(env);
-
-  if (override !== null) {
-    return override;
-  }
-
+}: ResolveDataflowEnabledOptions = {}): Promise<boolean> => {
   let dataflowApp: DataflowApp | null;
 
   try {
     dataflowApp = await readDataflowApp();
   } catch (error) {
     logger.warn('[dataflow] Failed to read app-system/dataflow App CR', error);
-    return '';
+    return false;
   }
 
   if (!dataflowApp) {
-    return '';
+    return false;
   }
 
   const healthUrl = dataflowApp.metadata?.annotations?.[DATAFLOW_HEALTH_URL_ANNOTATION]?.trim();
@@ -124,20 +97,20 @@ export const resolveDataflowEnabled = async ({
     logger.warn(
       `[dataflow] App CR is missing ${DATAFLOW_HEALTH_URL_ANNOTATION} annotation; hiding DataFlow entry`
     );
-    return '';
+    return false;
   }
 
   try {
     const health = await fetchHealth(healthUrl);
 
     if (health.ok) {
-      return 'true';
+      return true;
     }
 
     logger.warn(`[dataflow] Health check returned status ${health.status}; hiding DataFlow entry`);
-    return '';
+    return false;
   } catch (error) {
     logger.warn('[dataflow] Health check failed; hiding DataFlow entry', error);
-    return '';
+    return false;
   }
 };
