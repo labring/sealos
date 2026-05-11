@@ -1,0 +1,17 @@
+# Custom values for license frontend helm chart.
+# This file contains user-customizable configurations.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+# License business configuration
+# Customize these settings based on your requirements
+licenseConfig:
+  licensePurchaseDomain: "license.sealos.io"

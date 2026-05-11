@@ -18,6 +18,13 @@ rules:
   - apiGroups: ['dataprotection.kubeblocks.io']
     resources: ['backuprepos']
     verbs: ['get', 'watch', 'list']
+  - apiGroups: ['apps.kubeblocks.io']
+    resources: ['componentversions']
+    verbs: ['get', 'watch', 'list']
+  - apiGroups: ['app.sealos.io']
+    resources: ['apps']
+    resourceNames: ['dataflow']
+    verbs: ['get']
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

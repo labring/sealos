@@ -52,6 +52,7 @@ export enum DevboxStatusEnum {
   Stopping = 'Stopping',
   Stopped = 'Stopped', // normal
   Shutdown = 'Shutdown', // cold: delete service
+  Paused = 'Paused', // pause: pause the devbox
   Running = 'Running',
   Pending = 'Pending',
   Error = 'Error',
@@ -98,6 +99,13 @@ export const devboxStatusMap = {
   [DevboxStatusEnum.Stopped]: {
     label: 'Stopped',
     value: DevboxStatusEnum.Stopped,
+    color: '#8172D8',
+    backgroundColor: '#F2F1FB',
+    dotColor: '#8172D8'
+  },
+  [DevboxStatusEnum.Paused]: {
+    label: 'Paused',
+    value: DevboxStatusEnum.Paused,
     color: '#8172D8',
     backgroundColor: '#F2F1FB',
     dotColor: '#8172D8'

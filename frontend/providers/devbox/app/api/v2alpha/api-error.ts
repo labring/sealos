@@ -4,11 +4,14 @@ import { z } from 'zod';
 import {
   buildErrorBody,
   buildValidationErrorBody,
-  ErrorCode,
-  ErrorType
+  ErrorCode as SharedErrorCode,
+  ErrorType as SharedErrorType
 } from '@sealos/shared/server/v2alpha';
 
-export { buildErrorBody, buildValidationErrorBody, ErrorCode, ErrorType };
+export { buildErrorBody, buildValidationErrorBody };
+// NOTE: Explicit local value exports avoid SWC dropping re-exported bindings in Next build.
+export const ErrorCode = SharedErrorCode;
+export const ErrorType = SharedErrorType;
 export type {
   ApiErrorResponse,
   ApiErrorDetails,

@@ -1,9 +1,9 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
-import { findTopKeyWords } from '@/utils/template';
+import { getCategorySlugs } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
-import { readTemplates } from '../../listTemplate';
+import { readTemplatesFromFile } from '../../listTemplate';
 import { Config } from '@/config';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = (req.query.language as string) || 'en';
@@ -11,10 +11,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const jsonPath = path.resolve(originalPath, 'templates.json');
 
   try {
-    const templates = readTemplates(
+    const config = Config();
+    const templates = readTemplatesFromFile(
       jsonPath,
-      Config().template.cdnHost,
-      Config().template.excludedCategories,
+      config.template.cdnHost,
+      config.template.categories,
       language
     );
 
@@ -39,15 +40,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     });
 
-    const categories = templates.map((item: TemplateType) =>
-      item.spec?.categories ? item.spec.categories : []
-    );
-    const topKeys = findTopKeyWords(categories, Config().template.sidebarMenuCount);
+    const menuKeys = getCategorySlugs(config.template.categories).join(',');
 
     jsonRes(res, {
       data: {
         templates: simplifiedTemplates,
-        menuKeys: topKeys.join(',')
+        menuKeys
       },
       code: 200
     });

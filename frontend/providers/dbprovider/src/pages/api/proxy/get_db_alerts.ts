@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
@@ -26,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { namespace } = req.query;
   const apiUrl = `${
-    process.env.DATABASE_ALERT_URL || 'http://database-alert.sealos.svc:8000'
+    Config().dbprovider.components.alerting.url
   }/v1/databases?namespace=${namespace}`;
 
   try {

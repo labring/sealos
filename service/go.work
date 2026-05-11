@@ -7,11 +7,9 @@ use (
 	./devbox
 	./exceptionmonitor
 	./hubble
-	./imagemonitor
 	./launchpad
 	./pay
 	./vlogs
-	./zombiedetector
 	./sshgate
 )
 

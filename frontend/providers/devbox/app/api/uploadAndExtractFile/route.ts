@@ -40,7 +40,8 @@ async function testContainerReady(
           resolve(false);
         });
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        console.log(error);
         resolve(false);
       });
   });
@@ -182,6 +183,7 @@ echo "=========================================="
     console.log(`File extracted successfully to ${targetDir}, output:`, result);
     return result;
   } catch (error: any) {
+    console.log(error);
     console.error('Extract failed:', error?.message || String(error));
     throw new Error(`Failed to extract file: ${error?.message || 'Unknown error'}`);
   }
@@ -292,6 +294,7 @@ export async function POST(req: NextRequest) {
         uploadSuccess = true;
         break;
       } catch (error: any) {
+        console.log(error);
         lastError = error;
         console.error(`Upload attempt ${attempt} failed:`, error.message);
         if (attempt < 3) {
@@ -310,6 +313,7 @@ export async function POST(req: NextRequest) {
       const extractResult = await extractTarFileInDevbox(kubefs, namespace, podName, containerName);
       console.log('Tar file extracted successfully, result:', extractResult);
     } catch (error: any) {
+      console.log(error);
       console.error('Extract failed:', error?.message || String(error));
       throw new Error(`Failed to extract file: ${error?.message || 'Unknown error'}`);
     }
@@ -337,6 +341,7 @@ echo "Local import completed successfully"
       ]);
       console.log('Entrypoint.sh created successfully');
     } catch (error: any) {
+      console.log(error);
       console.error('Create entrypoint failed:', error?.message || String(error));
       throw new Error(`Failed to create entrypoint: ${error?.message || 'Unknown error'}`);
     }
@@ -347,6 +352,7 @@ echo "Local import completed successfully"
       }
     });
   } catch (err: any) {
+    console.log(err);
     console.error('Upload and extract error:', err);
     return jsonRes({
       code: 500,

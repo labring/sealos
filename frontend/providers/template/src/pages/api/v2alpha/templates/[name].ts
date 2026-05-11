@@ -128,7 +128,8 @@ async function handleTemplateDetails(
         message: 'Templates catalog not found.'
       });
     }
-    getCachedTemplates(jsonPath, Config().template.cdnHost, [], language);
+    const config = Config();
+    getCachedTemplates(jsonPath, config.template.cdnHost, config.template.categories, language);
     const template = getTemplateFromCache(templateName);
 
     if (!template) {

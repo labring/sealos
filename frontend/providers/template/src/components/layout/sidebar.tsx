@@ -1,52 +1,35 @@
 import { useSearchStore } from '@/store/search';
 import { ApplicationType, SideBarMenuType } from '@/types/app';
 import { Flex, Text } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useMemo } from 'react';
-import { getTemplates } from '@/api/platform';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { getCategoryLabel } from '@/utils/template';
 
 export default function SideBar() {
   const { t, i18n } = useTranslation();
   const { appType, setAppType } = useSearchStore();
   const router = useRouter();
-
-  const { data } = useQuery(['listTemplate', i18n.language], () => getTemplates(i18n.language), {
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-    retry: 3,
-    /**
-     * Avoid executing axios with a relative baseURL during SSR render.
-     * The server will prefetch and hydrate this query from `_app.getInitialProps`.
-     */
-    enabled: typeof window !== 'undefined'
-  });
+  const clientAppConfig = useClientAppConfig();
 
   const sideBarMenu: SideBarMenuType[] = useMemo(() => {
     const base: SideBarMenuType[] = [
       {
         id: 'applications',
         type: ApplicationType.All,
-        value: 'SideBar.Applications'
+        value: t('SideBar.Applications')
       }
     ];
 
-    const menuKeys = data?.menuKeys ?? '';
-    if (!menuKeys) return base;
-
-    const menus: SideBarMenuType[] = menuKeys
-      .split(',')
-      .map((i) => i.trim())
-      .filter(Boolean)
-      .map((i) => ({
-        id: i,
-        type: i as ApplicationType,
-        value: `SideBar.${i}`
-      }));
+    const menus: SideBarMenuType[] = clientAppConfig.categories.map((category) => ({
+      id: category.slug,
+      type: category.slug as ApplicationType,
+      value: getCategoryLabel(category, i18n.language)
+    }));
 
     return [...base, ...menus];
-  }, [data?.menuKeys]);
+  }, [clientAppConfig.categories, i18n.language, t]);
 
   return (
     <Flex flexDirection="column" mt="8px" flex={1}>
@@ -78,7 +61,7 @@ export default function SideBar() {
                 fontSize={'14px'}
                 fontWeight={500}
               >
-                {t(item.value)}
+                {item.value}
               </Text>
             </Flex>
           );

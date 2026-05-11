@@ -1,24 +1,33 @@
+import { Config } from '@/config';
 import { createDatabaseSchemas } from '@/types/apis/v2alpha';
-import { getK8s, K8sApi } from '../kubernetes';
+import {
+  getEffectiveParameterConfig,
+  isMysql5742,
+  supportsParameterConfigDbType
+} from '../database-config';
+import { getK8s } from '../kubernetes';
 import { z } from 'zod';
-import { BackupSupportedDBTypeList, DBTypeEnum } from '@/constants/db';
+import { BackupSupportedDBTypeList } from '@/constants/db';
 import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster, json2ParameterConfig } from '@/utils/json2Yaml';
-import { DBEditType, EditType } from '@/types/db';
+import { DBEditType } from '@/types/db';
 import { getScore } from '@/utils/tools';
+import { fetchDatabaseVersions } from '../db-version';
 
 // Cache for version information to avoid repeated API calls
 const versionCache = new Map<string, { version: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
-//get latest version of database
+/**
+ * Get latest version of database
+ */
 async function getLatestVersion(
-  k8s: Awaited<ReturnType<typeof getK8s>>,
+  k8sClient: Awaited<ReturnType<typeof getK8s>>,
   dbType: string
 ): Promise<string> {
-  const cacheKey = `${k8s.namespace}-${dbType}`;
+  const cacheKey = `${k8sClient.namespace}-${dbType}`;
   const cached = versionCache.get(cacheKey);
   const now = Date.now();
 
@@ -27,53 +36,18 @@ async function getLatestVersion(
   }
 
   try {
-    let listClient = k8s;
-    try {
-      //use platform——kc
-      const kc = K8sApi();
-      const platformK8s = await getK8s({ kubeconfig: kc.exportConfig() });
-      if (platformK8s?.k8sCustomObjects) {
-        listClient = platformK8s;
-      }
-    } catch (platformError) {}
+    let versions = await fetchDatabaseVersions(dbType);
 
-    const { body } = (await listClient.k8sCustomObjects.listClusterCustomObject(
-      'apps.kubeblocks.io',
-      'v1alpha1',
-      'clusterversions'
-    )) as any;
-
-    const items = body?.items || [];
-    const versions: string[] = [];
-    items.forEach((item: any, index: number) => {
-      const clusterDefinitionRef = item?.spec?.clusterDefinitionRef as string;
-
-      //map db_type
-      let mappedDbType = clusterDefinitionRef;
-      if (clusterDefinitionRef === 'mysql' || clusterDefinitionRef === 'apecloud-mysql') {
-        mappedDbType = 'apecloud-mysql';
-      }
-
-      if (mappedDbType === dbType && item?.metadata?.name) {
-        if (dbType === 'apecloud-mysql' && item.metadata.name === 'mysql-8.0.33') {
-          return;
-        }
-        versions.push(item.metadata.name);
-      }
-    });
+    // Filter out mysql-8.0.33 if it exists
+    if (dbType === 'mysql') {
+      versions = versions.filter((v) => v !== 'mysql-8.0.33');
+    }
 
     if (versions.length === 0) {
       throw new Error(`No version found for database type: ${dbType}`);
     }
 
-    //sort versions
-    const sortedVersions = versions.sort((a, b) => {
-      const versionA = a.replace(/^[a-zA-Z-]+/, '');
-      const versionB = b.replace(/^[a-zA-Z-]+/, '');
-      return versionB.localeCompare(versionA, undefined, { numeric: true });
-    });
-
-    const latestVersion = sortedVersions[0];
+    const latestVersion = versions[0];
 
     versionCache.set(cacheKey, { version: latestVersion, timestamp: now });
 
@@ -164,19 +138,18 @@ export async function createDatabase(
 
   const account = json2Account(rawDbForm);
   const cluster = json2CreateCluster(rawDbForm, undefined, {
-    storageClassName: process.env.STORAGE_CLASSNAME
+    storageClassName: Config().dbprovider.storage.forcedClassName ?? undefined
   });
 
   const yamlList = [account, cluster];
 
-  if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
-    const isMysql5742 =
-      rawDbForm.dbType === 'apecloud-mysql' && rawDbForm.dbVersion === 'mysql-5.7.42';
+  if (supportsParameterConfigDbType(rawDbForm.dbType)) {
+    const mysql5742 = isMysql5742(rawDbForm.dbType, rawDbForm.dbVersion);
     const tz = rawDbForm.parameterConfig?.timeZone;
-    const shouldApplyMysql5742Timezone = isMysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
+    const shouldApplyMysql5742Timezone = mysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
 
     // For MySQL 5.7.42, only allow timezone configuration to be applied.
-    if (!isMysql5742 || shouldApplyMysql5742Timezone) {
+    if (!mysql5742 || shouldApplyMysql5742Timezone) {
       let dynamicMaxConnections: number = 0;
       try {
         dynamicMaxConnections = getScore(rawDbForm.dbType, rawDbForm.cpu, rawDbForm.memory);
@@ -184,15 +157,23 @@ export async function createDatabase(
         dynamicMaxConnections = 0;
       }
 
+      const effectiveParameterConfig = getEffectiveParameterConfig({
+        mode: 'create',
+        dbType: rawDbForm.dbType,
+        incomingParameterConfig: shouldApplyMysql5742Timezone
+          ? { timeZone: tz as string }
+          : rawDbForm.parameterConfig || {}
+      });
+
       const config = json2ParameterConfig(
         rawDbForm.dbName,
         rawDbForm.dbType,
         rawDbForm.dbVersion,
-        shouldApplyMysql5742Timezone ? { timeZone: tz as string } : rawDbForm.parameterConfig || {},
+        effectiveParameterConfig,
         dynamicMaxConnections
       );
 
-      yamlList.push(config);
+      yamlList.unshift(config);
     }
   }
 

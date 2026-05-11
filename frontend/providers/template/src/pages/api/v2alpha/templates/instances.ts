@@ -6,6 +6,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetTemplateByName } from '../../getTemplateSource';
 import JsYaml from 'js-yaml';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import { applyWithInstanceOwnerReferences } from '@/services/backend/instanceOwnerReferencesApply';
 
 interface CreateInstanceRequest {
   name: string;
@@ -181,10 +182,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get K8s client
     let namespace: string;
     let applyYamlList: (yamlList: string[], type: 'create' | 'replace' | 'dryrun') => Promise<any>;
+    let k8sCustomObjects: Awaited<ReturnType<typeof getK8s>>['k8sCustomObjects'];
     try {
       const k8sResult = await getK8s({ kubeconfig });
       namespace = k8sResult.namespace;
       applyYamlList = k8sResult.applyYamlList;
+      k8sCustomObjects = k8sResult.k8sCustomObjects;
     } catch (err: any) {
       return sendError(res, {
         status: 401,
@@ -355,7 +358,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Apply to Kubernetes
     let createdResources: any[] = [];
     try {
-      createdResources = await applyYamlList(yamls, 'create');
+      const applyResult = await applyWithInstanceOwnerReferences(
+        { applyYamlList, k8sCustomObjects, namespace },
+        yamls,
+        'create'
+      );
+      createdResources = applyResult.appliedResources;
       console.log('createdResources', createdResources);
     } catch (k8sErr: any) {
       const errMessage = k8sErr?.body?.message || k8sErr?.message || String(k8sErr);

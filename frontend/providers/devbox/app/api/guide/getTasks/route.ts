@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
       data: { needGuide, task: launchpadTask }
     });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       error: err

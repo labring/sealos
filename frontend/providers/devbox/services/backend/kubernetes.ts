@@ -188,7 +188,7 @@ export async function delYaml(kc: k8s.KubeConfig, specs: k8s.KubernetesObject[])
   try {
     for (const spec of validSpecs) {
       console.log('delete:', spec.kind);
-      client.delete(spec);
+      await client.delete(spec);
     }
   } catch (error: any) {
     // console.log('delete error', error);

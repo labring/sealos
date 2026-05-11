@@ -1,0 +1,10 @@
+# Custom values for job init helm chart.
+# This file contains user-customizable configurations.
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi

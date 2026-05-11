@@ -37,7 +37,7 @@ check_file_exits() {
 check_file_exits /usr/bin/sealos
 
 pushd "$(mktemp -d)" >/dev/null || exit
-  until curl -sLo "sealos.tar.gz"  "https://github.com/labring/sealos/releases/download/v5.1.0-beta3/sealos_5.1.0-beta3_linux_amd64.tar.gz"; do sleep 3; done
+  until curl -sLo "sealos.tar.gz"  "https://github.com/labring/sealos/releases/download/v5.1.2-rc5/sealos_5.1.2-rc5_linux_amd64.tar.gz"; do sleep 3; done
   tar -zxf sealos.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin
   rm -rf sealos.tar.gz
   sealos version

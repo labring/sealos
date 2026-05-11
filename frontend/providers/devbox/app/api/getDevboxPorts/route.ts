@@ -41,8 +41,14 @@ export async function GET(req: NextRequest) {
     const [ingressesResponse, serviceResponse] = await Promise.all([
       k8sNetworkingApp
         .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
-        .catch(() => null),
-      k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null)
+        .catch((error) => {
+          console.log(error);
+          return null;
+        }),
+      k8sCore.readNamespacedService(devboxName, namespace, undefined).catch((error) => {
+        console.log(error);
+        return null;
+      })
     ]);
 
     const ingresses = ingressesResponse?.body.items || [];
@@ -83,6 +89,7 @@ export async function GET(req: NextRequest) {
       }
     });
   } catch (err: any) {
+    console.log(err);
     console.error('Get ports error:', err);
     return jsonRes({
       code: 500,

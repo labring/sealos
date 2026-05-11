@@ -27,12 +27,12 @@ import { getQuota, listBucket } from '@/api/bucket';
 import { useRouter } from 'next/router';
 import { useOssStore } from '@/store/ossStore';
 import { useToast } from '@/hooks/useToast';
-import { formatBytes } from '@/utils/tools';
+import { formatBytesForDisplay } from '@/utils/tools';
 import { useTranslation } from 'next-i18next';
 import DeleteBucketModal from '../common/modal/DeleteBucketModal';
 import useSessionStore from '@/store/session';
 import { useQuotaGuarded } from '@sealos/shared';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 function MoreMenu({ bucket }: { bucket: TBucket }) {
   const router = useRouter();
@@ -202,13 +202,13 @@ function BucketOverview({ ...styles }: StackProps) {
           text={
             <Stack color={'grayModern.900'} w="80px">
               <Text>
-                {t('total')}: {formatBytes(limit).toString()}
+                {t('total')}: {formatBytesForDisplay(limit)}
               </Text>
               <Text>
-                {t('used')}: {formatBytes(used).toString()}
+                {t('used')}: {formatBytesForDisplay(used)}
               </Text>
               <Text>
-                {t('remaining')}: {formatBytes(limit - used).toString()}
+                {t('remaining')}: {formatBytesForDisplay(limit - used)}
               </Text>
             </Stack>
           }
@@ -236,7 +236,7 @@ export default function SideBar() {
     },
     enabled: !!s3client
   });
-  const bucketList = listBucketQuery.data?.list || [];
+  const bucketList = useMemo(() => listBucketQuery.data?.list ?? [], [listBucketQuery.data?.list]);
   const currentBucket = useOssStore((s) => s.currentBucket);
   const switchBucket = useOssStore((s) => s.switchBucket);
   useEffect(() => {
@@ -248,7 +248,7 @@ export default function SideBar() {
         else switchBucket(bucketList[0]);
       }
     }
-  }, [bucketList]);
+  }, [bucketList, currentBucket, switchBucket]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return (

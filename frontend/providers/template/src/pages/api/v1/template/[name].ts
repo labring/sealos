@@ -4,7 +4,7 @@ import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
-import { readTemplates } from '../../listTemplate';
+import { readTemplatesFromFile } from '../../listTemplate';
 import { GetTemplateByName } from '../../getTemplateSource';
 import { Config } from '@/config';
 
@@ -49,7 +49,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const templates = readTemplates(jsonPath, Config().template.cdnHost, [], language);
+    const config = Config();
+    const templates = readTemplatesFromFile(
+      jsonPath,
+      config.template.cdnHost,
+      config.template.categories,
+      language
+    );
     const template = templates.find((t) => t.metadata.name === templateName);
 
     if (!template) {

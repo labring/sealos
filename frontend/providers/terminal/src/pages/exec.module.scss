@@ -1,0 +1,14 @@
+.root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #2b2b2b;
+}
+
+.err {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

@@ -7,7 +7,7 @@ export const query = z.object({
   podName: z.string().nonempty('podName is required'),
   dbType: z
     .enum(DBTypeEnum)
-    .extract(['mysql', DBTypeEnum.mongodb, DBTypeEnum.redis, DBTypeEnum.postgresql]),
+    .extract(['mysql', 'notapemysql', DBTypeEnum.mongodb, DBTypeEnum.redis, DBTypeEnum.postgresql]),
   logType: z.enum(LogTypeEnum)
 });
 

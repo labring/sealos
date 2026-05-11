@@ -86,5 +86,20 @@ export const ServiceLogConfigs: Record<SupportReconfigureDBType, LoggingConfigur
           )
           .sort((a, b) => b.updateTime.getTime() - a.updateTime.getTime())
     }
+  },
+  mysql: {
+    [LogTypeEnum.RuntimeLog]: {
+      path: '/data/mysql/log',
+      containerNames: ['mysql', 'lorry'],
+      filter: (files: TFile[]) =>
+        files
+          .filter(
+            (f) =>
+              f.size > 0 &&
+              (f.name.toLowerCase().includes('mysqld-error') ||
+                f.name.toLowerCase().includes('slow-query'))
+          )
+          .sort((a, b) => b.updateTime.getTime() - a.updateTime.getTime())
+    }
   }
 };

@@ -29,6 +29,7 @@ export async function DELETE(req: NextRequest) {
       data: 'success delete devbox version'
     });
   } catch (err: any) {
+    console.log(err);
     return jsonRes<ApiResp>({
       code: 500,
       error: err

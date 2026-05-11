@@ -1,4 +1,12 @@
+import { Config } from '@/config';
 import { authSession } from '@/services/backend/auth';
+import {
+  getDBConfigurationByName,
+  getEffectiveParameterConfig,
+  extractParameterConfigFromConfiguration,
+  isMysql5742,
+  supportsParameterConfigDbType
+} from '@/services/backend/database-config';
 import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
@@ -24,7 +32,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       isEdit: boolean;
       backupInfo?: BackupItemType;
     };
-    console.log('api createDB dbForm', dbForm);
 
     const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
@@ -49,9 +56,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         opsRequests.push(verticalScalingYaml);
       }
 
+      let shouldNotifyReplicaChange = false;
       if (replicas !== dbForm.replicas) {
         const horizontalScalingYaml = json2ResourceOps(dbForm, 'HorizontalScaling');
         opsRequests.push(horizontalScalingYaml);
+        // Mark for notification after ops are applied
+        const mongoVersionsRequiringNotification = [
+          'mongodb-6.0',
+          'mongodb-5.0.20',
+          'mongodb-5.0',
+          'mongodb-4.4',
+          'mongodb-4.2',
+          'mongodb-4.0'
+        ];
+        if (mongoVersionsRequiringNotification.includes(dbForm.dbVersion)) {
+          shouldNotifyReplicaChange = true;
+        }
       }
 
       if (dbForm.storage > storage) {
@@ -60,24 +80,52 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       // Handle parameter configuration updates
-      if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-        const isMysql5742 =
-          dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42';
+      if (supportsParameterConfigDbType(dbForm.dbType) && dbForm.dbType !== 'mysql') {
+        const mysql5742 = isMysql5742(dbForm.dbType, dbForm.dbVersion);
         const tz = dbForm.parameterConfig?.timeZone;
         const shouldApplyMysql5742Timezone =
-          isMysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
+          mysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
 
-        if (!isMysql5742 || shouldApplyMysql5742Timezone) {
+        if (!mysql5742 || shouldApplyMysql5742Timezone) {
           try {
-            const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+            const dynamicMaxConnections = mysql5742
+              ? undefined
+              : getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+            let storedParameterConfig = undefined;
+            if (dbForm.dbType === 'apecloud-mysql') {
+              const configurationBody = await getDBConfigurationByName({
+                k8sCustomObjects,
+                namespace,
+                dbName: dbForm.dbName,
+                dbType: dbForm.dbType
+              });
+
+              if (!configurationBody) {
+                throw new Error(
+                  'Failed to load current MySQL configuration for safe parameter preservation'
+                );
+              }
+
+              storedParameterConfig = extractParameterConfigFromConfiguration(
+                configurationBody,
+                dbForm.dbType
+              );
+            }
+            const effectiveParameterConfig = getEffectiveParameterConfig({
+              mode: 'edit',
+              dbType: dbForm.dbType,
+              incomingParameterConfig: shouldApplyMysql5742Timezone
+                ? { timeZone: tz as string }
+                : dbForm.parameterConfig,
+              storedParameterConfig
+            });
             const configYaml = json2ParameterConfig(
               dbForm.dbName,
               dbForm.dbType,
               dbForm.dbVersion,
-              shouldApplyMysql5742Timezone ? { timeZone: tz as string } : dbForm.parameterConfig,
+              effectiveParameterConfig,
               dynamicMaxConnections
             );
-            console.log('api createDB configYaml', configYaml);
             await applyYamlList([configYaml], 'replace');
           } catch (err: any) {
             console.log('Failed to update parameter configuration:', err);
@@ -90,8 +138,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         await applyYamlList(opsRequests, 'create');
       }
 
+      // Call database alert API after ops are applied
+      if (shouldNotifyReplicaChange) {
+        await notifyDatabaseAlertApi({
+          namespace,
+          databaseName: dbForm.dbName,
+          replicas: dbForm.replicas
+        });
+      }
+
       if (
-        process.env.BACKUP_ENABLED === 'true' &&
+        Config().dbprovider.backup.enabled &&
         BackupSupportedDBTypeList.includes(dbForm.dbType) &&
         dbForm?.autoBackup
       ) {
@@ -125,26 +182,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const account = json2Account(dbForm);
     const cluster = json2CreateCluster(dbForm, backupInfo, {
-      storageClassName: process.env.STORAGE_CLASSNAME
+      storageClassName: Config().dbprovider.storage.forcedClassName ?? undefined
     });
 
     const yamlList = [account, cluster];
 
-    if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-      const isMysql5742 = dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42';
+    if (supportsParameterConfigDbType(dbForm.dbType)) {
+      const mysql5742 = isMysql5742(dbForm.dbType, dbForm.dbVersion);
       const tz = dbForm.parameterConfig?.timeZone;
-      const shouldApplyMysql5742Timezone =
-        isMysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
+      const shouldApplyMysql5742Timezone = mysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
 
       // For MySQL 5.7.42, only allow timezone configuration to be applied.
-      if (!isMysql5742 || shouldApplyMysql5742Timezone) {
+      if (!mysql5742 || shouldApplyMysql5742Timezone) {
         const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+        const effectiveParameterConfig = getEffectiveParameterConfig({
+          mode: 'create',
+          dbType: dbForm.dbType,
+          incomingParameterConfig: shouldApplyMysql5742Timezone
+            ? { timeZone: tz as string }
+            : dbForm.parameterConfig
+        });
 
         const config = json2ParameterConfig(
           dbForm.dbName,
           dbForm.dbType,
           dbForm.dbVersion,
-          shouldApplyMysql5742Timezone ? { timeZone: tz as string } : dbForm.parameterConfig,
+          effectiveParameterConfig,
           dynamicMaxConnections
         );
         yamlList.unshift(config);
@@ -170,7 +233,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     try {
       if (
-        process.env.BACKUP_ENABLED === 'true' &&
+        Config().dbprovider.backup.enabled &&
         BackupSupportedDBTypeList.includes(dbForm.dbType) &&
         dbForm?.autoBackup
       ) {
@@ -242,4 +305,44 @@ export async function updateTerminationPolicyApi({
   );
 
   return result;
+}
+
+export async function notifyDatabaseAlertApi({
+  namespace,
+  databaseName,
+  replicas
+}: {
+  namespace: string;
+  databaseName: string;
+  replicas: number;
+}) {
+  const databaseAlertUrl = Config().dbprovider.components.alerting.url;
+  const databaseAlertKey = Config().dbprovider.components.alerting.secret;
+  if (!databaseAlertUrl || !databaseAlertKey) {
+    return;
+  }
+
+  try {
+    const alertApiUrl = `${databaseAlertUrl}/v1/replicas?key=${databaseAlertKey}`;
+    const response = await fetch(alertApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        namespace: namespace,
+        database_name: databaseName,
+        replicas: replicas
+      })
+    });
+
+    if (!response.ok) {
+      console.log('Failed to call database alert API:', {
+        status: response.status,
+        statusText: response.statusText
+      });
+    }
+  } catch (err) {
+    console.log('Error calling database alert API:', err);
+  }
 }

@@ -46,7 +46,7 @@ import StopBackupModal from '../detail/components/StopBackupModal';
 import { resourcePropertyMap, useUserQuota, useQuotaGuarded } from '@sealos/shared';
 import { distributeResources } from '@/utils/database';
 import MyIcon from '@/components/Icon';
-import useEnvStore from '@/store/env';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { AutoBackupFormType } from '@/types/backup';
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -62,15 +62,19 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail } = useDBStore();
   const oldDBEditData = useRef<DBEditType>();
-  const { SystemEnv } = useEnvStore();
+  const config = useClientAppConfig();
 
   const defaultEdit = {
     ...defaultDBEditValue,
+    parameterConfig: {
+      ...defaultDBEditValue.parameterConfig,
+      lowerCaseTableNames: '0'
+    },
     dbVersion: DBVersionMap.postgresql?.[0]?.id || 'postgresql-14.8.0',
     autoBackup: {
       ...defaultDBEditValue.autoBackup,
       // Enable backup only when the flag is set.
-      start: SystemEnv.BACKUP_ENABLED
+      start: config.backupEnabled
     } satisfies Partial<AutoBackupFormType> as AutoBackupFormType | undefined
   };
 
@@ -259,7 +263,9 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
           ]),
       {
         filename: 'cluster.yaml',
-        value: json2CreateCluster(data)
+        value: json2CreateCluster(data, undefined, {
+          storageClassName: config.forcedStorageClassName ?? undefined
+        })
       }
     ];
   };
@@ -268,25 +274,19 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     try {
       const doc = yaml.load(yamlString) as any;
       const cpuStr: string | undefined = doc?.spec?.componentSpecs?.[0]?.resources?.limits?.cpu;
-      if (!cpuStr) return 0;
-
-      if (cpuStr.endsWith('m')) {
-        const milli = parseInt(cpuStr.slice(0, -1), 10);
-        return milli / 1000;
-      }
-
-      return parseFloat(cpuStr);
-    } catch (err) {
-      console.error(err);
-      return 0;
+      if (!cpuStr) return 8;
+      const cpu = parseInt(cpuStr.replace('m', ''));
+      return Math.ceil(cpu / 1000);
+    } catch (error) {
+      return 8;
     }
   }
+
   const cpu = useMemo(() => {
+    if (yamlList.length === 0) return 8;
     const clusterYaml = yamlList.find((item) => item.filename === 'cluster.yaml');
-    if (clusterYaml) {
-      return getCpuCores(clusterYaml.value);
-    }
-    return 0;
+    if (!clusterYaml) return 8;
+    return getCpuCores(clusterYaml.value);
   }, [yamlList]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -309,7 +309,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
   const { createCompleted } = useGuideStore();
 
-  const supportConnect = ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(
+  const supportConnect = ['postgresql', 'mongodb', 'apecloud-mysql', 'mysql', 'redis'].includes(
     formHook.getValues('dbType')
   );
 
@@ -337,7 +337,19 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     }
 
     try {
-      await createDB({ dbForm: formData, isEdit });
+      const payload = isEdit
+        ? {
+            ...formData,
+            parameterConfig: formData.parameterConfig
+              ? (() => {
+                  const { lowerCaseTableNames, ...rest } = formData.parameterConfig;
+                  return rest;
+                })()
+              : formData.parameterConfig
+          }
+        : formData;
+
+      await createDB({ dbForm: payload, isEdit });
 
       track({
         event: 'deployment_create',
@@ -420,7 +432,9 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         setYamlList([
           {
             filename: 'cluster.yaml',
-            value: json2CreateCluster(defaultEdit)
+            value: json2CreateCluster(defaultEdit, undefined, {
+              storageClassName: config.forcedStorageClassName ?? undefined
+            })
           },
           {
             filename: 'account.yaml',

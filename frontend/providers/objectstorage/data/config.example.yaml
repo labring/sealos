@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=config.schema.json
+
+cloud:
+  domain: cloud.sealos.io
+  port: 443
+
+objectStorage:
+  resources:
+    hostingPodCpuMilliCores: 200
+    hostingPodMemoryMiB: 128
+
+  components:
+    monitoring:
+      url: http://monitor.sealos.svc.cluster.local:8428
+    billing:
+      url: ''
+      secret: ''
+    appLaunchpad:
+      url: http://applaunchpad-frontend.sealos.svc:3000
+
+  realName:
+    appTokenJwtKey: ''
+
+  hosting:
+    appNamePrefix: static-host
+    networkProtocol: HTTP
+    networkPort: 80

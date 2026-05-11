@@ -6,6 +6,17 @@ interface CustomJwtPayload extends JwtPayload {
   devboxName: string;
 }
 
+const k8sNamePattern = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/;
+
+const isValidK8sName = (value: unknown): value is string =>
+  typeof value === 'string' && k8sNamePattern.test(value);
+
+const isCustomJwtPayload = (payload: unknown): payload is CustomJwtPayload => {
+  if (!payload || typeof payload !== 'object') return false;
+  const { namespace, devboxName } = payload as Partial<CustomJwtPayload>;
+  return isValidK8sName(namespace) && isValidK8sName(devboxName);
+};
+
 export const authSession = async (headers: Headers) => {
   if (!headers) return Promise.reject(ERROR_ENUM.unAuthorization);
 
@@ -24,10 +35,7 @@ export const authSessionWithDesktopJWT = async (headers: Headers) => {
   const kubeConfig = await authSession(headers);
   const token = headers.get('Authorization-Bearer');
   if (!token) return Promise.reject(ERROR_ENUM.unAuthorization);
-  const payload = await verifyToken<{ workspaceId: string }>(
-    token,
-    process.env.JWT_SECRET as string
-  );
+  const payload = verifyToken<{ workspaceId: string }>(token, process.env.JWT_SECRET as string);
   if (!payload) return Promise.reject(ERROR_ENUM.unAuthorization);
   return {
     kubeConfig,
@@ -39,7 +47,7 @@ export const authSessionWithJWT = async (headers: Headers) => {
   const kubeConfig = await authSession(headers);
   const token = headers.get('Authorization-Bearer');
   if (!token) return Promise.reject(ERROR_ENUM.unAuthorization);
-  const payload = await verifyToken<{
+  const payload = verifyToken<{
     workspaceId: string;
     organizationUid: string;
     userUid: string;
@@ -57,30 +65,45 @@ export const generateDevboxToken = (payload: {
   organizationUid: string;
   userUid: string;
   regionUid: string;
-}) => sign(payload, process.env.JWT_SECRET as string, { expiresIn: '7d' });
+}) =>
+  sign(payload, process.env.JWT_SECRET as string, {
+    algorithm: 'HS256',
+    expiresIn: '7d'
+  });
 
-export const getPayloadWithoutVerification = <T = CustomJwtPayload>(
+export const getPayloadWithoutVerification = (
   headers: Headers
-): { payload: T | null; token: string | null } => {
+): { payload: CustomJwtPayload | null; token: string | null } => {
   try {
     const authHeader = headers.get('authorization');
     if (!authHeader) {
       return { payload: null, token: null };
     }
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
-    const payload = decode(token) as T;
+    const decodedToken = decode(token, { complete: true }) as {
+      header?: { alg?: string };
+      payload?: unknown;
+    } | null;
+    if (!decodedToken || decodedToken.header?.alg !== 'HS256') {
+      return { payload: null, token: null };
+    }
+    if (!isCustomJwtPayload(decodedToken.payload)) {
+      return { payload: null, token: null };
+    }
+    const payload = decodedToken.payload;
     return { payload, token };
   } catch (err) {
     console.log(err);
     return { payload: null, token: null };
   }
 };
-export const verifyToken = async <TPayload = CustomJwtPayload>(
+export const verifyToken = <TPayload = CustomJwtPayload>(
   token: string,
   secret: string
-): Promise<TPayload | null> => {
+): TPayload | null => {
   try {
-    const payload = verify(token, secret) as TPayload;
+    if (!secret) return null;
+    const payload = verify(token, secret, { algorithms: ['HS256'] }) as TPayload;
     return payload;
   } catch (err) {
     return null;
@@ -93,4 +116,8 @@ export const generateAccessToken = (
     devboxName: string;
   },
   secret: string
-) => sign(payload, secret, { expiresIn: '365d' });
+) =>
+  sign(payload, secret, {
+    algorithm: 'HS256',
+    expiresIn: '365d'
+  });

@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
       data: 'success update devbox remark'
     });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       error: err

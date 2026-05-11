@@ -55,6 +55,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         switch (dbType) {
           case DBTypeEnum.mysql:
             break;
+          case DBTypeEnum.notapemysql:
+            break;
           case DBTypeEnum.postgresql:
             if (!dataObject.metric.datname) return null;
             name = dataObject.metric.pod + ' | ' + dataObject.metric.datname;

@@ -1,7 +1,3 @@
-SERVICE_NAME=sealos-devbox
-# Image URL to use all building/pushing image targets
-IMG ?= $(SERVICE_NAME):latest
-
 .PHONY: all
 all: build
 
@@ -31,7 +27,3 @@ build: ## Build desktop-frontend binary.
 .PHONY: run
 run: ## Run a dev service from host.
 	pnpm run start
-
-.PHONY: docker-build
-docker-build: ## Build docker image with the desktop-frontend.
-	docker build -t sealos-devbox:latest . --network host  --build-arg HTTP_PROXY=http://127.0.0.1:7890 --build-arg HTTPS_PROXY=http://127.0.0.1:7890

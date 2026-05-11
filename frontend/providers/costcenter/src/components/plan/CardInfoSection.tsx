@@ -23,7 +23,9 @@ export function CardInfoSection({ workspace, regionDomain }: CardInfoSectionProp
   const region = getRegion();
 
   const subscriptionData = usePlanStore((state) => state.subscriptionData);
-  const canManagePayment = subscriptionData?.subscription.role === 'OWNER';
+  const canManagePayment =
+    subscriptionData?.subscription.type === 'PAYG' ||
+    subscriptionData?.subscription.role === 'OWNER';
 
   const effectiveWorkspace = workspace || session?.user?.nsid || '';
   const effectiveRegionDomain = regionDomain || region?.domain || '';

@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "license-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }}, https://*.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }}"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-max-age: "600"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }}; img-src * data: blob: resource: *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} resource: *.baidu.com *.bdstatic.com https://js.stripe.com; frame-src 'self' *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} mailto: tel: weixin: mtt: *.baidu.com https://js.stripe.com; frame-ancestors 'self' https://{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} https://*.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }}";
+      more_set_headers "X-Xss-Protection: 1; mode=block";
+    higress.io/response-header-control-remove: X-Frame-Options
+    higress.io/response-header-control-update: |
+      Content-Security-Policy "default-src * blob: data: *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }}; img-src * data: blob: resource: *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} resource: *.baidu.com *.bdstatic.com https://js.stripe.com; frame-src 'self' *.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} {{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} mailto: tel: weixin: mtt: *.baidu.com https://js.stripe.com; frame-ancestors 'self' https://{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }} https://*.{{ .Values.licenseConfig.cloudDomain }}{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}:{{ .Values.ingress.cloudPort }}{{- end }}"
+      X-Xss-Protection "1; mode=block"
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ .Values.ingress.host | default (printf "license.%s" .Values.licenseConfig.cloudDomain) | quote }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: {{ include "license-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | default (printf "license.%s" .Values.licenseConfig.cloudDomain) | quote }}
+      secretName: {{ .Values.ingress.certSecretName | quote }}

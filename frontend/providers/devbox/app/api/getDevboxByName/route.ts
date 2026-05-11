@@ -75,11 +75,20 @@ export async function GET(req: NextRequest) {
       await Promise.all([
         k8sNetworkingApp
           .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
-          .catch(() => null),
-        k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null),
+          .catch((error) => {
+            console.log(error);
+            return null;
+          }),
+        k8sCore.readNamespacedService(devboxName, namespace, undefined).catch((error) => {
+          console.log(error);
+          return null;
+        }),
         k8sCore
           .listNamespacedConfigMap(namespace, undefined, undefined, undefined, undefined, label)
-          .catch(() => null),
+          .catch((error) => {
+            console.log(error);
+            return null;
+          }),
         k8sCore
           .listNamespacedPersistentVolumeClaim(
             namespace,
@@ -89,7 +98,10 @@ export async function GET(req: NextRequest) {
             undefined,
             label
           )
-          .catch(() => null)
+          .catch((error) => {
+            console.log(error);
+            return null;
+          })
       ]);
     const ingresses = ingressesResponse?.body.items || [];
     const service = serviceResponse?.body;
@@ -127,6 +139,7 @@ export async function GET(req: NextRequest) {
 
     return jsonRes({ data });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       error: err

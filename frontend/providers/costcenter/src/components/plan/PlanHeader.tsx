@@ -54,7 +54,7 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
 
   const plans = plansData?.plans;
   const subscription = subscriptionData?.subscription;
-  const canManagePayment = subscription?.role === 'OWNER';
+  const canManagePayment = subscription?.type === 'PAYG' || subscription?.role === 'OWNER';
   const lastTransaction = lastTransactionData?.transaction;
   const planName = subscription?.PlanName || t('common:free_plan');
   const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';

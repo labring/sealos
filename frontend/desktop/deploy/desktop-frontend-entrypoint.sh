@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 # Default values
 RELEASE_NAME=${RELEASE_NAME:-"desktop-frontend"}
@@ -142,11 +142,18 @@ USER_VALUES_PATH="/root/.sealos/cloud/values/core/desktop-values.yaml"
 # Copy user values template if not exists
 if [ ! -f "${USER_VALUES_PATH}" ]; then
   mkdir -p "$(dirname "${USER_VALUES_PATH}")"
-  cp "./charts/${SERVICE_NAME}/values.yaml" "${USER_VALUES_PATH}"
+  cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-values.yaml" "${USER_VALUES_PATH}"
+fi
+
+GLOBALS_FILE="/root/.sealos/cloud/values/global.yaml"
+if [ -f "${GLOBALS_FILE}" ]; then
+  echo "Merging global values from ${GLOBALS_FILE} into user values..."
+  HELM_ARGS="$HELM_ARGS -f ${GLOBALS_FILE}"
 fi
 
 # Deploy Helm chart
 echo "Deploying Helm chart..."
 helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" \
+  -f "./charts/${SERVICE_NAME}/values.yaml" \
   -f "${USER_VALUES_PATH}" \
   ${HELM_ARGS}

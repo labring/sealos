@@ -52,7 +52,7 @@
   },
   "packageManager": "pnpm@8.9.0",
   "engines": {
-    "node": "20.4.0",
+    "node": "20.20.2",
     "pnpm": "8.9.0"
   }
 }

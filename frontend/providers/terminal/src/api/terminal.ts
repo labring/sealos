@@ -8,6 +8,7 @@ export function getEnv() {
         data: {
           CPU_REQUIREMENT: number;
           MEMORY_REQUIREMENT: number;
+          TTY_AGENT_BASE_URL?: string;
         };
       };
     }

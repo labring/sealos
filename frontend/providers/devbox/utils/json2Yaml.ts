@@ -9,7 +9,8 @@ import { getUserNamespace } from './user';
 export const json2Devbox = (
   data: Omit<json2DevboxData, 'templateRepositoryUid'>,
   devboxAffinityEnable: string = 'true',
-  storageLimit: string = '10Gi'
+  storageLimit: string = '10Gi',
+  runtimeClassName: string = 'devbox-runtime'
 ) => {
   const gpuMap = !!data.gpu?.type
     ? {
@@ -117,7 +118,7 @@ export const json2Devbox = (
       }),
       state: 'Running',
       ...gpuMap,
-      runtimeClassName: 'devbox-runtime',
+      runtimeClassName: runtimeClassName || 'devbox-runtime',
       storageLimit: storageLimit // 10Gi default
     }
   };
@@ -434,6 +435,7 @@ export const generateYamlList = (
   env: {
     devboxAffinityEnable?: string;
     storageLimit?: string;
+    runtimeClassName?: string;
     ingressSecret: string;
     nfsStorageClassName?: string;
   }
@@ -461,7 +463,7 @@ export const generateYamlList = (
       : []),
     {
       filename: 'devbox.yaml',
-      value: json2Devbox(data, env.devboxAffinityEnable, env.storageLimit)
+      value: json2Devbox(data, env.devboxAffinityEnable, env.storageLimit, env.runtimeClassName)
     },
     ...(data.networks.length > 0
       ? [

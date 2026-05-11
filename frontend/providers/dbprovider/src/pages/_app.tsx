@@ -5,25 +5,30 @@ import { useGlobalStore } from '@/store/global';
 import { getDBVersion, getUserPrice } from '@/store/static';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { ChakraProvider } from '@chakra-ui/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { dehydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppContext, AppInitialProps, AppProps } from 'next/app';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, ComponentProps } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-import useEnvStore from '@/store/env';
 import '@sealos/driver/src/driver.css';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import Script from 'next/script';
 import App from 'next/app';
 import { useUserStore } from '@/store/user';
-import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
+import {
+  ClientConfigProvider,
+  prefetchClientAppConfig,
+  setupClientAppConfigDefaults
+} from '@sealos/shared';
 import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
+import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -41,14 +46,32 @@ const queryClient = new QueryClient({
   }
 });
 
+setupClientAppConfigDefaults(queryClient, ['client-app-config']);
+
 type AppOwnProps = {
-  customScripts: { [key: string]: string }[];
+  customScripts: ComponentProps<typeof Script>[];
+  dehydratedState?: unknown;
 };
 
-function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) {
+function AppContent({
+  Component,
+  pageProps,
+  customScripts
+}: {
+  Component: AppProps['Component'];
+  pageProps: AppProps['pageProps'];
+  customScripts: ComponentProps<typeof Script>[];
+}) {
+  const standaloneAllowedPaths = new Set(['/api-docs', '/api/v2alpha/docs', '/doc/v2alpha']);
+
+  const normalizePath = (path: string) => {
+    const [pathname] = path.split(/[?#]/);
+    return pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
+  };
+
   const router = useRouter();
   const { i18n } = useTranslation();
-  const { SystemEnv, initSystemEnv } = useEnvStore();
+  const clientConfig = useClientAppConfig();
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
   const { setSession } = useUserStore();
   const { Loading } = useLoading();
@@ -65,7 +88,6 @@ function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
   useEffect(() => {
     const response = createSealosApp();
     (async () => {
-      const { desktopDomain } = await initSystemEnv();
       try {
         const newSession = JSON.stringify(await sealosApp.getSession());
         setSession(JSON.parse(newSession));
@@ -73,9 +95,13 @@ function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
         console.log('app init success');
       } catch (err) {
         console.log('App is not running in desktop');
-        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+        const currentPath =
+          typeof window !== 'undefined' ? normalizePath(window.location.pathname) : '';
+        const allowStandaloneAccess = standaloneAllowedPaths.has(currentPath);
+
+        if (!process.env.NEXT_PUBLIC_MOCK_USER && !allowStandaloneAccess) {
           openConfirm(() => {
-            window.open(`https://${desktopDomain}`, '_self');
+            window.open(`https://${clientConfig.desktopDomain}`, '_self');
           })();
         }
       }
@@ -148,7 +174,7 @@ function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
     const setupInternalAppCallListener = async () => {
       try {
         const event = async (e: MessageEvent) => {
-          const whitelist = [`https://${SystemEnv.desktopDomain}`];
+          const whitelist = [`https://${clientConfig.desktopDomain}`];
           if (!whitelist.includes(e.origin)) {
             return;
           }
@@ -179,7 +205,7 @@ function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
       } catch (error) {}
     };
     setupInternalAppCallListener();
-  }, [SystemEnv.desktopDomain, router]);
+  }, [clientConfig.desktopDomain, router]);
 
   return (
     <>
@@ -189,20 +215,28 @@ function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) 
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <QueryClientProvider client={queryClient}>
-        <ChakraProvider theme={theme}>
-          <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
-            <Component {...pageProps} />
-            <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
-            <ConfirmChild />
-            <Loading loading={loading} />
-          </QuotaGuardProvider>
-        </ChakraProvider>
-      </QueryClientProvider>
-      {customScripts.map((script, i) => (
-        <Script strategy="afterInteractive" key={i} {...script} />
+      <ChakraProvider theme={theme}>
+        <QuotaGuardProvider getSession={getSession} sealosApp={sealosApp}>
+          <Component {...pageProps} />
+          <InsufficientQuotaDialog lang={(i18n?.language || 'en') as SupportedLang} />
+          <ConfirmChild />
+          <Loading loading={loading} />
+        </QuotaGuardProvider>
+      </ChakraProvider>
+      {customScripts.map((scriptProps, i) => (
+        <Script key={i} {...scriptProps} />
       ))}
     </>
+  );
+}
+
+function MyApp({ Component, pageProps, customScripts, dehydratedState }: AppProps & AppOwnProps) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ClientConfigProvider dehydratedState={dehydratedState}>
+        <AppContent Component={Component} pageProps={pageProps} customScripts={customScripts} />
+      </ClientConfigProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -210,16 +244,41 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
   const ctx = await App.getInitialProps(context);
 
   let customScripts: AppOwnProps['customScripts'] = [];
+  let dehydratedState: unknown;
 
-  try {
-    if (typeof window === 'undefined') {
-      customScripts = JSON.parse(process.env.CUSTOM_SCRIPTS ?? '[]');
+  if (typeof window === 'undefined') {
+    try {
+      const { Config } = await import('@/config');
+      const config = Config();
+      customScripts = config.dbprovider.ui.customScripts.map(
+        (script): ComponentProps<typeof Script> => {
+          const scriptProps: ComponentProps<typeof Script> = {
+            id: script.id,
+            strategy: script.strategy
+          };
+
+          if ('src' in script) {
+            scriptProps.src = script.src;
+          }
+
+          if ('content' in script) {
+            scriptProps.dangerouslySetInnerHTML = { __html: script.content };
+          }
+
+          return scriptProps;
+        }
+      );
+    } catch (error) {
+      console.error('[_app] Failed to read custom scripts:', error);
     }
-  } catch (error) {
-    console.error('Failed to inject custom scripts:', error);
+
+    const qc = new QueryClient();
+    const { getClientAppConfigServer } = await import('@/pages/api/platform/getClientAppConfig');
+    await prefetchClientAppConfig(qc, ['client-app-config'], getClientAppConfigServer);
+    dehydratedState = dehydrate(qc);
   }
 
-  return { ...ctx, customScripts };
+  return { ...ctx, customScripts, dehydratedState };
 };
 
 export default appWithTranslation(MyApp);

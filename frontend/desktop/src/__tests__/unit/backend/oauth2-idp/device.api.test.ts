@@ -1,13 +1,14 @@
+import { beforeEach, describe, expect, it, vi, type MockedFunction } from 'vitest';
 import { OAuth2HttpError } from '@/services/backend/oauth2/errors';
 
-jest.mock('@/services/backend/oauth2/service', () => ({
-  createDeviceAuthorizationGrant: jest.fn()
+vi.mock('@/services/backend/oauth2/service', () => ({
+  createDeviceAuthorizationGrant: vi.fn()
 }));
 
 import handler from '@/pages/api/auth/oauth2/device';
 import { createDeviceAuthorizationGrant } from '@/services/backend/oauth2/service';
 
-const mockCreateDeviceAuthorizationGrant = createDeviceAuthorizationGrant as jest.MockedFunction<
+const mockCreateDeviceAuthorizationGrant = createDeviceAuthorizationGrant as MockedFunction<
   typeof createDeviceAuthorizationGrant
 >;
 
@@ -16,25 +17,25 @@ const createMockRes = () => {
     headers: {},
     statusCode: 200,
     body: undefined,
-    setHeader: jest.fn((name: string, value: string) => {
+    setHeader: vi.fn((name: string, value: string) => {
       res.headers[name] = value;
     }),
-    status: jest.fn((code: number) => {
+    status: vi.fn((code: number) => {
       res.statusCode = code;
       return res;
     }),
-    json: jest.fn((payload: unknown) => {
+    json: vi.fn((payload: unknown) => {
       res.body = payload;
       return res;
     }),
-    end: jest.fn(() => res)
+    end: vi.fn(() => res)
   };
   return res;
 };
 
 describe('oauth2 device api handler', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('returns 405 for non-POST method and still sets no-store headers', async () => {

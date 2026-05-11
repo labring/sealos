@@ -29,11 +29,10 @@ export type KbPgClusterType = {
 export type KubeBlockClusterTerminationPolicy = 'Delete' | 'WipeOut';
 
 export interface KubeBlockClusterSpec {
-  clusterDefinitionRef: `${DBTypeEnum}`;
   clusterVersionRef: string;
   terminationPolicy: KubeBlockClusterTerminationPolicy;
   componentSpecs: {
-    componentDefRef: `${DBTypeEnum}`;
+    componentDef: `${DBTypeEnum}`;
     name: `${DBTypeEnum}`;
     replicas: number;
     resources: {

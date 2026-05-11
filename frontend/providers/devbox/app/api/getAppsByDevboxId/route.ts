@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const adaptedApps = apps.map(adaptAppListItem);
     return jsonRes({ data: adaptedApps });
   } catch (err: any) {
+    console.log(err);
     return jsonRes({
       code: 500,
       error: err

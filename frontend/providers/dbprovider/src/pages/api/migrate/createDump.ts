@@ -1,3 +1,4 @@
+import { Config } from '@/config';
 import { CloudMigraionLabel } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
@@ -19,17 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const secret = await fetchDBSecret(k8sCore, data.dbName, data.dbType, namespace);
 
-    if (
-      !Boolean(
-        process.env.MINIO_ACCESS_KEY &&
-        process.env.MINIO_SECRET_KEY &&
-        process.env.MINIO_URL &&
-        process.env.MINIO_BUCKET_NAME &&
-        process.env.MIGRATE_FILE_FETCH_FILE_IMAGE &&
-        process.env.MIGRATE_FILE_IMPORT_DATA_IMAGE
-      )
-    ) {
-      throw new Error('MinIO related environment variables are not configured!');
+    if (!Config().dbprovider.features.fileImport) {
+      throw new Error('MinIO file import feature is not enabled!');
     }
     const yamlObj = await json2DumpCR({
       ...data,
@@ -83,7 +75,7 @@ export const json2DumpCR = async (
           initContainers: [
             {
               name: 'fetch-file',
-              image: process.env.MIGRATE_FILE_FETCH_FILE_IMAGE,
+              image: Config().dbprovider.migration.fetchFileImage,
               resources: {
                 requests: {
                   cpu: '50m',
@@ -99,19 +91,19 @@ export const json2DumpCR = async (
               env: [
                 {
                   name: 'MINIO_URL',
-                  value: `http://${process.env.MINIO_URL}`
+                  value: `http://${Config().dbprovider.components.storage.url}`
                 },
                 {
                   name: 'MINIO_ACCESS_KEY',
-                  value: process.env.MINIO_ACCESS_KEY
+                  value: Config().dbprovider.components.storage.accessKey
                 },
                 {
                   name: 'MINIO_SECRET_KEY',
-                  value: process.env.MINIO_SECRET_KEY
+                  value: Config().dbprovider.components.storage.secretKey
                 },
                 {
                   name: 'MINIO_BUCKET',
-                  value: process.env.MINIO_BUCKET_NAME
+                  value: Config().dbprovider.components.storage.bucketName
                 },
                 {
                   name: 'FILE_NAME',
@@ -137,7 +129,7 @@ mc cp migrationTask/$MINIO_BUCKET/$FILE_NAME /data/$FILE_NAME
           containers: [
             {
               name: 'import-data',
-              image: process.env.MIGRATE_FILE_IMPORT_DATA_IMAGE,
+              image: Config().dbprovider.migration.importDataImage,
               resources: {
                 requests: {
                   cpu: '50m',

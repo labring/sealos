@@ -95,7 +95,7 @@ export default function SecondaryLinks() {
   const isFreePlan = (subscription?.PlanName || '').toLowerCase() === 'free';
   const isCancelled = !!subscription?.CancelAtPeriodEnd && !isFreePlan;
   const isDebt = subscription?.Status?.toLowerCase() === 'debt';
-  const canManagePayment = subscription?.role === 'OWNER';
+  const canManagePayment = subscription?.type === 'PAYG' || subscription?.role === 'OWNER';
 
   useEffect(() => {
     if (workspace) {

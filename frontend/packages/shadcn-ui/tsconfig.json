@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./src/**/*"],
+  "include": ["./src/**/*", "./__tests__/**/*.ts", "./__tests__/**/*.tsx"],
   "compilerOptions": {
     "baseUrl": ".",
     "outDir": "./dist",
@@ -12,6 +12,7 @@
     "module": "esnext",
     "jsx": "react",
     "importHelpers": true,
-    "target": "esnext"
+    "target": "esnext",
+    "types": ["node", "vitest/globals"]
   }
 }

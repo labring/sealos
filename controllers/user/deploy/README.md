@@ -1,7 +1,7 @@
 ### How to build image
 
 ```shell
-sealos build -t docker.io/labring/sealos-user-controller:latest -f Dockerfile .
+sealos build -t docker.io/labring/sealos-user-controller:latest -f Kubefile .
 ```
 
 ### How to run

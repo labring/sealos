@@ -1,5 +1,6 @@
 import { monitor } from '@/api/monitor';
 import { useOssStore } from '@/store/ossStore';
+import { formatBytesForDisplay, formatCountForDisplay } from '@/utils/tools';
 import { Box, BoxProps, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { connect } from 'echarts';
@@ -12,6 +13,11 @@ const titles = [
   'minio_bucket_traffic_received_bytes',
   'minio_bucket_traffic_sent_bytes'
 ] as const;
+const byteMetricTitles = new Set([
+  'minio_bucket_usage_total_bytes',
+  'minio_bucket_traffic_received_bytes',
+  'minio_bucket_traffic_sent_bytes'
+]);
 const chartStyles = [
   {
     lineColor: 'rgba(54, 173, 239, 1)',
@@ -58,17 +64,19 @@ export default function DataMonitor({ ...styles }: BoxProps) {
     if (monitorQuery.isSuccess && monitorQuery.data) {
       const _data = monitorQuery.data;
       for (let i = 0; i < 4; i++) {
-        const curdata = _data?.[i]?.reduce<[number, string][]>((pre, cur) => {
+        const curdata = _data?.[i]?.reduce<[number, number][]>((pre, cur) => {
           // single pool
-          const column = cur.values.map<[number, string]>(([time, v]) => [time * 1000, v]);
+          const column = cur.values.map<[number, number]>(([time, v]) => [time * 1000, Number(v)]);
           return [...pre, ...column];
         }, []);
-        curdata.sort((a, b) => a[0] - b[0]);
-        data[i].push(...curdata);
+        curdata?.sort((a, b) => a[0] - b[0]);
+        if (curdata) {
+          data[i].push(...curdata);
+        }
       }
     }
     return data;
-  }, [monitorQuery.data]);
+  }, [monitorQuery.data, monitorQuery.isSuccess]);
   return (
     <Box mt="32px" flex={'1 1 0'} h="0" overflowY={'auto'} {...styles}>
       <Flex
@@ -84,6 +92,11 @@ export default function DataMonitor({ ...styles }: BoxProps) {
               title={t(title)}
               dimesion={title}
               source={data[idx]}
+              valueFormatter={
+                byteMetricTitles.has(title)
+                  ? (value) => formatBytesForDisplay(value)
+                  : (value) => formatCountForDisplay(value)
+              }
               styles={chartStyles[idx]}
               onChartReady={(instance) => {
                 instance.group = 'group1';

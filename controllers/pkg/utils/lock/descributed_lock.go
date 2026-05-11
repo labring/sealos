@@ -40,8 +40,8 @@ func (dl *DistributedLock) TryLock(ctx context.Context, ttl time.Duration) error
 	err := dl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Exec(`
 		CREATE TABLE IF NOT EXISTS distributed_locks (
-			lock_name STRING PRIMARY KEY,
-			holder_id STRING NOT NULL,
+			lock_name TEXT PRIMARY KEY,
+			holder_id TEXT NOT NULL,
 			expires_at TIMESTAMPTZ NOT NULL,
 			version INT NOT NULL DEFAULT 1
 		)
