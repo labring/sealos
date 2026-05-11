@@ -66,6 +66,10 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
   const defaultEdit = {
     ...defaultDBEditValue,
+    parameterConfig: {
+      ...defaultDBEditValue.parameterConfig,
+      lowerCaseTableNames: '0'
+    },
     dbVersion: DBVersionMap.postgresql?.[0]?.id || 'postgresql-14.8.0',
     autoBackup: {
       ...defaultDBEditValue.autoBackup,
@@ -333,7 +337,19 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     }
 
     try {
-      await createDB({ dbForm: formData, isEdit });
+      const payload = isEdit
+        ? {
+            ...formData,
+            parameterConfig: formData.parameterConfig
+              ? (() => {
+                  const { lowerCaseTableNames, ...rest } = formData.parameterConfig;
+                  return rest;
+                })()
+              : formData.parameterConfig
+          }
+        : formData;
+
+      await createDB({ dbForm: payload, isEdit });
 
       track({
         event: 'deployment_create',

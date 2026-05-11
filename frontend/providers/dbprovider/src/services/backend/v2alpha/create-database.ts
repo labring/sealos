@@ -1,5 +1,10 @@
 import { Config } from '@/config';
 import { createDatabaseSchemas } from '@/types/apis/v2alpha';
+import {
+  getEffectiveParameterConfig,
+  isMysql5742,
+  supportsParameterConfigDbType
+} from '../database-config';
 import { getK8s } from '../kubernetes';
 import { z } from 'zod';
 import { BackupSupportedDBTypeList } from '@/constants/db';
@@ -138,14 +143,13 @@ export async function createDatabase(
 
   const yamlList = [account, cluster];
 
-  if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
-    const isMysql5742 =
-      rawDbForm.dbType === 'apecloud-mysql' && rawDbForm.dbVersion === 'mysql-5.7.42';
+  if (supportsParameterConfigDbType(rawDbForm.dbType)) {
+    const mysql5742 = isMysql5742(rawDbForm.dbType, rawDbForm.dbVersion);
     const tz = rawDbForm.parameterConfig?.timeZone;
-    const shouldApplyMysql5742Timezone = isMysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
+    const shouldApplyMysql5742Timezone = mysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
 
     // For MySQL 5.7.42, only allow timezone configuration to be applied.
-    if (!isMysql5742 || shouldApplyMysql5742Timezone) {
+    if (!mysql5742 || shouldApplyMysql5742Timezone) {
       let dynamicMaxConnections: number = 0;
       try {
         dynamicMaxConnections = getScore(rawDbForm.dbType, rawDbForm.cpu, rawDbForm.memory);
@@ -153,11 +157,19 @@ export async function createDatabase(
         dynamicMaxConnections = 0;
       }
 
+      const effectiveParameterConfig = getEffectiveParameterConfig({
+        mode: 'create',
+        dbType: rawDbForm.dbType,
+        incomingParameterConfig: shouldApplyMysql5742Timezone
+          ? { timeZone: tz as string }
+          : rawDbForm.parameterConfig || {}
+      });
+
       const config = json2ParameterConfig(
         rawDbForm.dbName,
         rawDbForm.dbType,
         rawDbForm.dbVersion,
-        shouldApplyMysql5742Timezone ? { timeZone: tz as string } : rawDbForm.parameterConfig || {},
+        effectiveParameterConfig,
         dynamicMaxConnections
       );
 
