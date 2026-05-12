@@ -23,11 +23,17 @@ add_set_string() {
 
 AUTO_CONFIG_HELM_OPTS=""
 
-SEALOS_CLOUD_DOMAIN=${SEALOS_CLOUD_DOMAIN:-"${cloudDomain:-$(get_cm_value sealos-system sealos-config cloudDomain)}"}
-SEALOS_CLOUD_PORT=${SEALOS_CLOUD_PORT:-"${cloudPort:-$(get_cm_value sealos-system sealos-config cloudPort)}"}
-SEALOS_HTTP_PORT=${SEALOS_HTTP_PORT:-"${httpPort:-$(get_cm_value sealos-system sealos-config httpPort)}"}
-SEALOS_DISABLE_HTTPS=${SEALOS_DISABLE_HTTPS:-"${disableHttps:-$(get_cm_value sealos-system sealos-config disableHttps)}"}
-SEALOS_CERT_SECRET_NAME=${SEALOS_CERT_SECRET_NAME:-"${certSecretName:-$(get_cm_value sealos-system sealos-config certSecretName)}"}
+CONFIG_CLOUD_DOMAIN=$(get_cm_value sealos-system sealos-config cloudDomain)
+CONFIG_CLOUD_PORT=$(get_cm_value sealos-system sealos-config cloudPort)
+CONFIG_HTTP_PORT=$(get_cm_value sealos-system sealos-config httpPort)
+CONFIG_DISABLE_HTTPS=$(get_cm_value sealos-system sealos-config disableHttps)
+CONFIG_CERT_SECRET_NAME=$(get_cm_value sealos-system sealos-config certSecretName)
+
+SEALOS_CLOUD_DOMAIN=${CONFIG_CLOUD_DOMAIN:-${SEALOS_CLOUD_DOMAIN:-${cloudDomain:-}}}
+SEALOS_CLOUD_PORT=${CONFIG_CLOUD_PORT:-${SEALOS_CLOUD_PORT:-${cloudPort:-}}}
+SEALOS_HTTP_PORT=${CONFIG_HTTP_PORT:-${SEALOS_HTTP_PORT:-${httpPort:-}}}
+SEALOS_DISABLE_HTTPS=${CONFIG_DISABLE_HTTPS:-${SEALOS_DISABLE_HTTPS:-${disableHttps:-}}}
+SEALOS_CERT_SECRET_NAME=${CONFIG_CERT_SECRET_NAME:-${SEALOS_CERT_SECRET_NAME:-${certSecretName:-}}}
 
 add_set_string applaunchpadConfig.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
 add_set_string applaunchpadConfig.cloudPort "${SEALOS_CLOUD_PORT}"
