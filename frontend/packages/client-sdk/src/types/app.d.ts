@@ -36,3 +36,13 @@ export type MasterOptions = {
     };
   }>;
 };
+
+export type WindowSize = 'maximized' | 'windowed' | 'minimized';
+
+export type OpenAppOptions = {
+  appKey: string;
+  query?: Record<string, string>;
+  messageData?: Record<string, any>;
+  pathname?: string;
+  appSize?: WindowSize;
+};

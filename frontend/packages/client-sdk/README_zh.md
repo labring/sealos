@@ -87,6 +87,25 @@ const { lng } = await sealosApp.getLanguage();
 // lng: 'zh' | 'en' | 其他语言代码
 ```
 
+### 打开 Desktop 应用
+
+```typescript
+// 以 desktop 小窗口打开应用
+await sealosApp.openApp({
+  appKey: 'system-costcenter',
+  appSize: 'windowed'
+});
+
+// 打开应用时传递路由、查询参数和消息数据
+await sealosApp.openApp({
+  appKey: 'system-template',
+  pathname: '/instance',
+  query: { instanceName: 'demo' },
+  messageData: { source: 'my-app' },
+  appSize: 'maximized'
+});
+```
+
 ### 事件通信
 
 ```typescript
@@ -153,12 +172,13 @@ createMasterAPP(allowedOrigins);
 
 ## 📖 API 参考
 
-| API                           | 参数               | 返回值                   | 说明             |
-| ----------------------------- | ------------------ | ------------------------ | ---------------- |
-| `getSession()`                | -                  | `Promise<SessionV1>`     | 获取用户会话信息 |
-| `getLanguage()`               | -                  | `Promise<{lng: string}>` | 获取语言设置     |
-| `runEvents(name, data)`       | `string, any`      | `Promise<any>`           | 触发主应用事件   |
-| `addAppEventListen(name, fn)` | `string, function` | `function`               | 监听主应用事件   |
+| API                           | 参数               | 返回值                   | 说明              |
+| ----------------------------- | ------------------ | ------------------------ | ----------------- |
+| `getSession()`                | -                  | `Promise<SessionV1>`     | 获取用户会话信息  |
+| `getLanguage()`               | -                  | `Promise<{lng: string}>` | 获取语言设置      |
+| `openApp(options)`            | `OpenAppOptions`   | `Promise<any>`           | 打开 desktop 应用 |
+| `runEvents(name, data)`       | `string, any`      | `Promise<any>`           | 触发主应用事件    |
+| `addAppEventListen(name, fn)` | `string, function` | `function`               | 监听主应用事件    |
 
 ## 🤝 贡献
 
