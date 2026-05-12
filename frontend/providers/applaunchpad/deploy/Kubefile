@@ -6,11 +6,6 @@ COPY registry registry
 COPY charts charts
 COPY applaunchpad-frontend-entrypoint.sh applaunchpad-frontend-entrypoint.sh
 
-ENV cloudDomain="127.0.0.1.nip.io"
-ENV cloudPort=""
-ENV httpPort=""
-ENV disableHttps="false"
-
 ENV certSecretName="wildcard-cert"
 
 ENV monitorUrl="http://launchpad-monitor.sealos.svc.cluster.local:8428"
