@@ -158,7 +158,7 @@ const useAppStore = create<TOSState>()(
           });
         },
 
-        openApp: async (app: TApp, { query, raw, pathname = '/', appSize = 'maximize' } = {}) => {
+        openApp: async (app: TApp, { query, raw, pathname = '/', appSize } = {}) => {
           console.log('open app: ', app.key);
 
           useDesktopConfigStore.getState().temporarilyDisableAnimation();
@@ -167,7 +167,16 @@ const useAppStore = create<TOSState>()(
           // 未支持多实例
           let alreadyApp = get().runningInfo.find((x) => x.key === app.key);
           if (alreadyApp) {
-            get().switchAppById(alreadyApp.pid);
+            if (appSize) {
+              get().updateOpenedAppInfo({
+                ...alreadyApp,
+                isShow: true,
+                size: appSize,
+                cacheSize: appSize
+              });
+            } else {
+              get().switchAppById(alreadyApp.pid);
+            }
             get().setToHighestLayerById(alreadyApp.pid);
             return;
           }
@@ -182,8 +191,10 @@ const useAppStore = create<TOSState>()(
           let run_app = get().runner.openApp(app.key);
 
           const _app = new AppInfo(app, run_app.pid);
+          const initialAppSize = appSize || 'maximize';
           _app.zIndex = zIndex;
-          _app.size = appSize;
+          _app.size = initialAppSize;
+          _app.cacheSize = initialAppSize;
           _app.isShow = true;
 
           if (_app.data?.url) {
@@ -209,7 +220,7 @@ const useAppStore = create<TOSState>()(
             state.runningInfo.push(_app);
             state.currentAppPid = _app.pid;
             // Only save currentAppKey when app is maximized
-            if (appSize === 'maximize') {
+            if (initialAppSize === 'maximize') {
               state.currentAppKey = _app.key;
             }
             state.maxZIndex = zIndex;
