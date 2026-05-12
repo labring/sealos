@@ -16,9 +16,8 @@ export const sessionConfig = async ({
 }) => {
   const store = useSessionStore.getState();
   store.setToken(token); // Sets region token for API requests
-  const infoData = await UserInfo();
   const payload = jwtDecode<AccessTokenPayload>(token);
-  const planInfo = await getPlanInfo(payload.workspaceId);
+  const [infoData, planInfo] = await Promise.all([UserInfo(), getPlanInfo(payload.workspaceId)]);
 
   store.setSession({
     token: appToken,
