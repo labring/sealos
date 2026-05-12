@@ -6,7 +6,7 @@ const fetchMock = vi.fn();
 async function importCheckDomainICP() {
   vi.resetModules();
   vi.stubGlobal('fetch', fetchMock);
-  global.AppConfig = {
+  globalThis.__APP_CONFIG__ = {
     launchpad: {
       checkIcpReg: {
         endpoint: 'cdn.aliyuncs.com',
@@ -14,7 +14,7 @@ async function importCheckDomainICP() {
         accessKeySecret: 'test-access-key-secret'
       }
     }
-  } as typeof global.AppConfig;
+  } as NonNullable<typeof globalThis.__APP_CONFIG__>;
 
   return import('@/services/backend/acsCdnActions');
 }

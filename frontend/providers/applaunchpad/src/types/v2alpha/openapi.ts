@@ -19,6 +19,7 @@ import {
   createError500Schema,
   createError503Schema
 } from './error';
+import { buildExternalUrl } from '@/utils/network-url';
 
 // Re-export for backward compatibility
 export {
@@ -47,7 +48,16 @@ const getProductionServerUrl = () => {
     }
     // Server-side: construct from global config
     if (globalThis.__APP_CONFIG__?.cloud?.domain) {
-      return `https://applaunchpad.${globalThis.__APP_CONFIG__.cloud.domain}/api/v2alpha`;
+      const config = globalThis.__APP_CONFIG__;
+      return `${buildExternalUrl({
+        protocol: 'HTTP',
+        host: `applaunchpad.${config.cloud.domain}`,
+        config: {
+          disableHttps: config.cloud.disableHttps,
+          cloudPort: config.cloud.port,
+          httpPort: config.cloud.httpPort
+        }
+      })}/api/v2alpha`;
     }
   } catch (error) {
     // Ignore error

@@ -44,7 +44,10 @@ const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 export const formData2Yamls = (
   data: AppEditType,
-  userDomains: { name: string; secretName: string }[]
+  userDomains: { name: string; secretName: string }[],
+  options: {
+    disableHttps?: boolean;
+  } = {}
 ) => [
   {
     filename: 'service.yaml',
@@ -71,7 +74,7 @@ export const formData2Yamls = (
     ? [
         {
           filename: 'ingress.yaml',
-          value: json2Ingress(data, userDomains)
+          value: json2Ingress(data, userDomains, options)
         }
       ]
     : []),
@@ -257,12 +260,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (data.networks?.[index]) {
           data.networks[index].customDomain = customDomain;
         }
-        const ingressYaml = json2Ingress(data, config.userDomains);
+        const ingressYaml = json2Ingress(data, config.userDomains, {
+          disableHttps: config.disableHttps
+        });
         setIsLoading(true);
         postDeployApp([ingressYaml], 'replace')
           .then(() => {
             toast.success(t('Deployment Successful'));
-            formOldYamls.current = formData2Yamls(data, config.userDomains);
+            formOldYamls.current = formData2Yamls(data, config.userDomains, {
+              disableHttps: config.disableHttps
+            });
           })
           .catch((err) => {
             toast.error(getErrText(err));
@@ -304,14 +311,20 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (!res) return;
         console.log(res, 'init res');
         oldAppEditData.current = res;
-        formOldYamls.current = formData2Yamls(res, config.userDomains);
+        formOldYamls.current = formData2Yamls(res, config.userDomains, {
+          disableHttps: config.disableHttps
+        });
         crOldYamls.current = res.crYamlList;
 
         setExistingStores(res.storeList);
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
-        setYamlList(formData2Yamls(realTimeForm.current, config.userDomains));
+        setYamlList(
+          formData2Yamls(realTimeForm.current, config.userDomains, {
+            disableHttps: config.disableHttps
+          })
+        );
       },
       onError(err) {
         toast.error(String(err));
@@ -325,7 +338,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   useEffect(() => {
     if (tabType === 'yaml') {
       try {
-        setYamlList(formData2Yamls(realTimeForm.current, config.userDomains));
+        setYamlList(
+          formData2Yamls(realTimeForm.current, config.userDomains, {
+            disableHttps: config.disableHttps
+          })
+        );
       } catch (error) {}
     }
   }, [router.query.name, tabType]);
@@ -434,7 +451,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const doSubmit = useCallback(() => {
     formHook.handleSubmit(async (data) => {
-      const parseYamls = formData2Yamls(data, config.userDomains);
+      const parseYamls = formData2Yamls(data, config.userDomains, {
+        disableHttps: config.disableHttps
+      });
       setYamlList(parseYamls);
 
       // gpu inventory check

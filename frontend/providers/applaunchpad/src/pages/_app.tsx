@@ -5,6 +5,7 @@ import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
+import { buildExternalUrl } from '@/utils/network-url';
 import { ChakraProvider } from '@chakra-ui/react';
 import { dehydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Fira_Code } from 'next/font/google';
@@ -89,6 +90,15 @@ const AppContent = ({ Component, pageProps, title, description }: AppContentProp
     content: 'jump_message'
   });
   const config = useClientAppConfig();
+  const desktopUrl = buildExternalUrl({
+    protocol: 'HTTP',
+    host: config.desktopDomain,
+    config: {
+      disableHttps: config.disableHttps,
+      cloudPort: config.port,
+      httpPort: config.httpPort
+    }
+  });
 
   const getSession = useCallback(() => {
     return useUserStore.getState().session ?? null;
@@ -111,7 +121,7 @@ const AppContent = ({ Component, pageProps, title, description }: AppContentProp
         console.log('App is not running in desktop');
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           openConfirm(() => {
-            window.open(`https://${config.desktopDomain}`, '_self');
+            window.open(desktopUrl, '_self');
           })();
         }
       }
@@ -211,7 +221,7 @@ const AppContent = ({ Component, pageProps, title, description }: AppContentProp
             action?: string;
           }>
         ) => {
-          const whitelist = [`https://${config.desktopDomain}`];
+          const whitelist = [desktopUrl];
           if (!whitelist.includes(e.origin)) {
             return;
           }
