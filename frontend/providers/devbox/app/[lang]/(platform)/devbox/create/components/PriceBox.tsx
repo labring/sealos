@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
-import { CurrencySymbol } from '@sealos/ui';
+import { CurrencySymbol } from '@labring/sealos-ui';
 import { useTranslations } from 'next-intl';
 import { CircuitBoard, Cpu, MemoryStick } from 'lucide-react';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
 
-import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
+import { Card, CardContent, CardHeader } from '@labring/sealos-shadcn-ui/card';
 
 export const colorMap = {
   cpu: '#33BABB',

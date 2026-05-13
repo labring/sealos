@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@sealos/shadcn-ui';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Label } from '@sealos/shadcn-ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@labring/sealos-shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Label } from '@labring/sealos-shadcn-ui/label';
 import { ProviderType } from '@/types/alert';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { useTranslation } from 'next-i18next';

@@ -4,14 +4,14 @@ import useOverviewStore from '@/stores/overview';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useEffect } from 'react';
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
+} from '@labring/sealos-shadcn-ui/select';
 
 export default function NamespaceMenu({
   isDisabled,

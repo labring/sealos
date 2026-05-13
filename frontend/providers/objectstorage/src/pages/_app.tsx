@@ -9,16 +9,16 @@ import { appWithTranslation } from 'next-i18next';
 import NextApp, { AppContext, AppInitialProps, type AppProps } from 'next/app';
 import { useRouter } from 'next/router';
 import { useEffect, useCallback } from 'react';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { sealosApp, createSealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { sealosApp, createSealosApp } from '@labring/sealos-desktop-sdk/app';
 import {
   ClientConfigProvider,
   prefetchClientAppConfig,
   setupClientAppConfigDefaults
-} from '@sealos/shared';
+} from '@labring/sealos-shared-sdk';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
-import { QuotaGuardProvider, type SupportedLang } from '@sealos/shared';
-import { InsufficientQuotaDialog } from '@sealos/shared/chakra';
+import { QuotaGuardProvider, type SupportedLang } from '@labring/sealos-shared-sdk';
+import { InsufficientQuotaDialog } from '@labring/sealos-shared-sdk/chakra';
 
 const queryClient = new QueryClient({
   defaultOptions: {

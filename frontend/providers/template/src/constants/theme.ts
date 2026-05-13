@@ -5,7 +5,7 @@ import {
   defineStyleConfig,
   extendTheme
 } from '@chakra-ui/react';
-import { theme as sealosTheme } from '@sealos/ui';
+import { theme as sealosTheme } from '@labring/sealos-ui';
 // @ts-ignore
 import { modalAnatomy, selectAnatomy, switchAnatomy } from '@chakra-ui/anatomy';
 const { definePartsStyle: selectPart, defineMultiStyleConfig: selectMultiStyle } =

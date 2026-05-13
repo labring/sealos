@@ -4,16 +4,16 @@ import DynamicTime from './Time';
 import { REFRESH_INTERVAL_OPTIONS } from '@/constants/monitor';
 import useDateTimeStore from '@/store/date';
 import dynamic from 'next/dynamic';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
-import { Separator } from '@sealos/shadcn-ui/separator';
+} from '@labring/sealos-shadcn-ui/select';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 import { RefreshCw } from 'lucide-react';
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 

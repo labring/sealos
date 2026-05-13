@@ -72,7 +72,7 @@ module.exports = (phase, { defaultConfig }) => {
           }
         ];
       },
-      transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk']
+      transpilePackages: ['@labring/sealos-ui', '@labring/sealos-desktop-sdk']
     };
     return nextConfig;
   } else
@@ -83,6 +83,6 @@ module.exports = (phase, { defaultConfig }) => {
         outputFileTracingRoot: path.join(__dirname, '../../')
       },
       output: 'standalone',
-      transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk']
+      transpilePackages: ['@labring/sealos-ui', '@labring/sealos-desktop-sdk']
     };
 };

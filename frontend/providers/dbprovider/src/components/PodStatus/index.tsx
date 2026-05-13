@@ -3,7 +3,7 @@ import { Box, Flex, useTheme } from '@chakra-ui/react';
 import { PodStatusEnum, podStatusMap } from '@/constants/db';
 import type { V1ContainerStatus } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
-import { MyTooltip } from '@sealos/ui';
+import { MyTooltip } from '@labring/sealos-ui';
 
 const PodStatus = ({ containerStatuses }: { containerStatuses: V1ContainerStatus[] }) => {
   const theme = useTheme();

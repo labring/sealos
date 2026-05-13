@@ -6,8 +6,8 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@sealos/shadcn-ui/drawer';
-import { Button } from '@sealos/shadcn-ui/button';
+} from '@labring/sealos-shadcn-ui/drawer';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 
 const ConfigMapDetailModal = ({
   mountPath,

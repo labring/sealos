@@ -1,4 +1,4 @@
-import { McpHandler } from 'sealos-mcp-sdk';
+import { McpHandler } from '@labring/sealos-mcp-sdk';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';

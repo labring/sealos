@@ -3,8 +3,8 @@ import { UseFormReturn } from 'react-hook-form';
 
 import { useEnvStore } from '@/stores/env';
 
-import { Checkbox } from '@sealos/shadcn-ui/checkbox';
-import { FormControl, FormField, FormItem, FormMessage } from '@sealos/shadcn-ui/form';
+import { Checkbox } from '@labring/sealos-shadcn-ui/checkbox';
+import { FormControl, FormField, FormItem, FormMessage } from '@labring/sealos-shadcn-ui/form';
 
 interface AgreeTermsFieldProps {
   form: UseFormReturn<any>;

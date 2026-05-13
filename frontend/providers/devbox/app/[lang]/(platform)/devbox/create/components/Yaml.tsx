@@ -4,12 +4,12 @@ import { Copy, FileCode } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 import Code from '@/components/Code';
-import { Card } from '@sealos/shadcn-ui/card';
-import { Button } from '@sealos/shadcn-ui/button';
-import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { Card } from '@labring/sealos-shadcn-ui/card';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { ScrollArea } from '@labring/sealos-shadcn-ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@labring/sealos-shadcn-ui/tabs';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useRouter } from '@/i18n';
 import type { YamlItemType } from '@/types';
 import { obj2Query, useCopyData } from '@/utils/tools';

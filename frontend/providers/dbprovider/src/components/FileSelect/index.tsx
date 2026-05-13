@@ -1,6 +1,6 @@
 import { useLoading } from '@/hooks/useLoading';
 import { Box, Flex, Icon, Text, type BoxProps } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useRef, useState } from 'react';
 import MyIcon from '../Icon';

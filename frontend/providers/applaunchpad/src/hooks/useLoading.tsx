@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Loading as ShadcnLoading } from '@sealos/shadcn-ui/loading';
-import { cn } from '@sealos/shadcn-ui';
+import { Loading as ShadcnLoading } from '@labring/sealos-shadcn-ui/loading';
+import { cn } from '@labring/sealos-shadcn-ui';
 
 export const useLoading = (props?: { defaultLoading: boolean }) => {
   const [isLoading, setIsLoading] = useState(props?.defaultLoading || false);

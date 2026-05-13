@@ -9,10 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter
-} from '@sealos/shadcn-ui/dialog';
-import { Label } from '@sealos/shadcn-ui/label';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Textarea } from '@sealos/shadcn-ui/textarea';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Textarea } from '@labring/sealos-shadcn-ui/textarea';
 
 import { editDevboxVersion } from '@/api/devbox';
 import { DevboxVersionListItemType } from '@/types/devbox';

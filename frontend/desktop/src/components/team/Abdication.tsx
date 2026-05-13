@@ -24,7 +24,7 @@ import { abdicateRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
-import { ExchangeIcon, ExpanMoreIcon } from '@sealos/ui';
+import { ExchangeIcon, ExpanMoreIcon } from '@labring/sealos-ui';
 import { useConfigStore } from '@/stores/config';
 
 export default function Abdication({

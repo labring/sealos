@@ -12,7 +12,7 @@ import Sidebar from './components/Sidebar';
 import Release from './components/Release';
 import IDEButton from '@/components/IDEButton';
 import { TabValue } from './components/Sidebar';
-import { Loading } from '@sealos/shadcn-ui/loading';
+import { Loading } from '@labring/sealos-shadcn-ui/loading';
 import LiveMonitoring from './components/LiveMonitoring';
 import AdvancedConfig from './components/AdvancedConfig';
 

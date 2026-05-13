@@ -1,4 +1,4 @@
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { formatMoney } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import CurrencySymbol from '../CurrencySymbol';

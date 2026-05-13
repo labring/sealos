@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Dialog, DialogContent, DialogOverlay, Input } from '@sealos/shadcn-ui';
+import { Button, Dialog, DialogContent, DialogOverlay, Input } from '@labring/sealos-shadcn-ui';
 import { LoaderCircle } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import { formatTime } from '@/utils/format';

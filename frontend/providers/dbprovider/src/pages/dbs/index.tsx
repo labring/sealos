@@ -9,7 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import { Box, Flex, Switch, Text } from '@chakra-ui/react';
 import { useGuideStore } from '@/store/guide';
 import { useRouter } from 'next/router';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 import { type DatabaseAlertItem } from '@/api/db';
 
 function Home() {

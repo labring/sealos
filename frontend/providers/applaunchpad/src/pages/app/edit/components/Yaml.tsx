@@ -7,13 +7,13 @@ import { obj2Query } from '@/api/tools';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 import { Copy, FileCode2, Check } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@labring/sealos-shadcn-ui/tabs';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@sealos/shadcn-ui/tooltip';
+} from '@labring/sealos-shadcn-ui/tooltip';
 
 const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
   const router = useRouter();

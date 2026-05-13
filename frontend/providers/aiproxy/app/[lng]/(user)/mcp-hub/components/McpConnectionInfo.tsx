@@ -13,7 +13,7 @@ import {
   Tabs,
   Text,
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useRouter } from 'next/navigation';
 
 import { useTranslationClientSide } from '@/app/i18n/client';

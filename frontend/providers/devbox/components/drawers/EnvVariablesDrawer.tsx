@@ -7,10 +7,10 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@sealos/shadcn-ui/drawer';
-import { Textarea } from '@sealos/shadcn-ui/textarea';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Label } from '@sealos/shadcn-ui/label';
+} from '@labring/sealos-shadcn-ui/drawer';
+import { Textarea } from '@labring/sealos-shadcn-ui/textarea';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Label } from '@labring/sealos-shadcn-ui/label';
 
 interface EnvVariablesDrawerProps {
   onClose: () => void;

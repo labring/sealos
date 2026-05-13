@@ -1,7 +1,7 @@
 'use client';
 import { useRef } from 'react';
 import { Button, Divider, Flex, Text, useDisclosure } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui/src/components';
+import { useMessage } from '@labring/sealos-ui/src/components';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getOption, uploadOptions } from '@/api/platform';

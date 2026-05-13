@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 
 import PodLineChart from '@/components/MonitorChart';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@sealos/shadcn-ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@labring/sealos-shadcn-ui/dialog';
 
 import { useDevboxStore } from '@/stores/devbox';
 

@@ -5,16 +5,16 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types/api';
 import { toast } from 'sonner';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import {
   Dialog,
   DialogClose,
   DialogContent,
   DialogFooter,
   DialogTitle
-} from '@sealos/shadcn-ui/dialog';
-import { Label } from '@sealos/shadcn-ui/label';
-import { Input } from '@sealos/shadcn-ui/input';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Input } from '@labring/sealos-shadcn-ui/input';
 import { Loader } from 'lucide-react';
 
 interface GiftCodeModalProps {

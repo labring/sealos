@@ -12,7 +12,7 @@ import {
   Flex,
   Text,
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 
 import { useTranslationClientSide } from '@/app/i18n/client';
 import { useI18n } from '@/providers/i18n/i18nContext';

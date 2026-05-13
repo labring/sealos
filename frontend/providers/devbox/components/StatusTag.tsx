@@ -2,10 +2,10 @@ import React from 'react';
 import { CircleHelp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import type { DevboxReleaseStatusMapType, DevboxStatusMapType } from '@/types/devbox';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 
 interface StatusTagProps {
   status: DevboxStatusMapType | DevboxReleaseStatusMapType;

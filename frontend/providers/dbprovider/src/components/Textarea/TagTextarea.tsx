@@ -1,5 +1,5 @@
 import { Box, BoxProps, Flex, Input, Tag, TagCloseButton, TagLabel } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useRef, useState } from 'react';
 

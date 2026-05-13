@@ -7,7 +7,7 @@ import { ChangeEventHandler, useMemo, useState } from 'react';
 import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDay } from 'date-fns';
 import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useDateTimeStore } from '@/stores/date';
 import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
 
@@ -17,11 +17,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Separator } from '@sealos/shadcn-ui/separator';
-import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
+} from '@labring/sealos-shadcn-ui/select';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@labring/sealos-shadcn-ui/popover';
 
 interface DatePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   isDisabled?: boolean;

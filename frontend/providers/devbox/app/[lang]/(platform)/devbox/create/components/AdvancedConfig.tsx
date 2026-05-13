@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 import { PencilLine, Plus, Trash2, FileText, HardDrive } from 'lucide-react';
 
-import { Button } from '@sealos/shadcn-ui/button';
-import { Separator } from '@sealos/shadcn-ui/separator';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 import EnvVariablesDrawer from '@/components/drawers/EnvVariablesDrawer';
 import ConfigMapDrawer from '@/components/drawers/ConfigMapDrawer';
 import NetworkStorageDrawer from '@/components/drawers/NetworkStorageDrawer';

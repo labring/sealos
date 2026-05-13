@@ -61,8 +61,8 @@ pnpm --filter=<path> -r add <package>
 # add local
 pnpm --filter=<path> -r --offline add <package>
 # such as:
-# pnpm --filter=providers/costcenter -r --offline add sealos-desktop-sdk
-# pnpm --filter=desktop -r --offline add sealos-desktop-sdk
+# pnpm --filter=providers/costcenter -r --offline add @labring/sealos-desktop-sdk
+# pnpm --filter=desktop -r --offline add @labring/sealos-desktop-sdk
 ```
 
 ## how to build

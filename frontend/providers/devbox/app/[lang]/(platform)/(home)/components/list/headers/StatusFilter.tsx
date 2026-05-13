@@ -10,7 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@sealos/shadcn-ui/dropdown-menu';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
 import DevboxStatusTag from '@/components/StatusTag';
 import { Polygon } from '@/components/Polygon';
 

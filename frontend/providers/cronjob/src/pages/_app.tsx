@@ -18,15 +18,15 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import { useEffect, useState, useCallback } from 'react';
 import 'react-day-picker/dist/style.css';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/chakra';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
+import { InsufficientQuotaDialog, type SupportedLang } from '@labring/sealos-shared-sdk/chakra';
 import {
   ClientConfigProvider,
   prefetchClientAppConfig,
   setupClientAppConfigDefaults,
   QuotaGuardProvider
-} from '@sealos/shared';
+} from '@labring/sealos-shared-sdk';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 
 Router.events.on('routeChangeStart', () => NProgress.start());

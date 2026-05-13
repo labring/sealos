@@ -4,8 +4,8 @@ import { PencilLine } from 'lucide-react';
 import { type CellContext } from '@tanstack/react-table';
 
 import { DevboxListItemTypeV2 } from '@/types/devbox';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import { Separator } from '@sealos/shadcn-ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 import { RuntimeIcon } from '@/components/RuntimeIcon';
 
 interface NameProps extends CellContext<DevboxListItemTypeV2, unknown> {

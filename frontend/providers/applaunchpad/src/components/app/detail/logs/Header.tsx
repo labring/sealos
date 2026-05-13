@@ -1,17 +1,17 @@
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { RefreshCw } from 'lucide-react';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
-import { Separator } from '@sealos/shadcn-ui/separator';
+} from '@labring/sealos-shadcn-ui/select';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 
 import AdvancedSelect, { ListItem } from '@/components/AdvancedSelect';
 import { REFRESH_INTERVAL_OPTIONS } from '@/constants/monitor';

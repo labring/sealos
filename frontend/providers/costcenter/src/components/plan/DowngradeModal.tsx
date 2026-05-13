@@ -1,6 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import { forwardRef, useCallback } from 'react';
-import { Button, Dialog, DialogContent, DialogOverlay, Separator } from '@sealos/shadcn-ui';
+import { Button, Dialog, DialogContent, DialogOverlay, Separator } from '@labring/sealos-shadcn-ui';
 import { SubscriptionPlan } from '@/types/plan';
 import { getWorkspaceQuota } from '@/api/workspace';
 import useSessionStore from '@/stores/session';
@@ -10,7 +10,7 @@ import { UserQuotaItem, WorkspaceQuotaResponseSchema } from '@/types/workspace';
 import { useQuery } from '@tanstack/react-query';
 import { formatTime } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
-import { Quantity } from '@sealos/shared';
+import { Quantity } from '@labring/sealos-shared-sdk';
 
 interface DowngradeModalProps {
   targetPlan?: SubscriptionPlan;

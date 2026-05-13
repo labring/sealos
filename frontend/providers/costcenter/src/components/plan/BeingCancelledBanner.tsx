@@ -1,6 +1,6 @@
 import { Info } from 'lucide-react';
 import { Trans, useTranslation } from 'next-i18next';
-import { Alert, AlertDescription, cn } from '@sealos/shadcn-ui';
+import { Alert, AlertDescription, cn } from '@labring/sealos-shadcn-ui';
 
 function formatBannerDate(dateStr: string, lang: string) {
   const date = new Date(dateStr);

@@ -16,7 +16,7 @@ import {
   Thead,
   Tr
 } from '@chakra-ui/react';
-import { MyTooltip, useMessage } from '@sealos/ui';
+import { MyTooltip, useMessage } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';

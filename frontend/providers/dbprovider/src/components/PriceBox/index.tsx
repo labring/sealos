@@ -1,7 +1,7 @@
 import { SOURCE_PRICE } from '@/store/static';
 import { I18nCommonKey } from '@/types/i18next';
 import { Box, Flex, useTheme, Text, Center } from '@chakra-ui/react';
-import { CurrencySymbol, MyTooltip } from '@sealos/ui';
+import { CurrencySymbol, MyTooltip } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import MyIcon from '@/components/Icon';

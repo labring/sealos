@@ -1,6 +1,6 @@
 import { Box, Center, Fade, Flex, Text, useMediaQuery } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { CurrencySymbol } from '@sealos/ui';
+import { CurrencySymbol } from '@labring/sealos-ui';
 
 interface SaleBannerProps {
   isBannerVisible: boolean;

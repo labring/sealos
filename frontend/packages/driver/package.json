@@ -1,5 +1,5 @@
 {
-  "name": "@sealos/driver",
+  "name": "@labring/sealos-driver-sdk",
   "version": "1.0.0",
   "description": "",
   "main": "./src/driver.ts",
@@ -24,5 +24,8 @@
   "devDependencies": {
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -2,12 +2,12 @@
 
 import throttle from 'lodash/throttle';
 import { useEffect, useState, useCallback } from 'react';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
 import { usePathname, useRouter } from '@/i18n';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale } from 'next-intl';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 import { initUser } from '@/api/template';
 import { useEnvStore } from '@/stores/env';
@@ -18,10 +18,10 @@ import { useGlobalStore } from '@/stores/global';
 import { getLangStore, setLangStore } from '@/utils/cookie';
 import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 
-import { Toaster } from '@sealos/shadcn-ui/sonner';
+import { Toaster } from '@labring/sealos-shadcn-ui/sonner';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
-import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
-import { QuotaGuardProvider } from '@sealos/shared';
+import { InsufficientQuotaDialog, type SupportedLang } from '@labring/sealos-shared-sdk/shadcn';
+import { QuotaGuardProvider } from '@labring/sealos-shared-sdk';
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();

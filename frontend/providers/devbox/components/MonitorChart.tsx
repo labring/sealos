@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import * as echarts from 'echarts';
 import React, { useEffect, useMemo, useRef } from 'react';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useGlobalStore } from '@/stores/global';
 import { MonitorDataResult } from '@/types/monitor';
 

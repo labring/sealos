@@ -1,5 +1,5 @@
-@import '@sealos/shadcn-ui/shadcn.css';
-@import '@sealos/shadcn-ui/styles.css';
+@import '@labring/sealos-shadcn-ui/shadcn.css';
+@import '@labring/sealos-shadcn-ui/styles.css';
 
 /* New designs uses white color for background. It's different from the default theme in shadcn-ui package (previously used by DevBox). */
 :root {

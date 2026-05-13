@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useLoading } from '@/hooks/useLoading';
-import { Skeleton } from '@sealos/shadcn-ui/skeleton';
+import { Skeleton } from '@labring/sealos-shadcn-ui/skeleton';
 
 interface DetailLayoutProps {
   children: React.ReactNode;

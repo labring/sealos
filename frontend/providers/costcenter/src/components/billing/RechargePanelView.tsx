@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { DateRangePicker } from '@sealos/shadcn-ui/date-range-picker';
-import { Pagination } from '@sealos/shadcn-ui/pagination';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
+import { DateRangePicker } from '@labring/sealos-shadcn-ui/date-range-picker';
+import { Pagination } from '@labring/sealos-shadcn-ui/pagination';
 import { Search } from 'lucide-react';
 import {
   TableLayout,
@@ -12,8 +12,8 @@ import {
   TableLayoutBody,
   TableLayoutFooter,
   TableLayoutContent
-} from '@sealos/shadcn-ui/table-layout';
-import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
+} from '@labring/sealos-shadcn-ui/table-layout';
+import { TableHead, TableRow, TableCell } from '@labring/sealos-shadcn-ui/table';
 import { formatMoney } from '@/utils/format';
 import { format as formatDate } from 'date-fns';
 import { useTranslation } from 'next-i18next';

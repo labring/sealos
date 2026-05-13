@@ -3,8 +3,8 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 
-import { cn } from '@sealos/shadcn-ui';
-import { Label } from '@sealos/shadcn-ui/label';
+import { cn } from '@labring/sealos-shadcn-ui';
+import { Label } from '@labring/sealos-shadcn-ui/label';
 import { usePriceStore } from '@/stores/price';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { GpuAmountMarkList } from '@/constants/devbox';
@@ -15,7 +15,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
+} from '@labring/sealos-shadcn-ui/select';
 
 export default function Gpu({
   countGpuInventory

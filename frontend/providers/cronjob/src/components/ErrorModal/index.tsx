@@ -13,7 +13,7 @@ import {
 import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
 import { ResponseCode } from '@/types/response';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 
 const ErrorModal = ({
   title,

@@ -5,10 +5,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter
-} from '@sealos/shadcn-ui/dialog';
-import { Textarea } from '@sealos/shadcn-ui/textarea';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Label } from '@sealos/shadcn-ui/label';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Textarea } from '@labring/sealos-shadcn-ui/textarea';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Label } from '@labring/sealos-shadcn-ui/label';
 import { InvoicePrintable } from './InvoicePrintable';
 import { OrderListRow } from './OrderListView';
 import { formatMoney } from '@/utils/format';

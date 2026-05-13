@@ -12,7 +12,7 @@ import { RequestSchema, nanoid } from './schema';
 import { getRegionUid } from '@/utils/env';
 import { parseTemplateConfig } from '@/utils/tools';
 import { generateDevboxRbacAndJob } from '@/utils/rbacJobGenerator';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 export const dynamic = 'force-dynamic';
 

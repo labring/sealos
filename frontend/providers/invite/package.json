@@ -47,7 +47,7 @@
     "react-markdown": "^8.0.7",
     "react-syntax-highlighter": "^15.5.0",
     "sass": "^1.68.0",
-    "sealos-desktop-sdk": "workspace:*",
+    "@labring/sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.2.2",
     "zustand": "^4.4.1"
   },

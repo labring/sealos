@@ -4,7 +4,7 @@ import { withErrorHandler } from '@/services/backend/middleware';
 import { generateBucketCR } from '@/utils/json2Yaml';
 import { V1Status } from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { initK8s } from 'sealos-desktop-sdk/service';
+import { initK8s } from '@labring/sealos-desktop-sdk/service';
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   const client = await initK8s({ req });

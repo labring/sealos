@@ -6,8 +6,8 @@ import type {
   ExceededWorkspaceQuotaItem,
   WorkspaceQuotaItemType
 } from '../types/workspace';
-import type { SessionV1 } from 'sealos-desktop-sdk';
-import type { sealosApp as defaultSealosApp } from 'sealos-desktop-sdk/app';
+import type { SessionV1 } from '@labring/sealos-desktop-sdk';
+import type { sealosApp as defaultSealosApp } from '@labring/sealos-desktop-sdk/app';
 
 /**
  * @internal

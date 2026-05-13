@@ -1,6 +1,6 @@
 import { Config } from '@/config';
 import { ClientAppConfig, ClientAppConfigSchema } from '@/types/config';
-import { validateClientAppConfigOrThrow } from '@sealos/shared/server/config';
+import { validateClientAppConfigOrThrow } from '@labring/sealos-shared-sdk/server/config';
 
 export function getClientAppConfigServer(): ClientAppConfig {
   const fullConfig = Config();

@@ -1,5 +1,5 @@
 import { AlertCircle, LoaderCircle } from 'lucide-react';
-import { Button, Dialog, DialogContent, DialogOverlay } from '@sealos/shadcn-ui';
+import { Button, Dialog, DialogContent, DialogOverlay } from '@labring/sealos-shadcn-ui';
 import { useTranslation } from 'next-i18next';
 import usePlanStore from '@/stores/plan';
 

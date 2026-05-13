@@ -5,10 +5,10 @@ import { tagColorMap, defaultTagColor } from '@/constants/tag';
 import { Tag, type Tag as TTag } from '@/prisma/generated/client';
 import { RuntimeIcon } from '@/components/RuntimeIcon';
 
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import { cn } from '@sealos/shadcn-ui';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@labring/sealos-shadcn-ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
+import { cn } from '@labring/sealos-shadcn-ui';
 
 interface TRepositoryItem {
   iconId: string | null;

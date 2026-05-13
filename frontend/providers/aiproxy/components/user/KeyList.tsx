@@ -29,8 +29,8 @@ import {
   Tr,
   useDisclosure,
 } from '@chakra-ui/react';
-import { CurrencySymbol } from '@sealos/ui';
-import { useMessage } from '@sealos/ui';
+import { CurrencySymbol } from '@labring/sealos-ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Column,

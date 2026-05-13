@@ -1,5 +1,5 @@
 {
-  "name": "@sealos/shadcn-ui",
+  "name": "@labring/sealos-shadcn-ui",
   "version": "1.0.0",
   "scripts": {
     "test:components": "vitest --project components",
@@ -83,5 +83,9 @@
         "src/components/*.tsx"
       ]
     }
+  },
+  "private": true,
+  "publishConfig": {
+    "access": "public"
   }
 }

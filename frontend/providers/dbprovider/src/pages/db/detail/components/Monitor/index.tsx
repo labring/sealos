@@ -7,7 +7,7 @@ import RunningTime from './RunningTime';
 import { DBTypeEnum } from '@/constants/db';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
-import { Tabs } from '@sealos/ui';
+import { Tabs } from '@labring/sealos-ui';
 
 enum MonitorType {
   resources = 'resources',

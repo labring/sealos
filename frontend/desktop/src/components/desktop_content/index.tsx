@@ -9,7 +9,7 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
+import { createMasterAPP, masterApp } from '@labring/sealos-desktop-sdk/master';
 import { ChakraIndicator } from './ChakraIndicator';
 // import Apps from './apps';
 import IframeWindow from './iframe_window';

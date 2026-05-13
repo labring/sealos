@@ -22,10 +22,10 @@ import ReadMe from './components/ReadMe';
 import { generateYamlData, getTemplateInputDefaultValues } from '@/utils/template';
 import { getResourceUsage } from '@/utils/usage';
 import Head from 'next/head';
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { Config } from '@/config';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 

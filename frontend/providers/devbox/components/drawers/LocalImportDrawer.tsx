@@ -11,12 +11,12 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@sealos/shadcn-ui/drawer';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Label } from '@sealos/shadcn-ui/label';
-import { Textarea } from '@sealos/shadcn-ui/textarea';
-import { Checkbox } from '@sealos/shadcn-ui/checkbox';
+} from '@labring/sealos-shadcn-ui/drawer';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Textarea } from '@labring/sealos-shadcn-ui/textarea';
+import { Checkbox } from '@labring/sealos-shadcn-ui/checkbox';
 import type { LocalImportFormData, ImportStage } from '@/types/import';
 import { createDevbox, getDevboxByName, uploadAndExtractFile, autostartDevbox } from '@/api/devbox';
 import { getTemplate } from '@/api/template';
