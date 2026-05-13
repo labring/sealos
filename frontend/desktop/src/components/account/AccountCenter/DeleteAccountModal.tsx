@@ -35,6 +35,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import {
+  isDeleteAccountConfirmationMatched,
+  isForceDeleteConfirmationMatched
+} from './deleteAccountConfirm';
 import { SettingInput } from './SettingInput';
 import { SettingInputGroup } from './SettingInputGroup';
 enum PageStatus {
@@ -75,6 +79,19 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
   const [verifyValue, setVerifyValue] = useState('');
   const [forceDeleteValue, setForceDeleteValue] = useState('');
   const [code, setCode] = useState('');
+  const isDeleteConfirmValid = isDeleteAccountConfirmationMatched({
+    accountName: nickname,
+    expectedAccountName: session?.user.name,
+    confirmationText: verifyValue,
+    expectedConfirmationText: verifyWords
+  });
+  const isForceDeleteConfirmValid = isForceDeleteConfirmationMatched(
+    forceDeleteValue,
+    forceDeleteKeywords
+  );
+  const isDeleteButtonDisabled =
+    (pagestatus === PageStatus.IDLE && !isDeleteConfirmValid) ||
+    (pagestatus === PageStatus.FORCE_DELETE && !isForceDeleteConfirmValid);
   const { openApp } = useAppStore();
   const appType = [
     '', // 0
@@ -343,6 +360,8 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                   <Button
                     onClick={async () => {
                       if (pagestatus === PageStatus.IDLE) {
+                        if (!isDeleteConfirmValid) return;
+
                         const res = await mutationCheck.mutateAsync();
                         const code = res.data?.code || '';
                         if (res.message === RESOURCE_STATUS.REMAIN_RESOURCE) {
@@ -357,6 +376,8 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                         // direct to force delete page
                         setPagestatus(PageStatus.FORCE_DELETE);
                       } else {
+                        if (!isForceDeleteConfirmValid) return;
+
                         // force delete
                         mutationForce.mutate({ code });
                         setCode('');
@@ -373,6 +394,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                     color={'red.600'}
                     fontSize={'12px'}
                     {...props}
+                    isDisabled={props.isDisabled || isDeleteButtonDisabled}
                   >
                     {pagestatus === PageStatus.REMAIN_RESOURCES
                       ? t('common:delete_account_force_button')
