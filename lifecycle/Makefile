@@ -43,6 +43,12 @@ Options:
                    This option is available when using: make {build}.multiarch
                    Example: make build.multiarch PLATFORMS="linux_arm64 linux_amd64"
 
+  CC               Override the C compiler for CGO-enabled binaries in single-platform builds.
+                   Example: make build BINS="sealos" CC=gcc
+
+  CC_<platform>    Override the C compiler for a specific platform in multi-platform builds.
+                   Example: make build.multiarch BINS="sealos" CC_linux_arm64=aarch64-linux-gnu-gcc
+
   V                Set to 1 enable verbose build. Default is 0.
 endef
 export USAGE_OPTIONS

@@ -148,6 +148,10 @@ func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 	return k.execer.Copy(host, srcFilePath, dstFilePath)
 }
 
+func (k *KubeadmRuntime) sshFetch(host, srcFilePath, dstFilePath string) error {
+	return k.execer.Fetch(host, srcFilePath, dstFilePath)
+}
+
 func (k *KubeadmRuntime) getKubeInterface() (kubernetes.Client, error) {
 	if k.cli != nil {
 		return k.cli, nil

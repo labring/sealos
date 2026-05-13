@@ -19,10 +19,14 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"path/filepath"
+	"strings"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/labring/sealos/pkg/cert"
+	"github.com/labring/sealos/pkg/runtime"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -32,13 +36,250 @@ import (
 
 const (
 	AdminConf      = "admin.conf"
+	SuperAdminConf = "super-admin.conf"
 	ControllerConf = "controller-manager.conf"
 	SchedulerConf  = "scheduler.conf"
 	KubeletConf    = "kubelet.conf"
 )
 
-func (k *KubeadmRuntime) Renew() error {
-	return errors.New("not implement")
+func (k *KubeadmRuntime) localKubeVersion() string {
+	if version := k.getKubeVersion(); version != "" {
+		return version
+	}
+	return k.getKubeVersionFromImage()
+}
+
+func (k *KubeadmRuntime) Renew(opts runtime.CertRenewOptions) error {
+	normalizedTargets, renewAll, err := normalizeRenewTargets(opts.Targets)
+	if err != nil {
+		return err
+	}
+	if err = validateRenewGroups(normalizedTargets, renewAll, opts.Groups); err != nil {
+		return err
+	}
+
+	if renewAll {
+		return k.renewAllLocalCertMaterials(opts.Groups)
+	}
+
+	hostName, err := k.execHostname(k.getMaster0IPAndPort())
+	if err != nil {
+		return fmt.Errorf("get hostname failed %v", err)
+	}
+	localTargets := effectiveLocalKubeConfigRenewTargets(normalizedTargets, k.localKubeVersion())
+	if err = renewLocalKubeConfigFiles(k, hostName, localTargets, opts.Groups); err != nil {
+		return err
+	}
+	if shouldEnsureAdminClusterRoleBinding(k.localKubeVersion(), opts.Groups, false, localTargets) {
+		if err = k.ensureAdminClusterRoleBinding(); err != nil {
+			return err
+		}
+	}
+	if containsRenewTarget(normalizedTargets, AdminConf) {
+		if err := k.syncLocalAdminKubeConfigCopies(); err != nil {
+			return err
+		}
+	}
+	k.cli = nil
+	return nil
+}
+
+func containsRenewTarget(targets []string, want string) bool {
+	for _, target := range targets {
+		if target == want {
+			return true
+		}
+	}
+	return false
+}
+
+func effectiveLocalKubeConfigRenewTargets(targets []string, kubeVersion string) []string {
+	effectiveTargets := append([]string{}, targets...)
+	if containsRenewTarget(targets, AdminConf) && certUsesClusterAdminsIdentityModel(kubeVersion) && !containsRenewTarget(targets, SuperAdminConf) {
+		effectiveTargets = append(effectiveTargets, SuperAdminConf)
+	}
+	return effectiveTargets
+}
+
+func (k *KubeadmRuntime) renewAllLocalCertMaterials(adminOrganizations []string) error {
+	if err := k.mergeWithBuiltinKubeadmConfig(); err != nil {
+		if strings.TrimSpace(k.getServiceCIDR()) == "" {
+			return fmt.Errorf("load cluster networking and certSANs for local cert renew: %w", err)
+		}
+		logger.Warn("failed to refresh kubeadm config for local cert renew, using local config: %s", err.Error())
+	}
+
+	hostName, err := k.execHostname(k.getMaster0IPAndPort())
+	if err != nil {
+		return fmt.Errorf("get hostname failed %v", err)
+	}
+	if err := cert.RenewLeafCertsForKubeVersion(
+		k.pathResolver.PkiPath(),
+		k.pathResolver.PkiEtcdPath(),
+		k.getCertSANs(),
+		k.getMaster0IP(),
+		hostName,
+		k.getServiceCIDR(),
+		k.getDNSDomain(),
+		k.localKubeVersion(),
+	); err != nil {
+		return fmt.Errorf("failed to renew local pki files: %w", err)
+	}
+	localTargets := defaultLocalKubeConfigFiles(k.localKubeVersion())
+	if err := renewLocalKubeConfigFiles(k, hostName, localTargets, adminOrganizations); err != nil {
+		return err
+	}
+	if shouldEnsureAdminClusterRoleBinding(k.localKubeVersion(), adminOrganizations, true, localTargets) {
+		if err := k.ensureAdminClusterRoleBinding(); err != nil {
+			return err
+		}
+	}
+	if err := k.syncLocalAdminKubeConfigCopies(); err != nil {
+		return err
+	}
+	k.cli = nil
+	return nil
+}
+
+func renewLocalKubeConfigFiles(k *KubeadmRuntime, hostName string, files []string, adminOrganizations []string) error {
+	return renewLocalKubeConfigFilesForVersion(k, hostName, k.localKubeVersion(), files, adminOrganizations)
+}
+
+func renewLocalKubeConfigFilesForVersion(k *KubeadmRuntime, hostName, kubeVersion string, files []string, adminOrganizations []string) error {
+	certConfig := cert.Config{
+		Path:     k.pathResolver.PkiPath(),
+		BaseName: "ca",
+	}
+	if err := cert.RenewKubeConfigFilesForKubeVersion(
+		k.pathResolver.EtcPath(),
+		certConfig,
+		hostName,
+		k.getClusterAPIServer(),
+		"kubernetes",
+		adminOrganizations,
+		kubeVersion,
+		files...,
+	); err != nil {
+		return fmt.Errorf("failed to renew local kubeconfig files %v: %w", files, err)
+	}
+	return nil
+}
+
+func defaultLocalKubeConfigFiles(kubeVersion string) []string {
+	files := []string{AdminConf, ControllerConf, SchedulerConf, KubeletConf}
+	if certUsesClusterAdminsIdentityModel(kubeVersion) {
+		files = append(files, SuperAdminConf)
+	}
+	return files
+}
+
+func remoteControlPlaneKubeConfigFiles(includeKubelet bool) []string {
+	// super-admin.conf is intentionally kept local to the sealos host.
+	files := []string{AdminConf, ControllerConf, SchedulerConf}
+	if includeKubelet {
+		files = append(files, KubeletConf)
+	}
+	return files
+}
+
+func certUsesClusterAdminsIdentityModel(kubeVersion string) bool {
+	return cert.UsesClusterAdminsIdentityModel(kubeVersion)
+}
+
+func shouldEnsureAdminClusterRoleBinding(kubeVersion string, adminOrganizations []string, renewAll bool, targets []string) bool {
+	if !certUsesClusterAdminsIdentityModel(kubeVersion) || adminOrganizations != nil {
+		return false
+	}
+	if renewAll {
+		return true
+	}
+	for _, target := range targets {
+		if target == AdminConf {
+			return true
+		}
+	}
+	return false
+}
+
+func (k *KubeadmRuntime) ensureAdminClusterRoleBinding() error {
+	superAdminFile := filepath.Join(k.pathResolver.EtcPath(), SuperAdminConf)
+	kubeconfig := superAdminFile
+	if !file.IsExist(kubeconfig) {
+		kubeconfig = k.pathResolver.AdminFile()
+	}
+
+	client, err := kubernetes.NewKubernetesClient(kubeconfig, k.getMaster0IPAPIServer())
+	if err != nil {
+		return fmt.Errorf("build kubernetes client from %s: %w", kubeconfig, err)
+	}
+
+	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "kubeadm:cluster-admins",
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "ClusterRole",
+			Name:     "cluster-admin",
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: rbacv1.GroupKind,
+				Name: "kubeadm:cluster-admins",
+			},
+		},
+	}
+	if err := kubernetes.NewKubeIdempotency(client.Kubernetes()).CreateOrUpdateClusterRoleBinding(clusterRoleBinding); err != nil {
+		return fmt.Errorf("ensure kubeadm:cluster-admins ClusterRoleBinding: %w", err)
+	}
+	return nil
+}
+
+func normalizeRenewTargets(targets []string) ([]string, bool, error) {
+	allowed := map[string]struct{}{
+		"all":          {},
+		AdminConf:      {},
+		SuperAdminConf: {},
+		ControllerConf: {},
+		SchedulerConf:  {},
+		KubeletConf:    {},
+	}
+
+	normalized := make([]string, 0, len(targets))
+	seen := make(map[string]struct{}, len(targets))
+	for _, target := range targets {
+		t := strings.TrimSpace(target)
+		if t == "" {
+			continue
+		}
+		if _, ok := allowed[t]; !ok {
+			return nil, false, fmt.Errorf("unsupported renew target %q", t)
+		}
+		if _, ok := seen[t]; ok {
+			continue
+		}
+		seen[t] = struct{}{}
+		normalized = append(normalized, t)
+	}
+	if len(normalized) == 0 {
+		return nil, false, errors.New("at least one renew target must be specified")
+	}
+	if _, ok := seen["all"]; ok {
+		return normalized, true, nil
+	}
+	return normalized, false, nil
+}
+
+func validateRenewGroups(targets []string, renewAll bool, groups []string) error {
+	if groups == nil || renewAll {
+		return nil
+	}
+	for _, target := range targets {
+		if target == AdminConf {
+			return nil
+		}
+	}
+	return errors.New("renew groups can only be used with target admin.conf or all")
 }
 
 func (k *KubeadmRuntime) UpdateCertSANs(certSans []string) error {
@@ -133,7 +374,7 @@ func (k *KubeadmRuntime) InitCertsAndKubeConfigs() error {
 	if err := k.CreateKubeConfigFiles(); err != nil {
 		return fmt.Errorf("failed to generate kubernetes conf: %w", err)
 	}
-	return k.SendJoinMasterKubeConfigs(k.getMasterIPAndPortList()[:1], AdminConf, ControllerConf, SchedulerConf, KubeletConf)
+	return k.SendJoinMasterKubeConfigs(k.getMasterIPAndPortList()[:1], remoteControlPlaneKubeConfigFiles(true)...)
 }
 
 func (k *KubeadmRuntime) initCert() error {
@@ -167,38 +408,6 @@ func (k *KubeadmRuntime) showKubeadmCert() error {
 }
 
 func (k *KubeadmRuntime) deleteAPIServer() error {
-	podIDSh := fmt.Sprintf("crictl ps -a --name %s -o json", kubernetes.KubeAPIServer)
-	type crictlPS struct {
-		Containers []struct {
-			ID           string `json:"id"`
-			PodSandboxID string `json:"podSandboxId"`
-		} `json:"containers"`
-	}
 	logger.Info("delete pod apiserver from crictl")
-	eg, _ := errgroup.WithContext(context.Background())
-	for _, master := range k.getMasterIPAndPortList() {
-		m := master
-		eg.Go(func() error {
-			podIDJson, err := k.sshCmdToString(m, podIDSh)
-			if err != nil {
-				return err
-			}
-			ps := &crictlPS{}
-			if err = json.Unmarshal([]byte(podIDJson), ps); err != nil {
-				return err
-			}
-			if len(ps.Containers) > 0 {
-				podID := ps.Containers[0].PodSandboxID[:13]
-				logger.Debug("found podID %s in %s", podID, m)
-				//crictl stopp
-				if err = k.sshCmdAsync(m, fmt.Sprintf("crictl --timeout=10s stopp %s", podID)); err != nil {
-					return err
-				}
-				//crictl rmp
-				return k.sshCmdAsync(m, fmt.Sprintf("crictl rmp %s", podID))
-			}
-			return errors.New("not found apiServer pod running")
-		})
-	}
-	return eg.Wait()
+	return k.deleteStaticPod(kubernetes.KubeAPIServer)
 }

@@ -143,14 +143,8 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if err = k.copyStaticFiles(masters); err != nil {
 		return err
 	}
-
-	if err = k.SendJoinMasterKubeConfigs(masters, AdminConf, ControllerConf, SchedulerConf); err != nil {
-		return err
-	}
-	// TODO only needs send ca?
-	if err = k.sendNewCertAndKey(masters); err != nil {
-		return err
-	}
+	// setKubernetesToken uploads control-plane shared certs through kubeadm
+	// and embeds the matching certificateKey into the join config.
 	if err = k.setKubernetesToken(); err != nil {
 		return err
 	}
@@ -169,11 +163,6 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		logger.Info("start to join %s as master", master)
 		if err = k.imagePull(master, ""); err != nil {
 			return err
-		}
-		logger.Debug("start to generate cert for master %s", master)
-		err = k.execCert(master)
-		if err != nil {
-			return fmt.Errorf("failed to create cert for master %s: %v", master, err)
 		}
 
 		err = k.sshCmdAsync(master, joinCmd)

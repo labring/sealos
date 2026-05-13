@@ -31,7 +31,6 @@ import (
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 type KubeadmRuntime struct {
@@ -82,7 +81,7 @@ func (k *KubeadmRuntime) GetRawConfig() ([]byte, error) {
 		conversion.KubeProxyConfiguration,
 		conversion.KubeletConfiguration,
 	}
-	data, err := yaml.MarshalConfigs(objects...)
+	data, err := marshalConfigsForVersion(k.kubeadmConfig.ClusterConfiguration.KubernetesVersion, objects...)
 	if err != nil {
 		return nil, err
 	}
