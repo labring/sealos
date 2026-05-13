@@ -1,0 +1,18 @@
+# Custom values for cronjob-frontend helm chart.
+# This file contains user-customizable configurations.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+cronjobConfig:
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  podCpuMilliCores: 50
+  podMemoryMiB: 64

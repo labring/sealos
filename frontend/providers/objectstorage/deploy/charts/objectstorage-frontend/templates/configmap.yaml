@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "objectstorage-frontend.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "objectstorage-frontend.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    cloud:
+      domain: {{ .Values.objectstorageConfig.cloudDomain | quote }}
+      port: {{ default 443 .Values.objectstorageConfig.cloudPort }}
+    objectStorage:
+      resources:
+        hostingPodCpuMilliCores: {{ .Values.objectstorageConfig.hostingPodCpuMilliCores }}
+        hostingPodMemoryMiB: {{ .Values.objectstorageConfig.hostingPodMemoryMiB }}
+      components:
+        monitoring:
+          url: {{ .Values.objectstorageConfig.monitorUrl | quote }}
+        billing:
+          url: {{ .Values.objectstorageConfig.billingUrl | quote }}
+          secret: {{ .Values.objectstorageConfig.billingSecret | quote }}
+        appLaunchpad:
+          url: {{ .Values.objectstorageConfig.appLaunchpadUrl | quote }}
+      realName:
+        appTokenJwtKey: {{ .Values.objectstorageConfig.appTokenJwtKey | quote }}
+      hosting:
+        appNamePrefix: {{ .Values.objectstorageConfig.hostingAppNamePrefix | quote }}
+        networkProtocol: {{ .Values.objectstorageConfig.hostingNetworkProtocol | quote }}
+        networkPort: {{ .Values.objectstorageConfig.hostingNetworkPort }}

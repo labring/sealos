@@ -1,3 +1,8 @@
 FROM scratch
-COPY . .
-CMD ["bash install.sh"]
+
+USER 65532:65532
+
+COPY charts charts
+COPY aiproxy-web-entrypoint.sh aiproxy-web-entrypoint.sh
+
+CMD ["bash", "aiproxy-web-entrypoint.sh"]

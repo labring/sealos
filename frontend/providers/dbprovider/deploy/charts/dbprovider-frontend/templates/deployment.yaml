@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dbprovider-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dbprovider-frontend.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "dbprovider-frontend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "dbprovider-frontend.labels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      serviceAccountName: cluster-version-reader
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.image | quote }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- if .Values.securityContext }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: SEALOS_DOMAIN
+              value: {{ .Values.dbproviderConfig.cloudDomain | quote }}
+            - name: DESKTOP_DOMAIN
+              value: {{ .Values.dbproviderConfig.cloudDomain | quote }}
+            - name: SEALOS_PORT
+              value: {{ include "dbprovider-frontend.portEnv" . | quote }}
+            - name: MONITOR_URL
+              value: {{ .Values.dbproviderConfig.monitorUrl | quote }}
+            - name: MINIO_URL
+              value: {{ .Values.dbproviderConfig.minioUrl | quote }}
+            - name: MINIO_ACCESS_KEY
+              value: {{ .Values.dbproviderConfig.minioAccessKey | quote }}
+            - name: MINIO_SECRET_KEY
+              value: {{ .Values.dbproviderConfig.minioSecretKey | quote }}
+            - name: MIGRATE_FILE_FETCH_FILE_IMAGE
+              value: {{ .Values.dbproviderConfig.migrateFileFetchFileImage | quote }}
+            - name: MIGRATE_FILE_IMPORT_DATA_IMAGE
+              value: {{ .Values.dbproviderConfig.migrateFileImportDataImage | quote }}
+            - name: MINIO_PORT
+              value: {{ .Values.dbproviderConfig.minioPort | quote }}
+            - name: MINIO_BUCKET_NAME
+              value: {{ .Values.dbproviderConfig.minioBucketName | quote }}
+            - name: BACKUP_ENABLED
+              value: {{ .Values.dbproviderConfig.backupEnabled | quote }}
+            - name: SHOW_DOCUMENT
+              value: {{ .Values.dbproviderConfig.showDocument | quote }}
+            - name: GUIDE_ENABLED
+              value: {{ .Values.dbproviderConfig.guideEnabled | quote }}
+            - name: BILLING_URL
+              value: {{ .Values.dbproviderConfig.billingUrl | quote }}
+            - name: MANAGED_DB_ENABLED
+              value: {{ .Values.dbproviderConfig.managedDbEnabled | quote }}
+            - name: VLOGS_BASE_URL
+              value: {{ .Values.dbproviderConfig.vlogsBaseUrl | quote }}
+            - name: MIGRATION_JOB_CPU_REQUIREMENT
+              value: {{ .Values.dbproviderConfig.migrationJobCPURequirement | quote }}
+            - name: MIGRATION_JOB_MEMORY_REQUIREMENT
+              value: {{ .Values.dbproviderConfig.migrationJobMemoryRequirement | quote }}
+            - name: DUMPIMPORT_JOB_CPU_REQUIREMENT
+              value: {{ .Values.dbproviderConfig.dumpImportJobCPURequirement | quote }}
+            - name: DUMPIMPORT_JOB_MEMORY_REQUIREMENT
+              value: {{ .Values.dbproviderConfig.dumpImportJobMemoryRequirement | quote }}
+            - name: BACKUP_JOB_CPU_REQUIREMENT
+              value: {{ .Values.dbproviderConfig.backupJobCPURequirement | quote }}
+            - name: BACKUP_JOB_MEMORY_REQUIREMENT
+              value: {{ .Values.dbproviderConfig.backupJobMemoryRequirement | quote }}
+            - name: CURRENCY_SYMBOL
+              value: {{ .Values.dbproviderConfig.currencySymbol | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          volumeMounts:
+            - name: dbprovider-frontend-volume
+              mountPath: /app/data/config.yaml
+              subPath: config.yaml
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: dbprovider-frontend-volume
+          configMap:
+            name: {{ include "dbprovider-frontend.fullname" . }}-config

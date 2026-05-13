@@ -1,0 +1,47 @@
+# Custom values for dbprovider-frontend helm chart.
+# This file contains user-customizable configurations.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+dbproviderConfig:
+  monitorUrl: "http://database-monitor.sealos.svc.cluster.local:9090"
+  minioUrl: ""
+  minioAccessKey: ""
+  minioSecretKey: ""
+  minioPort: 9000
+  minioUseSSL: false
+  minioBucketName: "file-migration"
+  migrateFileFetchFileImage: "quay.io/minio/mc:latest"
+  migrateFileImportDataImage: "sealos.hub:5000/db-import-client:latest"
+  guideEnabled: true
+  billingUrl: "http://account-service.account-system.svc:2333"
+  billingSecret: ""
+  alertingUrl: "http://database-alert-service.sealos.svc.cluster.local:8000"
+  alertingSecret: ""
+  vlogsBaseUrl: "http://service-vlogs.sealos.svc.cluster.local:8428"
+  migrationJobCPURequirement: 2000
+  migrationJobMemoryRequirement: 4096
+  dumpImportJobCPURequirement: 2000
+  dumpImportJobMemoryRequirement: 4096
+  backupJobCPURequirement: 300
+  backupJobMemoryRequirement: 256
+  backupEnabled: false
+  showDocument: true
+  managedDbEnabled: false
+  fileImportEnabled: false
+  currencySymbol: "shellCoin"
+  forcedStorageClassName: ""
+  storageMaxSize: 300
+  customScripts: []
+  eventAnalysisEnabled: false
+  eventAnalysisUrl: "https://fastgpt.run/api/openapi"
+  eventAnalysisModelId: "6455c433f437e55c638e630c"
+  eventAnalysisFastGPTKey: ""

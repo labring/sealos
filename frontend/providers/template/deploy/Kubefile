@@ -3,17 +3,7 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY manifests manifests
+COPY charts charts
+COPY template-frontend-entrypoint.sh template-frontend-entrypoint.sh
 
-ENV cloudDomain="127.0.0.1.nip.io"
-ENV cloudPort=""
-ENV userDomain=""
-ENV certSecretName="wildcard-cert"
-ENV templateRepoUrl="https://github.com/labring-actions/templates"
-ENV templateRepoBranch="main"
-ENV templateRepoPath="templates"
-ENV guideEnabled="true"
-ENV billingUrl="http://account-service.account-system.svc:2333"
-ENV enableReadmeFetch="true"
-
-CMD ["kubectl apply -f manifests"]
+CMD ["bash", "template-frontend-entrypoint.sh"]

@@ -1,0 +1,24 @@
+# Custom values for template-frontend helm chart.
+# This file contains user-customizable configurations.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 1024Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+templateConfig:
+  userDomain: ""
+  templateRepoUrl: "https://github.com/labring-actions/templates"
+  templateRepoBranch: "main"
+  templateRepoPath: "templates"
+  guideEnabled: true
+  billingUrl: "http://account-service.account-system.svc:2333"
+  enableReadmeFetch: true
+  brandName: "Sealos"
+  forcedLanguage: "en"
+  currencySymbol: "shellCoin"
