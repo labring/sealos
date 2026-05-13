@@ -7,6 +7,26 @@ import { withErrorHandler } from '@/services/backend/middleware';
 import { ResponseCode } from '@/types/response';
 import dayjs from 'dayjs';
 
+const sanitizeUrl = (value?: string | string[]) => {
+  const url = Array.isArray(value) ? value[0] : value;
+  if (!url) return undefined;
+
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return url.split('?')[0];
+  }
+};
+
+const getRequestSource = (req: NextApiRequest) => ({
+  method: req.method,
+  forwardedFor: req.headers['x-forwarded-for'],
+  realIp: req.headers['x-real-ip'],
+  userAgent: req.headers['user-agent'],
+  referer: sanitizeUrl(req.headers.referer)
+});
+
 export default withErrorHandler(async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResp>
@@ -19,10 +39,18 @@ export default withErrorHandler(async function handler(
     });
   }
 
-  const { getDeployApp, apiClient } = await getK8s({
+  const { getDeployApp, apiClient, namespace, kube_user } = await getK8s({
     kubeconfig: await authSession(req.headers)
   });
+  const logPayload = {
+    action: 'restart',
+    appName,
+    namespace,
+    user: kube_user?.name,
+    request: getRequestSource(req)
+  };
 
+  console.info('[applaunchpad app operation] received', logPayload);
   const app = await getDeployApp(appName);
 
   if (!app.spec?.template.metadata?.labels) {
@@ -32,8 +60,26 @@ export default withErrorHandler(async function handler(
     });
   }
 
-  app.spec.template.metadata.labels['restartTime'] = `${dayjs().format('YYYYMMDDHHmmss')}`;
-  await apiClient.replace(app);
+  const previousRestartTime = app.spec.template.metadata.labels.restartTime;
+  const nextRestartTime = `${dayjs().format('YYYYMMDDHHmmss')}`;
+  app.spec.template.metadata.labels.restartTime = nextRestartTime;
+
+  try {
+    await apiClient.replace(app);
+    console.info('[applaunchpad app operation] succeeded', {
+      ...logPayload,
+      previousRestartTime,
+      nextRestartTime
+    });
+  } catch (error) {
+    console.error('[applaunchpad app operation] failed', {
+      ...logPayload,
+      previousRestartTime,
+      nextRestartTime,
+      error
+    });
+    throw error;
+  }
 
   jsonRes(res);
 });
