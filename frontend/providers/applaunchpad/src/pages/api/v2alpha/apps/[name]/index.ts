@@ -51,11 +51,7 @@ const SIZE_UNITS = {
 
 // Custom Error Classes
 class PortError extends Error {
-  constructor(
-    message: string,
-    public code: number = 500,
-    public details?: ApiErrorDetails
-  ) {
+  constructor(message: string, public code: number = 500, public details?: ApiErrorDetails) {
     super(message);
     this.name = 'PortError';
   }
@@ -392,7 +388,9 @@ async function updateServiceAndIngress(
     );
 
     if (hasIngressPorts) {
-      const ingressYaml = json2Ingress(appEditData);
+      const ingressYaml = json2Ingress(appEditData, {
+        disableHttps: !!global.AppConfig?.cloud?.disableHttps
+      });
       if (ingressYaml.trim()) {
         yamlList.push(ingressYaml);
       }
@@ -451,7 +449,9 @@ async function convertToStatefulSet(
     );
 
     if (hasIngressPorts) {
-      const ingressYaml = json2Ingress(updatedAppData);
+      const ingressYaml = json2Ingress(updatedAppData, {
+        disableHttps: !!global.AppConfig?.cloud?.disableHttps
+      });
       if (ingressYaml.trim()) yamlList.push(ingressYaml);
     }
   }
@@ -1002,12 +1002,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 updateData.image.imageRegistry === null
                   ? null
                   : updateData.image.imageRegistry
-                    ? {
-                        username: updateData.image.imageRegistry.username,
-                        password: updateData.image.imageRegistry.password,
-                        serverAddress: updateData.image.imageRegistry.apiUrl
-                      }
-                    : undefined
+                  ? {
+                      username: updateData.image.imageRegistry.username,
+                      password: updateData.image.imageRegistry.password,
+                      serverAddress: updateData.image.imageRegistry.apiUrl
+                    }
+                  : undefined
             })
           };
 

@@ -1,7 +1,7 @@
 import MyIcon from '@/components/Icon';
 import { MySelect } from '@sealos/ui';
 import { APPLICATION_PROTOCOLS, ProtocolList } from '@/constants/app';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT, SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { customAlphabet } from 'nanoid';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
@@ -9,6 +9,7 @@ import { Box, Button, Flex, IconButton, Input, Switch, Tooltip, useTheme } from 
 import { useCopyData } from '@/utils/tools';
 import { useState, useCallback } from 'react';
 import type { AppEditType } from '@/types/app';
+import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import dynamic from 'next/dynamic';
 
@@ -174,6 +175,43 @@ export function NetworkSection({
     [getValues, appendNetworks, removeNetworks, updateNetworks]
   );
 
+  const getDomainDisplay = useCallback(
+    (network: AppEditType['networks'][0]) => {
+      if (network.customDomain) {
+        return buildExternalUrl({
+          protocol: network.appProtocol,
+          host: network.customDomain,
+          config: {
+            disableHttps: DISABLE_HTTPS,
+            cloudPort: DOMAIN_PORT,
+            httpPort: HTTP_PORT
+          }
+        });
+      }
+      if (network.openNodePort) {
+        return network?.nodePort
+          ? buildExternalUrl({
+              protocol: network.protocol,
+              host: `${network.protocol.toLowerCase()}.${network.domain}`,
+              nodePort: network.nodePort
+            })
+          : `${getExternalProtocol(network.protocol)}://${network.protocol.toLowerCase()}.${
+              network.domain
+            }:${t('pending_to_allocated')}`;
+      }
+      return buildExternalUrl({
+        protocol: network.appProtocol,
+        host: `${network.publicDomain}.${network.domain}`,
+        config: {
+          disableHttps: DISABLE_HTTPS,
+          cloudPort: DOMAIN_PORT,
+          httpPort: HTTP_PORT
+        }
+      });
+    },
+    [t]
+  );
+
   return (
     <>
       <Box id={'network'} {...boxStyles}>
@@ -287,8 +325,8 @@ export function NetworkSection({
                           network.openPublicDomain
                             ? network.appProtocol
                             : network.openNodePort
-                              ? network.protocol
-                              : 'HTTP'
+                            ? network.protocol
+                            : 'HTTP'
                         }
                         list={ProtocolList}
                         onchange={(val: any) => {
@@ -319,20 +357,10 @@ export function NetworkSection({
                             userSelect={'all'}
                             className="textEllipsis"
                             onClick={() => {
-                              copyData(`${network.publicDomain}.${network.domain}`);
+                              copyData(getDomainDisplay(network));
                             }}
                           >
-                            {network.customDomain
-                              ? network.customDomain
-                              : network.openNodePort
-                                ? network?.nodePort
-                                  ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                      network.nodePort
-                                    }`
-                                  : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                      'pending_to_allocated'
-                                    )}`
-                                : `${network.publicDomain}.${network.domain}`}
+                            {getDomainDisplay(network)}
                           </Box>
                         </Tooltip>
 

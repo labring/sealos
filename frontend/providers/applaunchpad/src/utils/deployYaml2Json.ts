@@ -7,7 +7,7 @@ import {
   ownerReferencesReadyValue,
   publicDomainKey
 } from '@/constants/app';
-import { SEALOS_USER_DOMAINS } from '@/store/static';
+import { DISABLE_HTTPS, SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
 import { str2Num, strToBase64 } from '@/utils/tools';
 import type { V1OwnerReference } from '@kubernetes/client-node';
@@ -100,13 +100,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       ? {
           [`${data.gpu.manufacturers}.com/use-gputype`]: data.gpu.type
         }
-      : supportedGpuManufacturers.reduce(
-          (acc, manufacturer) => {
-            acc[`${manufacturer}.com/use-gputype`] = null;
-            return acc;
-          },
-          {} as Record<string, null>
-        );
+      : supportedGpuManufacturers.reduce((acc, manufacturer) => {
+          acc[`${manufacturer}.com/use-gputype`] = null;
+          return acc;
+        }, {} as Record<string, null>);
 
   const metadata = {
     name: data.appName,
@@ -470,11 +467,27 @@ export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReferen
     : `${clusterIpYaml}${nodePortYaml}`;
 };
 
-export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
+export const json2Ingress = (
+  data: AppEditType,
+  ownerReferencesOrOptions?:
+    | V1OwnerReference[]
+    | {
+        disableHttps?: boolean;
+      },
+  options: {
+    disableHttps?: boolean;
+  } = {}
+) => {
+  const ownerReferences = Array.isArray(ownerReferencesOrOptions)
+    ? ownerReferencesOrOptions
+    : undefined;
+  const configOptions = Array.isArray(ownerReferencesOrOptions)
+    ? options
+    : ownerReferencesOrOptions || {};
+  const disableHttps = configOptions.disableHttps ?? DISABLE_HTTPS;
   // different protocol annotations
   const map = {
     HTTP: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
       'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
       'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
@@ -484,7 +497,6 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
         'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n'
     },
     GRPC: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'GRPC'
     },
     WS: {
@@ -508,7 +520,7 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
       // Ingress only uses ClusterIP services, not NodePort
       const serviceName = getServiceName(data, false);
 
-      const ingress = {
+      const ingress: any = {
         apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
         metadata: {
@@ -545,15 +557,17 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
                 ]
               }
             }
-          ],
-          tls: [
-            {
-              hosts: [host],
-              secretName
-            }
           ]
         }
       };
+      if (!disableHttps) {
+        ingress.spec.tls = [
+          {
+            hosts: [host],
+            secretName
+          }
+        ];
+      }
       const issuer = {
         apiVersion: 'cert-manager.io/v1',
         kind: 'Issuer',
@@ -605,7 +619,7 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
       };
 
       let resYaml = yaml.dump(ingress);
-      if (network.customDomain) {
+      if (network.customDomain && !disableHttps) {
         resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
       }
       return resYaml;

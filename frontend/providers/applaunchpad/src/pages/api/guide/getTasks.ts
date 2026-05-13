@@ -2,6 +2,7 @@ import { authAppToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { UserTask } from '@/types/user';
+import { buildExternalUrl } from '@/utils/network-url';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -19,8 +20,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const domain = global.AppConfig.cloud.desktopDomain;
+    const desktopUrl = buildExternalUrl({
+      protocol: 'HTTP',
+      host: domain,
+      config: {
+        disableHttps: !!global.AppConfig.cloud.disableHttps,
+        cloudPort: global.AppConfig.cloud.port,
+        httpPort: global.AppConfig.cloud.httpPort
+      }
+    });
 
-    const response = await fetch(`https://${domain}/api/account/getTasks`, {
+    const response = await fetch(`${desktopUrl}/api/account/getTasks`, {
       method: 'GET',
       headers: {
         Authorization: token

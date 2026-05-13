@@ -10,6 +10,7 @@ import { initK8s } from 'sealos-desktop-sdk/service';
 import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
 import type { V1Service } from '@kubernetes/client-node';
 import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deployYaml2Json';
+import { buildExternalUrl } from '@/utils/network-url';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -62,10 +63,19 @@ async function updateAppCRUrl(
       return;
     }
 
+    const newUrl = buildExternalUrl({
+      protocol: 'HTTP',
+      host,
+      config: {
+        disableHttps: !!global.AppConfig?.cloud?.disableHttps,
+        cloudPort: global.AppConfig?.cloud?.port,
+        httpPort: global.AppConfig?.cloud?.httpPort
+      }
+    });
     const appCrUrlPatch = {
       op: 'replace',
       path: '/spec/data/url',
-      value: `https://${host}`
+      value: newUrl
     };
 
     await k8sCustomObjects.patchNamespacedCustomObject(
@@ -81,7 +91,7 @@ async function updateAppCRUrl(
       { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
     );
 
-    infoLog('Successfully updated AppCR URL', { newUrl: `https://${host}` });
+    infoLog('Successfully updated AppCR URL', { newUrl });
   } catch (error) {
     errLog('Failed to update AppCR URL', error);
   }

@@ -28,6 +28,8 @@ export type AppConfigType = {
   cloud: {
     domain: string; // Main promoted domain
     port?: string;
+    httpPort?: string;
+    disableHttps?: boolean;
     // List of domains available for users
     userDomains: {
       name: string;
@@ -93,6 +95,8 @@ declare global {
 export type EnvResponse = {
   SEALOS_DOMAIN: string;
   DOMAIN_PORT: string;
+  HTTP_PORT: string;
+  DISABLE_HTTPS: boolean;
   INFRASTRUCTURE_PROVIDER: string;
   REQUIRES_DOMAIN_REG: boolean;
   DOMAIN_REG_QUERY_LINK: string;
