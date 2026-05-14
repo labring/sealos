@@ -121,6 +121,35 @@ export default function Plan() {
     [router, clearModalDefaults, clearRedeemCode]
   );
 
+  const queryClient = useQueryClient();
+
+  // Refetch all post-payment-affected queries. We await + throwOnError so that
+  // a transient backend failure surfaces as a toast rather than silently leaving
+  // the UI showing pre-payment state after Stripe reports success.
+  const refetchAfterPayment = useCallback(async () => {
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['subscription-info'] }, { throwOnError: true }),
+        queryClient.invalidateQueries({ queryKey: ['last-transaction'] }, { throwOnError: true }),
+        queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] }, { throwOnError: true }),
+        queryClient.invalidateQueries({ queryKey: ['card-info'] }, { throwOnError: true }),
+        queryClient.invalidateQueries(
+          { queryKey: ['payment-waiting-transaction'] },
+          { throwOnError: true }
+        )
+      ]);
+    } catch (err) {
+      console.error('[plan] post-payment refetch failed', err);
+      toast({
+        status: 'error',
+        title: t(
+          'common:plan.refetch_after_payment_failed',
+          'Payment succeeded, but refreshing subscription data failed. Please refresh the page.'
+        )
+      });
+    }
+  }, [queryClient, toast, t]);
+
   // useEffect to handle the router query
   useEffect(() => {
     if (!router.isReady) return;
@@ -195,19 +224,19 @@ export default function Plan() {
 
     // Check for success state from Stripe callback (set by desktop)
     if (router.query.stripeState === 'success' && router.query.payId) {
-      // Invalidate queries to refresh subscription data after payment success
-      queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-      queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
-      queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
-      queryClient.invalidateQueries({ queryKey: ['card-info'] });
-      queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
-      hideModal();
-      // Close UpgradePlanDialog to prevent focus fighting
-      setSubscriptionModalOpen(false);
-      setCongratulationsMode('upgrade');
-      setShowCongratulations(true);
-      setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
-      isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
+      // Wait for the post-payment refetch to settle before showing the
+      // congratulations modal, so the underlying balance/subscription data
+      // is up-to-date by the time the user sees it. Errors surface via toast.
+      void (async () => {
+        await refetchAfterPayment();
+        hideModal();
+        // Close UpgradePlanDialog to prevent focus fighting
+        setSubscriptionModalOpen(false);
+        setCongratulationsMode('upgrade');
+        setShowCongratulations(true);
+        setHasTrackedStripeSuccess(false); // Reset to allow tracking for this payment
+        isStripeCallbackRef.current = true; // Save flag, persists even if router.query is cleared
+      })();
       return;
     }
   }, [
@@ -217,10 +246,10 @@ export default function Plan() {
     hideModal,
     setDefaultSelectedPlan,
     setDefaultShowPaymentConfirmation,
-    setDefaultWorkspaceName
+    setDefaultWorkspaceName,
+    refetchAfterPayment
   ]);
 
-  const queryClient = useQueryClient();
   const rechargeRef = useRef<any>();
   const transferRef = useRef<any>();
 
@@ -883,12 +912,7 @@ export default function Plan() {
           clearRedeemCode();
         }}
         onPaymentSuccess={async () => {
-          // Invalidate queries to refresh subscription data after payment success
-          queryClient.invalidateQueries({ queryKey: ['subscription-info'] });
-          queryClient.invalidateQueries({ queryKey: ['last-transaction'] });
-          queryClient.invalidateQueries({ queryKey: ['upgrade-amount'] });
-          queryClient.invalidateQueries({ queryKey: ['card-info'] });
-          queryClient.invalidateQueries({ queryKey: ['payment-waiting-transaction'] });
+          await refetchAfterPayment();
           // Close all modals before showing congratulations modal
           hideModal();
           // Close UpgradePlanDialog to prevent focus fighting
