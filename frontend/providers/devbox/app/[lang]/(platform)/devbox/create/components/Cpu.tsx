@@ -4,8 +4,8 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 
-import { Label } from '@sealos/shadcn-ui/label';
-import { Slider } from '@sealos/shadcn-ui/slider';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Slider } from '@labring/sealos-shadcn-ui/slider';
 
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { useEnvStore } from '@/stores/env';

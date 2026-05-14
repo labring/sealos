@@ -3,12 +3,12 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 
-import { cn } from '@sealos/shadcn-ui';
-import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
+import { cn } from '@labring/sealos-shadcn-ui';
+import { useUserQuota, resourcePropertyMap } from '@labring/sealos-shared-sdk';
 
-import { Progress } from '@sealos/shadcn-ui/progress';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
+import { Progress } from '@labring/sealos-shadcn-ui/progress';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
+import { Card, CardContent, CardHeader } from '@labring/sealos-shadcn-ui/card';
 
 const QuotaBox = ({ className }: { className?: string }) => {
   const t = useTranslations();

@@ -26,7 +26,7 @@ import { getSmsBindCodeRequest, verifySmsBindRequest, mergeUserRequest } from '@
 import { ApiResp } from '@/types';
 import { MERGE_USER_READY } from '@/types/response/utils';
 import { ProviderType } from 'prisma/global/generated/client';
-import { WarnTriangeIcon } from '@sealos/ui';
+import { WarnTriangeIcon } from '@labring/sealos-ui';
 import { ValueOf } from '@/types';
 import { I18nErrorKey } from '@/types/i18next';
 import { USER_MERGE_STATUS } from '@/types/response/merge';

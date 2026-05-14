@@ -17,7 +17,7 @@ import {
   Tr,
   useDisclosure,
 } from '@chakra-ui/react';
-import { CurrencySymbol } from '@sealos/ui';
+import { CurrencySymbol } from '@labring/sealos-ui';
 import {
   createColumnHelper,
   flexRender,

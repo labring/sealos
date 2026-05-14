@@ -9,7 +9,7 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import React, { useCallback, useMemo } from 'react';
 import { useResourceStore } from '@/store/resource';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { refetchIntervalTime } from './appList';
 import useSessionStore from '@/store/session';
 import { CronjobIcon } from '@/components/icons/Application';

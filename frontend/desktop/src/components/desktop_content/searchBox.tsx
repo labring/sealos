@@ -2,7 +2,7 @@ import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { TApp } from '@/types';
 import { Box, Center, Flex, Image, Input } from '@chakra-ui/react';
-import { SearchIcon } from '@sealos/ui';
+import { SearchIcon } from '@labring/sealos-ui';
 import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
 import { blurBackgroundStyles } from './index';

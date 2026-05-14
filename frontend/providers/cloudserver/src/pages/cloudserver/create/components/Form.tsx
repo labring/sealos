@@ -37,7 +37,7 @@ import {
   useDisclosure,
   useTheme
 } from '@chakra-ui/react';
-import { MySelect, RangeInput, Tabs as SealosTabs } from '@sealos/ui';
+import { MySelect, RangeInput, Tabs as SealosTabs } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';

@@ -1,7 +1,7 @@
 import { Modal, ModalContent, ModalOverlay, Flex, Text, Box, Img, Divider } from '@chakra-ui/react';
 import { CheckCircle } from 'lucide-react';
 import congratsHeaderImage from '@/assets/congrats_header.svg';
-import { Button } from '@sealos/shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui';
 import { formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';
 import type { MaxResourcesRecord } from '@/types/plan';

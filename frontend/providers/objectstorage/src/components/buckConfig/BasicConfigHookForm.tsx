@@ -14,7 +14,7 @@ import { useFormContext, useWatch } from 'react-hook-form';
 import InfoCircleIcon from '../Icons/InfoCircleIcon';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { MySelect } from '@sealos/ui';
+import { MySelect } from '@labring/sealos-ui';
 const BasicConfigHookForm = () => {
   const { register, getFieldState, control, getValues, setValue } = useFormContext<FormSchema>();
   const { t } = useTranslation(['common', 'bucket']);

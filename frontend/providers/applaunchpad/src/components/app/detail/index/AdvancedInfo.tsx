@@ -1,8 +1,8 @@
 import MyIcon from '@/components/Icon';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import type { AppDetailType } from '@/types/app';
-import { Separator } from '@sealos/shadcn-ui/separator';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import {
   Table,
   TableBody,
@@ -10,7 +10,7 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@sealos/shadcn-ui/table';
+} from '@labring/sealos-shadcn-ui/table';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useState } from 'react';

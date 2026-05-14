@@ -15,7 +15,7 @@ import {
   Button,
   ButtonProps
 } from '@chakra-ui/react';
-import { WarnTriangeIcon } from '@sealos/ui';
+import { WarnTriangeIcon } from '@labring/sealos-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { title } from 'process';

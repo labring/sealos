@@ -24,7 +24,7 @@ import { DevboxListItemTypeV2, DevboxStatusMapType } from '@/types/devbox';
 import { DevboxStatusEnum, devboxStatusMap } from '@/constants/devbox';
 import { useControlDevbox } from '@/hooks/useControlDevbox';
 
-import { Pagination } from '@sealos/shadcn-ui/pagination';
+import { Pagination } from '@labring/sealos-shadcn-ui/pagination';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
 import SimpleShutdownDialog from '@/components/dialogs/SimpleShutdownDialog';

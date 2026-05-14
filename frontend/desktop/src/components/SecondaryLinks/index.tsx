@@ -17,14 +17,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo, useEffect } from 'react';
 import { getAmount } from '@/api/auth';
 import Decimal from 'decimal.js';
-import { CurrencySymbol } from '@sealos/ui';
+import { CurrencySymbol } from '@labring/sealos-ui';
 import { formatMoney } from '@/utils/format';
 import useSessionStore from '@/stores/session';
 import { useSubscriptionStore } from '@/stores/subscription';
 import { JoinDiscordPrompt } from '../account/JoinDiscordPrompt';
 import { MoreHorizontal, Sparkles } from 'lucide-react';
 import { BalancePopover, getPlanBackground } from '@/components/account/BalancePopover';
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 
 const baseItemStyle = {
   minW: '36px',

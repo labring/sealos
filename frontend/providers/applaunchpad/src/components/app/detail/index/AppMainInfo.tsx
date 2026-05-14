@@ -7,7 +7,7 @@ import type { AppDetailType } from '@/types/app';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import { useCopyData, generatePvcNameRegex } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MonitorModal from './MonitorModal';
@@ -20,7 +20,7 @@ import ICPStatus from './ICPStatus';
 import { CircleHelpIcon, Copy } from 'lucide-react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();

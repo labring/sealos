@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import { UserQuotaItem, WorkspaceQuotaRequestSchema } from '@/types/workspace';
-import { Quantity } from '@sealos/shared';
+import { Quantity } from '@labring/sealos-shared-sdk';
 
 type QuotaStatus = Record<string, string>;
 type UpstreamQuotaResponse = {

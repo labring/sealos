@@ -6,7 +6,7 @@ import { ApiResp } from '@/types';
 import { Region } from '@/types/region';
 import { getPaymentList } from '@/api/plan';
 import OrderListView, { OrderListRow } from './OrderListView';
-import { Badge } from '@sealos/shadcn-ui/badge';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
 import { useTranslation } from 'next-i18next';
 
 interface OrderListProps {

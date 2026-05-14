@@ -15,7 +15,7 @@ import {
 import { createBucket, listBucket } from '@/api/bucket';
 import { useRouter } from 'next/router';
 import useSessionStore from '@/store/session';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { useStorageOperation } from '@/hooks/useStorageOperation';
 import ErrorModal from '@/components/ErrorModal';
 import { useTranslation } from 'next-i18next';

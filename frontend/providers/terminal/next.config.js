@@ -3,7 +3,7 @@ const path = require('path');
 const nextConfig = {
   reactStrictMode: false,
   output: 'standalone',
-  transpilePackages: ['@sealos/shared', 'sealos-desktop-sdk', '@xterm/xterm', '@xterm/addon-fit'],
+  transpilePackages: ['@labring/sealos-shared-sdk', '@labring/sealos-desktop-sdk', '@xterm/xterm', '@xterm/addon-fit'],
   productionBrowserSourceMaps: true,
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../../')

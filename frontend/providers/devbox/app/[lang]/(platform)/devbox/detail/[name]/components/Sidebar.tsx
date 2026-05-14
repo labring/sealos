@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { LayoutDashboard, LineChart, Settings } from 'lucide-react';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 
 export type TabValue = 'overview' | 'monitor' | 'logs' | 'advancedConfig';

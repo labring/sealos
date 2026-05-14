@@ -13,7 +13,7 @@ import { useGuideStore } from '@/store/guide';
 import { Info, X, ArrowLeft } from 'lucide-react';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 
 const Header = ({
   dbName,

@@ -16,7 +16,7 @@ import { createRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 import useAppStore from '@/stores/app';
 
 /**

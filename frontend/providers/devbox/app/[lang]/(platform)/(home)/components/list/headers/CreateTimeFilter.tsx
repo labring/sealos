@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
-} from '@sealos/shadcn-ui/dropdown-menu';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
 import { Polygon } from '@/components/Polygon';
 import DatePicker from '@/components/DatePicker';
 

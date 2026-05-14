@@ -1,6 +1,6 @@
 import SealosCoinImage from '@/assets/sealos_coin.png';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useTranslation } from 'next-i18next';
 import Image from 'next/image';
 import { DetailedHTMLProps, HTMLAttributes } from 'react';

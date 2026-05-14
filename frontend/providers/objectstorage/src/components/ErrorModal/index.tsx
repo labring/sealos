@@ -11,7 +11,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { ResponseCode } from '@/types/response';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import InfoCircleIcon from '@/components/Icons/InfoCircleIcon';
 
 interface ErrorModalProps {

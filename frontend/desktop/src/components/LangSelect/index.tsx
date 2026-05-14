@@ -11,8 +11,8 @@ import {
   Text
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { masterApp } from 'sealos-desktop-sdk/master';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { masterApp } from '@labring/sealos-desktop-sdk/master';
 import { ExpanMoreIcon } from '../../../../packages/ui';
 import { ROLE_LIST } from '@/types/team';
 import { router } from 'next/client';

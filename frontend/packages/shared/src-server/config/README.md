@@ -3,8 +3,8 @@
 ## Usage
 
 ```typescript
-import { readConfig, prettyPrintErrors } from '@sealos/shared/server/config';
-import type { ConfigResult } from '@sealos/shared/server/config';
+import { readConfig, prettyPrintErrors } from '@labring/sealos-shared-sdk/server/config';
+import type { ConfigResult } from '@labring/sealos-shared-sdk/server/config';
 
 // For example, configText can be loaded with fs module
 

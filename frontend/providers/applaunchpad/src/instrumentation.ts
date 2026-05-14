@@ -2,7 +2,7 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const { readFileSync } = await import('fs');
     const { readConfig, mountToGlobalThis, prettyPrintErrors } = await import(
-      '@sealos/shared/server/config'
+      '@labring/sealos-shared-sdk/server/config'
     );
     const { AppConfigSchema } = await import('./types/config');
 

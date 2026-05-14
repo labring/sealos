@@ -14,7 +14,7 @@ import {
   Text,
   UseDisclosureReturn
 } from '@chakra-ui/react';
-import { NotificationIcon, WarnIcon, useMessage } from '@sealos/ui';
+import { NotificationIcon, WarnIcon, useMessage } from '@labring/sealos-ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { produce } from 'immer';

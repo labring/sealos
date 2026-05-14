@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Box, Button, Center, Flex, Text } from '@chakra-ui/react';
-import { CurrencySymbol, MySelect } from '@sealos/ui';
+import { CurrencySymbol, MySelect } from '@labring/sealos-ui';
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
 
 import { getDashboardData } from '@/api/platform';

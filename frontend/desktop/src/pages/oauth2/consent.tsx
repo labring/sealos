@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import { oauth2AuthorizeContext, oauth2AuthorizeDecision } from '@/api/auth';
 import useSessionStore from '@/stores/session';
 import { OAuth2AuthorizeContextResponse } from '@/schema/oauth2';

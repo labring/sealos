@@ -9,7 +9,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@sealos/shadcn-ui/dropdown-menu';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
 import { Polygon } from '@/components/Polygon';
 
 export const Name = memo<HeaderContext<DevboxListItemTypeV2, unknown>>(({ column }) => {

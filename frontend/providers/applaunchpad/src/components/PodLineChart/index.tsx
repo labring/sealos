@@ -3,7 +3,7 @@ import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
 import { MonitorDataResult } from '@/types/monitor';
 import dayjs from 'dayjs';
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 
 const map = {
   blue: {

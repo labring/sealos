@@ -1,5 +1,5 @@
 {
-  "name": "sealos-desktop-sdk",
+  "name": "@labring/sealos-desktop-sdk",
   "version": "0.1.20",
   "description": "sealos desktop sdk",
   "scripts": {
@@ -73,5 +73,8 @@
   },
   "peerDependencies": {
     "@kubernetes/client-node": "^0.18.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

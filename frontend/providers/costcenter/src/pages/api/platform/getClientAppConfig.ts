@@ -4,7 +4,7 @@ import { ClientAppConfigSchema, type ClientAppConfig } from '@/types/config';
 import {
   isServerMisconfiguredError,
   validateClientAppConfigOrThrow
-} from '@sealos/shared/server/config';
+} from '@labring/sealos-shared-sdk/server/config';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export function getClientAppConfigServer(): ClientAppConfig {

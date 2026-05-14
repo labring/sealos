@@ -12,7 +12,7 @@ import { KBDevboxTypeV2 } from '@/types/k8s';
 import { UpdateDevboxRequestSchema, nanoid } from './schema';
 import { devboxDB } from '@/services/db/init';
 import { parseTemplateConfig } from '@/utils/tools';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 export const dynamic = 'force-dynamic';
 

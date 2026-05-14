@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 
 const colorMap = {
   blue: {

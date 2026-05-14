@@ -20,7 +20,7 @@ import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { useToast } from '@/hooks/useToast';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));

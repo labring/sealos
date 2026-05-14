@@ -17,15 +17,15 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import { useEffect } from 'react';
 import 'react-day-picker/dist/style.css';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { ChakraProvider } from '@chakra-ui/react';
-import { Toaster } from '@sealos/shadcn-ui/sonner';
+import { Toaster } from '@labring/sealos-shadcn-ui/sonner';
 import {
   ClientConfigProvider,
   prefetchClientAppConfig,
   setupClientAppConfigDefaults
-} from '@sealos/shared';
+} from '@labring/sealos-shared-sdk';
 import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfig';
 
 const queryClient = new QueryClient({

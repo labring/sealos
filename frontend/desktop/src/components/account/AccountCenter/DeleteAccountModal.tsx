@@ -49,9 +49,9 @@ import {
   useDisclosure,
   VStack
 } from '@chakra-ui/react';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { cn } from '@sealos/shadcn-ui';
-import { InfoCircleIcon, LinkIcon, WarnTriangeIcon } from '@sealos/ui';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
+import { cn } from '@labring/sealos-shadcn-ui';
+import { InfoCircleIcon, LinkIcon, WarnTriangeIcon } from '@labring/sealos-ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';

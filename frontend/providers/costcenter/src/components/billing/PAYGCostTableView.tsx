@@ -1,7 +1,7 @@
-import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import { cn } from '@sealos/shadcn-ui';
-import { Button } from '@sealos/shadcn-ui/button';
+import { TableHead, TableRow, TableCell } from '@labring/sealos-shadcn-ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
+import { cn } from '@labring/sealos-shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import {
   TableLayout,
   TableLayoutCaption,
@@ -9,10 +9,10 @@ import {
   TableLayoutHeadRow,
   TableLayoutBody,
   TableLayoutFooter
-} from '@sealos/shadcn-ui/table-layout';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { Pagination } from '@sealos/shadcn-ui/pagination';
-import { Skeleton } from '@sealos/shadcn-ui/skeleton';
+} from '@labring/sealos-shadcn-ui/table-layout';
+import { Badge } from '@labring/sealos-shadcn-ui/badge';
+import { Pagination } from '@labring/sealos-shadcn-ui/pagination';
+import { Skeleton } from '@labring/sealos-shadcn-ui/skeleton';
 import { useTranslation } from 'next-i18next';
 import { AppIcon } from '../AppIcon';
 import { formatMoney } from '@/utils/format';
@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem
-} from '@sealos/shadcn-ui/dropdown-menu';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
 import { AppType } from '@/types/app';
 import { QueryFilters } from './PAYGCostTable';
 

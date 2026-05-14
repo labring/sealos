@@ -22,7 +22,7 @@ import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/clien
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import { calculateUptime, formatPodTime } from '@/utils/tools';
 import { devboxRemarkKey, gpuNodeSelectorKey, gpuResourceKey } from '../constants/devbox';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import { cpuFormatToM, memoryFormatToMi } from '@labring/sealos-shared-sdk';
 
 export const adaptDevboxListItemV2 = ([devbox, template]: [
   KBDevboxTypeV2,

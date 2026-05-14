@@ -1,4 +1,4 @@
-import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui';
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getCardInfo, createCardManageSession } from '@/api/plan';
 import { useTranslation } from 'next-i18next';

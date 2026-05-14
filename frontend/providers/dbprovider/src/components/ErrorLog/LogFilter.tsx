@@ -18,7 +18,7 @@ import {
   Checkbox
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { SealosMenu } from '@sealos/ui';
+import { SealosMenu } from '@labring/sealos-ui';
 import MyIcon from '@/components/Icon';
 import { DBDetailType, SupportReconfigureDBType } from '@/types/db';
 import { LogTypeEnum } from '@/constants/log';

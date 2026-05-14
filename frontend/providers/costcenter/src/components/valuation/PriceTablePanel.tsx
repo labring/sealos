@@ -15,8 +15,8 @@ import {
   TableLayoutHeadRow,
   TableLayoutBody,
   TableLayoutContent
-} from '@sealos/shadcn-ui/table-layout';
-import { TableHead, TableRow, TableCell } from '@sealos/shadcn-ui/table';
+} from '@labring/sealos-shadcn-ui/table-layout';
+import { TableHead, TableRow, TableCell } from '@labring/sealos-shadcn-ui/table';
 import { LucideIcon } from 'lucide-react';
 
 export type PricePayload = {

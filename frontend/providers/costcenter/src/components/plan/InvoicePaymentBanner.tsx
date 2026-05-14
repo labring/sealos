@@ -1,7 +1,7 @@
 import { AlertCircle } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
-import { Alert, AlertDescription, cn } from '@sealos/shadcn-ui';
-import { Button } from '@sealos/shadcn-ui';
+import { Alert, AlertDescription, cn } from '@labring/sealos-shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui';
 import { openInNewWindow } from '@/utils/windowUtils';
 
 interface InvoicePaymentBannerProps {

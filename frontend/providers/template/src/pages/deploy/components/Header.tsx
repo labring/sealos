@@ -27,12 +27,12 @@ import { nanoid } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback, useMemo } from 'react';
 import PriceBox, { usePriceCalculation } from './PriceBox';
-import { CurrencySymbol } from '@sealos/ui';
+import { CurrencySymbol } from '@labring/sealos-ui';
 import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { X } from 'lucide-react';
 import { startDriver, quitGuideDriverObj } from '@/hooks/driver';
-import { track } from '@sealos/gtm';
+import { track } from '@labring/sealos-gtm-sdk';
 import useSessionStore from '@/store/session';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 

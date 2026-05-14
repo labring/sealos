@@ -1,7 +1,7 @@
 import { Column, Row, Table as ReactTable, flexRender } from '@tanstack/react-table';
 import { CSSProperties } from 'react';
-import { Loading } from '@sealos/shadcn-ui/loading';
-import { cn } from '@sealos/shadcn-ui';
+import { Loading } from '@labring/sealos-shadcn-ui/loading';
+import { cn } from '@labring/sealos-shadcn-ui';
 import {
   Table,
   TableHeader,
@@ -9,7 +9,7 @@ import {
   TableHead,
   TableRow,
   TableCell
-} from '@sealos/shadcn-ui/table';
+} from '@labring/sealos-shadcn-ui/table';
 
 const getCommonPinningStyles = <T,>(column: Column<T, unknown>): CSSProperties => {
   const isPinned = column.getIsPinned();

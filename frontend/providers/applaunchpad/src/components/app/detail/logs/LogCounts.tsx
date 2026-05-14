@@ -1,8 +1,8 @@
 import MyIcon from '@/components/Icon';
 import LogBarChart from '@/components/LogBarChart';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Loading } from '@sealos/shadcn-ui/loading';
-import { cn } from '@sealos/shadcn-ui';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Loading } from '@labring/sealos-shadcn-ui/loading';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import EmptyChart from '@/components/Icon/icons/emptyChart.svg';

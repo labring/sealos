@@ -2,8 +2,8 @@ import { useConfigStore } from '@/stores/config';
 import { setCookie } from '@/utils/cookieUtils';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect } from 'react';
-import { EVENT_NAME } from 'sealos-desktop-sdk';
-import { masterApp } from 'sealos-desktop-sdk/master';
+import { EVENT_NAME } from '@labring/sealos-desktop-sdk';
+import { masterApp } from '@labring/sealos-desktop-sdk/master';
 
 export function useLanguageSwitcher() {
   const { i18n } = useTranslation();

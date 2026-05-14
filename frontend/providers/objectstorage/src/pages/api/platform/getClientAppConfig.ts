@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { getClientAppConfigServer } from '@/server/getClientAppConfig';
-import { isServerMisconfiguredError } from '@sealos/shared/server/config';
+import { isServerMisconfiguredError } from '@labring/sealos-shared-sdk/server/config';
 
 export { getClientAppConfigServer };
 

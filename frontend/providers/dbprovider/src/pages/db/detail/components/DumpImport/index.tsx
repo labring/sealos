@@ -12,7 +12,7 @@ import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
 import { DBDetailType } from '@/types/db';
 import { DumpForm } from '@/types/migrate';
-import { useQuotaGuarded } from '@sealos/shared';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { assembleTranslate } from '@/utils/i18n-client';
 
 import {
@@ -31,7 +31,7 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { AutoComplete, useMessage } from '@sealos/ui';
+import { AutoComplete, useMessage } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';

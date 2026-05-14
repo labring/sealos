@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
 import { ArrowUpRight } from 'lucide-react';
-import { sealosApp } from 'sealos-desktop-sdk/app';
+import { sealosApp } from '@labring/sealos-desktop-sdk/app';
 import { useQuery } from '@tanstack/react-query';
 
 import { useEnvStore } from '@/stores/env';
@@ -16,17 +16,17 @@ import {
   TableHead,
   TableRow,
   TableCell
-} from '@sealos/shadcn-ui/table';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
-import { Loading } from '@sealos/shadcn-ui/loading';
-import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+} from '@labring/sealos-shadcn-ui/table';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@labring/sealos-shadcn-ui/drawer';
+import { Loading } from '@labring/sealos-shadcn-ui/loading';
+import { ScrollArea } from '@labring/sealos-shadcn-ui/scroll-area';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
-} from '@sealos/shadcn-ui/tooltip';
+} from '@labring/sealos-shadcn-ui/tooltip';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 

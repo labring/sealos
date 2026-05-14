@@ -1,6 +1,6 @@
 import { Authority, type TBucket } from '@/consts';
 import { useToast } from '@/hooks/useToast';
-import { Quantity } from '@sealos/shared';
+import { Quantity } from '@labring/sealos-shared-sdk';
 import { useTranslation } from 'next-i18next';
 
 /**

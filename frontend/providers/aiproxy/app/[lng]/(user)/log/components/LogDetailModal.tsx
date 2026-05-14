@@ -15,8 +15,8 @@ import {
   Spinner,
   Text,
 } from '@chakra-ui/react';
-import { CurrencySymbol } from '@sealos/ui';
-import { useMessage } from '@sealos/ui';
+import { CurrencySymbol } from '@labring/sealos-ui';
+import { useMessage } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 
 import { getUserLogDetail } from '@/api/platform';

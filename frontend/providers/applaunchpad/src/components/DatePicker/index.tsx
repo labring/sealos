@@ -17,19 +17,19 @@ import { ChangeEventHandler, useMemo, useState } from 'react';
 import { DateRange, DayPicker } from 'react-day-picker';
 import useDateTimeStore from '@/store/date';
 import { parseTimeRange } from '@/utils/timeRange';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import { Calendar, RefreshCw } from 'lucide-react';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
-import { Separator } from '@sealos/shadcn-ui/separator';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@labring/sealos-shadcn-ui/popover';
+import { Separator } from '@labring/sealos-shadcn-ui/separator';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
-import { cn } from '@sealos/shadcn-ui';
+} from '@labring/sealos-shadcn-ui/select';
+import { cn } from '@labring/sealos-shadcn-ui';
 import 'react-day-picker/style.css';
 
 interface DatePickerProps {

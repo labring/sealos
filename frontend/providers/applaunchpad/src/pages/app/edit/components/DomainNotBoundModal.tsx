@@ -6,9 +6,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter
-} from '@sealos/shadcn-ui/dialog';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Alert, AlertDescription } from '@sealos/shadcn-ui/alert';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Alert, AlertDescription } from '@labring/sealos-shadcn-ui/alert';
 
 export function DomainNotBoundModal({
   isOpen,

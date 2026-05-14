@@ -22,7 +22,7 @@ import {
   useDisclosure,
   VStack
 } from '@chakra-ui/react';
-import { CloseIcon, LeftArrowIcon, SettingIcon } from '@sealos/ui';
+import { CloseIcon, LeftArrowIcon, SettingIcon } from '@labring/sealos-ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useMemo, useState, ReactNode } from 'react';

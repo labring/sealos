@@ -1,4 +1,4 @@
-import { useMessage } from '@sealos/ui';
+import { useMessage } from '@labring/sealos-ui';
 
 /**
  * copy text data

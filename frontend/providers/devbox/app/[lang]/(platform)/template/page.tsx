@@ -6,8 +6,8 @@ import { LayoutTemplate, Search, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 
-import { Input } from '@sealos/shadcn-ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@sealos/shadcn-ui/tabs';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@labring/sealos-shadcn-ui/tabs';
 
 import Header from './components/Header';
 import PrivateTemplate from './components/PrivateTemplate';

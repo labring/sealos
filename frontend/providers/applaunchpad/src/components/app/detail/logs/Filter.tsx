@@ -1,19 +1,19 @@
 import { Search, X, Plus, Filter as FilterIcon, Inbox, Trash2 } from 'lucide-react';
 import { JsonFilterItem, LogsFormData } from '@/pages/app/detail/logs';
-import { Button } from '@sealos/shadcn-ui/button';
-import { Input } from '@sealos/shadcn-ui/input';
-import { Switch } from '@sealos/shadcn-ui/switch';
+import { Button } from '@labring/sealos-shadcn-ui/button';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Switch } from '@labring/sealos-shadcn-ui/switch';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@sealos/shadcn-ui/select';
+} from '@labring/sealos-shadcn-ui/select';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 
 export const Filter = ({
   formHook,

@@ -21,7 +21,7 @@ const { definePartsStyle: numInputPart, defineMultiStyleConfig: numInputMultiSty
 const { definePartsStyle: checkboxPart, defineMultiStyleConfig: checkboxStyle } =
   createMultiStyleConfigHelpers(checkboxAnatomy.keys);
 
-import { theme as sealosTheme } from '@sealos/ui';
+import { theme as sealosTheme } from '@labring/sealos-ui';
 
 const Button = defineStyleConfig({
   baseStyle: {

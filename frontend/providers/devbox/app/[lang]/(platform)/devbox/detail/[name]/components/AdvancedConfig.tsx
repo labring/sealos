@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { FileText, HardDrive } from 'lucide-react';
 
 import { useRouter } from '@/i18n';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import { useDevboxStore } from '@/stores/devbox';
 
 const AdvancedConfig = () => {

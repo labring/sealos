@@ -1,6 +1,6 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
-import { cn } from '@sealos/shadcn-ui';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@labring/sealos-shadcn-ui/tooltip';
+import { cn } from '@labring/sealos-shadcn-ui';
 
 interface TruncateTooltipProps {
   children: React.ReactNode;

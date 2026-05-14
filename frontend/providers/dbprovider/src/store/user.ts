@@ -1,4 +1,4 @@
-import { SessionV1 } from 'sealos-desktop-sdk';
+import { SessionV1 } from '@labring/sealos-desktop-sdk';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';

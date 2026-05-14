@@ -19,15 +19,15 @@ import { useGuideStore } from '@/stores/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
 
-import { Input } from '@sealos/shadcn-ui/input';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Input } from '@labring/sealos-shadcn-ui/input';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@sealos/shadcn-ui/dropdown-menu';
-import { useQuotaGuarded } from '@sealos/shared';
+} from '@labring/sealos-shadcn-ui/dropdown-menu';
+import { useQuotaGuarded } from '@labring/sealos-shared-sdk';
 import { ImportType } from '@/types/import';
 import GitImportDrawer from '@/components/drawers/GitImportDrawer';
 import LocalImportDrawer from '@/components/drawers/LocalImportDrawer';

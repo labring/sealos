@@ -17,7 +17,7 @@
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.18.1",
     "@next/font": "13.1.6",
-    "@sealos/ui": "workspace:^",
+    "@labring/sealos-ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "@types/multer": "^1.4.10",
     "ansi_up": "^5.2.1",
@@ -50,7 +50,7 @@
     "react-markdown": "^8.0.7",
     "react-syntax-highlighter": "^15.5.0",
     "sass": "^1.68.0",
-    "sealos-desktop-sdk": "workspace:*",
+    "@labring/sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.2.2",
     "zustand": "^4.4.1"
   },

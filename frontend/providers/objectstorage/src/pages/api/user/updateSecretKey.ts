@@ -3,7 +3,7 @@ import { ApiResp, jsonRes } from '@/services/backend/response';
 import { generateUserCR } from '@/utils/json2Yaml';
 import { V1Status } from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { initK8s } from 'sealos-desktop-sdk/service';
+import { initK8s } from '@labring/sealos-desktop-sdk/service';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const client = await initK8s({ req });

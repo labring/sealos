@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Quantity, QuantitySchema } from '@sealos/shared';
+import { Quantity, QuantitySchema } from '@labring/sealos-shared-sdk';
 
 /** Schema for a single resource value (quantity string/number from API). */
 const MaxResourcesValueSchema = z.union([

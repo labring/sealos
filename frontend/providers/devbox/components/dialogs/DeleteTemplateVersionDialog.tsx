@@ -11,8 +11,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@sealos/shadcn-ui/dialog';
-import { Button } from '@sealos/shadcn-ui/button';
+} from '@labring/sealos-shadcn-ui/dialog';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 
 type DeleteTemplateVersionDialogProps = {
   uid: string;

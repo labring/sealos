@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp, jsonRes } from '@/services/backend/response';
 import { withErrorHandler } from '@/services/backend/middleware';
-import { initK8s } from 'sealos-desktop-sdk/service';
+import { initK8s } from '@labring/sealos-desktop-sdk/service';
 import * as k8s from '@kubernetes/client-node';
 
 /**

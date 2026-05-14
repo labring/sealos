@@ -1,5 +1,5 @@
 import { defineStyleConfig, extendTheme } from '@chakra-ui/react';
-import { theme as originTheme } from '@sealos/ui';
+import { theme as originTheme } from '@labring/sealos-ui';
 
 const Button = defineStyleConfig({
   baseStyle: {

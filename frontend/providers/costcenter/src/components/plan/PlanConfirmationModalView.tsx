@@ -7,7 +7,7 @@ import {
   Info,
   LoaderCircle
 } from 'lucide-react';
-import { Button, Tooltip, TooltipTrigger, TooltipContent, Input } from '@sealos/shadcn-ui';
+import { Button, Tooltip, TooltipTrigger, TooltipContent, Input } from '@labring/sealos-shadcn-ui';
 import { SubscriptionPlan, PaymentMethodInfo } from '@/types/plan';
 import { displayMoney, formatMoney, formatTrafficAuto } from '@/utils/format';
 import { useTranslation } from 'next-i18next';

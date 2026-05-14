@@ -3,11 +3,11 @@
 import { useState } from 'react';
 import { ChevronRight, Copy } from 'lucide-react';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { useCopyData } from '@/utils/tools';
 
 import Code from './Code';
-import { Button } from '@sealos/shadcn-ui/button';
+import { Button } from '@labring/sealos-shadcn-ui/button';
 
 interface ScriptCodeProps {
   platform: string;

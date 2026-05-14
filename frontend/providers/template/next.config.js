@@ -35,7 +35,7 @@ const nextConfig = {
       }
     ]
   },
-  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver'],
+  transpilePackages: ['@labring/sealos-ui', '@labring/sealos-desktop-sdk', '@labring/sealos-driver-sdk'],
   async rewrites() {
     return [
       {

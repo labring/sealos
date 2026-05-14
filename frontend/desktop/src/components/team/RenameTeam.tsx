@@ -19,7 +19,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { renameRequest } from '@/api/namespace';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
-import { EditIcon } from '@sealos/ui';
+import { EditIcon } from '@labring/sealos-ui';
 
 export default function RenameTeam({
   ns_uid,

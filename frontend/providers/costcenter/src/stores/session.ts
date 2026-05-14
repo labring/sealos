@@ -1,6 +1,6 @@
 import { sessionKey } from '@/types/session';
 import * as yaml from 'js-yaml';
-import type { SessionV1 } from 'sealos-desktop-sdk';
+import type { SessionV1 } from '@labring/sealos-desktop-sdk';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';

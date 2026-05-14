@@ -1,3 +1,3 @@
-# @sealos/shared/server
+# @labring/sealos-shared-sdk/server
 
 Server-side utilities for Sealos applications.

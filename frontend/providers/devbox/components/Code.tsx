@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 
-import { cn } from '@sealos/shadcn-ui';
+import { cn } from '@labring/sealos-shadcn-ui';
 import { codeTheme } from '@/constants/hljs';
 
-import { ScrollArea, ScrollBar } from '@sealos/shadcn-ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@labring/sealos-shadcn-ui/scroll-area';
 
 interface CodeProps {
   content: string;

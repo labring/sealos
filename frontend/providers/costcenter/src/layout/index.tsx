@@ -1,7 +1,7 @@
 import useSessionStore from '@/stores/session';
 import { Box, Flex, Link, Text } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import { createSealosApp, sealosApp } from '@labring/sealos-desktop-sdk/app';
 import SideBar from './sidebar';
 import useBillingStore from '@/stores/billing';
 

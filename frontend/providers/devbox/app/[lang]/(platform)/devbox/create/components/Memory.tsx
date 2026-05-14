@@ -7,8 +7,8 @@ import { useFormContext } from 'react-hook-form';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { useEnvStore } from '@/stores/env';
 
-import { Label } from '@sealos/shadcn-ui/label';
-import { Slider } from '@sealos/shadcn-ui/slider';
+import { Label } from '@labring/sealos-shadcn-ui/label';
+import { Slider } from '@labring/sealos-shadcn-ui/slider';
 
 export default function Memory() {
   const t = useTranslations();

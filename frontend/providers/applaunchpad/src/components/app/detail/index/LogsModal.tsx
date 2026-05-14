@@ -14,7 +14,7 @@ import {
 import { useLoading } from '@/hooks/useLoading';
 import { downLoadBold } from '@/utils/tools';
 import styles from '@/components/app/detail/index/index.module.scss';
-import { SealosMenu } from '@sealos/ui';
+import { SealosMenu } from '@labring/sealos-ui';
 import Empty from './empty';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { streamFetch } from '@/services/streamFetch';
