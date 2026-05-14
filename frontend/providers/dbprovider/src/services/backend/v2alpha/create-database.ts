@@ -20,6 +20,14 @@ import { fetchDatabaseVersions } from '../db-version';
 const versionCache = new Map<string, { version: string; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
+const terminationPolicyMap = {
+  delete: 'Delete',
+  wipeout: 'WipeOut'
+} as const satisfies Record<
+  NonNullable<z.infer<typeof createDatabaseSchemas.body>['terminationPolicy']>,
+  DBEditType['terminationPolicy']
+>;
+
 /**
  * Get latest version of database
  */
@@ -76,9 +84,7 @@ const schema2Raw = (dbForm: z.infer<typeof createDatabaseSchemas.body>): DBEditT
     memory: resources.memory,
     storage: resources.storage,
     labels: {},
-    terminationPolicy: (terminationPolicy.charAt(0).toUpperCase() + terminationPolicy.slice(1)) as
-      | 'Delete'
-      | 'WipeOut',
+    terminationPolicy: terminationPolicyMap[terminationPolicy],
     autoBackup: dbForm.autoBackup,
     parameterConfig: dbForm.parameterConfig || {}
   };
