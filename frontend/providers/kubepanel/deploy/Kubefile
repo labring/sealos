@@ -6,4 +6,4 @@ COPY registry registry
 COPY charts charts
 COPY kubepanel-frontend-entrypoint.sh kubepanel-frontend-entrypoint.sh
 
-CMD ["bash", "kubepanel-frontend-entrypoint.sh"]
+CMD ["bash kubepanel-frontend-entrypoint.sh"]

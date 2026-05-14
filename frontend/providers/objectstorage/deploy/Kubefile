@@ -6,4 +6,4 @@ COPY registry registry
 COPY charts charts
 COPY object-storage-frontend-entrypoint.sh object-storage-frontend-entrypoint.sh
 
-CMD ["bash", "object-storage-frontend-entrypoint.sh"]
+CMD ["bash object-storage-frontend-entrypoint.sh"]

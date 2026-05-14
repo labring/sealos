@@ -6,4 +6,4 @@ COPY registry registry
 COPY charts charts
 COPY cronjob-frontend-entrypoint.sh cronjob-frontend-entrypoint.sh
 
-CMD ["bash", "cronjob-frontend-entrypoint.sh"]
+CMD ["bash cronjob-frontend-entrypoint.sh"]

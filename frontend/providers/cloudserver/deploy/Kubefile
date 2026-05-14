@@ -6,4 +6,4 @@ COPY registry registry
 COPY charts charts
 COPY cloudserver-frontend-entrypoint.sh cloudserver-frontend-entrypoint.sh
 
-CMD ["bash", "cloudserver-frontend-entrypoint.sh"]
+CMD ["bash cloudserver-frontend-entrypoint.sh"]

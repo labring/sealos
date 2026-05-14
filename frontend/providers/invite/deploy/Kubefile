@@ -6,4 +6,4 @@ COPY registry registry
 COPY charts charts
 COPY invite-frontend-entrypoint.sh invite-frontend-entrypoint.sh
 
-CMD ["bash", "invite-frontend-entrypoint.sh"]
+CMD ["bash invite-frontend-entrypoint.sh"]

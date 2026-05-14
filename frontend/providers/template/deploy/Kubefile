@@ -6,4 +6,4 @@ COPY registry registry
 COPY charts charts
 COPY template-frontend-entrypoint.sh template-frontend-entrypoint.sh
 
-CMD ["bash", "template-frontend-entrypoint.sh"]
+CMD ["bash template-frontend-entrypoint.sh"]

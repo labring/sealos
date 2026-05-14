@@ -6,4 +6,4 @@ COPY registry registry
 COPY charts charts
 COPY devbox-frontend-entrypoint.sh devbox-frontend-entrypoint.sh
 
-CMD ["bash", "devbox-frontend-entrypoint.sh"]
+CMD ["bash devbox-frontend-entrypoint.sh"]

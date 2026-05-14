@@ -6,4 +6,4 @@ COPY registry registry
 COPY charts charts
 COPY dbprovider-frontend-entrypoint.sh dbprovider-frontend-entrypoint.sh
 
-CMD ["bash", "dbprovider-frontend-entrypoint.sh"]
+CMD ["bash dbprovider-frontend-entrypoint.sh"]
