@@ -17,6 +17,7 @@ import { getTemplateEnvs } from '@/utils/tools';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
+import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -123,15 +124,15 @@ export async function GetTemplateByName({
   const TemplateEnvs = getTemplateEnvs(namespace);
 
   const originalPath = process.cwd();
-  const targetPath = path.resolve(originalPath, 'templates', targetFolder);
+  const repoRootPath = path.resolve(originalPath, 'templates');
+  const targetPath = path.resolve(repoRootPath, targetFolder);
 
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
   const _tempalte = jsonData.find((item) => item.metadata.name === templateName);
   const _tempalteName = _tempalte ? _tempalte.spec.fileName : `${templateName}.yaml`;
-  const yamlString = _tempalte?.spec?.filePath
-    ? fs.readFileSync(_tempalte?.spec?.filePath, 'utf-8')
-    : fs.readFileSync(`${targetPath}/${_tempalteName}`, 'utf-8');
+  const templateFilePath = _tempalte?.spec?.filePath || `${targetPath}/${_tempalteName}`;
+  const yamlString = fs.readFileSync(templateFilePath, 'utf-8');
 
   let { appYaml, templateYaml } = getYamlTemplate(yamlString);
 
@@ -142,6 +143,14 @@ export async function GetTemplateByName({
     };
   }
   templateYaml.spec.deployCount = _tempalte?.spec?.deployCount;
+  templateYaml = resolveTemplateAssetUrls(templateYaml, {
+    repo: {
+      url: TemplateEnvs.TEMPLATE_REPO_URL,
+      branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
+    },
+    templateFilePath,
+    repoRootPath
+  });
 
   if (cdnUrl) {
     templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
