@@ -575,22 +575,12 @@ func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig
 		logger.Warn("image pull pre-upgrade failed: %s", err.Error())
 	}
 
-	config, err := marshalConfigsForVersion(version, &conversion.InitConfiguration, &conversion.ClusterConfiguration)
-	if err != nil {
-		logger.Error("kubeadm config marshal failed: %s", err.Error())
-		return err
-	}
-
-	upgradeConfigName := "kubeadm-upgrade.yaml"
-	upgradeConfigPath := path.Join(k.pathResolver.EtcPath(), upgradeConfigName)
 	upgradeApplyCmd, err := getUpgradeApplyCmd(version)
 	if err != nil {
 		return err
 	}
 
 	err = k.sshCmdAsyncSeq(master0ip,
-		// write kubeadm config to file
-		fmt.Sprintf(writeKubeadmConfig, upgradeConfigPath, string(config)),
 		// execute kubeadm upgrade apply {version} at master0.
 		// The desired kubeadm configuration has already been persisted to the
 		// cluster ConfigMap by autoUpdateConfig. Passing InitConfiguration and

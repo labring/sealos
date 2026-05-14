@@ -116,7 +116,7 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 		cmdCtx, cancel := context.WithCancel(ctx)
 		cancelFuncs = append(cancelFuncs, cancel)
 		temporaryRegistries = append(temporaryRegistries, hosts[i])
-		go func(ctx context.Context, host string) {
+		go func(ctx context.Context, host, registryServeCommand string) {
 			logger.Debug("running temporary registry on host %s", host)
 			if err := s.execer.CmdAsyncWithContext(ctx, host, registryServeCommand); err != nil {
 				// ignore expected signal killed error when context cancel
@@ -128,15 +128,15 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 					logger.Error(err)
 				}
 			}
-		}(cmdCtx, hosts[i])
-		go func(target string) {
+		}(cmdCtx, hosts[i], registryServeCommand)
+		go func(target, ep string) {
 			if err := waitRemoteTemporaryRegistry(ctx, target, defaultTemporaryPort); err != nil {
 				logger.Warn("cannot connect to remote temporary registry %s: %v, fallback using ssh mode instead", ep, err)
 				syncOptionChan <- &syncOption{target: target, typ: sshMode}
 			} else {
 				syncOptionChan <- &syncOption{target: ep, typ: httpMode}
 			}
-		}(hosts[i])
+		}(hosts[i], ep)
 	}
 
 	eg, _ := errgroup.WithContext(ctx)
