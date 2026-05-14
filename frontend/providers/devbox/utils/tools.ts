@@ -14,6 +14,11 @@ dayjs.extend(duration);
 const decodeJsonPointerToken = (token: string) => token.replace(/~1/g, '/').replace(/~0/g, '~');
 const isUnsafeProtoKey = (key: string) =>
   key === '__proto__' || key === 'prototype' || key === 'constructor';
+const DEVBOX_CONFIG_MERGE_PATCH_DELETE_PATHS = new Set([
+  '/spec/config/env',
+  '/spec/config/volumes',
+  '/spec/config/volumeMounts'
+]);
 
 export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
@@ -292,7 +297,8 @@ export const patchYamlList = ({
                 }
               } else if (
                 op.path.startsWith('/spec/resource/') ||
-                op.path.startsWith('/spec/config/annotations/')
+                op.path.startsWith('/spec/config/annotations/') ||
+                DEVBOX_CONFIG_MERGE_PATCH_DELETE_PATHS.has(op.path)
               ) {
                 // Handle removal of specific fields
                 const fieldPath = op.path
