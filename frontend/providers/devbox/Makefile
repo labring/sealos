@@ -34,4 +34,4 @@ run: ## Run a dev service from host.
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the desktop-frontend.
-	docker build -t sealos-devbox:latest . --network host  --build-arg HTTP_PROXY=http://127.0.0.1:7890 --build-arg HTTPS_PROXY=http://127.0.0.1:7890
+	docker build -t sealos-devbox:latest . --network host --build-arg DEVBOX_COMMIT_HASH=$$(git rev-parse --short=12 HEAD) --build-arg HTTP_PROXY=http://127.0.0.1:7890 --build-arg HTTPS_PROXY=http://127.0.0.1:7890

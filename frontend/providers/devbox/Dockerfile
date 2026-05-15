@@ -21,6 +21,8 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NEXT_PUBLIC_MOCK_USER ''
+ARG DEVBOX_COMMIT_HASH=source-unavailable
+ENV NEXT_PUBLIC_DEVBOX_COMMIT_HASH=${DEVBOX_COMMIT_HASH}
 
 RUN npm install -g pnpm && pnpm run build
 
