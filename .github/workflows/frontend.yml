@@ -109,6 +109,7 @@ jobs:
           build-args: |
             name=${{ env.MODULE_NAME }}
             path=${{ inputs.module }}
+            DEVBOX_COMMIT_HASH=${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,"name=${{ env.GHCR_REPO }}${{ env.ALIYUN_REPO && format(',{0}', env.ALIYUN_REPO) || '' }}",name-canonical=true,push-by-digest=${{ inputs.push_image }},push=${{ inputs.push_image }}
 

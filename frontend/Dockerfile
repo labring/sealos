@@ -51,8 +51,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 ARG name
 ARG path
+ARG DEVBOX_COMMIT_HASH=source-unavailable
 
 COPY ${path} ${path}
+
+ENV NEXT_PUBLIC_DEVBOX_COMMIT_HASH=${DEVBOX_COMMIT_HASH}
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm --frozen-lockfile --filter=$name install && \
     pnpm --filter=$name run build
