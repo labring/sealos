@@ -40,7 +40,13 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   // init session
   useEffect(() => {
     const response = createSealosApp();
-    console.log(`devbox: version ${process.env.NEXT_PUBLIC_DEVBOX_COMMIT_HASH}`);
+    console.log(
+      '%c Devbox Frontend %c build commit %c %s ',
+      'background:#155e75;color:#fff;padding:2px 6px;border-radius:4px 0 0 4px;font-weight:600;',
+      'background:#ecfeff;color:#155e75;padding:2px 6px;font-weight:600;',
+      'background:#f8fafc;color:#0f172a;padding:2px 6px;border-radius:0 4px 4px 0;font-family:monospace;',
+      process.env.NEXT_PUBLIC_DEVBOX_COMMIT_HASH
+    );
     (async () => {
       try {
         const newSession = JSON.stringify(await sealosApp.getSession());
