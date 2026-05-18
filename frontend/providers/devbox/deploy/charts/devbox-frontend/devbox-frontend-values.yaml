@@ -1,0 +1,18 @@
+# User-customizable values for devbox frontend.
+
+devboxConfig:
+  tlsRejectUnauthorized: "1"
+  documentUrlZH: https://sealos.run/docs/overview/intro
+  documentUrlEN: https://sealos.io/docs/overview/intro
+  privacyUrlZH: https://sealos.run/docs/msa/privacy-policy
+  privacyUrlEN: https://sealos.io/docs/msa/privacy-policy
+  monitorURL: http://launchpad-monitor.sealos.svc.cluster.local:8428
+  accountURL: http://account-service.account-system.svc.cluster.local:2333
+  rootRuntimeNamespace: devbox-system
+  currencySymbol: usd
+  gpuEnable: "false"
+  retagSvcURL: http://devbox-service.devbox-system.svc.cluster.local:8092
+  devboxAffinityEnable: "true"
+  squashEnable: "false"
+  enableImportFeature: "false"
+  enableWebideFeature: "false"

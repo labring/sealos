@@ -1,0 +1,102 @@
+# Default values for devbox frontend helm chart.
+
+replicaCount: 1
+
+global:
+  featureConfigs:
+    database:
+      # Database backend for Prisma migrations.
+      # Supported values: cockroachdb, postgresql
+      type: cockroachdb
+image: ghcr.io/labring/sealos-devbox-frontend:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: "devbox-frontend"
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""
+  certSecretName: wildcard-cert
+  annotations: {}
+  challenge:
+    enabled: true
+    host: ""
+    path: /api/.well-known/devbox-domain-challenge
+
+app:
+  enabled: true
+  namespace: app-system
+  name: devbox
+  displayType: normal
+  type: iframe
+
+# Auto-configured values are injected by devbox-frontend-entrypoint.sh from sealos-config.
+devboxConfig:
+  cloudDomain: 127.0.0.1.nip.io
+  cloudPort: ""
+  certSecretName: wildcard-cert
+  registryAddr: sealos.hub:5000
+  tlsRejectUnauthorized: "1"
+  documentUrlZH: https://sealos.run/docs/overview/intro
+  documentUrlEN: https://sealos.io/docs/overview/intro
+  privacyUrlZH: https://sealos.run/docs/msa/privacy-policy
+  privacyUrlEN: https://sealos.io/docs/msa/privacy-policy
+  monitorURL: http://launchpad-monitor.sealos.svc.cluster.local:8428
+  accountURL: http://account-service.account-system.svc.cluster.local:2333
+  rootRuntimeNamespace: devbox-system
+  ingressDomain: ""
+  currencySymbol: usd
+  gpuEnable: "false"
+  retagSvcURL: http://devbox-service.devbox-system.svc.cluster.local:8092
+  jwtInternal: ""
+  regionUID: ""
+  databaseURL: ""
+  devboxAffinityEnable: "true"
+  squashEnable: "false"
+  enableImportFeature: "false"
+  enableWebideFeature: "false"
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app.kubernetes.io/name"
+                operator: In
+                values:
+                  - devbox-frontend
+          topologyKey: "kubernetes.io/hostname"
+
+nodeSelector: {}
+
+tolerations: []

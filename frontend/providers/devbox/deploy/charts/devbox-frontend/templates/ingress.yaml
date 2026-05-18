@@ -1,0 +1,64 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "devbox-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "devbox-frontend.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }}; img-src * data: blob: resource: *.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} https://*.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }}";
+      more_set_headers "X-Xss-Protection: 1; mode=block";
+    higress.io/response-header-control-remove: X-Frame-Options
+    higress.io/response-header-control-update: |
+      Content-Security-Policy "default-src * blob: data: *.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }}; img-src * data: blob: resource: *.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' {{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }} https://*.{{ .Values.devboxConfig.cloudDomain }}{{- if .Values.devboxConfig.cloudPort -}}:{{ .Values.devboxConfig.cloudPort }}{{- end }}"
+      X-Xss-Protection "1; mode=block"
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ .Values.ingress.host | default (printf "devbox.%s" .Values.devboxConfig.cloudDomain) | quote }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: {{ include "devbox-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | default (printf "devbox.%s" .Values.devboxConfig.cloudDomain) | quote }}
+      secretName: {{ .Values.ingress.certSecretName | quote }}
+---
+{{- if .Values.ingress.challenge.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devbox-challenge
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "devbox-frontend.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ .Values.ingress.challenge.host | quote }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: {{ .Values.ingress.challenge.path | quote }}
+            backend:
+              service:
+                name: {{ include "devbox-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}
+{{- end }}
