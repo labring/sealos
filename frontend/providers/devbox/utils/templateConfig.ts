@@ -20,6 +20,8 @@ const isRecord = (value: unknown): value is Record<string, any> =>
 export const sanitizeTemplateDefaults = (defaults?: TemplateDefaults): TemplateDefaults => {
   if (!defaults) return {};
 
+  const configMapIdByPath = new Map<string, string>();
+  const usedConfigMapIds = new Set<string>();
   const envs =
     defaults.envs
       ?.filter((env) => env.key.trim())
@@ -31,16 +33,51 @@ export const sanitizeTemplateDefaults = (defaults?: TemplateDefaults): TemplateD
   const configMaps =
     defaults.configMaps
       ?.filter((cm) => cm.path.trim())
-      .map((cm) => ({
-        id: cm.id || createTemplateDefaultId(),
-        path: cm.path,
-        content: cm.content
-      })) || [];
+      .map((cm) => {
+        const normalizedPath = cm.path.trim();
+        const id =
+          configMapIdByPath.get(normalizedPath) ||
+          (() => {
+            let nextId = cm.id || createTemplateDefaultId();
+            while (usedConfigMapIds.has(nextId)) {
+              nextId = createTemplateDefaultId();
+            }
+            configMapIdByPath.set(normalizedPath, nextId);
+            usedConfigMapIds.add(nextId);
+            return nextId;
+          })();
+
+        return {
+          id,
+          path: normalizedPath,
+          content: cm.content
+        };
+      }) || [];
 
   return {
     ...(envs.length ? { envs } : {}),
     ...(configMaps.length ? { configMaps } : {})
   };
+};
+
+export const normalizeTemplateRuntimeConfig = (config: unknown) => {
+  const runtimeConfig = isRecord(config) ? { ...config } : {};
+  delete runtimeConfig[TEMPLATE_DEFAULTS_KEY];
+  delete runtimeConfig.env;
+  delete runtimeConfig.volumes;
+  delete runtimeConfig.volumeMounts;
+
+  if (Array.isArray(runtimeConfig.appPorts)) {
+    runtimeConfig.appPorts = runtimeConfig.appPorts.map((appPort: Record<string, any>) => {
+      if (!isRecord(appPort)) return appPort;
+      return {
+        ...appPort,
+        name: `port-${appPort.port}`
+      };
+    });
+  }
+
+  return runtimeConfig;
 };
 
 export const splitTemplateConfig = (config: string) => {
@@ -66,8 +103,7 @@ export const getTemplateDefaults = (config: string): TemplateDefaults =>
   splitTemplateConfig(config).defaults;
 
 export const mergeTemplateDefaults = (config: unknown, defaults?: TemplateDefaults) => {
-  const runtimeConfig = isRecord(config) ? { ...config } : {};
-  delete runtimeConfig[TEMPLATE_DEFAULTS_KEY];
+  const runtimeConfig = normalizeTemplateRuntimeConfig(config);
 
   const sanitizedDefaults = sanitizeTemplateDefaults(defaults);
   if (sanitizedDefaults.envs?.length || sanitizedDefaults.configMaps?.length) {
