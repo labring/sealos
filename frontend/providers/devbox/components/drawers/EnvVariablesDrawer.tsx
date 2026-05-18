@@ -40,7 +40,7 @@ const EnvVariablesDrawer = ({ onClose, onSuccess, initialValue = [] }: EnvVariab
       const key = line.slice(0, separatorIndex).trim();
       const value = line.slice(separatorIndex + 1).trim();
 
-      if (key && value) {
+      if (key) {
         envVars.push({ key, value });
       }
     }

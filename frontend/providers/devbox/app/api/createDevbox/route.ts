@@ -16,6 +16,7 @@ import {
   json2ConfigMap,
   json2PVC
 } from '@/utils/json2Yaml';
+import { getTemplateDefaults, getRuntimeTemplateConfig } from '@/utils/templateConfig';
 import { RequestSchema } from './schema';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 
@@ -35,6 +36,8 @@ export async function POST(req: NextRequest) {
     }
 
     const devboxForm = validationResult.data;
+    const hasExplicitEnvs = Object.prototype.hasOwnProperty.call(body, 'envs');
+    const hasExplicitConfigMaps = Object.prototype.hasOwnProperty.call(body, 'configMaps');
     const headerList = req.headers;
 
     const { applyYamlList, k8sCustomObjects, k8sCore, k8sNetworkingApp, namespace } = await getK8s({
@@ -86,24 +89,40 @@ export async function POST(req: NextRequest) {
 
     const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE, NFS_STORAGE_CLASS_NAME } =
       process.env;
+    const templateDefaults = getTemplateDefaults(template.config);
+    const finalDevboxForm = {
+      ...devboxForm,
+      templateConfig: getRuntimeTemplateConfig(devboxForm.templateConfig),
+      envs: hasExplicitEnvs ? devboxForm.envs : templateDefaults.envs || [],
+      configMaps:
+        hasExplicitConfigMaps ? devboxForm.configMaps : templateDefaults.configMaps || []
+    };
 
     // Create PVC first (if volumes exist)
-    const pvc = json2PVC(devboxForm, NFS_STORAGE_CLASS_NAME || 'nfs-csi');
+    const pvc = json2PVC(finalDevboxForm, NFS_STORAGE_CLASS_NAME || 'nfs-csi');
 
     // Create ConfigMap (if configMaps exist)
-    const configMap = json2ConfigMap(devboxForm);
+    const configMap = json2ConfigMap(finalDevboxForm);
 
     // Create Devbox
-    const devbox = json2DevboxV2(devboxForm, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE);
+    const devbox = json2DevboxV2(finalDevboxForm, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE);
     const preYamlList = [pvc, configMap].filter((yaml) => yaml !== '');
     if (preYamlList.length > 0) {
       await applyYamlList(preYamlList, 'create');
     }
     await applyYamlList([devbox], 'create');
 
-    const ownerReference = await getDevboxOwnerReference(k8sCustomObjects, namespace, devboxForm.name);
-    const service = json2Service(devboxForm, ownerReference || undefined);
-    const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string, ownerReference || undefined);
+    const ownerReference = await getDevboxOwnerReference(
+      k8sCustomObjects,
+      namespace,
+      finalDevboxForm.name
+    );
+    const service = json2Service(finalDevboxForm, ownerReference || undefined);
+    const ingress = json2Ingress(
+      finalDevboxForm,
+      INGRESS_SECRET as string,
+      ownerReference || undefined
+    );
 
     const postYamlList = [service, ingress].filter((yaml) => yaml !== '');
     if (postYamlList.length > 0) {
@@ -111,7 +130,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ownerReferencesReady = await ensureDevboxOwnerReferences({
-      devboxName: devboxForm.name,
+      devboxName: finalDevboxForm.name,
       namespace,
       ownerReference,
       k8sCore,
@@ -122,7 +141,7 @@ export async function POST(req: NextRequest) {
       await markDevboxOwnerReferencesReady(
         k8sCustomObjects,
         namespace,
-        devboxForm.name,
+        finalDevboxForm.name,
         ownerReference
       );
     }

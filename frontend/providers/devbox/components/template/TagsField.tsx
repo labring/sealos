@@ -8,7 +8,7 @@ import { Tag, TagType } from '@/prisma/generated/client';
 import { Checkbox } from '@sealos/shadcn-ui/checkbox';
 import { Separator } from '@sealos/shadcn-ui/separator';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@sealos/shadcn-ui/form';
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@sealos/shadcn-ui/select';
+import { Select, SelectContent, SelectTrigger } from '@sealos/shadcn-ui/select';
 
 interface TagsFieldProps {
   form: UseFormReturn<any>;
@@ -49,8 +49,8 @@ const TagsField = ({ form }: TagsFieldProps) => {
           </FormLabel>
           <FormControl>
             <Select value="placeholder" onValueChange={() => {}}>
-              <SelectTrigger className="min-h-10 w-full">
-                <SelectValue className="flex flex-wrap gap-2">
+              <SelectTrigger className="h-auto min-h-10 w-full whitespace-normal py-2">
+                <div className="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-2 pr-2">
                   {field.value.map((t: { value: string }) => {
                     const tag = [
                       ...tagListCollection[TagType.USE_CASE],
@@ -67,7 +67,7 @@ const TagsField = ({ form }: TagsFieldProps) => {
                       </div>
                     ) : null;
                   })}
-                </SelectValue>
+                </div>
               </SelectTrigger>
               <SelectContent className="py-2">
                 {/* use case */}

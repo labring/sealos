@@ -103,9 +103,9 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       case 'overview':
         return (
           <div className="flex h-full min-h-0 w-full flex-col gap-2">
-            <div className="flex h-[75%] min-h-0 w-full gap-2">
+            <div className="flex h-[75%] min-h-0 w-full overflow-hidden gap-2">
               <Basic />
-              <div className="flex w-full flex-col gap-2">
+              <div className="flex min-h-0 w-full flex-col gap-2 overflow-hidden">
                 <LiveMonitoring />
                 <Network />
               </div>

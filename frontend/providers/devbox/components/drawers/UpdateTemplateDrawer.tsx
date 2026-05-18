@@ -14,6 +14,8 @@ import NameField from '@/components/template/NameField';
 import TagsField from '@/components/template/TagsField';
 import DescriptionField from '@/components/template/DescriptionField';
 import UpdateTemplateConfirmDialog from '@/components/dialogs/UpdateTemplateConfirmDialog';
+import TemplateDefaultsPanel from '@/components/template/TemplateDefaultsPanel';
+import type { TemplateDefaults } from '@/utils/templateConfig';
 
 import {
   Form,
@@ -39,6 +41,7 @@ interface UpdateTemplateDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   devboxReleaseName: string;
+  initialTemplateDefaults?: TemplateDefaults;
   templateRepository: {
     uid: string;
     name: string;
@@ -62,7 +65,8 @@ const UpdateTemplateDrawer = ({
   isOpen,
   onClose,
   templateRepository,
-  devboxReleaseName
+  devboxReleaseName,
+  initialTemplateDefaults = {}
 }: UpdateTemplateDrawerProps) => {
   const t = useTranslations();
   const tagSchema = z.object({
@@ -95,6 +99,8 @@ const UpdateTemplateDrawer = ({
       description: ''
     }
   });
+  const [templateDefaults, setTemplateDefaults] =
+    useState<TemplateDefaults>(initialTemplateDefaults);
 
   const tagsQuery = useQuery(['template-repository-tags'], listTag, {
     staleTime: Infinity,
@@ -127,8 +133,9 @@ const UpdateTemplateDrawer = ({
       form.setValue('version', templateRepository.templates[0]?.name || '');
       form.setValue('name', templateRepository.name);
       form.setValue('description', templateRepository.description || '');
+      setTemplateDefaults(initialTemplateDefaults);
     }
-  }, [templateRepository, isOpen, form]);
+  }, [templateRepository, isOpen, form, initialTemplateDefaults]);
 
   const [showOverview, setShowOverview] = useState(false);
 
@@ -150,7 +157,8 @@ const UpdateTemplateDrawer = ({
         version: data.version,
         devboxReleaseName,
         description: data.description,
-        tagUidList: data.tags.map(({ value }) => value)
+        tagUidList: data.tags.map(({ value }) => value),
+        templateDefaults
       });
 
       queryClient.invalidateQueries(['template-repository-list']);
@@ -173,44 +181,52 @@ const UpdateTemplateDrawer = ({
   return (
     <>
       <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DrawerContent>
+        <DrawerContent className="overflow-hidden">
           <Form {...form}>
-            <DrawerHeader>
+            <DrawerHeader className="shrink-0">
               <DrawerTitle>{t('update_template')}</DrawerTitle>
             </DrawerHeader>
-            <div className="flex flex-col gap-5 p-6">
-              {/* name */}
-              <NameField form={form} disabled />
+            <div className="min-h-0 flex-1 overflow-y-auto p-6">
+              <div className="flex flex-col gap-5">
+                {/* name */}
+                <NameField form={form} disabled />
 
-              {/* version */}
-              <FormField
-                control={form.control}
-                name="version"
-                render={({ field }) => (
-                  <FormItem className="flex w-full flex-col gap-2 border-none bg-transparent p-0">
-                    <FormLabel required className="text-sm">
-                      {t('version')}
-                    </FormLabel>
-                    <FormControl>
-                      <VersionSelect
-                        templateList={templateRepository.templates}
-                        value={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                {/* version */}
+                <FormField
+                  control={form.control}
+                  name="version"
+                  render={({ field }) => (
+                    <FormItem className="flex w-full flex-col gap-2 border-none bg-transparent p-0">
+                      <FormLabel required className="text-sm">
+                        {t('version')}
+                      </FormLabel>
+                      <FormControl>
+                        <VersionSelect
+                          templateList={templateRepository.templates}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              {/* tags */}
-              <TagsField form={form} />
+                {/* tags */}
+                <TagsField form={form} />
 
-              {/* description */}
-              <DescriptionField form={form} />
+                {/* description */}
+                <DescriptionField form={form} />
+
+                <TemplateDefaultsPanel
+                  value={templateDefaults}
+                  onChange={setTemplateDefaults}
+                  isPublic={templateRepository.isPublic}
+                />
+              </div>
             </div>
           </Form>
-          <DrawerFooter>
+          <DrawerFooter className="shrink-0">
             <Button
               type="button"
               variant="outline"
