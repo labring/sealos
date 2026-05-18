@@ -131,9 +131,10 @@ const TemplateCard = ({
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        data-testid="template-card"
       >
         {/* top */}
-        <div className="flex w-full flex-col items-start gap-2 px-4 pt-4 pb-3">
+        <div className="flex w-full flex-col items-start gap-2 px-4 pb-3 pt-4">
           <div className="flex items-center justify-between gap-2 self-stretch">
             <div className="flex items-center gap-2">
               {/* logo */}
@@ -155,7 +156,10 @@ const TemplateCard = ({
               {/* name */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="max-w-[108px] cursor-pointer truncate font-medium">
+                  <span
+                    className="max-w-[108px] cursor-pointer truncate font-medium"
+                    data-testid="template-card.name"
+                  >
                     {templateRepositoryName}
                   </span>
                 </TooltipTrigger>
@@ -186,13 +190,14 @@ const TemplateCard = ({
                 size="sm"
                 onClick={handleSelectTemplate}
                 disabled={isDisabled || !selectedVersion}
+                data-testid="template-card.select-button"
               >
                 {t('select')}
               </Button>
               {!inPublicStore && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" data-testid="template-card.actions-button">
                       <Ellipsis className="text-gray-600" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -205,7 +210,11 @@ const TemplateCard = ({
                       <GitFork className="h-4 w-4" />
                       {t('version_manage')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsDeleteOpen(true)} variant="destructive">
+                    <DropdownMenuItem
+                      onClick={() => setIsDeleteOpen(true)}
+                      variant="destructive"
+                      data-testid="template-card.delete-action"
+                    >
                       <Trash2 className="h-4 w-4" />
                       {t('delete')}
                     </DropdownMenuItem>
@@ -262,7 +271,10 @@ const TemplateCard = ({
         {/* bottom */}
         <div className="borer-t w-full border-zinc-100">
           <Select value={selectedVersion} onValueChange={setSelectedVersion}>
-            <SelectTrigger className="w-full rounded-t-none rounded-b-xl border-x-0 border-t border-b-0 text-sm text-zinc-900">
+            <SelectTrigger
+              className="w-full rounded-b-xl rounded-t-none border-x-0 border-b-0 border-t text-sm text-zinc-900"
+              data-testid="template-card.version-select"
+            >
               <SelectValue placeholder={t('select_version')} />
             </SelectTrigger>
             <SelectContent>

@@ -73,7 +73,10 @@ export default function PrivateTemplate({ search }: { search: string }) {
   const t = useTranslations();
 
   return (
-    <div className="flex h-[calc(100vh-200px)] flex-col gap-3">
+    <div
+      className="flex h-[calc(100vh-200px)] flex-col gap-3"
+      data-testid="template-page.private-content"
+    >
       <ScrollArea className="h-[calc(100vh-200px)] pr-2">
         {listPrivateTemplateRepository.isLoading ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,340px,540px),1fr))] gap-3">
@@ -112,19 +115,21 @@ export default function PrivateTemplate({ search }: { search: string }) {
         )}
       </ScrollArea>
 
-      <Pagination
-        className="pr-2"
-        pageSize={pageQueryBody.pageSize}
-        totalPages={pageQueryBody.totalPage}
-        totalItems={pageQueryBody.totalItems}
-        currentPage={pageQueryBody.page}
-        onPageChange={(currentPage) => {
-          setPageQueryBody((page) => ({
-            ...page,
-            page: currentPage
-          }));
-        }}
-      />
+      <div data-testid="template-page.pagination">
+        <Pagination
+          className="pr-2"
+          pageSize={pageQueryBody.pageSize}
+          totalPages={pageQueryBody.totalPage}
+          totalItems={pageQueryBody.totalItems}
+          currentPage={pageQueryBody.page}
+          onPageChange={(currentPage) => {
+            setPageQueryBody((page) => ({
+              ...page,
+              page: currentPage
+            }));
+          }}
+        />
+      </div>
     </div>
   );
 }

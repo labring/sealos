@@ -201,8 +201,9 @@ const Network = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
-                  className="guide-network-address cursor-pointer text-sm/5 break-all hover:underline"
+                  className="guide-network-address cursor-pointer break-all text-sm/5 hover:underline"
                   onClick={() => window.open(`${protocolMap[item.protocol]}${address}`, '_blank')}
+                  data-testid="devbox-detail.network.external-address"
                 >
                   {protocolMap[item.protocol]}
                   {address}
@@ -223,11 +224,19 @@ const Network = () => {
   };
 
   return (
-    <div className="flex min-h-0 max-h-[400px] flex-1 flex-col items-center gap-3 overflow-hidden rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div
+      className="flex max-h-[400px] min-h-0 flex-1 flex-col items-center gap-3 overflow-hidden rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs"
+      data-testid="devbox-detail.network-section"
+    >
       {/* title */}
       <div className="flex w-full items-center justify-between">
         <span className="text-lg/7 font-medium text-accent-foreground">{t('network')}</span>
-        <Button variant="outline" size="sm" onClick={handleManage}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleManage}
+          data-testid="devbox-detail.network.manage-button"
+        >
           {t('manage')}
         </Button>
       </div>
@@ -241,7 +250,7 @@ const Network = () => {
                   <TableHead
                     key={column.key}
                     style={{ width: column.width }}
-                    className="px-4 break-words whitespace-normal"
+                    className="whitespace-normal break-words px-4"
                   >
                     {column.title}
                   </TableHead>
@@ -255,11 +264,14 @@ const Network = () => {
                     !(env.enableWebideFeature === 'true' && network.port === env.webIdePort)
                 )
                 .map((network, index) => (
-                  <TableRow key={`${network.port}-${index}`}>
+                  <TableRow
+                    key={`${network.port}-${index}`}
+                    data-testid="devbox-detail.network.item"
+                  >
                     {networkColumn.map((column) => (
                       <TableCell
                         key={`${network.port}-${column.key}`}
-                        className="px-4 break-words whitespace-normal"
+                        className="whitespace-normal break-words px-4"
                       >
                         {column.render
                           ? column.render(network as NetworkType)

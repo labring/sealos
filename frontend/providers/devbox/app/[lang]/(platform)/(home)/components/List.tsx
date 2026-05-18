@@ -140,7 +140,7 @@ const DevboxList = ({
           header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex cursor-pointer items-center gap-2 select-none hover:text-zinc-800">
+                <div className="flex cursor-pointer select-none items-center gap-2 hover:text-zinc-800">
                   {column.getIsSorted() === 'desc' ? (
                     <ArrowDownAZ className="h-4 w-4 shrink-0 text-blue-600" />
                   ) : (
@@ -233,17 +233,21 @@ const DevboxList = ({
                   <TooltipTrigger asChild>
                     <div className="flex w-full flex-1 flex-col leading-none">
                       <div className="group flex items-center gap-1">
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                        <span
+                          className="min-w-0 flex-1 truncate text-sm font-medium"
+                          data-testid="devbox-list.item.name"
+                        >
                           {item.name}
                         </span>
 
                         {!item.remark && (
                           <div
-                            className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity select-none group-hover:opacity-100"
+                            className="flex shrink-0 select-none items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
                             onClick={() => {
                               setOnOpenEditRemark(true);
                               setEditRemarkItem(item);
                             }}
+                            data-testid="devbox-list.item.remark-edit"
                           >
                             <PencilLine className="h-4 min-h-4 w-4 min-w-4 cursor-pointer text-neutral-500" />
                             <span className="text-sm text-zinc-500">{t('set_remarks')}</span>
@@ -252,7 +256,10 @@ const DevboxList = ({
                       </div>
                       {item.remark && (
                         <div className="group flex w-[80%] items-center gap-1">
-                          <span className="truncate text-xs font-normal text-zinc-500">
+                          <span
+                            className="truncate text-xs font-normal text-zinc-500"
+                            data-testid="devbox-list.item.remark"
+                          >
                             {item.remark}
                           </span>
                           <PencilLine
@@ -261,6 +268,7 @@ const DevboxList = ({
                               setOnOpenEditRemark(true);
                               setEditRemarkItem(item);
                             }}
+                            data-testid="devbox-list.item.remark-edit"
                           />
                         </div>
                       )}
@@ -335,7 +343,7 @@ const DevboxList = ({
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-48">
-                  <div className="flex items-center px-1 py-1.5 text-xs font-medium text-zinc-500 select-none">
+                  <div className="flex select-none items-center px-1 py-1.5 text-xs font-medium text-zinc-500">
                     {t('status')}
                   </div>
                   {statusOptions.map((option) => (
@@ -364,10 +372,12 @@ const DevboxList = ({
           cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
             const item = row.original;
             return (
-              <DevboxStatusTag
-                status={item.status}
-                isShutdown={item.status.value === DevboxStatusEnum.Shutdown}
-              />
+              <div data-testid="devbox-list.item.status">
+                <DevboxStatusTag
+                  status={item.status}
+                  isShutdown={item.status.value === DevboxStatusEnum.Shutdown}
+                />
+              </div>
             );
           }
         },
@@ -484,7 +494,7 @@ const DevboxList = ({
           cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
             const item = row.original;
             return (
-              <span className="text-sm text-zinc-600">
+              <span className="text-sm text-zinc-600" data-testid="devbox-list.item.create-time">
                 {dayjs(item.createTime).format('YYYY/MM/DD HH:mm')}
               </span>
             );
@@ -519,17 +529,26 @@ const DevboxList = ({
                       context: 'app'
                     });
                   }}
+                  data-testid="devbox-list.item.detail-button"
                 >
                   {t('detail')}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      data-testid="devbox-list.item.actions-button"
+                    >
                       <Ellipsis className="h-4 w-4 text-zinc-500" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem className="h-9" onClick={() => handleOpenRelease(item)}>
+                    <DropdownMenuItem
+                      className="h-9"
+                      onClick={() => handleOpenRelease(item)}
+                      data-testid="devbox-list.item.release-action"
+                    >
                       <ArrowBigUpDash className="h-4 w-4 text-neutral-500" />
                       {t('release')}
                     </DropdownMenuItem>
@@ -545,6 +564,7 @@ const DevboxList = ({
                     <DropdownMenuItem
                       className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
                       onClick={() => router.push(`/devbox/create?name=${item.name}&from=list`)}
+                      data-testid="devbox-list.item.update-action"
                     >
                       <PencilLine className="h-4 w-4 text-neutral-500" />
                       {t('update')}
@@ -553,6 +573,7 @@ const DevboxList = ({
                       <DropdownMenuItem
                         className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
                         onClick={() => handleStartDevbox(item)}
+                        data-testid="devbox-list.item.start-action"
                       >
                         <Play className="h-4 w-4 text-neutral-500" />
                         {t('start')}
@@ -562,6 +583,7 @@ const DevboxList = ({
                       <DropdownMenuItem
                         className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
                         onClick={() => handleRestartDevbox(item)}
+                        data-testid="devbox-list.item.restart-action"
                       >
                         <IterationCw className="h-4 w-4 text-neutral-500" />
                         {t('restart')}
@@ -574,6 +596,7 @@ const DevboxList = ({
                           setOnOpenShutdown(true);
                           setCurrentDevboxListItem(item);
                         }}
+                        data-testid="devbox-list.item.pause-action"
                       >
                         <Pause className="h-4 w-4 text-neutral-500" />
                         {t('shutdown')}
@@ -584,6 +607,7 @@ const DevboxList = ({
                       variant="destructive"
                       className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
                       onClick={() => setDelDevbox(item)}
+                      data-testid="devbox-list.item.delete-action"
                     >
                       <Trash2 className="h-4 w-4" />
                       {t('delete')}
@@ -661,11 +685,7 @@ const DevboxList = ({
           {/* table header */}
           <div className="flex h-10 min-w-[1350px] items-center rounded-lg border-[0.5px] bg-white px-6 py-1 text-sm/5 text-zinc-500 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)]">
             {table.getFlatHeaders().map((header) => (
-              <div
-                key={header.id}
-                style={{ width: header.getSize() }}
-                className="shrink-0 grow"
-              >
+              <div key={header.id} style={{ width: header.getSize() }} className="shrink-0 grow">
                 {flexRender(header.column.columnDef.header, header.getContext())}
               </div>
             ))}
@@ -679,6 +699,7 @@ const DevboxList = ({
                 key={row.id}
                 className="devboxListItem flex h-16 min-w-[1350px] items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors"
                 data-id={row.original.id}
+                data-testid="devbox-list.item"
               >
                 {row.getVisibleCells().map((cell) => (
                   <div
@@ -695,13 +716,15 @@ const DevboxList = ({
         </div>
         {/* pagination */}
         {table.getRowModel().rows.length > 0 && (
-          <Pagination
-            currentPage={table.getState().pagination.pageIndex + 1}
-            totalPages={table.getPageCount()}
-            pageSize={table.getState().pagination.pageSize}
-            totalItems={table.getFilteredRowModel().rows.length}
-            onPageChange={(page) => table.setPageIndex(page - 1)}
-          />
+          <div data-testid="devbox-list.pagination">
+            <Pagination
+              currentPage={table.getState().pagination.pageIndex + 1}
+              totalPages={table.getPageCount()}
+              pageSize={table.getState().pagination.pageSize}
+              totalItems={table.getFilteredRowModel().rows.length}
+              onPageChange={(page) => table.setPageIndex(page - 1)}
+            />
+          </div>
         )}
       </div>
 

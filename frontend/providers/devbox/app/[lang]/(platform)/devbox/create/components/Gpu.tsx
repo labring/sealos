@@ -181,7 +181,10 @@ export default function Gpu({
             }
           }}
         >
-          <SelectTrigger className="h-10 w-[450px] border-zinc-200">
+          <SelectTrigger
+            className="h-10 w-[450px] border-zinc-200"
+            data-testid="devbox-create.gpu-select"
+          >
             <SelectValue placeholder={t('No GPU')}>
               {selectedGpu ? (
                 <div className="flex min-w-0 items-center gap-2">
@@ -277,6 +280,7 @@ export default function Gpu({
                 return (
                   <button
                     key={item.value}
+                    data-testid="devbox-create.gpu-amount-option"
                     className={cn(
                       'flex h-10 w-10 items-center justify-center rounded-lg border bg-white text-sm transition-all',
                       isSelected

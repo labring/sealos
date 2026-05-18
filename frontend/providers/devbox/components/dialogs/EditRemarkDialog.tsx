@@ -45,7 +45,7 @@ const EditRemarkDialog = ({ open, onClose, onSuccess, devboxName, currentRemark 
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent data-testid="devbox-remark.dialog">
         <DialogHeader>
           <DialogTitle>{t('edit_remark')}</DialogTitle>
         </DialogHeader>
@@ -56,13 +56,23 @@ const EditRemarkDialog = ({ open, onClose, onSuccess, devboxName, currentRemark 
             onChange={(e) => setRemark(e.target.value)}
             placeholder={t('remark_input_placeholder')}
             maxLength={64}
+            data-testid="devbox-remark.input"
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            data-testid="devbox-remark.cancel-button"
+          >
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading}
+            data-testid="devbox-remark.submit-button"
+          >
             {t('confirm')}
           </Button>
         </DialogFooter>

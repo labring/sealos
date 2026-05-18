@@ -136,6 +136,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
           <div
             className="flex cursor-pointer items-center gap-2 text-blue-600"
             onClick={handleGotoDocs}
+            data-testid="devbox-list.docs-link"
           >
             <BookOpen className="h-4 w-4" />
             <span className="text-sm/5 font-medium">{t('docs')}</span>
@@ -148,26 +149,40 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
             icon={<Search className="h-4 w-4 text-zinc-500" />}
             className="h-10 w-64 bg-white"
             onChange={(e) => onSearch(e.target.value)}
+            data-testid="devbox-list.search-input"
           />
-          <Button variant="outline" className="h-10 w-auto" onClick={handleGotoTemplate}>
+          <Button
+            variant="outline"
+            className="h-10 w-auto"
+            onClick={handleGotoTemplate}
+            data-testid="devbox-list.template-button"
+          >
             <LayoutTemplate className="h-4 w-4" />
             <span className="leading-5"> {t('scan_templates')}</span>
           </Button>
           {env.enableImportFeature === 'true' ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="list-create-app-button h-10 gap-2">
+                <Button
+                  className="list-create-app-button h-10 gap-2"
+                  data-testid="devbox-list.create-button"
+                >
                   <Plus className="h-4 w-4" />
                   <span className="leading-5">{t('create_devbox')}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 space-y-1 p-2">
+              <DropdownMenuContent
+                align="end"
+                className="w-64 space-y-1 p-2"
+                data-testid="devbox-list.create-menu"
+              >
                 <p className="px-1 py-1.5 text-xs font-medium text-zinc-500">
                   {t('creation_method')}
                 </p>
                 <DropdownMenuItem
                   onClick={handleCreateDevbox}
                   className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
+                  data-testid="devbox-list.create-from-template"
                 >
                   <Package className="mr-2 h-4 w-4 text-zinc-500" />
                   <span className="text-sm font-normal text-zinc-900">{t('choose_runtime')}</span>
@@ -175,6 +190,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
                 <DropdownMenuItem
                   onClick={() => handleOpenImportDrawer('git')}
                   className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
+                  data-testid="devbox-list.import-from-git"
                 >
                   <Github className="mr-2 h-4 w-4 text-zinc-500" />
                   <span className="text-sm font-normal text-zinc-900">{t('import_from_git')}</span>
@@ -182,6 +198,7 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
                 <DropdownMenuItem
                   onClick={() => handleOpenImportDrawer('local')}
                   className="cursor-pointer rounded-lg px-2 py-2.5 hover:bg-zinc-100 focus:bg-zinc-100"
+                  data-testid="devbox-list.import-from-local"
                 >
                   <FolderArchive className="mr-2 h-4 w-4 text-zinc-500" />
                   <span className="text-sm font-normal text-zinc-900">
@@ -191,7 +208,11 @@ export default function Header({ onSearch }: { onSearch: (value: string) => void
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button className="list-create-app-button h-10 gap-2" onClick={handleCreateDevbox}>
+            <Button
+              className="list-create-app-button h-10 gap-2"
+              onClick={handleCreateDevbox}
+              data-testid="devbox-list.create-button"
+            >
               <Plus className="h-4 w-4" />
               <span className="leading-5">{t('create_devbox')}</span>
             </Button>

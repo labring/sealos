@@ -87,11 +87,12 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
               isClientSide && !guideConfigDevbox && 'outline-2 outline-offset-2 outline-blue-600'
             )}
             onClick={applyCb}
+            data-testid="devbox-create.submit-button"
           >
             {t(applyBtnText)}
           </Button>
           {isClientSide && !guideConfigDevbox && (
-            <div className="absolute top-[136px] right-[72px] z-[1000] w-[250px] rounded-xl bg-blue-600 p-4 text-white">
+            <div className="absolute right-[72px] top-[136px] z-[1000] w-[250px] rounded-xl bg-blue-600 p-4 text-white">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold">{t('driver.configure_devbox')}</p>
                 <div
@@ -110,7 +111,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
                   <X className="h-4 w-4 text-[#7CA1F3]" strokeWidth={2} />
                 </div>
               </div>
-              <p className="text-start text-sm font-normal whitespace-normal text-white">
+              <p className="whitespace-normal text-start text-sm font-normal text-white">
                 {t('driver.adjust_resources_as_needed')}
               </p>
               <div className="mt-4 flex items-center justify-between">
@@ -125,7 +126,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
                   {t('driver.next')}
                 </Button>
               </div>
-              <div className="absolute -top-[10px] right-4 h-0 w-0 rotate-180 border-t-[10px] border-r-8 border-l-8 border-t-[#2563EB] border-r-transparent border-l-transparent" />
+              <div className="absolute -top-[10px] right-4 h-0 w-0 rotate-180 border-l-8 border-r-8 border-t-[10px] border-l-transparent border-r-transparent border-t-[#2563EB]" />
             </div>
           )}
         </div>

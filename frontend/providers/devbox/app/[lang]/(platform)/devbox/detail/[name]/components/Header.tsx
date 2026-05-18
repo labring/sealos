@@ -48,14 +48,19 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
         <div
           className="flex h-12 w-12 cursor-pointer items-center justify-center"
           onClick={() => router.push('/')}
+          data-testid="devbox-detail.back-button"
         >
           <ArrowLeft className="h-6 w-6" />
         </div>
-        <div className="mr-3 text-xl font-semibold">{devboxDetail.name}</div>
-        <DevboxStatusTag
-          status={devboxDetail.status}
-          isShutdown={devboxDetail.status.value === DevboxStatusEnum.Shutdown}
-        />
+        <div className="mr-3 text-xl font-semibold" data-testid="devbox-detail.title">
+          {devboxDetail.name}
+        </div>
+        <div data-testid="devbox-detail.status">
+          <DevboxStatusTag
+            status={devboxDetail.status}
+            isShutdown={devboxDetail.status.value === DevboxStatusEnum.Shutdown}
+          />
+        </div>
       </div>
       {/* right */}
       <div className="flex h-10 gap-3">
@@ -64,6 +69,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           variant="outline"
           className="h-10 w-10 bg-white text-neutral-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
           onClick={() => setDelDevbox(devboxDetail)}
+          data-testid="devbox-detail.delete-button"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -73,12 +79,18 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           className="h-10 w-10 bg-white text-neutral-500 hover:text-neutral-600"
           disabled={devboxDetail.status.value !== 'Running'}
           onClick={() => handleGoToTerminal(devboxDetail)}
+          data-testid="devbox-detail.terminal-button"
         >
           <Terminal className="h-4 w-4" />
         </Button>
         <ButtonGroup>
           {devboxDetail.status.value === 'Stopped' || devboxDetail.status.value === 'Shutdown' ? (
-            <Button variant="outline" size="lg" onClick={() => handleStartDevbox(devboxDetail)}>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => handleStartDevbox(devboxDetail)}
+              data-testid="devbox-detail.start-button"
+            >
               {t('start')}
             </Button>
           ) : (
@@ -87,6 +99,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
               size="lg"
               className="guide-close-button"
               onClick={() => setOnOpenShutdown(true)}
+              data-testid="devbox-detail.pause-button"
             >
               {t('pause')}
             </Button>
@@ -95,10 +108,16 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
             variant="outline"
             size="lg"
             onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}&from=detail`)}
+            data-testid="devbox-detail.update-button"
           >
             {t('update')}
           </Button>
-          <Button variant="outline" size="lg" onClick={() => handleRestartDevbox(devboxDetail)}>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={() => handleRestartDevbox(devboxDetail)}
+            data-testid="devbox-detail.restart-button"
+          >
             {t('restart')}
           </Button>
         </ButtonGroup>

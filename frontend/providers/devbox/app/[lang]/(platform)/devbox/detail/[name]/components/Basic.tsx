@@ -145,16 +145,19 @@ const Basic = () => {
   ]);
 
   return (
-    <div className="flex h-full min-h-0 min-w-[450px] flex-col items-start overflow-hidden rounded-xl border-[0.5px] bg-white shadow-xs">
+    <div
+      className="flex h-full min-h-0 min-w-[450px] flex-col items-start overflow-hidden rounded-xl border-[0.5px] bg-white shadow-xs"
+      data-testid="devbox-detail.basic-section"
+    >
       {/* top:basic,ssh config*/}
-      <div className="flex w-full min-h-0 flex-1 flex-col items-start gap-4 p-6">
+      <div className="flex min-h-0 w-full flex-1 flex-col items-start gap-4 p-6">
         {/* title */}
         <div className="flex shrink-0 items-center gap-2">
           <div className="text-lg/7 font-medium">{t('basic_info')}</div>
           <div className="rounded-full border-[0.5px] border-zinc-200 bg-zinc-50 px-2 text-xs/4 text-zinc-700">{`${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`}</div>
         </div>
         {/* basic info */}
-        <div className="flex w-full min-h-0 flex-1 flex-col items-start gap-4">
+        <div className="flex min-h-0 w-full flex-1 flex-col items-start gap-4">
           <div className="flex min-h-0 w-full flex-1 flex-col items-start gap-5 overflow-y-auto pr-1">
             {basicInfoItems.map((item, index) => (
               <BasicInfoRow key={index} items={item} />
@@ -180,6 +183,7 @@ const Basic = () => {
                         <span
                           className="cursor-pointer truncate text-sm text-zinc-900"
                           onClick={() => copyData(sshConnectCommand)}
+                          data-testid="devbox-detail.ssh.command"
                         >
                           {sshConnectCommand}
                         </span>
@@ -189,6 +193,7 @@ const Basic = () => {
                     <Copy
                       className="h-4 w-4 cursor-pointer text-neutral-500"
                       onClick={() => copyData(sshConnectCommand)}
+                      data-testid="devbox-detail.ssh.copy-command"
                     />
                   </div>
                 ) : (
@@ -206,6 +211,7 @@ const Basic = () => {
                     `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
                   )
                 }
+                data-testid="devbox-detail.ssh.private-key-button"
               >
                 <Download className="h-4 w-4 text-neutral-500" />
                 {t('private_key')}
@@ -214,6 +220,7 @@ const Basic = () => {
                 variant="outline"
                 disabled={devboxDetail?.status.value !== 'Running'}
                 onClick={() => handleOneClickConfig()}
+                data-testid="devbox-detail.ssh.one-click-config-button"
               >
                 <Settings className="h-4 w-4 text-neutral-500" />
                 {t('one_click_config')}
@@ -228,6 +235,7 @@ const Basic = () => {
           'flex h-[52px] w-full flex-col items-start justify-center border-t border-zinc-100 px-6 py-3',
           devboxDetail?.lastTerminatedReason && 'rounded-b-xl bg-red-50'
         )}
+        data-testid="devbox-detail.last-event"
       >
         <div className="flex items-center gap-3">
           <span
@@ -278,9 +286,16 @@ type BasicInfoItemType = {
 
 const BasicInfoItem = ({ title, value }: { title: string; value: React.ReactNode }) => {
   return (
-    <div className="flex flex-col items-start gap-2 self-stretch">
-      <span className="text-sm text-zinc-500">{title}</span>
-      <span className="text-sm text-zinc-600">{value}</span>
+    <div
+      className="flex flex-col items-start gap-2 self-stretch"
+      data-testid="devbox-detail.basic.item"
+    >
+      <span className="text-sm text-zinc-500" data-testid="devbox-detail.basic.item-label">
+        {title}
+      </span>
+      <span className="text-sm text-zinc-600" data-testid="devbox-detail.basic.item-value">
+        {value}
+      </span>
     </div>
   );
 };

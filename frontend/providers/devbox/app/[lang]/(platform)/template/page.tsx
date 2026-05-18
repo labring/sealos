@@ -37,14 +37,24 @@ const TemplatePage = () => {
     <div className="flex h-full w-full flex-col">
       <Header />
       <div className="flex h-full w-full flex-col gap-5 px-10 pt-6">
-        <Tabs defaultValue={defaultTab} className="flex flex-col">
+        <Tabs defaultValue={defaultTab} className="flex flex-col" data-testid="template-page.tabs">
           <div className="flex items-center justify-between gap-4">
             <TabsList variant="ghost" className="w-fit">
-              <TabsTrigger value="public" variant="ghost" className="p-2">
+              <TabsTrigger
+                value="public"
+                variant="ghost"
+                className="p-2"
+                data-testid="template-page.tab.public"
+              >
                 <LayoutTemplate className="!h-5 !w-5" />
                 <span className="text-base">{t('all_templates')}</span>
               </TabsTrigger>
-              <TabsTrigger value="private" variant="ghost" className="p-2">
+              <TabsTrigger
+                value="private"
+                variant="ghost"
+                className="p-2"
+                data-testid="template-page.tab.private"
+              >
                 <User className="!h-5 !w-5" />
                 <span className="text-base">{t('my_templates')}</span>
               </TabsTrigger>
@@ -56,6 +66,7 @@ const TemplatePage = () => {
                 icon={<Search className="h-4 w-4 text-zinc-500" />}
                 placeholder={t('template_search')}
                 onChange={(e) => updateSearchVal(e.target.value)}
+                data-testid="template-page.search-input"
               />
             </div>
           </div>

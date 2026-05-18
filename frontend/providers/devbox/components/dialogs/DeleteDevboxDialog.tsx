@@ -75,7 +75,7 @@ const DeleteDevboxDialog = ({
   // TODO：refactor this component to alert dialog
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="w-[450px]">
+      <DialogContent className="w-[450px]" data-testid="devbox-delete.dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <TriangleAlert className="h-4 w-4 text-yellow-600" />
@@ -83,7 +83,9 @@ const DeleteDevboxDialog = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="text-sm/5">{t('delete_warning_content')}</div>
+        <div className="text-sm/5" data-testid="devbox-delete.warning">
+          {t('delete_warning_content')}
+        </div>
 
         <div className="rounded-lg bg-red-50 p-4 text-sm/5 text-red-600">
           {t('delete_warning_content_2')}
@@ -93,7 +95,7 @@ const DeleteDevboxDialog = ({
             {t.rich('please_enter_devbox_name_confirm', {
               name: devbox.name,
               strong: (chunks) => (
-                <span className="font-medium text-zinc-900 select-all">{chunks}</span>
+                <span className="select-all font-medium text-zinc-900">{chunks}</span>
               )
             })}
           </span>
@@ -101,17 +103,19 @@ const DeleteDevboxDialog = ({
             placeholder={devbox.name}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            data-testid="devbox-delete.name-input"
           />
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} data-testid="devbox-delete.cancel-button">
             {t('cancel')}
           </Button>
           <Button
             variant="destructive"
             disabled={inputValue !== devbox.name || loading}
             onClick={handleDelDevbox}
+            data-testid="devbox-delete.confirm-button"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('confirm_delete')}

@@ -467,7 +467,7 @@ const PublicTemplate = ({
   );
 
   return (
-    <div className="flex h-[calc(100vh-200px)] gap-3">
+    <div className="flex h-[calc(100vh-200px)] gap-3" data-testid="template-page.public-content">
       {/* left sidebar */}
       <div className="flex w-[200px] flex-shrink-0 flex-col items-start gap-1">
         <ScrollArea className="flex h-[calc(100vh-200px)] w-full flex-col gap-1 pr-2">
@@ -479,6 +479,7 @@ const PublicTemplate = ({
                 onClick={() => {
                   handleCategoryClick('official');
                 }}
+                data-testid="template-page.category.official"
               >
                 <span className="text-sm text-zinc-900">{t('official')}</span>
               </div>
@@ -499,6 +500,7 @@ const PublicTemplate = ({
                     handleCategoryClick('language');
                   }
                 }}
+                data-testid="template-page.category.language"
               >
                 <span className="text-sm text-zinc-900">{t('language')}</span>
               </div>
@@ -524,6 +526,7 @@ const PublicTemplate = ({
                     handleCategoryClick('framework');
                   }
                 }}
+                data-testid="template-page.category.framework"
               >
                 <span className="text-sm text-zinc-900">{t('framework')}</span>
               </div>
@@ -549,6 +552,7 @@ const PublicTemplate = ({
                     handleCategoryClick('os');
                   }
                 }}
+                data-testid="template-page.category.os"
               >
                 <span className="text-sm text-zinc-900">{t('os')}</span>
               </div>
@@ -574,6 +578,7 @@ const PublicTemplate = ({
                     handleCategoryClick('mcp');
                   }
                 }}
+                data-testid="template-page.category.mcp"
               >
                 <span className="text-sm text-zinc-900">{t('mcp')}</span>
               </div>
@@ -591,6 +596,7 @@ const PublicTemplate = ({
                 onClick={() => {
                   handleCategoryClick('unofficial');
                 }}
+                data-testid="template-page.category.unofficial"
               >
                 <span className="text-sm text-zinc-900">{t('unofficial')}</span>
               </div>
@@ -670,19 +676,21 @@ const PublicTemplate = ({
                 />
               )}
             </ScrollArea>
-            <Pagination
-              className="pr-2"
-              pageSize={pageQueryBody.pageSize}
-              totalPages={pageQueryBody.totalPage}
-              totalItems={pageQueryBody.totalItems}
-              currentPage={pageQueryBody.page}
-              onPageChange={(currentPage) => {
-                setPageQueryBody((page) => ({
-                  ...page,
-                  page: currentPage
-                }));
-              }}
-            />
+            <div data-testid="template-page.pagination">
+              <Pagination
+                className="pr-2"
+                pageSize={pageQueryBody.pageSize}
+                totalPages={pageQueryBody.totalPage}
+                totalItems={pageQueryBody.totalItems}
+                currentPage={pageQueryBody.page}
+                onPageChange={(currentPage) => {
+                  setPageQueryBody((page) => ({
+                    ...page,
+                    page: currentPage
+                  }));
+                }}
+              />
+            </div>
           </>
         ) : (
           // Category mode - paginated list with header
@@ -733,19 +741,21 @@ const PublicTemplate = ({
                 />
               )}
             </ScrollArea>
-            <Pagination
-              className="pr-2"
-              pageSize={pageQueryBody.pageSize}
-              totalPages={pageQueryBody.totalPage}
-              totalItems={pageQueryBody.totalItems}
-              currentPage={pageQueryBody.page}
-              onPageChange={(currentPage) => {
-                setPageQueryBody((page) => ({
-                  ...page,
-                  page: currentPage
-                }));
-              }}
-            />
+            <div data-testid="template-page.pagination">
+              <Pagination
+                className="pr-2"
+                pageSize={pageQueryBody.pageSize}
+                totalPages={pageQueryBody.totalPage}
+                totalItems={pageQueryBody.totalItems}
+                currentPage={pageQueryBody.page}
+                onPageChange={(currentPage) => {
+                  setPageQueryBody((page) => ({
+                    ...page,
+                    page: currentPage
+                  }));
+                }}
+              />
+            </div>
           </>
         )}
       </div>
@@ -834,6 +844,7 @@ const TagItem = ({ tag, onSelect }: { tag: Tag; onSelect: (value: string) => voi
     <div
       className="flex h-9 w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1 hover:bg-neutral-200"
       onClick={handleClick}
+      data-testid="template-page.category-filter"
     >
       <RadioGroupItem value={tag.uid} id={tag.uid} className="border-zinc-900" />
       <Label htmlFor={tag.uid} className="w-full cursor-pointer text-sm text-zinc-900">

@@ -35,7 +35,10 @@ export default function AdvancedConfig({
   const [editingConfigMapIndex, setEditingConfigMapIndex] = useState<number | null>(null);
 
   return (
-    <div className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8">
+    <div
+      className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8"
+      data-testid="devbox-create.advanced-section"
+    >
       {/* Header */}
       <div className="flex items-center gap-2">
         <span className="text-xl/7 font-medium">{t('advanced_configurations')}</span>
@@ -46,7 +49,11 @@ export default function AdvancedConfig({
 
       {/* Shared Memory */}
       {showSharedMemory && (
-        <div id="shared-memory" className="flex flex-col gap-3">
+        <div
+          id="shared-memory"
+          className="flex flex-col gap-3"
+          data-testid="devbox-create.shared-memory-section"
+        >
           <span className="text-base font-medium">{t('shared_memory')}</span>
           <div className="flex items-end gap-3">
             <div className="flex flex-col gap-3">
@@ -55,6 +62,7 @@ export default function AdvancedConfig({
                   <Switch
                     id="shared-memory-switch"
                     checked={sharedMemory.enabled}
+                    data-testid="devbox-create.shared-memory.switch"
                     onCheckedChange={(checked) => {
                       setValue('sharedMemory', {
                         ...sharedMemory,
@@ -77,6 +85,7 @@ export default function AdvancedConfig({
                   <button
                     type="button"
                     className="flex h-10 w-10 items-center justify-center rounded-l-md border border-zinc-200 bg-white hover:bg-zinc-50"
+                    data-testid="devbox-create.shared-memory.decrease-button"
                     onClick={() => {
                       const newSize = Math.max(1, (sharedMemory.sizeLimit || 64) - 1);
                       setValue('sharedMemory', { ...sharedMemory, sizeLimit: newSize });
@@ -84,12 +93,16 @@ export default function AdvancedConfig({
                   >
                     <Minus className="h-4 w-4 text-zinc-500" />
                   </button>
-                  <div className="flex h-10 w-20 items-center justify-center border-y border-zinc-200 bg-white">
+                  <div
+                    className="flex h-10 w-20 items-center justify-center border-y border-zinc-200 bg-white"
+                    data-testid="devbox-create.shared-memory.size-value"
+                  >
                     <span className="text-sm font-medium">{sharedMemory.sizeLimit || 64}</span>
                   </div>
                   <button
                     type="button"
                     className="flex h-10 w-10 items-center justify-center rounded-r-md border border-zinc-200 bg-white hover:bg-zinc-50"
+                    data-testid="devbox-create.shared-memory.increase-button"
                     onClick={() => {
                       const newSize = Math.min(maxSharedMemory, (sharedMemory.sizeLimit || 64) + 1);
                       setValue('sharedMemory', { ...sharedMemory, sizeLimit: newSize });

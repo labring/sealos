@@ -241,6 +241,7 @@ const IDEButton = memo(
                 className="w-32 rounded-r-none px-2"
                 onClick={() => handleGotoIDE(selectedIDE)}
                 disabled={status.value !== 'Running' || loading}
+                data-testid="devbox-ide.open-button"
                 {...leftButtonProps}
               >
                 <div className="flex w-full items-center justify-center gap-1.5">
@@ -266,12 +267,17 @@ const IDEButton = memo(
                 variant="secondary"
                 className="rounded-l-none"
                 disabled={status.value !== 'Running' || loading}
+                data-testid="devbox-ide.menu-button"
                 {...rightButtonProps}
               >
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="!max-h-none !overflow-visible p-1.5" align="end">
+            <DropdownMenuContent
+              className="!max-h-none !overflow-visible p-1.5"
+              align="end"
+              data-testid="devbox-ide.menu"
+            >
               <div className="flex items-start">
                 {/* left column */}
                 {showLeftColumn && (
@@ -298,6 +304,7 @@ const IDEButton = memo(
                                   updateDevboxIDE(option.value, devboxName);
                                   handleGotoIDE(option.value);
                                 }}
+                                data-testid="devbox-ide.option"
                               >
                                 <div className="flex items-center gap-1.5">
                                   <Image
@@ -329,6 +336,7 @@ const IDEButton = memo(
                             updateDevboxIDE(item.value as IDEType, devboxName);
                             handleGotoIDE(item.value as IDEType);
                           }}
+                          data-testid="devbox-ide.option"
                         >
                           <div className="flex items-center gap-1.5">
                             <Image
@@ -370,6 +378,7 @@ const IDEButton = memo(
                                   updateDevboxIDE(option.value, devboxName);
                                   handleGotoIDE(option.value);
                                 }}
+                                data-testid="devbox-ide.option"
                               >
                                 <div className="flex items-center gap-1.5">
                                   <Image
@@ -399,6 +408,7 @@ const IDEButton = memo(
                             updateDevboxIDE(item.value as IDEType, devboxName);
                             handleGotoIDE(item.value as IDEType);
                           }}
+                          data-testid="devbox-ide.option"
                         >
                           <div className="flex items-center gap-1.5">
                             <Image

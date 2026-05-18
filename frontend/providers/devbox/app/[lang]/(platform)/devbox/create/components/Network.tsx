@@ -107,6 +107,7 @@ export default function Network({
       <div
         className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8"
         id="network"
+        data-testid="devbox-create.network-section"
       >
         <span className="text-lg/7 font-medium">{t('Network Settings')}</span>
         <div className="flex flex-col items-start gap-3">
@@ -120,7 +121,11 @@ export default function Network({
               network.port === env.webIdePort &&
               network.portName === webIDEPortName;
             return (
-              <div key={network.id} className="flex w-full flex-col gap-3">
+              <div
+                key={network.id}
+                className="flex w-full flex-col gap-3"
+                data-testid="devbox-create.network.port-item"
+              >
                 <div className="guide-network-configuration flex w-full items-center gap-4">
                   {/* left part */}
                   <div className="flex flex-shrink-0 items-start gap-8">
@@ -135,6 +140,7 @@ export default function Network({
                         min={1}
                         max={65535}
                         disabled={isManagedWebIDEPort}
+                        data-testid="devbox-create.network.port-input"
                         {...register(`networks.${i}.port`, {
                           valueAsNumber: true,
                           min: {
@@ -184,6 +190,7 @@ export default function Network({
                             id={`openPublicDomain-${i}`}
                             checked={!!network.openPublicDomain}
                             disabled={isManagedWebIDEPort}
+                            data-testid="devbox-create.network.public-switch"
                             onCheckedChange={(checked) => {
                               const devboxName = getValues('name');
                               if (!devboxName) {
@@ -213,7 +220,10 @@ export default function Network({
                                 });
                               }}
                             >
-                              <SelectTrigger className="w-[108px] rounded-r-none">
+                              <SelectTrigger
+                                className="w-[108px] rounded-r-none"
+                                data-testid="devbox-create.network.protocol-select"
+                              >
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -225,14 +235,17 @@ export default function Network({
                               </SelectContent>
                             </Select>
                             <div className="flex h-10 shrink-0 grow items-center rounded-r-md border border-l-0 px-3 py-2">
-                              <div className="mr-2 min-w-64 flex-1 truncate text-sm/5 text-muted-foreground select-all">
+                              <div
+                                className="mr-2 min-w-64 flex-1 select-all truncate text-sm/5 text-muted-foreground"
+                                data-testid="devbox-create.network.public-domain"
+                              >
                                 {network.customDomain
                                   ? network.customDomain
                                   : network.publicDomain!}
                               </div>
                               <Button
                                 variant="ghost"
-                                className="cursor-pointer text-sm/5 whitespace-nowrap text-blue-600 hover:bg-white hover:text-blue-700"
+                                className="cursor-pointer whitespace-nowrap text-sm/5 text-blue-600 hover:bg-white hover:text-blue-700"
                                 disabled={isManagedWebIDEPort}
                                 onClick={() =>
                                   setCustomAccessModalData({
@@ -240,6 +253,7 @@ export default function Network({
                                     customDomain: network.customDomain!
                                   })
                                 }
+                                data-testid="devbox-create.network.custom-domain-button"
                               >
                                 {t('Custom Domain')}
                               </Button>
@@ -258,6 +272,7 @@ export default function Network({
                         className="h-9 w-9 bg-white text-neutral-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                         disabled={isManagedWebIDEPort}
                         onClick={() => removeNetworks(i)}
+                        data-testid="devbox-create.network.delete-port-button"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -298,7 +313,12 @@ export default function Network({
 const AppendNetworksButton = ({ ...props }: React.ComponentPropsWithoutRef<typeof Button>) => {
   const t = useTranslations();
   return (
-    <Button className="w-[100px] rounded-lg bg-white" variant="outline" {...props}>
+    <Button
+      className="w-[100px] rounded-lg bg-white"
+      variant="outline"
+      data-testid="devbox-create.network.add-port-button"
+      {...props}
+    >
       <Plus className="h-4 w-4 text-neutral-500" />
       {t('Add Port')}
     </Button>

@@ -66,7 +66,7 @@ export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStora
   }, [hasDefaultGpuVolume, hasGpu, isEdit, setValue, volumes]);
 
   return (
-    <div id="storage" className="flex flex-col gap-3">
+    <div id="storage" className="flex flex-col gap-3" data-testid="devbox-create.storage-section">
       <Separator className="my-1" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
@@ -80,7 +80,7 @@ export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStora
             <TooltipContent
               side="top"
               align="start"
-              className="max-w-[250px] text-left text-xs ![text-wrap:wrap] whitespace-normal"
+              className="max-w-[250px] whitespace-normal text-left text-xs ![text-wrap:wrap]"
             >
               {t('network_storage_nfs_tooltip')}
             </TooltipContent>
@@ -93,6 +93,7 @@ export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStora
             setEditingStorageIndex(null);
             setIsNetworkStorageDrawerOpen(true);
           }}
+          data-testid="devbox-create.storage.add-button"
         >
           <Plus className="h-4 w-4 text-neutral-500" />
           <span className="text-sm/5 font-medium">{t('add')}</span>
@@ -104,6 +105,7 @@ export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStora
           <div
             key={storage.id || `${storage.path}-${idx}`}
             className="flex h-14 items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3"
+            data-testid="devbox-create.storage.item"
           >
             <button
               type="button"
@@ -128,6 +130,7 @@ export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStora
                   setEditingStorageIndex(idx);
                   setIsNetworkStorageDrawerOpen(true);
                 }}
+                data-testid="devbox-create.storage.edit-button"
               >
                 <PencilLine className="h-4 w-4" />
               </Button>
@@ -141,6 +144,7 @@ export default function NetworkStorage({ isEdit, originalVolumes }: NetworkStora
                     volumes.filter((_, i) => i !== idx)
                   );
                 }}
+                data-testid="devbox-create.storage.delete-button"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

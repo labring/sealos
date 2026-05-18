@@ -58,6 +58,7 @@ const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
               currentTab === tab.value && 'bg-zinc-100 text-zinc-900'
             )}
             onClick={() => onTabChange(tab.value)}
+            data-testid={`devbox-detail.tab.${tab.value === 'advancedConfig' ? 'advanced-config' : tab.value}`}
           >
             <span>{tab.icon}</span>
             <span className="text-center text-xs font-medium">{tab.label}</span>

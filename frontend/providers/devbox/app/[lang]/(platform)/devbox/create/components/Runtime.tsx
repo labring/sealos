@@ -205,6 +205,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
       <FormLabel>{t('runtime_environment')}</FormLabel>
       <div
         className={cn('flex items-center rounded-xl border bg-card p-3', isEdit && 'opacity-60')}
+        data-testid="devbox-create.runtime-section"
       >
         <div className="flex w-[500px] items-center gap-3">
           <div className="flex items-center gap-2">
@@ -228,7 +229,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
             value={templateUid}
             onValueChange={handleVersionChange}
           >
-            <SelectTrigger className="h-10 border-none px-3 text-zinc-600 select-none hover:bg-zinc-100">
+            <SelectTrigger className="h-10 select-none border-none px-3 text-zinc-600 hover:bg-zinc-100">
               <SelectValue />
             </SelectTrigger>
             <SelectContent align="end">

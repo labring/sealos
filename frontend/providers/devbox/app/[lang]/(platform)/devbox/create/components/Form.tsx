@@ -81,8 +81,12 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
       <div className="flex min-w-[260px] flex-col gap-4 text-sm">
         <Tabs defaultValue="form" onValueChange={handleTabChange}>
           <TabsList className="h-11 w-full">
-            <TabsTrigger value="form">{t('config_form')}</TabsTrigger>
-            <TabsTrigger value="yaml">{t('yaml_file')}</TabsTrigger>
+            <TabsTrigger value="form" data-testid="devbox-create.form-tab">
+              {t('config_form')}
+            </TabsTrigger>
+            <TabsTrigger value="yaml" data-testid="devbox-create.yaml-tab">
+              {t('yaml_file')}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         <PriceBox
@@ -104,12 +108,17 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         {/* Devbox Name */}
         <DevboxName isEdit={isEdit} />
         {/* Usage */}
-        <div className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8">
+        <div
+          className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8"
+          data-testid="devbox-create.usage-section"
+        >
           <span className="text-lg/7 font-medium">{t('usage')}</span>
           <Gpu countGpuInventory={countGpuInventory} />
           <Cpu />
           <Memory />
-          {showNfs && <NetworkStorage isEdit={isEdit} originalVolumes={originalVolumesRef.current} />}
+          {showNfs && (
+            <NetworkStorage isEdit={isEdit} originalVolumes={originalVolumesRef.current} />
+          )}
         </div>
         {/* Network */}
         <div id="network">

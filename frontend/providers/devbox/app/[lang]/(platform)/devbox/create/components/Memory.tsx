@@ -70,8 +70,9 @@ export default function Memory() {
           min={0}
           step={1}
           marks={MemorySlideMarkList}
+          data-testid="devbox-create.memory-slider"
         />
-        <span className="mt-[18px] ml-2 h-auto text-sm text-neutral-500">Gi</span>
+        <span className="ml-2 mt-[18px] h-auto text-sm text-neutral-500">Gi</span>
       </div>
     </div>
   );

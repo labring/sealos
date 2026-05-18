@@ -58,8 +58,9 @@ export default function Cpu() {
           min={0}
           step={1}
           marks={CpuSlideMarkList}
+          data-testid="devbox-create.cpu-slider"
         />
-        <span className="mt-[18px] ml-2 h-auto text-sm text-neutral-500">C</span>
+        <span className="ml-2 mt-[18px] h-auto text-sm text-neutral-500">C</span>
       </div>
     </div>
   );

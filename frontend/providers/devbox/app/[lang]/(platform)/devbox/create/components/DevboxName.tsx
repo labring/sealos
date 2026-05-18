@@ -40,6 +40,7 @@ export default function DevboxName({ isEdit }: { isEdit: boolean }) {
               disabled={isEdit}
               autoFocus={true}
               placeholder={t('enter_devbox_name')}
+              data-testid="devbox-create.name-input"
               onBlur={async (e) => {
                 const lowercaseValue = e.target.value.toLowerCase();
                 field.onChange(lowercaseValue);

@@ -281,13 +281,22 @@ const Release = () => {
         title: t('version_number'),
         key: 'tag',
         render: (item: DevboxVersionListItemType) => (
-          <div className="max-w-[200px] truncate text-zinc-900">{item.tag}</div>
+          <div
+            className="max-w-[200px] truncate text-zinc-900"
+            data-testid="devbox-release.item.tag"
+          >
+            {item.tag}
+          </div>
         )
       },
       {
         title: t('status'),
         key: 'status',
-        render: (item: DevboxVersionListItemType) => <DevboxStatusTag status={item.status} />
+        render: (item: DevboxVersionListItemType) => (
+          <div data-testid="devbox-release.item.status">
+            <DevboxStatusTag status={item.status} />
+          </div>
+        )
       },
       {
         title: t('create_time'),
@@ -303,14 +312,20 @@ const Release = () => {
           <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="max-w-[200px] cursor-pointer truncate">{item.description}</span>
+                <span
+                  className="max-w-[200px] cursor-pointer truncate"
+                  data-testid="devbox-release.item.description"
+                >
+                  {item.description}
+                </span>
               </TooltipTrigger>
-              <TooltipContent className="max-w-[300px] break-words whitespace-pre-wrap">
+              <TooltipContent className="max-w-[300px] whitespace-pre-wrap break-words">
                 <p>{item.description}</p>
               </TooltipContent>
             </Tooltip>
             <PencilLine
               className="h-4 w-4 cursor-pointer"
+              data-testid="devbox-release.item.description-edit"
               onClick={() => {
                 setCurrentVersion(item);
                 setIsOpenEdit(true);
@@ -329,24 +344,34 @@ const Release = () => {
               variant="outline"
               disabled={item.status.value !== DevboxReleaseStatusEnum.Success}
               onClick={() => handleDeploy(item)}
+              data-testid="devbox-release.item.deploy-button"
             >
               {t('deploy')}
               <ArrowUpRight className="h-4 w-4 text-neutral-500" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" disabled={item?.status?.value !== 'Success'}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={item?.status?.value !== 'Success'}
+                  data-testid="devbox-release.item.actions-button"
+                >
                   <Ellipsis className="text-gray-600 hover:text-blue-600" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleConvertToRuntime(item)}>
+                <DropdownMenuItem
+                  onClick={() => handleConvertToRuntime(item)}
+                  data-testid="devbox-release.item.convert-template"
+                >
                   <LayoutTemplate className="h-4 w-4 text-neutral-500" />
                   {t('convert_to_runtime')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  className="focus:bg-destructive/10 text-destructive focus:text-destructive"
                   onClick={() => openConfirm(() => handleDelDevboxVersion(item.name))()}
+                  data-testid="devbox-release.item.delete-action"
                 >
                   <Trash2 className="h-4 w-4 text-destructive" />
                   {t('delete')}
@@ -376,17 +401,28 @@ const Release = () => {
   if (!initialized || isLoading) return <Loading />;
 
   return (
-    <div className="flex h-[25%] min-h-0 flex-col items-center gap-3 overflow-hidden rounded-xl border-[0.5px] bg-white px-6 py-4 shadow-xs">
+    <div
+      className="flex h-[25%] min-h-0 flex-col items-center gap-3 overflow-hidden rounded-xl border-[0.5px] bg-white px-6 py-4 shadow-xs"
+      data-testid="devbox-release.section"
+    >
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
-        <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">
+        <Button
+          className="guide-release-button"
+          onClick={handleOpenRelease}
+          variant="outline"
+          data-testid="devbox-release.open-button"
+        >
           <ArrowBigUpDash className="h-4 w-4 text-neutral-500" />
           {t('release_version')}
         </Button>
       </div>
 
       {devboxVersionList.length === 0 && initialized ? (
-        <div className="flex h-full w-[300px] flex-col items-center justify-center gap-3">
+        <div
+          className="flex h-full w-[300px] flex-col items-center justify-center gap-3"
+          data-testid="devbox-release.empty"
+        >
           <div className="rounded-lg border border-dashed border-zinc-200 p-2">
             <ArrowBigUpDash className="h-6 w-6 text-zinc-400" />
           </div>
@@ -409,7 +445,7 @@ const Release = () => {
             </TableHeader>
             <TableBody>
               {devboxVersionList.map((item) => (
-                <TableRow key={item.tag}>
+                <TableRow key={item.tag} data-testid="devbox-release.item">
                   {releaseColumn.map((column) => (
                     <TableCell key={`${item.tag}-${column.key}`}>{column.render(item)}</TableCell>
                   ))}

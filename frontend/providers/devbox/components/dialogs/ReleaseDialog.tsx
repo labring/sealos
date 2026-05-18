@@ -147,7 +147,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
         onClose();
       }}
     >
-      <DialogContent>
+      <DialogContent data-testid="devbox-release.dialog">
         <DialogHeader>
           <DialogTitle>{t('release_version')}</DialogTitle>
         </DialogHeader>
@@ -184,6 +184,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
               <Checkbox
                 id="confirm-checkbox"
                 checked={isAutoStart}
+                data-testid="devbox-release.auto-start-checkbox"
                 onCheckedChange={(checked) =>
                   setIsAutoStart(checked === 'indeterminate' ? false : checked)
                 }
@@ -198,6 +199,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
               id="image-name"
               value={`${env.registryAddr}/${env.namespace}/${devbox.name}`}
               disabled
+              data-testid="devbox-release.image-input"
             />
           </div>
           {/* tag  */}
@@ -213,6 +215,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
                 onChange={handleTagChange}
                 maxLength={50}
                 className={cn(tagError && 'border-red-500')}
+                data-testid="devbox-release.tag-input"
               />
               <div className="mt-1 flex justify-between">
                 <div className="text-sm text-red-500">{tagError}</div>
@@ -228,15 +231,20 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
               onChange={(e) => setReleaseDes(e.target.value)}
               placeholder={t('enter_version_description')}
               className="w-[462px]"
+              data-testid="devbox-release.description-input"
             />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant={'outline'} onClick={onClose}>
+          <Button variant={'outline'} onClick={onClose} data-testid="devbox-release.cancel-button">
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
+          <Button
+            onClick={handleSubmit}
+            disabled={loading}
+            data-testid="devbox-release.submit-button"
+          >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('release')}
           </Button>
