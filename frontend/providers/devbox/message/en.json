@@ -584,5 +584,9 @@
   "mount_path_invalid_format": "Invalid path format. Must start and end with alphanumeric, underscore or slash, and can contain dots and hyphens",
   "mount_path_protected": "This path is protected and cannot be used as a mount path",
   "mount_path_conflict": "Path conflict, this path already exists",
-  "shared_memory": "Shared Memory"
+  "shared_memory": "Shared Memory",
+  "template_defaults": "Template Defaults",
+  "template_defaults_tip": "These environment variables and ConfigMaps will be saved into the template and reused when creating a DevBox from it. Remove or clear sensitive values first.",
+  "template_defaults_public_tip": "This template will be public, and these environment variables and ConfigMaps will be visible with it. Remove or clear sensitive values first.",
+  "empty_content": "Empty content"
 }

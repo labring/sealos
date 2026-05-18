@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,6 +28,8 @@ import VersionField from '@/components/template/VersionField';
 import IsPublicField from '@/components/template/IsPublicField';
 import DescriptionField from '@/components/template/DescriptionField';
 import AgreeTermsField from '@/components/template/AgreeTermsField';
+import TemplateDefaultsPanel from '@/components/template/TemplateDefaultsPanel';
+import type { TemplateDefaults } from '@/utils/templateConfig';
 
 const tagSchema = z.object({
   value: z.string()
@@ -36,9 +39,15 @@ interface CreateTemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
   devboxReleaseName: string;
+  initialTemplateDefaults?: TemplateDefaults;
 }
 
-const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemplateModalProps) => {
+const CreateTemplateDrawer = ({
+  isOpen,
+  onClose,
+  devboxReleaseName,
+  initialTemplateDefaults = {}
+}: CreateTemplateModalProps) => {
   const t = useTranslations();
   const { getErrorMessage, getErrorCode } = useErrorMessage();
 
@@ -67,6 +76,14 @@ const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemp
       description: ''
     }
   });
+  const [templateDefaults, setTemplateDefaults] =
+    useState<TemplateDefaults>(initialTemplateDefaults);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTemplateDefaults(initialTemplateDefaults);
+    }
+  }, [initialTemplateDefaults, isOpen]);
 
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -82,7 +99,8 @@ const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemp
         isPublic: data.isPublic,
         description: data.description,
         tagUidList: data.tags.map((tag) => tag.value),
-        devboxReleaseName
+        devboxReleaseName,
+        templateDefaults
       });
 
       queryClient.invalidateQueries(['template-repository-list']);
@@ -107,25 +125,32 @@ const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemp
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent>
-        <DrawerHeader>
+      <DrawerContent className="overflow-hidden">
+        <DrawerHeader className="shrink-0">
           <DrawerTitle>{t('create_template')}</DrawerTitle>
         </DrawerHeader>
-        <div className="flex flex-col gap-5 p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <Form {...form}>
-            <NameField form={form} />
-            <VersionField form={form} />
-            <TagsField form={form} />
-            <DescriptionField form={form} />
-            <Separator />
-            <div className="flex flex-col items-center gap-3">
-              <IsPublicField form={form} />
-              <AgreeTermsField form={form} />
+            <div className="flex flex-col gap-5">
+              <NameField form={form} />
+              <VersionField form={form} />
+              <TagsField form={form} />
+              <DescriptionField form={form} />
+              <TemplateDefaultsPanel
+                value={templateDefaults}
+                onChange={setTemplateDefaults}
+                isPublic={form.watch('isPublic')}
+              />
+              <Separator />
+              <div className="flex flex-col items-center gap-3">
+                <IsPublicField form={form} />
+                <AgreeTermsField form={form} />
+              </div>
             </div>
           </Form>
         </div>
 
-        <DrawerFooter>
+        <DrawerFooter className="shrink-0">
           <Button
             variant="outline"
             onClick={() => {

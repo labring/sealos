@@ -28,6 +28,7 @@ import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox';
 import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
 import { getTemplateConfig, listPrivateTemplateRepository } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
+import { sanitizeTemplateDefaults } from '@/utils/templateConfig';
 
 import {
   Table,
@@ -115,6 +116,14 @@ const Release = () => {
   );
   const templateRepositoryList =
     listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || [];
+  const initialTemplateDefaults = useMemo(
+    () =>
+      sanitizeTemplateDefaults({
+        envs: devbox?.envs || [],
+        configMaps: devbox?.configMaps || []
+      }),
+    [devbox?.configMaps, devbox?.envs]
+  );
 
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
@@ -123,7 +132,18 @@ const Release = () => {
       const config = parseTemplateConfig(result.template.config);
       const releaseArgs = config.releaseArgs.join(' ');
       const releaseCommand = config.releaseCommand.join(' ');
-      const { cpu, memory, sharedMemory, networks, name, gpu, configMaps, volumes, envs, tolerations } = devbox;
+      const {
+        cpu,
+        memory,
+        sharedMemory,
+        networks,
+        name,
+        gpu,
+        configMaps,
+        volumes,
+        envs,
+        tolerations
+      } = devbox;
       const newNetworks = networks
         .filter((network) => network.port !== env.webIdePort)
         .map((network) => {
@@ -356,7 +376,7 @@ const Release = () => {
   if (!initialized || isLoading) return <Loading />;
 
   return (
-    <div className="flex h-[25%] flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-4 shadow-xs">
+    <div className="flex h-[25%] min-h-0 flex-col items-center gap-3 overflow-hidden rounded-xl border-[0.5px] bg-white px-6 py-4 shadow-xs">
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">
@@ -378,7 +398,7 @@ const Release = () => {
           </div>
         </div>
       ) : (
-        <ScrollArea className="w-full">
+        <ScrollArea className="min-h-0 w-full flex-1">
           <Table>
             <TableHeader>
               <TableRow>
@@ -434,6 +454,7 @@ const Release = () => {
         isOpen={isCreateTemplateDrawerOpen}
         onClose={() => setIsCreateTemplateDrawerOpen(false)}
         devboxReleaseName={currentVersion?.name || ''}
+        initialTemplateDefaults={initialTemplateDefaults}
       />
       {templateRepositoryList.length > 0 && (
         <CreateOrUpdateDrawer
@@ -454,6 +475,7 @@ const Release = () => {
           isOpen={isUpdateTemplateDrawerOpen}
           onClose={() => setIsUpdateTemplateDrawerOpen(false)}
           devboxReleaseName={currentVersion?.name || ''}
+          initialTemplateDefaults={initialTemplateDefaults}
         />
       )}
     </div>
