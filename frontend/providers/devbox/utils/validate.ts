@@ -11,13 +11,37 @@ export const versionSchema = z
   });
 export const templateNameSchema = z.string().regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/);
 export const devboxNameSchema = z.string().regex(/^[a-z]([-a-z0-9]*[a-z0-9])?$/);
+
+const templateDefaultsSchema = z
+  .object({
+    envs: z
+      .array(
+        z.object({
+          key: z.string(),
+          value: z.string()
+        })
+      )
+      .optional(),
+    configMaps: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          path: z.string(),
+          content: z.string()
+        })
+      )
+      .optional()
+  })
+  .optional();
+
 export const createTemplateRepositorySchema = z.object({
   description: z.string().max(255),
   version: z.string().min(1).max(255),
   tagUidList: z.string().uuid().array().default([]),
   templateRepositoryName: z.string().min(1).max(255),
   isPublic: z.boolean().default(false),
-  devboxReleaseName: z.string()
+  devboxReleaseName: z.string(),
+  templateDefaults: templateDefaultsSchema
 });
 export const updateTemplateRepositorySchema = z.object({
   uid: z.string().uuid(),
@@ -31,7 +55,8 @@ export const updateTemplateSchema = z.object({
   description: z.string().max(255),
   version: z.string(),
   tagUidList: z.string().uuid().array().default([]),
-  devboxReleaseName: z.string()
+  devboxReleaseName: z.string(),
+  templateDefaults: templateDefaultsSchema
 });
 export const updateTemplateListSchema = z.object({
   uid: z.string().uuid(),

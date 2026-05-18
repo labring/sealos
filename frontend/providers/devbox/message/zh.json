@@ -586,5 +586,9 @@
   "mount_path_invalid_format": "路径格式无效。必须以字母、数字、下划线或斜杠开头和结尾，可以包含点和连字符",
   "mount_path_protected": "该路径属于受保护目录，禁止作为挂载路径",
   "mount_path_conflict": "路径冲突，该路径已存在",
-  "shared_memory": "共享内存"
+  "shared_memory": "共享内存",
+  "template_defaults": "随模板保存的配置",
+  "template_defaults_tip": "这些环境变量和配置文件会写入模板，后续用该模板创建 DevBox 时会自动带上。请先删除或清空敏感值。",
+  "template_defaults_public_tip": "该模板会公开给其他用户，这些环境变量和配置文件也会随模板可见。请务必删除或清空敏感值。",
+  "empty_content": "空内容"
 }

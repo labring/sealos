@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 
 import { YamlKindEnum, gpuTypeAnnotationKey } from '@/constants/devbox';
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox';
+import { getRuntimeTemplateConfig } from '@/utils/templateConfig';
 
 dayjs.extend(duration);
 
@@ -458,7 +459,7 @@ export const isElementInViewport = (element: Element) => {
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 export const parseTemplateConfig = (config: string) => {
-  return JSON.parse(config) as {
+  return JSON.parse(getRuntimeTemplateConfig(config)) as {
     user: string;
     workingDir: string;
     releaseCommand: string[];

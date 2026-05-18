@@ -28,6 +28,7 @@ import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox';
 import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
 import { getTemplateConfig, listPrivateTemplateRepository } from '@/api/template';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
+import { sanitizeTemplateDefaults } from '@/utils/templateConfig';
 
 import {
   Table,
@@ -115,6 +116,14 @@ const Release = () => {
   );
   const templateRepositoryList =
     listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || [];
+  const initialTemplateDefaults = useMemo(
+    () =>
+      sanitizeTemplateDefaults({
+        envs: devbox?.envs || [],
+        configMaps: devbox?.configMaps || []
+      }),
+    [devbox?.configMaps, devbox?.envs]
+  );
 
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
@@ -123,7 +132,18 @@ const Release = () => {
       const config = parseTemplateConfig(result.template.config);
       const releaseArgs = config.releaseArgs.join(' ');
       const releaseCommand = config.releaseCommand.join(' ');
-      const { cpu, memory, sharedMemory, networks, name, gpu, configMaps, volumes, envs, tolerations } = devbox;
+      const {
+        cpu,
+        memory,
+        sharedMemory,
+        networks,
+        name,
+        gpu,
+        configMaps,
+        volumes,
+        envs,
+        tolerations
+      } = devbox;
       const newNetworks = networks
         .filter((network) => network.port !== env.webIdePort)
         .map((network) => {
@@ -434,6 +454,7 @@ const Release = () => {
         isOpen={isCreateTemplateDrawerOpen}
         onClose={() => setIsCreateTemplateDrawerOpen(false)}
         devboxReleaseName={currentVersion?.name || ''}
+        initialTemplateDefaults={initialTemplateDefaults}
       />
       {templateRepositoryList.length > 0 && (
         <CreateOrUpdateDrawer
@@ -454,6 +475,7 @@ const Release = () => {
           isOpen={isUpdateTemplateDrawerOpen}
           onClose={() => setIsUpdateTemplateDrawerOpen(false)}
           devboxReleaseName={currentVersion?.name || ''}
+          initialTemplateDefaults={initialTemplateDefaults}
         />
       )}
     </div>
