@@ -17,6 +17,11 @@ const createTemplateDefaultId = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 const isRecord = (value: unknown): value is Record<string, any> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const getConfigMapFallbackId = (configMapName: string) => {
+  const match = configMapName.match(/-cm-([a-z0-9]+)$/i);
+  return match?.[1] || createTemplateDefaultId();
+};
+
 export const sanitizeTemplateDefaults = (defaults?: TemplateDefaults): TemplateDefaults => {
   if (!defaults) return {};
 
@@ -80,6 +85,43 @@ export const normalizeTemplateRuntimeConfig = (config: unknown) => {
   return runtimeConfig;
 };
 
+const getLegacyTemplateDefaults = (runtimeConfig: Record<string, any>): TemplateDefaults => {
+  const envs =
+    Array.isArray(runtimeConfig.env) && !runtimeConfig[TEMPLATE_DEFAULTS_KEY]
+      ? runtimeConfig.env
+          .filter((env) => env?.name && typeof env.value === 'string')
+          .map((env) => ({
+            key: env.name,
+            value: env.value
+          }))
+      : [];
+
+  const configMaps =
+    Array.isArray(runtimeConfig.volumes) && Array.isArray(runtimeConfig.volumeMounts)
+      ? runtimeConfig.volumes
+          .filter((volume) => isRecord(volume) && isRecord(volume.configMap))
+          .map((volume) => {
+            const mount = runtimeConfig.volumeMounts.find(
+              (volumeMount: Record<string, any>) =>
+                isRecord(volumeMount) && volumeMount.name === volume.name && volumeMount.mountPath
+            );
+            if (!mount) return null;
+
+            return {
+              id: getConfigMapFallbackId(volume.configMap.name),
+              path: mount.mountPath,
+              content: ''
+            };
+          })
+          .filter(Boolean)
+      : [];
+
+  return sanitizeTemplateDefaults({
+    envs,
+    configMaps
+  } as TemplateDefaults);
+};
+
 export const splitTemplateConfig = (config: string) => {
   const parsed = JSON.parse(config);
   if (!isRecord(parsed)) {
@@ -90,9 +132,12 @@ export const splitTemplateConfig = (config: string) => {
   }
 
   const { [TEMPLATE_DEFAULTS_KEY]: rawDefaults, ...runtimeConfig } = parsed;
+  const defaults = rawDefaults
+    ? sanitizeTemplateDefaults(rawDefaults as TemplateDefaults)
+    : getLegacyTemplateDefaults(runtimeConfig);
   return {
     runtimeConfig,
-    defaults: sanitizeTemplateDefaults(rawDefaults as TemplateDefaults | undefined)
+    defaults
   };
 };
 
