@@ -376,7 +376,7 @@ const Release = () => {
   if (!initialized || isLoading) return <Loading />;
 
   return (
-    <div className="flex h-[25%] flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-4 shadow-xs">
+    <div className="flex h-[25%] min-h-0 flex-col items-center gap-3 overflow-hidden rounded-xl border-[0.5px] bg-white px-6 py-4 shadow-xs">
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">
@@ -398,7 +398,7 @@ const Release = () => {
           </div>
         </div>
       ) : (
-        <ScrollArea className="w-full">
+        <ScrollArea className="min-h-0 w-full flex-1">
           <Table>
             <TableHeader>
               <TableRow>

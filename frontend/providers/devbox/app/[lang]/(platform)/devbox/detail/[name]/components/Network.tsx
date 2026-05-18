@@ -223,7 +223,7 @@ const Network = () => {
   };
 
   return (
-    <div className="flex h-full max-h-[400px] flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="flex min-h-0 max-h-[400px] flex-1 flex-col items-center gap-3 overflow-hidden rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       {/* title */}
       <div className="flex w-full items-center justify-between">
         <span className="text-lg/7 font-medium text-accent-foreground">{t('network')}</span>
@@ -233,7 +233,7 @@ const Network = () => {
       </div>
       {/* table */}
       {devboxDetail?.networks && devboxDetail.networks.length > 0 ? (
-        <ScrollArea className="w-full min-w-0">
+        <ScrollArea className="min-h-0 w-full min-w-0 flex-1">
           <Table className="w-full table-fixed">
             <TableHeader>
               <TableRow>
