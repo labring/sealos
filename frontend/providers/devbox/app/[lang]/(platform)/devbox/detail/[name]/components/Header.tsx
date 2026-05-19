@@ -27,7 +27,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
 
   const { guideIDE } = useGuideStore();
   const { devboxDetail, setDevboxList } = useDevboxStore();
-  const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal } =
+  const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal, RestartConfirmChild } =
     useControlDevbox(refetchDevboxDetail);
 
   const [onOpenShutdown, setOnOpenShutdown] = useState(false);
@@ -143,6 +143,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           devbox={devboxDetail}
         />
       )}
+      <RestartConfirmChild />
     </div>
   );
 };

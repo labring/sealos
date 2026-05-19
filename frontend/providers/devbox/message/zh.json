@@ -79,6 +79,7 @@
   "confirm_create_devbox": "确认创建项目？",
   "confirm_delete": "确认删除",
   "confirm_shutdown": "确认关机",
+  "confirm_restart_devbox": "重启会中断当前 IDE 和终端连接，请先保存好正在进行的工作再继续。",
   "confirm_update_devbox": "变更 CPU 和内存将导致项目重启和 IDE 的重新连接（变更网络配置并不会）。是否继续？",
   "confirm_update_configmap_restart_devbox": "本次变更包含配置文件内容或挂载路径更新。为了让配置文件在 DevBox 中生效，系统会重启 DevBox，已连接的 IDE 需要重新连接。是否继续？",
   "confirm_update_and_restart": "变更并重启",

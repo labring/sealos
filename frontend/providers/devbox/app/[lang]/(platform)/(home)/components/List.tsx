@@ -100,7 +100,7 @@ const DevboxList = ({
 }) => {
   const router = useRouter();
   const t = useTranslations();
-  const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal } =
+  const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal, RestartConfirmChild } =
     useControlDevbox(refetchDevboxList);
 
   const { startDateTime: dateRangeStart } = useDateTimeStore();
@@ -600,7 +600,8 @@ const DevboxList = ({
         }
         return true;
       }),
-    // NOTE: do not add devboxList dependency, it will cause infinite re-render
+    // NOTE: keep this dependency set narrow; table columns must not follow per-render handlers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [statusFilter, isSpecificTimeRangeSelected, sourcePrice.gpu]
   );
 
@@ -769,6 +770,7 @@ const DevboxList = ({
           currentRemark={editRemarkItem.remark}
         />
       )}
+      <RestartConfirmChild />
     </>
   );
 };

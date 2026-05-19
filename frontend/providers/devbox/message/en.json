@@ -79,6 +79,7 @@
   "confirm_create_devbox": "Confirm creation of your DevBox?",
   "confirm_delete": "Delete",
   "confirm_shutdown": "Shutdown",
+  "confirm_restart_devbox": "Restarting will interrupt current IDE and terminal connections. Save your work before continuing.",
   "confirm_update_devbox": "Changing the CPU or memory will cause the project to restart and any active IDE instances will need to reconnect. Are you sure you wish to continue?",
   "confirm_update_configmap_restart_devbox": "This change updates ConfigMap-mounted file content or mount paths. The DevBox will restart so the files take effect, and active IDE connections will need to reconnect. Continue?",
   "confirm_update_and_restart": "Update and restart",
