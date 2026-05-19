@@ -3,7 +3,17 @@ import DBStatusTag from '@/components/DBStatusTag';
 import { defaultDBDetail } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { DBDetailType } from '@/types/db';
-import { Box, Button, Flex, useDisclosure } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Flex,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  useDisclosure
+} from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import { useTranslation } from 'next-i18next';
@@ -151,6 +161,48 @@ const Header = ({
       toast({ title: t('manage_data_redirect_failed'), status: 'error' });
     }
   }, [toast, t, db.dbName, db.dbType]);
+
+  const getManageDataDisabledReason = useCallback(() => {
+    if (!DATAFLOW_SUPPORTED_TYPES.has(db.dbType)) {
+      return t('manage_data_disabled_unsupported_type');
+    }
+    if (db.status.value !== 'Running') {
+      return t('manage_data_disabled_not_running');
+    }
+    return '';
+  }, [db.dbType, db.status.value, t]);
+
+  const manageDataDisabledReason = getManageDataDisabledReason();
+  const manageDataButton = (
+    <Button
+      display={'flex'}
+      height={'40px'}
+      padding={'8px 16px'}
+      justifyContent={'center'}
+      alignItems={'center'}
+      gap={'8px'}
+      borderRadius={'8px'}
+      border={'1px solid #E4E4E7'}
+      background={'#FFF'}
+      boxShadow={'0 1px 2px 0 rgba(0, 0, 0, 0.05)'}
+      isLoading={loading}
+      isDisabled={!!manageDataDisabledReason}
+      onClick={handleManageData}
+      leftIcon={<Settings size={16} color="#71717A" />}
+      color={'#18181B'}
+      fontFamily={'Geist, sans-serif'}
+      fontSize={'14px'}
+      fontWeight={'500'}
+      lineHeight={'20px'}
+      _hover={{
+        color: '#FFF',
+        bg: '#000',
+        '& svg': { color: '#FFF' }
+      }}
+    >
+      {t('manage_data')}
+    </Button>
+  );
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
@@ -325,36 +377,32 @@ const Header = ({
           )}
         </Flex>
 
-        {SystemEnv.DATAFLOW_ENABLED && DATAFLOW_SUPPORTED_TYPES.has(db.dbType) && (
-          <Button
-            display={'flex'}
-            height={'40px'}
-            padding={'8px 16px'}
-            justifyContent={'center'}
-            alignItems={'center'}
-            gap={'8px'}
-            borderRadius={'8px'}
-            border={'1px solid #E4E4E7'}
-            background={'#FFF'}
-            boxShadow={'0 1px 2px 0 rgba(0, 0, 0, 0.05)'}
-            isLoading={loading}
-            isDisabled={db.status.value !== 'Running'}
-            onClick={handleManageData}
-            leftIcon={<Settings size={16} color="#71717A" />}
-            color={'#18181B'}
-            fontFamily={'Geist, sans-serif'}
-            fontSize={'14px'}
-            fontWeight={'500'}
-            lineHeight={'20px'}
-            _hover={{
-              color: '#FFF',
-              bg: '#000',
-              '& svg': { color: '#FFF' }
-            }}
-          >
-            {t('manage_data')}
-          </Button>
-        )}
+        {SystemEnv.DATAFLOW_ENABLED &&
+          (manageDataDisabledReason ? (
+            <Popover trigger="hover" placement="top" openDelay={200}>
+              <PopoverTrigger>
+                <Box as="span" display="inline-flex">
+                  {manageDataButton}
+                </Box>
+              </PopoverTrigger>
+              <PopoverContent
+                w={'fit-content'}
+                maxW={'240px'}
+                px={'12px'}
+                py={'8px'}
+                borderRadius={'6px'}
+                borderColor={'grayModern.200'}
+                boxShadow={'0px 8px 24px rgba(17, 24, 36, 0.12)'}
+                color={'grayModern.700'}
+                fontSize={'12px'}
+              >
+                <PopoverArrow />
+                <PopoverBody p={0}>{manageDataDisabledReason}</PopoverBody>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            manageDataButton
+          ))}
       </Flex>
 
       {/* modal */}

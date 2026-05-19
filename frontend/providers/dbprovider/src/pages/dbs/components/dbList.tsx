@@ -423,7 +423,7 @@ const DBList = ({
           );
 
           return (
-            <Flex key={row.id} justifyContent={'flex-end'}>
+            <Flex key={row.id} justifyContent={'flex-start'}>
               {SystemEnv.DATAFLOW_ENABLED &&
                 (manageDataDisabledReason ? (
                   <Popover trigger="hover" placement="top" openDelay={200}>
