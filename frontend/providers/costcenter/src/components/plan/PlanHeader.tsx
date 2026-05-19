@@ -189,20 +189,28 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
             </div>
           </div>
 
-          {children?.({
-            trigger: (
-              <Tooltip open={canManagePayment ? false : undefined}>
-                <TooltipTrigger asChild>
-                  <Button size="lg" variant="outline" disabled={!canManagePayment}>
+          {canManagePayment ? (
+            children?.({
+              trigger: (
+                <Button size="lg" variant="outline">
+                  <span>{inDebt ? t('common:renew') : t('common:subscribe_plan')}</span>
+                </Button>
+              )
+            })
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button size="lg" variant="outline" disabled>
                     <span>{inDebt ? t('common:renew') : t('common:subscribe_plan')}</span>
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t('common:can_not_manage_payments')}</p>
-                </TooltipContent>
-              </Tooltip>
-            )
-          })}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t('common:can_not_manage_payments')}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </div>
     );
