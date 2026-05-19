@@ -32,7 +32,7 @@ import {
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 
 import { useRouter } from '@/i18n';
 import { useDateTimeStore } from '@/stores/date';
@@ -100,7 +100,7 @@ const DevboxList = ({
 }) => {
   const router = useRouter();
   const t = useTranslations();
-  const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal } =
+  const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal, RestartConfirmChild } =
     useControlDevbox(refetchDevboxList);
 
   const { startDateTime: dateRangeStart } = useDateTimeStore();
@@ -140,7 +140,7 @@ const DevboxList = ({
           header: ({ column }: HeaderContext<DevboxListItemTypeV2, unknown>) => (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="flex cursor-pointer items-center gap-2 select-none hover:text-zinc-800">
+                <div className="flex cursor-pointer select-none items-center gap-2 hover:text-zinc-800">
                   {column.getIsSorted() === 'desc' ? (
                     <ArrowDownAZ className="h-4 w-4 shrink-0 text-blue-600" />
                   ) : (
@@ -197,6 +197,7 @@ const DevboxList = ({
           size: 220,
           cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
             const item = row.original;
+            const iconId = item.template.templateRepository.iconId || 'custom';
             return (
               <div className="flex w-full cursor-pointer items-center gap-2 pr-4">
                 <Tooltip>
@@ -205,8 +206,8 @@ const DevboxList = ({
                       <Image
                         width={21}
                         height={21}
-                        alt={item.id}
-                        src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
+                        alt={item.template.name}
+                        src={`/images/runtime/${iconId}.svg`}
                       />
                     </div>
                   </TooltipTrigger>
@@ -216,14 +217,12 @@ const DevboxList = ({
                         <Image
                           width={21}
                           height={21}
-                          alt={item.id}
-                          src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
+                          alt={item.template.name}
+                          src={`/images/runtime/${iconId}.svg`}
                         />
                       </div>
                       <div className="flex flex-col">
-                        <p className="text-sm/5 font-medium">
-                          {item.template.templateRepository.iconId}
-                        </p>
+                        <p className="text-sm/5 font-medium">{iconId}</p>
                         <p className="text-xs/5 text-zinc-500">{item.template.name}</p>
                       </div>
                     </div>
@@ -239,7 +238,7 @@ const DevboxList = ({
 
                         {!item.remark && (
                           <div
-                            className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity select-none group-hover:opacity-100"
+                            className="flex shrink-0 select-none items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
                             onClick={() => {
                               setOnOpenEditRemark(true);
                               setEditRemarkItem(item);
@@ -335,7 +334,7 @@ const DevboxList = ({
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-48">
-                  <div className="flex items-center px-1 py-1.5 text-xs font-medium text-zinc-500 select-none">
+                  <div className="flex select-none items-center px-1 py-1.5 text-xs font-medium text-zinc-500">
                     {t('status')}
                   </div>
                   {statusOptions.map((option) => (
@@ -600,7 +599,8 @@ const DevboxList = ({
         }
         return true;
       }),
-    // NOTE: do not add devboxList dependency, it will cause infinite re-render
+    // NOTE: keep this dependency set narrow; table columns must not follow per-render handlers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [statusFilter, isSpecificTimeRangeSelected, sourcePrice.gpu]
   );
 
@@ -653,6 +653,22 @@ const DevboxList = ({
     autoResetPageIndex: false
   });
 
+  const filterSnapshot = useMemo(
+    () =>
+      [searchQuery.toLowerCase(), [...statusFilter].sort().join(','), startDateTime.getTime()].join(
+        '|'
+      ),
+    [searchQuery, statusFilter, startDateTime]
+  );
+  const previousFilterSnapshotRef = useRef(filterSnapshot);
+
+  useEffect(() => {
+    if (previousFilterSnapshotRef.current !== filterSnapshot) {
+      table.setPageIndex(0);
+      previousFilterSnapshotRef.current = filterSnapshot;
+    }
+  }, [filterSnapshot, table]);
+
   return (
     <>
       {/* table */}
@@ -661,11 +677,7 @@ const DevboxList = ({
           {/* table header */}
           <div className="flex h-10 min-w-[1350px] items-center rounded-lg border-[0.5px] bg-white px-6 py-1 text-sm/5 text-zinc-500 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)]">
             {table.getFlatHeaders().map((header) => (
-              <div
-                key={header.id}
-                style={{ width: header.getSize() }}
-                className="shrink-0 grow"
-              >
+              <div key={header.id} style={{ width: header.getSize() }} className="shrink-0 grow">
                 {flexRender(header.column.columnDef.header, header.getContext())}
               </div>
             ))}
@@ -757,6 +769,7 @@ const DevboxList = ({
           currentRemark={editRemarkItem.remark}
         />
       )}
+      <RestartConfirmChild />
     </>
   );
 };

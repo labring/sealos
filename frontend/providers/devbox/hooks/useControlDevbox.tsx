@@ -8,11 +8,18 @@ import { DevboxListItemTypeV2, DevboxDetailTypeV2 } from '@/types/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
 import { track } from '@sealos/gtm';
 import { useErrorMessage } from '@/hooks/useErrorMessage';
+import { useConfirm } from '@/hooks/useConfirm';
 
 export const useControlDevbox = (refetchDevboxData: () => void) => {
   const { isOutStandingPayment } = useUserStore();
   const t = useTranslations();
   const { getErrorMessage } = useErrorMessage();
+  const { openConfirm, ConfirmChild: RestartConfirmChild } = useConfirm({
+    title: 'prompt',
+    content: 'confirm_restart_devbox',
+    confirmText: 'restart',
+    cancelText: 'cancel'
+  });
 
   const refetchThreeTimes = useCallback(() => {
     refetchDevboxData();
@@ -24,8 +31,7 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
     }, 3000);
   }, [refetchDevboxData]);
 
-  // TODO: we need a new loading component
-  const handleRestartDevbox = useCallback(
+  const restartDevboxWithFeedback = useCallback(
     async (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
       try {
         if (isOutStandingPayment) {
@@ -46,6 +52,13 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
       refetchThreeTimes();
     },
     [refetchThreeTimes, t, isOutStandingPayment, getErrorMessage]
+  );
+
+  const handleRestartDevbox = useCallback(
+    (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
+      openConfirm(() => restartDevboxWithFeedback(devbox))();
+    },
+    [openConfirm, restartDevboxWithFeedback]
   );
 
   const handleStartDevbox = useCallback(
@@ -99,6 +112,7 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
   return {
     handleRestartDevbox,
     handleStartDevbox,
-    handleGoToTerminal
+    handleGoToTerminal,
+    RestartConfirmChild
   };
 };

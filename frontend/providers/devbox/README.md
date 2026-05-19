@@ -1,10 +1,16 @@
+# Devbox Frontend Provider
+
+Devbox is the Sealos frontend provider for creating, editing, releasing, and
+operating DevBox development environments. It is a Next.js app inside the
+Sealos frontend workspace.
+
 ## How to dev
 
 1. First,you should refer to `frontend/README.md` ’s `How to dev` part.
 
 2. Then you should config your env.
 
-   1. Create a new file `.env.local` in frontend/providers/kubepanel directory.
+   1. Create a new file `.env.local` in `frontend/providers/devbox`.
 
       > `SEALOS_DOMAIN` is anyone website you use in sealos.
 
@@ -37,3 +43,23 @@
    4. Then you can get your own dev in this.
 
       ![image-20240423111123308](https://raw.githubusercontent.com/mlhiter/typora-images/master/202404231111720.png)
+
+## Useful commands
+
+```bash
+pnpm dev
+pnpm build
+pnpm ts-lint
+pnpm gen-client
+```
+
+This workspace does not currently define a `test` script. Use `pnpm ts-lint` as
+the focused typecheck until a real test command is added.
+
+## More docs
+
+- `AGENT.md` - agent operating notes for this provider.
+- `docs/architecture.md` - module boundaries and request flow.
+- `docs/runbook.md` - local verification and 70-cluster deployment notes.
+- `docs/ia.md` - main pages and API route surfaces.
+- `prisma/README.md` - Prisma schema and migration layout.
