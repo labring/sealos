@@ -7,9 +7,11 @@ import { dbDetailSchema } from '@/types/schemas/v2alpha/db';
 import {
   CPUResourceEnum,
   DBDetailType,
+  DBType,
   MemoryResourceEnum,
   ReplicasResourceEnum
 } from '@/types/db';
+import { dbTypeMap, getSecretNames } from '@/utils/database';
 
 type DbDetail = z.infer<typeof dbDetailSchema>;
 type ConnectionInfo = DbDetail['connection'];
@@ -85,8 +87,34 @@ async function getConnectionInfo(
   const { k8sCore, namespace } = k8s;
 
   try {
+    const getSecretResult = async () => {
+      const secretConfig = dbTypeMap[dbType as DBType];
+      if (!secretConfig) {
+        return null;
+      }
+
+      const { primary, backup } = getSecretNames(dbType as DBType, dbName);
+      const secretNames = [primary, backup].filter(
+        (secretName): secretName is string => !!secretName
+      );
+
+      for (const [index, secretName] of secretNames.entries()) {
+        try {
+          const secretResult = await k8sCore.readNamespacedSecret(secretName, namespace);
+          if (secretResult?.body?.data) {
+            return {
+              data: secretResult.body.data,
+              isBackup: index > 0
+            };
+          }
+        } catch (error) {}
+      }
+
+      return null;
+    };
+
     const [secretResult, serviceResult] = await Promise.all([
-      k8sCore.readNamespacedSecret(`${dbName}-conn-credential`, namespace).catch(() => null),
+      getSecretResult(),
       k8sCore
         .listNamespacedService(
           namespace,
@@ -104,15 +132,25 @@ async function getConnectionInfo(
     let port = '';
 
     // 解析 Secret
-    if (secretResult?.body?.data) {
-      const secretData = secretResult.body.data;
-      username = secretData.username
-        ? Buffer.from(secretData.username, 'base64').toString('utf-8')
+    if (secretResult?.data) {
+      const secretConfig = dbTypeMap[dbType as DBType];
+      const secretData = secretResult.data;
+      const usernameKey = secretConfig.usernameKey;
+      let passwordKey = secretConfig.passwordKey;
+
+      if (secretResult.isBackup && dbType === 'kafka') {
+        passwordKey = 'admin-password';
+      }
+
+      username = secretData[usernameKey]
+        ? Buffer.from(secretData[usernameKey], 'base64').toString('utf-8').trim()
         : '';
-      password = secretData.password
-        ? Buffer.from(secretData.password, 'base64').toString('utf-8')
+      password = secretData[passwordKey]
+        ? Buffer.from(secretData[passwordKey], 'base64').toString('utf-8').trim()
         : '';
-      port = secretData.port ? Buffer.from(secretData.port, 'base64').toString('utf-8') : '';
+      port = secretData[secretConfig.portKey]
+        ? Buffer.from(secretData[secretConfig.portKey], 'base64').toString('utf-8').trim()
+        : '';
     }
 
     let privateHost = '';
