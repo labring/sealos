@@ -197,6 +197,7 @@ const DevboxList = ({
           size: 220,
           cell: ({ row }: CellContext<DevboxListItemTypeV2, unknown>) => {
             const item = row.original;
+            const iconId = item.template.templateRepository.iconId || 'custom';
             return (
               <div className="flex w-full cursor-pointer items-center gap-2 pr-4">
                 <Tooltip>
@@ -205,8 +206,8 @@ const DevboxList = ({
                       <Image
                         width={21}
                         height={21}
-                        alt={item.id}
-                        src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
+                        alt={item.template.name}
+                        src={`/images/runtime/${iconId}.svg`}
                       />
                     </div>
                   </TooltipTrigger>
@@ -216,14 +217,12 @@ const DevboxList = ({
                         <Image
                           width={21}
                           height={21}
-                          alt={item.id}
-                          src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
+                          alt={item.template.name}
+                          src={`/images/runtime/${iconId}.svg`}
                         />
                       </div>
                       <div className="flex flex-col">
-                        <p className="text-sm/5 font-medium">
-                          {item.template.templateRepository.iconId}
-                        </p>
+                        <p className="text-sm/5 font-medium">{iconId}</p>
                         <p className="text-xs/5 text-zinc-500">{item.template.name}</p>
                       </div>
                     </div>
