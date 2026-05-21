@@ -18,6 +18,52 @@ export type CronJobStatus = {
   commit: () => Promise<void>;
 };
 const TIMEOUT = 5000;
+const RUNNABLE_TRANSACTION_STATUSES = [TransactionStatus.READY, TransactionStatus.RUNNING];
+
+const getRunnableTransactionUidList = async () => {
+  const transactions = await globalPrisma.precommitTransaction.findMany({
+    where: {
+      status: {
+        in: RUNNABLE_TRANSACTION_STATUSES
+      }
+    },
+    select: {
+      uid: true
+    }
+  });
+  return transactions.map(({ uid }) => uid);
+};
+
+const findRunnableTransactionDetail = async ({
+  regionUid,
+  status,
+  transactionUidList,
+  updatedAt
+}: {
+  regionUid: string;
+  status: TransactionStatus;
+  transactionUidList: string[];
+  updatedAt?: {
+    lte: Date;
+  };
+}) => {
+  if (transactionUidList.length === 0) return null;
+
+  return globalPrisma.transactionDetail.findFirst({
+    where: {
+      regionUid,
+      status,
+      transactionUid: {
+        in: transactionUidList
+      },
+      ...(updatedAt ? { updatedAt } : {})
+    },
+    orderBy: {
+      updatedAt: 'asc'
+    }
+  });
+};
+
 const getJob = (
   transaction: Prisma.Result<
     typeof globalPrisma.precommitTransaction,
@@ -40,49 +86,22 @@ export const runTransactionjob = async () => {
   // console.log('run transactionjob', new Date());
   const regionUid = getRegionUid();
   let isTimeoutTransactionDetail = false;
+  const runnableTransactionUidList = await getRunnableTransactionUidList();
   // find task
-  let transactionDetail = await globalPrisma.transactionDetail.findFirst({
-    where: {
-      regionUid,
-      status: TransactionStatus.READY,
-      precommitTransaction: {
-        is: {
-          status: {
-            in: [TransactionStatus.READY, TransactionStatus.RUNNING]
-          }
-        }
-      }
-    },
-    include: {
-      precommitTransaction: true
-    },
-    orderBy: {
-      updatedAt: 'asc'
-    }
+  let transactionDetail = await findRunnableTransactionDetail({
+    regionUid,
+    status: TransactionStatus.READY,
+    transactionUidList: runnableTransactionUidList
   });
   if (!transactionDetail) {
-    transactionDetail = await globalPrisma.transactionDetail.findFirst({
-      where: {
-        regionUid,
-        //  death lock
-        status: TransactionStatus.RUNNING,
-        updatedAt: {
-          lte: dayjs().subtract(TIMEOUT, 'ms').toDate()
-        },
-        precommitTransaction: {
-          is: {
-            status: {
-              in: [TransactionStatus.READY, TransactionStatus.RUNNING]
-            }
-          }
-        }
+    transactionDetail = await findRunnableTransactionDetail({
+      regionUid,
+      //  death lock
+      status: TransactionStatus.RUNNING,
+      updatedAt: {
+        lte: dayjs().subtract(TIMEOUT, 'ms').toDate()
       },
-      orderBy: {
-        updatedAt: 'asc'
-      },
-      include: {
-        precommitTransaction: true
-      }
+      transactionUidList: runnableTransactionUidList
     });
     isTimeoutTransactionDetail = true;
   }
@@ -90,7 +109,12 @@ export const runTransactionjob = async () => {
   if (!transactionDetail) {
     return;
   }
-  const transaction = transactionDetail.precommitTransaction;
+  const transaction = await globalPrisma.precommitTransaction.findUnique({
+    where: {
+      uid: transactionDetail.transactionUid
+    }
+  });
+  if (!transaction) return;
 
   const job = getJob(transaction);
   if (!job) return;
@@ -173,21 +197,40 @@ export const finishTransactionJob = async () => {
   const transactionList = await globalPrisma.precommitTransaction.findMany({
     where: {
       status: {
-        in: [TransactionStatus.RUNNING, TransactionStatus.READY]
+        in: RUNNABLE_TRANSACTION_STATUSES
       }
     },
-    include: {
-      transactionDetail: {
-        select: {
-          status: true,
-          regionUid: true
-        }
-      }
+    select: {
+      uid: true
     }
   });
+  const transactionUidList = transactionList.map(({ uid }) => uid);
+  if (transactionUidList.length === 0) return;
+
+  const transactionDetailList = await globalPrisma.transactionDetail.findMany({
+    where: {
+      transactionUid: {
+        in: transactionUidList
+      }
+    },
+    select: {
+      status: true,
+      regionUid: true,
+      transactionUid: true
+    }
+  });
+  const transactionDetailMap = transactionDetailList.reduce<
+    Record<string, { status: TransactionStatus; regionUid: string }[]>
+  >((acc, detail) => {
+    acc[detail.transactionUid] = acc[detail.transactionUid] ?? [];
+    acc[detail.transactionUid].push(detail);
+    return acc;
+  }, {});
   const needFinishTransactionList = transactionList
     .filter((tx) => {
-      const finishList = tx.transactionDetail.filter((d) => d.status === TransactionStatus.FINISH);
+      const finishList = (transactionDetailMap[tx.uid] ?? []).filter(
+        (d) => d.status === TransactionStatus.FINISH
+      );
       return regionList.every(({ uid }) => finishList.findIndex((f) => f.regionUid === uid) >= 0);
     })
     .map((tx) => tx.uid);
