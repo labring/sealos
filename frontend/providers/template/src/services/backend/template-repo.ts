@@ -10,6 +10,7 @@ import * as k8s from '@kubernetes/client-node';
 import { getYamlTemplate } from '@/utils/json-yaml';
 import { getTemplateEnvs } from '@/utils/common';
 import { Config } from '@/config';
+import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
 
 const execAsync = util.promisify(exec);
 
@@ -71,6 +72,7 @@ export async function updateRepo() {
   const jsonPath = path.resolve(originalPath, 'templates.json');
 
   const TemplateEnvs = getTemplateEnvs();
+  const config = Config();
 
   try {
     const gitConfigResult = await execAsync(
@@ -94,7 +96,7 @@ export async function updateRepo() {
   }
 
   let fileList: unknown[] = [];
-  const _targetPath = path.join(targetPath, Config().template.repo.localDir);
+  const _targetPath = path.join(targetPath, config.template.repo.localDir);
   readFileList(_targetPath, fileList);
 
   const templateStaticMap: { [key: string]: number } = await GetTemplateStatic();
@@ -105,8 +107,13 @@ export async function updateRepo() {
       if (!item) return;
       const fileName = path.basename(item);
       const content = fs.readFileSync(item, 'utf-8');
-      const { templateYaml } = getYamlTemplate(content);
+      let { templateYaml } = getYamlTemplate(content);
       if (!!templateYaml) {
+        templateYaml = resolveTemplateAssetUrls(templateYaml, {
+          repo: config.template.repo,
+          templateFilePath: item,
+          repoRootPath: targetPath
+        });
         const appTitle = templateYaml.spec.title.toUpperCase();
         const currentCount = templateStaticMap[appTitle] || 0;
         const randomFactor = 11 + Math.floor(Math.random() * 5); // [11,12,13,14,15]
