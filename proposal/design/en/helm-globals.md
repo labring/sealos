@@ -1,5 +1,7 @@
 # Sealos Horizontal Configuration Layering (ConfigMap and global)
 
+> Status: design background. For the current implementation convention, see [Global YAML Usage Convention](../../global-yaml-usage-convention.md).
+
 ## 0. Key Conclusion
 
 Your design can be split into two clear tracks:
@@ -71,9 +73,9 @@ Typical flow:
 ```yaml
 global:
   version: "zh"
-  
+
   isKylin10: false
-  
+
   featureGates:
     gpuHami: false
     gpu: false
@@ -82,7 +84,7 @@ global:
     giteaTemplate: false
     nfs: false
     offline: false
-    
+
   feature_configs:
     gpuHami: {}
     gpu: {}
@@ -96,10 +98,10 @@ global:
       uri: ""
     globalDatabase:
       uri: ""
-      
+
     objectStorage:
       size: 10Gi
-    
+
     s3:
       # - s3 (Amazon Simple Storage Service)
       # - oss (Alibaba Cloud Object Storage Service)
@@ -113,7 +115,7 @@ global:
       secretKey: ""
       region: ""
       region_endpoint: ""
-    
+
     backup:
       useObjectStorage: false
       bucket: "sealos-file-backup"
@@ -126,7 +128,7 @@ global:
       storageClass: "nfs-client"
       address: "nfsserver:30060"
       mountOptions: []
-    
+
     offline:
       dnsmasq: false
       location: "/data/nginx"

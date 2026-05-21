@@ -43,6 +43,10 @@ After the proposal is accepted, implementation work proceeds goes on.
 3. [1873-gateway](https://github.com/labring/sealos/issues/1873)
 4. [1902-image-app-hub](https://github.com/labring/sealos/issues/1902)
 
+### Conventions
+
+1. [Global YAML Usage Convention](global-yaml-usage-convention.md) ([中文](global-yaml-usage-convention.zh.md))
+
 ### Help
 
 As proposal process is just from a starter stage, if something is missing or not cleared here, feel free to open new issues to discuss the proposal process1
