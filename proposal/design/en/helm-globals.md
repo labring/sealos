@@ -1,6 +1,6 @@
 # Sealos Horizontal Configuration Layering (ConfigMap and global)
 
-> Status: design background. For the current implementation convention, see [Global YAML Usage Convention](../../global-yaml-usage-convention.md).
+> Status: design background. For the current implementation convention, see [Global YAML Usage Convention](global-yaml-usage-convention.md).
 
 ## 0. Key Conclusion
 

@@ -45,7 +45,7 @@ After the proposal is accepted, implementation work proceeds goes on.
 
 ### Conventions
 
-1. [Global YAML Usage Convention](global-yaml-usage-convention.md) ([中文](global-yaml-usage-convention.zh.md))
+1. [Global YAML Usage Convention](design/en/global-yaml-usage-convention.md) ([中文](design/zh/global-yaml-usage-convention.zh.md))
 
 ### Help
 
