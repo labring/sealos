@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "template-frontend.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "template-frontend.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    # yaml-language-server: $schema=config.schema.json
+    cloud:
+        domain: {{ .Values.templateConfig.cloudDomain | quote }}
+        port: {{ default 443 .Values.templateConfig.cloudPort }}
+        regionUid: ""
+        certSecretName: {{ .Values.templateConfig.certSecretName | quote }}
+
+    template:
+        ui:
+            brandName: {{ .Values.templateConfig.brandName | quote }}
+            forcedLanguage: {{ .Values.templateConfig.forcedLanguage | quote }}
+            currencySymbol: {{ .Values.templateConfig.currencySymbol | quote }}
+            meta:
+                canonicalUrl: https://template.example.org
+                customScripts: []
+            carousel:
+                enabled: false
+                slides: []
+
+        repo:
+            url: {{ .Values.templateConfig.templateRepoUrl | quote }}
+            branch: {{ .Values.templateConfig.templateRepoBranch | quote }}
+            localDir: template
+
+        features:
+            fetchReadme: {{ .Values.templateConfig.enableReadmeFetch }}
+            showAuthor: false
+            guide: {{ .Values.templateConfig.guideEnabled }}
+
+        categories:
+            - slug: ai
+              i18n:
+                  en: AI
+                  zh: AI
+            - slug: backend
+              i18n:
+                  en: Backend
+                  zh: 后端
+            - slug: blog
+              i18n:
+                  en: Blog
+                  zh: 博客
+            - slug: database
+              i18n:
+                  en: Database
+                  zh: 数据库
+            - slug: dev-ops
+              i18n:
+                  en: DevOps
+                  zh: 运维
+            - slug: frontend
+              i18n:
+                  en: Frontend
+                  zh: 前端
+            - slug: game
+              i18n:
+                  en: Games
+                  zh: 游戏
+            - slug: low-code
+              i18n:
+                  en: Low-Code
+                  zh: 低代码
+            - slug: monitor
+              i18n:
+                  en: Monitoring
+                  zh: 监控
+            - slug: storage
+              i18n:
+                  en: Storage
+                  zh: 存储
+            - slug: tool
+              i18n:
+                  en: Tools
+                  zh: 工具
+        desktopDomain: {{ .Values.templateConfig.cloudDomain | quote }}
+        userDomain: {{ .Values.templateConfig.userDomain | quote }}
+        billingUrl: {{ .Values.templateConfig.billingUrl | quote }}

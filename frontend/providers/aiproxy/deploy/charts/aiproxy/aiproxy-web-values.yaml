@@ -1,0 +1,17 @@
+# Custom values for aiproxy web helm chart.
+# This file contains user-customizable configurations.
+
+replicas: 2
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 50Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+aiproxy:
+  CURRENCY_SYMBOL: ""
+  IS_INVITATION_ACTIVE: "false"
+  DOC_URL: "https://sealos.run/docs/guides/ai-proxy"

@@ -1,0 +1,88 @@
+# Default values for devbox-frontend helm chart.
+
+image: ghcr.io/labring/sealos-devbox-frontend:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+fullnameOverride: "devbox-frontend"
+
+replicaCount: 1
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  className: nginx
+  host: ""
+  annotations: {}
+
+devboxConfig:
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  httpPort: ""
+  disableHttps: false
+  certSecretName: "wildcard-cert"
+  databaseUrl: ""
+  databaseProvider: "cockroachdb"
+  tlsRejectUnauthorized: "1"
+  sshDomain: ""
+  registryAddr: "sealos.hub:5000"
+  monitorUrl: "http://launchpad-monitor.sealos.svc.cluster.local:8428"
+  accountUrl: "http://account-service.account-system.svc.cluster.local:2333"
+  rootRuntimeNamespace: "devbox-system"
+  currencySymbol: "usd"
+  gpuEnable: false
+  storageLimit: "10Gi"
+  runtimeClassName: "devbox-runtime"
+  retagSvcUrl: "http://devbox-service.devbox-system.svc.cluster.local:8092"
+  jwtSecret: ""
+  regionUid: ""
+  enableImportFeature: false
+  enableWebideFeature: false
+  enableAdvancedConfig: false
+  cpuSlideMarkList: "1,2,4,8,16"
+  memorySlideMarkList: "2,4,8,16,32"
+  devboxDomainChallengeSecret: "default-dev-secret-change-in-production"
+  nfsStorageClassName: "nfs-csi"
+  customScripts: "[]"
+  documentUrlZh: "https://sealos.run/docs/overview/intro"
+  documentUrlEn: "https://sealos.io/docs/overview/intro"
+  privacyUrlZh: "https://sealos.run/docs/msa/privacy-policy"
+  privacyUrlEn: "https://sealos.io/docs/msa/privacy-policy"
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - devbox-frontend
+          topologyKey: "kubernetes.io/hostname"

@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: kubepanel
+  namespace: app-system
+spec:
+  data:
+    desc: Kube Panel
+    url: {{ include "kubepanel-frontend.appUrl" . | quote }}
+  icon: {{ printf "%s/logo.svg" (include "kubepanel-frontend.appUrl" .) | quote }}
+  i18n:
+    zh:
+      name: 资源监控
+    zh-Hans:
+      name: 资源监控
+  menuData:
+  name: Kube Panel
+  type: iframe
+  displayType: normal

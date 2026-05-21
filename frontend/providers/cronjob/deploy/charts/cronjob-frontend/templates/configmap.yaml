@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cronjob-frontend.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cronjob-frontend.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    cloud:
+      domain: {{ .Values.cronjobConfig.cloudDomain | quote }}
+      desktopDomain: {{ .Values.cronjobConfig.cloudDomain | quote }}
+    cronjob:
+      components:
+        applaunchpad:
+          url: {{ printf "https://applaunchpad.%s%s" .Values.cronjobConfig.cloudDomain (include "cronjob-frontend.portSuffix" .) | quote }}
+      podResources:
+        cpuMilliCores: {{ .Values.cronjobConfig.podCpuMilliCores }}
+        memoryMiB: {{ .Values.cronjobConfig.podMemoryMiB }}
+      jobHistory:
+        successfulLimit: {{ .Values.cronjobConfig.successfulJobsHistoryLimit }}
+        failedLimit: {{ .Values.cronjobConfig.failedJobsHistoryLimit }}

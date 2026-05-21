@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+  name: devbox-challenge
+  namespace: {{ .Release.Namespace }}
+spec:
+  rules:
+    - host: ""
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ include "devbox-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+            path: /api/.well-known/devbox-domain-challenge
+            pathType: Prefix
