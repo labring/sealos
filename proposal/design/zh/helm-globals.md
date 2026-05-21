@@ -1,5 +1,7 @@
 # Sealos 横向配置职责分层（ConfigMap 与 global）
 
+> 状态：设计背景。当前实现规范请参考 [Global YAML 使用规范](global-yaml-usage-convention.zh.md)。
+
 ## 0. 结论先行
 
 你当前思路可以明确拆成两条线：
@@ -72,7 +74,7 @@
 global:
   version: "zh"
   isKylin10: false
-  
+
   featureGates:
     gpuHami: false
     gpu: false
@@ -81,7 +83,7 @@ global:
     giteaTemplate: false
     nfs: false
     offline: false
-    
+
   featureConfigs:
     gpuHami: {}
     gpu: {}
@@ -95,10 +97,10 @@ global:
       uri: ""
     globalDatabase:
       uri: ""
-      
+
     objectStorage:
       size: 10Gi
-      
+
     s3:
       # - s3 (Amazon Simple Storage Service)
       # - oss (Alibaba Cloud Object Storage Service)
@@ -112,7 +114,7 @@ global:
       secretKey: ""
       region: ""
       region_endpoint: ""
-    
+
     backup:
       useObjectStorage: false
       bucket: "sealos-file-backup"
@@ -125,7 +127,7 @@ global:
       storageClass: "nfs-client"
       address: "nfsserver:30060"
       mountOptions: []
-    
+
     offline:
       dnsmasq: false
       location: "/data/nginx"
