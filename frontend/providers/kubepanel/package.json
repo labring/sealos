@@ -45,7 +45,7 @@
     "@tailwindcss/postcss": "^4.1.17",
     "@types/js-yaml": "^4.0.9",
     "@types/lodash": "^4.17.21",
-    "@types/node": "^24.0.0",
+    "@types/node": "^24",
     "@types/nprogress": "^0.2.3",
     "@types/react": "18.3.27",
     "autoprefixer": "^10.4.22",

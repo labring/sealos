@@ -1,9 +1,13 @@
 import { memo } from 'react';
 import { type CellContext } from '@tanstack/react-table';
+import dynamic from 'next/dynamic';
 
 import { AppListItemType } from '@/types/app';
-import PodLineChart from '@/components/PodLineChart';
 import { EMPTY_MONITOR_DATA } from '@/constants/monitor';
+
+const PodLineChart = dynamic(() => import('@/components/PodLineChart'), {
+  ssr: false
+});
 
 export const Memory = memo<CellContext<AppListItemType, unknown>>(
   ({ row }) => {

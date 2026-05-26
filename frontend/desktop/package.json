@@ -63,7 +63,7 @@
     "immer": "^10.0.2",
     "js-cookie": "^3.0.5",
     "js-yaml": "^4.1.0",
-    "jsonwebtoken": "^9.0.2",
+    "jsonwebtoken": "^9.0.3",
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.488.0",
@@ -97,26 +97,26 @@
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
     "@testing-library/react": "^14.0.0",
     "@types/js-cookie": "^3.0.4",
     "@types/js-yaml": "^4.0.6",
     "@types/jsonwebtoken": "^9.0.3",
     "@types/lodash": "^4.14.199",
     "@types/minio": "^7.1.1",
-    "@types/node": "18.15.11",
+    "@types/node": "^24",
     "@types/nodemailer": "^6.4.15",
     "@types/nprogress": "^0.2.1",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@types/umami-browser": "^2.3.2",
     "@types/uuid": "^9.0.4",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser": "4.0.15",
+    "@vitest/browser-playwright": "4.0.15",
     "dotenv-cli": "^7.3.0",
     "prettier": "^2.8.8",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.12",
-    "@playwright/test": "^1.58.1",
-    "@vitest/browser": "4.0.15",
-    "@vitest/browser-playwright": "4.0.15",
-    "@vitejs/plugin-react": "^5.1.1"
+    "vitest": "^4.0.12"
   }
 }

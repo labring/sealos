@@ -33,7 +33,7 @@
   "license": "ISC",
   "devDependencies": {
     "@rollup/plugin-typescript": "^11.1.4",
-    "@types/node": "^20.7.1",
+    "@types/node": "^24",
     "rollup": "2.79.1",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-dts": "^4.2.3",

@@ -102,7 +102,7 @@
     "@chakra-ui/react": "^2.8.1",
     "@tanstack/react-query": "^4.36.1",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^20.7.1",
+    "@types/node": "^24",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@vitejs/plugin-react": "^5.1.1",

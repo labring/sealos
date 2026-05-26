@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM node:20.20.2-alpine AS base
+FROM node:26.1.0-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 WORKDIR /app
@@ -20,7 +20,7 @@ WORKDIR /app
 FROM base AS deps
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat && corepack enable && corepack prepare pnpm@8.9.0 --activate
+RUN apk add --no-cache libc6-compat && npm install -g corepack && corepack enable && corepack prepare pnpm@8.9.0 --activate
 
 
 # Install dependencies based on the preferred package manager root workspace
