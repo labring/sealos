@@ -19,14 +19,16 @@ package kubeconfig
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"time"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -35,19 +37,27 @@ func (sac *ServiceAccountConfig) Apply(
 	config *rest.Config,
 	client client.Client,
 ) (*api.Config, error) {
+	cfg, _, err := sac.ApplyWithTokenRequest(context.Background(), config, client)
+	return cfg, err
+}
+
+func (sac *ServiceAccountConfig) ApplyWithTokenRequest(
+	ctx context.Context,
+	config *rest.Config,
+	client client.Client,
+) (*api.Config, metav1.Time, error) {
 	if err := sac.applyServiceAccount(config, client); err != nil {
-		return nil, fmt.Errorf("failed to apply service account error: %w", err)
+		return nil, metav1.Time{}, fmt.Errorf("failed to apply service account error: %w", err)
 	}
-	if err := sac.applySecret(config, client); err != nil {
-		return nil, fmt.Errorf("failed to apply secret: %w", err)
+	tokenRequest, err := sac.requestToken(ctx, config)
+	if err != nil {
+		return nil, metav1.Time{}, fmt.Errorf("failed to fetch token: %w", err)
 	}
-	token, err := sac.fetchToken(client)
-	if err == nil {
-		if cfg, err := sac.generatorKubeConfig(config, token); err == nil {
-			return cfg, nil
-		}
+	cfg, err := sac.generatorKubeConfig(config, tokenRequest.Status.Token)
+	if err != nil {
+		return nil, metav1.Time{}, fmt.Errorf("failed to generate kube config: %w", err)
 	}
-	return nil, fmt.Errorf("failed to fetch token: %w", err)
+	return cfg, tokenRequest.Status.ExpirationTimestamp, nil
 }
 
 func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client client.Client) error {
@@ -61,93 +71,38 @@ func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client clie
 		},
 	}
 	_, err := controllerutil.CreateOrUpdate(context.TODO(), client, sa, func() error {
-		if len(sa.Secrets) == 0 {
-			sa.Secrets = []v1.ObjectReference{
-				{
-					Name: sac.getSecretName(),
-				},
-			}
-		}
 		return nil
 	})
-	sac.secretName = sa.Secrets[0].Name
+	sac.sa = sa
 	return err
 }
 
-func (sac *ServiceAccountConfig) applySecret(_ *rest.Config, client client.Client) error {
-	if sac.sa != nil {
-		return nil
+func (sac *ServiceAccountConfig) requestToken(ctx context.Context, config *rest.Config) (*authenticationv1.TokenRequest, error) {
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
 	}
-	secret := &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      sac.secretName,
-			Namespace: sac.namespace,
-		},
+	tokenRequest, err := clientset.CoreV1().
+		ServiceAccounts(sac.namespace).
+		CreateToken(ctx, sac.user, &authenticationv1.TokenRequest{
+			Spec: authenticationv1.TokenRequestSpec{
+				ExpirationSeconds: ptr.To(int64(sac.tokenRequestExpirationSeconds())),
+			},
+		}, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
 	}
-	_, err := controllerutil.CreateOrUpdate(context.TODO(), client, secret, func() error {
-		if secret.Annotations == nil {
-			secret.Annotations = make(map[string]string, 0)
-		}
-		secret.Type = v1.SecretTypeServiceAccountToken
-		secret.Annotations[v1.ServiceAccountNameKey] = sac.user
-		secret.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(
-			int(sac.expirationSeconds),
-		)
-		return nil
-	})
-	sac.sa = &v1.ServiceAccount{}
-	sac.sa.Name = sac.user
-	sac.sa.Namespace = sac.namespace
-	return err
+	if tokenRequest.Status.Token == "" {
+		return nil, fmt.Errorf("token request returned empty token for serviceaccount %s/%s", sac.namespace, sac.user)
+	}
+	return tokenRequest, nil
 }
 
-func (sac *ServiceAccountConfig) getSecretName() string {
-	if sac.sa != nil {
-		return sac.sa.Secrets[0].Name
+func (sac *ServiceAccountConfig) tokenRequestExpirationSeconds() int32 {
+	if sac.expirationSeconds < userv1.DefaultCSRExpirationSeconds {
+		return userv1.DefaultCSRExpirationSeconds
 	}
-	return SecretName(sac.user)
-}
-
-func (sac *ServiceAccountConfig) fetchToken(cli client.Client) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	start := time.Now()
-	for {
-		select {
-		case <-time.After(5 * time.Millisecond):
-			sa := sac.sa
-			if err := cli.Get(ctx, client.ObjectKeyFromObject(sa), sa); err != nil {
-				return "", err
-			}
-			if len(sa.Secrets) == 0 {
-				continue
-			}
-			secret := &v1.Secret{}
-			secret.Name = sa.Secrets[0].Name
-			secret.Namespace = sac.sa.Namespace
-			if err := cli.Get(ctx, client.ObjectKeyFromObject(secret), secret); err != nil {
-				continue
-			}
-			if secret.Data != nil && secret.Data[v1.ServiceAccountTokenKey] != nil {
-				dis := time.Since(start).Milliseconds()
-				defaultLog.Info(
-					"The serviceAccount secret is ready.",
-					"secretName",
-					secret.Name,
-					"using Milliseconds",
-					dis,
-				)
-				return string(secret.Data[v1.ServiceAccountTokenKey]), nil
-			}
-		case <-ctx.Done():
-			// A negligible error: The first 10-second wait to obtain the token failed. Subsequent reconcile will continue to obtain
-			defaultLog.Error(
-				ctx.Err(),
-				"context get secrets time out, wait until next time reconcile to get it done",
-			)
-			return "", ctx.Err()
-		}
-	}
+	return sac.expirationSeconds
 }
 
 func (sac *ServiceAccountConfig) generatorKubeConfig(

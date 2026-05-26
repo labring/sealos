@@ -17,12 +17,14 @@ limitations under the License.
 package kubeconfig
 
 import (
+	"context"
 	"net"
 	"os"
-	"time"
 
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	csrv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -33,6 +35,11 @@ var defaultLog = ctrl.Log.WithName("kubeconfig")
 
 type Interface interface {
 	Apply(config *rest.Config, client client.Client) (*api.Config, error)
+}
+
+type TokenRequestInterface interface {
+	Interface
+	ApplyWithTokenRequest(ctx context.Context, config *rest.Config, client client.Client) (*api.Config, metav1.Time, error)
 }
 
 type CertConfig struct {
@@ -56,9 +63,8 @@ type CsrConfig struct {
 }
 type ServiceAccountConfig struct {
 	*DefaultConfig
-	namespace  string
-	sa         *v1.ServiceAccount
-	secretName string
+	namespace string
+	sa        *v1.ServiceAccount
 }
 
 type WebhookConfig struct {
@@ -89,7 +95,7 @@ func NewConfig(user, clusterName string, expirationSeconds int32) *DefaultConfig
 		clusterName = "sealos"
 	}
 	if expirationSeconds == 0 {
-		expirationSeconds = int32(2 * time.Hour.Seconds())
+		expirationSeconds = userv1.DefaultCSRExpirationSeconds
 	}
 	return &DefaultConfig{
 		user:              user,
