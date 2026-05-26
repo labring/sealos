@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg"   viewBox="0 0 16 10" fill="currentColor">
-  <line y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="2"/>
-  <rect x="4.00879" y="1" width="8" height="8" rx="4" fill="white" stroke="currentColor" stroke-width="2"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 10"><line x2="16" y1="5" y2="5" stroke="currentColor" stroke-width="2"/><rect width="8" height="8" x="4.009" y="1" fill="#fff" stroke="currentColor" stroke-width="2" rx="4"/></svg>
