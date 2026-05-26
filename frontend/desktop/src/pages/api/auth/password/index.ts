@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!strongPassword(password)) {
       return jsonRes(res, {
         message:
-          'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character',
+          'Password must be at least 8 characters long and contain at least one non-whitespace character',
         code: 400
       });
     }
@@ -47,14 +47,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Auto init region for new users so callers can directly use regionToken API
     if (data.needInit && data.user) {
       try {
-        await initRegionToken({
+        const regionData = await initRegionToken({
           userUid: data.user.userUid,
           userId: data.user.userId,
           regionUid: getRegionUid(),
           workspaceName: 'My Workspace'
         });
+        if (!regionData) {
+          return jsonRes(res, {
+            data: {
+              token: data.token,
+              needInit: true
+            },
+            code: 409,
+            message: 'Failed to init workspace'
+          });
+        }
       } catch (e) {
         console.error('Auto init region failed:', e);
+        return jsonRes(res, {
+          data: {
+            token: data.token,
+            needInit: true
+          },
+          code: 409,
+          message: 'Failed to init workspace'
+        });
       }
     }
 
