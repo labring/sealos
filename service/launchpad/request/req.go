@@ -54,7 +54,7 @@ func GetQuery(query *api.VMRequest) (string, error) {
 	case "network_service_request_count":
 		result = "envoy_cluster_upstream_rq{cluster_name=\"$cluster\"}"
 	case "network_service_request_percent":
-		result = "envoy:service:upstream_rq_percentage{cluster_name=\"$cluster\"}"
+		result = "envoy_upstream_request_percentage{cluster_name=\"$cluster\"}"
 	default:
 		log.Println(query.Type)
 	}
