@@ -51,8 +51,16 @@ func GetQuery(query *api.VMRequest) (string, error) {
 		result = "Device_utilization_desc_of_container{podnamespace=~\"$namespace\",podname=~\"$pod.*\"}"
 	case "gpu_memory":
 		result = "sum without(data) (Device_memory_desc_of_container{podnamespace=~\"$namespace\",podname=~\"$pod.*\"})"
+	case "network_service_request_count":
+		result = "envoy_cluster_upstream_rq{cluster_name=\"$cluster\"}"
+	case "network_service_request_percent":
+		result = "envoy_upstream_request_percentage{cluster_name=\"$cluster\"}"
 	default:
 		log.Println(query.Type)
+	}
+	if isNetworkServiceRequest(query.Type) {
+		result = strings.ReplaceAll(result, "$cluster", buildClusterName(query.Service, query.Port))
+		return result, nil
 	}
 	podName := getPodName(query.LaunchPadName)
 	result = strings.ReplaceAll(strings.ReplaceAll(result, "$namespace", query.NS), "$pod", podName)
@@ -62,8 +70,20 @@ func GetQuery(query *api.VMRequest) (string, error) {
 
 func getPodName(str string) string {
 	index := strings.LastIndex(str, "-")
+	if index == -1 {
+		return str
+	}
 	firstPart := str[:index]
 	return firstPart
+}
+
+func isNetworkServiceRequest(queryType string) bool {
+	return queryType == "network_service_request_count" ||
+		queryType == "network_service_request_percent"
+}
+
+func buildClusterName(serviceName, port string) string {
+	return fmt.Sprintf("outbound|%s||%s", port, serviceName)
 }
 
 func VMNew(query *api.VMRequest) ([]byte, error) {
