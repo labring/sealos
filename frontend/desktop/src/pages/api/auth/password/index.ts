@@ -46,14 +46,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Auto init region for new users so callers can directly use regionToken API
     if (data.needInit && data.user) {
+      const regionUid = getRegionUid();
+      console.log('password auth: auto init workspace start', {
+        providerId: name,
+        userUid: data.user.userUid,
+        userId: data.user.userId,
+        regionUid
+      });
       try {
         const regionData = await initRegionToken({
           userUid: data.user.userUid,
           userId: data.user.userId,
-          regionUid: getRegionUid(),
+          regionUid,
           workspaceName: 'My Workspace'
         });
         if (!regionData) {
+          console.error('password auth: auto init workspace returned empty result', {
+            providerId: name,
+            userUid: data.user.userUid,
+            userId: data.user.userId,
+            regionUid
+          });
           return jsonRes(res, {
             data: {
               token: data.token,
@@ -64,7 +77,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
         }
       } catch (e) {
-        console.error('Auto init region failed:', e);
+        console.error('password auth: auto init workspace failed', {
+          providerId: name,
+          userUid: data.user.userUid,
+          userId: data.user.userId,
+          regionUid,
+          error: e
+        });
         return jsonRes(res, {
           data: {
             token: data.token,

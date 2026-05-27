@@ -24,6 +24,25 @@ type TransactionClient = Omit<
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >;
 
+function logAuthError(message: string, error: unknown, context: Record<string, unknown> = {}) {
+  const knownError = error as {
+    code?: string;
+    message?: string;
+    meta?: unknown;
+    stack?: string;
+    name?: string;
+  };
+
+  console.error(message, {
+    ...context,
+    errorName: knownError?.name,
+    errorCode: knownError?.code,
+    errorMessage: knownError?.message,
+    errorMeta: knownError?.meta,
+    stack: knownError?.stack
+  });
+}
+
 async function signIn({ provider, id }: { provider: ProviderType; id: string }) {
   const userProvider = await globalPrisma.oauthProvider.findUnique({
     where: {
@@ -300,9 +319,21 @@ export async function signUpByPassword({
 }) {
   const name = nanoid(10);
   const displayName = nickname?.trim() ? nickname : nanoid(8);
+  const regionUid = getRegionUid();
 
   try {
+    console.log('globalAuth: password sign up start', {
+      providerId: id,
+      generatedUserId: name,
+      displayName,
+      regionUid
+    });
     const result = await globalPrisma.$transaction(async (tx) => {
+      console.log('globalAuth: creating password user', {
+        providerId: id,
+        generatedUserId: name,
+        regionUid
+      });
       const user: User = await tx.user.create({
         data: {
           nickname: displayName,
@@ -318,14 +349,24 @@ export async function signUpByPassword({
           },
           userInfo: {
             create: {
-              signUpRegionUid: getRegionUid(),
+              signUpRegionUid: regionUid,
               isInited: false
             }
           }
         }
       });
+      console.log('globalAuth: password user created', {
+        providerId: id,
+        userUid: user.uid,
+        generatedUserId: user.name
+      });
 
       if (semData?.channel) {
+        console.log('globalAuth: creating password user sem channel', {
+          providerId: id,
+          userUid: user.uid,
+          channel: semData.channel
+        });
         await tx.userSemChannel.create({
           data: {
             userUid: user.uid,
@@ -335,13 +376,31 @@ export async function signUpByPassword({
         });
       }
 
+      console.log('globalAuth: creating password user tasks', {
+        providerId: id,
+        userUid: user.uid
+      });
       await createNewUserTasks(tx, user.uid);
+      console.log('globalAuth: password user tasks created', {
+        providerId: id,
+        userUid: user.uid
+      });
 
       return { user };
     });
+    console.log('globalAuth: password sign up success', {
+      providerId: id,
+      userUid: result.user.uid,
+      generatedUserId: result.user.name
+    });
     return result;
   } catch (error) {
-    console.error('globalAuth: Error during sign up:', error);
+    logAuthError('globalAuth: password sign up failed', error, {
+      providerId: id,
+      generatedUserId: name,
+      displayName,
+      regionUid
+    });
     return null;
   }
 }
@@ -423,7 +482,12 @@ export const getGlobalToken = async ({
     }
     if (!_user) {
       // Auto sign up when user not found
-      if (!enableSignUp()) throw new AuthError('Failed to signUp user', 'SIGNUP_FAILED');
+      if (!enableSignUp()) {
+        console.error('globalAuth: password sign up blocked because signUpEnabled is false', {
+          providerId
+        });
+        throw new AuthError('Failed to signUp user', 'SIGNUP_FAILED');
+      }
       const signUpResult = await signUpByPassword({
         id: providerId,
         name: name,
@@ -432,6 +496,9 @@ export const getGlobalToken = async ({
         semData
       });
       if (!signUpResult) {
+        console.error('globalAuth: password sign up returned null', {
+          providerId
+        });
         throw new AuthError('Failed to sign up user', 'SIGNUP_FAILED');
       }
       user = signUpResult.user;

@@ -527,6 +527,12 @@ export async function initRegionToken({
     );
     if (!regionalDbResult) {
       const failureMessage = 'failed to get user from db';
+      console.error('initRegionToken: failed to get user from regional db', {
+        userUid,
+        userId,
+        regionUid: region.uid,
+        workspaceUid
+      });
       throw new Error(failureMessage);
     }
     // k8s 操作会自动创建, 幂等
@@ -536,6 +542,15 @@ export async function initRegionToken({
     );
     if (!kubeconfig) {
       const failureMessage = 'failed to get user from k8s';
+      console.error('initRegionToken: failed to get user kubeconfig from k8s', {
+        userUid,
+        userId,
+        regionUid: region.uid,
+        workspaceUid: regionalDbResult.workspaceUid,
+        userCrUid: regionalDbResult.userCrUid,
+        userCrName: regionalDbResult.userCrName,
+        workspaceId: regionalDbResult.workspaceId
+      });
       throw new Error(failureMessage);
     }
     console.log('first sign up workspace id: ', firstSignUpWorkspaceId);
