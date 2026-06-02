@@ -108,6 +108,9 @@ spec:
                 type: array
               name:
                 type: string
+              position:
+                format: int32
+                type: integer
               type:
                 type: string
             type: object
