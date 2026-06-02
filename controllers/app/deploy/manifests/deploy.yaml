@@ -121,8 +121,8 @@ spec:
               name:
                 type: string
               position:
-                format: int32
-                type: integer
+                format: double
+                type: number
               type:
                 type: string
             type: object
