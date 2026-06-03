@@ -4,7 +4,7 @@ import { CustomMenu } from '@/components/BaseTable/customMenu';
 import DBStatusTag from '@/components/DBStatusTag';
 import type { DatabaseAlertItem } from '@/api/db';
 import MyIcon from '@/components/Icon';
-import { DBStatusEnum, DBTypeList } from '@/constants/db';
+import { DBStatusEnum, DBTypeList, isDBOperationLocked } from '@/constants/db';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -14,7 +14,8 @@ import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
-import { printMemory } from '@/utils/tools';
+import { I18nCommonKey } from '@/types/i18next';
+import { formatPodTime, printMemory } from '@/utils/tools';
 import { TriangleAlert } from 'lucide-react';
 import {
   Box,
@@ -66,6 +67,11 @@ import { useQuotaGuarded } from '@sealos/shared';
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
+type StatusModalState = {
+  type: 'status' | 'alert';
+  dbName: string;
+} | null;
+
 const DBList = ({
   dbList = [],
   refetchApps,
@@ -95,6 +101,8 @@ const DBList = ({
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusModalState, setStatusModalState] = useState<StatusModalState>(null);
+  const [openMenuDbName, setOpenMenuDbName] = useState('');
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
@@ -220,6 +228,13 @@ const DBList = ({
     }
     return DBTypeList.find((i) => i.id === dbType)?.label || dbType;
   };
+
+  const openedStatusDb = useMemo(
+    () => dbList.find((item) => item.name === statusModalState?.dbName),
+    [dbList, statusModalState?.dbName]
+  );
+  const openedStatusAlert = statusModalState?.dbName ? alerts[statusModalState.dbName] : undefined;
+  const closeStatusModal = useCallback(() => setStatusModalState(null), []);
 
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
     () => [
@@ -351,6 +366,12 @@ const DBList = ({
             status={row.original.status}
             alertReason={alerts[row.original.name]?.reason}
             alertDetails={alerts[row.original.name]?.details}
+            onOpenStatusDetails={() =>
+              setStatusModalState({ type: 'status', dbName: row.original.name })
+            }
+            onOpenAlertDetails={() =>
+              setStatusModalState({ type: 'alert', dbName: row.original.name })
+            }
           />
         )
       },
@@ -397,6 +418,11 @@ const DBList = ({
         header: () => t('operation'),
         cell: ({ row }) => {
           const manageDataDisabledReason = getManageDataDisabledReason(row.original);
+          const isOperationLocked = isDBOperationLocked(row.original.status.value);
+          const canUpdate =
+            !isOperationLocked ||
+            (row.original.status.value === DBStatusEnum.Updating &&
+              row.original.isDiskSpaceOverflow);
           const manageDataButton = (
             <Button
               size={'sm'}
@@ -466,6 +492,9 @@ const DBList = ({
 
               <CustomMenu
                 width={100}
+                isOpen={openMenuDbName === row.original.name}
+                onOpen={() => setOpenMenuDbName(row.original.name)}
+                onClose={() => setOpenMenuDbName('')}
                 Button={
                   <Button
                     bg={'white'}
@@ -522,10 +551,7 @@ const DBList = ({
                         router.push(`/db/edit?name=${row.original.name}`);
                       }
                     },
-                    isDisabled:
-                      row.original.status.value === DBStatusEnum.Stopped ||
-                      (row.original.status.value === 'Updating' &&
-                        !row.original.isDiskSpaceOverflow)
+                    isDisabled: row.original.status.value === DBStatusEnum.Stopped || !canUpdate
                   },
                   {
                     child: (
@@ -543,8 +569,7 @@ const DBList = ({
                       handleRestartApp(row.original);
                     },
                     isDisabled:
-                      row.original.status.value === DBStatusEnum.Stopped ||
-                      row.original.status.value === 'Updating'
+                      row.original.status.value === DBStatusEnum.Stopped || isOperationLocked
                   },
                   {
                     child: (
@@ -577,8 +602,7 @@ const DBList = ({
                         bg: 'rgba(17, 24, 36, 0.05)'
                       }
                     },
-                    onClick: () => setDelAppName(row.original.name),
-                    isDisabled: row.original.status.value === 'Updating'
+                    onClick: () => setDelAppName(row.original.name)
                   }
                 ]}
               />
@@ -593,6 +617,7 @@ const DBList = ({
       alerts,
       config.dataflowEnabled,
       getManageDataDisabledReason,
+      openMenuDbName,
       onOpenPause,
       handleManageData,
       router,
@@ -707,6 +732,65 @@ const DBList = ({
           }
         }}
       />
+
+      <Modal
+        isOpen={statusModalState !== null && openedStatusDb !== undefined}
+        onClose={closeStatusModal}
+        lockFocusAcrossFrames={false}
+      >
+        <ModalOverlay />
+        <ModalContent minW={'520px'}>
+          <ModalHeader display={'flex'} alignItems={'center'}>
+            <Box flex={1}>
+              {statusModalState?.type === 'alert'
+                ? openedStatusAlert?.reason || 'Status Details'
+                : openedStatusDb
+                ? t(openedStatusDb.status.label as I18nCommonKey)
+                : ''}
+            </Box>
+            <ModalCloseButton top={'10px'} right={'10px'} />
+          </ModalHeader>
+          <ModalBody>
+            {statusModalState?.type === 'alert' ? (
+              <Box whiteSpace={'pre-wrap'} color={'gray.700'}>
+                {openedStatusAlert?.details || ''}
+              </Box>
+            ) : (
+              openedStatusDb?.conditions.map((item, i) => (
+                <Box
+                  key={i}
+                  pl={6}
+                  pb={6}
+                  ml={4}
+                  borderLeft={`2px solid ${
+                    i === openedStatusDb.conditions.length - 1 ? 'transparent' : '#DCE7F1'
+                  }`}
+                  position={'relative'}
+                  _before={{
+                    content: '""',
+                    position: 'absolute',
+                    left: '-6.5px',
+                    w: '8px',
+                    h: '8px',
+                    borderRadius: '8px',
+                    backgroundColor: '#fff',
+                    border: '2px solid',
+                    borderColor: item.status === 'False' ? '#D92D20' : '#039855'
+                  }}
+                >
+                  <Flex lineHeight={1} mb={2} alignItems={'center'}>
+                    <Box fontWeight={'bold'}>
+                      {item.reason},&ensp;Last Occur:{' '}
+                      {formatPodTime(item.lastTransitionTime as unknown as Date)}
+                    </Box>
+                  </Flex>
+                  <Box color={'blackAlpha.700'}>{item.message}</Box>
+                </Box>
+              ))
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
 
       <PauseChild />
       {!!delApp && (

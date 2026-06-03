@@ -1,7 +1,7 @@
 import { pauseDBByName, restartDB, startDBByName, type DatabaseAlertItem } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { defaultDBDetail } from '@/constants/db';
+import { DBStatusEnum, defaultDBDetail, isDBOperationLocked } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useDBOperation } from '@/hooks/useDBOperation';
 import type { DBDetailType } from '@/types/db';
@@ -68,6 +68,9 @@ const Header = ({
 
   const { executeOperation, loading, errorModalState, closeErrorModal } = useDBOperation();
   const config = useClientAppConfig();
+  const isOperationLocked = isDBOperationLocked(db.status.value);
+  const canUpdate =
+    !isOperationLocked || (db.status.value === DBStatusEnum.Updating && db.isDiskSpaceOverflow);
 
   const handleRestartApp = useCallback(async () => {
     await executeOperation(() => restartDB(db), {
@@ -217,7 +220,7 @@ const Header = ({
             background={'#FFF'}
             boxShadow={'0 1px 2px 0 rgba(0, 0, 0, 0.05)'}
             isLoading={loading}
-            isDisabled={db.status.value === 'Updating'}
+            isDisabled={isOperationLocked}
             _hover={{
               color: '#71717A'
             }}
@@ -269,7 +272,7 @@ const Header = ({
                 lineHeight={'20px'}
                 borderRadius={'8px 0 0 8px'}
                 isLoading={loading}
-                isDisabled={db.status.value === 'Updating'}
+                isDisabled={isOperationLocked}
                 _hover={{
                   color: '#FFF',
                   bg: '#000'
@@ -299,7 +302,7 @@ const Header = ({
                   lineHeight={'20px'}
                   borderRadius={'0'}
                   isLoading={loading}
-                  isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
+                  isDisabled={!canUpdate}
                   _hover={{
                     color: '#FFF',
                     bg: '#000'
@@ -331,7 +334,7 @@ const Header = ({
                   fontWeight={'500'}
                   lineHeight={'20px'}
                   borderRadius={'0 8px 8px 0'}
-                  isDisabled={db.status.value === 'Updating'}
+                  isDisabled={isOperationLocked}
                   onClick={openRestartConfirm(handleRestartApp)}
                   isLoading={loading}
                   _hover={{
