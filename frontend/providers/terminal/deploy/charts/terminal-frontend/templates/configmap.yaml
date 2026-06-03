@@ -6,5 +6,8 @@ metadata:
   labels:
     {{- include "terminal-frontend.labels" . | nindent 4 }}
 data:
+  TTYD_IMAGE: {{ .Values.terminalConfig.ttydImage | quote }}
+  SITE: {{ include "terminal-frontend.cloudOrigin" . | quote }}
+  KEEPALIVED: {{ .Values.terminalConfig.keepalived | quote }}
   config.yaml: |-
     addr: :3000

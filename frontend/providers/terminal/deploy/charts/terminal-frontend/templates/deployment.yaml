@@ -38,11 +38,20 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           env:
             - name: TTYD_IMAGE
-              value: {{ .Values.terminalConfig.ttydImage | quote }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "terminal-frontend.fullname" . }}-config
+                  key: TTYD_IMAGE
             - name: SITE
-              value: {{ include "terminal-frontend.cloudOrigin" . | quote }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "terminal-frontend.fullname" . }}-config
+                  key: SITE
             - name: KEEPALIVED
-              value: {{ .Values.terminalConfig.keepalived | quote }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "terminal-frontend.fullname" . }}-config
+                  key: KEEPALIVED
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:

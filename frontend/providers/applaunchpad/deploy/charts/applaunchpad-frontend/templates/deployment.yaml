@@ -36,7 +36,10 @@ spec:
         - name: {{ .Chart.Name }}
           env:
             - name: NODE_TLS_REJECT_UNAUTHORIZED
-              value: {{ .Values.applaunchpadConfig.tlsRejectUnauthorized | quote }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "applaunchpad-frontend.fullname" . }}-config
+                  key: NODE_TLS_REJECT_UNAUTHORIZED
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:

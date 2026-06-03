@@ -1,0 +1,47 @@
+{
+  "title": "release v5.1 provider helm configmap migration",
+  "slug": "release-v5-1-provider-helm-configmap-migration",
+  "created_at": "2026-06-03T08:41:20+00:00",
+  "status": "in_progress",
+  "approval": {
+    "required": false,
+    "granted": true,
+    "notes": "User approved implementation. No deployment, publish, destructive git, or database writes are allowed without separate approval."
+  },
+  "packets": [
+    {
+      "id": "P1",
+      "status": "completed",
+      "result": "results/p1-inventory.md"
+    },
+    {
+      "id": "P2",
+      "status": "completed",
+      "result": "results/p2-chart-migration.md"
+    },
+    {
+      "id": "P3",
+      "status": "completed",
+      "result": "results/p3-configmap-env.md"
+    },
+    {
+      "id": "P4",
+      "status": "completed",
+      "result": "results/p4-verification-closeout.md"
+    }
+  ],
+  "verification": {
+    "status": "passed_with_known_external_failures",
+    "checks": [
+      "helm lint/template for four charts",
+      "rendered env/resource inspection",
+      "git diff --check",
+      "terminal build",
+      "dbprovider build",
+      "dbprovider typecheck",
+      "workflow verification",
+      "applaunchpad build failed in existing source typecheck",
+      "template build failed in existing dependency/module resolution"
+    ]
+  }
+}

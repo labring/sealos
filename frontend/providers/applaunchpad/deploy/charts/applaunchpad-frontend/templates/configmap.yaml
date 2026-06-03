@@ -6,6 +6,7 @@ metadata:
   labels:
     {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
 data:
+  NODE_TLS_REJECT_UNAUTHORIZED: {{ .Values.applaunchpadConfig.tlsRejectUnauthorized | quote }}
   config.yaml: |-
     cloud:
       domain: {{ .Values.applaunchpadConfig.cloudDomain }}

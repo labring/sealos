@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "template-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "template-frontend.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "template-frontend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "template-frontend.labels" . | nindent 8 }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          env:
+            - name: SEALOS_CLOUD_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: SEALOS_CLOUD_DOMAIN
+            - name: SEALOS_CLOUD_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: SEALOS_CLOUD_PORT
+            - name: SEALOS_USER_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: SEALOS_USER_DOMAIN
+            - name: SEALOS_CERT_SECRET_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: SEALOS_CERT_SECRET_NAME
+            - name: TEMPLATE_REPO_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: TEMPLATE_REPO_URL
+            - name: TEMPLATE_REPO_BRANCH
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: TEMPLATE_REPO_BRANCH
+            - name: SHOW_AUTHOR
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: SHOW_AUTHOR
+            - name: ACCOUNT_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: ACCOUNT_URL
+            - name: GUIDE_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: GUIDE_ENABLED
+            - name: BILLING_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: BILLING_URL
+            - name: DESKTOP_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: DESKTOP_DOMAIN
+            - name: ENABLE_README_FETCH
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: ENABLE_README_FETCH
+            - name: TEMPLATE_CATEGORIES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "template-frontend.fullname" . }}-config
+                  key: TEMPLATE_CATEGORIES
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          image: {{ .Values.image | quote }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          volumeMounts:
+            - name: template-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+            - name: template-frontend-volume
+              mountPath: /app/data/config.json
+              subPath: config.json
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: template-frontend-volume
+          configMap:
+            name: {{ include "template-frontend.fullname" . }}-config

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: template-frontend
+description: Sealos App Store Frontend Helm Chart
+type: application
+version: 1.0.0
+appVersion: "latest"

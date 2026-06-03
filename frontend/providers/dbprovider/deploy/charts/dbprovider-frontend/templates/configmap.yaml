@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dbprovider-frontend.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dbprovider-frontend.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    addr: :3000
+  SEALOS_DOMAIN: {{ .Values.dbproviderConfig.cloudDomain | quote }}
+  DESKTOP_DOMAIN: {{ .Values.dbproviderConfig.cloudDomain | quote }}
+  SEALOS_PORT: {{ include "dbprovider-frontend.portSuffix" . | quote }}
+  MONITOR_URL: {{ .Values.dbproviderConfig.monitorUrl | quote }}
+  MINIO_URL: {{ .Values.dbproviderConfig.minioUrl | quote }}
+  MINIO_ACCESS_KEY: {{ .Values.dbproviderConfig.minioAccessKey | quote }}
+  MINIO_SECRET_KEY: {{ .Values.dbproviderConfig.minioSecretKey | quote }}
+  MIGRATE_FILE_IMAGE: {{ .Values.dbproviderConfig.migrateFileImage | quote }}
+  MINIO_PORT: {{ .Values.dbproviderConfig.minioPort | quote }}
+  MINIO_BUCKET_NAME: {{ .Values.dbproviderConfig.minioBucketName | quote }}
+  BACKUP_ENABLED: {{ .Values.dbproviderConfig.backupEnabled | quote }}
+  SHOW_DOCUMENT: {{ .Values.dbproviderConfig.showDocument | quote }}
+  GUIDE_ENABLED: {{ .Values.dbproviderConfig.guideEnabled | quote }}
+  BILLING_URL: {{ .Values.dbproviderConfig.billingUrl | quote }}
+  MANAGED_DB_ENABLED: {{ .Values.dbproviderConfig.managedDbEnabled | quote }}
+  VLOGS_BASE_URL: {{ .Values.dbproviderConfig.vlogsBaseUrl | quote }}

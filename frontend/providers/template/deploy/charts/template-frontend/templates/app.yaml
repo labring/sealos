@@ -1,0 +1,18 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: template
+  namespace: app-system
+spec:
+  data:
+    url: {{ include "template-frontend.url" . | quote }}
+  displayType: normal
+  i18n:
+    zh:
+      name: 应用商店
+    zh-Hans:
+      name: 应用商店
+  icon: {{ printf "%s/logo.svg" (include "template-frontend.url" .) | quote }}
+  menuData:
+  name: App Store
+  type: iframe

@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }}; img-src * data: blob: resource: *.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} https://*.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }}";
+      more_set_headers "X-Xss-Protection: 1; mode=block";
+    higress.io/response-header-control-remove: X-Frame-Options
+    higress.io/response-header-control-update: |
+      Content-Security-Policy "default-src * blob: data: *.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }}; img-src * data: blob: resource: *.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' {{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }} https://*.{{ .Values.dbproviderConfig.cloudDomain }}{{ include "dbprovider-frontend.portSuffix" . }}"
+      X-Xss-Protection "1; mode=block"
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ include "dbprovider-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ include "dbprovider-frontend.host" . | quote }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: {{ include "dbprovider-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+  tls:
+    - hosts:
+        - {{ include "dbprovider-frontend.host" . | quote }}
+      secretName: {{ .Values.dbproviderConfig.certSecretName | quote }}
