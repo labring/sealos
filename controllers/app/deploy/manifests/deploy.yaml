@@ -120,6 +120,9 @@ spec:
                 type: array
               name:
                 type: string
+              position:
+                format: double
+                type: number
               type:
                 type: string
             type: object
