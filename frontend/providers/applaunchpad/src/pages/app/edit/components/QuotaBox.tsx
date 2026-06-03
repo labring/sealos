@@ -10,7 +10,7 @@ import { Progress } from '@sealos/shadcn-ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
 import { Cpu, MemoryStick, HardDrive, CircuitBoard, HdmiPort, ArrowUpDown } from 'lucide-react';
 
-import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
+import { useUserQuota, resourcePropertyMap, formatResourceQuotaValue } from '@sealos/shared';
 
 const iconMap: Record<string, React.ReactNode> = {
   cpu: <Cpu className="h-5 w-5" />,
@@ -33,11 +33,10 @@ const QuotaBox = () => {
       .map((item) => {
         const { limit, used, type } = item;
         const unit = resourcePropertyMap[type]?.unit;
-        const scale = resourcePropertyMap[type]?.scale;
 
-        const tip = `${t('Total')}: ${(limit / scale).toFixed(2)} ${unit}
-${t('common.Used')}: ${(used / scale).toFixed(2)} ${unit}
-${t('common.Surplus')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
+        const tip = `${t('Total')}: ${formatResourceQuotaValue(limit, type)} ${unit}
+${t('common.Used')}: ${formatResourceQuotaValue(used, type)} ${unit}
+${t('common.Surplus')}: ${formatResourceQuotaValue(Math.max(0, limit - used), type)} ${unit}`;
 
         const percentage = Math.min((used / limit) * 100, 100);
 

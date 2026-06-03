@@ -8,45 +8,60 @@ metadata:
 data:
   config.yaml: |-
     cloud:
-      domain: {{ .Values.applaunchpadConfig.cloudDomain }}
+      domain: {{ .Values.applaunchpadConfig.cloudDomain | quote }}
       port: {{ include "applaunchpad-frontend.mainConfigPort" . }}
       httpPort: {{ include "applaunchpad-frontend.mainConfigHTTPPort" . }}
       disableHttps: {{ .Values.applaunchpadConfig.disableHttps }}
-      desktopDomain: {{ .Values.applaunchpadConfig.cloudDomain }}
+      desktopDomain: {{ .Values.applaunchpadConfig.cloudDomain | quote }}
       userDomains:
-        - name: {{ .Values.applaunchpadConfig.cloudDomain }}
-          secretName: {{ .Values.applaunchpadConfig.certSecretName }}
-    common:
-      guideEnabled: false
-      apiEnabled: false
+        - name: {{ .Values.applaunchpadConfig.cloudDomain | quote }}
+          secretName: {{ .Values.applaunchpadConfig.certSecretName | quote }}
     launchpad:
       infrastructure:
         provider: alibaba
-        requiresDomainReg: false
-        domainRegQueryLink: https://beian.miit.gov.cn/#/Integrated/index
+        requiresIcpReg: false
+        icpRegQueryLink: https://beian.miit.gov.cn/#/Integrated/index
         domainBindingDocumentationLink: null
-      eventAnalyze:
-        enabled: false
-        fastGPTKey: ""
+      features:
+        guide: false
+        api: false
+        gpu: false
+      ui:
+        currencySymbol: shellCoin
+        meta:
+          title: "Sealos App Launchpad"
+          description: "Deploy and manage your applications on Sealos"
+          scripts: []
+        appResourceFormSliderConfig:
+          default:
+            cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
+            memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+          default-gpu:
+            cpu: [8000, 16000, 32000, 48000, 64000, 80000, 108000]
+            memory: [16384, 32768, 65536, 131072, 262144, 524288, 614400]
       components:
-        monitor:
-          url: {{ .Values.applaunchpadConfig.monitorUrl }}
+        monitoring:
+          url: {{ .Values.applaunchpadConfig.monitorUrl | quote }}
         billing:
-          url: {{ .Values.applaunchpadConfig.billingUrl }}
-        log:
-          url: {{ .Values.applaunchpadConfig.logUrl }}
-      appResourceFormSliderConfig:
-        default:
-          cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
-          memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-        default-gpu:
-          cpu: [8000, 16000, 32000, 48000, 64000, 80000, 108000]
-          memory: [16384, 32768, 65536, 131072, 262144, 524288, 614400]
-      fileManger:
+          url: {{ .Values.applaunchpadConfig.billingUrl | quote }}
+        logging:
+          enabled: true
+          url: {{ .Values.applaunchpadConfig.logUrl | quote }}
+        eventAnalysis:
+          enabled: false
+          url: https://fastgpt.run/api/openapi/v1
+          fastGPTKey: ""
+      fileManager:
         uploadLimit: 50 # MB
         downloadLimit: 100 # MB
+      analytics:
+        gtm:
+          enabled: false
+          gtmId: ""
       checkIcpReg:
         enabled: false
         endpoint: cdn.aliyuncs.com
         accessKeyID: ''
         accessKeySecret: ''
+      domainChallengeSecret: default-dev-secret-change-in-production
+      pvcStorageMax: 100
