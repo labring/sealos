@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@sealos/shadcn-ui';
-import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
+import { useUserQuota, resourcePropertyMap, formatResourceQuotaValue } from '@sealos/shared';
 
 import { Progress } from '@sealos/shadcn-ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
@@ -23,11 +23,10 @@ const QuotaBox = ({ className }: { className?: string }) => {
         const { limit, used, type } = item;
         const unit = resourcePropertyMap[type]?.unit;
         const Icon = resourcePropertyMap[type]?.icon;
-        const scale = resourcePropertyMap[type]?.scale;
 
-        const tip = `${t('total')}: ${(limit / scale).toFixed(2)} ${unit}
-${t('used')}: ${(used / scale).toFixed(2)} ${unit}
-${t('remaining')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
+        const tip = `${t('total')}: ${formatResourceQuotaValue(limit, type)} ${unit}
+${t('used')}: ${formatResourceQuotaValue(used, type)} ${unit}
+${t('remaining')}: ${formatResourceQuotaValue(Math.max(0, limit - used), type)} ${unit}`;
         return { ...item, tip, Icon };
       });
   }, [userQuota, t]);

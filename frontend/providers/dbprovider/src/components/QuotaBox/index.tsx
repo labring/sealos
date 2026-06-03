@@ -3,7 +3,7 @@ import { Box, Flex, useTheme, Progress, css, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { MyTooltip } from '@sealos/ui';
 
-import { useUserQuota, resourcePropertyMap } from '@sealos/shared';
+import { useUserQuota, resourcePropertyMap, formatResourceQuotaValue } from '@sealos/shared';
 
 const sourceMap = {
   cpu: {
@@ -39,12 +39,11 @@ const QuotaBox = () => {
       .map((item) => {
         const { limit, used, type } = item;
         const unit = resourcePropertyMap[type]?.unit;
-        const scale = resourcePropertyMap[type]?.scale;
         const color = sourceMap[type]?.color;
 
-        const tip = `${t('Total')}: ${(limit / scale).toFixed(2)} ${unit}
-${t('common.Used')}: ${(used / scale).toFixed(2)} ${unit}
-${t('common.Surplus')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;
+        const tip = `${t('Total')}: ${formatResourceQuotaValue(limit, type)} ${unit}
+${t('common.Used')}: ${formatResourceQuotaValue(used, type)} ${unit}
+${t('common.Surplus')}: ${formatResourceQuotaValue(Math.max(0, limit - used), type)} ${unit}`;
         return { ...item, tip, color };
       });
   }, [userQuota, t]);
