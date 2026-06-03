@@ -102,8 +102,6 @@ jobs:
               - 'frontend/providers/objectstorage/**'
             kubepanel:
               - 'frontend/providers/kubepanel/**'
-            devbox:
-              - 'frontend/providers/devbox/**'
             desktop:
               - 'frontend/desktop/**'
       - name: Generate build matrix
@@ -127,7 +125,6 @@ jobs:
               "providers/costcenter"
               "providers/objectstorage"
               "providers/kubepanel"
-              "providers/devbox"
               "desktop"
             )
           else
@@ -142,7 +139,6 @@ jobs:
             [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
             [[ "${{ steps.filter.outputs.objectstorage }}" == "true" ]] && modules+=("providers/objectstorage")
             [[ "${{ steps.filter.outputs.kubepanel }}" == "true" ]] && modules+=("providers/kubepanel")
-            [[ "${{ steps.filter.outputs.devbox }}" == "true" ]] && modules+=("providers/devbox")
             [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
           fi
 
