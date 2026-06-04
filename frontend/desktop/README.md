@@ -155,6 +155,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 3. src/layout/index.tsx
 4. src/components/desktop_content.tsx
 
+### 安装 App 数据流
+
+- `src/pages/api/desktop/getInstalledApps.ts` 负责组装桌面可见 App 列表。共享 App 来自 `app-system` namespace 的 `app.sealos.io/v1 App`，workspace App 来自当前 workspace namespace。
+- 共享 App 保持 `displayType` 分组顺序 `normal -> more -> hidden`，组内按 `spec.position` 从小到大排序；没有 `position` 的旧数据按 `0` 处理，再按创建时间倒序和 key 稳定排序。
+- `spec.position` 由管理端共享 App 图标管理写入，集群 App CRD 需要先包含 `spec.position` schema；workspace App 管理不写这个字段。
+
 ### 测试环境
 
 1. 需要设置环境变量`NODE_ENV=test` 或者 `$env:NODE_ENV="test"`

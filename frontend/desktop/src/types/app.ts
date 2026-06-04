@@ -59,6 +59,7 @@ export type TAppConfig = {
   };
   representativeMeta: TRepresentativeMeta;
   displayType: displayType;
+  position?: number;
   creationTimestamp?: string;
 };
 

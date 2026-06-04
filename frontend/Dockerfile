@@ -65,6 +65,7 @@ RUN if [ "$name" = "desktop" ]; then \
     if [ -d "./desktop/prisma/providers" ]; then \
         mkdir -p desktop/.next/standalone/desktop/prisma/providers && \
         cp -r ./desktop/prisma/providers/* desktop/.next/standalone/desktop/prisma/providers/; \
+    fi; \
 fi
 # Production image, copy all the files and run next
 FROM base AS runner
