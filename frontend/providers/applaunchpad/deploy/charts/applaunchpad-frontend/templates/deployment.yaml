@@ -34,12 +34,9 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          env:
-            - name: NODE_TLS_REJECT_UNAUTHORIZED
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "applaunchpad-frontend.fullname" . }}-config
-                  key: NODE_TLS_REJECT_UNAUTHORIZED
+          envFrom:
+            - configMapRef:
+                name: {{ include "applaunchpad-frontend.fullname" . }}-env
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:

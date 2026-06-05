@@ -34,72 +34,9 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          env:
-            - name: SEALOS_CLOUD_DOMAIN
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: SEALOS_CLOUD_DOMAIN
-            - name: SEALOS_CLOUD_PORT
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: SEALOS_CLOUD_PORT
-            - name: SEALOS_USER_DOMAIN
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: SEALOS_USER_DOMAIN
-            - name: SEALOS_CERT_SECRET_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: SEALOS_CERT_SECRET_NAME
-            - name: TEMPLATE_REPO_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: TEMPLATE_REPO_URL
-            - name: TEMPLATE_REPO_BRANCH
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: TEMPLATE_REPO_BRANCH
-            - name: SHOW_AUTHOR
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: SHOW_AUTHOR
-            - name: ACCOUNT_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: ACCOUNT_URL
-            - name: GUIDE_ENABLED
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: GUIDE_ENABLED
-            - name: BILLING_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: BILLING_URL
-            - name: DESKTOP_DOMAIN
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: DESKTOP_DOMAIN
-            - name: ENABLE_README_FETCH
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: ENABLE_README_FETCH
-            - name: TEMPLATE_CATEGORIES
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "template-frontend.fullname" . }}-config
-                  key: TEMPLATE_CATEGORIES
+          envFrom:
+            - configMapRef:
+                name: {{ include "template-frontend.fullname" . }}-env
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:

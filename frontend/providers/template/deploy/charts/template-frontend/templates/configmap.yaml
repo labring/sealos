@@ -1,18 +1,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "template-frontend.fullname" . }}-config
+  name: {{ include "template-frontend.fullname" . }}-env
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "template-frontend.labels" . | nindent 4 }}
 data:
-  config.yaml: |-
-    addr: :3000
-  config.json: |-
-    {
-      "showCarousel": false,
-      "slideData": []
-    }
   SEALOS_CLOUD_DOMAIN: {{ .Values.templateConfig.cloudDomain | quote }}
   SEALOS_CLOUD_PORT: {{ .Values.templateConfig.cloudPort | quote }}
   SEALOS_USER_DOMAIN: {{ .Values.templateConfig.userDomain | quote }}
@@ -26,3 +19,19 @@ data:
   DESKTOP_DOMAIN: {{ .Values.templateConfig.cloudDomain | quote }}
   ENABLE_README_FETCH: {{ .Values.templateConfig.enableReadmeFetch | quote }}
   TEMPLATE_CATEGORIES: {{ .Values.templateConfig.templateCategories | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "template-frontend.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "template-frontend.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    addr: :3000
+  config.json: |-
+    {
+      "showCarousel": false,
+      "slideData": []
+    }

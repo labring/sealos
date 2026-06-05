@@ -1,13 +1,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "dbprovider-frontend.fullname" . }}-config
+  name: {{ include "dbprovider-frontend.fullname" . }}-env
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "dbprovider-frontend.labels" . | nindent 4 }}
 data:
-  config.yaml: |-
-    addr: :3000
   SEALOS_DOMAIN: {{ .Values.dbproviderConfig.cloudDomain | quote }}
   DESKTOP_DOMAIN: {{ .Values.dbproviderConfig.cloudDomain | quote }}
   SEALOS_PORT: {{ include "dbprovider-frontend.portSuffix" . | quote }}
@@ -24,3 +22,14 @@ data:
   BILLING_URL: {{ .Values.dbproviderConfig.billingUrl | quote }}
   MANAGED_DB_ENABLED: {{ .Values.dbproviderConfig.managedDbEnabled | quote }}
   VLOGS_BASE_URL: {{ .Values.dbproviderConfig.vlogsBaseUrl | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dbprovider-frontend.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dbprovider-frontend.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    addr: :3000

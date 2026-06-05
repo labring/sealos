@@ -36,22 +36,9 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          env:
-            - name: TTYD_IMAGE
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "terminal-frontend.fullname" . }}-config
-                  key: TTYD_IMAGE
-            - name: SITE
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "terminal-frontend.fullname" . }}-config
-                  key: SITE
-            - name: KEEPALIVED
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "terminal-frontend.fullname" . }}-config
-                  key: KEEPALIVED
+          envFrom:
+            - configMapRef:
+                name: {{ include "terminal-frontend.fullname" . }}-env
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:
