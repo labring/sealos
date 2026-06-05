@@ -1,33 +1,25 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "template-frontend.fullname" . }}-env
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "template-frontend.labels" . | nindent 4 }}
-data:
-  SEALOS_CLOUD_DOMAIN: {{ .Values.templateConfig.cloudDomain | quote }}
-  SEALOS_CLOUD_PORT: {{ .Values.templateConfig.cloudPort | quote }}
-  SEALOS_USER_DOMAIN: {{ .Values.templateConfig.userDomain | quote }}
-  SEALOS_CERT_SECRET_NAME: {{ .Values.templateConfig.certSecretName | quote }}
-  TEMPLATE_REPO_URL: {{ .Values.templateConfig.templateRepoUrl | quote }}
-  TEMPLATE_REPO_BRANCH: {{ .Values.templateConfig.templateRepoBranch | quote }}
-  SHOW_AUTHOR: {{ .Values.templateConfig.showAuthor | quote }}
-  ACCOUNT_URL: {{ .Values.templateConfig.accountUrl | quote }}
-  GUIDE_ENABLED: {{ .Values.templateConfig.guideEnabled | quote }}
-  BILLING_URL: {{ .Values.templateConfig.billingUrl | quote }}
-  DESKTOP_DOMAIN: {{ .Values.templateConfig.cloudDomain | quote }}
-  ENABLE_README_FETCH: {{ .Values.templateConfig.enableReadmeFetch | quote }}
-  TEMPLATE_CATEGORIES: {{ .Values.templateConfig.templateCategories | quote }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: {{ include "template-frontend.fullname" . }}-config
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "template-frontend.labels" . | nindent 4 }}
 data:
+  .env: |-
+    SEALOS_CLOUD_DOMAIN={{ .Values.templateConfig.cloudDomain }}
+    SEALOS_CLOUD_PORT={{ .Values.templateConfig.cloudPort }}
+    SEALOS_USER_DOMAIN={{ .Values.templateConfig.userDomain }}
+    SEALOS_CERT_SECRET_NAME={{ .Values.templateConfig.certSecretName }}
+    TEMPLATE_REPO_URL={{ .Values.templateConfig.templateRepoUrl }}
+    TEMPLATE_REPO_BRANCH={{ .Values.templateConfig.templateRepoBranch }}
+    SHOW_AUTHOR={{ .Values.templateConfig.showAuthor }}
+    ACCOUNT_URL={{ .Values.templateConfig.accountUrl }}
+    GUIDE_ENABLED={{ .Values.templateConfig.guideEnabled }}
+    BILLING_URL={{ .Values.templateConfig.billingUrl }}
+    DESKTOP_DOMAIN={{ .Values.templateConfig.cloudDomain }}
+    ENABLE_README_FETCH={{ .Values.templateConfig.enableReadmeFetch }}
+    TEMPLATE_CATEGORIES={{ .Values.templateConfig.templateCategories }}
   config.yaml: |-
     addr: :3000
   config.json: |-

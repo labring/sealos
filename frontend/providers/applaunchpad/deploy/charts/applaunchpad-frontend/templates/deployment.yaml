@@ -34,9 +34,22 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          envFrom:
-            - configMapRef:
-                name: {{ include "applaunchpad-frontend.fullname" . }}-env
+          command:
+            - dumb-init
+            - sh
+            - -c
+          args:
+            - |
+              set -e
+              while IFS= read -r line || [ -n "$line" ]; do
+                case "$line" in
+                  ''|\#*) continue ;;
+                esac
+                key="${line%%=*}"
+                value="${line#*=}"
+                export "${key}=${value}"
+              done < /app/data/.env
+              exec node "${launchpath}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
@@ -44,9 +57,8 @@ spec:
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:
-            - mountPath: /app/data/config.yaml
+            - mountPath: /app/data
               name: applaunchpad-frontend-volume
-              subPath: config.yaml
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
@@ -54,4 +66,5 @@ spec:
       volumes:
         - name: applaunchpad-frontend-volume
           configMap:
+            defaultMode: 420
             name: {{ include "applaunchpad-frontend.fullname" . }}-config

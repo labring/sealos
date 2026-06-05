@@ -1,21 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "applaunchpad-frontend.fullname" . }}-env
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
-data:
-  NODE_TLS_REJECT_UNAUTHORIZED: {{ .Values.applaunchpadConfig.tlsRejectUnauthorized | quote }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
   name: {{ include "applaunchpad-frontend.fullname" . }}-config
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
 data:
+  .env: |-
+    NODE_TLS_REJECT_UNAUTHORIZED={{ .Values.applaunchpadConfig.tlsRejectUnauthorized }}
   config.yaml: |-
     cloud:
       domain: {{ .Values.applaunchpadConfig.cloudDomain }}

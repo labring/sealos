@@ -35,9 +35,22 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          envFrom:
-            - configMapRef:
-                name: {{ include "dbprovider-frontend.fullname" . }}-env
+          command:
+            - dumb-init
+            - sh
+            - -c
+          args:
+            - |
+              set -e
+              while IFS= read -r line || [ -n "$line" ]; do
+                case "$line" in
+                  ''|\#*) continue ;;
+                esac
+                key="${line%%=*}"
+                value="${line#*=}"
+                export "${key}=${value}"
+              done < /app/data/.env
+              exec node "${launchpath}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
@@ -45,6 +58,8 @@ spec:
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:
+            - name: dbprovider-frontend-volume
+              mountPath: /app/data
             - name: dbprovider-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
@@ -55,4 +70,5 @@ spec:
       volumes:
         - name: dbprovider-frontend-volume
           configMap:
+            defaultMode: 420
             name: {{ include "dbprovider-frontend.fullname" . }}-config
