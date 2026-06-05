@@ -34,22 +34,6 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          command:
-            - dumb-init
-            - sh
-            - -c
-          args:
-            - |
-              set -e
-              while IFS= read -r line || [ -n "$line" ]; do
-                case "$line" in
-                  ''|\#*) continue ;;
-                esac
-                key="${line%%=*}"
-                value="${line#*=}"
-                export "${key}=${value}"
-              done < /app/data/.env
-              exec node "${launchpath}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:
@@ -58,10 +42,14 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:
             - name: template-frontend-volume
-              mountPath: /app/data
+              mountPath: /app/providers/template/.env
+              subPath: .env
             - name: template-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
+            - name: template-frontend-volume
+              mountPath: /app/data/config.json
+              subPath: config.json
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
