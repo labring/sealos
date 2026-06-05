@@ -23,6 +23,7 @@ pkg/registry/save/testdata/registry
 deploy/cloud/tars
 .vscode/
 /lifecycle/tools/
+.workflow/
 
 **.env*
 !scripts/cloud/sealos.env

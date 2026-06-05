@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "applaunchpad-frontend.fullname" . }}
+  name: {{ include "dbprovider-frontend.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
+    {{- include "dbprovider-frontend.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "applaunchpad-frontend.selectorLabels" . | nindent 6 }}
+      {{- include "dbprovider-frontend.selectorLabels" . | nindent 6 }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,12 +18,13 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "applaunchpad-frontend.labels" . | nindent 8 }}
+        {{- include "dbprovider-frontend.labels" . | nindent 8 }}
       {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
+      serviceAccountName: cluster-version-reader
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -41,18 +42,18 @@ spec:
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:
-            - mountPath: /app/providers/applaunchpad/.env
-              name: applaunchpad-frontend-volume
+            - name: dbprovider-frontend-volume
+              mountPath: /app/providers/dbprovider/.env
               subPath: .env
-            - mountPath: /app/data/config.yaml
-              name: applaunchpad-frontend-volume
+            - name: dbprovider-frontend-volume
+              mountPath: /config.yaml
               subPath: config.yaml
       {{- with .Values.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
-        - name: applaunchpad-frontend-volume
+        - name: dbprovider-frontend-volume
           configMap:
             defaultMode: 420
-            name: {{ include "applaunchpad-frontend.fullname" . }}-config
+            name: {{ include "dbprovider-frontend.fullname" . }}-config

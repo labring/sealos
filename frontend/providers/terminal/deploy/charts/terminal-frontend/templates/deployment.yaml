@@ -36,16 +36,12 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          env:
-            - name: TTYD_IMAGE
-              value: {{ .Values.terminalConfig.ttydImage | quote }}
-            - name: SITE
-              value: {{ include "terminal-frontend.cloudOrigin" . | quote }}
-            - name: KEEPALIVED
-              value: {{ .Values.terminalConfig.keepalived | quote }}
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           volumeMounts:
+            - name: terminal-frontend-volume
+              mountPath: /app/providers/terminal/.env
+              subPath: .env
             - name: terminal-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
@@ -56,4 +52,5 @@ spec:
       volumes:
         - name: terminal-frontend-volume
           configMap:
+            defaultMode: 420
             name: {{ include "terminal-frontend.fullname" . }}-config

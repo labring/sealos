@@ -3,7 +3,8 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY manifests manifests
+COPY charts charts
+COPY dbprovider-frontend-entrypoint.sh dbprovider-frontend-entrypoint.sh
 
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV cloudPort=""
@@ -19,4 +20,4 @@ ENV guideEnabled="true"
 ENV billingUrl="http://account-service.account-system.svc:2333"
 ENV vlogsBaseUrl="http://service-vlogs.sealos.svc.cluster.local:8428"
 
-CMD ["kubectl apply -f manifests"]
+CMD ["bash dbprovider-frontend-entrypoint.sh"]

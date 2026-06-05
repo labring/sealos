@@ -1,0 +1,68 @@
+# Default values for template frontend helm chart.
+
+image: ghcr.io/labring/sealos-template-frontend:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+fullnameOverride: "template-frontend"
+
+replicaCount: 1
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 1024Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+ingress:
+  className: nginx
+  host: ""
+  annotations: {}
+
+# Keep release-v5.1 env defaults and names. Entrypoint auto-fills cloud values from sealos-config when available.
+templateConfig:
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  userDomain: ""
+  certSecretName: "wildcard-cert"
+  templateRepoUrl: "https://github.com/labring-actions/templates"
+  templateRepoBranch: "main"
+  templateRepoPath: "templates"
+  showAuthor: "false"
+  accountUrl: "http://account-service.account-system.svc.cluster.local:2333"
+  guideEnabled: "true"
+  billingUrl: "http://account-service.account-system.svc:2333"
+  enableReadmeFetch: "true"
+  templateCategories: '[{"slug":"ai","i18n":{"en":"AI","zh":"AI"}},{"slug":"backend","i18n":{"en":"Backend","zh":"后端"}},{"slug":"blog","i18n":{"en":"Blog","zh":"博客"}},{"slug":"database","i18n":{"en":"Database","zh":"数据库"}},{"slug":"dev-ops","i18n":{"en":"DevOps","zh":"运维"}},{"slug":"frontend","i18n":{"en":"Frontend","zh":"前端"}},{"slug":"game","i18n":{"en":"Games","zh":"游戏"}},{"slug":"low-code","i18n":{"en":"Low-Code","zh":"低代码"}},{"slug":"monitor","i18n":{"en":"Monitoring","zh":"监控"}},{"slug":"storage","i18n":{"en":"Storage","zh":"存储"}},{"slug":"tool","i18n":{"en":"Tools","zh":"工具"}}]'
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - template-frontend
+          topologyKey: "kubernetes.io/hostname"
