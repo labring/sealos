@@ -13,6 +13,7 @@ import {
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { globalPrisma } from '@/services/backend/db/init';
+import { compareSystemAppOrder } from '@/utils/appSort';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { UserStatus } from 'prisma/global/generated/client';
 
@@ -68,20 +69,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           key,
           ...item.spec,
           representativeMeta: getRepresentativeMeta(key, item.metadata.annotations),
+          displayType: item.spec.displayType || 'normal',
           creationTimestamp: item.metadata.creationTimestamp
         };
       })
-      .sort((a, b) => {
-        if (a.displayType === 'more' && b.displayType !== 'more') {
-          return 1;
-        } else if (a.displayType !== 'more' && b.displayType === 'more') {
-          return -1;
-        } else {
-          const timeA = a.creationTimestamp ? new Date(a.creationTimestamp).getTime() : 0;
-          const timeB = b.creationTimestamp ? new Date(b.creationTimestamp).getTime() : 0;
-          return timeB - timeA;
-        }
-      });
+      .sort(compareSystemAppOrder);
 
     const userArr = (await getRawAppList(getMeta(payload.workspaceId))).map<TAppConfig>((item) => {
       const key = `user-${item.metadata.name}` as const;
