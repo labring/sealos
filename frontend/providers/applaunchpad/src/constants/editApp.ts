@@ -54,6 +54,7 @@ export const defaultEditVal: AppEditType = {
       ]
     }
   ],
+  serviceList: [],
   envs: [],
   hpa: {
     use: false,

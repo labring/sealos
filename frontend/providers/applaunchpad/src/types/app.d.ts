@@ -113,6 +113,14 @@ export interface AppEditType {
     openNodePort: boolean; // open nodePort
     routes?: AppNetworkRouteType[];
   }[];
+  serviceList?: {
+    name: string;
+    ports: {
+      name?: string;
+      port: number;
+      protocol?: TransportProtocolType;
+    }[];
+  }[];
   envs: {
     key: string;
     value: string;
