@@ -80,6 +80,15 @@ export type ApplicationProtocolType = 'HTTP' | 'GRPC' | 'WS';
 
 export type TransportProtocolType = 'TCP' | 'UDP' | 'SCTP';
 
+export type NetworkRoutePathType = 'Prefix' | 'Exact' | 'ImplementationSpecific';
+
+export interface AppNetworkRouteType {
+  path: string;
+  pathType: NetworkRoutePathType;
+  serviceName?: string;
+  servicePort?: number;
+}
+
 export interface AppEditType {
   appName: string;
   imageName: string;
@@ -102,6 +111,7 @@ export interface AppEditType {
     domain: string; // Main promoted domain
     nodePort?: number; // nodePort
     openNodePort: boolean; // open nodePort
+    routes?: AppNetworkRouteType[];
   }[];
   envs: {
     key: string;

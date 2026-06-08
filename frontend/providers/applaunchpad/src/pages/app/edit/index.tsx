@@ -10,9 +10,7 @@ import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
 import { adaptEditAppData } from '@/utils/adapt';
-import type { V1OwnerReference } from '@kubernetes/client-node';
 import {
-  generateOwnerReference,
   json2ConfigMap,
   json2DeployCr,
   json2HPA,
@@ -21,9 +19,7 @@ import {
   json2Service
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
-import { getErrText, patchYamlList } from '@/utils/tools';
-
-import { YamlKindEnum } from '@/utils/adapt';
+import { patchYamlList } from '@/utils/tools';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -268,45 +264,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     });
   }, [formHook.formState.errors, t, toast]);
 
-  const handleDomainVerified = useCallback(
-    ({ index, customDomain }: { index: number; customDomain: string }) => {
-      try {
-        if (!appName) return;
-        const data = formHook.getValues();
-        if (!data?.appName) return;
-        if (data.networks?.[index]) {
-          data.networks[index].customDomain = customDomain;
-        }
-
-        // Get ownerReferences from existing workload
-        let ownerReferences: V1OwnerReference[] | undefined;
-        const workload = crOldYamls.current.find(
-          (item) => item.kind === YamlKindEnum.Deployment || item.kind === YamlKindEnum.StatefulSet
-        );
-        if (workload) {
-          const workloadUid = workload.metadata?.uid;
-          const workloadKind = workload.kind as 'Deployment' | 'StatefulSet';
-          if (workloadUid && workloadKind) {
-            ownerReferences = generateOwnerReference(data.appName, workloadKind, workloadUid);
-          }
-        }
-
-        const ingressYaml = json2Ingress(data, ownerReferences);
-        setIsLoading(true);
-        postDeployApp([ingressYaml], 'replace')
-          .then(() => {
-            toast({ status: 'success', title: t('Deployment Successful') });
-            formOldYamls.current = formData2Yamls(data);
-          })
-          .catch((err) => {
-            toast({ status: 'error', title: getErrText(err) });
-          })
-          .finally(() => setIsLoading(false));
-      } catch (error) {}
-    },
-    [formHook, setIsLoading, toast, t, appName]
-  );
-
   useQuery(
     ['initLaunchpadApp'],
     () => {
@@ -400,7 +357,17 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           openNodePort: network.openNodePort || false,
           publicDomain: network.publicDomain || nanoid(),
           customDomain: network.customDomain || '',
-          domain: network.domain || 'gzg.sealos.run'
+          domain: network.domain || 'gzg.sealos.run',
+          routes: network.routes?.length
+            ? network.routes
+            : [
+                {
+                  path: '/',
+                  pathType: 'Prefix' as const,
+                  serviceName: '',
+                  servicePort: network.port || 80
+                }
+              ]
         }));
         formHook.setValue('networks', completeNetworks);
       }
@@ -589,7 +556,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               pxVal={pxVal}
               refresh={forceUpdate}
               isAdvancedOpen={isAdvancedOpen}
-              onDomainVerified={handleDomainVerified}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
