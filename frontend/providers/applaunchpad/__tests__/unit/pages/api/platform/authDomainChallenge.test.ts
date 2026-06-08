@@ -92,6 +92,10 @@ describe('authDomainChallenge SSRF protections', () => {
       expect(isPublicIp('169.254.169.254')).toBe(false);
       expect(isPublicIp('172.16.0.1')).toBe(false);
       expect(isPublicIp('192.168.1.1')).toBe(false);
+      expect(isPublicIp('192.0.0.1')).toBe(false);
+      expect(isPublicIp('192.0.2.1')).toBe(false);
+      expect(isPublicIp('198.51.100.1')).toBe(false);
+      expect(isPublicIp('203.0.113.1')).toBe(false);
       expect(isPublicIp('::1')).toBe(false);
       expect(isPublicIp('fc00::1')).toBe(false);
       expect(isPublicIp('fe80::1')).toBe(false);
@@ -107,6 +111,7 @@ describe('authDomainChallenge SSRF protections', () => {
 
     it('allows public addresses', () => {
       expect(isPublicIp('93.184.216.34')).toBe(true);
+      expect(isPublicIp('192.0.1.1')).toBe(true);
       expect(isPublicIp('2001:4860:4860::8888')).toBe(true);
     });
   });
@@ -124,17 +129,44 @@ describe('authDomainChallenge SSRF protections', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('requires a kubeconfig that can access its namespace', async () => {
+  it('returns forbidden when the kubeconfig cannot access its namespace', async () => {
     mockedGetK8s.mockResolvedValueOnce({
       namespace: 'ns-test',
       k8sCore: {
-        listNamespacedService: vi.fn().mockRejectedValue(new Error('forbidden'))
+        listNamespacedService: vi.fn().mockRejectedValue({
+          body: {
+            code: 403,
+            message: 'forbidden'
+          }
+        })
       }
     } as any);
 
     const response = await callHandler({ customDomain: 'example.com' }, 'not-a-kubeconfig');
 
-    expect(response.code).toBe(401);
+    expect(response.code).toBe(403);
+    expect(response.error.code).toBe('FORBIDDEN');
+    expect(mockedQueryA).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('does not report server-side authentication probe failures as unauthorized', async () => {
+    mockedGetK8s.mockResolvedValueOnce({
+      namespace: 'ns-test',
+      k8sCore: {
+        listNamespacedService: vi.fn().mockRejectedValue({
+          body: {
+            code: 500,
+            message: 'apiserver unavailable'
+          }
+        })
+      }
+    } as any);
+
+    const response = await callHandler({ customDomain: 'example.com' });
+
+    expect(response.code).toBe(500);
+    expect(response.error.code).toBe('INTERNAL_ERROR');
     expect(mockedQueryA).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
   });

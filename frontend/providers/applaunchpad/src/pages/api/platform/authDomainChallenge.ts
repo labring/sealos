@@ -90,7 +90,7 @@ const isPrivateIpv4 = (ip: string) => {
   const bytes = parseIpv4(ip);
   if (!bytes) return true;
 
-  const [first, second] = bytes;
+  const [first, second, third] = bytes;
   return (
     first === 0 ||
     first === 10 ||
@@ -98,9 +98,12 @@ const isPrivateIpv4 = (ip: string) => {
     (first === 100 && second >= 64 && second <= 127) ||
     (first === 169 && second === 254) ||
     (first === 172 && second >= 16 && second <= 31) ||
-    (first === 192 && second === 0) ||
+    (first === 192 && second === 0 && third === 0) ||
+    (first === 192 && second === 0 && third === 2) ||
     (first === 192 && second === 168) ||
     (first === 198 && (second === 18 || second === 19)) ||
+    (first === 198 && second === 51 && third === 100) ||
+    (first === 203 && second === 0 && third === 113) ||
     first >= 224
   );
 };
@@ -193,6 +196,23 @@ const authenticateRequest = async (req: NextApiRequest) => {
   );
 };
 
+const getAuthErrorCode = (error: any) => {
+  if (error === 'unAuthorization') return ResponseCode.UNAUTHORIZED;
+
+  const statusCode =
+    error?.body?.code ||
+    error?.response?.status ||
+    error?.response?.statusCode ||
+    error?.status ||
+    error?.statusCode;
+
+  if (statusCode === ResponseCode.UNAUTHORIZED || statusCode === ResponseCode.FORBIDDEN) {
+    return statusCode;
+  }
+
+  return null;
+};
+
 function isTimestampValid(timestamp: number, maxAge: number = 600): boolean {
   const now = Math.floor(Date.now() / 1000);
   const age = now - timestamp;
@@ -201,15 +221,22 @@ function isTimestampValid(timestamp: number, maxAge: number = 600): boolean {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const authenticated = await authenticateRequest(req)
-      .then(() => true)
-      .catch(() => false);
-    if (!authenticated) {
+    try {
+      await authenticateRequest(req);
+    } catch (authError) {
+      const authErrorCode = getAuthErrorCode(authError);
+      if (!authErrorCode) {
+        throw authError;
+      }
+
       return jsonRes(res, {
-        code: ResponseCode.UNAUTHORIZED,
+        code: authErrorCode,
         error: {
-          code: 'UNAUTHORIZED',
-          message: 'Authentication required'
+          code: authErrorCode === ResponseCode.FORBIDDEN ? 'FORBIDDEN' : 'UNAUTHORIZED',
+          message:
+            authErrorCode === ResponseCode.FORBIDDEN
+              ? 'Insufficient permissions'
+              : 'Authentication required'
         }
       });
     }
