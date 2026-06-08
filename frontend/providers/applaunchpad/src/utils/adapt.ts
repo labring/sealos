@@ -551,7 +551,15 @@ export const adaptAppDetail = async (
             ? SEALOS_DOMAIN
             : item?.nodePort
               ? domain
-              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
+              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
+          routes: [
+            {
+              path: '/',
+              pathType: 'Prefix' as const,
+              serviceName: service?.metadata?.name || '',
+              servicePort: item.port
+            }
+          ]
         };
         return result;
       }) || [],

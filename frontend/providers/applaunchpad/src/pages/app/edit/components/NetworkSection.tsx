@@ -1,51 +1,58 @@
 import MyIcon from '@/components/Icon';
 import { MySelect } from '@sealos/ui';
 import { APPLICATION_PROTOCOLS, ProtocolList } from '@/constants/app';
-import { DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT, SEALOS_DOMAIN } from '@/store/static';
+import { SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { customAlphabet } from 'nanoid';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
-import { Box, Button, Flex, IconButton, Input, Switch, Tooltip, useTheme } from '@chakra-ui/react';
-import { useCopyData } from '@/utils/tools';
-import { useState, useCallback } from 'react';
+import { Box, Button, Flex, IconButton, Input, Switch, useTheme } from '@chakra-ui/react';
+import { useCallback } from 'react';
 import type { AppEditType } from '@/types/app';
-import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
-import type { CustomAccessModalParams } from './CustomAccessModal';
-import dynamic from 'next/dynamic';
-
-const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 type NetworkAction =
   | { type: 'ADD_PORT'; payload: AppEditType['networks'][0] }
   | { type: 'REMOVE_PORT'; payload: { index: number } }
-  | { type: 'UPDATE_PROTOCOL'; payload: { index: number; protocol: string } }
-  | { type: 'UPDATE_CUSTOM_DOMAIN'; payload: { index: number; customDomain: string } }
-  | {
-      type: 'ENABLE_EXTERNAL_ACCESS';
-      payload: { index: number; network: AppEditType['networks'][0] };
-    }
+  | { type: 'ENABLE_EXTERNAL_ACCESS'; payload: { index: number } }
   | { type: 'DISABLE_EXTERNAL_ACCESS'; payload: { index: number } }
-  | { type: 'UPDATE_PORT'; payload: { index: number; port: number } };
+  | { type: 'UPDATE_PROTOCOL'; payload: { index: number; protocol: string } };
 
 interface NetworkSectionProps {
   formHook: UseFormReturn<AppEditType, any>;
-  onDomainVerified?: (params: { index: number; customDomain: string }) => void;
   boxStyles: any;
   headerStyles: any;
 }
 
-export function NetworkSection({
-  formHook,
-  onDomainVerified,
-  boxStyles,
-  headerStyles
-}: NetworkSectionProps) {
+const createDefaultRoute = (
+  port: number
+): NonNullable<AppEditType['networks'][0]['routes']>[0] => ({
+  path: '/',
+  pathType: 'Prefix',
+  serviceName: '',
+  servicePort: port
+});
+
+const withDefaultRoutes = (network: AppEditType['networks'][0]): AppEditType['networks'][0] => ({
+  ...network,
+  routes: network.routes?.length ? network.routes : [createDefaultRoute(network.port)]
+});
+
+const getNextAvailablePort = (networks: AppEditType['networks']) => {
+  const usedPorts = new Set(networks.map((network) => Number(network.port)).filter(Boolean));
+
+  for (let port = 80; port <= 65535; port++) {
+    if (!usedPorts.has(port)) {
+      return port;
+    }
+  }
+
+  return 80;
+};
+
+export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSectionProps) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { copyData } = useCopyData();
-  const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
 
   const { register, control, getValues } = formHook;
 
@@ -65,85 +72,36 @@ export function NetworkSection({
 
       switch (action.type) {
         case 'ADD_PORT':
-          appendNetworks(action.payload);
+          appendNetworks(withDefaultRoutes(action.payload));
           break;
 
         case 'REMOVE_PORT': {
           const { index } = action.payload;
-          if (index >= 0 && index < currentNetworks.length) {
+          if (currentNetworks.length > 1 && index >= 0 && index < currentNetworks.length) {
             removeNetworks(index);
           }
           break;
         }
 
-        case 'UPDATE_PROTOCOL': {
-          const { index, protocol } = action.payload;
-          const currentNetwork = currentNetworks[index];
-
-          if (APPLICATION_PROTOCOLS.includes(protocol as any)) {
-            updateNetworks(index, {
-              ...currentNetwork,
-              serviceName: '',
-              protocol: 'TCP',
-              appProtocol: protocol as any,
-              openNodePort: false,
-              openPublicDomain: true,
-              networkName: currentNetwork.networkName || `network-${nanoid()}`,
-              publicDomain: currentNetwork.publicDomain || nanoid(),
-              nodePort: undefined
-            });
-          } else {
-            updateNetworks(index, {
-              ...currentNetwork,
-              serviceName: '',
-              protocol: protocol as any,
-              appProtocol: undefined,
-              openNodePort: true,
-              openPublicDomain: false,
-              customDomain: '',
-              nodePort: undefined
-            });
-          }
-          break;
-        }
-
-        case 'UPDATE_CUSTOM_DOMAIN': {
-          const { index, customDomain } = action.payload;
-          updateNetworks(index, {
-            ...currentNetworks[index],
-            customDomain
-          });
-          break;
-        }
-
         case 'ENABLE_EXTERNAL_ACCESS': {
-          const { index, network } = action.payload;
+          const { index } = action.payload;
           const currentNetwork = currentNetworks[index];
 
-          if (network.appProtocol && APPLICATION_PROTOCOLS.includes(network.appProtocol)) {
-            updateNetworks(index, {
+          updateNetworks(
+            index,
+            withDefaultRoutes({
               ...currentNetwork,
               serviceName: '',
-              networkName: network.networkName || `network-${nanoid()}`,
+              networkName: currentNetwork.networkName || `network-${nanoid()}`,
               protocol: 'TCP',
-              appProtocol: network.appProtocol,
+              appProtocol: currentNetwork.appProtocol || 'HTTP',
               openPublicDomain: true,
               openNodePort: false,
-              publicDomain: network.publicDomain || nanoid(),
-              domain: network.domain || SEALOS_DOMAIN
-            });
-          } else {
-            updateNetworks(index, {
-              ...currentNetwork,
-              serviceName: '',
-              networkName: network.networkName || `network-${nanoid()}`,
-              protocol: network.protocol,
-              appProtocol: undefined,
-              openNodePort: true,
-              openPublicDomain: false,
-              customDomain: ''
-            });
-          }
+              publicDomain: currentNetwork.publicDomain || nanoid(),
+              domain: currentNetwork.domain || SEALOS_DOMAIN,
+              nodePort: undefined
+            })
+          );
           break;
         }
 
@@ -154,17 +112,49 @@ export function NetworkSection({
             serviceName: '',
             openPublicDomain: false,
             openNodePort: false,
+            customDomain: '',
             nodePort: undefined
           });
           break;
         }
 
-        case 'UPDATE_PORT': {
-          const { index, port } = action.payload;
-          updateNetworks(index, {
-            ...currentNetworks[index],
-            port
-          });
+        case 'UPDATE_PROTOCOL': {
+          const { index, protocol } = action.payload;
+          const currentNetwork = currentNetworks[index];
+
+          if (APPLICATION_PROTOCOLS.includes(protocol as any)) {
+            updateNetworks(
+              index,
+              withDefaultRoutes({
+                ...currentNetwork,
+                serviceName: '',
+                protocol: 'TCP',
+                appProtocol: protocol as any,
+                openNodePort: false,
+                openPublicDomain: true,
+                networkName: currentNetwork.networkName || `network-${nanoid()}`,
+                publicDomain: currentNetwork.publicDomain || nanoid(),
+                domain: currentNetwork.domain || SEALOS_DOMAIN,
+                nodePort: undefined
+              })
+            );
+          } else {
+            updateNetworks(
+              index,
+              withDefaultRoutes({
+                ...currentNetwork,
+                serviceName: '',
+                protocol: protocol as any,
+                appProtocol: undefined,
+                openNodePort: true,
+                openPublicDomain: false,
+                customDomain: '',
+                networkName: currentNetwork.networkName || `network-${nanoid()}`,
+                domain: currentNetwork.domain || SEALOS_DOMAIN,
+                nodePort: undefined
+              })
+            );
+          }
           break;
         }
 
@@ -175,260 +165,264 @@ export function NetworkSection({
     [getValues, appendNetworks, removeNetworks, updateNetworks]
   );
 
-  const getDomainDisplay = useCallback(
-    (network: AppEditType['networks'][0]) => {
-      if (network.customDomain) {
-        return buildExternalUrl({
-          protocol: network.appProtocol,
-          host: network.customDomain,
-          config: {
-            disableHttps: DISABLE_HTTPS,
-            cloudPort: DOMAIN_PORT,
-            httpPort: HTTP_PORT
-          }
-        });
-      }
-      if (network.openNodePort) {
-        return network?.nodePort
-          ? buildExternalUrl({
-              protocol: network.protocol,
-              host: `${network.protocol.toLowerCase()}.${network.domain}`,
-              nodePort: network.nodePort
-            })
-          : `${getExternalProtocol(network.protocol)}://${network.protocol.toLowerCase()}.${
-              network.domain
-            }:${t('pending_to_allocated')}`;
-      }
-      return buildExternalUrl({
-        protocol: network.appProtocol,
-        host: `${network.publicDomain}.${network.domain}`,
-        config: {
-          disableHttps: DISABLE_HTTPS,
-          cloudPort: DOMAIN_PORT,
-          httpPort: HTTP_PORT
-        }
-      });
-    },
-    [t]
-  );
-
   return (
-    <>
-      <Box id={'network'} {...boxStyles}>
-        <Box {...headerStyles}>
-          <MyIcon name={'network'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
-          {t('Network Configuration')}
-        </Box>
-        <Box px={'42px'} py={'24px'} userSelect={'none'}>
-          {networks.map((network, i) => (
-            <Flex
-              alignItems={'flex-start'}
+    <Box id={'network'} {...boxStyles}>
+      <Box {...headerStyles}>
+        <MyIcon name={'network'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
+        {t('Network Configuration')}
+      </Box>
+      <Box px={'42px'} py={'24px'} userSelect={'none'}>
+        {networks.map((network, i) => {
+          const isExternalAccess = !!network.openPublicDomain || !!network.openNodePort;
+
+          return (
+            <Box
               key={network.id}
-              _notLast={{ pb: 6, borderBottom: theme.borders.base }}
-              _notFirst={{ pt: 6 }}
+              w={'697px'}
+              maxW={'100%'}
+              _notLast={{ pb: 6, mb: 6, borderBottom: theme.borders.base }}
             >
-              <Box w={'140px'}>
-                <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
-                  {t('Container Port')}
-                </Box>
-                <Input
-                  h={'32px'}
-                  type={'number'}
-                  w={'110px'}
-                  bg={'grayModern.50'}
-                  {...register(`networks.${i}.port`, {
-                    required:
-                      t('app.The container exposed port cannot be empty') ||
-                      'The container exposed port cannot be empty',
-                    valueAsNumber: true,
-                    min: {
-                      value: 1,
-                      message: t('app.The minimum exposed port is 1')
-                    },
-                    max: {
-                      value: 65535,
-                      message: t('app.The maximum number of exposed ports is 65535')
-                    }
-                  })}
-                />
-                {i === networks.length - 1 && networks.length + 1 <= 15 && (
-                  <Box mt={3}>
-                    <Button
-                      w={'100px'}
-                      variant={'outline'}
-                      leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
-                      onClick={() =>
-                        dispatch({
-                          type: 'ADD_PORT',
-                          payload: {
-                            networkName: '',
-                            portName: nanoid(),
-                            port: 80,
-                            protocol: 'TCP',
-                            appProtocol: 'HTTP',
-                            openPublicDomain: false,
-                            publicDomain: '',
-                            customDomain: '',
-                            domain: SEALOS_DOMAIN,
-                            openNodePort: false,
-                            nodePort: undefined
-                          }
-                        })
-                      }
-                    >
-                      {t('Add Port')}
-                    </Button>
+              <Flex alignItems={'flex-start'}>
+                <Box flex={'0 0 110px'}>
+                  <Box mb={'9px'} h={'16px'} fontSize={'sm'} color={'grayModern.900'}>
+                    {t('Port')}
                   </Box>
-                )}
-              </Box>
-
-              <Box w={'200px'} mx={7}>
-                <Box mb={'8px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
-                  {t('Open Public Access')}
-                </Box>
-                <Flex alignItems={'center'} h={'35px'}>
-                  <Switch
-                    className="driver-deploy-network-switch"
-                    size={'lg'}
-                    isChecked={!!network.openPublicDomain || !!network.openNodePort}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        dispatch({
-                          type: 'ENABLE_EXTERNAL_ACCESS',
-                          payload: {
-                            index: i,
-                            network
-                          }
-                        });
-                      } else {
-                        dispatch({
-                          type: 'DISABLE_EXTERNAL_ACCESS',
-                          payload: { index: i }
-                        });
-                      }
-                    }}
-                  ></Switch>
-                </Flex>
-              </Box>
-
-              <Box w={'500px'}>
-                <Box mb={'8px'} h={'20px'}></Box>
-                <Flex alignItems={'center'} h={'35px'}>
-                  {network.openPublicDomain || network.openNodePort ? (
-                    <>
-                      <MySelect
-                        width={'120px'}
-                        height={'32px'}
-                        borderTopRightRadius={0}
-                        borderBottomRightRadius={0}
-                        value={
-                          network.openPublicDomain
-                            ? network.appProtocol
-                            : network.openNodePort
-                            ? network.protocol
-                            : 'HTTP'
+                  <Input
+                    h={'32px'}
+                    type={'number'}
+                    w={'110px'}
+                    bg={'grayModern.50'}
+                    {...register(`networks.${i}.port`, {
+                      required:
+                        t('app.The container exposed port cannot be empty') ||
+                        'The container exposed port cannot be empty',
+                      valueAsNumber: true,
+                      min: {
+                        value: 1,
+                        message: t('app.The minimum exposed port is 1')
+                      },
+                      max: {
+                        value: 65535,
+                        message: t('app.The maximum number of exposed ports is 65535')
+                      },
+                      validate: (value) => {
+                        const currentPort = Number(value);
+                        if (!currentPort) {
+                          return true;
                         }
-                        list={ProtocolList}
-                        onchange={(val: any) => {
-                          dispatch({
-                            type: 'UPDATE_PROTOCOL',
-                            payload: {
-                              index: i,
-                              protocol: val
-                            }
-                          });
-                        }}
-                      />
-                      <Flex
-                        maxW={'350px'}
-                        flex={'1 0 0'}
-                        alignItems={'center'}
-                        h={'32px'}
-                        bg={'grayModern.50'}
-                        px={4}
-                        border={theme.borders.base}
-                        borderLeft={0}
-                        borderTopRightRadius={'md'}
-                        borderBottomRightRadius={'md'}
-                      >
-                        <Tooltip label={t('click_to_copy_tooltip')}>
-                          <Box
-                            flex={1}
-                            userSelect={'all'}
-                            className="textEllipsis"
-                            onClick={() => {
-                              copyData(getDomainDisplay(network));
-                            }}
-                          >
-                            {getDomainDisplay(network)}
-                          </Box>
-                        </Tooltip>
 
-                        {network.openPublicDomain && !network.openNodePort && (
-                          <Box
-                            fontSize={'11px'}
-                            color={'brightBlue.600'}
-                            cursor={'pointer'}
-                            onClick={() =>
-                              setCustomAccessModalData({
-                                publicDomain: network.publicDomain,
-                                currentCustomDomain: network.customDomain,
-                                domain: network.domain
-                              })
-                            }
-                          >
-                            {t('Custom Domain')}
-                          </Box>
-                        )}
-                      </Flex>
-                    </>
-                  ) : (
-                    <Box w={'470px'} h={'32px'}></Box>
-                  )}
-                </Flex>
-              </Box>
+                        const isDuplicate = getValues('networks').some(
+                          (item, index) => index !== i && Number(item.port) === currentPort
+                        );
 
-              {networks.length > 1 && (
-                <Box w={'50px'} ml={3}>
-                  <Box mb={'8px'} h={'20px'}></Box>
-                  <IconButton
-                    height={'32px'}
-                    width={'32px'}
-                    aria-label={'button'}
-                    variant={'outline'}
-                    bg={'#FFF'}
-                    _hover={{
-                      color: 'red.600',
-                      bg: 'rgba(17, 24, 36, 0.05)'
-                    }}
-                    icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
-                    onClick={() => dispatch({ type: 'REMOVE_PORT', payload: { index: i } })}
+                        return isDuplicate ? t('app.The exposed port cannot be duplicated') : true;
+                      }
+                    })}
                   />
                 </Box>
-              )}
-            </Flex>
-          ))}
-        </Box>
-      </Box>
 
-      {!!customAccessModalData && (
-        <CustomAccessModal
-          {...customAccessModalData}
-          onClose={() => setCustomAccessModalData(undefined)}
-          onSuccess={(e) => {
-            const i = networks.findIndex(
-              (item) => item.publicDomain === customAccessModalData.publicDomain
-            );
-            if (i === -1) return;
+                <Box
+                  ml={'32px'}
+                  flex={isExternalAccess ? '1 1 auto' : '0 0 93px'}
+                  minW={0}
+                >
+                  <Box mb={'9px'} h={'16px'} fontSize={'sm'} color={'grayModern.900'}>
+                    {t('Public Access')}
+                  </Box>
+                  <Flex alignItems={'center'} h={'32px'} minW={0}>
+                    <Switch
+                      className="driver-deploy-network-switch"
+                      isChecked={isExternalAccess}
+                      mr={isExternalAccess ? '24px' : 0}
+                      sx={{
+                        w: '36px',
+                        h: '20px',
+                        '.chakra-switch__track': {
+                          w: '36px',
+                          h: '20px',
+                          p: '2px'
+                        },
+                        '.chakra-switch__thumb': {
+                          w: '16px',
+                          h: '16px'
+                        },
+                        '.chakra-switch__input:checked + .chakra-switch__track .chakra-switch__thumb':
+                          {
+                            transform: 'translateX(16px)'
+                          }
+                      }}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          dispatch({
+                            type: 'ENABLE_EXTERNAL_ACCESS',
+                            payload: { index: i }
+                          });
+                        } else {
+                          dispatch({
+                            type: 'DISABLE_EXTERNAL_ACCESS',
+                            payload: { index: i }
+                          });
+                        }
+                      }}
+                    />
+
+                    {isExternalAccess && (
+                      <>
+                        <Flex alignItems={'center'} w={'349px'} mr={'8px'} h={'32px'}>
+                          <MySelect
+                            width={'90px'}
+                            height={'32px'}
+                            borderTopRightRadius={0}
+                            borderBottomRightRadius={0}
+                            value={
+                              network.openPublicDomain
+                                ? network.appProtocol
+                                : network.openNodePort
+                                ? network.protocol
+                                : 'HTTP'
+                            }
+                            list={ProtocolList}
+                            onchange={(val: any) => {
+                              dispatch({
+                                type: 'UPDATE_PROTOCOL',
+                                payload: {
+                                  index: i,
+                                  protocol: val
+                                }
+                              });
+                            }}
+                          />
+                          <Flex
+                            alignItems={'center'}
+                            h={'32px'}
+                            w={'260px'}
+                            bg={'grayModern.50'}
+                            border={theme.borders.base}
+                            borderLeft={0}
+                            borderTopRightRadius={'md'}
+                            borderBottomRightRadius={'md'}
+                            overflow={'hidden'}
+                          >
+                            <Input
+                              h={'30px'}
+                              flex={'1 1 auto'}
+                              minW={0}
+                              px={'12px'}
+                              bg={'transparent'}
+                              border={0}
+                              borderRadius={0}
+                              fontSize={'sm'}
+                              _focusVisible={{
+                                boxShadow: 'none'
+                              }}
+                              placeholder={t('External Access Domain Placeholder')}
+                              {...register(`networks.${i}.customDomain`, {
+                                validate: (value) => {
+                                  const currentNetwork = getValues('networks')[i];
+
+                                  if (
+                                    (currentNetwork?.openPublicDomain ||
+                                      currentNetwork?.openNodePort) &&
+                                    !String(value || '').trim()
+                                  ) {
+                                    return t('External Access Domain Required');
+                                  }
+
+                                  return true;
+                                }
+                              })}
+                            />
+                            {network.openPublicDomain && !network.openNodePort && (
+                              <Box
+                                flex={'0 0 auto'}
+                                mr={'37px'}
+                                px={'8px'}
+                                py={'4px'}
+                                fontSize={'11px'}
+                                lineHeight={'16px'}
+                                fontWeight={500}
+                                letterSpacing={'0.5px'}
+                                color={'brightBlue.600'}
+                              >
+                                {t('Custom Domain')}
+                              </Box>
+                            )}
+                          </Flex>
+                        </Flex>
+                        <Button
+                          type={'button'}
+                          h={'32px'}
+                          w={'113px'}
+                          minW={'113px'}
+                          px={3}
+                          fontSize={'sm'}
+                          variant={'outline'}
+                          onClick={() => undefined}
+                        >
+                          {t('Configure Route Rules')}
+                        </Button>
+                        {networks.length > 1 && (
+                          <IconButton
+                            ml={2}
+                            height={'32px'}
+                            width={'32px'}
+                            minW={'32px'}
+                            aria-label={t('Delete')}
+                            variant={'outline'}
+                            bg={'#FFF'}
+                            _hover={{
+                              color: 'red.600',
+                              bg: 'rgba(17, 24, 36, 0.05)'
+                            }}
+                            icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
+                            onClick={() =>
+                              dispatch({ type: 'REMOVE_PORT', payload: { index: i } })
+                            }
+                          />
+                        )}
+                      </>
+                    )}
+                  </Flex>
+                </Box>
+              </Flex>
+            </Box>
+          );
+        })}
+
+        <Button
+          type={'button'}
+          mt={6}
+          h={'36px'}
+          w={'109px'}
+          variant={'outline'}
+          leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
+          onClick={() => {
+            const currentNetworks = getValues('networks');
+            const port = getNextAvailablePort(currentNetworks);
+
             dispatch({
-              type: 'UPDATE_CUSTOM_DOMAIN',
-              payload: { index: i, customDomain: e }
+              type: 'ADD_PORT',
+              payload: {
+                networkName: `network-${nanoid()}`,
+                portName: nanoid(),
+                port,
+                protocol: 'TCP',
+                appProtocol: 'HTTP',
+                openPublicDomain: true,
+                publicDomain: nanoid(),
+                customDomain: '',
+                domain: SEALOS_DOMAIN,
+                openNodePort: false,
+                nodePort: undefined,
+                routes: [createDefaultRoute(port)]
+              }
             });
-            onDomainVerified?.({ index: i, customDomain: e });
           }}
-        />
-      )}
-    </>
+        >
+          {t('Add Network Port')}
+        </Button>
+      </Box>
+    </Box>
   );
 }
 
