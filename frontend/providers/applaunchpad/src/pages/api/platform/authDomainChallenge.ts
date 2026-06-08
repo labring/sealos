@@ -431,15 +431,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const challengeUrls = resolvedHosts.map((host) => {
-      return `http://${formatChallengeHost(host)}${challengePath}`;
+    const challengeTargets = resolvedHosts.map((host) => {
+      return {
+        host,
+        url: `http://${formatChallengeHost(host)}${challengePath}`
+      };
     });
 
-    console.log('URLs to attempt for domain', verifiedDomain, ':', challengeUrls);
+    console.log(
+      'URLs to attempt for domain',
+      verifiedDomain,
+      ':',
+      challengeTargets.map((target) => target.url)
+    );
 
     let response: Response | null = null;
     let challengeUrl: string | null = null;
-    for (const url of challengeUrls) {
+    for (const { host, url } of challengeTargets) {
       console.log('Attempting domain challenge:', url);
       challengeUrl = url;
 
@@ -450,18 +458,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         : null;
 
       if (httpsRedirectUrl) {
-        const redirectResolution = await resolveChallengeHosts(verifiedDomain);
-        if (redirectResolution.nonPublicHost || redirectResolution.resolvedHosts.length === 0) {
-          response = null;
-          continue;
-        }
-
         challengeUrl = httpsRedirectUrl;
-        response = await fetchHttpsChallengeUrl(
-          httpsRedirectUrl,
-          verifiedDomain,
-          redirectResolution.resolvedHosts
-        ).catch(() => null);
+        response = await fetchHttpsChallengeUrl(httpsRedirectUrl, verifiedDomain, [host]).catch(
+          () => null
+        );
       }
 
       // Try every URL until one succeeds or all fail
