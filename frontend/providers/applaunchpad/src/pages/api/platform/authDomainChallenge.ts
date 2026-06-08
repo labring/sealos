@@ -8,6 +8,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { ResponseCode } from '@/types/response';
 import { isIP } from 'net';
+import https from 'https';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16);
 
@@ -21,6 +22,9 @@ const HOSTNAME_PATTERN =
   /^(?=.{1,253}$)(?:(?!-)[a-z0-9-]{1,63}(?<!-)\.)+(?!-)[a-z0-9-]{2,63}(?<!-)$/i;
 
 const normalizeDomain = (domain: string) => domain.trim().replace(/\.$/, '').toLowerCase();
+const getChallengePath = (token: string) =>
+  `/api/.well-known/applaunchpad-domain-challenge/${token}`;
+const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308]);
 
 const parseIpv4 = (ip: string) => {
   const parts = ip.split('.');
@@ -182,6 +186,148 @@ export const formatChallengeHost = (host: string) => {
   return isIP(host) === 6 ? `[${host}]` : host;
 };
 
+const isRedirectResponse = (response: Response) => REDIRECT_STATUS_CODES.has(response.status);
+
+const getSafeHttpsRedirectUrl = (
+  response: Response,
+  verifiedDomain: string,
+  challengePath: string
+) => {
+  if (!isRedirectResponse(response)) return null;
+
+  const location = response.headers.get('location');
+  if (!location) return null;
+
+  let redirectUrl: URL;
+  try {
+    redirectUrl = new URL(location, `http://${verifiedDomain}${challengePath}`);
+  } catch {
+    return null;
+  }
+
+  if (
+    redirectUrl.protocol !== 'https:' ||
+    normalizeDomain(redirectUrl.hostname) !== verifiedDomain ||
+    redirectUrl.pathname !== challengePath ||
+    redirectUrl.search ||
+    redirectUrl.hash ||
+    redirectUrl.username ||
+    redirectUrl.password ||
+    (redirectUrl.port && redirectUrl.port !== '443')
+  ) {
+    return null;
+  }
+
+  return redirectUrl.toString();
+};
+
+const fetchChallengeUrl = (url: string, verifiedDomain: string) => {
+  return fetch(url, {
+    method: 'GET',
+    redirect: 'manual',
+    headers: {
+      Host: verifiedDomain,
+      'User-Agent': 'Sealos-AppLaunchpad-Domain-Verifier/1.0'
+    },
+    // Set timeout to 10 seconds
+    signal: AbortSignal.timeout(10000)
+  });
+};
+
+const toResponseHeaders = (headers: Record<string, string | string[] | undefined>) => {
+  const responseHeaders = new Headers();
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (Array.isArray(value)) {
+      value.forEach((item) => responseHeaders.append(key, item));
+    } else if (value !== undefined) {
+      responseHeaders.set(key, value);
+    }
+  }
+
+  return responseHeaders;
+};
+
+const fetchHttpsChallengeUrlByHost = (
+  url: string,
+  verifiedDomain: string,
+  host: string
+): Promise<Response> => {
+  const redirectUrl = new URL(url);
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        protocol: 'https:',
+        hostname: host,
+        port: redirectUrl.port ? Number(redirectUrl.port) : 443,
+        path: redirectUrl.pathname,
+        method: 'GET',
+        servername: verifiedDomain,
+        headers: {
+          Host: verifiedDomain,
+          'User-Agent': 'Sealos-AppLaunchpad-Domain-Verifier/1.0'
+        },
+        signal: AbortSignal.timeout(10000)
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+
+        res.on('data', (chunk) => {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+        res.on('end', () => {
+          resolve(
+            new Response(Buffer.concat(chunks), {
+              status: res.statusCode || 500,
+              headers: toResponseHeaders(res.headers)
+            })
+          );
+        });
+      }
+    );
+
+    req.on('error', reject);
+    req.end();
+  });
+};
+
+const fetchHttpsChallengeUrl = async (
+  url: string,
+  verifiedDomain: string,
+  resolvedHosts: string[]
+) => {
+  let lastResponse: Response | null = null;
+
+  for (const host of resolvedHosts) {
+    const response = await fetchHttpsChallengeUrlByHost(url, verifiedDomain, host).catch(
+      () => null
+    );
+    if (!response) continue;
+
+    lastResponse = response;
+    if (response.ok) break;
+  }
+
+  return lastResponse;
+};
+
+const resolveChallengeHosts = async (verifiedDomain: string) => {
+  const ip4 = await queryA(verifiedDomain).catch((e) => {
+    console.error('Failed to resolve IPv4 address:', e);
+    return null;
+  });
+  const ip6 = await queryAAAA(verifiedDomain).catch((e) => {
+    console.error('Failed to resolve IPv6 address:', e);
+    return null;
+  });
+
+  const resolvedHosts = [ip4?.data, ip6?.data].filter((host): host is string => !!host);
+  const nonPublicHost = resolvedHosts.find((host) => !isPublicIp(host));
+
+  return { nonPublicHost, resolvedHosts };
+};
+
 const authenticateRequest = async (req: NextApiRequest) => {
   const kubeconfig = await authSession(req.headers);
   const { k8sCore, namespace } = await getK8s({ kubeconfig });
@@ -261,18 +407,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const ip4 = await queryA(verifiedDomain).catch((e) => {
-      console.error('Failed to resolve IPv4 address:', e);
-      return null;
-    });
-    const ip6 = await queryAAAA(verifiedDomain).catch((e) => {
-      console.error('Failed to resolve IPv6 address:', e);
-      return null;
-    });
-
     const token = nanoid();
-    const resolvedHosts = [ip4?.data, ip6?.data].filter((host): host is string => !!host);
-    const nonPublicHost = resolvedHosts.find((host) => !isPublicIp(host));
+    const challengePath = getChallengePath(token);
+    const { nonPublicHost, resolvedHosts } = await resolveChallengeHosts(verifiedDomain);
 
     if (nonPublicHost) {
       return jsonRes(res, {
@@ -295,9 +432,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const challengeUrls = resolvedHosts.map((host) => {
-      return `http://${formatChallengeHost(
-        host
-      )}/api/.well-known/applaunchpad-domain-challenge/${token}`;
+      return `http://${formatChallengeHost(host)}${challengePath}`;
     });
 
     console.log('URLs to attempt for domain', verifiedDomain, ':', challengeUrls);
@@ -308,17 +443,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('Attempting domain challenge:', url);
       challengeUrl = url;
 
-      // Make HTTP request to user's domain
-      response = await fetch(url, {
-        method: 'GET',
-        redirect: 'manual',
-        headers: {
-          Host: verifiedDomain,
-          'User-Agent': 'Sealos-AppLaunchpad-Domain-Verifier/1.0'
-        },
-        // Set timeout to 10 seconds
-        signal: AbortSignal.timeout(10000)
-      }).catch(() => null);
+      response = await fetchChallengeUrl(url, verifiedDomain).catch(() => null);
+
+      const httpsRedirectUrl = response
+        ? getSafeHttpsRedirectUrl(response, verifiedDomain, challengePath)
+        : null;
+
+      if (httpsRedirectUrl) {
+        const redirectResolution = await resolveChallengeHosts(verifiedDomain);
+        if (redirectResolution.nonPublicHost || redirectResolution.resolvedHosts.length === 0) {
+          response = null;
+          continue;
+        }
+
+        challengeUrl = httpsRedirectUrl;
+        response = await fetchHttpsChallengeUrl(
+          httpsRedirectUrl,
+          verifiedDomain,
+          redirectResolution.resolvedHosts
+        ).catch(() => null);
+      }
 
       // Try every URL until one succeeds or all fail
       if (response?.ok) {

@@ -1,5 +1,7 @@
 // @vitest-environment node
 import crypto from 'crypto';
+import { EventEmitter } from 'events';
+import { Readable } from 'stream';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import handler, {
@@ -9,6 +11,7 @@ import handler, {
 } from '@/pages/api/platform/authDomainChallenge';
 import { queryA, queryAAAA } from '@/services/dns-resolver';
 import { getK8s } from '@/services/backend/kubernetes';
+import https from 'https';
 
 vi.mock('nanoid', () => ({
   customAlphabet: () => () => 'abcdefghijklmnop'
@@ -23,6 +26,12 @@ vi.mock('@/services/backend/kubernetes', () => ({
   getK8s: vi.fn()
 }));
 
+vi.mock('https', () => ({
+  default: {
+    request: vi.fn()
+  }
+}));
+
 vi.mock('@/config', () => ({
   Config: () => ({
     launchpad: {
@@ -34,6 +43,7 @@ vi.mock('@/config', () => ({
 const mockedQueryA = vi.mocked(queryA);
 const mockedQueryAAAA = vi.mocked(queryAAAA);
 const mockedGetK8s = vi.mocked(getK8s);
+const mockedHttpsRequest = vi.mocked(https.request);
 
 const createResponse = () => {
   const res = {
@@ -53,6 +63,38 @@ const callHandler = async (body: unknown, authorization = 'kubeconfig') => {
   await handler(req, res);
 
   return res.json.mock.calls[0][0];
+};
+
+const createValidChallengeResponse = (host = 'example.com') => {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signatureData = `${host}:abcdefghijklmnop:${timestamp}:applaunchpad:false`;
+  const signature = crypto.createHmac('sha256', 'test-secret').update(signatureData).digest('hex');
+
+  return {
+    host,
+    token: 'abcdefghijklmnop',
+    timestamp,
+    service: 'applaunchpad',
+    isProxy: false,
+    signature
+  };
+};
+
+const mockHttpsResponse = (body: unknown, statusCode = 200) => {
+  mockedHttpsRequest.mockImplementationOnce((options: any, callback: any) => {
+    const req = new EventEmitter() as any;
+    req.end = vi.fn();
+
+    const res = Readable.from([Buffer.from(JSON.stringify(body))]) as any;
+    res.statusCode = statusCode;
+    res.headers = {
+      'content-type': 'application/json'
+    };
+
+    callback(res);
+
+    return req;
+  });
 };
 
 describe('authDomainChallenge SSRF protections', () => {
@@ -198,7 +240,7 @@ describe('authDomainChallenge SSRF protections', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('does not follow redirects during challenge fetch', async () => {
+  it('rejects unsafe redirects during challenge fetch', async () => {
     mockedQueryA.mockResolvedValueOnce({
       name: 'example.com',
       type: 'A',
@@ -228,6 +270,137 @@ describe('authDomainChallenge SSRF protections', () => {
         })
       })
     );
+  });
+
+  it('allows same-host HTTP to HTTPS challenge redirects', async () => {
+    mockedQueryA
+      .mockResolvedValueOnce({
+        name: 'example.com',
+        type: 'A',
+        ttl: 60,
+        data: '93.184.216.34'
+      })
+      .mockResolvedValueOnce({
+        name: 'example.com',
+        type: 'A',
+        ttl: 60,
+        data: '93.184.216.34'
+      });
+    mockedQueryAAAA
+      .mockRejectedValueOnce(new Error('no AAAA'))
+      .mockRejectedValueOnce(new Error('no AAAA'));
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 301,
+          headers: {
+            Location:
+              'https://example.com/api/.well-known/applaunchpad-domain-challenge/abcdefghijklmnop'
+          }
+        })
+      )
+      .mockResolvedValueOnce(Response.json(createValidChallengeResponse()));
+    mockHttpsResponse(createValidChallengeResponse());
+
+    const response = await callHandler({ customDomain: 'example.com' });
+
+    expect(response.code).toBe(200);
+    expect(response.data.verified).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(mockedHttpsRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        hostname: '93.184.216.34',
+        path: '/api/.well-known/applaunchpad-domain-challenge/abcdefghijklmnop',
+        servername: 'example.com',
+        headers: expect.objectContaining({
+          Host: 'example.com'
+        })
+      }),
+      expect.any(Function)
+    );
+  });
+
+  it('rejects same-host HTTPS redirects when re-resolution becomes private', async () => {
+    mockedQueryA
+      .mockResolvedValueOnce({
+        name: 'example.com',
+        type: 'A',
+        ttl: 60,
+        data: '93.184.216.34'
+      })
+      .mockResolvedValueOnce({
+        name: 'example.com',
+        type: 'A',
+        ttl: 60,
+        data: '10.0.0.2'
+      });
+    mockedQueryAAAA
+      .mockRejectedValueOnce(new Error('no AAAA'))
+      .mockRejectedValueOnce(new Error('no AAAA'));
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(null, {
+        status: 301,
+        headers: {
+          Location:
+            'https://example.com/api/.well-known/applaunchpad-domain-challenge/abcdefghijklmnop'
+        }
+      })
+    );
+
+    const response = await callHandler({ customDomain: 'example.com' });
+
+    expect(response.code).toBe(400);
+    expect(response.error.code).toBe('CHALLENGE_REQUEST_FAILED');
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects redirects to a different host', async () => {
+    mockedQueryA.mockResolvedValueOnce({
+      name: 'example.com',
+      type: 'A',
+      ttl: 60,
+      data: '93.184.216.34'
+    });
+    mockedQueryAAAA.mockRejectedValueOnce(new Error('no AAAA'));
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: {
+          Location:
+            'https://evil.example/api/.well-known/applaunchpad-domain-challenge/abcdefghijklmnop'
+        }
+      })
+    );
+
+    const response = await callHandler({ customDomain: 'example.com' });
+
+    expect(response.code).toBe(400);
+    expect(response.error.code).toBe('CHALLENGE_REQUEST_FAILED');
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects redirects that change the challenge path', async () => {
+    mockedQueryA.mockResolvedValueOnce({
+      name: 'example.com',
+      type: 'A',
+      ttl: 60,
+      data: '93.184.216.34'
+    });
+    mockedQueryAAAA.mockRejectedValueOnce(new Error('no AAAA'));
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: {
+          Location: 'https://example.com/other-path'
+        }
+      })
+    );
+
+    const response = await callHandler({ customDomain: 'example.com' });
+
+    expect(response.code).toBe(400);
+    expect(response.error.code).toBe('CHALLENGE_REQUEST_FAILED');
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 
   it('does not reflect invalid challenge response bodies', async () => {
@@ -320,23 +493,7 @@ describe('authDomainChallenge SSRF protections', () => {
     });
     mockedQueryAAAA.mockRejectedValueOnce(new Error('no AAAA'));
 
-    const timestamp = Math.floor(Date.now() / 1000);
-    const signatureData = `example.com:abcdefghijklmnop:${timestamp}:applaunchpad:false`;
-    const signature = crypto
-      .createHmac('sha256', 'test-secret')
-      .update(signatureData)
-      .digest('hex');
-
-    vi.mocked(fetch).mockResolvedValueOnce(
-      Response.json({
-        host: 'example.com',
-        token: 'abcdefghijklmnop',
-        timestamp,
-        service: 'applaunchpad',
-        isProxy: false,
-        signature
-      })
-    );
+    vi.mocked(fetch).mockResolvedValueOnce(Response.json(createValidChallengeResponse()));
 
     const response = await callHandler({ customDomain: 'Example.COM.' });
 
