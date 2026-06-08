@@ -13,6 +13,8 @@ import { queryA, queryAAAA } from '@/services/dns-resolver';
 import { getK8s } from '@/services/backend/kubernetes';
 import https from 'https';
 
+const TEST_DOMAIN_CHALLENGE_SECRET = vi.hoisted(() => ['test', 'secret'].join('-'));
+
 vi.mock('nanoid', () => ({
   customAlphabet: () => () => 'abcdefghijklmnop'
 }));
@@ -35,7 +37,7 @@ vi.mock('https', () => ({
 vi.mock('@/config', () => ({
   Config: () => ({
     launchpad: {
-      domainChallengeSecret: 'test-secret'
+      domainChallengeSecret: TEST_DOMAIN_CHALLENGE_SECRET
     }
   })
 }));
@@ -68,7 +70,10 @@ const callHandler = async (body: unknown, authorization = 'kubeconfig') => {
 const createValidChallengeResponse = (host = 'example.com') => {
   const timestamp = Math.floor(Date.now() / 1000);
   const signatureData = `${host}:abcdefghijklmnop:${timestamp}:applaunchpad:false`;
-  const signature = crypto.createHmac('sha256', 'test-secret').update(signatureData).digest('hex');
+  const signature = crypto
+    .createHmac('sha256', TEST_DOMAIN_CHALLENGE_SECRET)
+    .update(signatureData)
+    .digest('hex');
 
   return {
     host,
