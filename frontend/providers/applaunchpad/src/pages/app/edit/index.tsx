@@ -359,7 +359,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           customDomain: network.customDomain || '',
           domain: network.domain || 'gzg.sealos.run',
           routes: network.routes?.length
-            ? network.routes
+            ? network.routes.map((route) => ({
+                path: route.path || '/',
+                pathType: route.pathType || ('Prefix' as const),
+                serviceName: route.serviceName || '',
+                servicePort: route.servicePort || network.port || 80
+              }))
             : [
                 {
                   path: '/',
@@ -533,8 +538,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                             data.hpa.target === 'cpu'
                               ? 'CPU'
                               : data.hpa.target === 'gpu'
-                                ? 'GPU'
-                                : 'RAM',
+                              ? 'GPU'
+                              : 'RAM',
                           value: data.hpa.value
                         }
                       : undefined

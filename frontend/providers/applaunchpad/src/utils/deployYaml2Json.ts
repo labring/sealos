@@ -519,6 +519,19 @@ export const json2Ingress = (
           'wildcard-cert';
       // Ingress only uses ClusterIP services, not NodePort
       const serviceName = getServiceName(data, false);
+      const routes = network.routes?.length
+        ? network.routes
+        : [
+            {
+              path: '/',
+              pathType: 'Prefix' as const,
+              serviceName,
+              servicePort: network.port
+            }
+          ];
+      const hasImplementationSpecificRoute = routes.some(
+        (route) => route.pathType === 'ImplementationSpecific'
+      );
 
       const ingress: any = {
         apiVersion: 'networking.k8s.io/v1',
@@ -532,7 +545,10 @@ export const json2Ingress = (
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            ...map[network.appProtocol ?? 'HTTP']
+            ...map[network.appProtocol ?? 'HTTP'],
+            ...(hasImplementationSpecificRoute
+              ? { 'nginx.ingress.kubernetes.io/use-regex': 'true' }
+              : {})
           },
           ...(ownerReferences ? { ownerReferences } : {})
         },
@@ -541,20 +557,18 @@ export const json2Ingress = (
             {
               host,
               http: {
-                paths: [
-                  {
-                    pathType: 'Prefix',
-                    path: '/',
-                    backend: {
-                      service: {
-                        name: serviceName,
-                        port: {
-                          number: network.port
-                        }
+                paths: routes.map((route) => ({
+                  pathType: route.pathType || 'Prefix',
+                  path: route.path || '/',
+                  backend: {
+                    service: {
+                      name: route.serviceName || serviceName,
+                      port: {
+                        number: route.servicePort || network.port
                       }
                     }
                   }
-                ]
+                }))
               }
             }
           ]

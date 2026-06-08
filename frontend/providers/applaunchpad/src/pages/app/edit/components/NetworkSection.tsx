@@ -6,8 +6,9 @@ import { useTranslation } from 'next-i18next';
 import { customAlphabet } from 'nanoid';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
 import { Box, Button, Flex, IconButton, Input, Switch, useTheme } from '@chakra-ui/react';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { AppEditType } from '@/types/app';
+import RouteRulesModal from './RouteRulesModal';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -16,7 +17,14 @@ type NetworkAction =
   | { type: 'REMOVE_PORT'; payload: { index: number } }
   | { type: 'ENABLE_EXTERNAL_ACCESS'; payload: { index: number } }
   | { type: 'DISABLE_EXTERNAL_ACCESS'; payload: { index: number } }
-  | { type: 'UPDATE_PROTOCOL'; payload: { index: number; protocol: string } };
+  | { type: 'UPDATE_PROTOCOL'; payload: { index: number; protocol: string } }
+  | {
+      type: 'UPDATE_ROUTES';
+      payload: {
+        index: number;
+        routes: NonNullable<AppEditType['networks'][0]['routes']>;
+      };
+    };
 
 interface NetworkSectionProps {
   formHook: UseFormReturn<AppEditType, any>;
@@ -50,9 +58,13 @@ const getNextAvailablePort = (networks: AppEditType['networks']) => {
   return 80;
 };
 
+const getBackendServiceValue = (serviceName = '', servicePort?: number) =>
+  `${serviceName}:${servicePort || ''}`;
+
 export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSectionProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const [routeRulesIndex, setRouteRulesIndex] = useState<number>();
 
   const { register, control, getValues } = formHook;
 
@@ -158,12 +170,52 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
           break;
         }
 
+        case 'UPDATE_ROUTES': {
+          const { index, routes } = action.payload;
+          updateNetworks(index, {
+            ...currentNetworks[index],
+            routes
+          });
+          break;
+        }
+
         default:
           break;
       }
     },
     [getValues, appendNetworks, removeNetworks, updateNetworks]
   );
+
+  const getServiceOptions = useCallback(() => {
+    const currentForm = getValues();
+    const serviceOptions =
+      currentForm.serviceList
+        ?.flatMap((service) =>
+          service.ports.map((port) => ({
+            label: `${service.name}:${port.port}`,
+            value: getBackendServiceValue(service.name, port.port),
+            serviceName: service.name,
+            servicePort: port.port
+          }))
+        )
+        .filter(
+          (option, index, list) => list.findIndex((item) => item.value === option.value) === index
+        ) || [];
+
+    if (serviceOptions.length) {
+      return serviceOptions;
+    }
+
+    return currentForm.networks.map((network) => ({
+      label: `${t('Main Service')}:${network.port}`,
+      value: getBackendServiceValue('', network.port),
+      serviceName: '',
+      servicePort: network.port
+    }));
+  }, [getValues, t]);
+
+  const routeRulesNetwork =
+    routeRulesIndex !== undefined ? getValues('networks')[routeRulesIndex] : undefined;
 
   return (
     <Box id={'network'} {...boxStyles}>
@@ -221,11 +273,7 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
                   />
                 </Box>
 
-                <Box
-                  ml={'32px'}
-                  flex={isExternalAccess ? '1 1 auto' : '0 0 93px'}
-                  minW={0}
-                >
+                <Box ml={'32px'} flex={isExternalAccess ? '1 1 auto' : '0 0 93px'} minW={0}>
                   <Box mb={'9px'} h={'16px'} fontSize={'sm'} color={'grayModern.900'}>
                     {t('Public Access')}
                   </Box>
@@ -240,11 +288,17 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
                         '.chakra-switch__track': {
                           w: '36px',
                           h: '20px',
-                          p: '2px'
+                          p: '2px',
+                          bg: 'grayModern.200'
                         },
                         '.chakra-switch__thumb': {
                           w: '16px',
-                          h: '16px'
+                          h: '16px',
+                          bg: 'white',
+                          boxShadow: '0px 1px 2px rgba(17, 24, 36, 0.16)'
+                        },
+                        '.chakra-switch__input:checked + .chakra-switch__track': {
+                          bg: 'grayModern.900'
                         },
                         '.chakra-switch__input:checked + .chakra-switch__track .chakra-switch__thumb':
                           {
@@ -357,7 +411,7 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
                           px={3}
                           fontSize={'sm'}
                           variant={'outline'}
-                          onClick={() => undefined}
+                          onClick={() => setRouteRulesIndex(i)}
                         >
                           {t('Configure Route Rules')}
                         </Button>
@@ -375,9 +429,7 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
                               bg: 'rgba(17, 24, 36, 0.05)'
                             }}
                             icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
-                            onClick={() =>
-                              dispatch({ type: 'REMOVE_PORT', payload: { index: i } })
-                            }
+                            onClick={() => dispatch({ type: 'REMOVE_PORT', payload: { index: i } })}
                           />
                         )}
                       </>
@@ -422,6 +474,24 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
           {t('Add Network Port')}
         </Button>
       </Box>
+
+      {routeRulesIndex !== undefined && routeRulesNetwork && (
+        <RouteRulesModal
+          network={routeRulesNetwork}
+          serviceOptions={getServiceOptions()}
+          onClose={() => setRouteRulesIndex(undefined)}
+          onSave={(routes) => {
+            dispatch({
+              type: 'UPDATE_ROUTES',
+              payload: {
+                index: routeRulesIndex,
+                routes
+              }
+            });
+            setRouteRulesIndex(undefined);
+          }}
+        />
+      )}
     </Box>
   );
 }

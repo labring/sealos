@@ -24,6 +24,7 @@ import type {
   TransportProtocolType,
   DeployKindsType,
   AppEditType,
+  NetworkRoutePathType,
   StorageType
 } from '@/types/app';
 import {
@@ -506,6 +507,15 @@ export const adaptAppDetail = async (
           valueFrom: env.valueFrom
         };
       }) || [],
+    serviceList: allServices.map((service) => ({
+      name: service.metadata?.name || '',
+      ports:
+        service.spec?.ports?.map((port) => ({
+          name: port.name,
+          port: port.port,
+          protocol: port.protocol as TransportProtocolType
+        })) || []
+    })),
     networks:
       allServicePorts?.map((item) => {
         const service = allServices.find((svc) =>
@@ -517,9 +527,12 @@ export const adaptAppDetail = async (
           (config: any) =>
             item.protocol === 'TCP' &&
             config.kind === YamlKindEnum.Ingress &&
-            config?.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number === item.port
+            config?.spec?.rules?.[0]?.http?.paths?.some(
+              (path: any) => path?.backend?.service?.port?.number === item.port
+            )
         ) as V1Ingress;
         const domain = ingress?.spec?.rules?.[0].host || '';
+        const ingressPaths = ingress?.spec?.rules?.[0]?.http?.paths || [];
 
         const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
 
@@ -550,16 +563,23 @@ export const adaptAppDetail = async (
           domain: isCustomDomain
             ? SEALOS_DOMAIN
             : item?.nodePort
-              ? domain
-              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
-          routes: [
-            {
-              path: '/',
-              pathType: 'Prefix' as const,
-              serviceName: service?.metadata?.name || '',
-              servicePort: item.port
-            }
-          ]
+            ? domain
+            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
+          routes: ingressPaths.length
+            ? ingressPaths.map((path) => ({
+                path: path.path || '/',
+                pathType: (path.pathType || 'Prefix') as NetworkRoutePathType,
+                serviceName: path.backend?.service?.name || service?.metadata?.name || '',
+                servicePort: path.backend?.service?.port?.number || item.port
+              }))
+            : [
+                {
+                  path: '/',
+                  pathType: 'Prefix' as const,
+                  serviceName: service?.metadata?.name || '',
+                  servicePort: item.port
+                }
+              ]
         };
         return result;
       }) || [],
@@ -636,6 +656,7 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'cpu',
     'memory',
     'networks',
+    'serviceList',
     'envs',
     'hpa',
     'configMapList',
@@ -678,8 +699,8 @@ export const sliderNumber2MarkList = ({
           ? `${item / 1024} G`
           : `${item} M`
         : type === 'ephemeralStorage'
-          ? `${item}`
-          : `${item / 1000}`,
+        ? `${item}`
+        : `${item / 1000}`,
     value: item
   }));
 };
