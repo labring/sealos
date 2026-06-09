@@ -8,6 +8,8 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { ResponseCode } from '@/types/response';
 import { isIP } from 'net';
+import http from 'http';
+import type { IncomingMessage } from 'http';
 import https from 'https';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16);
@@ -221,19 +223,6 @@ const getSafeHttpsRedirectUrl = (
   return redirectUrl.toString();
 };
 
-const fetchChallengeUrl = (url: string, verifiedDomain: string) => {
-  return fetch(url, {
-    method: 'GET',
-    redirect: 'manual',
-    headers: {
-      Host: verifiedDomain,
-      'User-Agent': 'Sealos-AppLaunchpad-Domain-Verifier/1.0'
-    },
-    // Set timeout to 10 seconds
-    signal: AbortSignal.timeout(10000)
-  });
-};
-
 const toResponseHeaders = (headers: Record<string, string | string[] | undefined>) => {
   const responseHeaders = new Headers();
 
@@ -246,6 +235,51 @@ const toResponseHeaders = (headers: Record<string, string | string[] | undefined
   }
 
   return responseHeaders;
+};
+
+const resolveNodeResponse = (res: IncomingMessage, resolve: (response: Response) => void) => {
+  const chunks: Buffer[] = [];
+
+  res.on('data', (chunk) => {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  });
+  res.on('end', () => {
+    resolve(
+      new Response(Buffer.concat(chunks), {
+        status: res.statusCode || 500,
+        headers: toResponseHeaders(res.headers)
+      })
+    );
+  });
+};
+
+const fetchHttpChallengeUrlByHost = (
+  host: string,
+  verifiedDomain: string,
+  challengePath: string
+): Promise<Response> => {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      {
+        protocol: 'http:',
+        hostname: host,
+        port: 80,
+        path: challengePath,
+        method: 'GET',
+        headers: {
+          Host: verifiedDomain,
+          'User-Agent': 'Sealos-AppLaunchpad-Domain-Verifier/1.0'
+        },
+        signal: AbortSignal.timeout(10000)
+      },
+      (res) => {
+        resolveNodeResponse(res, resolve);
+      }
+    );
+
+    req.on('error', reject);
+    req.end();
+  });
 };
 
 const fetchHttpsChallengeUrlByHost = (
@@ -271,19 +305,7 @@ const fetchHttpsChallengeUrlByHost = (
         signal: AbortSignal.timeout(10000)
       },
       (res) => {
-        const chunks: Buffer[] = [];
-
-        res.on('data', (chunk) => {
-          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-        });
-        res.on('end', () => {
-          resolve(
-            new Response(Buffer.concat(chunks), {
-              status: res.statusCode || 500,
-              headers: toResponseHeaders(res.headers)
-            })
-          );
-        });
+        resolveNodeResponse(res, resolve);
       }
     );
 
@@ -451,7 +473,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('Attempting domain challenge:', url);
       challengeUrl = url;
 
-      response = await fetchChallengeUrl(url, verifiedDomain).catch(() => null);
+      response = await fetchHttpChallengeUrlByHost(host, verifiedDomain, challengePath).catch(
+        () => null
+      );
 
       const httpsRedirectUrl = response
         ? getSafeHttpsRedirectUrl(response, verifiedDomain, challengePath)
