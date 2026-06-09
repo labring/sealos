@@ -77,4 +77,37 @@ describe('json2Ingress', () => {
       objects[0].metadata.annotations['nginx.ingress.kubernetes.io/ssl-redirect']
     ).toBeUndefined();
   });
+
+  it('normalizes custom domain before writing ingress host and certificate dns name', () => {
+    const objects = yamlString2Objects(
+      json2Ingress(createApp('Codex-ms100066-launch.192.168.13.29.nip.io.'), {
+        disableHttps: false
+      })
+    ) as any[];
+
+    expect(objects[0].spec.rules[0].host).toBe(
+      'codex-ms100066-launch.192.168.13.29.nip.io'
+    );
+    expect(objects[0].spec.tls[0].hosts).toEqual([
+      'codex-ms100066-launch.192.168.13.29.nip.io'
+    ]);
+    expect(objects[2].spec.dnsNames).toEqual([
+      'codex-ms100066-launch.192.168.13.29.nip.io'
+    ]);
+  });
+
+  it('normalizes configured app domain before writing generated ingress host', () => {
+    const app = createApp();
+    app.networks[0].domain = '192.168.13.29.nip.io.';
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: false
+      })
+    ) as any[];
+
+    expect(objects.map((item) => item.kind)).toEqual(['Ingress']);
+    expect(objects[0].spec.rules[0].host).toBe('demo.192.168.13.29.nip.io');
+    expect(objects[0].spec.tls[0].hosts).toEqual(['demo.192.168.13.29.nip.io']);
+  });
 });
