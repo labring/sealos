@@ -1,7 +1,13 @@
 import { cloneDeep, forEach, isNumber, isBoolean, isObject, has } from 'lodash';
-import { templateDeployKey } from '@/constants/keys';
+import { ownerReferencesKey, templateDeployKey } from '@/constants/keys';
 import { EnvResponse } from '@/types';
 import { Config } from '@/config';
+
+export type ExtraResourceLabels = Record<string, string>;
+
+const labelNameSegmentRegex = /^[A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?$/;
+const dnsLabelRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
+const reservedExtraLabelKeys = new Set([templateDeployKey, ownerReferencesKey]);
 
 export const parseGithubUrl = (url: string) => {
   if (!url) return null;
@@ -17,7 +23,96 @@ export const parseGithubUrl = (url: string) => {
   };
 };
 
-export const processEnvValue = (obj: any, labelName: string) => {
+function isValidLabelPrefix(prefix: string) {
+  if (prefix.length > 253) return false;
+  return prefix.split('.').every((part) => dnsLabelRegex.test(part));
+}
+
+export function validateExtraLabels(value: unknown): {
+  error?: string;
+  labels: ExtraResourceLabels;
+} {
+  if (value === undefined || value === null) {
+    return { labels: {} };
+  }
+  if (!isObject(value) || Array.isArray(value)) {
+    return { error: 'extraLabels must be an object.', labels: {} };
+  }
+
+  const labels: ExtraResourceLabels = {};
+  for (const [key, rawValue] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof rawValue !== 'string') {
+      return { error: `extraLabels.${key} must be a string.`, labels: {} };
+    }
+    if (reservedExtraLabelKeys.has(key)) {
+      return { error: `extraLabels.${key} is reserved.`, labels: {} };
+    }
+
+    const keyParts = key.split('/');
+    if (keyParts.length > 2) {
+      return { error: `extraLabels.${key} is not a valid Kubernetes label key.`, labels: {} };
+    }
+    const name = keyParts[keyParts.length - 1] ?? '';
+    const prefix = keyParts.length === 2 ? keyParts[0] : '';
+    if (!labelNameSegmentRegex.test(name) || (prefix && !isValidLabelPrefix(prefix))) {
+      return { error: `extraLabels.${key} is not a valid Kubernetes label key.`, labels: {} };
+    }
+    if (rawValue.length > 63 || (rawValue !== '' && !labelNameSegmentRegex.test(rawValue))) {
+      return { error: `extraLabels.${key} is not a valid Kubernetes label value.`, labels: {} };
+    }
+    labels[key] = rawValue;
+  }
+
+  return { labels };
+}
+
+function mergeLabels(target: any, labels: ExtraResourceLabels) {
+  if (!target || Object.keys(labels).length === 0) return;
+  target.labels = target.labels || {};
+  Object.assign(target.labels, labels);
+}
+
+function ensurePath(root: any, keys: string[]) {
+  let cursor = root;
+  for (const key of keys) {
+    if (!cursor?.[key]) cursor[key] = {};
+    cursor = cursor[key];
+  }
+  return cursor;
+}
+
+function applyExtraLabels(obj: any, extraLabels: ExtraResourceLabels) {
+  if (Object.keys(extraLabels).length === 0) return;
+
+  obj.metadata = obj.metadata || {};
+  mergeLabels(obj.metadata, extraLabels);
+
+  if (obj?.spec?.template) {
+    mergeLabels(ensurePath(obj.spec.template, ['metadata']), extraLabels);
+  }
+
+  if (obj?.spec?.jobTemplate?.spec?.template) {
+    mergeLabels(ensurePath(obj.spec.jobTemplate.spec.template, ['metadata']), extraLabels);
+  }
+
+  forEach(obj?.spec?.volumeClaimTemplates, (claim) => {
+    claim.metadata = claim.metadata || {};
+    mergeLabels(claim.metadata, extraLabels);
+  });
+
+  forEach(obj?.spec?.componentSpecs, (component) => {
+    forEach(component?.volumeClaimTemplates, (claim) => {
+      claim.metadata = claim.metadata || {};
+      mergeLabels(claim.metadata, extraLabels);
+    });
+  });
+}
+
+export const processEnvValue = (
+  obj: any,
+  labelName: string,
+  extraLabels: ExtraResourceLabels = {}
+) => {
   const newDeployment = cloneDeep(obj);
 
   forEach(newDeployment?.spec?.template?.spec?.containers, (container) => {
@@ -29,6 +124,8 @@ export const processEnvValue = (obj: any, labelName: string) => {
       }
     });
   });
+
+  applyExtraLabels(newDeployment, extraLabels);
 
   if (labelName) {
     newDeployment.metadata = newDeployment.metadata || {};
