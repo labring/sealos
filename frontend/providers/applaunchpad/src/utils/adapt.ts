@@ -44,7 +44,11 @@ import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
 import { lauchpadRemarkKey } from '@/constants/account';
-import { cpuFormatToM, memoryFormatToMi } from '@sealos/shared';
+import {
+  parseK8sQuantityOrZero,
+  quantityToStorageGi,
+  storageAnnotationToQuantity
+} from '@/utils/resourceQuantity';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -113,10 +117,12 @@ export const getAppSource = (
 export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItemType => {
   // compute store amount
   const storeAmount = app.spec?.volumeClaimTemplates
-    ? app.spec?.volumeClaimTemplates.reduce(
-        (sum, item) => sum + Number(item?.metadata?.annotations?.value),
-        0
-      )
+    ? app.spec?.volumeClaimTemplates.reduce((sum, item) => {
+        const storage = item?.spec?.resources?.requests?.storage
+          ? parseK8sQuantityOrZero(item.spec.resources.requests.storage)
+          : storageAnnotationToQuantity(item?.metadata?.annotations?.value);
+        return sum + quantityToStorageGi(storage);
+      }, 0)
     : 0;
 
   const gpuNodeSelector = app?.spec?.template?.spec?.nodeSelector;
@@ -127,8 +133,10 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     status: appStatusMap.waiting,
     isPause: !!app?.metadata?.annotations?.[pauseKey],
     createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-    cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
-    memory: memoryFormatToMi(
+    cpu: parseK8sQuantityOrZero(
+      app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'
+    ),
+    memory: parseK8sQuantityOrZero(
       app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
     gpu: {
@@ -227,16 +235,16 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
       xData: new Array(30).fill(0),
       yData: new Array(30).fill('0')
     },
-    cpu: cpuFormatToM(pod.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
-    memory: memoryFormatToMi(pod.spec?.containers?.[0]?.resources?.limits?.memory || '0')
+    cpu: parseK8sQuantityOrZero(pod.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
+    memory: parseK8sQuantityOrZero(pod.spec?.containers?.[0]?.resources?.limits?.memory || '0')
   };
 };
 
 export const adaptMetrics = (metrics: SinglePodMetrics): PodMetrics => {
   return {
     podName: metrics.metadata.name,
-    cpu: cpuFormatToM(metrics?.containers?.[0]?.usage?.cpu),
-    memory: memoryFormatToMi(metrics?.containers?.[0]?.usage?.memory)
+    cpu: parseK8sQuantityOrZero(metrics?.containers?.[0]?.usage?.cpu),
+    memory: parseK8sQuantityOrZero(metrics?.containers?.[0]?.usage?.memory)
   };
 };
 
@@ -431,10 +439,10 @@ export const adaptAppDetail = async (
         ? appDeploy.spec?.template?.spec?.containers?.[0]?.args.join(' ')
         : JSON.stringify(appDeploy.spec?.template?.spec?.containers?.[0]?.args)) || '',
     replicas: appDeploy.spec?.replicas || 0,
-    cpu: cpuFormatToM(
+    cpu: parseK8sQuantityOrZero(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'
     ),
-    memory: memoryFormatToMi(
+    memory: parseK8sQuantityOrZero(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
     gpu: {
@@ -538,11 +546,16 @@ export const adaptAppDetail = async (
     configMapList: getConfigMapList(),
     secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']),
     storeList: deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates
-      ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => ({
-          name: item.metadata?.name || '',
-          path: item.metadata?.annotations?.path || '',
-          value: Number(item.metadata?.annotations?.value || 0)
-        }))
+      ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => {
+          const storage = item.spec?.resources?.requests?.storage;
+          return {
+            name: item.metadata?.name || '',
+            path: item.metadata?.annotations?.path || '',
+            value: storage
+              ? parseK8sQuantityOrZero(storage)
+              : storageAnnotationToQuantity(item.metadata?.annotations?.value)
+          };
+        })
       : [],
     volumeMounts: getFilteredVolumeMounts(),
     volumes: getFilteredVolumes(),

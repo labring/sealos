@@ -13,6 +13,12 @@ import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { customAlphabet, customRandom } from 'nanoid';
 import crypto from 'crypto';
+import {
+  cpuRequestQuantity,
+  memoryRequestQuantity,
+  quantityToStorageGi,
+  storageGiToQuantity
+} from '@/utils/resourceQuantity';
 
 // Create deterministic nanoid based on seed
 const createDeterministicNanoid = (seed: string): string => {
@@ -54,7 +60,10 @@ export const yamlString2Objects = (yamlString: string): object[] => {
 };
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
-  const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
+  const totalStorage = data.storeList.reduce(
+    (acc, item) => acc + quantityToStorageGi(item.value),
+    0
+  );
 
   const metadata = {
     name: data.appName,
@@ -62,7 +71,11 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       originImageName: data.imageName,
       [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
       [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
-      [deployPVCResizeKey]: `${totalStorage}Gi`
+      [deployPVCResizeKey]: storageGiToQuantity(totalStorage).formatForDisplay({
+        format: 'BinarySI',
+        scale: 'auto',
+        digits: 4
+      })
     },
     labels: {
       ...(data.labels || {}),
@@ -105,13 +118,13 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         : [],
     resources: {
       requests: {
-        cpu: `${str2Num(Math.floor(data.cpu * 0.1))}m`,
-        memory: `${str2Num(Math.floor(data.memory * 0.1))}Mi`,
+        cpu: cpuRequestQuantity(data.cpu).withFormat('DecimalSI').toString(),
+        memory: memoryRequestQuantity(data.memory).withFormat('BinarySI').toString(),
         ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
       limits: {
-        cpu: `${str2Num(data.cpu)}m`,
-        memory: `${str2Num(data.memory)}Mi`,
+        cpu: data.cpu.withFormat('DecimalSI').toString(),
+        memory: data.memory.withFormat('BinarySI').toString(),
         ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       }
     },
@@ -168,7 +181,11 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     metadata: {
       annotations: {
         path: store.path,
-        value: `${store.value}`
+        value: store.value.formatForDisplay({
+          format: 'BinarySI',
+          scale: 'auto',
+          digits: 4
+        })
       },
       name: store.name
     },
@@ -176,7 +193,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       accessModes: ['ReadWriteOnce'],
       resources: {
         requests: {
-          storage: `${store.value}Gi`
+          storage: store.value.withFormat('BinarySI').toString()
         }
       }
     }

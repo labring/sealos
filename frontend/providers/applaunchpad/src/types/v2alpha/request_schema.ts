@@ -15,10 +15,16 @@ import {
   PortConfigSchema,
   LaunchpadApplicationSchema,
   LaunchCommandSchema,
-  ImageSchema,
-  resourceConverters
+  ImageSchema
 } from './schema';
 import { buildExternalUrl } from '@/utils/network-url';
+import {
+  parseK8sQuantityOrZero,
+  publicCpuCoresToQuantity,
+  publicMemoryGiToQuantity,
+  quantityToPublicCpuCores,
+  quantityToPublicMemoryGi
+} from '@/utils/resourceQuantity';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -357,8 +363,8 @@ export const CreateLaunchpadRequestSchema = z
 export function transformToLegacySchema(
   standardRequest: z.infer<typeof CreateLaunchpadRequestSchema>
 ): AppEditType {
-  const cpuValue = resourceConverters.cpuToMillicores(standardRequest.quota.cpu);
-  const memoryValue = resourceConverters.memoryToMB(standardRequest.quota.memory);
+  const cpuValue = publicCpuCoresToQuantity(standardRequest.quota.cpu);
+  const memoryValue = publicMemoryGiToQuantity(standardRequest.quota.memory);
 
   const ports = standardRequest.ports || [];
   const defaultPort = ports.length > 0 ? ports[0].number : 80;
@@ -455,13 +461,9 @@ export function transformToLegacySchema(
 
   const storeList =
     standardRequest.storage?.map((storage) => {
-      let sizeValue = 1;
-      if (storage.size) {
-        const match = storage.size.match(/^(\d+)/);
-        if (match) {
-          sizeValue = parseInt(match[1]);
-        }
-      }
+      const sizeValue = storage.size
+        ? parseK8sQuantityOrZero(storage.size)
+        : parseK8sQuantityOrZero('1Gi');
       return {
         name: storage.name,
         path: storage.path,
@@ -531,8 +533,8 @@ export function transformFromLegacySchema(
     },
     quota: {
       replicas: legacyData.hpa?.use ? undefined : legacyData.replicas || 1,
-      cpu: resourceConverters.millicoresToCpu(legacyData.cpu || 200),
-      memory: resourceConverters.mbToMemory(legacyData.memory || 256),
+      cpu: quantityToPublicCpuCores(legacyData.cpu),
+      memory: quantityToPublicMemoryGi(legacyData.memory),
       hpa: legacyData.hpa?.use
         ? {
             target: legacyData.hpa.target,
@@ -609,7 +611,11 @@ export function transformFromLegacySchema(
       legacyData.storeList?.map((store) => ({
         name: store.name,
         path: store.path,
-        size: `${store.value || 1}Gi`
+        size: (store.value || parseK8sQuantityOrZero('1Gi')).formatForDisplay({
+          format: 'BinarySI',
+          scale: 'auto',
+          digits: 4
+        })
       })) || [],
     resourceType: 'launchpad',
     kind: legacyData.kind,

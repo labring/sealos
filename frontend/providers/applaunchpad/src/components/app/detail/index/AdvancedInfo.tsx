@@ -252,7 +252,13 @@ const AdvancedInfo = ({
                 <MyIcon name="storeColor" w="24px" h="24px" color="#a1a1aa" className="shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-zinc-900 truncate">{item.path}</p>
-                  <p className="text-xs text-neutral-500">{item.value} Gi</p>
+                  <p className="text-xs text-neutral-500">
+                    {item.value.formatForDisplay({
+                      format: 'BinarySI',
+                      scale: 'auto',
+                      digits: 4
+                    })}
+                  </p>
                 </div>
               </div>
             ))}

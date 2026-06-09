@@ -7,10 +7,12 @@ import { str2Num } from '@/utils/tools';
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
-import { LaunchpadApplicationSchema, resourceConverters } from '@/types/schema';
+import { LaunchpadApplicationSchema } from '@/types/schema';
 import { transformFromLegacySchema } from '@/types/request_schema';
 import { LaunchpadApplicationSchema as LaunchpadApplicationSchemaV2 } from '@/types/v2alpha/schema';
 import { transformFromLegacySchema as transformFromLegacySchemaV2 } from '@/types/v2alpha/request_schema';
+import type { Quantity } from '@sealos/shared';
+import { cpuRequestQuantity, memoryRequestQuantity } from '@/utils/resourceQuantity';
 import {
   PatchUtils,
   KubeConfig,
@@ -549,8 +551,8 @@ export async function updateAppResources(
   appName: string,
   updateData: {
     resource?: {
-      cpu?: number;
-      memory?: number;
+      cpu?: Quantity;
+      memory?: Quantity;
       replicas?: number;
       hpa?: {
         target: 'cpu' | 'memory' | 'gpu';
@@ -699,33 +701,31 @@ export async function updateAppResources(
     }> = [];
 
     if (updateData.resource?.cpu !== undefined) {
-      const millicores = resourceConverters.cpuToMillicores(updateData.resource.cpu);
       jsonPatch.push(
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/requests/cpu',
-          value: `${str2Num(Math.floor(millicores * 0.1))}m`
+          value: cpuRequestQuantity(updateData.resource.cpu).withFormat('DecimalSI').toString()
         },
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/limits/cpu',
-          value: `${str2Num(millicores)}m`
+          value: updateData.resource.cpu.withFormat('DecimalSI').toString()
         }
       );
     }
 
     if (updateData.resource?.memory !== undefined) {
-      const memoryMB = resourceConverters.memoryToMB(updateData.resource.memory);
       jsonPatch.push(
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/requests/memory',
-          value: `${str2Num(Math.floor(memoryMB * 0.1))}Mi`
+          value: memoryRequestQuantity(updateData.resource.memory).withFormat('BinarySI').toString()
         },
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/limits/memory',
-          value: `${str2Num(memoryMB)}Mi`
+          value: updateData.resource.memory.withFormat('BinarySI').toString()
         }
       );
     }

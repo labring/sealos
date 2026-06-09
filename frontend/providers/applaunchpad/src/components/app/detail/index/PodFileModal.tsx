@@ -64,6 +64,8 @@ import {
 } from '@sealos/shadcn-ui/breadcrumb';
 import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
 import { Label } from '@sealos/shadcn-ui/label';
+import { storageGiToQuantity } from '@/utils/resourceQuantity';
+import type { Quantity } from '@sealos/shared';
 
 const PodFile = ({
   isOpen,
@@ -86,8 +88,12 @@ const PodFile = ({
   const [storeDetail, setStoreDetail] = useState<{
     name: string;
     path: string;
-    value: number;
-  }>(appDetail.storeList[0] || { name: '/', path: '/', value: 10 });
+    value: Quantity;
+  }>(
+    appDetail.storeList[0]
+      ? appDetail.storeList[0]
+      : { name: '/', path: '/', value: storageGiToQuantity(10) }
+  );
 
   const [fileProgress, setFileProgress] = useState<number>(0);
   const [appName, setAppName] = useState(appDetail.appName);

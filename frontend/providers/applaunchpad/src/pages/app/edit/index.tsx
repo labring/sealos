@@ -37,6 +37,14 @@ import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
 import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@sealos/shared';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import {
+  cpuMillicoresToQuantity,
+  memoryMiToQuantity,
+  quantityFromJSONOrZero,
+  quantityToCpuMillicores,
+  quantityToMemoryMi,
+  quantityToStorageGi
+} from '@/utils/resourceQuantity';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -286,8 +294,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       if (!appName) {
         const defaultApp = {
           ...defaultEditVal,
-          cpu: formSliderListConfig[defaultSliderKey].cpu[0],
-          memory: formSliderListConfig[defaultSliderKey].memory[0]
+          cpu: cpuMillicoresToQuantity(formSliderListConfig[defaultSliderKey].cpu[0]),
+          memory: memoryMiToQuantity(formSliderListConfig[defaultSliderKey].memory[0])
         };
         setAlready(true);
         setYamlList([
@@ -418,13 +426,23 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
     return {
       cpu: isEdit
-        ? realTimeForm.current.cpu * newReplicas -
-          (formHook.formState.defaultValues?.cpu ?? 0) * oldReplicas
-        : realTimeForm.current.cpu * newReplicas,
+        ? quantityToCpuMillicores(realTimeForm.current.cpu) * newReplicas -
+          quantityToCpuMillicores(
+            formHook.formState.defaultValues?.cpu
+              ? quantityFromJSONOrZero(String(formHook.formState.defaultValues.cpu))
+              : defaultEditVal.cpu
+          ) *
+            oldReplicas
+        : quantityToCpuMillicores(realTimeForm.current.cpu) * newReplicas,
       memory: isEdit
-        ? realTimeForm.current.memory * newReplicas -
-          (formHook.formState.defaultValues?.memory ?? 0) * oldReplicas
-        : realTimeForm.current.memory * newReplicas,
+        ? quantityToMemoryMi(realTimeForm.current.memory) * newReplicas -
+          quantityToMemoryMi(
+            formHook.formState.defaultValues?.memory
+              ? quantityFromJSONOrZero(String(formHook.formState.defaultValues.memory))
+              : defaultEditVal.memory
+          ) *
+            oldReplicas
+        : quantityToMemoryMi(realTimeForm.current.memory) * newReplicas,
       gpu: isEdit
         ? newGpuCount * newReplicas - oldGpuCount * oldReplicas
         : newGpuCount * newReplicas,
@@ -437,10 +455,18 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         : (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) *
           newReplicas,
       storage: isEdit
-        ? (realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) * newReplicas -
-            existingStores.reduce((sum, item) => sum + item.value, 0) * oldReplicas) *
+        ? (realTimeForm.current.storeList.reduce(
+            (sum, item) => sum + quantityToStorageGi(item.value),
+            0
+          ) *
+            newReplicas -
+            existingStores.reduce((sum, item) => sum + quantityToStorageGi(item.value), 0) *
+              oldReplicas) *
           resourcePropertyMap.storage.scale
-        : realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) *
+        : realTimeForm.current.storeList.reduce(
+            (sum, item) => sum + quantityToStorageGi(item.value),
+            0
+          ) *
           newReplicas *
           resourcePropertyMap.storage.scale,
       traffic: true as const
@@ -505,8 +531,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             template_version: data.imageName.split(':')?.[1] ?? 'latest'
           },
           resources: {
-            cpu_cores: data.cpu,
-            ram_mb: data.memory,
+            cpu_cores: quantityToCpuMillicores(data.cpu) / 1000,
+            ram_mb: quantityToMemoryMi(data.memory),
             replicas: data.hpa.use ? data.hpa.maxReplicas : Number(data.replicas),
             scaling: data.hpa.use
               ? {
