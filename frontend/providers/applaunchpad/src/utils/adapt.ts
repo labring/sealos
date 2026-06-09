@@ -35,6 +35,7 @@ import {
   minReplicasKey,
   PodStatusEnum,
   publicDomainKey,
+  publicDomainPortKey,
   AppSourceConfigs
 } from '@/constants/app';
 import {
@@ -451,6 +452,27 @@ export const adaptAppDetail = async (
     return undefined;
   };
 
+  const ingresses = configs.filter((item) => item.kind === YamlKindEnum.Ingress) as V1Ingress[];
+  const getIngressPaths = (ingress?: V1Ingress) => ingress?.spec?.rules?.[0]?.http?.paths || [];
+  const getPathBackendPort = (path: any) => path?.backend?.service?.port?.number;
+  const getIngressOwnerPort = (ingress: V1Ingress) => {
+    const port = Number(ingress.metadata?.labels?.[publicDomainPortKey]);
+    if (port) return port;
+
+    return getIngressPaths(ingress)
+      .map(getPathBackendPort)
+      .find((port): port is number => typeof port === 'number');
+  };
+  const ingressByPrimaryPort = ingresses.reduce((map, ingress) => {
+    const primaryPort = getIngressOwnerPort(ingress);
+
+    if (primaryPort !== undefined && !map.has(primaryPort)) {
+      map.set(primaryPort, ingress);
+    }
+
+    return map;
+  }, new Map<number, V1Ingress>());
+
   return {
     labels: appDeploy?.metadata?.labels || {},
     crYamlList: configs,
@@ -523,16 +545,9 @@ export const adaptAppDetail = async (
             (port) => port.port === item.port && port.protocol === item.protocol
           )
         );
-        const ingress = configs.find(
-          (config: any) =>
-            item.protocol === 'TCP' &&
-            config.kind === YamlKindEnum.Ingress &&
-            config?.spec?.rules?.[0]?.http?.paths?.some(
-              (path: any) => path?.backend?.service?.port?.number === item.port
-            )
-        ) as V1Ingress;
+        const ingress = item.protocol === 'TCP' ? ingressByPrimaryPort.get(item.port) : undefined;
         const domain = ingress?.spec?.rules?.[0].host || '';
-        const ingressPaths = ingress?.spec?.rules?.[0]?.http?.paths || [];
+        const ingressPaths = getIngressPaths(ingress);
 
         const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
 

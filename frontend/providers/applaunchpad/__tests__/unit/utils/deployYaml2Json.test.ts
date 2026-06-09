@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { json2Ingress, yamlString2Objects } from '@/utils/deployYaml2Json';
+import {
+  json2DeployCr,
+  json2Ingress,
+  json2Service,
+  yamlString2Objects
+} from '@/utils/deployYaml2Json';
 import type { AppEditType } from '@/types/app';
 
 const createApp = (customDomain = ''): AppEditType =>
@@ -109,5 +114,70 @@ describe('json2Ingress', () => {
     expect(objects.map((item) => item.kind)).toEqual(['Ingress']);
     expect(objects[0].spec.rules[0].host).toBe('demo.192.168.13.29.nip.io');
     expect(objects[0].spec.tls[0].hosts).toEqual(['demo.192.168.13.29.nip.io']);
+  });
+
+  it('labels the ingress owner port for stable route rule round trips', () => {
+    const app = createApp();
+    app.networks[0].routes = [
+      {
+        path: '/api',
+        pathType: 'Prefix',
+        serviceName: 'demo',
+        servicePort: 81
+      }
+    ];
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: false
+      })
+    ) as any[];
+
+    expect(objects[0].metadata.labels['cloud.sealos.io/app-deploy-manager-port']).toBe('80');
+  });
+});
+
+describe('json2Service', () => {
+  it('fills a stable service port name when portName is missing', () => {
+    const app = createApp();
+    app.networks[0].portName = '';
+
+    const objects = yamlString2Objects(json2Service(app)) as any[];
+
+    expect(objects[0].spec.ports[0].name).toBe('p-t-80-0');
+  });
+
+  it('deduplicates generated service port names for repeated ports', () => {
+    const app = createApp();
+    app.networks = [
+      { ...app.networks[0], portName: '', port: 80 },
+      { ...app.networks[0], portName: 'p-t-80-0', port: 80 },
+      { ...app.networks[0], portName: '', port: 80 }
+    ];
+
+    const objects = yamlString2Objects(json2Service(app)) as any[];
+    const portNames = objects[0].spec.ports.map((port: any) => port.name);
+
+    expect(portNames).toEqual(['p-t-80-0', 'p-t-80-1', 'p-t-80-2']);
+    expect(new Set(portNames).size).toBe(portNames.length);
+  });
+});
+
+describe('json2DeployCr', () => {
+  it('deduplicates generated container port names for repeated ports', () => {
+    const app = createApp();
+    app.networks = [
+      { ...app.networks[0], portName: '', port: 80 },
+      { ...app.networks[0], portName: 'p-t-80-0', port: 80 },
+      { ...app.networks[0], portName: '', port: 80 }
+    ];
+
+    const objects = yamlString2Objects(json2DeployCr(app, 'deployment')) as any[];
+    const portNames = objects[0].spec.template.spec.containers[0].ports.map(
+      (port: any) => port.name
+    );
+
+    expect(portNames).toEqual(['p-t-80-0', 'p-t-80-1', 'p-t-80-2']);
+    expect(new Set(portNames).size).toBe(portNames.length);
   });
 });

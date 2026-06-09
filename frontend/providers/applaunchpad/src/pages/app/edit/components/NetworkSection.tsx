@@ -1,14 +1,20 @@
 import MyIcon from '@/components/Icon';
 import { MySelect } from '@sealos/ui';
 import { APPLICATION_PROTOCOLS, ProtocolList } from '@/constants/app';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT, SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { customAlphabet } from 'nanoid';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
-import { Box, Button, Flex, IconButton, Input, Switch, useTheme } from '@chakra-ui/react';
+import { Box, Button, Flex, IconButton, Input, Switch, Tooltip, useTheme } from '@chakra-ui/react';
 import { useCallback, useState } from 'react';
 import type { AppEditType } from '@/types/app';
 import RouteRulesModal from './RouteRulesModal';
+import { useCopyData } from '@/utils/tools';
+import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
+import type { CustomAccessModalParams } from './CustomAccessModal';
+import dynamic from 'next/dynamic';
+
+const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -18,6 +24,7 @@ type NetworkAction =
   | { type: 'ENABLE_EXTERNAL_ACCESS'; payload: { index: number } }
   | { type: 'DISABLE_EXTERNAL_ACCESS'; payload: { index: number } }
   | { type: 'UPDATE_PROTOCOL'; payload: { index: number; protocol: string } }
+  | { type: 'UPDATE_CUSTOM_DOMAIN'; payload: { index: number; customDomain: string } }
   | {
       type: 'UPDATE_ROUTES';
       payload: {
@@ -28,6 +35,7 @@ type NetworkAction =
 
 interface NetworkSectionProps {
   formHook: UseFormReturn<AppEditType, any>;
+  onDomainVerified?: (params: { index: number; customDomain: string }) => void;
   boxStyles: any;
   headerStyles: any;
 }
@@ -61,10 +69,48 @@ const getNextAvailablePort = (networks: AppEditType['networks']) => {
 const getBackendServiceValue = (serviceName = '', servicePort?: number) =>
   `${serviceName}:${servicePort || ''}`;
 
-export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSectionProps) {
+const fieldLabelStyles = {
+  mb: '9px',
+  h: '16px',
+  fontSize: '12px',
+  lineHeight: '16px',
+  fontWeight: 500,
+  letterSpacing: '0.5px',
+  color: 'grayModern.900'
+};
+
+const fieldInputStyles = {
+  fontSize: '12px',
+  lineHeight: '16px',
+  fontWeight: 400,
+  letterSpacing: '0.048px',
+  color: 'grayModern.900'
+};
+
+const actionButtonStyles = {
+  h: '32px',
+  px: '14px',
+  fontSize: '14px',
+  lineHeight: '20px',
+  fontWeight: 500,
+  letterSpacing: '0.1px',
+  color: 'grayModern.600',
+  borderColor: 'grayModern.250',
+  bg: 'white',
+  boxShadow: '0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
+};
+
+export function NetworkSection({
+  formHook,
+  onDomainVerified,
+  boxStyles,
+  headerStyles
+}: NetworkSectionProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const { copyData } = useCopyData();
   const [routeRulesIndex, setRouteRulesIndex] = useState<number>();
+  const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
 
   const { register, control, getValues } = formHook;
 
@@ -170,6 +216,15 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
           break;
         }
 
+        case 'UPDATE_CUSTOM_DOMAIN': {
+          const { index, customDomain } = action.payload;
+          updateNetworks(index, {
+            ...currentNetworks[index],
+            customDomain
+          });
+          break;
+        }
+
         case 'UPDATE_ROUTES': {
           const { index, routes } = action.payload;
           updateNetworks(index, {
@@ -214,6 +269,45 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
     }));
   }, [getValues, t]);
 
+  const getDomainDisplay = useCallback(
+    (network: AppEditType['networks'][number]) => {
+      if (network.customDomain) {
+        return buildExternalUrl({
+          protocol: network.appProtocol,
+          host: network.customDomain,
+          config: {
+            disableHttps: DISABLE_HTTPS,
+            cloudPort: DOMAIN_PORT,
+            httpPort: HTTP_PORT
+          }
+        });
+      }
+
+      if (network.openNodePort) {
+        return network?.nodePort
+          ? buildExternalUrl({
+              protocol: network.protocol,
+              host: `${network.protocol.toLowerCase()}.${network.domain}`,
+              nodePort: network.nodePort
+            })
+          : `${getExternalProtocol(network.protocol)}://${network.protocol.toLowerCase()}.${
+              network.domain
+            }:${t('pending_to_allocated')}`;
+      }
+
+      return buildExternalUrl({
+        protocol: network.appProtocol,
+        host: `${network.publicDomain}.${network.domain}`,
+        config: {
+          disableHttps: DISABLE_HTTPS,
+          cloudPort: DOMAIN_PORT,
+          httpPort: HTTP_PORT
+        }
+      });
+    },
+    [t]
+  );
+
   const routeRulesNetwork =
     routeRulesIndex !== undefined ? getValues('networks')[routeRulesIndex] : undefined;
 
@@ -236,14 +330,13 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
             >
               <Flex alignItems={'flex-start'}>
                 <Box flex={'0 0 110px'}>
-                  <Box mb={'9px'} h={'16px'} fontSize={'sm'} color={'grayModern.900'}>
-                    {t('Port')}
-                  </Box>
+                  <Box {...fieldLabelStyles}>{t('Port')}</Box>
                   <Input
                     h={'32px'}
                     type={'number'}
                     w={'110px'}
                     bg={'grayModern.50'}
+                    {...fieldInputStyles}
                     {...register(`networks.${i}.port`, {
                       required:
                         t('app.The container exposed port cannot be empty') ||
@@ -274,36 +367,32 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
                 </Box>
 
                 <Box ml={'32px'} flex={isExternalAccess ? '1 1 auto' : '0 0 93px'} minW={0}>
-                  <Box mb={'9px'} h={'16px'} fontSize={'sm'} color={'grayModern.900'}>
-                    {t('Public Access')}
-                  </Box>
+                  <Box {...fieldLabelStyles}>{t('Public Access')}</Box>
                   <Flex alignItems={'center'} h={'32px'} minW={0}>
                     <Switch
                       className="driver-deploy-network-switch"
+                      size={'lg'}
                       isChecked={isExternalAccess}
                       mr={isExternalAccess ? '24px' : 0}
                       sx={{
-                        w: '36px',
-                        h: '20px',
+                        lineHeight: 0,
                         '.chakra-switch__track': {
-                          w: '36px',
-                          h: '20px',
-                          p: '2px',
-                          bg: 'grayModern.200'
+                          bg: 'grayModern.200',
+                          transitionProperty:
+                            'background-color, border-color, color, fill, stroke, opacity, box-shadow, transform',
+                          transitionDuration: '0.15s',
+                          transitionTimingFunction: 'ease'
                         },
                         '.chakra-switch__thumb': {
-                          w: '16px',
-                          h: '16px',
                           bg: 'white',
-                          boxShadow: '0px 1px 2px rgba(17, 24, 36, 0.16)'
+                          boxShadow: '0px 1px 2px rgba(17, 24, 36, 0.16)',
+                          transitionProperty: 'transform',
+                          transitionDuration: '0.2s',
+                          transitionTimingFunction: 'ease'
                         },
                         '.chakra-switch__input:checked + .chakra-switch__track': {
                           bg: 'grayModern.900'
-                        },
-                        '.chakra-switch__input:checked + .chakra-switch__track .chakra-switch__thumb':
-                          {
-                            transform: 'translateX(16px)'
-                          }
+                        }
                       }}
                       onChange={(e) => {
                         if (e.target.checked) {
@@ -328,6 +417,10 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
                             height={'32px'}
                             borderTopRightRadius={0}
                             borderBottomRightRadius={0}
+                            fontSize={'12px'}
+                            fontWeight={400}
+                            lineHeight={'16px'}
+                            letterSpacing={'0.048px'}
                             value={
                               network.openPublicDomain
                                 ? network.appProtocol
@@ -357,39 +450,28 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
                             borderBottomRightRadius={'md'}
                             overflow={'hidden'}
                           >
-                            <Input
-                              h={'30px'}
-                              flex={'1 1 auto'}
-                              minW={0}
-                              px={'12px'}
-                              bg={'transparent'}
-                              border={0}
-                              borderRadius={0}
-                              fontSize={'sm'}
-                              _focusVisible={{
-                                boxShadow: 'none'
-                              }}
-                              placeholder={t('External Access Domain Placeholder')}
-                              {...register(`networks.${i}.customDomain`, {
-                                validate: (value) => {
-                                  const currentNetwork = getValues('networks')[i];
-
-                                  if (
-                                    (currentNetwork?.openPublicDomain ||
-                                      currentNetwork?.openNodePort) &&
-                                    !String(value || '').trim()
-                                  ) {
-                                    return t('External Access Domain Required');
-                                  }
-
-                                  return true;
-                                }
-                              })}
-                            />
+                            <Tooltip label={t('click_to_copy_tooltip')}>
+                              <Box
+                                h={'30px'}
+                                display={'flex'}
+                                alignItems={'center'}
+                                flex={'1 1 auto'}
+                                minW={0}
+                                px={'12px'}
+                                userSelect={'all'}
+                                className="textEllipsis"
+                                cursor={'pointer'}
+                                {...fieldInputStyles}
+                                onClick={() => {
+                                  copyData(getDomainDisplay(network));
+                                }}
+                              >
+                                {getDomainDisplay(network)}
+                              </Box>
+                            </Tooltip>
                             {network.openPublicDomain && !network.openNodePort && (
                               <Box
                                 flex={'0 0 auto'}
-                                mr={'37px'}
                                 px={'8px'}
                                 py={'4px'}
                                 fontSize={'11px'}
@@ -397,20 +479,33 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
                                 fontWeight={500}
                                 letterSpacing={'0.5px'}
                                 color={'brightBlue.600'}
+                                cursor={'pointer'}
+                                onClick={() =>
+                                  setCustomAccessModalData({
+                                    publicDomain: network.publicDomain,
+                                    currentCustomDomain: network.customDomain,
+                                    domain: network.domain
+                                  })
+                                }
                               >
                                 {t('Custom Domain')}
                               </Box>
                             )}
+                            {/* keep a hidden field registered so customDomain remains part of form state */}
+                            <Input
+                              display={'none'}
+                              flex={'1 1 auto'}
+                              minW={0}
+                              {...register(`networks.${i}.customDomain`)}
+                            />
                           </Flex>
                         </Flex>
                         <Button
                           type={'button'}
-                          h={'32px'}
                           w={'113px'}
                           minW={'113px'}
-                          px={3}
-                          fontSize={'sm'}
                           variant={'outline'}
+                          {...actionButtonStyles}
                           onClick={() => setRouteRulesIndex(i)}
                         >
                           {t('Configure Route Rules')}
@@ -444,9 +539,8 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
         <Button
           type={'button'}
           mt={6}
-          h={'36px'}
-          w={'109px'}
           variant={'outline'}
+          {...actionButtonStyles}
           leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
           onClick={() => {
             const currentNetworks = getValues('networks');
@@ -489,6 +583,25 @@ export function NetworkSection({ formHook, boxStyles, headerStyles }: NetworkSec
               }
             });
             setRouteRulesIndex(undefined);
+          }}
+        />
+      )}
+
+      {!!customAccessModalData && (
+        <CustomAccessModal
+          {...customAccessModalData}
+          onClose={() => setCustomAccessModalData(undefined)}
+          onSuccess={(customDomain) => {
+            const index = networks.findIndex(
+              (network) => network.publicDomain === customAccessModalData.publicDomain
+            );
+            if (index === -1) return;
+
+            dispatch({
+              type: 'UPDATE_CUSTOM_DOMAIN',
+              payload: { index, customDomain }
+            });
+            onDomainVerified?.({ index, customDomain });
           }}
         />
       )}

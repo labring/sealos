@@ -250,6 +250,7 @@
   "contains": "包含",
   "cpu": "CPU",
   "custom_domain_input_title": "您的域名",
+  "custom_domain_cname_required": "请先将 {{customDomain}} 的 CNAME 解析到 {{publicDomain}}，生效后再提交。",
   "day": "天",
   "delete_app_tip": "确定要删除此应用吗？如果继续，该项目的所有数据将被删除。",
   "delete_remote_storage_warning": "检测到当前应用存在网络存储卷，删除应用后该存储卷仍将保留在对应 DevBox 中，请前往 DevBox 侧进行后续操作（如变更、删除等）。",

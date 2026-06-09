@@ -5,11 +5,12 @@ import {
   minReplicasKey,
   ownerReferencesKey,
   ownerReferencesReadyValue,
-  publicDomainKey
+  publicDomainKey,
+  publicDomainPortKey
 } from '@/constants/app';
 import { DISABLE_HTTPS, SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
-import { str2Num, strToBase64 } from '@/utils/tools';
+import { ensureUniquePortNames, getFallbackPortName, str2Num, strToBase64 } from '@/utils/tools';
 import type { V1OwnerReference } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
@@ -193,10 +194,19 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         return [data.cmdParam];
       }
     })(),
-    ports: data.networks.map((item) => ({
-      containerPort: item.port,
-      name: item.portName
-    })),
+    ports: ensureUniquePortNames(
+      data.networks.map((item, index) => ({
+        containerPort: item.port,
+        name:
+          item.portName ||
+          getFallbackPortName({
+            port: item.port,
+            protocol: item.protocol,
+            index
+          }),
+        protocol: item.protocol
+      }))
+    ).map(({ protocol, ...port }) => port),
     imagePullPolicy: 'Always'
   };
 
@@ -400,8 +410,8 @@ export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReferen
   const openPublicPorts: any[] = [];
   const closedPublicPorts: any[] = [];
 
-  data.networks.forEach((network) => {
-    const port = {
+  const namedPorts = ensureUniquePortNames(
+    data.networks.map((network, index) => ({
       port: str2Num(network.port),
       targetPort: str2Num(network.port),
       ...(network.openNodePort && network.nodePort
@@ -409,10 +419,19 @@ export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReferen
             nodePort: str2Num(network.nodePort)
           }
         : {}),
-      name: network.portName,
+      name:
+        network.portName ||
+        getFallbackPortName({
+          port: network.port,
+          protocol: network.protocol,
+          index
+        }),
       protocol: network.protocol
-    };
+    }))
+  );
 
+  data.networks.forEach((network, index) => {
+    const port = namedPorts[index];
     if (network.openNodePort) {
       openPublicPorts.push(port);
     } else {
@@ -544,7 +563,8 @@ export const json2Ingress = (
           name: network.networkName,
           labels: {
             [appDeployKey]: data.appName,
-            [publicDomainKey]: network.publicDomain
+            [publicDomainKey]: network.publicDomain,
+            [publicDomainPortKey]: String(network.port)
           },
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
