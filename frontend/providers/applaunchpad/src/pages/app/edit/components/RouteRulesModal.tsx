@@ -25,6 +25,12 @@ const pathTypeList: Array<{ label: NetworkRoutePathType; value: NetworkRoutePath
   { label: 'Exact', value: 'Exact' },
   { label: 'ImplementationSpecific', value: 'ImplementationSpecific' }
 ];
+const routeRuleFieldWidthPx = 219.5;
+const routeRuleFieldGapPx = 19;
+const routeRuleFieldWidth = `${routeRuleFieldWidthPx}px`;
+const routeRuleFieldGap = `${routeRuleFieldGapPx}px`;
+const routeRuleContentWidth = `${routeRuleFieldWidthPx * 2 + routeRuleFieldGapPx}px`;
+const routeRulesScrollbarWidth = '6px';
 
 type RouteRulesForm = {
   routes: AppNetworkRouteType[];
@@ -167,25 +173,29 @@ export default function RouteRulesModal({
         <ModalBody px={'36px'} py={'24px'}>
           <Flex direction={'column'} alignItems={'flex-end'} gap={'24px'}>
             <Box
-              w={'458px'}
+              w={routeRuleContentWidth}
               maxH={shouldScroll ? '424px' : undefined}
               overflowY={shouldScroll ? 'auto' : 'visible'}
-              pr={shouldScroll ? '8px' : 0}
+              overflowX={shouldScroll ? 'hidden' : 'visible'}
+              pr={shouldScroll ? '14px' : 0}
+              mr={shouldScroll ? '-14px' : 0}
+              boxSizing={shouldScroll ? 'content-box' : 'border-box'}
               sx={
                 shouldScroll
                   ? {
-                      scrollbarWidth: 'none',
+                      scrollbarWidth: 'thin',
+                      scrollbarColor: 'transparent transparent',
                       '&::-webkit-scrollbar': {
-                        width: 0
+                        width: routeRulesScrollbarWidth
                       },
                       '&:hover': {
-                        scrollbarWidth: 'thin'
-                      },
-                      '&:hover::-webkit-scrollbar': {
-                        width: '6px'
+                        scrollbarColor: 'var(--chakra-colors-grayModern-300) transparent'
                       },
                       '&::-webkit-scrollbar-thumb': {
                         borderRadius: '999px',
+                        bg: 'transparent'
+                      },
+                      '&:hover::-webkit-scrollbar-thumb': {
                         bg: 'grayModern.300'
                       },
                       '&::-webkit-scrollbar-track': {
@@ -203,6 +213,7 @@ export default function RouteRulesModal({
                     key={field.id}
                     role={'group'}
                     position={'relative'}
+                    w={routeRuleContentWidth}
                     _notLast={{
                       pb: '24px',
                       mb: '24px',
@@ -224,8 +235,13 @@ export default function RouteRulesModal({
                         position={'absolute'}
                         top={'-6px'}
                         right={0}
+                        w={'28px'}
+                        minW={'28px'}
+                        h={'28px'}
                         opacity={0}
-                        _groupHover={{ opacity: 1 }}
+                        pointerEvents={'none'}
+                        transition={'opacity 0.15s ease'}
+                        _groupHover={{ opacity: 1, pointerEvents: 'auto' }}
                         variant={'ghost'}
                         size={'sm'}
                         icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
@@ -233,8 +249,14 @@ export default function RouteRulesModal({
                       />
                     )}
 
-                    <Flex gap={'19px'} mb={'24px'}>
-                      <MyFormControl showError={!!pathError} errorText={pathError} flex={'1 1 0'}>
+                    <Flex gap={routeRuleFieldGap} mb={'24px'}>
+                      <MyFormControl
+                        showError={!!pathError}
+                        errorText={pathError}
+                        flex={`0 0 ${routeRuleFieldWidth}`}
+                        w={routeRuleFieldWidth}
+                        minW={0}
+                      >
                         <Box
                           mb={'8px'}
                           fontSize={'14px'}
@@ -245,6 +267,7 @@ export default function RouteRulesModal({
                           {t('Path Route Path')}
                         </Box>
                         <Input
+                          w={routeRuleFieldWidth}
                           h={'32px'}
                           bg={'grayModern.50'}
                           borderColor={'grayModern.200'}
@@ -259,7 +282,7 @@ export default function RouteRulesModal({
                         />
                       </MyFormControl>
 
-                      <Box flex={'1 1 0'} minW={0}>
+                      <Box flex={`0 0 ${routeRuleFieldWidth}`} w={routeRuleFieldWidth} minW={0}>
                         <Box
                           mb={'8px'}
                           fontSize={'14px'}
@@ -270,7 +293,7 @@ export default function RouteRulesModal({
                           {t('Path Route Match Type')}
                         </Box>
                         <MySelect
-                          width={'100%'}
+                          width={routeRuleFieldWidth}
                           height={'32px'}
                           value={routes?.[index]?.pathType || 'Prefix'}
                           list={pathTypeList}
@@ -284,7 +307,7 @@ export default function RouteRulesModal({
                       </Box>
                     </Flex>
 
-                    <Box>
+                    <Box w={routeRuleContentWidth}>
                       <Box
                         mb={'8px'}
                         fontSize={'14px'}
@@ -295,7 +318,7 @@ export default function RouteRulesModal({
                         {t('Path Route Backend Service')}
                       </Box>
                       <MySelect
-                        width={'100%'}
+                        width={routeRuleContentWidth}
                         height={'32px'}
                         value={getBackendServiceValue(
                           routes?.[index]?.serviceName ?? defaultServiceName,
