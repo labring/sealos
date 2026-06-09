@@ -86,6 +86,8 @@ export const yamlString2Objects = (yamlString: string): object[] => {
   return documents.filter((doc) => doc.trim()).map((doc) => yaml.load(doc.trim()) as object);
 };
 
+const normalizeIngressHost = (host: string) => host.trim().toLowerCase().replace(/\.+$/g, '');
+
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
@@ -509,14 +511,16 @@ export const json2Ingress = (
   const result = data.networks
     .filter((item) => item.openPublicDomain && !item.openNodePort)
     .map((network) => {
-      const host = network.customDomain
-        ? network.customDomain
-        : `${network.publicDomain}.${network.domain}`;
+      const customDomain = normalizeIngressHost(network.customDomain || '');
+      const domain = normalizeIngressHost(network.domain || '');
+      const host = customDomain
+        ? customDomain
+        : normalizeIngressHost(`${network.publicDomain}.${domain}`);
 
-      const secretName = network.customDomain
+      const secretName = customDomain
         ? network.networkName
-        : SEALOS_USER_DOMAINS.find((domain) => domain.name === network.domain)?.secretName ||
-          'wildcard-cert';
+        : SEALOS_USER_DOMAINS.find((item) => normalizeIngressHost(item.name) === domain)
+            ?.secretName || 'wildcard-cert';
       // Ingress only uses ClusterIP services, not NodePort
       const serviceName = getServiceName(data, false);
       const routes = network.routes?.length
@@ -624,7 +628,7 @@ export const json2Ingress = (
         },
         spec: {
           secretName,
-          dnsNames: [network.customDomain],
+          dnsNames: [customDomain],
           issuerRef: {
             name: network.networkName,
             kind: 'Issuer'
@@ -633,7 +637,7 @@ export const json2Ingress = (
       };
 
       let resYaml = yaml.dump(ingress);
-      if (network.customDomain && !disableHttps) {
+      if (customDomain && !disableHttps) {
         resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
       }
       return resYaml;
