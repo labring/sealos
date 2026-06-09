@@ -4,12 +4,382 @@ import { customAlphabet } from 'nanoid';
 import crypto from 'crypto';
 import { queryA, queryAAAA } from '@/services/dns-resolver';
 import { Config } from '@/config';
+import { authSession } from '@/services/backend/auth';
+import { getK8s } from '@/services/backend/kubernetes';
+import { ResponseCode } from '@/types/response';
+import { isIP } from 'net';
+import http from 'http';
+import type { IncomingMessage } from 'http';
+import https from 'https';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16);
 
 export interface AuthDomainChallengeParams {
   customDomain: string;
 }
+
+export const PRIVATE_HOSTNAME_SUFFIXES = ['.svc', '.svc.cluster.local', '.cluster.local'] as const;
+
+const HOSTNAME_PATTERN =
+  /^(?=.{1,253}$)(?:(?!-)[a-z0-9-]{1,63}(?<!-)\.)+(?!-)[a-z0-9-]{2,63}(?<!-)$/i;
+
+const normalizeDomain = (domain: string) => domain.trim().replace(/\.$/, '').toLowerCase();
+const getChallengePath = (token: string) =>
+  `/api/.well-known/applaunchpad-domain-challenge/${token}`;
+const REDIRECT_STATUS_CODES = new Set([301, 302, 303, 307, 308]);
+
+const parseIpv4 = (ip: string) => {
+  const parts = ip.split('.');
+  if (parts.length !== 4) return null;
+
+  const bytes = parts.map((part) => {
+    if (!/^\d{1,3}$/.test(part)) return null;
+    const value = Number(part);
+    return value >= 0 && value <= 255 ? value : null;
+  });
+
+  if (bytes.some((byte) => byte === null)) return null;
+  return bytes as [number, number, number, number];
+};
+
+const ipv4BytesToAddress = (bytes: [number, number, number, number]) => bytes.join('.');
+
+const ipv6WordsToIpv4 = (highWord: number, lowWord: number) => {
+  return ipv4BytesToAddress([
+    (highWord >> 8) & 0xff,
+    highWord & 0xff,
+    (lowWord >> 8) & 0xff,
+    lowWord & 0xff
+  ]);
+};
+
+const parseIpv6Words = (ip: string) => {
+  const parts = ip.toLowerCase().split('::');
+  if (parts.length > 2) return null;
+
+  const parseSegments = (value: string) => {
+    if (!value) return [];
+
+    const segments = value.split(':');
+    const words: number[] = [];
+
+    for (const segment of segments) {
+      if (segment.includes('.')) {
+        const ipv4 = parseIpv4(segment);
+        if (!ipv4) return null;
+        words.push((ipv4[0] << 8) + ipv4[1], (ipv4[2] << 8) + ipv4[3]);
+        continue;
+      }
+
+      if (!/^[0-9a-f]{1,4}$/.test(segment)) return null;
+      words.push(parseInt(segment, 16));
+    }
+
+    return words;
+  };
+
+  const left = parseSegments(parts[0]);
+  const right = parseSegments(parts[1] ?? '');
+  if (!left || !right) return null;
+
+  if (parts.length === 1) {
+    return left.length === 8 ? left : null;
+  }
+
+  const missing = 8 - left.length - right.length;
+  if (missing < 1) return null;
+
+  return [...left, ...Array(missing).fill(0), ...right];
+};
+
+const isPrivateIpv4 = (ip: string) => {
+  const bytes = parseIpv4(ip);
+  if (!bytes) return true;
+
+  const [first, second, third] = bytes;
+  return (
+    first === 0 ||
+    first === 10 ||
+    first === 127 ||
+    (first === 100 && second >= 64 && second <= 127) ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 0 && third === 0) ||
+    (first === 192 && second === 0 && third === 2) ||
+    (first === 192 && second === 168) ||
+    (first === 198 && (second === 18 || second === 19)) ||
+    (first === 198 && second === 51 && third === 100) ||
+    (first === 203 && second === 0 && third === 113) ||
+    first >= 224
+  );
+};
+
+const isPrivateIpv6 = (ip: string) => {
+  const normalizedIp = ip.toLowerCase();
+  const words = parseIpv6Words(normalizedIp);
+  if (!words) return true;
+
+  const embeddedIpv4 = ipv6WordsToIpv4(words[6], words[7]);
+  const isIpv4Compatible = words.slice(0, 6).every((word) => word === 0);
+  const isIpv4Mapped = words.slice(0, 5).every((word) => word === 0) && words[5] === 0xffff;
+  const isSixToFour = words[0] === 0x2002;
+
+  if (isIpv4Compatible || isIpv4Mapped) {
+    return isPrivateIpv4(embeddedIpv4);
+  }
+
+  if (isSixToFour) {
+    return isPrivateIpv4(ipv6WordsToIpv4(words[1], words[2]));
+  }
+
+  const firstSegment = parseInt(normalizedIp.split(':')[0], 16);
+
+  return (
+    normalizedIp === '::1' ||
+    normalizedIp === '::' ||
+    normalizedIp.startsWith('fc') ||
+    normalizedIp.startsWith('fd') ||
+    (firstSegment >= 0xfe80 && firstSegment <= 0xfebf) ||
+    (firstSegment >= 0xff00 && firstSegment <= 0xffff) ||
+    normalizedIp.startsWith('::ffff:0:') ||
+    normalizedIp.startsWith('64:ff9b:')
+  );
+};
+
+export const isPublicIp = (ip: string) => {
+  const version = isIP(ip);
+  if (version === 4) return !isPrivateIpv4(ip);
+  if (version === 6) return !isPrivateIpv6(ip);
+  return false;
+};
+
+export const sanitizeChallengeDomain = (customDomain: string) => {
+  if (typeof customDomain !== 'string') return null;
+
+  const domain = normalizeDomain(customDomain);
+
+  if (
+    !domain ||
+    domain.includes('/') ||
+    domain.includes('\\') ||
+    domain.includes('?') ||
+    domain.includes('#') ||
+    domain.includes('@') ||
+    domain.includes(':')
+  ) {
+    return null;
+  }
+
+  if (
+    domain === 'localhost' ||
+    PRIVATE_HOSTNAME_SUFFIXES.some((suffix) => domain.endsWith(suffix))
+  ) {
+    return null;
+  }
+
+  if (isIP(domain) || !HOSTNAME_PATTERN.test(domain)) {
+    return null;
+  }
+
+  return domain;
+};
+
+export const formatChallengeHost = (host: string) => {
+  return isIP(host) === 6 ? `[${host}]` : host;
+};
+
+const isRedirectResponse = (response: Response) => REDIRECT_STATUS_CODES.has(response.status);
+
+const getSafeHttpsRedirectUrl = (
+  response: Response,
+  verifiedDomain: string,
+  challengePath: string
+) => {
+  if (!isRedirectResponse(response)) return null;
+
+  const location = response.headers.get('location');
+  if (!location) return null;
+
+  let redirectUrl: URL;
+  try {
+    redirectUrl = new URL(location, `http://${verifiedDomain}${challengePath}`);
+  } catch {
+    return null;
+  }
+
+  if (
+    redirectUrl.protocol !== 'https:' ||
+    normalizeDomain(redirectUrl.hostname) !== verifiedDomain ||
+    redirectUrl.pathname !== challengePath ||
+    redirectUrl.search ||
+    redirectUrl.hash ||
+    redirectUrl.username ||
+    redirectUrl.password ||
+    (redirectUrl.port && redirectUrl.port !== '443')
+  ) {
+    return null;
+  }
+
+  return redirectUrl.toString();
+};
+
+const toResponseHeaders = (headers: Record<string, string | string[] | undefined>) => {
+  const responseHeaders = new Headers();
+
+  for (const [key, value] of Object.entries(headers)) {
+    if (Array.isArray(value)) {
+      value.forEach((item) => responseHeaders.append(key, item));
+    } else if (value !== undefined) {
+      responseHeaders.set(key, value);
+    }
+  }
+
+  return responseHeaders;
+};
+
+const resolveNodeResponse = (res: IncomingMessage, resolve: (response: Response) => void) => {
+  const chunks: Buffer[] = [];
+
+  res.on('data', (chunk) => {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  });
+  res.on('end', () => {
+    resolve(
+      new Response(Buffer.concat(chunks), {
+        status: res.statusCode || 500,
+        headers: toResponseHeaders(res.headers)
+      })
+    );
+  });
+};
+
+const fetchHttpChallengeUrlByHost = (
+  host: string,
+  verifiedDomain: string,
+  challengePath: string
+): Promise<Response> => {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      {
+        protocol: 'http:',
+        hostname: host,
+        port: 80,
+        path: challengePath,
+        method: 'GET',
+        headers: {
+          Host: verifiedDomain,
+          'User-Agent': 'Sealos-AppLaunchpad-Domain-Verifier/1.0'
+        },
+        signal: AbortSignal.timeout(10000)
+      },
+      (res) => {
+        resolveNodeResponse(res, resolve);
+      }
+    );
+
+    req.on('error', reject);
+    req.end();
+  });
+};
+
+const fetchHttpsChallengeUrlByHost = (
+  url: string,
+  verifiedDomain: string,
+  host: string
+): Promise<Response> => {
+  const redirectUrl = new URL(url);
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        protocol: 'https:',
+        hostname: host,
+        port: redirectUrl.port ? Number(redirectUrl.port) : 443,
+        path: redirectUrl.pathname,
+        method: 'GET',
+        servername: verifiedDomain,
+        headers: {
+          Host: verifiedDomain,
+          'User-Agent': 'Sealos-AppLaunchpad-Domain-Verifier/1.0'
+        },
+        signal: AbortSignal.timeout(10000)
+      },
+      (res) => {
+        resolveNodeResponse(res, resolve);
+      }
+    );
+
+    req.on('error', reject);
+    req.end();
+  });
+};
+
+const fetchHttpsChallengeUrl = async (
+  url: string,
+  verifiedDomain: string,
+  resolvedHosts: string[]
+) => {
+  let lastResponse: Response | null = null;
+
+  for (const host of resolvedHosts) {
+    const response = await fetchHttpsChallengeUrlByHost(url, verifiedDomain, host).catch(
+      () => null
+    );
+    if (!response) continue;
+
+    lastResponse = response;
+    if (response.ok) break;
+  }
+
+  return lastResponse;
+};
+
+const resolveChallengeHosts = async (verifiedDomain: string) => {
+  const ip4 = await queryA(verifiedDomain).catch((e) => {
+    console.error('Failed to resolve IPv4 address:', e);
+    return null;
+  });
+  const ip6 = await queryAAAA(verifiedDomain).catch((e) => {
+    console.error('Failed to resolve IPv6 address:', e);
+    return null;
+  });
+
+  const resolvedHosts = [ip4?.data, ip6?.data].filter((host): host is string => !!host);
+  const nonPublicHost = resolvedHosts.find((host) => !isPublicIp(host));
+
+  return { nonPublicHost, resolvedHosts };
+};
+
+const authenticateRequest = async (req: NextApiRequest) => {
+  const kubeconfig = await authSession(req.headers);
+  const { k8sCore, namespace } = await getK8s({ kubeconfig });
+  await k8sCore.listNamespacedService(
+    namespace,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    1
+  );
+};
+
+const getAuthErrorCode = (error: any) => {
+  if (error === 'unAuthorization') return ResponseCode.UNAUTHORIZED;
+
+  const statusCode =
+    error?.body?.code ||
+    error?.response?.status ||
+    error?.response?.statusCode ||
+    error?.status ||
+    error?.statusCode;
+
+  if (statusCode === ResponseCode.UNAUTHORIZED || statusCode === ResponseCode.FORBIDDEN) {
+    return statusCode;
+  }
+
+  return null;
+};
 
 function isTimestampValid(timestamp: number, maxAge: number = 600): boolean {
   const now = Math.floor(Date.now() / 1000);
@@ -19,6 +389,26 @@ function isTimestampValid(timestamp: number, maxAge: number = 600): boolean {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    try {
+      await authenticateRequest(req);
+    } catch (authError) {
+      const authErrorCode = getAuthErrorCode(authError);
+      if (!authErrorCode) {
+        throw authError;
+      }
+
+      return jsonRes(res, {
+        code: authErrorCode,
+        error: {
+          code: authErrorCode === ResponseCode.FORBIDDEN ? 'FORBIDDEN' : 'UNAUTHORIZED',
+          message:
+            authErrorCode === ResponseCode.FORBIDDEN
+              ? 'Insufficient permissions'
+              : 'Authentication required'
+        }
+      });
+    }
+
     const { customDomain } = req.body as AuthDomainChallengeParams;
 
     if (!customDomain) {
@@ -28,40 +418,75 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const ip4 = await queryA(customDomain).catch((e) => {
-      console.error('Failed to resolve IPv4 address:', e);
-      return null;
-    });
-    const ip6 = await queryAAAA(customDomain).catch((e) => {
-      console.error('Failed to resolve IPv6 address:', e);
-      return null;
-    });
+    const verifiedDomain = sanitizeChallengeDomain(customDomain);
+    if (!verifiedDomain) {
+      return jsonRes(res, {
+        code: ResponseCode.BAD_REQUEST,
+        error: {
+          code: 'INVALID_CUSTOM_DOMAIN',
+          message: 'customDomain must be a public hostname without port, path, query, or fragment'
+        }
+      });
+    }
 
     const token = nanoid();
+    const challengePath = getChallengePath(token);
+    const { nonPublicHost, resolvedHosts } = await resolveChallengeHosts(verifiedDomain);
 
-    const challengeUrls = [ip4?.data, ip6?.data, customDomain].flatMap((host) => {
-      if (!host) return [];
-      return [`http://${host}/api/.well-known/applaunchpad-domain-challenge/${token}`];
+    if (nonPublicHost) {
+      return jsonRes(res, {
+        code: ResponseCode.BAD_REQUEST,
+        error: {
+          code: 'PRIVATE_ADDRESS_NOT_ALLOWED',
+          message: 'customDomain must not resolve to a private or reserved address'
+        }
+      });
+    }
+
+    if (resolvedHosts.length === 0) {
+      return jsonRes(res, {
+        code: ResponseCode.BAD_REQUEST,
+        error: {
+          code: 'DOMAIN_RESOLVE_FAILED',
+          message: 'customDomain must resolve to a public A or AAAA record'
+        }
+      });
+    }
+
+    const challengeTargets = resolvedHosts.map((host) => {
+      return {
+        host,
+        url: `http://${formatChallengeHost(host)}${challengePath}`
+      };
     });
 
-    console.log('URLs to attempt for domain', customDomain, ':', challengeUrls);
+    console.log(
+      'URLs to attempt for domain',
+      verifiedDomain,
+      ':',
+      challengeTargets.map((target) => target.url)
+    );
 
     let response: Response | null = null;
     let challengeUrl: string | null = null;
-    for (const url of challengeUrls) {
+    for (const { host, url } of challengeTargets) {
       console.log('Attempting domain challenge:', url);
       challengeUrl = url;
 
-      // Make HTTP request to user's domain
-      response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Host: customDomain,
-          'User-Agent': 'Sealos-AppLaunchpad-Domain-Verifier/1.0'
-        },
-        // Set timeout to 10 seconds
-        signal: AbortSignal.timeout(10000)
-      }).catch(() => null);
+      response = await fetchHttpChallengeUrlByHost(host, verifiedDomain, challengePath).catch(
+        () => null
+      );
+
+      const httpsRedirectUrl = response
+        ? getSafeHttpsRedirectUrl(response, verifiedDomain, challengePath)
+        : null;
+
+      if (httpsRedirectUrl) {
+        challengeUrl = httpsRedirectUrl;
+        response = await fetchHttpsChallengeUrl(httpsRedirectUrl, verifiedDomain, [host]).catch(
+          () => null
+        );
+      }
 
       // Try every URL until one succeeds or all fail
       if (response?.ok) {
@@ -110,8 +535,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           error: {
             code: 'INVALID_CHALLENGE_RESPONSE',
             message:
-              'Challenge response missing required fields (signature, host, token, timestamp, service)',
-            response: challengeResponse
+              'Challenge response missing required fields (signature, host, token, timestamp, service)'
           }
         });
       }
@@ -156,10 +580,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           code: 400,
           error: {
             code: 'SIGNATURE_VERIFICATION_FAILED',
-            message: 'Domain challenge signature verification failed',
-            expected: expectedSignature,
-            received: challengeData.signature,
-            signatureData
+            message: 'Domain challenge signature verification failed'
           }
         });
       }
@@ -178,24 +599,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       // Verify that the host matches the custom domain
-      if (challengeData.host !== customDomain) {
+      if (challengeData.host !== verifiedDomain) {
         return jsonRes(res, {
           code: 400,
           error: {
             code: 'HOST_MISMATCH',
             message: 'Challenge host mismatch',
-            expected: customDomain,
+            expected: verifiedDomain,
             received: challengeData.host
           }
         });
       }
 
-      console.log('Domain challenge successful for:', customDomain);
+      console.log('Domain challenge successful for:', verifiedDomain);
 
       jsonRes(res, {
         data: {
           verified: true,
-          domain: customDomain,
+          domain: verifiedDomain,
           challengeUrl,
           proxy: {
             isProxy: challengeData.isProxy || false
@@ -211,7 +632,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           code: 400,
           error: {
             code: 'CHALLENGE_TIMEOUT',
-            message: `Challenge request timeout for domain: ${customDomain}`,
+            message: `Challenge request timeout for domain: ${verifiedDomain}`,
             url: challengeUrl
           }
         });
