@@ -8,23 +8,68 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { JoinStatus } from 'prisma/region/generated/client';
 import { validate } from 'uuid';
 
+type ModifyRoleError = {
+  code: number;
+  message: string;
+};
+
+type ModifyRoleBody = {
+  ns_uid: string;
+  targetUserCrUid: string;
+  tRole: UserRole;
+};
+
+export const validateModifyRoleRequest = (
+  body: {
+    ns_uid?: string;
+    targetUserCrUid?: string;
+    tRole?: UserRole;
+  },
+  requesterUserCrUid: string
+): { ok: true; data: ModifyRoleBody } | { ok: false; error: ModifyRoleError } => {
+  const { ns_uid, targetUserCrUid, tRole } = body;
+
+  if (!targetUserCrUid || !validate(targetUserCrUid))
+    return { ok: false, error: { code: 400, message: 'tUserId is invalid' } };
+  if (!isUserRole(tRole)) return { ok: false, error: { code: 400, message: 'tRole is required' } };
+  if (!ns_uid || !validate(ns_uid))
+    return { ok: false, error: { code: 400, message: 'ns_uid is invalid' } };
+  if (targetUserCrUid === requesterUserCrUid)
+    return { ok: false, error: { code: 403, message: 'target user is not self' } };
+
+  return { ok: true, data: { ns_uid, targetUserCrUid, tRole } };
+};
+
+export const getModifyRolePermissionError = ({
+  requesterRole,
+  targetCurrentRole,
+  requestedRole,
+  isSelf
+}: {
+  requesterRole: UserRole;
+  targetCurrentRole: UserRole;
+  requestedRole: UserRole;
+  isSelf: boolean;
+}): ModifyRoleError | null => {
+  const canManageTargetCurrentRole = vaildManage(requesterRole)(targetCurrentRole, isSelf);
+
+  if (!canManageTargetCurrentRole) return { code: 403, message: 'you are not manager' };
+  if (requestedRole === UserRole.Owner && requesterRole !== UserRole.Owner)
+    return { code: 403, message: 'you are not owner' };
+
+  return null;
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    //
-    const { ns_uid, targetUserCrUid, tRole } = req.body as {
-      ns_uid?: string;
-      targetUserCrUid?: string;
-      tRole?: UserRole;
-    };
-    if (!targetUserCrUid || !validate(targetUserCrUid))
-      return jsonRes(res, { code: 400, message: 'tUserId is invalid' });
-    if (!isUserRole(tRole)) return jsonRes(res, { code: 400, message: 'tRole is required' });
-    if (!ns_uid || !validate(ns_uid))
-      return jsonRes(res, { code: 400, message: 'ns_uid is invalid' });
-    if (targetUserCrUid === payload.userCrUid)
-      return jsonRes(res, { code: 403, message: 'target user is not self' });
+
+    const requestValidation = validateModifyRoleRequest(req.body, payload.userCrUid);
+    if (!requestValidation.ok) return jsonRes(res, requestValidation.error);
+
+    const { ns_uid, targetUserCrUid, tRole } = requestValidation.data;
+
     //  get utn
     const queryResults = await prisma.userWorkspace.findMany({
       where: {
@@ -41,22 +86,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     const own = queryResults.find((x) => x.userCrUid === payload.userCrUid);
     if (!own) return jsonRes(res, { code: 403, message: 'you are not in namespace' });
-    const vaildFn = vaildManage(roleToUserRole(own.role));
     const targetUser = queryResults.find((x) => x.userCrUid === targetUserCrUid);
     if (!targetUser) return jsonRes(res, { code: 404, message: 'target is not in namespace' });
-    if (!vaildFn(roleToUserRole(targetUser.role), targetUser.userCrUid === own.userCrUid))
-      return jsonRes(res, { code: 403, message: 'you are not manager' });
+
+    const ownRole = roleToUserRole(own.role);
+    const targetRole = roleToUserRole(targetUser.role);
+    const permissionError = getModifyRolePermissionError({
+      requesterRole: ownRole,
+      targetCurrentRole: targetRole,
+      requestedRole: tRole,
+      isSelf: targetUser.userCrUid === own.userCrUid
+    });
+
+    if (permissionError) return jsonRes(res, permissionError);
 
     // if role is same, do nothing
-    if (roleToUserRole(targetUser.role) === tRole)
-      return jsonRes(res, { code: 200, message: 'Successfully' });
+    if (targetRole === tRole) return jsonRes(res, { code: 200, message: 'Successfully' });
 
     await modifyWorkspaceRole({
       k8s_username: targetUser.userCr.crName,
       role: tRole,
       action: 'Modify',
       workspaceId: targetUser.workspace.id,
-      pre_role: roleToUserRole(targetUser.role)
+      pre_role: targetRole
     });
     const updateResult = await modifyBinding({
       userCrUid: targetUser.userCrUid,
