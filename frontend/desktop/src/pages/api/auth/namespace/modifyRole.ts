@@ -43,7 +43,6 @@ export const validateModifyRoleRequest = (
 export const getModifyRolePermissionError = ({
   requesterRole,
   targetCurrentRole,
-  requestedRole,
   isSelf
 }: {
   requesterRole: UserRole;
@@ -51,11 +50,11 @@ export const getModifyRolePermissionError = ({
   requestedRole: UserRole;
   isSelf: boolean;
 }): ModifyRoleError | null => {
+  if (requesterRole !== UserRole.Owner) return { code: 403, message: 'you are not owner' };
+
   const canManageTargetCurrentRole = vaildManage(requesterRole)(targetCurrentRole, isSelf);
 
   if (!canManageTargetCurrentRole) return { code: 403, message: 'you are not manager' };
-  if (requestedRole === UserRole.Owner && requesterRole !== UserRole.Owner)
-    return { code: 403, message: 'you are not owner' };
 
   return null;
 };

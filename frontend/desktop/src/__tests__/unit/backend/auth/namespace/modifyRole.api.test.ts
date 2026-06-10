@@ -221,10 +221,24 @@ describe('namespace modifyRole api handler', () => {
       ).toBeNull();
     });
 
-    it('allows manager modification of a developer to a non-owner role', () => {
+    it('rejects manager modification of a developer to a non-owner role', () => {
       expect(
         getModifyRolePermissionError({
           requesterRole: UserRole.Manager,
+          targetCurrentRole: UserRole.Developer,
+          requestedRole: UserRole.Manager,
+          isSelf: false
+        })
+      ).toEqual({
+        code: 403,
+        message: 'you are not owner'
+      });
+    });
+
+    it('allows owner modification of a developer to a non-owner role', () => {
+      expect(
+        getModifyRolePermissionError({
+          requesterRole: UserRole.Owner,
           targetCurrentRole: UserRole.Developer,
           requestedRole: UserRole.Manager,
           isSelf: false
@@ -242,7 +256,7 @@ describe('namespace modifyRole api handler', () => {
         })
       ).toEqual({
         code: 403,
-        message: 'you are not manager'
+        message: 'you are not owner'
       });
     });
   });
@@ -327,7 +341,7 @@ describe('namespace modifyRole api handler', () => {
     });
   });
 
-  it('allows a manager to modify a developer to a non-owner role', async () => {
+  it('rejects a manager modifying a developer to a non-owner role', async () => {
     mockVerifyAccessToken.mockResolvedValue({
       userCrUid: managerUserCrUid
     } as any);
@@ -336,6 +350,40 @@ describe('namespace modifyRole api handler', () => {
         userCrUid: managerUserCrUid,
         role: Role.MANAGER,
         crName: 'manager-cr'
+      }),
+      buildUserWorkspace({
+        userCrUid: developerUserCrUid,
+        role: Role.DEVELOPER,
+        crName: 'developer-cr'
+      })
+    ]);
+    mockModifyWorkspaceRole.mockResolvedValue(undefined as any);
+    mockModifyBinding.mockResolvedValue({} as any);
+
+    const req: any = createModifyRoleReq({
+      targetUserCrUid: developerUserCrUid,
+      tRole: UserRole.Manager
+    });
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.body).toMatchObject({
+      code: 403
+    });
+    expect(mockModifyWorkspaceRole).not.toHaveBeenCalled();
+    expect(mockModifyBinding).not.toHaveBeenCalled();
+  });
+
+  it('allows an owner to modify a developer to a non-owner role', async () => {
+    mockVerifyAccessToken.mockResolvedValue({
+      userCrUid: ownerUserCrUid
+    } as any);
+    mockPrisma.userWorkspace.findMany.mockResolvedValue([
+      buildUserWorkspace({
+        userCrUid: ownerUserCrUid,
+        role: Role.OWNER,
+        crName: 'owner-cr'
       }),
       buildUserWorkspace({
         userCrUid: developerUserCrUid,
