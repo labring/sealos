@@ -382,6 +382,17 @@ func (k *KubeadmRuntime) syncLocalCertificateIdentity(version string) error {
 		return fmt.Errorf("load cluster networking and certSANs for local identity sync: %w", err)
 	}
 
+	localKubeConfigFiles := defaultLocalKubeConfigFiles(version)
+	// Ensure the kubeadm:cluster-admins binding before local kubeconfig renewal.
+	// After renewal, local super-admin.conf may be signed by sealos-managed PKI and
+	// apiserver may still be settling after control-plane static pod upgrades.
+	if shouldEnsureAdminClusterRoleBinding(version, nil, true, localKubeConfigFiles) {
+		if err := k.ensureAdminClusterRoleBinding(); err != nil {
+			return err
+		}
+		k.clearKubeClient()
+	}
+
 	hostName, err := k.execHostname(k.getMaster0IPAndPort())
 	if err != nil {
 		return fmt.Errorf("get hostname failed while syncing local certificate identity: %w", err)
@@ -400,15 +411,10 @@ func (k *KubeadmRuntime) syncLocalCertificateIdentity(version string) error {
 		return fmt.Errorf("refresh local pki identity model for %s: %w", version, err)
 	}
 
-	localKubeConfigFiles := defaultLocalKubeConfigFiles(version)
 	if err := renewLocalKubeConfigFilesForVersion(k, hostName, version, localKubeConfigFiles, nil); err != nil {
 		return err
 	}
-	if shouldEnsureAdminClusterRoleBinding(version, nil, true, localKubeConfigFiles) {
-		if err := k.ensureAdminClusterRoleBinding(); err != nil {
-			return err
-		}
-	}
+	k.clearKubeClient()
 	if shouldRegenerateRemoteAdminKubeConfig(version) {
 		if err := k.syncRemoteAdminKubeConfigIdentity(version); err != nil {
 			return err
@@ -464,10 +470,7 @@ func (k *KubeadmRuntime) syncRemoteAdminKubeConfigIdentity(version string) error
 }
 
 func (k *KubeadmRuntime) syncRemoteAdminKubeConfigWithLocalIdentityModel(version string) error {
-	if err := k.mergeWithBuiltinKubeadmConfig(); err != nil {
-		return fmt.Errorf("load cluster networking and certSANs for remote admin.conf sync: %w", err)
-	}
-
+	// certSANs and networking were loaded earlier in syncLocalCertificateIdentity.
 	stagingDir := filepath.Join(k.pathResolver.TmpPath(), "upgrade-migrations", "remote-admin-kubeconfig")
 	if err := os.RemoveAll(stagingDir); err != nil {
 		return fmt.Errorf("cleanup local kubeconfig staging dir %s: %w", stagingDir, err)

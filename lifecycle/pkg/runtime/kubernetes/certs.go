@@ -18,9 +18,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/labring/sealos/pkg/cert"
 	"github.com/labring/sealos/pkg/runtime"
@@ -201,17 +203,57 @@ func shouldEnsureAdminClusterRoleBinding(kubeVersion string, adminOrganizations 
 	return false
 }
 
-func (k *KubeadmRuntime) ensureAdminClusterRoleBinding() error {
-	superAdminFile := filepath.Join(k.pathResolver.EtcPath(), SuperAdminConf)
-	kubeconfig := superAdminFile
-	if !file.IsExist(kubeconfig) {
-		kubeconfig = k.pathResolver.AdminFile()
+func (k *KubeadmRuntime) fetchMasterKubeConfigFile(name string) (string, error) {
+	localPath := filepath.Join(k.pathResolver.EtcPath(), name)
+	if err := os.MkdirAll(k.pathResolver.EtcPath(), 0o755); err != nil {
+		return "", fmt.Errorf("create local etc dir for %s: %w", name, err)
 	}
+	remotePath := path.Join(kubernetesEtc, name)
+	if err := k.sshFetch(k.getMaster0IPAndPort(), remotePath, localPath); err != nil {
+		return "", fmt.Errorf("fetch %s from master0: %w", remotePath, err)
+	}
+	return localPath, nil
+}
 
-	client, err := kubernetes.NewKubernetesClient(kubeconfig, k.getMaster0IPAPIServer())
-	if err != nil {
-		return fmt.Errorf("build kubernetes client from %s: %w", kubeconfig, err)
+// resolvePrivilegedKubeConfig returns a kubeconfig that still has cluster-admin
+// privileges on the live cluster. Prefer master0 copies over sealos-managed local
+// files, which may be signed by stale PKI from a previous partial upgrade.
+func (k *KubeadmRuntime) resolvePrivilegedKubeConfig() (string, error) {
+	if kubeconfig, err := k.fetchMasterKubeConfigFile(SuperAdminConf); err == nil {
+		return kubeconfig, nil
 	}
+	if kubeconfig, err := k.fetchMasterKubeConfigFile(AdminConf); err == nil {
+		return kubeconfig, nil
+	}
+	localSuperAdmin := filepath.Join(k.pathResolver.EtcPath(), SuperAdminConf)
+	if file.IsExist(localSuperAdmin) {
+		return localSuperAdmin, nil
+	}
+	return k.pathResolver.AdminFile(), nil
+}
+
+func (k *KubeadmRuntime) resolveSuperAdminKubeConfig() (string, error) {
+	return k.resolvePrivilegedKubeConfig()
+}
+
+func isRetryableKubernetesClientError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "connection refused") ||
+		strings.Contains(msg, "no route to host") ||
+		strings.Contains(msg, "i/o timeout") ||
+		strings.Contains(msg, "TLS handshake timeout") ||
+		strings.Contains(msg, "EOF")
+}
+
+func (k *KubeadmRuntime) ensureAdminClusterRoleBinding() error {
+	kubeconfig, err := k.resolvePrivilegedKubeConfig()
+	if err != nil {
+		return err
+	}
+	apiserver := k.getClusterAPIServer()
 
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -229,10 +271,24 @@ func (k *KubeadmRuntime) ensureAdminClusterRoleBinding() error {
 			},
 		},
 	}
-	if err := kubernetes.NewKubeIdempotency(client.Kubernetes()).CreateOrUpdateClusterRoleBinding(clusterRoleBinding); err != nil {
-		return fmt.Errorf("ensure kubeadm:cluster-admins ClusterRoleBinding: %w", err)
+
+	deadline := time.Now().Add(2 * time.Minute)
+	var lastErr error
+	for {
+		client, err := kubernetes.NewKubernetesClient(kubeconfig, apiserver)
+		if err != nil {
+			return fmt.Errorf("build kubernetes client from %s: %w", kubeconfig, err)
+		}
+		lastErr = kubernetes.NewKubeIdempotency(client.Kubernetes()).CreateOrUpdateClusterRoleBinding(clusterRoleBinding)
+		if lastErr == nil {
+			return nil
+		}
+		if !isRetryableKubernetesClientError(lastErr) || time.Now().After(deadline) {
+			return fmt.Errorf("ensure kubeadm:cluster-admins ClusterRoleBinding: %w", lastErr)
+		}
+		logger.Warn("api-server not ready while ensuring kubeadm:cluster-admins ClusterRoleBinding, retrying: %s", lastErr.Error())
+		time.Sleep(5 * time.Second)
 	}
-	return nil
 }
 
 func normalizeRenewTargets(targets []string) ([]string, bool, error) {
