@@ -477,11 +477,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const doSubmit = useCallback(() => {
     formHook.handleSubmit(async (data) => {
-      const parseYamls = formData2Yamls(data, config.userDomains, {
-        disableHttps: config.disableHttps
-      });
-      setYamlList(parseYamls);
-
       // gpu inventory check
       if (data.gpu?.type) {
         const inventory = countGpuInventory(data.gpu?.type);
@@ -522,13 +517,22 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       }
 
       openConfirm(() => {
+        const submitData = data;
+        formHook.setValue('appName', submitData.appName);
+        realTimeForm.current = submitData;
+
+        const parseYamls = formData2Yamls(submitData, config.userDomains, {
+          disableHttps: config.disableHttps
+        });
+        setYamlList(parseYamls);
+
         track('deployment_create', {
           module: 'applaunchpad',
           method: 'custom',
           config: {
             template_type: 'public',
-            template_name: data.imageName,
-            template_version: data.imageName.split(':')?.[1] ?? 'latest'
+            template_name: submitData.imageName,
+            template_version: submitData.imageName.split(':')?.[1] ?? 'latest'
           },
           resources: {
             cpu_cores: quantityToCpuMillicores(data.cpu) / 1000,
@@ -537,8 +541,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             scaling: data.hpa.use
               ? {
                   method:
-                    data.hpa.target === 'cpu' ? 'CPU' : data.hpa.target === 'gpu' ? 'GPU' : 'RAM',
-                  value: data.hpa.value
+                    submitData.hpa.target === 'cpu'
+                      ? 'CPU'
+                      : submitData.hpa.target === 'gpu'
+                      ? 'GPU'
+                      : 'RAM',
+                  value: submitData.hpa.value
                 }
               : undefined
           }
@@ -554,7 +562,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     openConfirm,
     submitSuccess,
     submitError,
-    setIsLoading
+    setIsLoading,
+    config.userDomains,
+    config.disableHttps
   ]);
 
   const handleSubmit = useQuotaGuarded(
