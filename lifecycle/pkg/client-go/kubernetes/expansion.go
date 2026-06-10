@@ -98,7 +98,7 @@ func (ke *kubeExpansion) UpdateKubeletConfig(ctx context.Context, kubeletConfig 
 	if err != nil {
 		return err
 	}
-	cm.Data[ckubeadm.KubeletBaseConfigurationConfigMap] = kubeletConfig
+	cm.Data[ckubeadm.KubeletBaseConfigurationConfigMapKey] = kubeletConfig
 	_, err = ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Update(ctx, cm, metav1.UpdateOptions{})
 	return err
 }
