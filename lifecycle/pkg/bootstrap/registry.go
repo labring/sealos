@@ -50,7 +50,10 @@ func (a *registryApplier) Apply(ctx Context, host string) error {
 		return err
 	}
 
-	return ctx.GetExecer().CmdAsync(host, ctx.GetBash().InitRegistryBash(host))
+	if err := ctx.GetExecer().CmdAsync(host, ctx.GetBash().InitRegistryBash(host)); err != nil {
+		return err
+	}
+	return helpers.WaitRegistryReady(ctx.GetExecer(), host, rc.Domain, rc.Port)
 }
 
 func (*registryApplier) Undo(ctx Context, host string) error {

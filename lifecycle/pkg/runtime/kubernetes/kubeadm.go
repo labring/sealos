@@ -47,6 +47,8 @@ var (
 	V1260 = semver.MustParse("v1.26.0")
 	V1270 = semver.MustParse("v1.27.0")
 	V1280 = semver.MustParse("v1.28.0")
+	V1290 = semver.MustParse("v1.29.0")
+	V1300 = semver.MustParse("v1.30.0")
 	V1310 = semver.MustParse("v1.31.0")
 )
 
@@ -477,7 +479,8 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return yaml.MarshalConfigs(&conversion.InitConfiguration,
+	return marshalConfigsForVersion(k.kubeadmConfig.ClusterConfiguration.KubernetesVersion,
+		&conversion.InitConfiguration,
 		&conversion.ClusterConfiguration,
 		&conversion.KubeletConfiguration,
 		&conversion.KubeProxyConfiguration)
