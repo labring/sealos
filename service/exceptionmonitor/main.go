@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/labring/sealos/service/exceptionmonitor/helper/monitor"
+	"github.com/labring/sealos/service/exceptionmonitor/server"
 	"log"
 
 	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
@@ -8,8 +10,6 @@ import (
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/dao"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/client"
-	"github.com/labring/sealos/service/exceptionmonitor/helper/monitor"
-	"github.com/labring/sealos/service/exceptionmonitor/server"
 )
 
 func main() {
@@ -20,6 +20,8 @@ func main() {
 	go monitor.DatabasePerformanceMonitor()
 	go monitor.DatabaseBackupMonitor()
 	go monitor.QuotaMonitor()
+	go monitor.CockroachMonitor()
+	//go monitor.DatabaseRoleMonitor()
 	go monitor.CockroachMonitor()
 	go server.StartServer()
 	select {}
