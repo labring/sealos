@@ -1,0 +1,89 @@
+import '@/styles/tailwind.css';
+
+import { cleanup, render, screen, within } from '@testing-library/react';
+import type React from 'react';
+import { afterEach, describe, expect, test, vi } from 'vitest';
+import { page } from 'vitest/browser';
+import NetworkConfigurationTable, {
+  type NetworkConfigurationTableItem
+} from '@/components/app/detail/index/NetworkConfigurationTable';
+
+vi.mock('@sealos/shadcn-ui/tooltip', () => ({
+  Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  TooltipContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  TooltipTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>
+}));
+
+vi.mock('@/components/app/detail/index/ICPStatus', () => ({
+  default: () => <span data-testid="icp-status" />
+}));
+
+const publicAddress = 'https://very-long-public-domain-for-layout-regression.gzg.sealos.run';
+
+const networks: NetworkConfigurationTableItem[] = [
+  {
+    inline: 'http://hello-world.ns-test.svc.cluster.local:8080',
+    public: publicAddress,
+    customDomain: '',
+    showReadyStatus: true,
+    port: 8080
+  }
+];
+
+const renderNetworkConfigurationTable = () => {
+  return render(
+    <div style={{ width: 360 }}>
+      <NetworkConfigurationTable
+        networks={networks}
+        networkStatus={[{ ready: true, url: publicAddress }]}
+        statusMap={{
+          [publicAddress]: {
+            ready: true,
+            url: publicAddress
+          }
+        }}
+        copyData={vi.fn()}
+        t={(key) => key}
+      />
+    </div>
+  );
+};
+
+const getLineTop = (element: Element) => Math.round(element.getBoundingClientRect().top);
+const expectOnSameLine = (left: Element, right: Element) => {
+  expect(Math.abs(getLineTop(left) - getLineTop(right))).toBeLessThanOrEqual(2);
+};
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
+
+describe('NetworkConfigurationTable layout', () => {
+  test('keeps cells, ready tag, and public address on one line in a narrow viewport', async () => {
+    await page.viewport(390, 844);
+    renderNetworkConfigurationTable();
+
+    const table = screen.getByRole('table');
+    const tableHead = table.querySelector('thead');
+    const tableBody = table.querySelector('tbody');
+    const publicCell = within(table).getByText(publicAddress).closest('td');
+    const accessibleTag = screen.getByText('Accessible');
+    const renderedPublicAddress = screen.getByText(publicAddress);
+    const publicContentRow = publicCell?.firstElementChild;
+
+    expect(tableHead).toBeTruthy();
+    expect(tableBody).toBeTruthy();
+    expect(publicCell).toBeTruthy();
+    expect(publicContentRow).toBeTruthy();
+
+    expect(getComputedStyle(table).minWidth).toBe('720px');
+    expect(getComputedStyle(tableHead as HTMLTableSectionElement).whiteSpace).toBe('nowrap');
+    expect(getComputedStyle(tableBody as HTMLTableSectionElement).whiteSpace).toBe('nowrap');
+    expect(getComputedStyle(publicContentRow as Element).whiteSpace).toBe('nowrap');
+
+    const scrollContainer = table.parentElement;
+    expect(scrollContainer?.clientWidth).toBeLessThan(scrollContainer?.scrollWidth ?? 0);
+    expectOnSameLine(accessibleTag, renderedPublicAddress);
+  });
+});
