@@ -618,7 +618,16 @@ export async function deleteDeployment(api: AppsV1Api, namespace: string, resour
 }
 
 export async function deleteStatefulSet(api: AppsV1Api, namespace: string, resourceName: string) {
-  await api.deleteNamespacedStatefulSet(resourceName, namespace);
+  await api.deleteNamespacedStatefulSet(
+    resourceName,
+    namespace,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    'Foreground',
+    { propagationPolicy: 'Foreground' }
+  );
 }
 
 export async function deleteCustomResource(
@@ -846,7 +855,6 @@ export async function deleteAppLaunchpad(
     ...certificates.map((item: any) =>
       deleteCertificate(apis.k8sCustomObjects, namespace, item.metadata.name)
     ),
-    legacyDeletePersistentVolumeClaimsByAppLabel(apis.k8sCore, namespace, resourceName),
     deleteHorizontalPodAutoscaler(apis.k8sAutoscaling, namespace, resourceName)
   ]);
 
@@ -871,6 +879,8 @@ export async function deleteAppLaunchpad(
       });
     }
   });
+
+  await legacyDeletePersistentVolumeClaimsByAppLabel(apis.k8sCore, namespace, resourceName);
 }
 
 export async function getDatabases(api: CustomObjectsApi, namespace: string, instanceName: string) {

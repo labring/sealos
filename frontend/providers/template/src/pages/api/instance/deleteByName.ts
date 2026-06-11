@@ -6,7 +6,7 @@ import { jsonRes } from '@/services/backend/response';
 import { withErrorHandler } from '@/services/backend/middleware';
 import {
   deleteInstanceOnly,
-  deleteInstancePersistentVolumeClaims,
+  deleteOwnerReferencedInstance,
   getInstanceOrThrow404,
   isInstanceOwnerReferencesReady,
   legacyDeleteInstanceAll
@@ -29,9 +29,7 @@ export default withErrorHandler(async function handler(req: NextApiRequest, res:
   }
 
   if (isInstanceOwnerReferencesReady(instance)) {
-    await deleteInstancePersistentVolumeClaims(k8s, instanceName);
-
-    await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+    await deleteOwnerReferencedInstance(k8s, instance.metadata.name);
     return jsonRes(res, { message: `Instance "${instanceName}" deleted successfully` });
   }
 

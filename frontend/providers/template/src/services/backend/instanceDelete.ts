@@ -32,6 +32,16 @@ type StatefulSetResource = KubernetesObject & {
     }>;
   };
 };
+type StatefulSetPvcCleanupMode =
+  | 'legacy'
+  | 'owner-reference-only'
+  | 'labeled-pvc'
+  | 'native-retention';
+type StatefulSetPvcCleanupTarget = {
+  statefulSet: StatefulSetResource;
+  statefulSetName: string;
+  mode: StatefulSetPvcCleanupMode;
+};
 
 const pvcCleanupLogPrefix = '[template pvc cleanup]';
 
@@ -81,6 +91,27 @@ export async function deleteInstanceOnly(
   instanceName: string
 ): Promise<void> {
   await operations.deleteInstance(api, namespace, instanceName);
+}
+
+export async function deleteOwnerReferencedInstance(
+  k8s: Awaited<ReturnType<typeof getK8s>>,
+  instanceName: string
+): Promise<void> {
+  const ns = k8s.namespace;
+  const statefulSets = await listStatefulSetsByInstance(k8s.k8sApp, ns, instanceName).catch(
+    (error) => {
+      if (isK8sNotFound(error)) return [];
+      throw error;
+    }
+  );
+
+  await deleteResourcesBatch(
+    Promise.resolve(statefulSets),
+    (name: string) => operations.deleteStatefulSet(k8s.k8sApp, ns, name),
+    'An error occurred whilst deleting StatefulSets.'
+  );
+  await deleteInstancePersistentVolumeClaims(k8s, instanceName, statefulSets);
+  await deleteInstanceOnly(k8s.k8sCustomObjects, ns, instanceName);
 }
 
 export async function legacyDeletePersistentVolumeClaimsOnly(
@@ -171,7 +202,7 @@ async function deletePersistentVolumeClaimByName(
 function inferStatefulSetPvcCleanupMode(
   statefulSet: StatefulSetResource,
   instanceName: string
-): 'legacy' | 'owner-reference-only' | 'labeled-pvc' | 'native-retention' {
+): StatefulSetPvcCleanupMode {
   const volumeClaimTemplates = statefulSet.spec?.volumeClaimTemplates ?? [];
   const hasTemplateDeployLabelInVolumeClaimTemplates =
     volumeClaimTemplates.length > 0 &&
@@ -189,18 +220,19 @@ function inferStatefulSetPvcCleanupMode(
 
 export async function deleteInstancePersistentVolumeClaims(
   k8s: Awaited<ReturnType<typeof getK8s>>,
-  instanceName: string
+  instanceName: string,
+  knownStatefulSets?: StatefulSetResource[]
 ): Promise<void> {
   const ns = k8s.namespace;
 
   console.log(pvcCleanupLogPrefix, 'cleanup start', { instanceName, namespace: ns });
 
-  const statefulSets = await listStatefulSetsByInstance(k8s.k8sApp, ns, instanceName).catch(
-    (error) => {
+  const statefulSets =
+    knownStatefulSets ??
+    (await listStatefulSetsByInstance(k8s.k8sApp, ns, instanceName).catch((error) => {
       if (isK8sNotFound(error)) return [];
       throw error;
-    }
-  );
+    }));
 
   // ? PVC cleanup modes:
   // * 1. legacy: resources do not have Instance ownerReference.
@@ -210,6 +242,8 @@ export async function deleteInstancePersistentVolumeClaims(
 
   // [TODO] Migrate instance creation to mode 4 in the future.
   // ? Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#persistentvolumeclaim-retention
+
+  const statefulSetCleanupTargets: StatefulSetPvcCleanupTarget[] = [];
 
   for (const statefulSet of statefulSets) {
     const statefulSetName = statefulSet.metadata?.name ?? '';
@@ -225,13 +259,22 @@ export async function deleteInstancePersistentVolumeClaims(
     const retentionWhenDeleted =
       statefulSet.spec?.persistentVolumeClaimRetentionPolicy?.whenDeleted;
 
+    const inferredMode = inferStatefulSetPvcCleanupMode(statefulSet, instanceName);
+
     console.log(pvcCleanupLogPrefix, 'statefulset identified', {
       statefulSetName,
       ownerReferenceReady: (statefulSet.metadata?.ownerReferences ?? []).length > 0,
       retentionWhenDeleted,
       hasTemplateDeployLabelInVolumeClaimTemplates,
       volumeClaimTemplateNames,
-      inferredMode: inferStatefulSetPvcCleanupMode(statefulSet, instanceName)
+      inferredMode
+    });
+
+    if (!statefulSetName) continue;
+    statefulSetCleanupTargets.push({
+      statefulSet,
+      statefulSetName,
+      mode: inferredMode
     });
   }
 
@@ -241,6 +284,13 @@ export async function deleteInstancePersistentVolumeClaims(
     `${templateDeployKey}=${instanceName}`,
     'instance-label'
   );
+
+  const needsLegacyPvcFallbacks =
+    statefulSetCleanupTargets.some(({ mode }) => mode !== 'labeled-pvc') ||
+    statefulSetCleanupTargets.length === 0;
+
+  if (!needsLegacyPvcFallbacks) return;
+
   // Legacy fallback for old Applaunchpad-style PVCs that were labeled by application name.
   await deletePersistentVolumeClaimsBySelector(
     k8s.k8sCore,
@@ -249,9 +299,8 @@ export async function deleteInstancePersistentVolumeClaims(
     'legacy-app-label-instance'
   );
 
-  for (const statefulSet of statefulSets) {
-    const statefulSetName = statefulSet.metadata?.name;
-    if (!statefulSetName) continue;
+  for (const { statefulSet, statefulSetName, mode } of statefulSetCleanupTargets) {
+    if (mode === 'labeled-pvc') continue;
 
     // Legacy fallback for component-level StatefulSet PVCs, for example `app=mysql`.
     await deletePersistentVolumeClaimsBySelector(
@@ -366,6 +415,12 @@ export async function legacyDeleteInstanceAll(
   instanceName: string
 ): Promise<void> {
   const ns = k8s.namespace;
+  const statefulSets = await listStatefulSetsByInstance(k8s.k8sApp, ns, instanceName).catch(
+    (error) => {
+      if (isK8sNotFound(error)) return [];
+      throw error;
+    }
+  );
 
   // Workloads and applaunchpad dependents
   await deleteResourcesBatch(
@@ -475,7 +530,7 @@ export async function legacyDeleteInstanceAll(
   );
 
   // PVC
-  await deleteInstancePersistentVolumeClaims(k8s, instanceName);
+  await deleteInstancePersistentVolumeClaims(k8s, instanceName, statefulSets);
 
   // Monitoring (Prometheus Operator)
   await deleteResourcesBatch(

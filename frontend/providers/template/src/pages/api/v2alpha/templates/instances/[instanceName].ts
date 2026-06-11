@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
 import {
   deleteInstanceOnly,
-  deleteInstancePersistentVolumeClaims,
+  deleteOwnerReferencedInstance,
   getInstanceOrThrow404,
   isInstanceOwnerReferencesReady,
   legacyDeleteInstanceAll
@@ -90,8 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (isInstanceOwnerReferencesReady(instance)) {
-      await deleteInstancePersistentVolumeClaims(k8s, instanceName);
-      await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+      await deleteOwnerReferencedInstance(k8s, instance.metadata.name);
     } else {
       await legacyDeleteInstanceAll(k8s, instanceName);
       await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);

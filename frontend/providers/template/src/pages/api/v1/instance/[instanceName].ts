@@ -9,7 +9,7 @@ import {
   isInstanceOwnerReferencesReady,
   legacyDeleteInstanceAll,
   deleteInstanceOnly,
-  deleteInstancePersistentVolumeClaims
+  deleteOwnerReferencedInstance
 } from '@/services/backend/instanceDelete';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -61,9 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // New instances: only delete Instance, rely on GC cascade
       if (isInstanceOwnerReferencesReady(instance)) {
-        await deleteInstancePersistentVolumeClaims(k8s, instanceName);
-
-        await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+        await deleteOwnerReferencedInstance(k8s, instance.metadata.name);
         return jsonRes(res, {
           code: ResponseCode.SUCCESS,
           message: ResponseMessages[ResponseCode.SUCCESS]
