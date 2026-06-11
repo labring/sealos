@@ -1,6 +1,10 @@
 import { NextApiResponse } from 'next';
 import { ApiResponse, ResponseCode, ResponseMessages } from '@/types/response';
 import { V1Status } from '@kubernetes/client-node';
+import {
+  getPublicDomainConflictResponse,
+  isIngressPublicDomainConflictError
+} from './publicDomain';
 
 export const jsonRes = <T = any>(res: NextApiResponse, options: Partial<ApiResponse<T>> = {}) => {
   const { code = ResponseCode.SUCCESS, message, data, error } = options;
@@ -17,6 +21,15 @@ export const jsonRes = <T = any>(res: NextApiResponse, options: Partial<ApiRespo
 };
 
 export const handleK8sError = (err: any): Partial<ApiResponse> => {
+  if (isIngressPublicDomainConflictError(err)) {
+    const conflict = getPublicDomainConflictResponse(err);
+    return {
+      code: 409,
+      message: conflict.message,
+      error: conflict
+    };
+  }
+
   if (err?.kind === 'Status' && err?.apiVersion === 'v1' && err?.status) {
     const k8sApiErr = err as V1Status;
     if (k8sApiErr.code === 403) {

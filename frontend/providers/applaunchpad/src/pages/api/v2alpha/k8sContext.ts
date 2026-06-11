@@ -2,6 +2,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createK8sContext } from '@/services/backend';
 import type { K8sContext } from '@/services/backend';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import {
+  getPublicDomainConflictResponse,
+  isIngressPublicDomainConflictError
+} from '@/services/backend/publicDomain';
 
 /**
  * Auth/kubeconfig error identifiers from authSession and getK8s.
@@ -133,6 +137,22 @@ export function sendK8sOperationError(
   const errMessage = getK8sErrorMessage(err);
   const errStr = errMessage.toLowerCase();
   const statusCode = getK8sStatusCode(err);
+
+  if (isIngressPublicDomainConflictError(err)) {
+    const conflict = getPublicDomainConflictResponse(err);
+    sendError(res, {
+      status: 409,
+      type: ErrorType.RESOURCE_ERROR,
+      code: ErrorCode.CONFLICT,
+      message: conflict.message,
+      details: {
+        code: conflict.code,
+        message: conflict.message,
+        rawMessage: conflict.details
+      }
+    });
+    return;
+  }
 
   // 403 Forbidden - K8s permission denied
   if (statusCode === 403 || errStr.includes('forbidden') || errStr.includes('permission denied')) {

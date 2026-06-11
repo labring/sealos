@@ -4,6 +4,9 @@ import type { K8sContext } from '@/services/backend/appService';
 import type { AppEditType } from '@/types/app';
 import { validatePublicDomainPrefix } from '@/utils/public-domain';
 
+const INGRESS_OWNER_CONFLICT_CODE = '40301';
+const INGRESS_OWNER_CONFLICT_MESSAGE = 'owned by other user';
+
 export class PublicDomainError extends Error {
   constructor(
     message: string,
@@ -21,6 +24,41 @@ export type PublicDomainTarget = {
   appName?: string;
   networkName?: string;
 };
+
+export function getPublicDomainErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+
+  const anyError = error as {
+    body?: {
+      message?: unknown;
+    };
+    message?: unknown;
+  };
+
+  if (typeof anyError?.body?.message === 'string') return anyError.body.message;
+  if (typeof anyError?.message === 'string') return anyError.message;
+  return String(error);
+}
+
+export function isIngressPublicDomainConflictError(error: unknown) {
+  const message = getPublicDomainErrorMessage(error).toLowerCase();
+  return (
+    message.includes(`admission webhook "vingress.sealos.io" denied the request`) &&
+    message.includes(`${INGRESS_OWNER_CONFLICT_CODE}:`) &&
+    message.includes(INGRESS_OWNER_CONFLICT_MESSAGE)
+  );
+}
+
+export function getPublicDomainConflictResponse(error: unknown) {
+  const details = getPublicDomainErrorMessage(error);
+
+  return {
+    code: 'PUBLIC_DOMAIN_CONFLICT' as const,
+    message: 'Public domain is already in use by another workspace.',
+    details
+  };
+}
 
 type PublicDomainK8sContext = {
   k8sNetworkingApp: NetworkingV1Api;
