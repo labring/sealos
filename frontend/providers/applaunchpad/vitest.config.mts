@@ -16,6 +16,10 @@ export default defineConfig({
     conditions: ['node', 'import', 'default'],
     alias: [
       {
+        find: '@',
+        replacement: resolve(__dirname, 'src')
+      },
+      {
         find: /^@sealos\/shadcn-ui\/shadcn\.css$/,
         replacement: resolve(__dirname, '../../packages/shadcn-ui/src/styles/shadcn.css')
       },
