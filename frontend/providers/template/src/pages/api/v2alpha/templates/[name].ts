@@ -10,7 +10,7 @@ import {
   getCachedTemplateDetail,
   setCachedTemplateDetail
 } from './templateCache';
-import { parseTemplateCategories } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/template';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 // estimate min—max equality
@@ -131,7 +131,7 @@ async function handleTemplateDetails(
     getCachedTemplates(
       jsonPath,
       process.env.CDN_URL,
-      parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
+      getConfiguredTemplateCategories(path.resolve(originalPath, 'templates')),
       language
     );
     const template = getTemplateFromCache(templateName);

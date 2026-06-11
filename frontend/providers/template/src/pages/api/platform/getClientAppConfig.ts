@@ -1,6 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { ClientAppConfigSchema } from '@/types/config';
-import { parseTemplateCategories } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export function getClientAppConfigServer() {
@@ -11,7 +11,7 @@ export function getClientAppConfigServer() {
       process.env.CURRENCY_SYMBOL === 'cny' || process.env.CURRENCY_SYMBOL === 'usd'
         ? process.env.CURRENCY_SYMBOL
         : 'shellCoin',
-    categories: parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
+    categories: getConfiguredTemplateCategories(),
     showAuthor: process.env.SHOW_AUTHOR === 'true',
     carousel: {
       enabled: false,

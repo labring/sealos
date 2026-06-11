@@ -1,5 +1,17 @@
 # sealos app launchpad
 
+## template repository configuration
+
+The Template App reads app-store templates from a Git repository configured by environment variables:
+
+- `TEMPLATE_REPO_URL`: Git clone URL, for example an internal Gogs URL.
+- `TEMPLATE_REPO_BRANCH`: branch to clone, default `main`.
+- `TEMPLATE_REPO_FOLDER`: folder inside the repository that contains template YAML files, default `template`.
+- `TEMPLATE_CATEGORIES_PATH`: optional category JSON path inside the cloned repo, default `config/categories.json`.
+- `TEMPLATE_CATEGORIES`: fallback category JSON when the repository category file is missing.
+
+When templates use repository-local README or icon paths such as `README.md`, `./README.md`, or `/shared/logo.svg`, the app serves them through `/api/templateAsset` from the cloned local repository. This keeps private/offline deployments from depending on public raw URLs.
+
 ## project tree
 ```bash
 .

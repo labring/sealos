@@ -3,7 +3,7 @@ import { TemplateType } from '@/types/app';
 import {
   filterConfiguredCategorySlugs,
   getCategorySlugs,
-  parseTemplateCategories
+  getConfiguredTemplateCategories
 } from '@/utils/template';
 import type { TemplateCategory } from '@/types/config';
 import { parseGithubUrl } from '@/utils/tools';
@@ -77,7 +77,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const cdnUrl = process.env.CDN_URL;
   const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-  const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
+  const repoRootPath = path.resolve(originalPath, 'templates');
+  const configuredCategories = getConfiguredTemplateCategories(repoRootPath);
 
   try {
     if (!global.updateRepoCronJob) {

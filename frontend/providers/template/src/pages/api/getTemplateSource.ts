@@ -18,6 +18,11 @@ import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
 import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
+import {
+  hasLocalTemplateAssets,
+  readTemplateAssetFile,
+  rewriteTemplateAssetsToLocalApi
+} from '@/utils/templateAssets';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -143,14 +148,16 @@ export async function GetTemplateByName({
     };
   }
   templateYaml.spec.deployCount = _tempalte?.spec?.deployCount;
-  templateYaml = resolveTemplateAssetUrls(templateYaml, {
-    repo: {
-      url: TemplateEnvs.TEMPLATE_REPO_URL,
-      branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
-    },
-    templateFilePath,
-    repoRootPath
-  });
+  templateYaml = hasLocalTemplateAssets(templateYaml)
+    ? rewriteTemplateAssetsToLocalApi(templateYaml)
+    : resolveTemplateAssetUrls(templateYaml, {
+        repo: {
+          url: TemplateEnvs.TEMPLATE_REPO_URL,
+          branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
+        },
+        templateFilePath,
+        repoRootPath
+      });
 
   if (cdnUrl) {
     templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
@@ -187,7 +194,17 @@ export async function GetTemplateByName({
     readUrl = templateYaml?.spec?.i18n?.[locale]?.readme || templateYaml?.spec?.readme || '';
     if (readUrl) {
       try {
-        readmeContent = await fetchReadmeContentWithRetry(readUrl);
+        if (readUrl.startsWith('/api/templateAsset?')) {
+          const asset = new URLSearchParams(readUrl.split('?')[1] || '').get('asset') || '';
+          readmeContent = readTemplateAssetFile({
+            jsonPath,
+            templateName,
+            assetUrl: asset,
+            repoRootPath
+          }).content.toString('utf8');
+        } else {
+          readmeContent = await fetchReadmeContentWithRetry(readUrl);
+        }
       } catch (error) {
         readmeContent = '';
       }

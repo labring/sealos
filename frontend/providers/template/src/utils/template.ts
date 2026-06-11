@@ -3,6 +3,8 @@ import { TemplateSourceType } from '@/types/app';
 import type { TemplateCategory } from '@/types/config';
 import { reduce, mapValues } from 'lodash';
 import { developGenerateYamlList, generateYamlList, parseTemplateString } from './json-yaml';
+import fs from 'fs';
+import path from 'path';
 
 export const DEFAULT_TEMPLATE_CATEGORIES: TemplateCategory[] = [
   { slug: 'ai', i18n: { en: 'AI', zh: 'AI' } },
@@ -36,6 +38,22 @@ export function parseTemplateCategories(value?: string): TemplateCategory[] {
     console.error('[Template Categories] Failed to parse TEMPLATE_CATEGORIES:', error);
     return DEFAULT_TEMPLATE_CATEGORIES;
   }
+}
+
+export function getConfiguredTemplateCategories(repoRootPath?: string): TemplateCategory[] {
+  const configuredPath = process.env.TEMPLATE_CATEGORIES_PATH || 'config/categories.json';
+  const rootPath = repoRootPath || path.resolve(process.cwd(), 'templates');
+  const categoryPath = path.resolve(rootPath, configuredPath);
+
+  if (categoryPath.startsWith(rootPath) && fs.existsSync(categoryPath)) {
+    try {
+      return parseTemplateCategories(fs.readFileSync(categoryPath, 'utf8'));
+    } catch (error) {
+      console.error('[Template Categories] Failed to read categories from repository:', error);
+    }
+  }
+
+  return parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
 }
 
 export function getCategorySlugs(categories: readonly TemplateCategory[] = []) {
