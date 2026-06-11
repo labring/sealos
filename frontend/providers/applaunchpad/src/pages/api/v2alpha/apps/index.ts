@@ -18,6 +18,7 @@ import {
   sendK8sOperationError,
   sendInternalError
 } from '@/pages/api/v2alpha/k8sContext';
+import { PublicDomainError } from '@/services/backend/publicDomain';
 
 async function processAppResponse(
   response: PromiseSettledResult<any>[],
@@ -77,6 +78,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const appData = await processAppResponse(response, k8s.namespace);
         return res.status(201).json(appData);
       } catch (err) {
+        if (err instanceof PublicDomainError) {
+          return sendError(res, {
+            status: err.status,
+            type: ErrorType.VALIDATION_ERROR,
+            code: ErrorCode.INVALID_VALUE,
+            message: err.message,
+            details: err.code
+          });
+        }
         console.error('Kubernetes create application error:', err);
         return sendK8sOperationError(
           res,

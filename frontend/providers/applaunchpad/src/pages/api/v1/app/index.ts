@@ -11,6 +11,7 @@ import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
 import { LaunchpadApplicationSchema } from '@/types/schema';
+import { PublicDomainError } from '@/services/backend/publicDomain';
 
 async function processAppResponse(
   response: PromiseSettledResult<any>[]
@@ -67,6 +68,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
   } catch (err: any) {
+    if (err instanceof PublicDomainError) {
+      return jsonRes(res, {
+        code: err.status,
+        error: {
+          code: err.code,
+          message: err.message
+        }
+      });
+    }
     jsonRes(res, {
       code: 500,
       error: err

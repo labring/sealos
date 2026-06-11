@@ -27,6 +27,21 @@ export const postAuthDomainChallenge = (data: AuthDomainChallengeParams) =>
     };
   }>('/api/platform/authDomainChallenge', data);
 
+export const getImagePorts = (data: {
+  imageName: string;
+  imageRegistry?: {
+    username?: string;
+    password?: string;
+    serverAddress?: string;
+  };
+}) =>
+  POST<{
+    ports: {
+      port: number;
+      protocol: 'TCP' | 'UDP' | 'SCTP';
+    }[];
+  }>('/api/platform/getImagePorts', data);
+
 export const getUserTasks = () =>
   GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {
     headers: {

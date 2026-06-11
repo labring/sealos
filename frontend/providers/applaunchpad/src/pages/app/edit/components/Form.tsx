@@ -1,12 +1,13 @@
 import { obj2Query } from '@/api/tools';
 import { getSharePVCs } from '@/api/app';
+import { getImagePorts } from '@/api/platform';
 import MyIcon from '@/components/Icon';
 import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
 import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { PVC_STORAGE_MAX, NETWORK_STORAGE_ENABLED } from '@/store/static';
+import { PVC_STORAGE_MAX, NETWORK_STORAGE_ENABLED, SEALOS_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
@@ -36,8 +37,9 @@ import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, UseFormReturn } from 'react-hook-form';
+import { customAlphabet } from 'nanoid';
 import type { ConfigMapType } from './ConfigmapModal';
 import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
@@ -53,6 +55,35 @@ const NetworkStoreModal = dynamic(() => import('./NetworkStoreModal'));
 const EditEnvs = dynamic(() => import('./EditEnvs'));
 
 const labelWidth = 120;
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+function getNetworkSignature(networks: AppEditType['networks']) {
+  return networks
+    .map((network) =>
+      [
+        network.port,
+        network.protocol,
+        network.appProtocol || '',
+        network.openPublicDomain ? 'public' : 'private',
+        network.openNodePort ? 'nodeport' : 'cluster'
+      ].join(':')
+    )
+    .join('|');
+}
+
+function canAutoReplaceNetworks(networks: AppEditType['networks'], lastAutoSignature: string) {
+  const networkSignature = getNetworkSignature(networks);
+  return (
+    networks.length === 0 ||
+    networkSignature === lastAutoSignature ||
+    (networks.length === 1 &&
+      Number(networks[0].port) === 80 &&
+      networks[0].protocol === 'TCP' &&
+      networks[0].appProtocol === 'HTTP' &&
+      !networks[0].openPublicDomain &&
+      !networks[0].openNodePort)
+  );
+}
 
 const Form = ({
   formHook,
@@ -163,6 +194,19 @@ const Form = ({
   const [storeEdit, setStoreEdit] = useState<StoreType>();
   const [networkStoreEdit, setNetworkStoreEdit] = useState(false);
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
+  const imagePortRequestId = useRef(0);
+  const secretPasswordVersion = useRef(0);
+  const lastAutoPortKey = useRef('');
+  const lastAutoNetworkSignature = useRef('');
+  const watchedImageName = watch('imageName');
+  const watchedSecretUse = watch('secret.use');
+  const watchedSecretUsername = watch('secret.username');
+  const watchedSecretPassword = watch('secret.password');
+  const watchedSecretServerAddress = watch('secret.serverAddress');
+
+  useEffect(() => {
+    secretPasswordVersion.current += 1;
+  }, [watchedSecretPassword]);
 
   // For quota calculation in fields
   const { userQuota, loadUserQuota } = useUserStore();
@@ -229,6 +273,77 @@ const Form = ({
     });
     return () => subscription.unsubscribe();
   }, [watch, setValue]);
+
+  useEffect(() => {
+    if (isEdit || !already) return;
+
+    const imageName = getValues('imageName');
+    if (!imageName) return;
+    const secret = getValues('secret');
+    const autoPortKey = [
+      imageName,
+      secret.use ? secret.username : '',
+      secret.use ? secret.serverAddress : '',
+      secret.use && secret.password ? `password-v${secretPasswordVersion.current}` : ''
+    ].join('|');
+    if (lastAutoPortKey.current === autoPortKey) return;
+
+    if (!canAutoReplaceNetworks(getValues('networks'), lastAutoNetworkSignature.current)) return;
+
+    const requestId = ++imagePortRequestId.current;
+    const timer = setTimeout(async () => {
+      try {
+        const res = await getImagePorts({
+          imageName,
+          imageRegistry: secret.use
+            ? {
+                username: secret.username,
+                password: secret.password,
+                serverAddress: secret.serverAddress
+              }
+            : undefined
+        });
+
+        if (
+          requestId !== imagePortRequestId.current ||
+          !res.ports.length ||
+          !canAutoReplaceNetworks(getValues('networks'), lastAutoNetworkSignature.current)
+        ) {
+          return;
+        }
+        lastAutoPortKey.current = autoPortKey;
+        const nextNetworks: AppEditType['networks'] = res.ports.slice(0, 15).map((item, index) => ({
+          networkName: '',
+          portName: nanoid(),
+          port: item.port,
+          protocol: item.protocol,
+          appProtocol: item.protocol === 'TCP' && index === 0 ? 'HTTP' : undefined,
+          openPublicDomain: false,
+          publicDomain: '',
+          customDomain: '',
+          domain: SEALOS_DOMAIN,
+          openNodePort: false,
+          nodePort: undefined
+        }));
+        lastAutoNetworkSignature.current = getNetworkSignature(nextNetworks);
+
+        setValue('networks', nextNetworks);
+      } catch (error) {}
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [
+    already,
+    getValues,
+    isEdit,
+    refresh,
+    setValue,
+    watchedImageName,
+    watchedSecretPassword,
+    watchedSecretServerAddress,
+    watchedSecretUse,
+    watchedSecretUsername
+  ]);
 
   // common form label
   const Label = ({

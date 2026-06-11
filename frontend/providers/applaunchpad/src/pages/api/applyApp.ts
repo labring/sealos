@@ -5,6 +5,67 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import yaml from 'js-yaml';
 import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deployYaml2Json';
+import { appDeployKey } from '@/constants/app';
+import {
+  ensurePublicDomainTargetsAvailable,
+  PublicDomainError,
+  PublicDomainTarget
+} from '@/services/backend/publicDomain';
+
+type K8sResource = {
+  kind?: string;
+  metadata?: {
+    name?: string;
+    labels?: Record<string, string>;
+    ownerReferences?: any[];
+  };
+  spec?: {
+    rules?: {
+      host?: string;
+    }[];
+  };
+};
+
+type WorkloadResource = K8sResource & {
+  kind: 'Deployment' | 'StatefulSet';
+};
+
+function isWorkloadResource(resource: K8sResource): resource is WorkloadResource {
+  return resource.kind === 'Deployment' || resource.kind === 'StatefulSet';
+}
+
+function getManagedDomains() {
+  return [
+    global.AppConfig?.cloud?.domain,
+    ...(global.AppConfig?.cloud?.userDomains || []).map((domain: { name: string }) => domain.name)
+  ].filter((domain): domain is string => Boolean(domain));
+}
+
+function getPublicDomainTargets(resources: K8sResource[]): PublicDomainTarget[] {
+  const workload = resources.find(isWorkloadResource);
+  const fallbackAppName = workload?.metadata?.name;
+  const managedDomains = getManagedDomains();
+
+  return resources
+    .filter((resource) => resource.kind === 'Ingress')
+    .flatMap((resource) =>
+      (resource.spec?.rules || [])
+        .map((rule) => rule.host)
+        .filter((host): host is string => typeof host === 'string' && !host.startsWith('*.'))
+        .flatMap((host) => {
+          const domain = managedDomains.find((item) => host.endsWith(`.${item}`));
+          if (!domain) return [];
+          return [
+            {
+              prefix: host.slice(0, -domain.length - 1),
+              domain,
+              appName: resource.metadata?.labels?.[appDeployKey] || fallbackAppName,
+              networkName: resource.metadata?.name
+            }
+          ];
+        })
+    );
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   const { yamlList, mode = 'create' }: { yamlList: string[]; mode?: 'create' | 'replace' } =
@@ -17,19 +78,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return;
   }
   try {
-    const { k8sApp, applyYamlList, namespace } = await getK8s({
+    const { k8sApp, k8sNetworkingApp, applyYamlList, namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
-    const allResources: any[] = [];
+    const allResources: K8sResource[] = [];
     yamlList.forEach((yamlStr) => {
-      const resources = yaml.loadAll(yamlStr).filter((item) => item);
+      const resources = yaml.loadAll(yamlStr).filter((item): item is K8sResource => Boolean(item));
       allResources.push(...resources);
     });
 
-    const mainWorkloadIndex = allResources.findIndex(
-      (resource) => resource.kind === 'Deployment' || resource.kind === 'StatefulSet'
-    );
+    await ensurePublicDomainTargetsAvailable(getPublicDomainTargets(allResources), {
+      k8sNetworkingApp,
+      namespace
+    });
+
+    const mainWorkloadIndex = allResources.findIndex(isWorkloadResource);
 
     if (mainWorkloadIndex === -1) {
       const applyRes = await applyYamlList(yamlList, mode);
@@ -37,7 +101,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       return;
     }
 
-    const mainWorkload = allResources[mainWorkloadIndex];
+    const mainWorkload = allResources[mainWorkloadIndex] as WorkloadResource;
+    const mainWorkloadName = mainWorkload.metadata?.name;
+    if (!mainWorkloadName) {
+      throw new Error('Workload metadata.name is required');
+    }
     const dependentResources = allResources.filter((_, index) => index !== mainWorkloadIndex);
 
     const mainWorkloadYaml = yaml.dump(mainWorkload);
@@ -47,16 +115,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     let workloadUid: string;
     try {
       if (mainWorkload.kind === 'Deployment') {
-        const deployment = await k8sApp.readNamespacedDeployment(
-          mainWorkload.metadata.name,
-          namespace
-        );
+        const deployment = await k8sApp.readNamespacedDeployment(mainWorkloadName, namespace);
         workloadUid = deployment.body.metadata?.uid || '';
       } else {
-        const statefulSet = await k8sApp.readNamespacedStatefulSet(
-          mainWorkload.metadata.name,
-          namespace
-        );
+        const statefulSet = await k8sApp.readNamespacedStatefulSet(mainWorkloadName, namespace);
         workloadUid = statefulSet.body.metadata?.uid || '';
       }
     } catch (err) {
@@ -69,13 +131,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const ownerReferences = generateOwnerReference(
-      mainWorkload.metadata.name,
+      mainWorkloadName,
       mainWorkload.kind,
       workloadUid
     );
 
     dependentResources.forEach((resource) => {
-      if (shouldHaveOwnerReference(resource.kind)) {
+      if (resource.kind && shouldHaveOwnerReference(resource.kind)) {
         if (!resource.metadata) {
           resource.metadata = {};
         }
@@ -92,6 +154,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     jsonRes(res, { data: allKinds });
   } catch (err: any) {
     console.log(err);
+    if (err instanceof PublicDomainError) {
+      return jsonRes(res, {
+        code: err.status,
+        message: err.message,
+        error: {
+          code: err.code,
+          message: err.message
+        }
+      });
+    }
     jsonRes(res, handleK8sError(err));
   }
 }

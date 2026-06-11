@@ -12,6 +12,7 @@ import type { AppEditType } from '@/types/app';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import dynamic from 'next/dynamic';
+import { normalizePublicDomainPrefix, validatePublicDomainPrefix } from '@/utils/public-domain';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 
@@ -27,7 +28,8 @@ type NetworkAction =
       payload: { index: number; network: AppEditType['networks'][0] };
     }
   | { type: 'DISABLE_EXTERNAL_ACCESS'; payload: { index: number } }
-  | { type: 'UPDATE_PORT'; payload: { index: number; port: number } };
+  | { type: 'UPDATE_PORT'; payload: { index: number; port: number } }
+  | { type: 'UPDATE_PUBLIC_DOMAIN'; payload: { index: number; publicDomain: string } };
 
 interface NetworkSectionProps {
   formHook: UseFormReturn<AppEditType, any>;
@@ -164,6 +166,15 @@ export function NetworkSection({
           updateNetworks(index, {
             ...currentNetworks[index],
             port
+          });
+          break;
+        }
+
+        case 'UPDATE_PUBLIC_DOMAIN': {
+          const { index, publicDomain } = action.payload;
+          updateNetworks(index, {
+            ...currentNetworks[index],
+            publicDomain: normalizePublicDomainPrefix(publicDomain)
           });
           break;
         }
@@ -325,8 +336,8 @@ export function NetworkSection({
                           network.openPublicDomain
                             ? network.appProtocol
                             : network.openNodePort
-                            ? network.protocol
-                            : 'HTTP'
+                              ? network.protocol
+                              : 'HTTP'
                         }
                         list={ProtocolList}
                         onchange={(val: any) => {
@@ -345,27 +356,72 @@ export function NetworkSection({
                         alignItems={'center'}
                         h={'32px'}
                         bg={'grayModern.50'}
-                        px={4}
                         border={theme.borders.base}
                         borderLeft={0}
                         borderTopRightRadius={'md'}
                         borderBottomRightRadius={'md'}
+                        overflow={'hidden'}
                       >
-                        <Tooltip label={t('click_to_copy_tooltip')}>
-                          <Box
-                            flex={1}
-                            userSelect={'all'}
-                            className="textEllipsis"
-                            onClick={() => {
-                              copyData(getDomainDisplay(network));
-                            }}
-                          >
-                            {getDomainDisplay(network)}
-                          </Box>
-                        </Tooltip>
+                        {network.openPublicDomain &&
+                        !network.openNodePort &&
+                        !network.customDomain ? (
+                          <>
+                            <Input
+                              h={'30px'}
+                              w={'125px'}
+                              flexShrink={0}
+                              border={0}
+                              borderRadius={0}
+                              bg={'transparent'}
+                              px={3}
+                              fontSize={'sm'}
+                              value={network.publicDomain}
+                              isInvalid={
+                                !network.publicDomain ||
+                                !validatePublicDomainPrefix(network.publicDomain).valid
+                              }
+                              onChange={(e) =>
+                                dispatch({
+                                  type: 'UPDATE_PUBLIC_DOMAIN',
+                                  payload: { index: i, publicDomain: e.target.value }
+                                })
+                              }
+                            />
+                            <Tooltip label={t('click_to_copy_tooltip')}>
+                              <Box
+                                flex={1}
+                                minW={0}
+                                userSelect={'all'}
+                                className="textEllipsis"
+                                onClick={() => {
+                                  copyData(getDomainDisplay(network));
+                                }}
+                              >
+                                .{network.domain}
+                              </Box>
+                            </Tooltip>
+                          </>
+                        ) : (
+                          <Tooltip label={t('click_to_copy_tooltip')}>
+                            <Box
+                              flex={1}
+                              minW={0}
+                              userSelect={'all'}
+                              className="textEllipsis"
+                              px={4}
+                              onClick={() => {
+                                copyData(getDomainDisplay(network));
+                              }}
+                            >
+                              {getDomainDisplay(network)}
+                            </Box>
+                          </Tooltip>
+                        )}
 
                         {network.openPublicDomain && !network.openNodePort && (
                           <Box
+                            flexShrink={0}
+                            px={3}
                             fontSize={'11px'}
                             color={'brightBlue.600'}
                             cursor={'pointer'}
