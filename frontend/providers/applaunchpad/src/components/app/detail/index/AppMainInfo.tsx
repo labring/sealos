@@ -6,6 +6,7 @@ import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import type { AppDetailType } from '@/types/app';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import { useCopyData, generatePvcNameRegex } from '@/utils/tools';
+import { calculateStorageUsagePercent } from '@/utils/storage-usage';
 import { getUserNamespace } from '@/utils/user';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -32,47 +33,33 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const hasStorage = app.storeList && app.storeList.length > 0;
   const pvcNameRegex = generatePvcNameRegex(app);
 
-  // Fetch storage usage data for all PVCs
+  // Fetch storage size and available capacity for all PVCs
   const { data: storageData } = useQuery({
     queryKey: ['storageUsage', app.appName, pvcNameRegex],
     queryFn: async () => {
       if (!pvcNameRegex) return null;
-      const result = await getAppMonitorData({
-        queryName: pvcNameRegex,
-        queryKey: 'storage',
-        step: '2m',
-        pvcName: pvcNameRegex
-      });
-      return result;
+      const [sizeData, availData] = await Promise.all([
+        getAppMonitorData({
+          queryName: pvcNameRegex,
+          queryKey: 'size_n',
+          step: '2m',
+          pvcName: pvcNameRegex
+        }),
+        getAppMonitorData({
+          queryName: pvcNameRegex,
+          queryKey: 'avail_n',
+          step: '2m',
+          pvcName: pvcNameRegex
+        })
+      ]);
+      return { sizeData, availData };
     },
     enabled: hasStorage && !!pvcNameRegex,
     refetchInterval: 2 * 60 * 1000
   });
 
-  // Calculate average storage usage across all PVCs
   const storageUsagePercent = useMemo(() => {
-    if (!storageData?.length) return 0;
-
-    let sum = 0;
-    let count = 0;
-
-    storageData.forEach((pvc) => {
-      if (!pvc?.yData?.length) return;
-      // Get the last non-null value
-      for (let i = pvc.yData.length - 1; i >= 0; i--) {
-        const val = pvc.yData[i];
-        if (val !== null && val !== undefined) {
-          sum += parseFloat(val);
-          count++;
-          break;
-        }
-      }
-    });
-
-    if (count === 0) return 0;
-    const avg = sum / count;
-    if (avg > 0 && avg < 0.1) return 0.1;
-    return Math.round(avg * 10) / 10;
+    return calculateStorageUsagePercent(storageData?.sizeData, storageData?.availData);
   }, [storageData]);
 
   // Get all available networks for error codes query (non-NodePort networks only)

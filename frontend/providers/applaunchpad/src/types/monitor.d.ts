@@ -40,6 +40,8 @@ export type MonitorQueryKey = {
   average_memory: string;
   average_cpu: string;
   storage: string;
+  size_n: string;
+  avail_n: string;
 };
 
 export type MonitorDataResult = {
