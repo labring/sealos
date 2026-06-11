@@ -1,6 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
-import { getCategorySlugs, getConfiguredTemplateCategories } from '@/utils/template';
+import { getCategorySlugs } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/templateCategories.server';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { readTemplatesFromFile } from '../../listTemplate';

@@ -1,6 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { ClientAppConfigSchema } from '@/types/config';
-import { getConfiguredTemplateCategories } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/templateCategories.server';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export function getClientAppConfigServer() {

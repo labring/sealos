@@ -1,10 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
-import {
-  filterConfiguredCategorySlugs,
-  getCategorySlugs,
-  getConfiguredTemplateCategories
-} from '@/utils/template';
+import { filterConfiguredCategorySlugs, getCategorySlugs } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/templateCategories.server';
 import type { TemplateCategory } from '@/types/config';
 import { parseGithubUrl } from '@/utils/tools';
 import fs from 'fs';

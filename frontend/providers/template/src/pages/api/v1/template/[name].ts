@@ -6,7 +6,7 @@ import path from 'path';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { readTemplatesFromFile } from '../../listTemplate';
 import { GetTemplateByName } from '../../getTemplateSource';
-import { getConfiguredTemplateCategories } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/templateCategories.server';
 
 function simplifyResourceValue(
   resource: { min: number; max: number },

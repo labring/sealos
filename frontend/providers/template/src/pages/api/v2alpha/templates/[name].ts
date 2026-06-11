@@ -10,7 +10,7 @@ import {
   getCachedTemplateDetail,
   setCachedTemplateDetail
 } from './templateCache';
-import { getConfiguredTemplateCategories } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/templateCategories.server';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 
 // estimate min—max equality
