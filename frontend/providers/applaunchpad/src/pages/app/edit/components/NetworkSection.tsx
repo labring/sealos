@@ -674,7 +674,7 @@ export function NetworkSection({
                                 />
                                 <Tooltip label={t('click_to_copy_tooltip')}>
                                   <Box
-                                    flex={1}
+                                    flex={'0 1 auto'}
                                     minW={0}
                                     userSelect={'all'}
                                     className="textEllipsis"
@@ -689,7 +689,11 @@ export function NetworkSection({
                             ) : (
                               <Tooltip label={t('click_to_copy_tooltip')}>
                                 <Box
-                                  flex={1}
+                                  flex={
+                                    network.openPublicDomain && !network.openNodePort
+                                      ? '0 1 auto'
+                                      : 1
+                                  }
                                   minW={0}
                                   userSelect={'all'}
                                   className="textEllipsis"
