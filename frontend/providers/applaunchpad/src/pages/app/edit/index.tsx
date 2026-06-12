@@ -44,6 +44,13 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
+const EDIT_PAGE_MIN_PADDING = 20;
+const EDIT_PAGE_NAV_WIDTH = 220;
+const EDIT_PAGE_COLUMN_GAP = 20;
+const EDIT_PAGE_CONTENT_TARGET_WIDTH = 1100;
+const EDIT_PAGE_TARGET_WIDTH =
+  EDIT_PAGE_NAV_WIDTH + EDIT_PAGE_COLUMN_GAP + EDIT_PAGE_CONTENT_TARGET_WIDTH;
+
 export const formData2Yamls = (
   data: AppEditType
   // handleType: 'edit' | 'create' = 'create',
@@ -125,11 +132,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     content: applyMessage
   });
   const pxVal = useMemo(() => {
-    const val = Math.floor((screenWidth - 1050) / 2);
-    if (val < 20) {
-      return 20;
-    }
-    return val;
+    return Math.max(EDIT_PAGE_MIN_PADDING, Math.floor((screenWidth - EDIT_PAGE_TARGET_WIDTH) / 2));
   }, [screenWidth]);
   const { createCompleted } = useGuideStore();
 
