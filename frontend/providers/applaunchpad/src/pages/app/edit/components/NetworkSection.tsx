@@ -203,8 +203,7 @@ type NetworkAction =
       payload: { index: number; network: AppEditType['networks'][0] };
     }
   | { type: 'DISABLE_EXTERNAL_ACCESS'; payload: { index: number } }
-  | { type: 'UPDATE_PORT'; payload: { index: number; port: number } }
-  | { type: 'UPDATE_PUBLIC_DOMAIN'; payload: { index: number; publicDomain: string } };
+  | { type: 'UPDATE_PORT'; payload: { index: number; port: number } };
 
 interface NetworkSectionProps {
   formHook: UseFormReturn<AppEditType, any>;
@@ -223,7 +222,8 @@ export function NetworkSection({
   const theme = useTheme();
   const { copyData } = useCopyData();
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
-  const publicDomainCheckSeqRef = useRef(0);
+  const publicDomainCheckSeqRef = useRef<Record<number, number>>({});
+  const publicDomainDraftCheckTimerRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   const {
     register,
@@ -369,15 +369,6 @@ export function NetworkSection({
           break;
         }
 
-        case 'UPDATE_PUBLIC_DOMAIN': {
-          const { index, publicDomain } = action.payload;
-          updateNetworks(index, {
-            ...currentNetworks[index],
-            publicDomain: normalizePublicDomainPrefix(publicDomain)
-          });
-          break;
-        }
-
         default:
           break;
       }
@@ -415,19 +406,41 @@ export function NetworkSection({
     [errors.networks]
   );
 
-  const updatePublicDomainDraft = useCallback(
-    (index: number, value: string) => {
-      setValue(getPublicDomainFieldName(index), value, {
-        shouldDirty: true,
-        shouldValidate: false
-      });
-      clearPublicDomainValidationError(index);
+  const clearPublicDomainDraftCheckTimer = useCallback((index?: number) => {
+    if (typeof index === 'number') {
+      if (publicDomainDraftCheckTimerRef.current[index]) {
+        clearTimeout(publicDomainDraftCheckTimerRef.current[index]);
+        delete publicDomainDraftCheckTimerRef.current[index];
+      }
+      return;
+    }
+
+    Object.values(publicDomainDraftCheckTimerRef.current).forEach(clearTimeout);
+    publicDomainDraftCheckTimerRef.current = {};
+  }, []);
+
+  useEffect(() => clearPublicDomainDraftCheckTimer, [clearPublicDomainDraftCheckTimer]);
+
+  const isPublicDomainCheckCurrent = useCallback(
+    (index: number, prefix: string, domain: string, checkSeq: number) => {
+      const network = getValues(`networks.${index}`);
+
+      return (
+        checkSeq === publicDomainCheckSeqRef.current[index] &&
+        !!network?.openPublicDomain &&
+        !network.openNodePort &&
+        !network.customDomain &&
+        normalizePublicDomainPrefix(network.publicDomain) === prefix &&
+        (network.domain || SEALOS_DOMAIN) === domain
+      );
     },
-    [clearPublicDomainValidationError, getPublicDomainFieldName, setValue]
+    [getValues]
   );
 
   const commitPublicDomainDraft = useCallback(
-    async (index: number, value: string) => {
+    async (index: number, value: string, options: { commitValue?: boolean } = {}) => {
+      const { commitValue = true } = options;
+      clearPublicDomainDraftCheckTimer(index);
       const result = validatePublicDomainPrefix(value);
 
       if (!result.valid) {
@@ -440,16 +453,18 @@ export function NetworkSection({
       }
 
       const network = getValues(`networks.${index}`);
-      const checkSeq = ++publicDomainCheckSeqRef.current;
+      const domain = network.domain || SEALOS_DOMAIN;
+      const checkSeq = (publicDomainCheckSeqRef.current[index] || 0) + 1;
+      publicDomainCheckSeqRef.current[index] = checkSeq;
 
       try {
         await checkPublicDomain({
           prefix: result.value,
-          domain: network.domain || SEALOS_DOMAIN,
+          domain,
           appName: getValues('appName')
         });
       } catch (error: any) {
-        if (checkSeq !== publicDomainCheckSeqRef.current) return null;
+        if (!isPublicDomainCheckCurrent(index, result.value, domain, checkSeq)) return null;
 
         if (error?.error?.code === 'PUBLIC_DOMAIN_CONFLICT') {
           setPublicDomainValidationError(index, 'conflict');
@@ -459,21 +474,52 @@ export function NetworkSection({
         return result.value;
       }
 
-      if (checkSeq !== publicDomainCheckSeqRef.current) return null;
+      if (!isPublicDomainCheckCurrent(index, result.value, domain, checkSeq)) return null;
 
       clearPublicDomainValidationError(index);
-      dispatch({
-        type: 'UPDATE_PUBLIC_DOMAIN',
-        payload: { index, publicDomain: result.value }
-      });
+      if (commitValue) {
+        setValue(getPublicDomainFieldName(index), result.value, {
+          shouldDirty: true,
+          shouldValidate: false
+        });
+      }
       return result.value;
     },
     [
+      clearPublicDomainDraftCheckTimer,
       clearPublicDomainValidationError,
-      dispatch,
       getPublicDomainFieldName,
       getValues,
+      isPublicDomainCheckCurrent,
       setPublicDomainValidationError,
+      setValue
+    ]
+  );
+
+  const schedulePublicDomainDraftCheck = useCallback(
+    (index: number, value: string) => {
+      clearPublicDomainDraftCheckTimer(index);
+      publicDomainCheckSeqRef.current[index] = (publicDomainCheckSeqRef.current[index] || 0) + 1;
+      publicDomainDraftCheckTimerRef.current[index] = setTimeout(() => {
+        void commitPublicDomainDraft(index, value, { commitValue: false });
+      }, 600);
+    },
+    [clearPublicDomainDraftCheckTimer, commitPublicDomainDraft]
+  );
+
+  const updatePublicDomainDraft = useCallback(
+    (index: number, value: string) => {
+      setValue(getPublicDomainFieldName(index), value, {
+        shouldDirty: true,
+        shouldValidate: false
+      });
+      clearPublicDomainValidationError(index);
+      schedulePublicDomainDraftCheck(index, value);
+    },
+    [
+      clearPublicDomainValidationError,
+      getPublicDomainFieldName,
+      schedulePublicDomainDraftCheck,
       setValue
     ]
   );

@@ -28,7 +28,7 @@ The config controls cloud domain and user-domain suffixes, UI feature flags, pri
 
 `launchpad.publicDomain.reservedPrefixes` is an optional policy list. It defaults to empty, is loaded into the shared public-domain helper on both server startup and browser init data, and only affects Launchpad pre-validation. Cluster-side ingress admission remains the authoritative conflict and ownership guard.
 
-Managed public-domain availability is checked in two stages. The form first runs local prefix validation, then `/api/platform/checkPublicDomain` uses the user's kubeconfig to perform a server-side dry-run Ingress create. That dry-run reaches `vingress.sealos.io`, so cross-namespace host ownership conflicts can be shown before the user applies the app. Create/update/apply paths still keep the admission-webhook error translation as the final fallback.
+Managed public-domain availability is checked in two stages. The form first runs local prefix validation, then `/api/platform/checkPublicDomain` uses the user's kubeconfig to perform a server-side dry-run Ingress create. The prefix editor triggers that availability check shortly after the user changes a managed public-domain prefix, and the submit flow repeats the check as a final pre-apply guard. The dry-run reaches `vingress.sealos.io`, so cross-namespace host ownership conflicts can be shown before the user applies the app. Create/update/apply paths still keep the admission-webhook error translation as the final fallback.
 
 ## Authentication Model
 
