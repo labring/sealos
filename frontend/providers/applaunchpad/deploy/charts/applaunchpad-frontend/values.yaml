@@ -49,6 +49,7 @@ applaunchpadConfig:
   billingUrl: "http://account-service.account-system.svc:2333"
   logUrl: ""
   tlsRejectUnauthorized: "1"
+  publicDomainReservedPrefixes: []
 
 affinity:
   podAntiAffinity:

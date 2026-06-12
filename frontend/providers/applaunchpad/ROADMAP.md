@@ -30,3 +30,4 @@ This file captures near-term product and engineering priorities for App Launchpa
 - `data/config.yaml.local` and `.env.local` contain local cluster details and must remain ignored.
 - API changes can affect external clients, not only the React UI.
 - `deploy/` chart defaults and runtime `data/config.yaml` shape must stay compatible with `src/instrumentation.ts`.
+- Public-domain reserved prefixes are deployment policy, not hardcoded product constants; keep `launchpad.publicDomain.reservedPrefixes` optional and default-empty unless an environment config says otherwise.

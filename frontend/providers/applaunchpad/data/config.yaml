@@ -25,6 +25,8 @@ launchpad:
     scripts: []
   gtmId: null
   pvcStorageMax: 100
+  publicDomain:
+    reservedPrefixes: []
   eventAnalyze:
     enabled: false
     fastGPTKey: ''

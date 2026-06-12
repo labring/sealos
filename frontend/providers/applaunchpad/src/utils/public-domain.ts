@@ -1,25 +1,7 @@
 export const PUBLIC_DOMAIN_PREFIX_MAX_LENGTH = 32;
 export const PUBLIC_DOMAIN_PREFIX_MIN_LENGTH = 3;
 
-const RESERVED_PUBLIC_DOMAIN_PREFIXES = new Set([
-  'admin',
-  'api',
-  'app',
-  'auth',
-  'billing',
-  'console',
-  'dashboard',
-  'devbox',
-  'help',
-  'kube',
-  'login',
-  'root',
-  'sealos',
-  'static',
-  'support',
-  'system',
-  'www'
-]);
+let reservedPublicDomainPrefixes = new Set<string>();
 
 export type PublicDomainPrefixValidationResult =
   | { valid: true; value: string }
@@ -27,6 +9,22 @@ export type PublicDomainPrefixValidationResult =
 
 export function normalizePublicDomainPrefix(value: string) {
   return value.trim().toLowerCase();
+}
+
+export function normalizePublicDomainReservedPrefixes(prefixes?: unknown) {
+  if (!Array.isArray(prefixes)) return [];
+
+  return prefixes
+    .filter((prefix): prefix is string => typeof prefix === 'string')
+    .map(normalizePublicDomainPrefix);
+}
+
+export function setPublicDomainReservedPrefixes(prefixes?: unknown) {
+  reservedPublicDomainPrefixes = new Set(normalizePublicDomainReservedPrefixes(prefixes));
+}
+
+export function getPublicDomainReservedPrefixes() {
+  return Array.from(reservedPublicDomainPrefixes);
 }
 
 export function validatePublicDomainPrefix(value: string): PublicDomainPrefixValidationResult {
@@ -41,7 +39,7 @@ export function validatePublicDomainPrefix(value: string): PublicDomainPrefixVal
     return { valid: false, value: normalized, reason: 'format' };
   }
 
-  if (RESERVED_PUBLIC_DOMAIN_PREFIXES.has(normalized)) {
+  if (reservedPublicDomainPrefixes.has(normalized)) {
     return { valid: false, value: normalized, reason: 'reserved' };
   }
 

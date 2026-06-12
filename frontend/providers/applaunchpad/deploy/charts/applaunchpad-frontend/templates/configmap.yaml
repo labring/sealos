@@ -31,6 +31,8 @@ data:
       eventAnalyze:
         enabled: false
         fastGPTKey: ""
+      publicDomain:
+        reservedPrefixes:{{ toYaml .Values.applaunchpadConfig.publicDomainReservedPrefixes | nindent 10 }}
       components:
         monitor:
           url: {{ .Values.applaunchpadConfig.monitorUrl }}

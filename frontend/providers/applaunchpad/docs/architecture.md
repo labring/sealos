@@ -24,7 +24,9 @@ flowchart TD
 - Development: `data/config.yaml.local`
 - Production: `/app/data/config.yaml`
 
-The config controls cloud domain and user-domain suffixes, UI feature flags, pricing/monitor/log service URLs, file limits, domain registration links, Launchpad metadata, and resource slider defaults.
+The config controls cloud domain and user-domain suffixes, UI feature flags, pricing/monitor/log service URLs, file limits, domain registration links, Launchpad metadata, public-domain policy, and resource slider defaults.
+
+`launchpad.publicDomain.reservedPrefixes` is an optional policy list. It defaults to empty, is loaded into the shared public-domain helper on both server startup and browser init data, and only affects Launchpad pre-validation. Cluster-side ingress admission remains the authoritative conflict and ownership guard.
 
 ## Authentication Model
 

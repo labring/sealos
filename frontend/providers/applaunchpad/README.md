@@ -52,7 +52,9 @@ The action creates or refreshes ignored local files:
 
 `NEXT_PUBLIC_MOCK_USER` must be a one-line kubeconfig string for development. The app uses it as the authorization source when it is not running inside Sealos Desktop.
 
-`data/config.yaml.local` controls cloud domain, user domains, feature flags, pricing and monitoring service URLs, file limits, and Launchpad metadata. Production mounts the same shape at `/app/data/config.yaml`.
+`data/config.yaml.local` controls cloud domain, user domains, feature flags, pricing and monitoring service URLs, file limits, public-domain policy, and Launchpad metadata. Production mounts the same shape at `/app/data/config.yaml`.
+
+`launchpad.publicDomain.reservedPrefixes` is optional and defaults to an empty list. Configure it only when an environment needs Launchpad to reject specific managed public-domain prefixes before Kubernetes admission checks run.
 
 ## Useful Commands
 

@@ -1,6 +1,7 @@
 import { Coin } from '@/constants/app';
 import { jsonRes } from '@/services/backend/response';
 import type { AppConfigType, EnvResponse } from '@/types';
+import { normalizePublicDomainReservedPrefixes } from '@/utils/public-domain';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -50,6 +51,9 @@ export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
     PVC_STORAGE_MAX: AppConfig.launchpad.pvcStorageMax || 20,
     GPU_ENABLED: AppConfig.common.gpuEnabled,
     LOG_ENABLED: !!AppConfig?.launchpad?.components?.log?.url,
-    NETWORK_STORAGE_ENABLED: AppConfig.common.networkStorageEnabled
+    NETWORK_STORAGE_ENABLED: AppConfig.common.networkStorageEnabled,
+    PUBLIC_DOMAIN_RESERVED_PREFIXES: normalizePublicDomainReservedPrefixes(
+      AppConfig.launchpad.publicDomain?.reservedPrefixes
+    )
   };
 };

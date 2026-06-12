@@ -124,6 +124,23 @@ pnpm run build
 
 The Dockerfile builds a standalone Next.js runtime. Production config is mounted at `/app/data/config.yaml`.
 
+## Public Domain Reserved Prefixes
+
+Managed public-domain prefix reservations are configured with `launchpad.publicDomain.reservedPrefixes` in `data/config.yaml.local` or `/app/data/config.yaml`. The default is an empty list, so words such as `admin`, `api`, or `www` are not blocked unless the deployment config explicitly lists them.
+
+For Helm deployments, set `applaunchpadConfig.publicDomainReservedPrefixes`:
+
+```bash
+helm template test ./deploy/charts/applaunchpad-frontend \
+  --set applaunchpadConfig.publicDomainReservedPrefixes='{admin,api}'
+```
+
+Verify the rendered runtime config:
+
+```bash
+helm template test ./deploy/charts/applaunchpad-frontend --set applaunchpadConfig.publicDomainReservedPrefixes='{admin,api}' | yq '. | select(.kind == "ConfigMap") | .data."config.yaml" | from_yaml | .launchpad.publicDomain'
+```
+
 ## Troubleshooting
 
 ### `NEXT_PUBLIC_MOCK_USER` is missing
