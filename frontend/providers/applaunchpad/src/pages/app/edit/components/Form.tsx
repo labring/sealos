@@ -29,6 +29,7 @@ import {
   IconButton,
   Image,
   Input,
+  Spinner,
   Switch,
   useDisclosure,
   useTheme
@@ -56,6 +57,11 @@ const EditEnvs = dynamic(() => import('./EditEnvs'));
 
 const labelWidth = 120;
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+type ImagePortDetectionState = {
+  status: 'idle' | 'loading' | 'success' | 'empty' | 'error';
+  count?: number;
+};
 
 function getNetworkSignature(networks: AppEditType['networks']) {
   return networks
@@ -198,6 +204,9 @@ const Form = ({
   const secretPasswordVersion = useRef(0);
   const lastAutoPortKey = useRef('');
   const lastAutoNetworkSignature = useRef('');
+  const [imagePortDetection, setImagePortDetection] = useState<ImagePortDetectionState>({
+    status: 'idle'
+  });
   const watchedImageName = watch('imageName');
   const watchedSecretUse = watch('secret.use');
   const watchedSecretUsername = watch('secret.username');
@@ -275,10 +284,16 @@ const Form = ({
   }, [watch, setValue]);
 
   useEffect(() => {
-    if (isEdit || !already) return;
+    if (isEdit || !already) {
+      setImagePortDetection({ status: 'idle' });
+      return;
+    }
 
     const imageName = getValues('imageName');
-    if (!imageName) return;
+    if (!imageName) {
+      setImagePortDetection({ status: 'idle' });
+      return;
+    }
     const secret = getValues('secret');
     const autoPortKey = [
       imageName,
@@ -288,9 +303,13 @@ const Form = ({
     ].join('|');
     if (lastAutoPortKey.current === autoPortKey) return;
 
-    if (!canAutoReplaceNetworks(getValues('networks'), lastAutoNetworkSignature.current)) return;
+    if (!canAutoReplaceNetworks(getValues('networks'), lastAutoNetworkSignature.current)) {
+      setImagePortDetection({ status: 'idle' });
+      return;
+    }
 
     const requestId = ++imagePortRequestId.current;
+    setImagePortDetection({ status: 'loading' });
     const timer = setTimeout(async () => {
       try {
         const res = await getImagePorts({
@@ -304,11 +323,17 @@ const Form = ({
             : undefined
         });
 
-        if (
-          requestId !== imagePortRequestId.current ||
-          !res.ports.length ||
-          !canAutoReplaceNetworks(getValues('networks'), lastAutoNetworkSignature.current)
-        ) {
+        if (requestId !== imagePortRequestId.current) {
+          return;
+        }
+
+        if (!res.ports.length) {
+          setImagePortDetection({ status: 'empty' });
+          return;
+        }
+
+        if (!canAutoReplaceNetworks(getValues('networks'), lastAutoNetworkSignature.current)) {
+          setImagePortDetection({ status: 'idle' });
           return;
         }
         lastAutoPortKey.current = autoPortKey;
@@ -328,7 +353,12 @@ const Form = ({
         lastAutoNetworkSignature.current = getNetworkSignature(nextNetworks);
 
         setValue('networks', nextNetworks);
-      } catch (error) {}
+        setImagePortDetection({ status: 'success', count: nextNetworks.length });
+      } catch (error) {
+        if (requestId === imagePortRequestId.current) {
+          setImagePortDetection({ status: 'error' });
+        }
+      }
     }, 700);
 
     return () => clearTimeout(timer);
@@ -344,6 +374,37 @@ const Form = ({
     watchedSecretUse,
     watchedSecretUsername
   ]);
+
+  const imagePortDetectionView = useMemo(() => {
+    switch (imagePortDetection.status) {
+      case 'loading':
+        return {
+          color: 'brightBlue.600',
+          text: t('recognizing_image_ports'),
+          showSpinner: true
+        };
+      case 'success':
+        return {
+          color: 'green.600',
+          text: t('recognized_image_ports', { count: imagePortDetection.count || 0 }),
+          showSpinner: false
+        };
+      case 'empty':
+        return {
+          color: 'grayModern.600',
+          text: t('no_image_ports_detected'),
+          showSpinner: false
+        };
+      case 'error':
+        return {
+          color: 'grayModern.600',
+          text: t('image_ports_detection_failed'),
+          showSpinner: false
+        };
+      default:
+        return null;
+    }
+  }, [imagePortDetection, t]);
 
   // common form label
   const Label = ({
@@ -698,22 +759,42 @@ const Form = ({
                   />
                 </Flex>
                 <Box mt={4} pl={`${labelWidth}px`}>
-                  <FormControl isInvalid={!!errors.imageName} w={'420px'}>
+                  <FormControl isInvalid={!!errors.imageName} w={'620px'} maxW={'100%'}>
                     <Box mb={1} fontSize={'sm'}>
                       {t('Image Name')}
                     </Box>
-                    <Input
-                      width={'350px'}
-                      value={getValues('imageName')}
-                      backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
-                      placeholder={`${t('Image Name')}`}
-                      {...register('imageName', {
-                        required: 'Image name cannot be empty',
-                        setValueAs(e) {
-                          return e.replace(/\s*/g, '');
-                        }
-                      })}
-                    />
+                    <Flex alignItems={'center'} gap={3}>
+                      <Input
+                        width={'350px'}
+                        flexShrink={0}
+                        value={getValues('imageName')}
+                        backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
+                        placeholder={`${t('Image Name')}`}
+                        {...register('imageName', {
+                          required: 'Image name cannot be empty',
+                          setValueAs(e) {
+                            return e.replace(/\s*/g, '');
+                          }
+                        })}
+                      />
+                      <Flex
+                        alignItems={'center'}
+                        gap={2}
+                        minW={'160px'}
+                        maxW={'220px'}
+                        h={'22px'}
+                        fontSize={'12px'}
+                        color={imagePortDetectionView?.color}
+                        visibility={imagePortDetectionView ? 'visible' : 'hidden'}
+                      >
+                        {imagePortDetectionView?.showSpinner ? (
+                          <Spinner size={'xs'} thickness={'2px'} speed={'0.8s'} />
+                        ) : null}
+                        <Box as={'span'} whiteSpace={'nowrap'} className="textEllipsis">
+                          {imagePortDetectionView?.text}
+                        </Box>
+                      </Flex>
+                    </Flex>
                   </FormControl>
                   {getValues('secret.use') ? (
                     <>
