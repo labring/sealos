@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  APP_GENERATED_NAME_MAX_LENGTH,
   APP_NAME_BASE_MAX_LENGTH,
   K8S_RFC1035_NAME_MAX_LENGTH,
   generateAppName,
@@ -16,7 +15,7 @@ describe('app name validation', () => {
     expect(isValidAppNameBase('app')).toBe(true);
     expect(isValidAppNameBase('app-1')).toBe(true);
     expect(isValidAppNameBase('hello-world')).toBe(true);
-    expect(maxLengthBase).toHaveLength(38);
+    expect(maxLengthBase).toHaveLength(25);
     expect(isValidAppNameBase(maxLengthBase)).toBe(true);
   });
 
@@ -31,24 +30,26 @@ describe('app name validation', () => {
     expect(isValidAppNameBase('app-')).toBe(false);
     expect(isValidAppNameBase('app.name')).toBe(false);
     expect(isValidAppNameBase('app name')).toBe(false);
-    expect(tooLongBase).toHaveLength(39);
+    expect(tooLongBase).toHaveLength(26);
     expect(isValidAppNameBase(tooLongBase)).toBe(false);
   });
 
-  it('generates an RFC 1035-safe app name with room for the pod suffix', () => {
+  it('uses the user-entered app name without appending a random suffix', () => {
     const generatedName = generateAppName('demo');
 
-    expect(generatedName).toMatch(/^demo-[a-z0-9]{8}$/);
+    expect(generatedName).toBe('demo');
     expect(isValidGeneratedAppName(generatedName)).toBe(true);
   });
 
-  it('keeps generated app names and pod names inside the RFC 1035 max length', () => {
+  it('keeps app names, generated nodeport service names, and pod names inside RFC 1035', () => {
     const maxLengthBase = `a${'b'.repeat(APP_NAME_BASE_MAX_LENGTH - 1)}`;
     const generatedName = generateAppName(maxLengthBase);
-    const podName = `${generatedName}-${'c'.repeat(15)}`;
+    const serviceName = `${generatedName}-nodeport-${'c'.repeat(12)}`;
+    const podName = `${serviceName}-${'d'.repeat(15)}`;
 
-    expect(generatedName).toHaveLength(APP_GENERATED_NAME_MAX_LENGTH);
+    expect(generatedName).toHaveLength(APP_NAME_BASE_MAX_LENGTH);
     expect(isValidGeneratedAppName(generatedName)).toBe(true);
+    expect(serviceName).toHaveLength(47);
     expect(podName).toHaveLength(K8S_RFC1035_NAME_MAX_LENGTH);
     expect(isValidGeneratedAppName(podName)).toBe(false);
     expect(/^[a-z]([-a-z0-9]*[a-z0-9])?$/.test(podName)).toBe(true);
