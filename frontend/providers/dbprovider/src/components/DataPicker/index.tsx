@@ -361,6 +361,8 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
           <Flex flex={1} minH={'420px'}>
             <Flex w={'242px'} flexDir={'column'}>
               <Flex
+                px={'16px'}
+                pt={'12px'}
                 sx={{
                   '.rdp': {
                     margin: 0,
