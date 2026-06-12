@@ -3,10 +3,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
 import {
   deleteInstanceOnly,
+  deleteOwnerReferencedInstance,
   getInstanceOrThrow404,
   isInstanceOwnerReferencesReady,
-  legacyDeleteInstanceAll,
-  legacyDeletePersistentVolumeClaimsOnly
+  legacyDeleteInstanceAll
 } from '@/services/backend/instanceDelete';
 import { getK8s } from '@/services/backend/kubernetes';
 import * as deleteInstanceSchemas from '@/types/apis/v2alpha/delete-instance';
@@ -90,10 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (isInstanceOwnerReferencesReady(instance)) {
-      // StatefulSet volumeClaimTemplates PVCs are not reliably garbage-collected with the
-      // workload in current supported clusters, so keep the existing explicit PVC cleanup.
-      await legacyDeletePersistentVolumeClaimsOnly(k8s, instanceName);
-      await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+      await deleteOwnerReferencedInstance(k8s, instance.metadata.name);
     } else {
       await legacyDeleteInstanceAll(k8s, instanceName);
       await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);

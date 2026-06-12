@@ -10,7 +10,13 @@ import {
 } from '@kubernetes/client-node';
 import { CRDMeta, getK8s } from './kubernetes';
 import { TemplateInstanceType } from '@/types/app';
-import { templateDeployKey, dbProviderKey, deployManagerKey, appDeployKey } from '@/constants/keys';
+import {
+  templateDeployKey,
+  dbProviderKey,
+  deployManagerKey,
+  appDeployKey,
+  legacyAppLabelKey
+} from '@/constants/keys';
 import { adaptAppListItem, adaptCronJobList, adaptObjectStorageItem } from '@/utils/adapt';
 import { DBListItemType } from '@/types/db';
 import { ObjectStorageCR } from '@/types/objectStorage';
@@ -612,7 +618,16 @@ export async function deleteDeployment(api: AppsV1Api, namespace: string, resour
 }
 
 export async function deleteStatefulSet(api: AppsV1Api, namespace: string, resourceName: string) {
-  await api.deleteNamespacedStatefulSet(resourceName, namespace);
+  await api.deleteNamespacedStatefulSet(
+    resourceName,
+    namespace,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    'Foreground',
+    { propagationPolicy: 'Foreground' }
+  );
 }
 
 export async function deleteCustomResource(
@@ -763,11 +778,19 @@ export async function deleteIngressesInApp(
   );
 }
 
-export async function deletePersistentVolumeClaimsInApp(
+/**
+ * Legacy Applaunchpad/StatefulSet PVC cleanup only.
+ *
+ * @deprecated - This is a fallback for legacy resources. New Template cleanup should use `templateDeployKey`
+ */
+export async function legacyDeletePersistentVolumeClaimsByAppLabel(
   api: CoreV1Api,
   namespace: string,
   appName: string
 ) {
+  // Legacy Applaunchpad/StatefulSet PVC cleanup only. New Template cleanup should use
+  // `templateDeployKey`; this selector remains for PVCs created before that label was
+  // injected into StatefulSet `volumeClaimTemplates`.
   await api.deleteCollectionNamespacedPersistentVolumeClaim(
     namespace,
     undefined,
@@ -775,8 +798,7 @@ export async function deletePersistentVolumeClaimsInApp(
     undefined,
     undefined,
     undefined,
-    // ! Why `app` here?
-    `app=${appName}`
+    `${legacyAppLabelKey}=${appName}`
   );
 }
 
@@ -833,7 +855,6 @@ export async function deleteAppLaunchpad(
     ...certificates.map((item: any) =>
       deleteCertificate(apis.k8sCustomObjects, namespace, item.metadata.name)
     ),
-    deletePersistentVolumeClaimsInApp(apis.k8sCore, namespace, resourceName),
     deleteHorizontalPodAutoscaler(apis.k8sAutoscaling, namespace, resourceName)
   ]);
 
@@ -858,6 +879,8 @@ export async function deleteAppLaunchpad(
       });
     }
   });
+
+  await legacyDeletePersistentVolumeClaimsByAppLabel(apis.k8sCore, namespace, resourceName);
 }
 
 export async function getDatabases(api: CustomObjectsApi, namespace: string, instanceName: string) {
