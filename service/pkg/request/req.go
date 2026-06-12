@@ -36,7 +36,7 @@ func Request(addr string, params *bytes.Buffer) ([]byte, error) {
 
 func PrometheusPre(query *api.PromRequest) ([]byte, error) {
 	result := strings.ReplaceAll(query.Query, "$", "namespace=~\""+query.NS+"\"")
-	result = strings.ReplaceAll(result, "{", "{namespace=~\""+query.NS+"\",")
+	result = addNamespaceMatcher(result, query.NS)
 	log.Println(result)
 
 	formData := url.Values{}
@@ -62,6 +62,40 @@ func PrometheusPre(query *api.PromRequest) ([]byte, error) {
 		return Request(prometheusHost+"/api/v1/query", bf)
 	}
 	return Request(prometheusHost+"/api/v1/query_range", bf)
+}
+
+func addNamespaceMatcher(query, namespace string) string {
+	matcher := "namespace=~\"" + namespace + "\""
+	var result strings.Builder
+	for {
+		open := strings.Index(query, "{")
+		if open == -1 {
+			result.WriteString(query)
+			return result.String()
+		}
+
+		close := strings.Index(query[open:], "}")
+		if close == -1 {
+			result.WriteString(query)
+			return result.String()
+		}
+		close += open
+
+		selector := query[open+1 : close]
+		result.WriteString(query[:open+1])
+		if strings.Contains(selector, "namespace=") || strings.Contains(selector, "namespace!=") ||
+			strings.Contains(selector, "namespace=~") || strings.Contains(selector, "namespace!~") {
+			result.WriteString(selector)
+		} else if strings.TrimSpace(selector) == "" {
+			result.WriteString(matcher)
+		} else {
+			result.WriteString(matcher)
+			result.WriteString(",")
+			result.WriteString(selector)
+		}
+		result.WriteString("}")
+		query = query[close+1:]
+	}
 }
 
 func GetQuery(query *api.PromRequest) (string, error) {
