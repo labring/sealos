@@ -134,6 +134,61 @@ sealos registry passwd
 
 如果你不确定如何更新节点和服务的配置，建议在修改 registry 密码之前，先查阅相关文档或者寻求专业的技术支持。
 
+## Sealos：sealos registry proxy 命令详解与使用指南
+
+为了便捷地管理 `image-cri-shim` 的代理能力，Sealos 新增了 `sealos registry proxy` 子命令。该命令当前包含 `upgrade`、`info`、`add` 与 `delete` 四个子命令，用于升级 shim 版本、查看现有代理配置、添加新的代理条目以及删除已有条目。
+
+> 💡 在执行任何 `proxy` 子命令之前，需要确保已经通过 `sealos registry proxy init` 完成初始化，并在集群的 `kube-system` 命名空间中生成 `image-cri-shim` 相关资源。
+
+### 命令速览
+
+| 子命令 | 作用 | 示例 |
+| --- | --- | --- |
+| `sealos registry proxy upgrade <版本号>` | 将 `image-cri-shim` DaemonSet 的镜像更新到指定版本 | `sealos registry proxy upgrade v5.1.0` |
+| `sealos registry proxy info` | 查看当前代理配置（包括 hub 与所有 registry 条目） | `sealos registry proxy info` |
+| `sealos registry proxy add --address <地址> [--auth 用户:密码]` | 新增或更新一个代理配置 | `sealos registry proxy add --address https://mirror.example.com --auth admin:passw0rd` |
+| `sealos registry proxy delete --address <地址>` | 删除指定地址的代理配置 | `sealos registry proxy delete --address https://mirror.example.com` |
+
+### 使用示例
+
+1. **升级 image-cri-shim 版本**
+
+   ```bash
+   sealos registry proxy upgrade v5.1.0
+   ```
+
+   如果集群尚未执行 `init`，命令会提示需要先完成初始化。
+
+2. **查看当前代理配置**
+
+   ```bash
+   sealos registry proxy info
+   ```
+
+   命令会列出 hub 地址及所有已配置的代理条目，方便核对。
+
+3. **添加或更新代理**
+
+   ```bash
+   sealos registry proxy add --address https://quay.example.com --auth user:password
+   ```
+
+   当目标地址已存在时，命令会直接覆盖原有的认证信息。
+
+4. **删除代理**
+
+   ```bash
+   sealos registry proxy delete --address https://quay.example.com
+   ```
+
+   若指定地址不存在，将返回友好的提示，避免误删。
+
+### 常见问题
+
+- **提示未找到配置**：说明 `kube-system/image-cri-shim` ConfigMap 或 DaemonSet 尚未创建，需要先执行 `sealos registry proxy init`。
+- **提示配置缺失或无法解析**：请检查 ConfigMap 中的 YAML 是否完整，可通过 `sealos registry proxy info` 验证。
+- **升级失败**：确认 `image-cri-shim` DaemonSet 已部署且模板中包含目标容器。
+
 ## Sealos：`sealos registry sync` 命令详解与使用指南
 
 Sealos 的 `registry sync` 命令可帮助您在两个 registry 之间同步所有镜像。这不仅可以用于镜像的迁移，还可以备份您的镜像。
