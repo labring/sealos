@@ -652,8 +652,9 @@ export function NetworkSection({
                             }}
                           />
                           <Flex
-                            flex={'1 1 0'}
+                            flex={'0 1 auto'}
                             minW={0}
+                            maxW={'100%'}
                             alignItems={'center'}
                             h={'32px'}
                             bg={'grayModern.50'}
