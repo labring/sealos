@@ -26,6 +26,8 @@ The runner targets cluster 209 through `~/.kube/209`, refreshes `.env.local` fro
 - `account-system/account-service` on `127.0.0.1:2333`
 - `pnpm run dev` for the Next.js app
 
+The runner sets `NODE_OPTIONS=--no-experimental-global-navigator` because Node 24 exposes a global `navigator` without `window`. `echarts@5.4.3` treats that as a browser-like environment during SSR and can throw `ReferenceError: window is not defined` unless the experimental navigator is disabled.
+
 `.env.local` and `data/config.yaml.local` are intentionally ignored because they can contain kubeconfig, tokens, and cluster service secrets.
 
 ## Verification
@@ -52,6 +54,7 @@ yq -o=json '.version, .name, .actions[0].name, .actions[0].icon' .codex/environm
 kubectl --kubeconfig ~/.kube/209 -n sealos get svc launchpad-monitor service-vlogs
 kubectl --kubeconfig ~/.kube/209 -n account-system get svc account-service
 kubectl --kubeconfig ~/.kube/209 get user 5jbcgjlg
+NODE_OPTIONS=--no-experimental-global-navigator node -e "require('echarts'); console.log('echarts ok')"
 ```
 
 Then run a bounded smoke test and wait for `✓ Ready` from Next.js.

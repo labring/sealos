@@ -24,7 +24,8 @@ The runner:
    - `127.0.0.1:8428 -> sealos/launchpad-monitor:8428`
    - `127.0.0.1:8429 -> sealos/service-vlogs:8428`
    - `127.0.0.1:2333 -> account-system/account-service:2333`
-5. Runs `pnpm run dev`.
+5. Sets `NODE_OPTIONS=--no-experimental-global-navigator` for Node 24 compatibility with `echarts@5.4.3`.
+6. Runs `pnpm run dev`.
 
 The app should print:
 
@@ -75,7 +76,7 @@ kubectl --kubeconfig ~/.kube/209 -n account-system port-forward --address 127.0.
 Then run:
 
 ```bash
-NODE_TLS_REJECT_UNAUTHORIZED=0 pnpm run dev
+NODE_OPTIONS=--no-experimental-global-navigator NODE_TLS_REJECT_UNAUTHORIZED=0 pnpm run dev
 ```
 
 ## Verification Commands
@@ -103,9 +104,10 @@ git check-ignore -v .env.local data/config.yaml.local
 kubectl --kubeconfig ~/.kube/209 -n sealos get svc launchpad-monitor service-vlogs
 kubectl --kubeconfig ~/.kube/209 -n account-system get svc account-service
 kubectl --kubeconfig ~/.kube/209 get user 5jbcgjlg
+NODE_OPTIONS=--no-experimental-global-navigator node -e "require('echarts'); console.log('echarts ok')"
 ```
 
-Then run a bounded smoke test and confirm `✓ Ready`.
+Then run a bounded smoke test and confirm `✓ Ready`. If the runner is stopped with a timeout or Ctrl-C, the wrapper shell should clean up the port-forward processes it started.
 
 ## Build
 
@@ -136,3 +138,7 @@ Verify `NEXT_PUBLIC_MOCK_USER` parses as kubeconfig YAML and points to the inten
 ### Public domain conflicts are unclear
 
 Check app-side public-domain validation first, then cluster-side `vingress.sealos.io` admission webhook responses. Cross-namespace ownership conflicts may only be caught by the admission layer.
+
+### `echarts` throws `window is not defined` during SSR
+
+On Node 24, `navigator` can exist globally even though `window` does not. `echarts@5.4.3` uses `typeof navigator` in its environment detection and then reaches browser-only `window` checks. Start dev with `NODE_OPTIONS=--no-experimental-global-navigator` or use the Codex runner, which sets it automatically.
