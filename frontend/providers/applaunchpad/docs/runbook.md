@@ -39,7 +39,7 @@ Ready
 The default `admin` user points at `ns-admin`, which is the 209 namespace that currently contains the sample Launchpad apps. To test another namespace, start the runner with an explicit user:
 
 ```bash
-APPLAUNCHPAD_DEV_USER=5jbcgjlg yq -r '.actions[0].command' .codex/environments/environment.toml | bash
+APPLAUNCHPAD_DEV_USER=<user> yq -r '.actions[0].command' .codex/environments/environment.toml | bash
 ```
 
 ## Manual Local Setup
