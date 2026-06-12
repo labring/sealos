@@ -17,7 +17,7 @@ yq -r '.actions[0].command' .codex/environments/environment.toml | bash
 
 The runner:
 
-1. Reads `User/5jbcgjlg.status.kubeConfig` from cluster 209 and writes `.env.local`.
+1. Reads `User/${APPLAUNCHPAD_DEV_USER:-admin}.status.kubeConfig` from cluster 209 and writes `.env.local`.
 2. Reads `applaunchpad-frontend-config` from cluster 209 and writes `data/config.yaml.local`.
 3. Rewrites monitor, log, and billing URLs to localhost ports.
 4. Starts port-forward processes:
@@ -36,6 +36,12 @@ Environments: .env.local
 Ready
 ```
 
+The default `admin` user points at `ns-admin`, which is the 209 namespace that currently contains the sample Launchpad apps. To test another namespace, start the runner with an explicit user:
+
+```bash
+APPLAUNCHPAD_DEV_USER=5jbcgjlg yq -r '.actions[0].command' .codex/environments/environment.toml | bash
+```
+
 ## Manual Local Setup
 
 Refresh local config from 209:
@@ -47,11 +53,12 @@ const fs = require('node:fs');
 const yaml = require('js-yaml');
 
 const kubeconfig = `${process.env.HOME}/.kube/209`;
+const devUser = process.env.APPLAUNCHPAD_DEV_USER || 'admin';
 function kubectl(args) {
   return execFileSync('kubectl', [...args, '--kubeconfig', kubeconfig], { encoding: 'utf8' });
 }
 
-const userKubeconfig = kubectl(['get', 'user', '5jbcgjlg', '-o', 'jsonpath={.status.kubeConfig}']);
+const userKubeconfig = kubectl(['get', 'user', devUser, '-o', 'jsonpath={.status.kubeConfig}']);
 fs.writeFileSync('.env.local', `NEXT_PUBLIC_MOCK_USER=${JSON.stringify(userKubeconfig)}\n`, { mode: 0o600 });
 
 const cm = JSON.parse(
@@ -103,7 +110,7 @@ yq -o=json '.version, .name, .actions[0].name, .actions[0].icon' .codex/environm
 git check-ignore -v .env.local data/config.yaml.local
 kubectl --kubeconfig ~/.kube/209 -n sealos get svc launchpad-monitor service-vlogs
 kubectl --kubeconfig ~/.kube/209 -n account-system get svc account-service
-kubectl --kubeconfig ~/.kube/209 get user 5jbcgjlg
+kubectl --kubeconfig ~/.kube/209 get user "${APPLAUNCHPAD_DEV_USER:-admin}"
 NODE_OPTIONS=--no-experimental-global-navigator node -e "require('echarts'); console.log('echarts ok')"
 ```
 

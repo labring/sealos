@@ -14,7 +14,7 @@
 ## Local Cluster References
 
 - Cluster 209 kubeconfig: `~/.kube/209`
-- Local dev user used by the runner: `User/5jbcgjlg`
+- Local dev user used by the runner: `User/${APPLAUNCHPAD_DEV_USER:-admin}`; `admin` points at `ns-admin`, while `APPLAUNCHPAD_DEV_USER=<user>` can target another user namespace.
 - App config source: `applaunchpad-frontend/applaunchpad-frontend-config`
 - Port-forwarded services:
   - `sealos/launchpad-monitor:8428`

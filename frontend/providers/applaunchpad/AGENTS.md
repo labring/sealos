@@ -19,12 +19,14 @@ Use the Codex runner action when possible:
 yq -r '.actions[0].command' .codex/environments/environment.toml | bash
 ```
 
-The runner targets cluster 209 through `~/.kube/209`, refreshes `.env.local` from `User/5jbcgjlg.status.kubeConfig`, refreshes `data/config.yaml.local` from `applaunchpad-frontend-config`, rewrites dependent service URLs to local ports, and starts:
+The runner targets cluster 209 through `~/.kube/209`, refreshes `.env.local` from `User/${APPLAUNCHPAD_DEV_USER:-admin}.status.kubeConfig`, refreshes `data/config.yaml.local` from `applaunchpad-frontend-config`, rewrites dependent service URLs to local ports, and starts:
 
 - `sealos/launchpad-monitor` on `127.0.0.1:8428`
 - `sealos/service-vlogs` on `127.0.0.1:8429`
 - `account-system/account-service` on `127.0.0.1:2333`
 - `pnpm run dev` for the Next.js app
+
+The default `admin` user points at `ns-admin`, where the cluster 209 sample Launchpad apps live. To test another namespace, start the runner with `APPLAUNCHPAD_DEV_USER=<user>`.
 
 The runner sets `NODE_OPTIONS=--no-experimental-global-navigator` because Node 24 exposes a global `navigator` without `window`. `echarts@5.4.3` treats that as a browser-like environment during SSR and can throw `ReferenceError: window is not defined` unless the experimental navigator is disabled.
 
@@ -53,7 +55,7 @@ For runner changes, also validate:
 yq -o=json '.version, .name, .actions[0].name, .actions[0].icon' .codex/environments/environment.toml
 kubectl --kubeconfig ~/.kube/209 -n sealos get svc launchpad-monitor service-vlogs
 kubectl --kubeconfig ~/.kube/209 -n account-system get svc account-service
-kubectl --kubeconfig ~/.kube/209 get user 5jbcgjlg
+kubectl --kubeconfig ~/.kube/209 get user "${APPLAUNCHPAD_DEV_USER:-admin}"
 NODE_OPTIONS=--no-experimental-global-navigator node -e "require('echarts'); console.log('echarts ok')"
 ```
 
