@@ -92,6 +92,7 @@ func GetQuery(query *api.PromRequest) (string, error) {
 	}
 	result = strings.ReplaceAll(result, "#", query.NS)
 	result = strings.ReplaceAll(result, "@", query.Cluster)
+	fmt.Println("query result", result)
 	return result, nil
 }
 
