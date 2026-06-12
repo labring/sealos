@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { json2DeployCr, json2Ingress, yamlString2Objects } from '@/utils/deployYaml2Json';
+import { json2DeployCr, json2Ingress, json2Service, yamlString2Objects } from '@/utils/deployYaml2Json';
 import type { AppEditType } from '@/types/app';
 import { deployPVCResizeKey } from '@/constants/app';
 import {
@@ -8,7 +8,7 @@ import {
   storageGiToQuantity
 } from '@/utils/resourceQuantity';
 
-const createApp = (customDomain = ''): AppEditType =>
+const createApp = (customDomain = '', openNodePort = false): AppEditType =>
   ({
     appName: 'demo',
     imageName: 'nginx:latest',
@@ -28,7 +28,7 @@ const createApp = (customDomain = ''): AppEditType =>
         publicDomain: 'demo',
         customDomain,
         domain: 'cloud.example.com',
-        openNodePort: false
+        openNodePort
       }
     ],
     envs: [],
@@ -131,5 +131,25 @@ describe('json2DeployCr', () => {
     expect(template.metadata.annotations.value).toBe('2Gi');
     expect(template.spec.resources.requests.storage).toBe('2Gi');
     expect(objects[0].metadata.annotations[deployPVCResizeKey]).toBe('2Gi');
+  });
+});
+
+describe('json2Service', () => {
+  it('adds a 13-character suffix to generated service names', () => {
+    const app = createApp();
+    const objects = yamlString2Objects(json2Service(app)) as any[];
+    const serviceName = objects[0].metadata.name;
+
+    expect(serviceName).toMatch(/^demo-[a-z]{12}$/);
+    expect(serviceName.length - app.appName.length).toBe(13);
+  });
+
+  it('adds a 22-character suffix to generated nodeport service names', () => {
+    const app = createApp('', true);
+    const objects = yamlString2Objects(json2Service(app)) as any[];
+    const serviceName = objects[0].metadata.name;
+
+    expect(serviceName).toMatch(/^demo-nodeport-[a-z]{12}$/);
+    expect(serviceName.length - app.appName.length).toBe(22);
   });
 });

@@ -61,6 +61,11 @@ import {
   quantityToStorageGi,
   storageGiToQuantity
 } from '@/utils/resourceQuantity';
+import {
+  APP_NAME_BASE_MAX_LENGTH,
+  APP_NAME_BASE_PATTERN,
+  isValidAppNameBase
+} from '@/utils/appNameValidation';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
@@ -470,29 +475,42 @@ const Form = ({
                   disabled={isEdit}
                   title={isEdit ? t('Not allowed to change app name') || '' : ''}
                   autoFocus={true}
-                  maxLength={60}
-                  placeholder={
-                    t(
-                      'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
-                    ) || ''
-                  }
-                  {...register('appName', {
-                    required: t('App Name is required') || '',
-                    maxLength: 60,
-                    pattern: {
-                      value: /^[a-z]([-a-z0-9]*[a-z0-9])?$/,
-                      message: 'invalid'
-                    }
-                  })}
+                  maxLength={isEdit ? undefined : APP_NAME_BASE_MAX_LENGTH}
+                  placeholder={t('Enter an app name.') || ''}
+                  {...register(
+                    'appName',
+                    isEdit
+                      ? {}
+                      : {
+                          required: t('App Name is required') || '',
+                          maxLength: {
+                            value: APP_NAME_BASE_MAX_LENGTH,
+                            message: t('App name base length limit', {
+                              length: APP_NAME_BASE_MAX_LENGTH
+                            })
+                          },
+                          pattern: {
+                            value: APP_NAME_BASE_PATTERN,
+                            message: 'invalid'
+                          },
+                          validate: (value) => isValidAppNameBase(value) || 'invalid'
+                        }
+                  )}
                 />
                 {errors.appName && (
                   <div className="text-sm text-red-500">
-                    {errors.appName.type === 'pattern' ? (
+                    {errors.appName.type === 'pattern' || errors.appName.type === 'validate' ? (
                       <>
                         <p>{t('Invalid name')}</p>
                         <ul className="list-disc list-inside ml-1 mt-1">
                           <li>{t('Use only lowercase letters, numbers, or hyphens (-)')}</li>
-                          <li>{t('Must start/end with a letter or number')}</li>
+                          <li>{t('Must start with a lowercase letter')}</li>
+                          <li>{t('Must end with a lowercase letter or number')}</li>
+                          <li>
+                            {t('App name base length limit', {
+                              length: APP_NAME_BASE_MAX_LENGTH
+                            })}
+                          </li>
                         </ul>
                       </>
                     ) : (

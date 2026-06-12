@@ -47,8 +47,23 @@ import {
   quantityToPublicCpuCores,
   quantityToPublicMemoryGi
 } from '@/utils/resourceQuantity';
+import {
+  APP_NAME_BASE_MAX_LENGTH,
+  APP_GENERATED_NAME_PATTERN
+} from '@/utils/appNameValidation';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+const AppCreateNameSchema = z
+  .string()
+  .min(1, { message: 'App name cannot be empty' })
+  .max(APP_NAME_BASE_MAX_LENGTH, {
+    message: `App name must be ${APP_NAME_BASE_MAX_LENGTH} characters or less`
+  })
+  .regex(APP_GENERATED_NAME_PATTERN, {
+    message:
+      'App name must start with a lowercase letter, contain only lowercase letters, digits, or hyphens, and end with a lowercase letter or digit'
+  });
 
 export const GetAppByAppNameQuerySchema = z.object({
   name: z.string().min(1, { message: 'name cannot be empty' })
@@ -307,7 +322,7 @@ export const GetAppPodsByAppNameResponseSchema = z.array(PodDetailTypeSchema);
 
 export const CreateLaunchpadRequestSchema = z
   .object({
-    name: z.string().default('hello-world').openapi({
+    name: AppCreateNameSchema.default('hello-world').openapi({
       description: 'Application name (must be unique) - was: appName'
     }),
     image: ImageSchema.default({
