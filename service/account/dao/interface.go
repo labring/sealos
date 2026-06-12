@@ -118,6 +118,7 @@ type Interface interface {
 	GetWorkspaceSubscriptionTraffic(workspace, regionDomain string) (total, used int64, err error)
 	GetAIQuota(workspace, regionDomain string) (total, used int64, err error)
 	ListWorkspaceSubscription(userUID uuid.UUID) ([]types.WorkspaceSubscription, error)
+	ListWorkspaceSubscriptionWorkspacePlan(planName string) ([]types.WorkspaceSubscription, error)
 	ListWorkspaceSubscriptionWorkspace(userUID uuid.UUID) ([]string, error)
 	GetWorkspaceSubscriptionPlanList() ([]types.WorkspaceSubscriptionPlan, error)
 	GetWorkspaceSubscriptionPlan(planName string) (*types.WorkspaceSubscriptionPlan, error)

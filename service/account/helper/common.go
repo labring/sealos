@@ -50,6 +50,7 @@ const (
 	AdminActiveBilling           = "/active-billing"
 	AdminGetUserRealNameInfo     = "/real-name-info"
 	AdminFlushSubQuota           = "/flush-sub-quota"
+	AdminFlushSubQuotaAll        = "/flush-sub-quota-all"
 	AdminFlushDebtResourceStatus = "/flush-debt-resource-status"
 	AdminSuspendUserTraffic      = "/suspend-user-traffic"
 	AdminResumeUserTraffic       = "/resume-user-traffic"
