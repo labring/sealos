@@ -13,8 +13,9 @@ import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
 import { hasLocalTemplateAssets, rewriteTemplateAssetsToLocalApi } from '@/utils/templateAssets';
 
 const execAsync = util.promisify(exec);
+const TEMPLATE_MANIFESTS_DIR = 'manifests';
 
-const readFileList = (targetPath: string, fileList: unknown[] = []) => {
+const readFileList = (targetPath: string, fileList: string[] = []) => {
   // fix ci
   const sanitizePath = (inputPath: string) => {
     if (typeof inputPath !== 'string') {
@@ -32,6 +33,7 @@ const readFileList = (targetPath: string, fileList: unknown[] = []) => {
     if (stats.isFile() && isYamlFile && item !== 'template.yaml') {
       fileList.push(filePath);
     } else if (stats.isDirectory()) {
+      if (item === TEMPLATE_MANIFESTS_DIR) return;
       readFileList(filePath, fileList);
     }
   });
@@ -95,7 +97,7 @@ export async function updateRepo() {
     throw new Error('missing template repository file');
   }
 
-  let fileList: unknown[] = [];
+  let fileList: string[] = [];
   const _targetPath = path.join(targetPath, targetFolder);
   readFileList(_targetPath, fileList);
 

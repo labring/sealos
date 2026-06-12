@@ -24,6 +24,39 @@ import {
   rewriteTemplateAssetsToLocalApi
 } from '@/utils/templateAssets';
 
+const TEMPLATE_MANIFESTS_DIR = 'manifests';
+
+const isTemplateIndexFile = (filePath: string) => {
+  const filename = path.basename(filePath).toLowerCase();
+  return filename === 'index.yaml' || filename === 'index.yml';
+};
+
+const joinYamlDocuments = (items: string[]) =>
+  items
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join('\n---\n');
+
+const readSiblingManifestYaml = (templateFilePath: string) => {
+  if (!isTemplateIndexFile(templateFilePath)) return '';
+
+  const manifestsDir = path.join(path.dirname(templateFilePath), TEMPLATE_MANIFESTS_DIR);
+  if (!fs.existsSync(manifestsDir) || !fs.statSync(manifestsDir).isDirectory()) {
+    return '';
+  }
+
+  const manifestContents = fs
+    .readdirSync(manifestsDir)
+    .filter((item) => {
+      const ext = path.extname(item).toLowerCase();
+      return ext === '.yaml' || ext === '.yml';
+    })
+    .sort((left, right) => left.localeCompare(right))
+    .map((item) => fs.readFileSync(path.join(manifestsDir, item), 'utf-8'));
+
+  return joinYamlDocuments(manifestContents);
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const envEnableReadme = process.env.ENABLE_README_FETCH;
@@ -140,6 +173,7 @@ export async function GetTemplateByName({
   const yamlString = fs.readFileSync(templateFilePath, 'utf-8');
 
   let { appYaml, templateYaml } = getYamlTemplate(yamlString);
+  appYaml = joinYamlDocuments([appYaml, readSiblingManifestYaml(templateFilePath)]);
 
   if (!templateYaml) {
     return {

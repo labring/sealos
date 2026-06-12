@@ -12,6 +12,25 @@ The Template App reads app-store templates from a Git repository configured by e
 
 When templates use repository-local README or icon paths such as `README.md`, `./README.md`, or `/shared/logo.svg`, the app serves them through `/api/templateAsset` from the cloned local repository. This keeps private/offline deployments from depending on public raw URLs.
 
+## template repository layout
+
+The app keeps backward compatibility with legacy single-file templates such as:
+
+```text
+template/wordpress.yaml
+```
+
+Managed templates may also use the split layout produced by Sealos Admin:
+
+```text
+template/<name>/index.yaml
+template/<name>/manifests/001-app.yaml
+template/<name>/README.md
+template/<name>/logo.svg
+```
+
+`index.yaml` must start with the `Template` document. App resources can either remain as following YAML documents in `index.yaml` or live in sibling `manifests/*.yaml` files. Catalog refresh skips `manifests/` so resource YAML files are not listed as templates. Template detail/source reads append sibling manifest files in lexical order.
+
 ## project tree
 ```bash
 .
