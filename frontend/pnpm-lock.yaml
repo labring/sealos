@@ -1130,6 +1130,12 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^5.1.1
         version: 5.1.1(vite@7.2.6)
+      '@vitest/browser':
+        specifier: 4.0.15
+        version: 4.0.15(vite@7.2.6)(vitest@4.0.15)
+      '@vitest/browser-playwright':
+        specifier: 4.0.15
+        version: 4.0.15(playwright@1.59.1)(vite@7.2.6)(vitest@4.0.15)
       '@vitest/ui':
         specifier: 4.0.12
         version: 4.0.12(vitest@4.0.15)
@@ -1156,7 +1162,7 @@ importers:
         version: 5.1.4(typescript@5.2.2)(vite@7.2.6)
       vitest:
         specifier: ^4.0.12
-        version: 4.0.15(@types/node@18.13.0)(@vitest/ui@4.0.12)(jsdom@27.2.0)(sass@1.69.5)
+        version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(@vitest/ui@4.0.12)(jsdom@27.2.0)(sass@1.69.5)
       webpack-bundle-analyzer:
         specifier: ^4.9.1
         version: 4.10.1
@@ -1741,7 +1747,7 @@ importers:
         version: 5.1.4(typescript@5.2.2)(vite@7.2.6)
       vitest:
         specifier: ^4.0.12
-        version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
+        version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(@vitest/ui@4.0.12)(jsdom@27.2.0)(sass@1.69.5)
       webpack-bundle-analyzer:
         specifier: ^4.9.1
         version: 4.10.1
@@ -1979,7 +1985,7 @@ importers:
         version: 5.1.4(typescript@5.2.2)(vite@7.2.6)
       vitest:
         specifier: ^4.0.12
-        version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
+        version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(@vitest/ui@4.0.12)(jsdom@27.2.0)(sass@1.69.5)
       webpack-bundle-analyzer:
         specifier: ^4.9.1
         version: 4.10.1
@@ -2893,7 +2899,7 @@ importers:
         version: 5.1.4(typescript@5.2.2)(vite@7.2.6)
       vitest:
         specifier: ^4.0.12
-        version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(sass@1.69.5)
+        version: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(@vitest/ui@4.0.12)(jsdom@27.2.0)(sass@1.69.5)
 
   providers/terminal:
     dependencies:
@@ -14385,7 +14391,7 @@ packages:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.15(@types/node@18.13.0)(@vitest/ui@4.0.12)(jsdom@27.2.0)(sass@1.69.5)
+      vitest: 4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(@vitest/ui@4.0.12)(jsdom@27.2.0)(sass@1.69.5)
     dev: true
 
   /@vitest/utils@4.0.12:
@@ -28305,7 +28311,7 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vitest@4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(sass@1.69.5):
+  /vitest@4.0.15(@types/node@18.13.0)(@vitest/browser-playwright@4.0.15)(@vitest/ui@4.0.12)(jsdom@27.2.0)(sass@1.69.5):
     resolution: {integrity: sha512-n1RxDp8UJm6N0IbJLQo+yzLZ2sQCDyl1o0LeugbPWf8+8Fttp29GghsQBjYJVmWq3gBFfe9Hs1spR44vovn2wA==}
     engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
     hasBin: true
@@ -28341,75 +28347,6 @@ packages:
     dependencies:
       '@types/node': 18.13.0
       '@vitest/browser-playwright': 4.0.15(playwright@1.59.1)(vite@7.2.6)(vitest@4.0.15)
-      '@vitest/expect': 4.0.15
-      '@vitest/mocker': 4.0.15(vite@7.2.6)
-      '@vitest/pretty-format': 4.0.15
-      '@vitest/runner': 4.0.15
-      '@vitest/snapshot': 4.0.15
-      '@vitest/spy': 4.0.15
-      '@vitest/utils': 4.0.15
-      es-module-lexer: 1.7.0
-      expect-type: 1.2.2
-      magic-string: 0.30.21
-      obug: 2.1.1
-      pathe: 2.0.3
-      picomatch: 4.0.3
-      std-env: 3.10.0
-      tinybench: 2.9.0
-      tinyexec: 1.0.2
-      tinyglobby: 0.2.15
-      tinyrainbow: 3.0.3
-      vite: 7.2.6(@types/node@18.13.0)(sass@1.69.5)
-      why-is-node-running: 2.3.0
-    transitivePeerDependencies:
-      - jiti
-      - less
-      - lightningcss
-      - msw
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - terser
-      - tsx
-      - yaml
-    dev: true
-
-  /vitest@4.0.15(@types/node@18.13.0)(@vitest/ui@4.0.12)(jsdom@27.2.0)(sass@1.69.5):
-    resolution: {integrity: sha512-n1RxDp8UJm6N0IbJLQo+yzLZ2sQCDyl1o0LeugbPWf8+8Fttp29GghsQBjYJVmWq3gBFfe9Hs1spR44vovn2wA==}
-    engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
-    hasBin: true
-    peerDependencies:
-      '@edge-runtime/vm': '*'
-      '@opentelemetry/api': ^1.9.0
-      '@types/node': ^20.0.0 || ^22.0.0 || >=24.0.0
-      '@vitest/browser-playwright': 4.0.15
-      '@vitest/browser-preview': 4.0.15
-      '@vitest/browser-webdriverio': 4.0.15
-      '@vitest/ui': 4.0.15
-      happy-dom: '*'
-      jsdom: '*'
-    peerDependenciesMeta:
-      '@edge-runtime/vm':
-        optional: true
-      '@opentelemetry/api':
-        optional: true
-      '@types/node':
-        optional: true
-      '@vitest/browser-playwright':
-        optional: true
-      '@vitest/browser-preview':
-        optional: true
-      '@vitest/browser-webdriverio':
-        optional: true
-      '@vitest/ui':
-        optional: true
-      happy-dom:
-        optional: true
-      jsdom:
-        optional: true
-    dependencies:
-      '@types/node': 18.13.0
       '@vitest/expect': 4.0.15
       '@vitest/mocker': 4.0.15(vite@7.2.6)
       '@vitest/pretty-format': 4.0.15

@@ -6,8 +6,8 @@ import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import type { AppDetailType } from '@/types/app';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import { useCopyData, generatePvcNameRegex } from '@/utils/tools';
+import { calculateStorageUsagePercent } from '@/utils/storage-usage';
 import { getUserNamespace } from '@/utils/user';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MonitorModal from './MonitorModal';
@@ -16,11 +16,10 @@ import { checkReady } from '@/api/platform';
 import { getAppMonitorData, getNetworkMonitorData } from '@/api/app';
 import { useGuideStore } from '@/store/guide';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
-import ICPStatus from './ICPStatus';
-import { CircleHelpIcon, Copy } from 'lucide-react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { Button } from '@sealos/shadcn-ui/button';
+import NetworkConfigurationTable from './NetworkConfigurationTable';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
@@ -34,47 +33,33 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const hasStorage = app.storeList && app.storeList.length > 0;
   const pvcNameRegex = generatePvcNameRegex(app);
 
-  // Fetch storage usage data for all PVCs
+  // Fetch storage size and available capacity for all PVCs
   const { data: storageData } = useQuery({
     queryKey: ['storageUsage', app.appName, pvcNameRegex],
     queryFn: async () => {
       if (!pvcNameRegex) return null;
-      const result = await getAppMonitorData({
-        queryName: pvcNameRegex,
-        queryKey: 'storage',
-        step: '2m',
-        pvcName: pvcNameRegex
-      });
-      return result;
+      const [sizeData, availData] = await Promise.all([
+        getAppMonitorData({
+          queryName: pvcNameRegex,
+          queryKey: 'size_n',
+          step: '2m',
+          pvcName: pvcNameRegex
+        }),
+        getAppMonitorData({
+          queryName: pvcNameRegex,
+          queryKey: 'avail_n',
+          step: '2m',
+          pvcName: pvcNameRegex
+        })
+      ]);
+      return { sizeData, availData };
     },
     enabled: hasStorage && !!pvcNameRegex,
     refetchInterval: 2 * 60 * 1000
   });
 
-  // Calculate average storage usage across all PVCs
   const storageUsagePercent = useMemo(() => {
-    if (!storageData?.length) return 0;
-
-    let sum = 0;
-    let count = 0;
-
-    storageData.forEach((pvc) => {
-      if (!pvc?.yData?.length) return;
-      // Get the last non-null value
-      for (let i = pvc.yData.length - 1; i >= 0; i--) {
-        const val = pvc.yData[i];
-        if (val !== null && val !== undefined) {
-          sum += parseFloat(val);
-          count++;
-          break;
-        }
-      }
-    });
-
-    if (count === 0) return 0;
-    const avg = sum / count;
-    if (avg > 0 && avg < 0.1) return 0.1;
-    return Math.round(avg * 10) / 10;
+    return calculateStorageUsagePercent(storageData?.sizeData, storageData?.availData);
   }, [storageData]);
 
   // Get all available networks for error codes query (non-NodePort networks only)
@@ -374,128 +359,13 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             {t('Manage')}
           </Button>
         </div>
-        <div className="overflow-auto pb-6">
-          <table className="w-full table-fixed">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-zinc-50">
-                <th className="w-[85px] h-10 text-sm font-normal text-zinc-500 px-4 py-3 rounded-l-lg text-left">
-                  {t('Port')}
-                </th>
-                <th className="h-10 text-sm font-normal text-zinc-500 px-4 py-3 text-left">
-                  {t('Private Address')}
-                </th>
-                <th className="h-10 text-sm font-normal text-zinc-500 px-4 py-3 rounded-r-lg text-left">
-                  {t('Public Address')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {networks.map((network, index) => {
-                return (
-                  <tr key={network.inline + index} className="!border-b border-zinc-100">
-                    <td className="w-[85px] px-4 py-2">
-                      <div className="text-sm text-zinc-700">{network.port}</div>
-                    </td>
-                    <td className="px-4 py-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            className="text-sm w-fit text-zinc-700 cursor-pointer"
-                            onClick={() => copyData(network.inline)}
-                          >
-                            {network.inline.replace('.svc.cluster.local', '')}
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{t('Copy')}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {network.public && network.showReadyStatus && (
-                          <div className="min-w-[70px]">
-                            {statusMap[network.public]?.ready ? (
-                              <div className="w-fit relative top-[1px] h-5 flex items-center gap-1 text-xs font-medium bg-emerald-50 text-emerald-600 rounded-full px-2 py-0.5 border-[0.5px] border-emerald-200">
-                                <div className="w-1.5 h-1.5 rounded-xs bg-emerald-500"></div>
-                                {t('Accessible')}
-                              </div>
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="w-fit relative top-[1px] h-5 flex items-center gap-1 text-xs font-medium bg-zinc-50 text-zinc-500 border-[0.5px] border-zinc-200 rounded-full px-2 py-0.5 cursor-pointer">
-                                    <CircleHelpIcon className="w-3 h-3 text-zinc-400" />
-                                    {t('Ready')}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="rounded-xl">
-                                  <div className="text-sm text-zinc-900 font-normal p-2">
-                                    {network.customDomain
-                                      ? t('network_not_ready_icp_reg')
-                                      : t('network_not_ready')}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-1">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div
-                                className={`text-sm ${
-                                  network.public ? 'text-zinc-700 cursor-pointer' : 'text-zinc-500'
-                                }`}
-                                {...(network.public
-                                  ? {
-                                      onClick: () => window.open(network.public, '_blank')
-                                    }
-                                  : {})}
-                              >
-                                {network.public || '-'}
-                              </div>
-                            </TooltipTrigger>
-                            {network.public && (
-                              <TooltipContent>
-                                <p>{t('Open Link')}</p>
-                              </TooltipContent>
-                            )}
-                          </Tooltip>
-                          {!!network.public && (
-                            <div
-                              className="relative top-[1px] flex-shrink-0 w-6 h-6 rounded-md hover:bg-zinc-100 cursor-pointer flex items-center justify-center"
-                              onClick={() => copyData(network.public)}
-                            >
-                              <Copy className="w-4 h-4 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* ICP reg status*/}
-                        {network.customDomain !== null &&
-                          network.showReadyStatus === true &&
-                          network.public &&
-                          !statusMap[network.public]?.ready && (
-                            <ICPStatus
-                              customDomain={network.customDomain}
-                              enabled={
-                                !!networkStatus &&
-                                !!network.customDomain &&
-                                network.showReadyStatus === true &&
-                                !!network.public &&
-                                !statusMap[network.public]?.ready
-                              }
-                            />
-                          )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <NetworkConfigurationTable
+          networks={networks}
+          networkStatus={networkStatus}
+          statusMap={statusMap}
+          copyData={copyData}
+          t={t}
+        />
       </div>
 
       <MonitorModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
