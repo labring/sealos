@@ -141,6 +141,18 @@ Verify the rendered runtime config:
 helm template test ./deploy/charts/applaunchpad-frontend --set applaunchpadConfig.publicDomainReservedPrefixes='{admin,api}' | yq '. | select(.kind == "ConfigMap") | .data."config.yaml" | from_yaml | .launchpad.publicDomain'
 ```
 
+For managed public-domain ownership checks, use the real user kubeconfig. Cluster-admin kubeconfigs are skipped by `vingress.sealos.io` and can produce false positives in manual dry-runs:
+
+```bash
+kubectl --kubeconfig ~/.kube/209 get user admin -o jsonpath='{.status.kubeConfig}' > /tmp/applaunchpad-admin.kubeconfig
+kubectl --kubeconfig /tmp/applaunchpad-admin.kubeconfig -n ns-admin create ingress public-domain-check-objectstorage \
+  --class=nginx \
+  --rule='objectstorage.192.168.13.209.nip.io/*=dummy-service:80' \
+  --dry-run=server -o yaml
+```
+
+The `objectstorage` probe should fail with `admission webhook "vingress.sealos.io" denied the request: 40301 ... owned by other user` on cluster 209 because the system object storage app owns that host.
+
 ## Troubleshooting
 
 ### `NEXT_PUBLIC_MOCK_USER` is missing

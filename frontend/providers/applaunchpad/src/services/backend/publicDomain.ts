@@ -1,5 +1,5 @@
-import { appDeployKey } from '@/constants/app';
-import type { NetworkingV1Api } from '@kubernetes/client-node';
+import { appDeployKey, publicDomainKey } from '@/constants/app';
+import type { KubernetesObjectApi, NetworkingV1Api } from '@kubernetes/client-node';
 import type { K8sContext } from '@/services/backend/appService';
 import type { AppEditType } from '@/types/app';
 import { validatePublicDomainPrefix } from '@/utils/public-domain';
@@ -24,6 +24,17 @@ export type PublicDomainTarget = {
   appName?: string;
   networkName?: string;
 };
+
+type PublicDomainDryRunContext = {
+  apiClient: KubernetesObjectApi;
+  namespace: string;
+};
+
+function getDryRunIngressName(prefix: string) {
+  const suffix = Date.now().toString(36);
+  const maxPrefixLength = 63 - 'public-domain-check--'.length - suffix.length;
+  return `public-domain-check-${prefix.slice(0, maxPrefixLength)}-${suffix}`.replace(/-+$/, '');
+}
 
 export function getPublicDomainErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
@@ -55,9 +66,13 @@ export function getPublicDomainConflictResponse(error: unknown) {
 
   return {
     code: 'PUBLIC_DOMAIN_CONFLICT' as const,
-    message: 'Public domain is already in use by another workspace.',
+    message: getPublicDomainConflictMessage(),
     details
   };
+}
+
+export function getPublicDomainConflictMessage() {
+  return 'Public domain is already in use by another workspace.';
 }
 
 type PublicDomainK8sContext = {
@@ -78,6 +93,65 @@ export function normalizeAndValidatePublicDomainPrefix(value: string) {
   }
 
   return result.value;
+}
+
+export async function dryRunPublicDomainIngress(
+  target: PublicDomainTarget,
+  k8s: PublicDomainDryRunContext
+) {
+  const prefix = normalizeAndValidatePublicDomainPrefix(target.prefix);
+  const host = `${prefix}.${target.domain}`;
+  const appName = target.appName || 'public-domain-check';
+  const networkName = target.networkName || getDryRunIngressName(prefix);
+
+  await k8s.apiClient.create(
+    {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'Ingress',
+      metadata: {
+        name: networkName,
+        namespace: k8s.namespace,
+        labels: {
+          [appDeployKey]: appName,
+          [publicDomainKey]: prefix
+        },
+        annotations: {
+          'kubernetes.io/ingress.class': 'nginx'
+        }
+      },
+      spec: {
+        rules: [
+          {
+            host,
+            http: {
+              paths: [
+                {
+                  path: '/',
+                  pathType: 'Prefix',
+                  backend: {
+                    service: {
+                      name: appName,
+                      port: {
+                        number: 80
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    undefined,
+    'All',
+    'applaunchpad-public-domain-check'
+  );
+
+  return {
+    prefix,
+    host
+  };
 }
 
 export async function ensurePublicDomainTargetsAvailable(

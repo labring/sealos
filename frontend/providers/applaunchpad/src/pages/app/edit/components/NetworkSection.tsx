@@ -1,4 +1,5 @@
 import MyIcon from '@/components/Icon';
+import { checkPublicDomain } from '@/api/platform';
 import { MySelect } from '@sealos/ui';
 import { APPLICATION_PROTOCOLS, ProtocolList } from '@/constants/app';
 import { DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT, SEALOS_DOMAIN } from '@/store/static';
@@ -36,8 +37,15 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const getPublicDomainPrefixErrorMessage = (
   t: ReturnType<typeof useTranslation>['t'],
-  reason: 'format' | 'reserved'
+  reason: 'format' | 'reserved' | 'conflict'
 ) => {
+  if (reason === 'conflict') {
+    return (
+      t('public_domain_prefix_conflict_error') ||
+      'This public address prefix is already in use. Please choose another one.'
+    );
+  }
+
   if (reason === 'reserved') {
     return (
       t('public_domain_prefix_reserved_error') ||
@@ -65,7 +73,7 @@ function PublicDomainPrefixInput({
   errorMessage?: string;
   onDraftChange: (value: string) => void;
   onStartEdit: () => void;
-  onCommit: (value: string) => string | null;
+  onCommit: (value: string) => Promise<string | null>;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(value);
@@ -80,8 +88,8 @@ function PublicDomainPrefixInput({
     }
   }, [isFocused, value]);
 
-  const commitDraft = useCallback(() => {
-    const committedValue = onCommit(draft);
+  const commitDraft = useCallback(async () => {
+    const committedValue = await onCommit(draft);
     if (committedValue) {
       lastCommittedValueRef.current = committedValue;
     }
@@ -145,7 +153,7 @@ function PublicDomainPrefixInput({
               skipNextBlurCommitRef.current = false;
               return;
             }
-            commitDraft();
+            void commitDraft();
           }}
           onChange={(e) => {
             const nextValue = e.target.value;
@@ -156,7 +164,7 @@ function PublicDomainPrefixInput({
             if (e.key === 'Enter') {
               e.preventDefault();
               skipNextBlurCommitRef.current = true;
-              commitDraft();
+              void commitDraft();
               e.currentTarget.blur();
             }
             if (e.key === 'Escape') {
@@ -215,6 +223,7 @@ export function NetworkSection({
   const theme = useTheme();
   const { copyData } = useCopyData();
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
+  const publicDomainCheckSeqRef = useRef(0);
 
   const {
     register,
@@ -382,7 +391,7 @@ export function NetworkSection({
   );
 
   const setPublicDomainValidationError = useCallback(
-    (index: number, reason: 'format' | 'reserved') => {
+    (index: number, reason: 'format' | 'reserved' | 'conflict') => {
       setError(getPublicDomainFieldName(index), {
         type: 'validate',
         message: getPublicDomainPrefixErrorMessage(t, reason)
@@ -418,7 +427,7 @@ export function NetworkSection({
   );
 
   const commitPublicDomainDraft = useCallback(
-    (index: number, value: string) => {
+    async (index: number, value: string) => {
       const result = validatePublicDomainPrefix(value);
 
       if (!result.valid) {
@@ -429,6 +438,28 @@ export function NetworkSection({
         setPublicDomainValidationError(index, result.reason);
         return null;
       }
+
+      const network = getValues(`networks.${index}`);
+      const checkSeq = ++publicDomainCheckSeqRef.current;
+
+      try {
+        await checkPublicDomain({
+          prefix: result.value,
+          domain: network.domain || SEALOS_DOMAIN,
+          appName: getValues('appName')
+        });
+      } catch (error: any) {
+        if (checkSeq !== publicDomainCheckSeqRef.current) return null;
+
+        if (error?.error?.code === 'PUBLIC_DOMAIN_CONFLICT') {
+          setPublicDomainValidationError(index, 'conflict');
+          return null;
+        }
+
+        return result.value;
+      }
+
+      if (checkSeq !== publicDomainCheckSeqRef.current) return null;
 
       clearPublicDomainValidationError(index);
       dispatch({
@@ -441,6 +472,7 @@ export function NetworkSection({
       clearPublicDomainValidationError,
       dispatch,
       getPublicDomainFieldName,
+      getValues,
       setPublicDomainValidationError,
       setValue
     ]
@@ -679,10 +711,10 @@ export function NetworkSection({
                                 fontWeight={500}
                                 color={'brightBlue.600'}
                                 cursor={'pointer'}
-                                onClick={() => {
+                                onClick={async () => {
                                   const publicDomain = network.customDomain
                                     ? network.publicDomain
-                                    : commitPublicDomainDraft(i, network.publicDomain);
+                                    : await commitPublicDomainDraft(i, network.publicDomain);
                                   if (!publicDomain) return;
                                   setCustomAccessModalData({
                                     publicDomain,

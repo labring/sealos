@@ -1,5 +1,5 @@
 import { postDeployApp, putApp } from '@/api/app';
-import { checkPermission } from '@/api/platform';
+import { checkPermission, checkPublicDomain } from '@/api/platform';
 import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -58,8 +58,15 @@ const EDIT_PAGE_TARGET_WIDTH =
 
 const getPublicDomainPrefixErrorMessage = (
   t: ReturnType<typeof useTranslation>['t'],
-  reason: 'format' | 'reserved'
+  reason: 'format' | 'reserved' | 'conflict'
 ) => {
+  if (reason === 'conflict') {
+    return (
+      t('public_domain_prefix_conflict_error') ||
+      'This public address prefix is already in use. Please choose another one.'
+    );
+  }
+
   if (reason === 'reserved') {
     return (
       t('public_domain_prefix_reserved_error') ||
@@ -95,6 +102,36 @@ function validatePublicDomainPrefixBeforeSubmit(
     const message = getPublicDomainPrefixErrorMessage(t, result.reason);
     setFieldError(index, message);
     return message;
+  }
+
+  return '';
+}
+
+async function validatePublicDomainAvailabilityBeforeSubmit(
+  data: AppEditType,
+  t: ReturnType<typeof useTranslation>['t'],
+  setFieldError: (index: number, message: string) => void
+) {
+  for (const [index, network] of data.networks.entries()) {
+    if (!network.openPublicDomain || network.openNodePort || network.customDomain) {
+      continue;
+    }
+
+    try {
+      await checkPublicDomain({
+        prefix: network.publicDomain,
+        domain: network.domain,
+        appName: data.appName
+      });
+    } catch (error: any) {
+      if (error?.error?.code !== 'PUBLIC_DOMAIN_CONFLICT') {
+        throw error;
+      }
+
+      const message = getPublicDomainPrefixErrorMessage(t, 'conflict');
+      setFieldError(index, message);
+      return message;
+    }
   }
 
   return '';
@@ -560,6 +597,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 return toast({
                   status: 'warning',
                   title: publicDomainErrorMessage
+                });
+              }
+
+              const publicDomainAvailabilityErrorMessage =
+                await validatePublicDomainAvailabilityBeforeSubmit(data, t, (index, message) => {
+                  formHook.setError(`networks.${index}.publicDomain`, {
+                    type: 'validate',
+                    message
+                  });
+                });
+
+              if (publicDomainAvailabilityErrorMessage) {
+                return toast({
+                  status: 'warning',
+                  title: publicDomainAvailabilityErrorMessage
                 });
               }
 

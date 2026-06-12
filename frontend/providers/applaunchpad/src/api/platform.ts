@@ -42,6 +42,13 @@ export const getImagePorts = (data: {
     }[];
   }>('/api/platform/getImagePorts', data);
 
+export const checkPublicDomain = (data: { prefix: string; domain: string; appName?: string }) =>
+  POST<{
+    available: boolean;
+    prefix?: string;
+    host?: string;
+  }>('/api/platform/checkPublicDomain', data);
+
 export const getUserTasks = () =>
   GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {
     headers: {
