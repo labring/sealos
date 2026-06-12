@@ -39,6 +39,11 @@ import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
+import {
+  PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
+  PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
+  validatePublicDomainPrefix
+} from '@/utils/public-domain';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -50,6 +55,50 @@ const EDIT_PAGE_COLUMN_GAP = 20;
 const EDIT_PAGE_CONTENT_TARGET_WIDTH = 1100;
 const EDIT_PAGE_TARGET_WIDTH =
   EDIT_PAGE_NAV_WIDTH + EDIT_PAGE_COLUMN_GAP + EDIT_PAGE_CONTENT_TARGET_WIDTH;
+
+const getPublicDomainPrefixErrorMessage = (
+  t: ReturnType<typeof useTranslation>['t'],
+  reason: 'format' | 'reserved'
+) => {
+  if (reason === 'reserved') {
+    return (
+      t('public_domain_prefix_reserved_error') ||
+      'This public address prefix is reserved. Please choose another one.'
+    );
+  }
+
+  return (
+    t('public_domain_prefix_format_error', {
+      min: PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
+      max: PUBLIC_DOMAIN_PREFIX_MAX_LENGTH
+    }) ||
+    `Use ${PUBLIC_DOMAIN_PREFIX_MIN_LENGTH}-${PUBLIC_DOMAIN_PREFIX_MAX_LENGTH} lowercase letters, numbers, or hyphens. It cannot start or end with a hyphen.`
+  );
+};
+
+function validatePublicDomainPrefixBeforeSubmit(
+  data: AppEditType,
+  t: ReturnType<typeof useTranslation>['t'],
+  setFieldError: (index: number, message: string) => void
+) {
+  for (const [index, network] of data.networks.entries()) {
+    if (!network.openPublicDomain || network.openNodePort || network.customDomain) {
+      continue;
+    }
+
+    const result = validatePublicDomainPrefix(network.publicDomain);
+    if (result.valid) {
+      network.publicDomain = result.value;
+      continue;
+    }
+
+    const message = getPublicDomainPrefixErrorMessage(t, result.reason);
+    setFieldError(index, message);
+    return message;
+  }
+
+  return '';
+}
 
 export const formData2Yamls = (
   data: AppEditType
@@ -495,6 +544,24 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyCb={() => {
             formHook.handleSubmit(async (data) => {
               console.log('data', data);
+
+              const publicDomainErrorMessage = validatePublicDomainPrefixBeforeSubmit(
+                data,
+                t,
+                (index, message) => {
+                  formHook.setError(`networks.${index}.publicDomain`, {
+                    type: 'validate',
+                    message
+                  });
+                }
+              );
+
+              if (publicDomainErrorMessage) {
+                return toast({
+                  status: 'warning',
+                  title: publicDomainErrorMessage
+                });
+              }
 
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
