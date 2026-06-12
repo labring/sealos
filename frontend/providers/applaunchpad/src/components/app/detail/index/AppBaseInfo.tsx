@@ -2,7 +2,7 @@ import GPUItem from '@/components/GPUItem';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useUserStore } from '@/store/user';
 import type { AppDetailType } from '@/types/app';
-import { printMemory, useCopyData } from '@/utils/tools';
+import { useCopyData } from '@/utils/tools';
 import { Separator } from '@sealos/shadcn-ui/separator';
 import TruncateTooltip from '@/components/TruncateTooltip';
 import { useTranslation } from 'next-i18next';
@@ -44,10 +44,21 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             label: `${t('Image Name')} ${app.secret.use ? '(Private)' : ''}`,
             value: app.imageName
           },
-          { label: 'Limit CPU', value: `${app.cpu / 1000} Core` },
+          {
+            label: 'Limit CPU',
+            value: app.cpu.formatForDisplay({
+              format: 'DecimalSI',
+              scale: 'auto',
+              digits: 4
+            })
+          },
           {
             label: 'Limit Memory',
-            value: printMemory(app.memory)
+            value: app.memory.formatForDisplay({
+              format: 'BinarySI',
+              scale: 'auto',
+              digits: 4
+            })
           },
           ...(userSourcePrice?.gpu
             ? [

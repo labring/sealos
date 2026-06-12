@@ -1,4 +1,5 @@
 import type { AppEditType } from '@/types/app';
+import { cpuMillicoresToQuantity, memoryMiToQuantity } from '@/utils/resourceQuantity';
 import { customAlphabet } from 'nanoid';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -31,8 +32,8 @@ export const defaultEditVal: AppEditType = {
   runCMD: '',
   cmdParam: '',
   replicas: 1,
-  cpu: 200,
-  memory: 256,
+  cpu: cpuMillicoresToQuantity(200),
+  memory: memoryMiToQuantity(256),
   networks: [
     {
       // note: this should not have serviceName

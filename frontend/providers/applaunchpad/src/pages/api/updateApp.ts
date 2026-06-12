@@ -11,6 +11,7 @@ import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
 import type { V1Service } from '@kubernetes/client-node';
 import { buildExternalUrl } from '@/utils/network-url';
 import { Config } from '@/config';
+import { storageAnnotationToQuantity } from '@/utils/resourceQuantity';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -312,26 +313,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           return k8sCore.deleteNamespacedPersistentVolumeClaim(pvc.metadata?.name || '', namespace);
         }
         // check storage change
+        const currentStorageQuantity = storageAnnotationToQuantity(
+          pvc.metadata?.annotations?.value
+        );
+        const nextStorageQuantity = storageAnnotationToQuantity(
+          volume.metadata?.annotations?.value
+        );
         if (
           pvc.metadata?.name &&
           pvc.metadata?.annotations?.value &&
           pvc.spec?.resources?.requests?.storage &&
-          pvc.metadata?.annotations?.value !== volume.metadata?.annotations?.value
+          !currentStorageQuantity.equals(nextStorageQuantity)
         ) {
+          const nextStorageDisplay = nextStorageQuantity.formatForDisplay({
+            format: 'BinarySI',
+            scale: 'auto',
+            digits: 4
+          });
           const pvcName = pvc.metadata.name;
           const jsonPatch = [
             {
               op: 'replace',
               path: '/spec/resources/requests/storage',
-              value: `${volume.metadata?.annotations?.value}Gi`
+              value: nextStorageQuantity.withFormat('BinarySI').toString()
             },
             {
               op: 'replace',
               path: '/metadata/annotations/value',
-              value: `${volume.metadata?.annotations?.value}`
+              value: nextStorageDisplay
             }
           ];
-          infoLog(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
+          infoLog(`replace ${pvcName} storage: ${nextStorageDisplay}`);
           return k8sCore
             .patchNamespacedPersistentVolumeClaim(
               pvcName,

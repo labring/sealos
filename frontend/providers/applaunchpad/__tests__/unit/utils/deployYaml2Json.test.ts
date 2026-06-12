@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { json2Ingress, yamlString2Objects } from '@/utils/deployYaml2Json';
+import { json2DeployCr, json2Ingress, yamlString2Objects } from '@/utils/deployYaml2Json';
 import type { AppEditType } from '@/types/app';
+import { deployPVCResizeKey } from '@/constants/app';
+import {
+  cpuMillicoresToQuantity,
+  memoryMiToQuantity,
+  storageGiToQuantity
+} from '@/utils/resourceQuantity';
 
 const createApp = (customDomain = ''): AppEditType =>
   ({
@@ -9,8 +15,8 @@ const createApp = (customDomain = ''): AppEditType =>
     runCMD: '',
     cmdParam: '',
     replicas: 1,
-    cpu: 100,
-    memory: 128,
+    cpu: cpuMillicoresToQuantity(100),
+    memory: memoryMiToQuantity(128),
     networks: [
       {
         networkName: 'demo-web',
@@ -78,5 +84,52 @@ describe('json2Ingress', () => {
     expect(
       objects[0].metadata.annotations['nginx.ingress.kubernetes.io/ssl-redirect']
     ).toBeUndefined();
+  });
+});
+
+describe('json2DeployCr', () => {
+  it('emits Quantity CPU and memory limits with 10 percent requests', () => {
+    const objects = yamlString2Objects(
+      json2DeployCr(
+        {
+          ...createApp(),
+          cpu: cpuMillicoresToQuantity(500),
+          memory: memoryMiToQuantity(1024)
+        },
+        'deployment'
+      )
+    ) as any[];
+
+    const resources = objects[0].spec.template.spec.containers[0].resources;
+
+    expect(resources.limits.cpu).toBe('500m');
+    expect(resources.requests.cpu).toBe('50m');
+    expect(resources.limits.memory).toBe('1Gi');
+    expect(resources.requests.memory).toBe('102Mi');
+  });
+
+  it('emits PVC storage from Quantity values', () => {
+    const objects = yamlString2Objects(
+      json2DeployCr(
+        {
+          ...createApp(),
+          storeList: [
+            {
+              name: 'data',
+              path: '/data',
+              value: storageGiToQuantity(2)
+            }
+          ],
+          kind: 'statefulset'
+        },
+        'statefulset'
+      )
+    ) as any[];
+
+    const template = objects[0].spec.volumeClaimTemplates[0];
+
+    expect(template.metadata.annotations.value).toBe('2Gi');
+    expect(template.spec.resources.requests.storage).toBe('2Gi');
+    expect(objects[0].metadata.annotations[deployPVCResizeKey]).toBe('2Gi');
   });
 });
