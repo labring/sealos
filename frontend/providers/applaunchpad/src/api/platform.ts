@@ -3,6 +3,7 @@ import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
 import { getUserSession } from '@/utils/user';
 import { AuthCnamePrams, AuthDomainChallengeParams } from './params';
 import type { EnvResponse } from '@/types';
+import type { PublicDomainConflictOwner } from '@/utils/public-domain';
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
 
@@ -47,6 +48,7 @@ export const checkPublicDomain = (data: { prefix: string; domain: string; appNam
     available: boolean;
     prefix?: string;
     host?: string;
+    conflictOwner?: PublicDomainConflictOwner;
   }>('/api/platform/checkPublicDomain', data);
 
 export const getUserTasks = () =>

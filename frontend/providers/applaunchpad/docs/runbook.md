@@ -154,6 +154,15 @@ kubectl --kubeconfig /tmp/applaunchpad-admin.kubeconfig -n ns-admin create ingre
 
 The `objectstorage` probe should fail with `admission webhook "vingress.sealos.io" denied the request: 40301 ... owned by other user` on cluster 209 because the system object storage app owns that host.
 
+For same-workspace conflicts, App Launchpad lists the user's namespace first and returns safe owner details from the matching Ingress. Inspect a namespace manually with:
+
+```bash
+kubectl --kubeconfig /tmp/applaunchpad-admin.kubeconfig -n ns-admin get ingress \
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.metadata.labels}{"\t"}{range .spec.rules[*]}{.host}{","}{end}{"\n"}{end}'
+```
+
+The UI can display Launchpad app labels (`cloud.sealos.io/app-deploy-manager`), Devbox-style recommended labels (`app.kubernetes.io/part-of=devbox`), generic Kubernetes recommended labels, or the Ingress name as a fallback. Cross-workspace webhook conflicts intentionally stay generic and do not expose the other namespace or resource name.
+
 ## Troubleshooting
 
 ### `NEXT_PUBLIC_MOCK_USER` is missing
@@ -174,7 +183,7 @@ Verify `NEXT_PUBLIC_MOCK_USER` parses as kubeconfig YAML and points to the inten
 
 ### Public domain conflicts are unclear
 
-Check app-side public-domain validation first, then cluster-side `vingress.sealos.io` admission webhook responses. Cross-namespace ownership conflicts may only be caught by the admission layer.
+Check app-side public-domain validation first, then cluster-side `vingress.sealos.io` admission webhook responses. Same-namespace conflicts should include `error.conflictOwner` in `/api/platform/checkPublicDomain`; cross-namespace ownership conflicts may only be caught by the admission layer and should remain privacy-preserving.
 
 ### `echarts` throws `window is not defined` during SSR
 

@@ -25,6 +25,7 @@ import {
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import { json2DeployCr, json2Service, json2Ingress } from '@/utils/deployYaml2Json';
 import { appDeployKey } from '@/constants/app';
+import { getPublicDomainErrorResponse } from '@/services/backend/response';
 
 import {
   sendError,
@@ -1094,7 +1095,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 type: ErrorType.VALIDATION_ERROR,
                 code: ErrorCode.INVALID_VALUE,
                 message: error.message,
-                details: error.code
+                details: getPublicDomainErrorResponse(error)
               });
             }
 

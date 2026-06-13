@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
-import { jsonRes } from '@/services/backend/response';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { YamlKindEnum } from '@/utils/adapt';
 import yaml from 'js-yaml';
 import type { CustomObjectsApi, V1StatefulSet } from '@kubernetes/client-node';
@@ -442,9 +442,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     return jsonRes(res);
   } catch (err: any) {
-    return jsonRes(res, {
-      code: 500,
-      error: err?.body
-    });
+    return jsonRes(res, handleK8sError(err?.body || err));
   }
 }

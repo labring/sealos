@@ -27,6 +27,7 @@ import dynamic from 'next/dynamic';
 import {
   PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
   PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
+  PublicDomainConflictOwner,
   normalizePublicDomainPrefix,
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
@@ -37,9 +38,20 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const getPublicDomainPrefixErrorMessage = (
   t: ReturnType<typeof useTranslation>['t'],
-  reason: 'format' | 'reserved' | 'conflict'
+  reason: 'format' | 'reserved' | 'conflict',
+  conflictOwner?: PublicDomainConflictOwner
 ) => {
   if (reason === 'conflict') {
+    if (conflictOwner) {
+      return (
+        t('public_domain_prefix_conflict_owner_error', {
+          type: conflictOwner.displayType,
+          name: conflictOwner.displayName
+        }) ||
+        `This public address prefix is already used by ${conflictOwner.displayType} "${conflictOwner.displayName}" in this workspace.`
+      );
+    }
+
     return (
       t('public_domain_prefix_conflict_error') ||
       'This public address prefix is already in use. Please choose another one.'
@@ -60,6 +72,10 @@ const getPublicDomainPrefixErrorMessage = (
     }) ||
     `Use ${PUBLIC_DOMAIN_PREFIX_MIN_LENGTH}-${PUBLIC_DOMAIN_PREFIX_MAX_LENGTH} lowercase letters, numbers, or hyphens. It cannot start or end with a hyphen.`
   );
+};
+
+const getConflictOwnerFromError = (error: any): PublicDomainConflictOwner | undefined => {
+  return error?.error?.conflictOwner;
 };
 
 function PublicDomainPrefixInput({
@@ -382,10 +398,14 @@ export function NetworkSection({
   );
 
   const setPublicDomainValidationError = useCallback(
-    (index: number, reason: 'format' | 'reserved' | 'conflict') => {
+    (
+      index: number,
+      reason: 'format' | 'reserved' | 'conflict',
+      conflictOwner?: PublicDomainConflictOwner
+    ) => {
       setError(getPublicDomainFieldName(index), {
         type: 'validate',
-        message: getPublicDomainPrefixErrorMessage(t, reason)
+        message: getPublicDomainPrefixErrorMessage(t, reason, conflictOwner)
       });
     },
     [getPublicDomainFieldName, setError, t]
@@ -467,7 +487,7 @@ export function NetworkSection({
         if (!isPublicDomainCheckCurrent(index, result.value, domain, checkSeq)) return null;
 
         if (error?.error?.code === 'PUBLIC_DOMAIN_CONFLICT') {
-          setPublicDomainValidationError(index, 'conflict');
+          setPublicDomainValidationError(index, 'conflict', getConflictOwnerFromError(error));
           return null;
         }
 

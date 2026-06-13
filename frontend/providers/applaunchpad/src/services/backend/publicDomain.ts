@@ -1,17 +1,29 @@
 import { appDeployKey, publicDomainKey } from '@/constants/app';
-import type { KubernetesObjectApi, NetworkingV1Api } from '@kubernetes/client-node';
+import type { KubernetesObjectApi, NetworkingV1Api, V1Ingress } from '@kubernetes/client-node';
 import type { K8sContext } from '@/services/backend/appService';
 import type { AppEditType } from '@/types/app';
-import { validatePublicDomainPrefix } from '@/utils/public-domain';
+import { PublicDomainConflictOwner, validatePublicDomainPrefix } from '@/utils/public-domain';
 
 const INGRESS_OWNER_CONFLICT_CODE = '40301';
 const INGRESS_OWNER_CONFLICT_MESSAGE = 'owned by other user';
+const APP_LABEL_KEYS = [
+  appDeployKey,
+  publicDomainKey,
+  'cloud.sealos.io/app-deploy-manager-port',
+  'app.kubernetes.io/name',
+  'app.kubernetes.io/instance',
+  'app.kubernetes.io/component',
+  'app.kubernetes.io/part-of',
+  'app.kubernetes.io/managed-by',
+  'helm.sh/chart'
+];
 
 export class PublicDomainError extends Error {
   constructor(
     message: string,
     public code: 'INVALID_PUBLIC_DOMAIN' | 'RESERVED_PUBLIC_DOMAIN' | 'PUBLIC_DOMAIN_CONFLICT',
-    public status = 400
+    public status = 400,
+    public conflictOwner?: PublicDomainConflictOwner
   ) {
     super(message);
     this.name = 'PublicDomainError';
@@ -73,6 +85,115 @@ export function getPublicDomainConflictResponse(error: unknown) {
 
 export function getPublicDomainConflictMessage() {
   return 'Public domain is already in use by another workspace.';
+}
+
+export function getSameWorkspacePublicDomainConflictMessage(owner: PublicDomainConflictOwner) {
+  return `Public domain "${owner.host}" is already used by ${owner.displayType} "${owner.displayName}" in this workspace.`;
+}
+
+function pickSafeLabels(labels?: Record<string, string>) {
+  if (!labels) return undefined;
+
+  const safeLabels = APP_LABEL_KEYS.reduce<Record<string, string>>((result, key) => {
+    const value = labels[key];
+    if (typeof value === 'string' && value) {
+      result[key] = value;
+    }
+    return result;
+  }, {});
+
+  return Object.keys(safeLabels).length > 0 ? safeLabels : undefined;
+}
+
+function getRecommendedDisplayName(labels: Record<string, string> | undefined, fallback: string) {
+  return (
+    labels?.['app.kubernetes.io/instance'] ||
+    labels?.['app.kubernetes.io/name'] ||
+    labels?.['app.kubernetes.io/component'] ||
+    fallback
+  );
+}
+
+function getPublicDomainConflictOwner(ingress: V1Ingress, host: string): PublicDomainConflictOwner {
+  const labels = ingress.metadata?.labels || {};
+  const ingressName = ingress.metadata?.name || 'unknown-ingress';
+  const namespace = ingress.metadata?.namespace || '';
+  const launchpadAppName = labels[appDeployKey];
+  const publicDomainPrefix = labels[publicDomainKey];
+
+  if (launchpadAppName) {
+    return {
+      scope: 'same_workspace',
+      resourceKind: 'Ingress',
+      component: 'app_launchpad',
+      displayType: 'App Launchpad app',
+      displayName: launchpadAppName,
+      host,
+      namespace,
+      ingressName,
+      publicDomainPrefix,
+      labels: pickSafeLabels(labels),
+      matchedBy: 'cloud.sealos.io/app-deploy-manager',
+      confidence: 'high'
+    };
+  }
+
+  if (
+    labels['app.kubernetes.io/part-of'] === 'devbox' ||
+    labels['app.kubernetes.io/name'] === 'devbox'
+  ) {
+    return {
+      scope: 'same_workspace',
+      resourceKind: 'Ingress',
+      component: 'devbox',
+      displayType: 'Devbox',
+      displayName: getRecommendedDisplayName(labels, ingressName),
+      host,
+      namespace,
+      ingressName,
+      publicDomainPrefix,
+      labels: pickSafeLabels(labels),
+      matchedBy: 'app.kubernetes.io/part-of=devbox',
+      confidence: labels['app.kubernetes.io/part-of'] === 'devbox' ? 'high' : 'medium'
+    };
+  }
+
+  if (
+    labels['app.kubernetes.io/name'] ||
+    labels['app.kubernetes.io/instance'] ||
+    labels['app.kubernetes.io/component'] ||
+    labels['app.kubernetes.io/managed-by']
+  ) {
+    return {
+      scope: 'same_workspace',
+      resourceKind: 'Ingress',
+      component: 'workspace_component',
+      displayType: 'workspace component',
+      displayName: getRecommendedDisplayName(labels, ingressName),
+      host,
+      namespace,
+      ingressName,
+      publicDomainPrefix,
+      labels: pickSafeLabels(labels),
+      matchedBy: 'kubernetes-recommended-labels',
+      confidence: 'medium'
+    };
+  }
+
+  return {
+    scope: 'same_workspace',
+    resourceKind: 'Ingress',
+    component: 'ingress',
+    displayType: 'Ingress',
+    displayName: ingressName,
+    host,
+    namespace,
+    ingressName,
+    publicDomainPrefix,
+    labels: pickSafeLabels(labels),
+    matchedBy: 'unlabeled-ingress',
+    confidence: 'low'
+  };
 }
 
 type PublicDomainK8sContext = {
@@ -196,10 +317,12 @@ export async function ensurePublicDomainTargetsAvailable(
     });
 
     if (conflictingHost) {
+      const conflictOwner = getPublicDomainConflictOwner(item, conflictingHost);
       throw new PublicDomainError(
-        `Public domain "${conflictingHost}" is already in use`,
+        getSameWorkspacePublicDomainConflictMessage(conflictOwner),
         'PUBLIC_DOMAIN_CONFLICT',
-        409
+        409,
+        conflictOwner
       );
     }
   }

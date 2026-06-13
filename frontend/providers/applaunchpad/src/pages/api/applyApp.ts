@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { handleK8sError, jsonRes } from '@/services/backend/response';
+import { getPublicDomainErrorResponse, handleK8sError, jsonRes } from '@/services/backend/response';
 import yaml from 'js-yaml';
 import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deployYaml2Json';
 import { appDeployKey } from '@/constants/app';
@@ -158,10 +158,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       return jsonRes(res, {
         code: err.status,
         message: err.message,
-        error: {
-          code: err.code,
-          message: err.message
-        }
+        error: getPublicDomainErrorResponse(err)
       });
     }
     jsonRes(res, handleK8sError(err));

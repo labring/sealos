@@ -1,4 +1,4 @@
-import { jsonRes } from '@/services/backend/response';
+import { getPublicDomainErrorResponse, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
@@ -84,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             type: ErrorType.VALIDATION_ERROR,
             code: ErrorCode.INVALID_VALUE,
             message: err.message,
-            details: err.code
+            details: getPublicDomainErrorResponse(err)
           });
         }
         console.error('Kubernetes create application error:', err);

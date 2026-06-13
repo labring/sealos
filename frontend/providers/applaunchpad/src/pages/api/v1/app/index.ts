@@ -1,4 +1,4 @@
-import { jsonRes } from '@/services/backend/response';
+import { getPublicDomainErrorResponse, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
@@ -71,10 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (err instanceof PublicDomainError) {
       return jsonRes(res, {
         code: err.status,
-        error: {
-          code: err.code,
-          message: err.message
-        }
+        error: getPublicDomainErrorResponse(err)
       });
     }
     jsonRes(res, {

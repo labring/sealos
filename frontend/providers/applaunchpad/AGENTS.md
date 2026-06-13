@@ -68,6 +68,7 @@ Then run a bounded smoke test and wait for `✓ Ready` from Next.js.
 - Keep form, YAML, backend handlers, shared schemas, and OpenAPI surfaces aligned when app shape or validation changes.
 - Do not treat cluster-side admission checks as redundant with app-side prechecks. They are complementary and should produce clear user-facing errors where matchers exist.
 - Public-domain prefix behavior is user-visible. Preserve normalization, configured reserved-prefix checks, conflict handling, and suffix/domain handling across create, update, apply, and API paths. The reserved prefix list comes from `launchpad.publicDomain.reservedPrefixes` and defaults to empty.
+- Same-workspace public-domain conflicts should return safe `conflictOwner` attribution from current-namespace Ingresses; cross-workspace `vingress.sealos.io` conflicts must stay generic and must not expose another namespace or resource name.
 - Image-derived exposed ports are defaults. Guard async updates so slower image lookups cannot overwrite later manual user edits.
 
 ## Safety

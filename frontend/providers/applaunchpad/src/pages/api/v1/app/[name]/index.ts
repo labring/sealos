@@ -4,7 +4,7 @@ import {
   UpdateAppResourcesSchema,
   nanoid
 } from '@/types/request_schema';
-import { jsonRes } from '@/services/backend/response';
+import { getPublicDomainErrorResponse, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
@@ -1041,8 +1041,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 code: error.status,
                 error: {
                   type: 'PUBLIC_DOMAIN_ERROR',
-                  code: error.code,
-                  message: error.message
+                  ...getPublicDomainErrorResponse(error)
                 }
               });
             }

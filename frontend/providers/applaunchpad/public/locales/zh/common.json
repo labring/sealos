@@ -276,6 +276,7 @@
   "domain_verification_success": "您的域名已成功绑定。",
   "domain_verified": "验证通过",
   "public_domain_prefix_conflict_error": "该公网地址前缀已被占用，请换一个",
+  "public_domain_prefix_conflict_owner_error": "该公网地址前缀已被当前工作区的 {{type}}「{{name}}」占用，请换一个",
   "public_domain_prefix_edit_tooltip": "可修改公网地址前缀",
   "public_domain_prefix_format_error": "公网地址前缀需为 {{min}}-{{max}} 位小写字母、数字或连字符，且不能以连字符开头或结尾",
   "public_domain_prefix_input_label": "公网地址前缀",

@@ -42,6 +42,7 @@ import { track } from '@sealos/gtm';
 import {
   PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
   PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
+  PublicDomainConflictOwner,
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
 
@@ -58,9 +59,20 @@ const EDIT_PAGE_TARGET_WIDTH =
 
 const getPublicDomainPrefixErrorMessage = (
   t: ReturnType<typeof useTranslation>['t'],
-  reason: 'format' | 'reserved' | 'conflict'
+  reason: 'format' | 'reserved' | 'conflict',
+  conflictOwner?: PublicDomainConflictOwner
 ) => {
   if (reason === 'conflict') {
+    if (conflictOwner) {
+      return (
+        t('public_domain_prefix_conflict_owner_error', {
+          type: conflictOwner.displayType,
+          name: conflictOwner.displayName
+        }) ||
+        `This public address prefix is already used by ${conflictOwner.displayType} "${conflictOwner.displayName}" in this workspace.`
+      );
+    }
+
     return (
       t('public_domain_prefix_conflict_error') ||
       'This public address prefix is already in use. Please choose another one.'
@@ -81,6 +93,10 @@ const getPublicDomainPrefixErrorMessage = (
     }) ||
     `Use ${PUBLIC_DOMAIN_PREFIX_MIN_LENGTH}-${PUBLIC_DOMAIN_PREFIX_MAX_LENGTH} lowercase letters, numbers, or hyphens. It cannot start or end with a hyphen.`
   );
+};
+
+const getConflictOwnerFromError = (error: any): PublicDomainConflictOwner | undefined => {
+  return error?.error?.conflictOwner;
 };
 
 function validatePublicDomainPrefixBeforeSubmit(
@@ -128,7 +144,11 @@ async function validatePublicDomainAvailabilityBeforeSubmit(
         throw error;
       }
 
-      const message = getPublicDomainPrefixErrorMessage(t, 'conflict');
+      const message = getPublicDomainPrefixErrorMessage(
+        t,
+        'conflict',
+        getConflictOwnerFromError(error)
+      );
       setFieldError(index, message);
       return message;
     }

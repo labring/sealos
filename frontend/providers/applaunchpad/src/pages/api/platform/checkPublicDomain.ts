@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { jsonRes } from '@/services/backend/response';
+import { getPublicDomainErrorResponse, jsonRes } from '@/services/backend/response';
 import { createK8sContext } from '@/services/backend';
 import {
   dryRunPublicDomainIngress,
@@ -58,17 +58,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (err instanceof PublicDomainError) {
+      const publicDomainError = getPublicDomainErrorResponse(err);
       return jsonRes(res, {
         code: err.status,
         message:
-          err.code === 'PUBLIC_DOMAIN_CONFLICT' ? getPublicDomainConflictMessage() : err.message,
+          err.code === 'PUBLIC_DOMAIN_CONFLICT' && !err.conflictOwner
+            ? getPublicDomainConflictMessage()
+            : err.message,
         data: {
           available: false
         },
-        error: {
-          code: err.code,
-          message: err.message
-        }
+        error: publicDomainError
       });
     }
 
