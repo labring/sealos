@@ -44,6 +44,23 @@ describe('isIngressPublicDomainConflictError', () => {
     });
   });
 
+  it('detects ingress admission owner conflicts from Kubernetes Error body', () => {
+    const error = new Error('Forbidden');
+    Object.assign(error, {
+      body: {
+        message:
+          'admission webhook "vingress.sealos.io" denied the request: 40301: ingress host devbox.192.168.13.209.nip.io is owned by other user, you can not create ingress with same host.'
+      }
+    });
+
+    expect(isIngressPublicDomainConflictError(error)).toBe(true);
+    expect(getPublicDomainConflictResponse(error)).toMatchObject({
+      code: 'PUBLIC_DOMAIN_CONFLICT',
+      details:
+        'admission webhook "vingress.sealos.io" denied the request: 40301: ingress host devbox.192.168.13.209.nip.io is owned by other user, you can not create ingress with same host.'
+    });
+  });
+
   it('does not treat other admission failures as public domain conflicts', () => {
     expect(
       isIngressPublicDomainConflictError({

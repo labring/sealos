@@ -37,7 +37,6 @@ function getDryRunIngressName(prefix: string) {
 }
 
 export function getPublicDomainErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message;
   if (typeof error === 'string') return error;
 
   const anyError = error as {
@@ -48,6 +47,7 @@ export function getPublicDomainErrorMessage(error: unknown) {
   };
 
   if (typeof anyError?.body?.message === 'string') return anyError.body.message;
+  if (error instanceof Error) return error.message;
   if (typeof anyError?.message === 'string') return anyError.message;
   return String(error);
 }
