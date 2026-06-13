@@ -10,3 +10,6 @@ resources:
   requests:
     cpu: 10m
     memory: 128Mi
+
+applaunchpadConfig:
+  publicDomainReservedPrefixes: []
