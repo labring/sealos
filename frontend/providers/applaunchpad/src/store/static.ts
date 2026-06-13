@@ -1,5 +1,6 @@
 import { getInitData } from '@/api/platform';
 import { Coin } from '@/constants/app';
+import { setPublicDomainReservedPrefixes } from '@/utils/public-domain';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
 export let SEALOS_USER_DOMAINS = [{ name: 'cloud.sealos.io', secretName: 'wildcard-cert' }];
@@ -19,6 +20,9 @@ export let PVC_STORAGE_MAX = 20;
 export let GPU_ENABLED = false;
 export let LOG_ENABLED = false;
 export let NETWORK_STORAGE_ENABLED = false;
+export let IMAGE_PORTS_ENABLED = false;
+export let CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED = false;
+export let PUBLIC_DOMAIN_RESERVED_PREFIXES: string[] = [];
 
 export const loadInitData = async () => {
   try {
@@ -42,6 +46,10 @@ export const loadInitData = async () => {
     GPU_ENABLED = res.GPU_ENABLED;
     LOG_ENABLED = res.LOG_ENABLED;
     NETWORK_STORAGE_ENABLED = res.NETWORK_STORAGE_ENABLED;
+    IMAGE_PORTS_ENABLED = res.IMAGE_PORTS_ENABLED;
+    CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED = res.CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED;
+    PUBLIC_DOMAIN_RESERVED_PREFIXES = res.PUBLIC_DOMAIN_RESERVED_PREFIXES || [];
+    setPublicDomainReservedPrefixes(PUBLIC_DOMAIN_RESERVED_PREFIXES);
 
     return {
       SEALOS_DOMAIN,
@@ -51,7 +59,10 @@ export const loadInitData = async () => {
       CURRENCY,
       FORM_SLIDER_LIST_CONFIG: res.FORM_SLIDER_LIST_CONFIG,
       DESKTOP_DOMAIN: res.DESKTOP_DOMAIN,
-      GPU_ENABLED
+      GPU_ENABLED,
+      IMAGE_PORTS_ENABLED,
+      CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
+      PUBLIC_DOMAIN_RESERVED_PREFIXES
     };
   } catch (error) {}
 
@@ -69,5 +80,11 @@ export const serverLoadInitData = () => {
     DISABLE_HTTPS = !!global.AppConfig.cloud.disableHttps;
     SHOW_EVENT_ANALYZE = global.AppConfig.launchpad.eventAnalyze.enabled;
     SEALOS_USER_DOMAINS = global.AppConfig.cloud.userDomains;
+    IMAGE_PORTS_ENABLED = !!global.AppConfig.launchpad.imagePorts?.enabled;
+    CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED =
+      !!global.AppConfig.launchpad.publicDomain?.customPrefixEnabled;
+    PUBLIC_DOMAIN_RESERVED_PREFIXES =
+      global.AppConfig.launchpad.publicDomain?.reservedPrefixes || [];
+    setPublicDomainReservedPrefixes(PUBLIC_DOMAIN_RESERVED_PREFIXES);
   } catch (error) {}
 };

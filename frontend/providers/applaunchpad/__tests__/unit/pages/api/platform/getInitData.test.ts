@@ -15,7 +15,8 @@ const createConfig = (): AppConfigType => ({
   common: {
     guideEnabled: false,
     apiEnabled: false,
-    gpuEnabled: false
+    gpuEnabled: false,
+    networkStorageEnabled: false
   },
   launchpad: {
     infrastructure: {
@@ -33,6 +34,13 @@ const createConfig = (): AppConfigType => ({
     gtmId: null,
     currencySymbol: Coin.shellCoin,
     pvcStorageMax: 20,
+    imagePorts: {
+      enabled: false
+    },
+    publicDomain: {
+      customPrefixEnabled: false,
+      reservedPrefixes: []
+    },
     eventAnalyze: {
       enabled: false
     },
@@ -45,12 +53,6 @@ const createConfig = (): AppConfigType => ({
     fileManger: {
       uploadLimit: 50,
       downloadLimit: 100
-    },
-    checkIcpReg: {
-      enabled: false,
-      endpoint: '',
-      accessKeyID: '',
-      accessKeySecret: ''
     }
   }
 });
@@ -62,5 +64,27 @@ describe('getServerEnv', () => {
     expect(env.DOMAIN_PORT).toBe(':443');
     expect(env.HTTP_PORT).toBe(':80');
     expect(env.DISABLE_HTTPS).toBe(true);
+  });
+
+  it('defaults new branch feature gates to disabled', () => {
+    const env = getServerEnv(createConfig());
+
+    expect(env.IMAGE_PORTS_ENABLED).toBe(false);
+    expect(env.CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED).toBe(false);
+  });
+
+  it('returns enabled branch feature gates from config', () => {
+    const config = createConfig();
+    config.launchpad.imagePorts = { enabled: true };
+    config.launchpad.publicDomain = {
+      customPrefixEnabled: true,
+      reservedPrefixes: ['admin']
+    };
+
+    const env = getServerEnv(config);
+
+    expect(env.IMAGE_PORTS_ENABLED).toBe(true);
+    expect(env.CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED).toBe(true);
+    expect(env.PUBLIC_DOMAIN_RESERVED_PREFIXES).toEqual(['admin']);
   });
 });
