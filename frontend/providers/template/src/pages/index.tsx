@@ -9,6 +9,7 @@ import type { TemplateCategory } from '@/types/config';
 import { serviceSideProps } from '@/utils/i18n';
 import { getCategoryLabel } from '@/utils/template';
 import { compareFirstLanguages, formatStarNumber } from '@/utils/tools';
+import { getAppListContentState, hasAppListTemplates } from '@/utils/appListState';
 import {
   Avatar,
   AvatarGroup,
@@ -51,7 +52,7 @@ export default function AppList({
 
   const { data } = useQuery(['listTemplate', i18n.language], () => getTemplates(i18n.language), {
     refetchInterval: 5 * 60 * 1000,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     retry: 3
   });
 
@@ -80,6 +81,11 @@ export default function AppList({
 
     return searchResults;
   }, [data?.templates, appType, searchValue]);
+  const contentState = getAppListContentState({
+    hasLoadedData: Boolean(data),
+    filteredTemplates: filterData
+  });
+  const showCarousel = hasAppListTemplates(data?.templates);
 
   const goDeploy = (name: string) => {
     if (!name) return;
@@ -118,7 +124,7 @@ export default function AppList({
     }
   }, [router.query?.action, isClientSide]);
 
-  if (!data) {
+  if (contentState === 'loading') {
     return (
       <Flex alignItems={'center'} justifyContent={'center'} w="full" h="100vh">
         <Spinner size="xl" color="#219BF4" />
@@ -157,161 +163,155 @@ export default function AppList({
         <meta name="twitter:image" content={`${canonicalUrl}/og.png`} />
       </Head>
 
-      {!!data?.templates?.length ? (
-        <>
-          {systemConfig?.showCarousel && <Banner />}
-          {filterData?.length && filterData?.length > 0 ? (
-            <Grid
-              justifyContent={'center'}
-              w={'100%'}
-              gridTemplateColumns="repeat(auto-fill,minmax(320px,1fr))"
-              gridGap={'24px'}
-              minW={'480px'}
-            >
-              {filterData?.map((item: TemplateType) => {
-                return (
-                  <Flex
-                    position={'relative'}
-                    cursor={'pointer'}
-                    onClick={() => goDeploy(item?.metadata?.name)}
-                    _hover={{
-                      borderColor: '#36ADEF',
-                      boxShadow: '0px 4px 5px 0px rgba(185, 196, 205, 0.25)'
-                    }}
-                    key={item?.metadata?.name}
-                    flexDirection={'column'}
-                    h={'184px'}
-                    p={'24px'}
-                    borderRadius={'8px'}
-                    backgroundColor={'#fff'}
-                    boxShadow={'0px 2px 4px 0px rgba(187, 196, 206, 0.25)'}
-                    border={'1px solid #EAEBF0'}
-                  >
-                    <Flex alignItems={'center'}>
-                      <Box
-                        p={'6px'}
-                        w={'48px'}
-                        h={'48px'}
-                        boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
-                        borderRadius={'4px'}
-                        backgroundColor={'#fff'}
-                        border={' 1px solid rgba(255, 255, 255, 0.50)'}
-                        aspectRatio={'1 / 1'}
+      <>
+        {showCarousel && systemConfig?.showCarousel && <Banner />}
+        {contentState === 'grid' ? (
+          <Grid
+            justifyContent={'center'}
+            w={'100%'}
+            gridTemplateColumns="repeat(auto-fill,minmax(320px,1fr))"
+            gridGap={'24px'}
+            minW={'480px'}
+          >
+            {filterData?.map((item: TemplateType) => {
+              return (
+                <Flex
+                  position={'relative'}
+                  cursor={'pointer'}
+                  onClick={() => goDeploy(item?.metadata?.name)}
+                  _hover={{
+                    borderColor: '#36ADEF',
+                    boxShadow: '0px 4px 5px 0px rgba(185, 196, 205, 0.25)'
+                  }}
+                  key={item?.metadata?.name}
+                  flexDirection={'column'}
+                  h={'184px'}
+                  p={'24px'}
+                  borderRadius={'8px'}
+                  backgroundColor={'#fff'}
+                  boxShadow={'0px 2px 4px 0px rgba(187, 196, 206, 0.25)'}
+                  border={'1px solid #EAEBF0'}
+                >
+                  <Flex alignItems={'center'}>
+                    <Box
+                      p={'6px'}
+                      w={'48px'}
+                      h={'48px'}
+                      boxShadow={'0px 1px 2px 0.5px rgba(84, 96, 107, 0.20)'}
+                      borderRadius={'4px'}
+                      backgroundColor={'#fff'}
+                      border={' 1px solid rgba(255, 255, 255, 0.50)'}
+                      aspectRatio={'1 / 1'}
+                    >
+                      <Image
+                        src={item.spec.i18n?.[i18n.language]?.icon ?? item?.spec?.icon}
+                        alt="logo"
+                        width={'36px'}
+                        height={'36px'}
+                        loading="lazy"
+                      />
+                    </Box>
+                    <Flex ml="16px" noOfLines={2} flexDirection={'column'}>
+                      <Text
+                        fontSize={'18px'}
+                        fontWeight={600}
+                        color={'#111824'}
+                        textOverflow={'ellipsis'}
+                        overflow={'hidden'}
+                        whiteSpace={'nowrap'}
+                        style={{
+                          textWrap: 'nowrap'
+                        }}
                       >
-                        <Image
-                          src={item.spec.i18n?.[i18n.language]?.icon ?? item?.spec?.icon}
-                          alt="logo"
-                          width={'36px'}
-                          height={'36px'}
-                          loading="lazy"
-                        />
-                      </Box>
-                      <Flex ml="16px" noOfLines={2} flexDirection={'column'}>
-                        <Text
-                          fontSize={'18px'}
-                          fontWeight={600}
-                          color={'#111824'}
-                          textOverflow={'ellipsis'}
-                          overflow={'hidden'}
-                          whiteSpace={'nowrap'}
-                          style={{
-                            textWrap: 'nowrap'
-                          }}
-                        >
-                          {item.spec.i18n?.[i18n.language]?.title ?? item.spec.title}
+                        {item.spec.i18n?.[i18n.language]?.title ?? item.spec.title}
+                      </Text>
+                      {envs?.SHOW_AUTHOR === 'true' && (
+                        <Text fontSize={'12px'} fontWeight={400} color={'#5A646E'}>
+                          By {item.spec.author}
                         </Text>
-                        {envs?.SHOW_AUTHOR === 'true' && (
-                          <Text fontSize={'12px'} fontWeight={400} color={'#5A646E'}>
-                            By {item.spec.author}
-                          </Text>
-                        )}
-                      </Flex>
-                      {item.spec?.deployCount && item.spec?.deployCount > 6 && (
-                        <Tooltip
-                          label={t('users installed the app', { count: item.spec.deployCount })}
-                          hasArrow
-                          bg="#FFF"
-                          placement="bottom-end"
-                        >
-                          <Flex gap={'6px'} ml={'auto'}>
-                            <AvatarGroup size={'xs'} max={3}>
-                              <Avatar name={nanoid(6)} />
-                              <Avatar name={nanoid(6)} />
-                              <Avatar name={nanoid(6)} />
-                            </AvatarGroup>
-                            <Text>+{formatStarNumber(item.spec.deployCount)}</Text>
-                          </Flex>
-                        </Tooltip>
                       )}
                     </Flex>
-                    <Text
-                      css={`
-                        display: -webkit-box;
-                        -webkit-line-clamp: 2;
-                        -webkit-box-orient: vertical;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                      `}
-                      my={'16px'}
-                      fontSize={'12px'}
-                      color={'5A646E'}
-                      fontWeight={400}
-                    >
-                      {item.spec.i18n?.[i18n.language]?.description ?? item.spec.description}
-                    </Text>
-                    <Flex
-                      mt="auto"
-                      justifyContent={'space-between'}
-                      alignItems={'center'}
-                      gap={'20px'}
-                    >
-                      <Flex alignItems={'center'} gap={'10px'} overflow={'hidden'}>
-                        {item?.spec?.categories
-                          ?.map((slug) => categoryBySlug.get(slug))
-                          .filter((category): category is TemplateCategory => Boolean(category))
-                          .map((category) => (
-                            <Tag
-                              flexShrink={0}
-                              key={category.slug}
-                              bg="#F4F4F7"
-                              border={'1px solid #E8EBF0'}
-                              fontSize={'10px'}
-                              color={'5A646E'}
-                              fontWeight={400}
-                            >
-                              {getCategoryLabel(category, i18n.language)}
-                            </Tag>
-                          ))}
-                      </Flex>
-                      <Center
-                        cursor={'pointer'}
-                        onClick={(e) =>
-                          goGithub(
-                            e,
-                            item.spec?.i18n?.[i18n.language]?.gitRepo ?? item?.spec?.gitRepo
-                          )
-                        }
+                    {item.spec?.deployCount && item.spec?.deployCount > 6 && (
+                      <Tooltip
+                        label={t('users installed the app', { count: item.spec.deployCount })}
+                        hasArrow
+                        bg="#FFF"
+                        placement="bottom-end"
                       >
-                        <ShareIcon color={'#667085'} />
-                      </Center>
-                    </Flex>
+                        <Flex gap={'6px'} ml={'auto'}>
+                          <AvatarGroup size={'xs'} max={3}>
+                            <Avatar name={nanoid(6)} />
+                            <Avatar name={nanoid(6)} />
+                            <Avatar name={nanoid(6)} />
+                          </AvatarGroup>
+                          <Text>+{formatStarNumber(item.spec.deployCount)}</Text>
+                        </Flex>
+                      </Tooltip>
+                    )}
                   </Flex>
-                );
-              })}
-            </Grid>
-          ) : (
-            <Center w="full" h="calc(100% - 285px)">
-              <Center border={'1px dashed #9CA2A8'} borderRadius="50%" w={'48px'} h={'48px'}>
-                <MyIcon color={'#7B838B'} name="empty"></MyIcon>
-              </Center>
+                  <Text
+                    css={`
+                      display: -webkit-box;
+                      -webkit-line-clamp: 2;
+                      -webkit-box-orient: vertical;
+                      overflow: hidden;
+                      text-overflow: ellipsis;
+                    `}
+                    my={'16px'}
+                    fontSize={'12px'}
+                    color={'5A646E'}
+                    fontWeight={400}
+                  >
+                    {item.spec.i18n?.[i18n.language]?.description ?? item.spec.description}
+                  </Text>
+                  <Flex
+                    mt="auto"
+                    justifyContent={'space-between'}
+                    alignItems={'center'}
+                    gap={'20px'}
+                  >
+                    <Flex alignItems={'center'} gap={'10px'} overflow={'hidden'}>
+                      {item?.spec?.categories
+                        ?.map((slug) => categoryBySlug.get(slug))
+                        .filter((category): category is TemplateCategory => Boolean(category))
+                        .map((category) => (
+                          <Tag
+                            flexShrink={0}
+                            key={category.slug}
+                            bg="#F4F4F7"
+                            border={'1px solid #E8EBF0'}
+                            fontSize={'10px'}
+                            color={'5A646E'}
+                            fontWeight={400}
+                          >
+                            {getCategoryLabel(category, i18n.language)}
+                          </Tag>
+                        ))}
+                    </Flex>
+                    <Center
+                      cursor={'pointer'}
+                      onClick={(e) =>
+                        goGithub(
+                          e,
+                          item.spec?.i18n?.[i18n.language]?.gitRepo ?? item?.spec?.gitRepo
+                        )
+                      }
+                    >
+                      <ShareIcon color={'#667085'} />
+                    </Center>
+                  </Flex>
+                </Flex>
+              );
+            })}
+          </Grid>
+        ) : (
+          <Center w="full" h="calc(100% - 285px)">
+            <Center border={'1px dashed #9CA2A8'} borderRadius="50%" w={'48px'} h={'48px'}>
+              <MyIcon color={'#7B838B'} name="empty"></MyIcon>
             </Center>
-          )}
-        </>
-      ) : (
-        <Flex alignItems={'center'} justifyContent={'center'} w="full" h="full">
-          <Spinner size="xl" color="#219BF4" />
-        </Flex>
-      )}
+          </Center>
+        )}
+      </>
     </Box>
   );
 }

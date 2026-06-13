@@ -6,7 +6,8 @@ import path from 'path';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { readTemplatesFromFile } from '../../listTemplate';
 import { GetTemplateByName } from '../../getTemplateSource';
-import { parseTemplateCategories } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/templateCategories.server';
+import { ensureRepoFresh } from '@/services/backend/template-repo';
 
 function simplifyResourceValue(
   resource: { min: number; max: number },
@@ -41,6 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const originalPath = process.cwd();
     const jsonPath = path.resolve(originalPath, 'templates.json');
+    await ensureRepoFresh();
 
     if (!fs.existsSync(jsonPath)) {
       return jsonRes(res, {
@@ -52,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const templates = readTemplatesFromFile(
       jsonPath,
       process.env.CDN_URL,
-      parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
+      getConfiguredTemplateCategories(path.resolve(originalPath, 'templates')),
       language
     );
     const template = templates.find((t) => t.metadata.name === templateName);
