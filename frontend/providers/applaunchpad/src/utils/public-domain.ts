@@ -32,6 +32,19 @@ export type PublicDomainPrefixValidationResult =
   | { valid: true; value: string }
   | { valid: false; value: string; reason: 'format' | 'reserved' };
 
+export type ManagedPublicDomainNetwork = {
+  openPublicDomain?: boolean;
+  openNodePort?: boolean;
+  customDomain?: string;
+  publicDomain?: string;
+  domain?: string;
+};
+
+export type DuplicateManagedPublicDomainHost = {
+  host: string;
+  indexes: number[];
+};
+
 export function normalizePublicDomainPrefix(value: string) {
   return value.trim().toLowerCase();
 }
@@ -69,4 +82,26 @@ export function validatePublicDomainPrefix(value: string): PublicDomainPrefixVal
   }
 
   return { valid: true, value: normalized };
+}
+
+export function getDuplicateManagedPublicDomainHosts(
+  networks: ManagedPublicDomainNetwork[],
+  defaultDomain: string
+) {
+  const indexesByHost = new Map<string, number[]>();
+
+  networks.forEach((network, index) => {
+    if (!network.openPublicDomain || network.openNodePort || network.customDomain) return;
+
+    const prefixResult = validatePublicDomainPrefix(network.publicDomain || '');
+    const domain = network.domain || defaultDomain;
+    if (!prefixResult.valid || !domain) return;
+
+    const host = `${prefixResult.value}.${domain}`;
+    indexesByHost.set(host, [...(indexesByHost.get(host) || []), index]);
+  });
+
+  return Array.from(indexesByHost.entries())
+    .filter(([, indexes]) => indexes.length > 1)
+    .map(([host, indexes]): DuplicateManagedPublicDomainHost => ({ host, indexes }));
 }

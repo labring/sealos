@@ -28,6 +28,7 @@ import {
   PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
   PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
   PublicDomainConflictOwner,
+  getDuplicateManagedPublicDomainHosts,
   normalizePublicDomainPrefix,
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
@@ -38,9 +39,16 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const getPublicDomainPrefixErrorMessage = (
   t: ReturnType<typeof useTranslation>['t'],
-  reason: 'format' | 'reserved' | 'conflict',
+  reason: 'format' | 'reserved' | 'conflict' | 'duplicate',
   conflictOwner?: PublicDomainConflictOwner
 ) => {
+  if (reason === 'duplicate') {
+    return (
+      t('public_domain_prefix_duplicate_error') ||
+      'This public address prefix is duplicated in this app. Please choose another one.'
+    );
+  }
+
   if (reason === 'conflict') {
     if (conflictOwner) {
       return (
@@ -400,11 +408,11 @@ export function NetworkSection({
   const setPublicDomainValidationError = useCallback(
     (
       index: number,
-      reason: 'format' | 'reserved' | 'conflict',
+      reason: 'format' | 'reserved' | 'conflict' | 'duplicate',
       conflictOwner?: PublicDomainConflictOwner
     ) => {
       setError(getPublicDomainFieldName(index), {
-        type: 'validate',
+        type: reason,
         message: getPublicDomainPrefixErrorMessage(t, reason, conflictOwner)
       });
     },
@@ -425,6 +433,71 @@ export function NetworkSection({
     },
     [errors.networks]
   );
+
+  const getPublicDomainValidationErrorType = useCallback(
+    (index: number) => {
+      const type = (errors.networks as any)?.[index]?.publicDomain?.type;
+      return typeof type === 'string' ? type : undefined;
+    },
+    [errors.networks]
+  );
+
+  const hasManagedPublicDomainHostDuplicate = useCallback(
+    (index: number, publicDomain: string, domain: string) => {
+      const networks = getValues('networks').map((network, networkIndex) =>
+        networkIndex === index
+          ? {
+              ...network,
+              publicDomain,
+              domain
+            }
+          : network
+      );
+
+      return getDuplicateManagedPublicDomainHosts(networks, SEALOS_DOMAIN).some(({ indexes }) =>
+        indexes.includes(index)
+      );
+    },
+    [getValues]
+  );
+
+  const syncManagedPublicDomainHostDuplicateErrors = useCallback(
+    (nextNetworks: AppEditType['networks']) => {
+      const duplicateIndexes = new Set(
+        getDuplicateManagedPublicDomainHosts(nextNetworks, SEALOS_DOMAIN).flatMap(
+          ({ indexes }) => indexes
+        )
+      );
+      const message = getPublicDomainPrefixErrorMessage(t, 'duplicate');
+
+      nextNetworks.forEach((_, index) => {
+        const currentErrorType = getPublicDomainValidationErrorType(index);
+
+        if (duplicateIndexes.has(index)) {
+          if (currentErrorType !== 'duplicate') {
+            setError(getPublicDomainFieldName(index), {
+              type: 'duplicate',
+              message
+            });
+          }
+          return;
+        }
+
+        if (currentErrorType === 'duplicate') {
+          clearErrors(getPublicDomainFieldName(index));
+        }
+      });
+
+      return duplicateIndexes;
+    },
+    [clearErrors, getPublicDomainFieldName, getPublicDomainValidationErrorType, setError, t]
+  );
+
+  useEffect(() => {
+    if (watchedNetworks) {
+      syncManagedPublicDomainHostDuplicateErrors(watchedNetworks);
+    }
+  }, [syncManagedPublicDomainHostDuplicateErrors, watchedNetworks]);
 
   const clearPublicDomainDraftCheckTimer = useCallback((index?: number) => {
     if (typeof index === 'number') {
@@ -474,6 +547,15 @@ export function NetworkSection({
 
       const network = getValues(`networks.${index}`);
       const domain = network.domain || SEALOS_DOMAIN;
+      if (hasManagedPublicDomainHostDuplicate(index, result.value, domain)) {
+        setValue(getPublicDomainFieldName(index), commitValue ? result.value : value, {
+          shouldDirty: true,
+          shouldValidate: false
+        });
+        setPublicDomainValidationError(index, 'duplicate');
+        return null;
+      }
+
       const checkSeq = (publicDomainCheckSeqRef.current[index] || 0) + 1;
       publicDomainCheckSeqRef.current[index] = checkSeq;
 
@@ -510,6 +592,7 @@ export function NetworkSection({
       clearPublicDomainValidationError,
       getPublicDomainFieldName,
       getValues,
+      hasManagedPublicDomainHostDuplicate,
       isPublicDomainCheckCurrent,
       setPublicDomainValidationError,
       setValue
@@ -534,12 +617,23 @@ export function NetworkSection({
         shouldValidate: false
       });
       clearPublicDomainValidationError(index);
+      const nextNetworks = getValues('networks').map((network, networkIndex) =>
+        networkIndex === index
+          ? {
+              ...network,
+              publicDomain: value
+            }
+          : network
+      );
+      syncManagedPublicDomainHostDuplicateErrors(nextNetworks);
       schedulePublicDomainDraftCheck(index, value);
     },
     [
       clearPublicDomainValidationError,
       getPublicDomainFieldName,
+      getValues,
       schedulePublicDomainDraftCheck,
+      syncManagedPublicDomainHostDuplicateErrors,
       setValue
     ]
   );

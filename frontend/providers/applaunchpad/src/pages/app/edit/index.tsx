@@ -6,6 +6,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
+import { SEALOS_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
@@ -43,6 +44,7 @@ import {
   PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
   PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
   PublicDomainConflictOwner,
+  getDuplicateManagedPublicDomainHosts,
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
 
@@ -59,9 +61,16 @@ const EDIT_PAGE_TARGET_WIDTH =
 
 const getPublicDomainPrefixErrorMessage = (
   t: ReturnType<typeof useTranslation>['t'],
-  reason: 'format' | 'reserved' | 'conflict',
+  reason: 'format' | 'reserved' | 'conflict' | 'duplicate',
   conflictOwner?: PublicDomainConflictOwner
 ) => {
+  if (reason === 'duplicate') {
+    return (
+      t('public_domain_prefix_duplicate_error') ||
+      'This public address prefix is duplicated in this app. Please choose another one.'
+    );
+  }
+
   if (reason === 'conflict') {
     if (conflictOwner) {
       return (
@@ -121,6 +130,21 @@ function validatePublicDomainPrefixBeforeSubmit(
   }
 
   return '';
+}
+
+function validateManagedPublicDomainHostDuplicatesBeforeSubmit(
+  data: AppEditType,
+  t: ReturnType<typeof useTranslation>['t'],
+  setFieldError: (index: number, message: string) => void
+) {
+  const duplicatedHosts = getDuplicateManagedPublicDomainHosts(data.networks, SEALOS_DOMAIN);
+  if (duplicatedHosts.length === 0) return '';
+
+  const message = getPublicDomainPrefixErrorMessage(t, 'duplicate');
+  duplicatedHosts.forEach(({ indexes }) => {
+    indexes.forEach((index) => setFieldError(index, message));
+  });
+  return message;
 }
 
 async function validatePublicDomainAvailabilityBeforeSubmit(
@@ -617,6 +641,21 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 return toast({
                   status: 'warning',
                   title: publicDomainErrorMessage
+                });
+              }
+
+              const publicDomainDuplicateErrorMessage =
+                validateManagedPublicDomainHostDuplicatesBeforeSubmit(data, t, (index, message) => {
+                  formHook.setError(`networks.${index}.publicDomain`, {
+                    type: 'duplicate',
+                    message
+                  });
+                });
+
+              if (publicDomainDuplicateErrorMessage) {
+                return toast({
+                  status: 'warning',
+                  title: publicDomainDuplicateErrorMessage
                 });
               }
 

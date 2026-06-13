@@ -183,7 +183,7 @@ Verify `NEXT_PUBLIC_MOCK_USER` parses as kubeconfig YAML and points to the inten
 
 ### Public domain conflicts are unclear
 
-Check app-side public-domain validation first, then cluster-side `vingress.sealos.io` admission webhook responses. Same-namespace conflicts should include `error.conflictOwner` in `/api/platform/checkPublicDomain`; cross-namespace ownership conflicts may only be caught by the admission layer and should remain privacy-preserving.
+Check app-side public-domain validation first, then cluster-side `vingress.sealos.io` admission webhook responses. The UI should catch invalid/reserved managed prefixes and duplicate managed hosts within the same app before calling the remote availability check. Same-namespace conflicts should include `error.conflictOwner` in `/api/platform/checkPublicDomain`; cross-namespace ownership conflicts may only be caught by the admission layer and should remain privacy-preserving.
 
 ### `echarts` throws `window is not defined` during SSR
 

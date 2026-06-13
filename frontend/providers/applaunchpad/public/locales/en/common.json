@@ -277,6 +277,7 @@
   "domain_verified": "Verified",
   "public_domain_prefix_conflict_error": "This public address prefix is already in use. Please choose another one.",
   "public_domain_prefix_conflict_owner_error": "This public address prefix is already used by {{type}} \"{{name}}\" in this workspace. Please choose another one.",
+  "public_domain_prefix_duplicate_error": "This public address prefix is duplicated in this app. Please choose another one.",
   "public_domain_prefix_edit_tooltip": "Edit the public address prefix",
   "public_domain_prefix_format_error": "Use {{min}}-{{max}} lowercase letters, numbers, or hyphens. It cannot start or end with a hyphen.",
   "public_domain_prefix_input_label": "Public address prefix",
