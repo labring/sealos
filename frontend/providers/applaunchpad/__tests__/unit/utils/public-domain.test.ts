@@ -1,11 +1,15 @@
-import { describe, expect, it } from 'vitest';
-import { validatePublicDomainPrefix } from '@/utils/public-domain';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setPublicDomainReservedPrefixes, validatePublicDomainPrefix } from '@/utils/public-domain';
 import {
   getPublicDomainConflictResponse,
   isIngressPublicDomainConflictError
 } from '@/services/backend/publicDomain';
 
 describe('validatePublicDomainPrefix', () => {
+  afterEach(() => {
+    setPublicDomainReservedPrefixes([]);
+  });
+
   it('normalizes and accepts dns-safe prefixes', () => {
     expect(validatePublicDomainPrefix(' My-App1 ')).toEqual({
       valid: true,
@@ -14,6 +18,8 @@ describe('validatePublicDomainPrefix', () => {
   });
 
   it('rejects reserved prefixes', () => {
+    setPublicDomainReservedPrefixes(['admin']);
+
     expect(validatePublicDomainPrefix('admin')).toEqual({
       valid: false,
       value: 'admin',
