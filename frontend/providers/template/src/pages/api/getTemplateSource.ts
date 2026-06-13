@@ -23,6 +23,7 @@ import {
   readTemplateAssetFile,
   rewriteTemplateAssetsToLocalApi
 } from '@/utils/templateAssets';
+import { ensureRepoFresh } from '@/services/backend/template-repo';
 
 const TEMPLATE_MANIFESTS_DIR = 'manifests';
 
@@ -156,6 +157,8 @@ export async function GetTemplateByName({
   locale?: string;
   includeReadme?: string;
 }) {
+  await ensureRepoFresh();
+
   const cdnUrl = process.env.CDN_URL;
   const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
 

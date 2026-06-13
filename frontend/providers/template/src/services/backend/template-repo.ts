@@ -11,9 +11,20 @@ import { getYamlTemplate } from '@/utils/json-yaml';
 import { getTemplateEnvs } from '@/utils/tools';
 import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
 import { hasLocalTemplateAssets, rewriteTemplateAssetsToLocalApi } from '@/utils/templateAssets';
+import { clearTemplateRuntimeCaches } from './template-runtime-cache';
 
 const execAsync = util.promisify(exec);
 const TEMPLATE_MANIFESTS_DIR = 'manifests';
+const DEFAULT_REPO_SYNC_INTERVAL_MS = 30_000;
+
+let lastRepoSyncAt = 0;
+let pendingRepoSync: Promise<void> | null = null;
+
+function getRepoSyncIntervalMs() {
+  const parsed = Number(process.env.TEMPLATE_REPO_SYNC_INTERVAL_MS);
+  if (!Number.isFinite(parsed) || parsed < 0) return DEFAULT_REPO_SYNC_INTERVAL_MS;
+  return parsed;
+}
 
 const readFileList = (targetPath: string, fileList: string[] = []) => {
   // fix ci
@@ -138,4 +149,33 @@ export async function updateRepo() {
 
   const jsonContent = JSON.stringify(jsonObjArr, null, 2);
   fs.writeFileSync(jsonPath, jsonContent, 'utf-8');
+  lastRepoSyncAt = Date.now();
+  clearTemplateRuntimeCaches();
+}
+
+export async function ensureRepoFresh({ force = false }: { force?: boolean } = {}) {
+  const jsonPath = path.resolve(process.cwd(), 'templates.json');
+  const now = Date.now();
+  const syncIntervalMs = getRepoSyncIntervalMs();
+
+  if (!force && fs.existsSync(jsonPath) && now - lastRepoSyncAt < syncIntervalMs) {
+    return;
+  }
+
+  if (!pendingRepoSync) {
+    pendingRepoSync = updateRepo().finally(() => {
+      pendingRepoSync = null;
+    });
+  }
+
+  try {
+    await pendingRepoSync;
+  } catch (error) {
+    if (fs.existsSync(jsonPath)) {
+      console.error('[template-repo] Failed to refresh repository, using local catalog:', error);
+      lastRepoSyncAt = Date.now();
+      return;
+    }
+    throw error;
+  }
 }

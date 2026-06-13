@@ -105,7 +105,7 @@ export const document = createDocument({
         tags: ['Query'],
         summary: 'List all templates',
         description:
-          'Returns metadata only (no resource calculation). Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`. When categories exist, top category keys are returned in `X-Menu-Keys` (comma-separated). For full details including resource requirements, use `/templates/{name}`.',
+          'Returns metadata only (no resource calculation). The handler first runs a TTL-bound repository freshness check, then responds with `Cache-Control: no-cache` and `ETag`. When categories exist, top category keys are returned in `X-Menu-Keys` (comma-separated). For full details including resource requirements, use `/templates/{name}`.',
         operationId: 'listTemplates',
         security: [],
         requestParams: {
@@ -116,8 +116,8 @@ export const document = createDocument({
             description: 'Successfully retrieved template list',
             headers: {
               'Cache-Control': {
-                description: 'Caching directive: public, max-age=300, s-maxage=600',
-                schema: { type: 'string', example: 'public, max-age=300, s-maxage=600' }
+                description: 'Caching directive: no-cache',
+                schema: { type: 'string', example: 'no-cache' }
               },
               ETag: {
                 description: 'Entity tag for caching, format: "template-list-{language}"',
@@ -188,7 +188,7 @@ export const document = createDocument({
         tags: ['Query'],
         summary: 'Get template details',
         description:
-          'Returns complete template metadata with dynamically calculated resource requirements (CPU, memory, storage, NodePort count) derived from the template YAML. Falls back to static configuration if calculation fails. Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`.',
+          'Returns complete template metadata with dynamically calculated resource requirements (CPU, memory, storage, NodePort count) derived from the template YAML. Falls back to static configuration if calculation fails. The handler first runs a TTL-bound repository freshness check, then responds with `Cache-Control: no-cache` and `ETag`.',
         operationId: 'getTemplate',
         security: [],
         requestParams: {
@@ -200,8 +200,8 @@ export const document = createDocument({
             description: 'Successfully retrieved template details',
             headers: {
               'Cache-Control': {
-                description: 'Caching directive: public, max-age=300, s-maxage=600',
-                schema: { type: 'string', example: 'public, max-age=300, s-maxage=600' }
+                description: 'Caching directive: no-cache',
+                schema: { type: 'string', example: 'no-cache' }
               },
               ETag: {
                 description: 'Entity tag for caching, format: "{name}-{language}"',

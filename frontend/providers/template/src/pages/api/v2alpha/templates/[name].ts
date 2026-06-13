@@ -12,6 +12,7 @@ import {
 } from './templateCache';
 import { getConfiguredTemplateCategories } from '@/utils/templateCategories.server';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import { ensureRepoFresh } from '@/services/backend/template-repo';
 
 // estimate min—max equality
 function simplifyResourceValue(
@@ -96,7 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   // Add caching headers for GET requests
   if (req.method === 'GET') {
-    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600');
+    res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('ETag', `"${templateName}-${language}"`);
     return handleTemplateDetails(req, res, templateName, language);
   }
@@ -119,6 +120,7 @@ async function handleTemplateDetails(
   try {
     const originalPath = process.cwd();
     const jsonPath = path.resolve(originalPath, 'templates.json');
+    await ensureRepoFresh();
 
     if (!fs.existsSync(jsonPath)) {
       return sendError(res, {

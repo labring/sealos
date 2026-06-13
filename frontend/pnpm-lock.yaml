@@ -2469,9 +2469,6 @@ importers:
       cron-parser:
         specifier: ^4.9.0
         version: 4.9.0
-      croner:
-        specifier: ^8.1.0
-        version: 8.1.0
       cronstrue:
         specifier: ^2.32.0
         version: 2.44.0
@@ -16172,11 +16169,6 @@ packages:
 
   /croner@8.0.2:
     resolution: {integrity: sha512-HgSdlSUX8mIgDTTiQpWUP4qY4IFRMsduPCYdca34Pelt8MVdxdaDOzreFtCscA6R+cRZd7UbD1CD3uyx6J3X1A==}
-    engines: {node: '>=18.0'}
-    dev: false
-
-  /croner@8.1.0:
-    resolution: {integrity: sha512-sz990XOUPR8dG/r5BRKMBd15MYDDUu8oeSaxFD5DqvNgHSZw8Psd1s689/IGET7ezxRMiNlCIyGeY1Gvxp/MLg==}
     engines: {node: '>=18.0'}
     dev: false
 

@@ -12,7 +12,9 @@ The Template App reads app-store templates from a Git repository configured by e
 
 When templates use repository-local README or icon paths such as `README.md`, `./README.md`, or `/shared/logo.svg`, the app serves them through `/api/templateAsset` from the cloned local repository. This keeps private/offline deployments from depending on public raw URLs.
 
-`/api/updateRepo` pulls the configured repository, regenerates `templates.json`, and clears both README and v2 template/detail caches. Admin template-management flows call this endpoint after successful Git pushes so `/api/listTemplate` and `/api/v2alpha/templates` reflect the same repository commit immediately.
+Template read APIs call a TTL-bound repository freshness check before reading `templates.json`. When the TTL has expired, the app pulls the configured repository, regenerates `templates.json`, and clears both README and v2 template/detail caches. This keeps `/api/listTemplate` and `/api/v2alpha/templates` aligned with the data source even when the repository is changed outside Admin. `TEMPLATE_REPO_SYNC_INTERVAL_MS` controls the freshness interval and defaults to `30000`.
+
+`/api/updateRepo` remains available as a manual immediate refresh endpoint.
 
 ## template repository layout
 

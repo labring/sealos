@@ -1,6 +1,7 @@
 import { readTemplatesFromFile } from '../../listTemplate';
 import { TemplateType } from '@/types/app';
 import type { TemplateCategory } from '@/types/config';
+import { registerTemplateCatalogCacheClearer } from '@/services/backend/template-runtime-cache';
 
 interface TemplatesCache {
   data: TemplateType[];
@@ -89,3 +90,5 @@ export function clearTemplateCache(): void {
   templatesCache = null;
   templateDetailCache.clear();
 }
+
+registerTemplateCatalogCacheClearer(clearTemplateCache);

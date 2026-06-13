@@ -2,6 +2,7 @@ import { jsonRes } from '@/services/backend/response';
 import { readTemplateAssetFile } from '@/utils/templateAssets';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
+import { ensureRepoFresh } from '@/services/backend/template-repo';
 
 const MIME_BY_EXT: Record<string, string> = {
   '.svg': 'image/svg+xml',
@@ -14,7 +15,7 @@ const MIME_BY_EXT: Record<string, string> = {
   '.txt': 'text/plain; charset=utf-8'
 };
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { templateName, asset } = req.query as {
     templateName?: string;
     asset?: string;
@@ -25,6 +26,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
+    await ensureRepoFresh();
+
     const originalPath = process.cwd();
     const jsonPath = path.resolve(originalPath, 'templates.json');
     const result = readTemplateAssetFile({ jsonPath, templateName, assetUrl: asset });

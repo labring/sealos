@@ -33,7 +33,6 @@
     "axios": "^1.5.1",
     "codemirror": "^6.0.1",
     "cron-parser": "^4.9.0",
-    "croner": "^8.1.0",
     "cronstrue": "^2.32.0",
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",

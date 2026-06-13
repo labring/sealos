@@ -51,7 +51,7 @@ export default function AppList({
 
   const { data } = useQuery(['listTemplate', i18n.language], () => getTemplates(i18n.language), {
     refetchInterval: 5 * 60 * 1000,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
     retry: 3
   });
 
