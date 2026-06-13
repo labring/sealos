@@ -24,8 +24,9 @@ The runner:
    - `127.0.0.1:8428 -> sealos/launchpad-monitor:8428`
    - `127.0.0.1:8429 -> sealos/service-vlogs:8428`
    - `127.0.0.1:2333 -> account-system/account-service:2333`
-5. Sets `NODE_OPTIONS=--no-experimental-global-navigator` for Node 24 compatibility with `echarts@5.4.3`.
-6. Runs `pnpm run dev`.
+5. Clears stale listeners left by earlier App Launchpad runs on those local ports and project-local Next.js dev ports before starting a new run.
+6. Sets `NODE_OPTIONS=--no-experimental-global-navigator` for Node 24 compatibility with `echarts@5.4.3`.
+7. Runs `pnpm run dev`.
 
 The app should print:
 
@@ -114,7 +115,7 @@ kubectl --kubeconfig ~/.kube/209 get user "${APPLAUNCHPAD_DEV_USER:-admin}"
 NODE_OPTIONS=--no-experimental-global-navigator node -e "require('echarts'); console.log('echarts ok')"
 ```
 
-Then run a bounded smoke test and confirm `✓ Ready`. If the runner is stopped with a timeout or Ctrl-C, the wrapper shell should clean up the port-forward processes it started.
+Then run a bounded smoke test and confirm `✓ Ready`. If the runner is stopped with a timeout or Ctrl-C, the wrapper shell should clean up the port-forward processes it started. A repeated run should start on `localhost:3000` again unless an unrelated process owns that port.
 
 ## Build
 

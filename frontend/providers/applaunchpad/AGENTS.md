@@ -28,6 +28,8 @@ The runner targets cluster 209 through `~/.kube/209`, refreshes `.env.local` fro
 
 The default `admin` user points at `ns-admin`, where the cluster 209 sample Launchpad apps live. To test another namespace, start the runner with `APPLAUNCHPAD_DEV_USER=<user>`.
 
+Before starting a new local run, the runner clears stale listeners left by earlier App Launchpad runs on `127.0.0.1:8428`, `127.0.0.1:8429`, `127.0.0.1:2333`, and project-local Next.js dev ports.
+
 The runner sets `NODE_OPTIONS=--no-experimental-global-navigator` because Node 24 exposes a global `navigator` without `window`. `echarts@5.4.3` treats that as a browser-like environment during SSR and can throw `ReferenceError: window is not defined` unless the experimental navigator is disabled.
 
 `.env.local` and `data/config.yaml.local` are intentionally ignored because they can contain kubeconfig, tokens, and cluster service secrets.
