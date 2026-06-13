@@ -24,6 +24,7 @@ deploy/cloud/tars
 .vscode/
 /lifecycle/tools/
 .workflow/
+**/.impeccable/
 
 **.env*
 !scripts/cloud/sealos.env
