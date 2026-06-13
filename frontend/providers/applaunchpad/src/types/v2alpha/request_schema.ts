@@ -19,11 +19,20 @@ import {
   resourceConverters
 } from './schema';
 import { buildExternalUrl } from '@/utils/network-url';
+import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
 import { validatePublicDomainPrefix } from '@/utils/public-domain';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const PublicDomainPrefixSchema = z.string().superRefine((value, ctx) => {
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Custom public domain prefixes are disabled'
+    });
+    return;
+  }
+
   const result = validatePublicDomainPrefix(value);
   if (!result.valid) {
     ctx.addIssue({
@@ -38,6 +47,10 @@ const PublicDomainPrefixSchema = z.string().superRefine((value, ctx) => {
 
 function getPublicDomainPrefixOrRandom(value?: string) {
   if (!value) return nanoid();
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    throw new Error('Custom public domain prefixes are disabled');
+  }
+
   const result = validatePublicDomainPrefix(value);
   if (!result.valid) {
     throw new Error(

@@ -28,6 +28,7 @@ import {
   ensurePublicDomainPrefixesAvailable,
   PublicDomainError
 } from '@/services/backend/publicDomain';
+import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
 import { validatePublicDomainPrefix } from '@/utils/public-domain';
 
 class PortError extends Error {
@@ -63,6 +64,12 @@ class PortValidationError extends PortError {
 }
 
 function normalizePublicDomainPrefixOrThrow(value: string) {
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    throw new PortValidationError('Custom public domain prefixes are disabled', {
+      operation: 'UPDATE_PUBLIC_DOMAIN_PREFIX'
+    });
+  }
+
   const result = validatePublicDomainPrefix(value);
   if (!result.valid) {
     throw new PortValidationError(

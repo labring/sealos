@@ -9,6 +9,7 @@ import {
   isIngressPublicDomainConflictError,
   PublicDomainError
 } from '@/services/backend/publicDomain';
+import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -16,6 +17,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonRes(res, {
       code: 405,
       error: `Method ${req.method} Not Allowed`
+    });
+  }
+
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    return jsonRes(res, {
+      code: 404,
+      error: 'Custom public domain prefixes are disabled'
     });
   }
 

@@ -6,7 +6,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED, SEALOS_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
@@ -113,6 +113,8 @@ function validatePublicDomainPrefixBeforeSubmit(
   t: ReturnType<typeof useTranslation>['t'],
   setFieldError: (index: number, message: string) => void
 ) {
+  if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return '';
+
   for (const [index, network] of data.networks.entries()) {
     if (!network.openPublicDomain || network.openNodePort || network.customDomain) {
       continue;
@@ -137,6 +139,8 @@ function validateManagedPublicDomainHostDuplicatesBeforeSubmit(
   t: ReturnType<typeof useTranslation>['t'],
   setFieldError: (index: number, message: string) => void
 ) {
+  if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return '';
+
   const duplicatedHosts = getDuplicateManagedPublicDomainHosts(data.networks, SEALOS_DOMAIN);
   if (duplicatedHosts.length === 0) return '';
 
@@ -152,6 +156,8 @@ async function validatePublicDomainAvailabilityBeforeSubmit(
   t: ReturnType<typeof useTranslation>['t'],
   setFieldError: (index: number, message: string) => void
 ) {
+  if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return '';
+
   for (const [index, network] of data.networks.entries()) {
     if (!network.openPublicDomain || network.openNodePort || network.customDomain) {
       continue;

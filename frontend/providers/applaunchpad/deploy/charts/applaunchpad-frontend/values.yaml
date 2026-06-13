@@ -49,6 +49,8 @@ applaunchpadConfig:
   billingUrl: "http://account-service.account-system.svc:2333"
   logUrl: ""
   tlsRejectUnauthorized: "1"
+  imagePortsEnabled: false
+  customPublicDomainPrefixEnabled: false
   publicDomainReservedPrefixes: []
 
 affinity:

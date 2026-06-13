@@ -12,4 +12,6 @@ resources:
     memory: 128Mi
 
 applaunchpadConfig:
+  imagePortsEnabled: false
+  customPublicDomainPrefixEnabled: false
   publicDomainReservedPrefixes: []

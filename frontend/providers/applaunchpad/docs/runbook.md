@@ -127,7 +127,25 @@ The Dockerfile builds a standalone Next.js runtime. Production config is mounted
 
 ## Public Domain Reserved Prefixes
 
-Managed public-domain prefix reservations are configured with `launchpad.publicDomain.reservedPrefixes` in `data/config.yaml.local` or `/app/data/config.yaml`. The default is an empty list, so words such as `admin`, `api`, or `www` are not blocked unless the deployment config explicitly lists them.
+Branch feature gates default to off. Enable them only for environments that should use the new create-time image port detection or editable managed public-domain prefix flow:
+
+```yaml
+launchpad:
+  imagePorts:
+    enabled: true
+  publicDomain:
+    customPrefixEnabled: true
+```
+
+For Helm deployments:
+
+```bash
+helm upgrade --install applaunchpad-frontend ./deploy/charts/applaunchpad-frontend \
+  --set applaunchpadConfig.imagePortsEnabled=true \
+  --set applaunchpadConfig.customPublicDomainPrefixEnabled=true
+```
+
+Managed public-domain prefix reservations are configured with `launchpad.publicDomain.reservedPrefixes` in `data/config.yaml.local` or `/app/data/config.yaml`. They are only enforced when `launchpad.publicDomain.customPrefixEnabled` is true. The default list is empty, so words such as `admin`, `api`, or `www` are not blocked unless the deployment config explicitly lists them.
 
 For Helm deployments, set `applaunchpadConfig.publicDomainReservedPrefixes`:
 

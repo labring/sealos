@@ -7,7 +7,12 @@ import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { PVC_STORAGE_MAX, NETWORK_STORAGE_ENABLED, SEALOS_DOMAIN } from '@/store/static';
+import {
+  PVC_STORAGE_MAX,
+  NETWORK_STORAGE_ENABLED,
+  SEALOS_DOMAIN,
+  IMAGE_PORTS_ENABLED
+} from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
@@ -284,7 +289,7 @@ const Form = ({
   }, [watch, setValue]);
 
   useEffect(() => {
-    if (isEdit || !already) {
+    if (!IMAGE_PORTS_ENABLED || isEdit || !already) {
       setImagePortDetection({ status: 'idle' });
       return;
     }

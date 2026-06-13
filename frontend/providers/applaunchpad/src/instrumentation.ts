@@ -46,7 +46,11 @@ export async function register() {
           gtmId: null,
           currencySymbol: Coin.shellCoin,
           pvcStorageMax: 20,
+          imagePorts: {
+            enabled: false
+          },
           publicDomain: {
+            customPrefixEnabled: false,
             reservedPrefixes: []
           },
           eventAnalyze: {

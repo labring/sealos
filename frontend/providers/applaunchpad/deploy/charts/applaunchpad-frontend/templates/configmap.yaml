@@ -31,7 +31,10 @@ data:
       eventAnalyze:
         enabled: false
         fastGPTKey: ""
+      imagePorts:
+        enabled: {{ .Values.applaunchpadConfig.imagePortsEnabled }}
       publicDomain:
+        customPrefixEnabled: {{ .Values.applaunchpadConfig.customPublicDomainPrefixEnabled }}
         reservedPrefixes:{{ toYaml .Values.applaunchpadConfig.publicDomainReservedPrefixes | nindent 10 }}
       components:
         monitor:

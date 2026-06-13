@@ -1,6 +1,7 @@
 import { getImageExposedPorts } from '@/utils/image-exposed-ports';
 import { authSession } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
+import { isImagePortsEnabled } from '@/utils/feature-gates';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -9,6 +10,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonRes(res, {
       code: 405,
       error: `Method ${req.method} Not Allowed`
+    });
+  }
+
+  if (!isImagePortsEnabled()) {
+    return jsonRes(res, {
+      code: 404,
+      error: 'Image port detection is disabled'
     });
   }
 

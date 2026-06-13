@@ -1,4 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import {
+  isCustomPublicDomainPrefixEnabled,
+  isImagePortsEnabled
+} from '@/utils/feature-gates';
 import { setPublicDomainReservedPrefixes, validatePublicDomainPrefix } from '@/utils/public-domain';
 import {
   getPublicDomainConflictResponse,
@@ -31,6 +35,29 @@ describe('validatePublicDomainPrefix', () => {
     expect(validatePublicDomainPrefix('-bad')).toMatchObject({ valid: false, reason: 'format' });
     expect(validatePublicDomainPrefix('bad-')).toMatchObject({ valid: false, reason: 'format' });
     expect(validatePublicDomainPrefix('ab')).toMatchObject({ valid: false, reason: 'format' });
+  });
+});
+
+describe('feature gates', () => {
+  it('defaults branch feature gates to disabled', () => {
+    expect(isImagePortsEnabled()).toBe(false);
+    expect(isCustomPublicDomainPrefixEnabled()).toBe(false);
+  });
+
+  it('reads branch feature gates from config', () => {
+    const config = {
+      launchpad: {
+        imagePorts: {
+          enabled: true
+        },
+        publicDomain: {
+          customPrefixEnabled: true
+        }
+      }
+    };
+
+    expect(isImagePortsEnabled(config)).toBe(true);
+    expect(isCustomPublicDomainPrefixEnabled(config)).toBe(true);
   });
 });
 

@@ -2,6 +2,7 @@ import { appDeployKey, publicDomainKey } from '@/constants/app';
 import type { KubernetesObjectApi, NetworkingV1Api, V1Ingress } from '@kubernetes/client-node';
 import type { K8sContext } from '@/services/backend/appService';
 import type { AppEditType } from '@/types/app';
+import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
 import { PublicDomainConflictOwner, validatePublicDomainPrefix } from '@/utils/public-domain';
 
 const INGRESS_OWNER_CONFLICT_CODE = '40301';
@@ -202,6 +203,13 @@ type PublicDomainK8sContext = {
 };
 
 export function normalizeAndValidatePublicDomainPrefix(value: string) {
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    throw new PublicDomainError(
+      'Custom public domain prefixes are disabled',
+      'INVALID_PUBLIC_DOMAIN'
+    );
+  }
+
   const result = validatePublicDomainPrefix(value);
 
   if (!result.valid) {
@@ -279,6 +287,7 @@ export async function ensurePublicDomainTargetsAvailable(
   targets: PublicDomainTarget[],
   k8s: PublicDomainK8sContext
 ) {
+  if (!isCustomPublicDomainPrefixEnabled()) return;
   if (targets.length === 0) return;
 
   const seenHosts = new Set<string>();
@@ -344,6 +353,8 @@ export function validateAppPublicDomainPrefixes(app: AppEditType) {
 }
 
 export async function ensurePublicDomainPrefixesAvailable(app: AppEditType, k8s: K8sContext) {
+  if (!isCustomPublicDomainPrefixEnabled()) return;
+
   const targets = validateAppPublicDomainPrefixes(app);
   await ensurePublicDomainTargetsAvailable(targets, k8s);
 }

@@ -2,7 +2,13 @@ import MyIcon from '@/components/Icon';
 import { checkPublicDomain } from '@/api/platform';
 import { MySelect } from '@sealos/ui';
 import { APPLICATION_PROTOCOLS, ProtocolList } from '@/constants/app';
-import { DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT, SEALOS_DOMAIN } from '@/store/static';
+import {
+  CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
+  DISABLE_HTTPS,
+  DOMAIN_PORT,
+  HTTP_PORT,
+  SEALOS_DOMAIN
+} from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { customAlphabet } from 'nanoid';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
@@ -454,6 +460,8 @@ export function NetworkSection({
           : network
       );
 
+      if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return false;
+
       return getDuplicateManagedPublicDomainHosts(networks, SEALOS_DOMAIN).some(({ indexes }) =>
         indexes.includes(index)
       );
@@ -463,6 +471,8 @@ export function NetworkSection({
 
   const syncManagedPublicDomainHostDuplicateErrors = useCallback(
     (nextNetworks: AppEditType['networks']) => {
+      if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return new Set<number>();
+
       const duplicateIndexes = new Set(
         getDuplicateManagedPublicDomainHosts(nextNetworks, SEALOS_DOMAIN).flatMap(
           ({ indexes }) => indexes
@@ -534,6 +544,20 @@ export function NetworkSection({
     async (index: number, value: string, options: { commitValue?: boolean } = {}) => {
       const { commitValue = true } = options;
       clearPublicDomainDraftCheckTimer(index);
+
+      if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) {
+        const network = getValues(`networks.${index}`);
+        const publicDomain = network?.publicDomain || nanoid();
+        if (!network?.publicDomain) {
+          setValue(getPublicDomainFieldName(index), publicDomain, {
+            shouldDirty: true,
+            shouldValidate: false
+          });
+        }
+        clearPublicDomainValidationError(index);
+        return publicDomain;
+      }
+
       const result = validatePublicDomainPrefix(value);
 
       if (!result.valid) {
@@ -601,6 +625,8 @@ export function NetworkSection({
 
   const schedulePublicDomainDraftCheck = useCallback(
     (index: number, value: string) => {
+      if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return;
+
       clearPublicDomainDraftCheckTimer(index);
       publicDomainCheckSeqRef.current[index] = (publicDomainCheckSeqRef.current[index] || 0) + 1;
       publicDomainDraftCheckTimerRef.current[index] = setTimeout(() => {
@@ -612,6 +638,8 @@ export function NetworkSection({
 
   const updatePublicDomainDraft = useCallback(
     (index: number, value: string) => {
+      if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return;
+
       setValue(getPublicDomainFieldName(index), value, {
         shouldDirty: true,
         shouldValidate: false
@@ -686,7 +714,10 @@ export function NetworkSection({
           {networks.map((field, i) => {
             const network = watchedNetworks?.[i] || field;
             const isPublicDomainPrefixVisible =
-              network.openPublicDomain && !network.openNodePort && !network.customDomain;
+              CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED &&
+              network.openPublicDomain &&
+              !network.openNodePort &&
+              !network.customDomain;
             const publicDomainErrorMessage = isPublicDomainPrefixVisible
               ? getPublicDomainValidationError(i)
               : undefined;
