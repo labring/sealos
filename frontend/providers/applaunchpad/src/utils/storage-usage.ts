@@ -1,4 +1,13 @@
 import type { MonitorDataResult } from '@/types/monitor';
+import { Scale } from '@sealos/shared';
+
+type StorageCapacityItem = {
+  name?: string;
+  value?: {
+    scaledValue?: (scale: typeof Scale.None) => bigint;
+    formatForDisplay: (options?: { format?: 'BinarySI'; scale?: 0; round?: boolean }) => string;
+  };
+};
 
 const getLatestNumericValue = (values?: Array<string | null>): number | null => {
   if (!values?.length) return null;
@@ -12,6 +21,22 @@ const getLatestNumericValue = (values?: Array<string | null>): number | null => 
   }
 
   return null;
+};
+
+const getStorageCapacityBytes = (store?: StorageCapacityItem): number | null => {
+  if (!store?.value) return null;
+
+  const bytes =
+    typeof store.value.scaledValue === 'function'
+      ? Number(store.value.scaledValue(Scale.None))
+      : Number(
+          store.value.formatForDisplay({
+            format: 'BinarySI',
+            round: true
+          })
+        );
+
+  return Number.isFinite(bytes) && bytes > 0 ? bytes : null;
 };
 
 export const calculateStorageUsagePercent = (
@@ -44,6 +69,76 @@ export const calculateStorageUsagePercent = (
   if (totals.size <= 0 || totals.used <= 0) return 0;
 
   const percent = (totals.used / totals.size) * 100;
+  if (percent > 0 && percent < 0.1) return 0.1;
+
+  return Math.round(percent * 10) / 10;
+};
+
+export const calculateStorageUsagePercentFromUsageData = (
+  usageData?: MonitorDataResult[] | null,
+  storeList?: StorageCapacityItem[] | null
+): number => {
+  if (!usageData?.length) return 0;
+
+  const storeCapacities = (storeList ?? [])
+    .map((store) => [store.name, getStorageCapacityBytes(store)] as const)
+    .filter((item): item is readonly [string, number] => Boolean(item[0]) && item[1] !== null)
+    .sort(([leftName], [rightName]) => rightName.length - leftName.length);
+
+  if (!storeCapacities.length) {
+    const totals = usageData.reduce(
+      (acc, item) => {
+        const usagePercent = getLatestNumericValue(item.yData);
+        if (usagePercent === null || usagePercent <= 0) return acc;
+
+        acc.capacity += 1;
+        acc.used += Math.min(usagePercent, 100);
+        return acc;
+      },
+      { capacity: 0, used: 0 }
+    );
+
+    if (totals.capacity <= 0 || totals.used <= 0) return 0;
+
+    const percent = totals.used / totals.capacity;
+    if (percent > 0 && percent < 0.1) return 0.1;
+
+    return Math.round(percent * 10) / 10;
+  }
+
+  const usageByStoreName = new Map<string, number>();
+
+  usageData.forEach((item) => {
+    if (!item.name) return;
+
+    const usagePercent = getLatestNumericValue(item.yData);
+    if (usagePercent === null || usagePercent <= 0) return;
+
+    const storeName = storeCapacities.find(([name]) => item.name?.startsWith(`${name}-`))?.[0];
+    if (!storeName) return;
+
+    usageByStoreName.set(
+      storeName,
+      Math.max(usageByStoreName.get(storeName) ?? 0, Math.min(usagePercent, 100))
+    );
+  });
+
+  const totals = storeCapacities.reduce(
+    (acc, item) => {
+      const [storeName, capacity] = item;
+      const usagePercent = usageByStoreName.get(storeName);
+      if (usagePercent === undefined) return acc;
+
+      acc.capacity += capacity;
+      acc.used += capacity * usagePercent;
+      return acc;
+    },
+    { capacity: 0, used: 0 }
+  );
+
+  if (totals.capacity <= 0 || totals.used <= 0) return 0;
+
+  const percent = totals.used / totals.capacity;
   if (percent > 0 && percent < 0.1) return 0.1;
 
   return Math.round(percent * 10) / 10;
