@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@types/react": "18.3.27",
-    "@types/node": "^24",
+    "@types/node": "^25.9.3",
     "typescript": "^5.0.0"
   }
 }
