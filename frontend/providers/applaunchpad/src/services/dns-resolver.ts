@@ -22,6 +22,11 @@ export type Nameserver = {
   readonly resolveIPv6: () => Promise<string | null>;
 };
 
+export type NameserverMatch = {
+  readonly zone: string;
+  readonly nameservers: readonly Nameserver[];
+};
+
 export type DNSRecord = {
   readonly name: string;
   readonly type: string;
@@ -205,6 +210,12 @@ const resolveIPv6Address = async (host: string) => {
   }
 };
 
+const getParentZones = (domain: string): readonly string[] => {
+  const parts = domain.split('.').filter((part) => part.length > 0);
+
+  return parts.map((_, index) => parts.slice(index).join('.'));
+};
+
 /**
  * Extract NS servers with their possible IP addresses from DNS answers.
  * @returns a list of NS servers with lazy IP resolution (max MAX_NAMESERVERS).
@@ -212,10 +223,20 @@ const resolveIPv6Address = async (host: string) => {
 export const extractNSServers = (
   target: string,
   allAnswers: readonly dnsPacket.Answer[]
-): readonly Nameserver[] => {
+): NameserverMatch | null => {
+  const candidateZones = getParentZones(target);
+  const zonesWithNs = candidateZones.filter((zone) =>
+    allAnswers.some((answer) => answer.type === 'NS' && answer.name === zone)
+  );
+  const zone = zonesWithNs[0];
+
+  if (!zone) {
+    return null;
+  }
+
   const nsWithPossibleAddresses = allAnswers.reduce(
     (prev, nsRecord) => {
-      if (nsRecord.type !== 'NS' || nsRecord.name !== target) return prev;
+      if (nsRecord.type !== 'NS' || nsRecord.name !== zone) return prev;
 
       const aRecord = allAnswers.find(
         (addrRecord) => addrRecord.type === 'A' && addrRecord.name === nsRecord.data
@@ -249,7 +270,7 @@ export const extractNSServers = (
     >()
   );
 
-  return Array.from(nsWithPossibleAddresses.entries())
+  const nameservers = Array.from(nsWithPossibleAddresses.entries())
     .map(([ns, addresses]): Nameserver => {
       const glueA = addresses.glueA;
       const glueAAAA = addresses.glueAAAA;
@@ -275,6 +296,15 @@ export const extractNSServers = (
       };
     })
     .slice(0, MAX_NAMESERVERS);
+
+  if (nameservers.length === 0) {
+    return null;
+  }
+
+  return {
+    zone,
+    nameservers
+  };
 };
 
 /**
@@ -403,8 +433,8 @@ export const getAuthoritativeNsFromRoot = async (domain: string): Promise<NSInfo
       ...(nsResponse.additionals ?? [])
     ];
 
-    const nsServersWithIP = extractNSServers(testDomain, answers);
-    if (nsServersWithIP.length === 0) {
+    const nsServerMatch = extractNSServers(testDomain, answers);
+    if (!nsServerMatch) {
       // Exhausted input, return last valid NSInfo if available
       if (remainingParts.length === 0) {
         return lastValidNSInfo;
@@ -419,8 +449,8 @@ export const getAuthoritativeNsFromRoot = async (domain: string): Promise<NSInfo
 
     // Valid response, continue...
     const currentNSInfo: NSInfo = {
-      zone: testDomain,
-      nameservers: nsServersWithIP
+      zone: nsServerMatch.zone,
+      nameservers: nsServerMatch.nameservers
     };
 
     if (remainingParts.length === 0) {
@@ -484,11 +514,11 @@ export const getAuthoritativeNsFromLocal = async (domain: string): Promise<NSInf
           ...(response.additionals ?? [])
         ];
 
-        const nsServersWithIP = extractNSServers(target, answers);
-        if (nsServersWithIP.length > 0) {
+        const nsServerMatch = extractNSServers(target, answers);
+        if (nsServerMatch) {
           return {
-            zone: target,
-            nameservers: nsServersWithIP
+            zone: nsServerMatch.zone,
+            nameservers: nsServerMatch.nameservers
           };
         }
       } catch {
@@ -500,16 +530,53 @@ export const getAuthoritativeNsFromLocal = async (domain: string): Promise<NSInf
     return null;
   };
 
+  const queryFromNameservers = async (
+    target: string,
+    nameservers: readonly Nameserver[]
+  ): Promise<NSInfo | null> => {
+    const response = await resolveWithNs(target, 'NS', nameservers, {
+      recursionDesired: true
+    });
+    if (!response) {
+      return null;
+    }
+
+    const answers = [
+      ...(response.answers ?? []),
+      ...(response.authorities ?? []),
+      ...(response.additionals ?? [])
+    ];
+
+    const nsServerMatch = extractNSServers(target, answers);
+    if (!nsServerMatch) {
+      return null;
+    }
+
+    return {
+      zone: nsServerMatch.zone,
+      nameservers: nsServerMatch.nameservers
+    };
+  };
+
+  let result: NSInfo | null = null;
+
   for (let i = 0; i < parts.length; i += 1) {
     const zoneCandidate = parts.slice(i).join('.');
-    const result = await queryFromLocalResolvers(zoneCandidate);
+    if (result && !zoneCandidate.endsWith(result.zone)) {
+      continue;
+    }
 
-    if (result) {
-      return result;
+    const candidateResult: NSInfo | null =
+      result === null
+        ? await queryFromLocalResolvers(zoneCandidate)
+        : await queryFromNameservers(zoneCandidate, result.nameservers);
+
+    if (candidateResult) {
+      result = candidateResult;
     }
   }
 
-  return null;
+  return result;
 };
 
 /**
