@@ -1,0 +1,24 @@
+# Custom values for objectstorage-frontend helm chart.
+# This file contains user-customizable configurations.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+objectstorageConfig:
+  monitorUrl: "http://object-storage-monitor.objectstorage-system.svc.cluster.local:9090/q"
+  billingUrl: ""
+  billingSecret: ""
+  appLaunchpadUrl: "http://applaunchpad-frontend.applaunchpad-frontend.svc.cluster.local:3000/api/v1alpha"
+  appTokenJwtKey: ""
+  hostingPodCpuMilliCores: 200
+  hostingPodMemoryMiB: 128
+  hostingAppNamePrefix: "static-host"
+  hostingNetworkProtocol: "HTTP"
+  hostingNetworkPort: 80

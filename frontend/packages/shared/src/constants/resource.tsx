@@ -64,3 +64,9 @@ export const resourcePropertyMap: Record<
     scale: 1024 * 1024 * 1024
   }
 };
+
+export const formatResourceQuotaValue = (value: number, type: WorkspaceQuotaItemType) => {
+  const scale = resourcePropertyMap[type].scale;
+
+  return (value / scale).toFixed(2);
+};

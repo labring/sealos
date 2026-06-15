@@ -6,6 +6,7 @@ import { UpdateStorageSchema } from '@/types/request_schema';
 import { json2DeployCr } from '@/utils/deployYaml2Json';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import type { AppEditType } from '@/types/app';
+import { parseK8sQuantityOrZero, storageAnnotationToQuantity } from '@/utils/resourceQuantity';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -88,23 +89,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       for (const newStore of storage) {
-        let numericValue = 1;
-        const sizeMatch = newStore.size.match(/^(\d+(?:\.\d+)?)(Gi|Mi|Ti)$/i);
-        if (sizeMatch) {
-          const [, value, unit] = sizeMatch;
-          numericValue = parseFloat(value);
-
-          if (unit.toLowerCase() === 'mi') {
-            numericValue = numericValue / 1024;
-          } else if (unit.toLowerCase() === 'ti') {
-            numericValue = numericValue * 1024;
-          }
-        }
-
         const storeItem = {
           name: mountPathToConfigMapKey(newStore.path),
           path: newStore.path,
-          value: Math.ceil(numericValue)
+          value: parseK8sQuantityOrZero(newStore.size)
         };
 
         if (existingStorageByPath.has(newStore.path)) {
@@ -220,38 +208,44 @@ async function updateExistingPVCs(
         return;
       }
 
-      let newSizeValue = 1;
-      if (newStorageItem.size) {
-        const match = newStorageItem.size.match(/^(\d+)/);
-        if (match) {
-          newSizeValue = parseInt(match[1]);
-        } else {
-          throw new Error(`Invalid storage size format: ${newStorageItem.size}`);
-        }
-      }
+      const newSizeQuantity = parseK8sQuantityOrZero(newStorageItem.size || '1Gi');
+      const currentSizeQuantity = pvc.spec?.resources?.requests?.storage
+        ? parseK8sQuantityOrZero(pvc.spec.resources.requests.storage)
+        : storageAnnotationToQuantity(pvc.metadata?.annotations?.value || '1');
 
-      const currentSizeValue = parseInt(pvc.metadata?.annotations?.value || '1');
-      if (newSizeValue < currentSizeValue) {
+      if (newSizeQuantity.cmp(currentSizeQuantity) < 0) {
         throw new Error(
-          `Cannot shrink PVC ${pvcName} from ${currentSizeValue}Gi to ${newSizeValue}Gi. PVC can only be expanded.`
+          `Cannot shrink PVC ${pvcName} from ${currentSizeQuantity.formatForDisplay({
+            format: 'BinarySI',
+            scale: 'auto',
+            digits: 4
+          })} to ${newSizeQuantity.formatForDisplay({
+            format: 'BinarySI',
+            scale: 'auto',
+            digits: 4
+          })}. PVC can only be expanded.`
         );
       }
 
       if (
         pvc.metadata?.annotations?.value &&
         pvc.spec?.resources?.requests?.storage &&
-        pvc.metadata?.annotations?.value !== newSizeValue.toString()
+        !currentSizeQuantity.equals(newSizeQuantity)
       ) {
         const jsonPatch = [
           {
             op: 'replace',
             path: '/spec/resources/requests/storage',
-            value: `${newSizeValue}Gi`
+            value: newSizeQuantity.withFormat('BinarySI').toString()
           },
           {
             op: 'replace',
             path: '/metadata/annotations/value',
-            value: newSizeValue.toString()
+            value: newSizeQuantity.formatForDisplay({
+              format: 'BinarySI',
+              scale: 'auto',
+              digits: 4
+            })
           }
         ];
 

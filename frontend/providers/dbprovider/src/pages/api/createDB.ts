@@ -1,5 +1,12 @@
 import { Config } from '@/config';
 import { authSession } from '@/services/backend/auth';
+import {
+  getDBConfigurationByName,
+  getEffectiveParameterConfig,
+  extractParameterConfigFromConfiguration,
+  isMysql5742,
+  supportsParameterConfigDbType
+} from '@/services/backend/database-config';
 import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
@@ -73,23 +80,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
 
       // Handle parameter configuration updates
-      if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-        const isMysql5742 =
-          dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42';
+      if (supportsParameterConfigDbType(dbForm.dbType) && dbForm.dbType !== 'mysql') {
+        const mysql5742 = isMysql5742(dbForm.dbType, dbForm.dbVersion);
         const tz = dbForm.parameterConfig?.timeZone;
         const shouldApplyMysql5742Timezone =
-          isMysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
+          mysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
 
-        if (!isMysql5742 || shouldApplyMysql5742Timezone) {
+        if (!mysql5742 || shouldApplyMysql5742Timezone) {
           try {
-            const dynamicMaxConnections = isMysql5742
+            const dynamicMaxConnections = mysql5742
               ? undefined
               : getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+            let storedParameterConfig = undefined;
+            if (dbForm.dbType === 'apecloud-mysql') {
+              const configurationBody = await getDBConfigurationByName({
+                k8sCustomObjects,
+                namespace,
+                dbName: dbForm.dbName,
+                dbType: dbForm.dbType
+              });
+
+              if (!configurationBody) {
+                throw new Error(
+                  'Failed to load current MySQL configuration for safe parameter preservation'
+                );
+              }
+
+              storedParameterConfig = extractParameterConfigFromConfiguration(
+                configurationBody,
+                dbForm.dbType
+              );
+            }
+            const effectiveParameterConfig = getEffectiveParameterConfig({
+              mode: 'edit',
+              dbType: dbForm.dbType,
+              incomingParameterConfig: shouldApplyMysql5742Timezone
+                ? { timeZone: tz as string }
+                : dbForm.parameterConfig,
+              storedParameterConfig
+            });
             const configYaml = json2ParameterConfig(
               dbForm.dbName,
               dbForm.dbType,
               dbForm.dbVersion,
-              shouldApplyMysql5742Timezone ? { timeZone: tz as string } : dbForm.parameterConfig,
+              effectiveParameterConfig,
               dynamicMaxConnections
             );
             await applyYamlList([configYaml], 'replace');
@@ -153,21 +187,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const yamlList = [account, cluster];
 
-    if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-      const isMysql5742 = dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42';
+    if (supportsParameterConfigDbType(dbForm.dbType)) {
+      const mysql5742 = isMysql5742(dbForm.dbType, dbForm.dbVersion);
       const tz = dbForm.parameterConfig?.timeZone;
-      const shouldApplyMysql5742Timezone =
-        isMysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
+      const shouldApplyMysql5742Timezone = mysql5742 && (tz === 'Asia/Shanghai' || tz === '+08:00');
 
       // For MySQL 5.7.42, only allow timezone configuration to be applied.
-      if (!isMysql5742 || shouldApplyMysql5742Timezone) {
+      if (!mysql5742 || shouldApplyMysql5742Timezone) {
         const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+        const effectiveParameterConfig = getEffectiveParameterConfig({
+          mode: 'create',
+          dbType: dbForm.dbType,
+          incomingParameterConfig: shouldApplyMysql5742Timezone
+            ? { timeZone: tz as string }
+            : dbForm.parameterConfig
+        });
 
         const config = json2ParameterConfig(
           dbForm.dbName,
           dbForm.dbType,
           dbForm.dbVersion,
-          shouldApplyMysql5742Timezone ? { timeZone: tz as string } : dbForm.parameterConfig,
+          effectiveParameterConfig,
           dynamicMaxConnections
         );
         yamlList.unshift(config);

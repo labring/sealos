@@ -37,6 +37,14 @@ import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
 import { useQuotaGuarded, useUserQuota, resourcePropertyMap } from '@sealos/shared';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
+import {
+  cpuMillicoresToQuantity,
+  memoryMiToQuantity,
+  quantityFromJSONOrZero,
+  quantityToCpuMillicores,
+  quantityToMemoryMi,
+  quantityToStorageGi
+} from '@/utils/resourceQuantity';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -44,7 +52,10 @@ const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 export const formData2Yamls = (
   data: AppEditType,
-  userDomains: { name: string; secretName: string }[]
+  userDomains: { name: string; secretName: string }[],
+  options: {
+    disableHttps?: boolean;
+  } = {}
 ) => [
   {
     filename: 'service.yaml',
@@ -71,7 +82,7 @@ export const formData2Yamls = (
     ? [
         {
           filename: 'ingress.yaml',
-          value: json2Ingress(data, userDomains)
+          value: json2Ingress(data, userDomains, options)
         }
       ]
     : []),
@@ -257,12 +268,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (data.networks?.[index]) {
           data.networks[index].customDomain = customDomain;
         }
-        const ingressYaml = json2Ingress(data, config.userDomains);
+        const ingressYaml = json2Ingress(data, config.userDomains, {
+          disableHttps: config.disableHttps
+        });
         setIsLoading(true);
         postDeployApp([ingressYaml], 'replace')
           .then(() => {
             toast.success(t('Deployment Successful'));
-            formOldYamls.current = formData2Yamls(data, config.userDomains);
+            formOldYamls.current = formData2Yamls(data, config.userDomains, {
+              disableHttps: config.disableHttps
+            });
           })
           .catch((err) => {
             toast.error(getErrText(err));
@@ -279,8 +294,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       if (!appName) {
         const defaultApp = {
           ...defaultEditVal,
-          cpu: formSliderListConfig[defaultSliderKey].cpu[0],
-          memory: formSliderListConfig[defaultSliderKey].memory[0]
+          cpu: cpuMillicoresToQuantity(formSliderListConfig[defaultSliderKey].cpu[0]),
+          memory: memoryMiToQuantity(formSliderListConfig[defaultSliderKey].memory[0])
         };
         setAlready(true);
         setYamlList([
@@ -304,14 +319,20 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (!res) return;
         console.log(res, 'init res');
         oldAppEditData.current = res;
-        formOldYamls.current = formData2Yamls(res, config.userDomains);
+        formOldYamls.current = formData2Yamls(res, config.userDomains, {
+          disableHttps: config.disableHttps
+        });
         crOldYamls.current = res.crYamlList;
 
         setExistingStores(res.storeList);
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
-        setYamlList(formData2Yamls(realTimeForm.current, config.userDomains));
+        setYamlList(
+          formData2Yamls(realTimeForm.current, config.userDomains, {
+            disableHttps: config.disableHttps
+          })
+        );
       },
       onError(err) {
         toast.error(String(err));
@@ -325,7 +346,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   useEffect(() => {
     if (tabType === 'yaml') {
       try {
-        setYamlList(formData2Yamls(realTimeForm.current, config.userDomains));
+        setYamlList(
+          formData2Yamls(realTimeForm.current, config.userDomains, {
+            disableHttps: config.disableHttps
+          })
+        );
       } catch (error) {}
     }
   }, [router.query.name, tabType]);
@@ -401,13 +426,23 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
     return {
       cpu: isEdit
-        ? realTimeForm.current.cpu * newReplicas -
-          (formHook.formState.defaultValues?.cpu ?? 0) * oldReplicas
-        : realTimeForm.current.cpu * newReplicas,
+        ? quantityToCpuMillicores(realTimeForm.current.cpu) * newReplicas -
+          quantityToCpuMillicores(
+            formHook.formState.defaultValues?.cpu
+              ? quantityFromJSONOrZero(String(formHook.formState.defaultValues.cpu))
+              : defaultEditVal.cpu
+          ) *
+            oldReplicas
+        : quantityToCpuMillicores(realTimeForm.current.cpu) * newReplicas,
       memory: isEdit
-        ? realTimeForm.current.memory * newReplicas -
-          (formHook.formState.defaultValues?.memory ?? 0) * oldReplicas
-        : realTimeForm.current.memory * newReplicas,
+        ? quantityToMemoryMi(realTimeForm.current.memory) * newReplicas -
+          quantityToMemoryMi(
+            formHook.formState.defaultValues?.memory
+              ? quantityFromJSONOrZero(String(formHook.formState.defaultValues.memory))
+              : defaultEditVal.memory
+          ) *
+            oldReplicas
+        : quantityToMemoryMi(realTimeForm.current.memory) * newReplicas,
       gpu: isEdit
         ? newGpuCount * newReplicas - oldGpuCount * oldReplicas
         : newGpuCount * newReplicas,
@@ -420,10 +455,18 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         : (realTimeForm.current.networks?.filter((item) => item.openNodePort)?.length ?? 0) *
           newReplicas,
       storage: isEdit
-        ? (realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) * newReplicas -
-            existingStores.reduce((sum, item) => sum + item.value, 0) * oldReplicas) *
+        ? (realTimeForm.current.storeList.reduce(
+            (sum, item) => sum + quantityToStorageGi(item.value),
+            0
+          ) *
+            newReplicas -
+            existingStores.reduce((sum, item) => sum + quantityToStorageGi(item.value), 0) *
+              oldReplicas) *
           resourcePropertyMap.storage.scale
-        : realTimeForm.current.storeList.reduce((sum, item) => sum + item.value, 0) *
+        : realTimeForm.current.storeList.reduce(
+            (sum, item) => sum + quantityToStorageGi(item.value),
+            0
+          ) *
           newReplicas *
           resourcePropertyMap.storage.scale,
       traffic: true as const
@@ -434,9 +477,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const doSubmit = useCallback(() => {
     formHook.handleSubmit(async (data) => {
-      const parseYamls = formData2Yamls(data, config.userDomains);
-      setYamlList(parseYamls);
-
       // gpu inventory check
       if (data.gpu?.type) {
         const inventory = countGpuInventory(data.gpu?.type);
@@ -477,23 +517,36 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       }
 
       openConfirm(() => {
+        const submitData = data;
+        formHook.setValue('appName', submitData.appName);
+        realTimeForm.current = submitData;
+
+        const parseYamls = formData2Yamls(submitData, config.userDomains, {
+          disableHttps: config.disableHttps
+        });
+        setYamlList(parseYamls);
+
         track('deployment_create', {
           module: 'applaunchpad',
           method: 'custom',
           config: {
             template_type: 'public',
-            template_name: data.imageName,
-            template_version: data.imageName.split(':')?.[1] ?? 'latest'
+            template_name: submitData.imageName,
+            template_version: submitData.imageName.split(':')?.[1] ?? 'latest'
           },
           resources: {
-            cpu_cores: data.cpu,
-            ram_mb: data.memory,
+            cpu_cores: quantityToCpuMillicores(data.cpu) / 1000,
+            ram_mb: quantityToMemoryMi(data.memory),
             replicas: data.hpa.use ? data.hpa.maxReplicas : Number(data.replicas),
             scaling: data.hpa.use
               ? {
                   method:
-                    data.hpa.target === 'cpu' ? 'CPU' : data.hpa.target === 'gpu' ? 'GPU' : 'RAM',
-                  value: data.hpa.value
+                    submitData.hpa.target === 'cpu'
+                      ? 'CPU'
+                      : submitData.hpa.target === 'gpu'
+                      ? 'GPU'
+                      : 'RAM',
+                  value: submitData.hpa.value
                 }
               : undefined
           }
@@ -509,7 +562,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     openConfirm,
     submitSuccess,
     submitError,
-    setIsLoading
+    setIsLoading,
+    config.userDomains,
+    config.disableHttps
   ]);
 
   const handleSubmit = useQuotaGuarded(

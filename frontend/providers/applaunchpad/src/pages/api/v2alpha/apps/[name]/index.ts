@@ -25,6 +25,12 @@ import {
 } from '@kubernetes/client-node';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import { json2DeployCr, json2Service, json2Ingress } from '@/utils/deployYaml2Json';
+import {
+  parseK8sQuantityOrZero,
+  publicCpuCoresToQuantity,
+  publicMemoryGiToQuantity,
+  storageAnnotationToQuantity
+} from '@/utils/resourceQuantity';
 import { appDeployKey } from '@/constants/app';
 
 import {
@@ -44,12 +50,6 @@ import {
 const DELAY_SHORT = 2000;
 const DELAY_LONG = 3000;
 const APPLICATION_PROTOCOLS = ['HTTP', 'GRPC', 'WS'] as const;
-const SIZE_UNITS = {
-  MI: 1 / 1024,
-  GI: 1,
-  TI: 1024
-} as const;
-
 // Custom Error Classes
 class PortError extends Error {
   constructor(message: string, public code: number = 500, public details?: ApiErrorDetails) {
@@ -84,17 +84,6 @@ function isApplicationProtocol(protocol?: string): boolean {
   if (!protocol) return false;
   const upperProtocol = protocol.toUpperCase();
   return APPLICATION_PROTOCOLS.includes(upperProtocol as any);
-}
-
-function convertStorageSize(size: string): number {
-  const sizeMatch = size.match(/^(\d+(?:\.\d+)?)(Gi|Mi|Ti)$/i);
-  if (!sizeMatch) return 1;
-
-  const [, value, unit] = sizeMatch;
-  const numericValue = parseFloat(value);
-  const multiplier = SIZE_UNITS[unit.toUpperCase() as keyof typeof SIZE_UNITS] ?? 1;
-
-  return Math.ceil(numericValue * multiplier);
 }
 
 function validateStorageData(storageData: Array<{ path: string; size: string }>): void {
@@ -389,7 +378,9 @@ async function updateServiceAndIngress(
     );
 
     if (hasIngressPorts) {
-      const ingressYaml = json2Ingress(appEditData, Config().cloud.userDomains);
+      const ingressYaml = json2Ingress(appEditData, Config().cloud.userDomains, {
+        disableHttps: Config().cloud.disableHttps
+      });
       if (ingressYaml.trim()) {
         yamlList.push(ingressYaml);
       }
@@ -408,11 +399,13 @@ async function updateServiceAndIngress(
   }
 }
 
-function createStorageList(storageData: Array<{ path: string; size: string }>): any[] {
+function createStorageList(
+  storageData: Array<{ path: string; size: string }>
+): AppEditType['storeList'] {
   return storageData.map((newStore) => ({
     name: mountPathToConfigMapKey(newStore.path),
     path: newStore.path,
-    value: convertStorageSize(newStore.size)
+    value: parseK8sQuantityOrZero(newStore.size)
   }));
 }
 
@@ -448,7 +441,9 @@ async function convertToStatefulSet(
     );
 
     if (hasIngressPorts) {
-      const ingressYaml = json2Ingress(updatedAppData, Config().cloud.userDomains);
+      const ingressYaml = json2Ingress(updatedAppData, Config().cloud.userDomains, {
+        disableHttps: Config().cloud.disableHttps
+      });
       if (ingressYaml.trim()) yamlList.push(ingressYaml);
     }
   }
@@ -497,30 +492,44 @@ async function updateExistingPVCs(
       return;
     }
 
-    const newSizeValue = convertStorageSize(newStorageItem.size);
-    const currentSizeValue = parseInt(pvc.metadata?.annotations?.value || '1');
+    const newSizeQuantity = parseK8sQuantityOrZero(newStorageItem.size || '1Gi');
+    const currentSizeQuantity = pvc.spec?.resources?.requests?.storage
+      ? parseK8sQuantityOrZero(pvc.spec.resources.requests.storage)
+      : storageAnnotationToQuantity(pvc.metadata?.annotations?.value || '1');
 
-    if (newSizeValue < currentSizeValue) {
+    if (newSizeQuantity.cmp(currentSizeQuantity) < 0) {
       throw new Error(
-        `Cannot shrink PVC ${pvcName} from ${currentSizeValue}Gi to ${newSizeValue}Gi. PVC can only be expanded.`
+        `Cannot shrink PVC ${pvcName} from ${currentSizeQuantity.formatForDisplay({
+          format: 'BinarySI',
+          scale: 'auto',
+          digits: 4
+        })} to ${newSizeQuantity.formatForDisplay({
+          format: 'BinarySI',
+          scale: 'auto',
+          digits: 4
+        })}. PVC can only be expanded.`
       );
     }
 
     if (
       pvc.metadata?.annotations?.value &&
       pvc.spec?.resources?.requests?.storage &&
-      pvc.metadata?.annotations?.value !== newSizeValue.toString()
+      !currentSizeQuantity.equals(newSizeQuantity)
     ) {
       const jsonPatch = [
         {
           op: 'replace',
           path: '/spec/resources/requests/storage',
-          value: `${newSizeValue}Gi`
+          value: newSizeQuantity.withFormat('BinarySI').toString()
         },
         {
           op: 'replace',
           path: '/metadata/annotations/value',
-          value: newSizeValue.toString()
+          value: newSizeQuantity.formatForDisplay({
+            format: 'BinarySI',
+            scale: 'auto',
+            digits: 4
+          })
         }
       ];
 
@@ -987,7 +996,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ) {
           const updateResourcesData = {
             ...updateData,
-            resource: updateData.quota,
+            resource: updateData.quota
+              ? {
+                  ...updateData.quota,
+                  cpu:
+                    updateData.quota.cpu !== undefined
+                      ? publicCpuCoresToQuantity(updateData.quota.cpu)
+                      : undefined,
+                  memory:
+                    updateData.quota.memory !== undefined
+                      ? publicMemoryGiToQuantity(updateData.quota.memory)
+                      : undefined
+                }
+              : undefined,
             command: updateData.launchCommand?.command,
             args: updateData.launchCommand?.args,
             image: updateData.image?.imageName,

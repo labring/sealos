@@ -12,7 +12,7 @@ import {
   WeekSelectList
 } from '@/constants/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from '@/constants/editApp';
-import { resourcePropertyMap } from '@sealos/shared';
+import { resourcePropertyMap, useUserQuota } from '@sealos/shared';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
@@ -201,6 +201,7 @@ const Form = ({
   const { name } = router.query as QueryType;
   const theme = useTheme();
   const isEdit = useMemo(() => !!name, [name]);
+  const { userQuota } = useUserQuota();
   const {
     register,
     setValue,
@@ -226,6 +227,7 @@ const Form = ({
   const isMaxConnectionsCustomized = watch('parameterConfig')?.isMaxConnectionsCustomized;
   const maxmemory = watch('parameterConfig')?.maxmemory;
   const memory = watch('memory');
+  const replicas = watch('replicas');
 
   const Label = ({
     children,
@@ -359,6 +361,70 @@ const Form = ({
     };
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getValues('dbType'), allocatedStorage]);
+
+  const storageMax = useMemo(() => {
+    const storageQuota = userQuota.find((item) => item.type === 'storage');
+    if (!storageQuota) return config.storageMaxSize;
+
+    const oldReplicas = isEdit ? formHook.formState.defaultValues?.replicas ?? 0 : 0;
+    const currentReplicas = getValues('replicas');
+    const currentDbType = getValues('dbType');
+    const availableStorage =
+      (storageQuota.limit - storageQuota.used) / resourcePropertyMap.storage.scale;
+
+    const oldComponents = distributeResources({
+      dbType: currentDbType,
+      cpu: getValues('cpu'),
+      memory: getValues('memory'),
+      storage: isEdit ? formHook.formState.defaultValues?.storage ?? 0 : 0,
+      replicas: oldReplicas,
+      forDisplay: false
+    });
+
+    const oldStorage = Object.values(oldComponents).reduce(
+      (acc, cur) => acc + Number(cur.storage) * (cur?.other?.replicas ?? oldReplicas),
+      0
+    );
+    const targetAvailableStorage = availableStorage + oldStorage;
+
+    const getTotalStorage = (storage: number) => {
+      const components = distributeResources({
+        dbType: currentDbType,
+        cpu: getValues('cpu'),
+        memory: getValues('memory'),
+        storage,
+        replicas: currentReplicas,
+        forDisplay: false
+      });
+
+      return Object.values(components).reduce(
+        (acc, cur) => acc + Number(cur.storage) * (cur?.other?.replicas ?? currentReplicas),
+        0
+      );
+    };
+
+    if (targetAvailableStorage < minStorage) return minStorage;
+
+    let maxStorage = minStorage;
+    for (let storage = minStorage; storage <= targetAvailableStorage; storage += minStorageChange) {
+      if (getTotalStorage(storage) <= targetAvailableStorage) {
+        maxStorage = storage;
+      } else {
+        break;
+      }
+    }
+
+    return maxStorage;
+  }, [
+    dbType,
+    formHook.formState.defaultValues,
+    getValues,
+    isEdit,
+    minStorage,
+    minStorageChange,
+    replicas,
+    userQuota
+  ]);
 
   useEffect(() => {
     if (getValues('cpu') < minCPU) {
@@ -947,12 +1013,10 @@ const Form = ({
               <FormControl isInvalid={!!errors.storage} paddingTop={1}>
                 <Flex alignItems={'center'}>
                   <Label w={100}>{t('storage')}</Label>
-                  <MyTooltip
-                    label={`${t('storage_range')}${minStorage}~${config.storageMaxSize} Gi`}
-                  >
+                  <MyTooltip label={`${t('storage_range')}${minStorage}~${storageMax} Gi`}>
                     <NumberInput
                       w={'180px'}
-                      max={config.storageMaxSize}
+                      max={storageMax}
                       min={minStorage}
                       step={minStorageChange}
                       position={'relative'}
@@ -985,13 +1049,13 @@ const Form = ({
                             message: `${t('storage_min')}${minStorage} Gi`
                           },
                           max: {
-                            value: config.storageMaxSize,
-                            message: `${t('storage_max')}${config.storageMaxSize} Gi`
+                            value: storageMax,
+                            message: `${t('storage_max')}${storageMax} Gi`
                           },
                           valueAsNumber: true
                         })}
                         min={minStorage}
-                        max={config.storageMaxSize}
+                        max={storageMax}
                         borderRadius={'md'}
                         borderColor={'#E8EBF0'}
                         bg={'#F7F8FA'}

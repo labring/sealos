@@ -19,19 +19,21 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@sealos/shadcn-ui/tooltip';
+import type { Quantity } from '@sealos/shared';
+import { quantityToStorageGi, storageGiToQuantity } from '@/utils/resourceQuantity';
 
 export type StoreType = {
   id?: string;
   name: string;
   path: string;
-  value: number;
+  value: Quantity;
 };
 
 const StoreModal = ({
   defaultValue = {
     name: '',
     path: '',
-    value: 1
+    value: storageGiToQuantity(1)
   },
   minValue,
   maxValue,
@@ -62,7 +64,17 @@ const StoreModal = ({
     defaultValues: defaultValue
   });
 
-  const currentValue = watch('value');
+  const currentValue = quantityToStorageGi(watch('value'));
+  const minValueDisplay = storageGiToQuantity(minValue).formatForDisplay({
+    format: 'BinarySI',
+    scale: 'auto',
+    digits: 4
+  });
+  const maxValueDisplay = storageGiToQuantity(maxValue).formatForDisplay({
+    format: 'BinarySI',
+    scale: 'auto',
+    digits: 4
+  });
 
   const textMap = {
     create: {
@@ -74,23 +86,27 @@ const StoreModal = ({
   };
 
   const clampValue = useCallback(
-    (value: number) => {
-      return Number.isSafeInteger(value) ? Math.min(maxValue, Math.max(value, minValue)) : minValue;
+    (value: Quantity) => {
+      const storageValue = quantityToStorageGi(value);
+      const clampedValue = Number.isSafeInteger(storageValue)
+        ? Math.min(maxValue, Math.max(storageValue, minValue))
+        : minValue;
+      return storageGiToQuantity(clampedValue);
     },
     [minValue, maxValue]
   );
 
   const handleIncrement = () => {
-    const current = getValues('value');
+    const current = quantityToStorageGi(getValues('value'));
     if (current < maxValue) {
-      setValue('value', current + 1);
+      setValue('value', storageGiToQuantity(current + 1));
     }
   };
 
   const handleDecrement = () => {
-    const current = getValues('value');
+    const current = quantityToStorageGi(getValues('value'));
     if (current > minValue) {
-      setValue('value', current - 1);
+      setValue('value', storageGiToQuantity(current - 1));
     }
   };
 
@@ -122,19 +138,18 @@ const StoreModal = ({
                         type="number"
                         disabled={maxValue === 0}
                         className="w-20 h-10 text-center border-t border-b border-zinc-200 bg-white text-sm font-medium focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        {...register('value', {
-                          required:
-                            t('Storage Value can not empty') || 'Storage Value can not empty',
-                          min: {
-                            value: minValue,
-                            message: `${t('Min Storage Value')} ${minValue} Gi`
-                          },
-                          max: {
-                            value: maxValue,
-                            message: `${t('Max Storage Value')} ${maxValue} Gi`
-                          },
-                          valueAsNumber: true
-                        })}
+                        value={currentValue}
+                        onChange={(event) => {
+                          const nextValue = Number(event.target.value);
+                          setValue(
+                            'value',
+                            storageGiToQuantity(Number.isFinite(nextValue) ? nextValue : minValue),
+                            {
+                              shouldDirty: true,
+                              shouldValidate: true
+                            }
+                          );
+                        }}
                       />
                     </div>
                     <button
@@ -152,12 +167,21 @@ const StoreModal = ({
                   <p className="text-sm text-zinc-900 font-normal p-2">
                     {maxValue === 0
                       ? t('Storage limit reached')
-                      : `${t('Storage Range')}: ${minValue}~${maxValue} Gi`}
+                      : `${t('Storage Range')}: ${minValueDisplay}~${maxValueDisplay}`}
                   </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            {errors.value && <p className="text-sm text-red-500">{errors.value.message}</p>}
+            {currentValue < minValue && (
+              <p className="text-sm text-red-500">
+                {`${t('Min Storage Value')} ${minValueDisplay}`}
+              </p>
+            )}
+            {currentValue > maxValue && (
+              <p className="text-sm text-red-500">
+                {`${t('Max Storage Value')} ${maxValueDisplay}`}
+              </p>
+            )}
           </div>
 
           {/* Mount Path */}

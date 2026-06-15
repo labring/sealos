@@ -1,0 +1,71 @@
+# Default values for template-frontend helm chart.
+
+image: ghcr.io/labring/sealos-template-frontend:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+fullnameOverride: "template-frontend"
+
+replicaCount: 1
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  className: nginx
+  host: ""
+  annotations: {}
+
+templateConfig:
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  httpPort: ""
+  disableHttps: false
+  certSecretName: "wildcard-cert"
+  userDomain: ""
+  templateRepoUrl: "https://github.com/labring-actions/templates"
+  templateRepoBranch: "main"
+  templateRepoPath: "templates"
+  guideEnabled: true
+  billingUrl: "http://account-service.account-system.svc:2333"
+  enableReadmeFetch: true
+  brandName: "Sealos"
+  forcedLanguage: "en"
+  currencySymbol: "shellCoin"
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 1024Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - template-frontend
+          topologyKey: "kubernetes.io/hostname"

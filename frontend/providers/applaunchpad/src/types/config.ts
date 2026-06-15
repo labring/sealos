@@ -8,6 +8,8 @@ const UserDomainSchema = z.strictObject({
 const CloudSchema = z.strictObject({
   domain: z.string().describe('Main promoted domain'),
   port: z.number().describe('Port number, e.g. 443'),
+  httpPort: z.number().optional().describe('HTTP port number used when HTTPS is disabled'),
+  disableHttps: z.boolean().default(false).describe('Whether public application URLs use HTTP'),
   userDomains: z.array(UserDomainSchema).describe('List of domains available for users'),
   desktopDomain: z.string().describe('Domain for the desktop application')
 });
@@ -137,6 +139,8 @@ export type FormSliderListType = Record<string, SliderConfig>;
 export const ClientAppConfigSchema = z.strictObject({
   domain: z.string(),
   port: z.number(),
+  httpPort: z.number().optional(),
+  disableHttps: z.boolean(),
   userDomains: z.array(UserDomainSchema),
   desktopDomain: z.string(),
   guideEnabled: z.boolean(),

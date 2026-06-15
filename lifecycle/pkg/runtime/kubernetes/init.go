@@ -57,7 +57,7 @@ func (k *KubeadmRuntime) GenerateCert() error {
 		hostName,
 		k.getServiceCIDR(),
 		k.getDNSDomain())
-	return cert.GenerateCert(
+	return cert.GenerateCertForKubeVersion(
 		k.pathResolver.PkiPath(),
 		k.pathResolver.PkiEtcdPath(),
 		k.getCertSANs(),
@@ -65,6 +65,7 @@ func (k *KubeadmRuntime) GenerateCert() error {
 		hostName,
 		k.getServiceCIDR(),
 		k.getDNSDomain(),
+		k.localKubeVersion(),
 	)
 }
 
@@ -79,8 +80,8 @@ func (k *KubeadmRuntime) CreateKubeConfigFiles() error {
 		BaseName: "ca",
 	}
 
-	err = cert.CreateJoinControlPlaneKubeConfigFiles(k.pathResolver.EtcPath(),
-		certConfig, hostName, k.getClusterAPIServer(), "kubernetes")
+	err = cert.CreateJoinControlPlaneKubeConfigFilesForKubeVersion(k.pathResolver.EtcPath(),
+		certConfig, hostName, k.getClusterAPIServer(), "kubernetes", k.localKubeVersion())
 	if err != nil {
 		return fmt.Errorf("failed to generate kubeconfig: %v", err)
 	}

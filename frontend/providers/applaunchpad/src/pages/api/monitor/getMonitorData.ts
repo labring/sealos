@@ -87,6 +87,32 @@ const AdapterChartData: Record<
       };
     });
     return newDataArray;
+  },
+  size_n: (data: MonitorServiceResult) => {
+    const newDataArray = data.data.result.map((item) => {
+      let name = item.metric.persistentvolumeclaim;
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
+      return {
+        name: name,
+        xData: xData,
+        yData: yData
+      };
+    });
+    return newDataArray;
+  },
+  avail_n: (data: MonitorServiceResult) => {
+    const newDataArray = data.data.result.map((item) => {
+      let name = item.metric.persistentvolumeclaim;
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
+      return {
+        name: name,
+        xData: xData,
+        yData: yData
+      };
+    });
+    return newDataArray;
   }
 };
 

@@ -38,11 +38,29 @@ import {
   LaunchpadApplicationSchema,
   LaunchCommandSchema,
   ImageSchema,
-  imageRegistrySchema,
-  resourceConverters
+  imageRegistrySchema
 } from './schema';
+import {
+  parseK8sQuantityOrZero,
+  publicCpuCoresToQuantity,
+  publicMemoryGiToQuantity,
+  quantityToPublicCpuCores,
+  quantityToPublicMemoryGi
+} from '@/utils/resourceQuantity';
+import { APP_NAME_BASE_MAX_LENGTH, APP_GENERATED_NAME_PATTERN } from '@/utils/appNameValidation';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+const AppCreateNameSchema = z
+  .string()
+  .min(1, { message: 'App name cannot be empty' })
+  .max(APP_NAME_BASE_MAX_LENGTH, {
+    message: `App name must be ${APP_NAME_BASE_MAX_LENGTH} characters or less`
+  })
+  .regex(APP_GENERATED_NAME_PATTERN, {
+    message:
+      'App name must start with a lowercase letter, contain only lowercase letters, digits, or hyphens, and end with a lowercase letter or digit'
+  });
 
 export const GetAppByAppNameQuerySchema = z.object({
   name: z.string().min(1, { message: 'name cannot be empty' })
@@ -301,7 +319,7 @@ export const GetAppPodsByAppNameResponseSchema = z.array(PodDetailTypeSchema);
 
 export const CreateLaunchpadRequestSchema = z
   .object({
-    name: z.string().default('hello-world').openapi({
+    name: AppCreateNameSchema.default('hello-world').openapi({
       description: 'Application name (must be unique) - was: appName'
     }),
     image: ImageSchema.default({
@@ -358,8 +376,8 @@ export const CreateLaunchpadRequestSchema = z
 export function transformToLegacySchema(
   standardRequest: z.infer<typeof CreateLaunchpadRequestSchema>
 ): AppEditType {
-  const cpuValue = resourceConverters.cpuToMillicores(standardRequest.resource.cpu);
-  const memoryValue = resourceConverters.memoryToMB(standardRequest.resource.memory);
+  const cpuValue = publicCpuCoresToQuantity(standardRequest.resource.cpu);
+  const memoryValue = publicMemoryGiToQuantity(standardRequest.resource.memory);
 
   const networks = standardRequest.ports?.map((port) => {
     const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(port.protocol);
@@ -446,13 +464,9 @@ export function transformToLegacySchema(
 
   const storeList =
     standardRequest.storage?.map((storage) => {
-      let sizeValue = 1;
-      if (storage.size) {
-        const match = storage.size.match(/^(\d+)/);
-        if (match) {
-          sizeValue = parseInt(match[1]);
-        }
-      }
+      const sizeValue = storage.size
+        ? parseK8sQuantityOrZero(storage.size)
+        : parseK8sQuantityOrZero('1Gi');
       return {
         name: storage.name,
         path: storage.path,
@@ -510,8 +524,8 @@ export function transformFromLegacySchema(
     },
     resource: {
       replicas: legacyData.hpa?.use ? undefined : legacyData.replicas || 1,
-      cpu: resourceConverters.millicoresToCpu(legacyData.cpu || 200),
-      memory: resourceConverters.mbToMemory(legacyData.memory || 256),
+      cpu: quantityToPublicCpuCores(legacyData.cpu),
+      memory: quantityToPublicMemoryGi(legacyData.memory),
       gpu: legacyData.gpu
         ? {
             vendor: legacyData.gpu.manufacturers,
@@ -564,7 +578,11 @@ export function transformFromLegacySchema(
       legacyData.storeList?.map((store) => ({
         name: store.name,
         path: store.path,
-        size: `${store.value || 1}Gi`
+        size: (store.value || parseK8sQuantityOrZero('1Gi')).formatForDisplay({
+          format: 'BinarySI',
+          scale: 'auto',
+          digits: 4
+        })
       })) || [],
     kind: legacyData.kind || 'deployment',
 

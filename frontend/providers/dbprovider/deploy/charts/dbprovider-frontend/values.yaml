@@ -1,0 +1,94 @@
+# Default values for dbprovider-frontend helm chart.
+
+image: ghcr.io/labring/sealos-dbprovider-frontend:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+fullnameOverride: "dbprovider-frontend"
+
+replicaCount: 1
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  className: nginx
+  host: ""
+  annotations: {}
+
+dbproviderConfig:
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  httpPort: ""
+  disableHttps: false
+  certSecretName: "wildcard-cert"
+  monitorUrl: "http://database-monitor.sealos.svc.cluster.local:9090"
+  minioUrl: ""
+  minioAccessKey: ""
+  minioSecretKey: ""
+  minioPort: 9000
+  minioUseSSL: false
+  minioBucketName: "file-migration"
+  migrateFileFetchFileImage: "quay.io/minio/mc:latest"
+  migrateFileImportDataImage: "sealos.hub:5000/db-import-client:latest"
+  guideEnabled: true
+  billingUrl: "http://account-service.account-system.svc:2333"
+  billingSecret: ""
+  alertingUrl: "http://database-alert-service.sealos.svc.cluster.local:8000"
+  alertingSecret: ""
+  vlogsBaseUrl: "http://service-vlogs.sealos.svc.cluster.local:8428"
+  migrationJobCPURequirement: 2000
+  migrationJobMemoryRequirement: 4096
+  dumpImportJobCPURequirement: 2000
+  dumpImportJobMemoryRequirement: 4096
+  backupJobCPURequirement: 300
+  backupJobMemoryRequirement: 256
+  backupEnabled: false
+  showDocument: true
+  managedDbEnabled: false
+  fileImportEnabled: false
+  currencySymbol: "shellCoin"
+  forcedStorageClassName: ""
+  storageMaxSize: 300
+  customScripts: []
+  eventAnalysisEnabled: false
+  eventAnalysisUrl: "https://fastgpt.run/api/openapi"
+  eventAnalysisModelId: "6455c433f437e55c638e630c"
+  eventAnalysisFastGPTKey: ""
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - dbprovider-frontend
+          topologyKey: "kubernetes.io/hostname"

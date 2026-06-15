@@ -1,14 +1,21 @@
-import { appDeployKey, ProtocolList } from '@/constants/app';
+import { appDeployKey } from '@/constants/app';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApplicationProtocolType } from '@/types/app';
+import { buildExternalUrl } from '@/utils/network-url';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Config } from '@/config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { appName } = req.query as { appName: string };
+    const config = Config();
+    const accessConfig = {
+      disableHttps: config.cloud.disableHttps,
+      cloudPort: config.cloud.port,
+      httpPort: config.cloud.httpPort
+    };
     if (!appName) {
       throw new Error('appName is empty');
     }
@@ -38,15 +45,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const rule = item.spec.rules[0];
         const host = rule.host;
+        if (!host) {
+          return { ready: false, url: '/', error: 'Invalid ingress host' };
+        }
         const backendProtocol = item?.metadata?.annotations?.[
           'nginx.ingress.kubernetes.io/backend-protocol'
         ] as ApplicationProtocolType;
 
-        const fetchUrl = `https://${host}`;
-        const protocol =
-          ProtocolList.find((item) => item.value === backendProtocol)?.label || 'https://';
-        const portSuffix = Config().cloud.port !== undefined ? `:${Config().cloud.port}` : '';
-        const url = `${protocol}${host}${portSuffix}`;
+        const fetchUrl = buildExternalUrl({
+          protocol: 'HTTP',
+          host,
+          config: accessConfig
+        });
+        const url = buildExternalUrl({
+          protocol: backendProtocol,
+          host,
+          config: accessConfig
+        });
 
         try {
           const response = await fetch(fetchUrl);

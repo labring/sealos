@@ -1,5 +1,6 @@
 import { Config } from '@/config';
 import { jsonRes } from '@/services/backend/response';
+import { resolveDataflowEnabled } from '@/services/backend/dataflow';
 import { ClientAppConfigSchema } from '@/types/config';
 import {
   isServerMisconfiguredError,
@@ -7,8 +8,10 @@ import {
 } from '@sealos/shared/server/config';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export function getClientAppConfigServer() {
+export async function getClientAppConfigServer() {
   const cfg = Config();
+  const dataflowEnabled = await resolveDataflowEnabled();
+
   return validateClientAppConfigOrThrow(ClientAppConfigSchema, {
     domain: cfg.cloud.domain,
     desktopDomain: cfg.cloud.desktopDomain,
@@ -27,10 +30,7 @@ export function getClientAppConfigServer() {
     backupJobCpuMillicores: cfg.dbprovider.backup.jobCpuMillicores,
     backupJobMemoryMiB: cfg.dbprovider.backup.jobMemoryMiB,
     billingUrl: cfg.dbprovider.components.billing.url,
-    chat2dbEnabled: cfg.dbprovider.components.chat2db.enabled,
-    chat2dbAesKey: cfg.dbprovider.components.chat2db.aesKey,
-    chat2dbClientDomainName: cfg.dbprovider.components.chat2db.clientDomainName,
-    chat2dbGatewayDomainName: cfg.dbprovider.components.chat2db.gatewayDomainName,
+    dataflowEnabled,
     eventAnalysisEnabled: cfg.dbprovider.components.eventAnalysis.enabled,
     customScripts: cfg.dbprovider.ui.customScripts
   });
@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     jsonRes(res, {
       code: 200,
-      data: getClientAppConfigServer()
+      data: await getClientAppConfigServer()
     });
   } catch (error) {
     if (isServerMisconfiguredError(error)) {

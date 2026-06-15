@@ -87,6 +87,25 @@ const { lng } = await sealosApp.getLanguage();
 // lng: 'zh' | 'en' | other language codes
 ```
 
+### Open Desktop App
+
+```typescript
+// Open an app in a small desktop window
+await sealosApp.openApp({
+  appKey: 'system-costcenter',
+  appSize: 'windowed'
+});
+
+// Open an app with route, query, and message data
+await sealosApp.openApp({
+  appKey: 'system-template',
+  pathname: '/instance',
+  query: { instanceName: 'demo' },
+  messageData: { source: 'my-app' },
+  appSize: 'maximized'
+});
+```
+
 ### Event Communication
 
 ```typescript
@@ -157,6 +176,7 @@ createMasterAPP(allowedOrigins);
 | ----------------------------- | ------------------ | ------------------------ | ---------------------------- |
 | `getSession()`                | -                  | `Promise<SessionV1>`     | Get user session information |
 | `getLanguage()`               | -                  | `Promise<{lng: string}>` | Get language settings        |
+| `openApp(options)`            | `OpenAppOptions`   | `Promise<any>`           | Open a desktop app           |
 | `runEvents(name, data)`       | `string, any`      | `Promise<any>`           | Trigger main app events      |
 | `addAppEventListen(name, fn)` | `string, function` | `function`               | Listen to main app events    |
 

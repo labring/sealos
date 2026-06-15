@@ -1,0 +1,58 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }}; img-src * data: blob: resource: *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }}; connect-src * ws: wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' {{ include "applaunchpad-frontend.cloudOrigin" . }} {{ include "applaunchpad-frontend.wildcardCloudOrigin" . }}";
+      more_set_headers "X-Xss-Protection: 1; mode=block";
+    higress.io/response-header-control-remove: X-Frame-Options
+    higress.io/response-header-control-update: |
+      Content-Security-Policy "default-src * blob: data: *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }}; img-src * data: blob: resource: *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }}; connect-src * ws: wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} {{ .Values.applaunchpadConfig.cloudDomain }}{{ include "applaunchpad-frontend.portSuffix" . }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' {{ include "applaunchpad-frontend.cloudOrigin" . }} {{ include "applaunchpad-frontend.wildcardCloudOrigin" . }}"
+      X-Xss-Protection "1; mode=block"
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  name: {{ include "applaunchpad-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ include "applaunchpad-frontend.host" . | quote }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: {{ include "applaunchpad-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+  {{- if not (eq (toString .Values.applaunchpadConfig.disableHttps) "true") }}
+  tls:
+    - hosts:
+        - {{ include "applaunchpad-frontend.host" . | quote }}
+      secretName: {{ .Values.applaunchpadConfig.certSecretName | quote }}
+  {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+  name: applaunchpad-challenge
+  namespace: {{ .Release.Namespace }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: ""
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ include "applaunchpad-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+            path: /api/.well-known/applaunchpad-domain-challenge
+            pathType: Prefix

@@ -53,6 +53,19 @@ import QuotaBox from './QuotaBox';
 import type { StoreType } from './StoreModal';
 import { NetworkSection } from './NetworkSection';
 import { mountPathToConfigMapKey } from '@/utils/tools';
+import {
+  cpuMillicoresToQuantity,
+  memoryMiToQuantity,
+  quantityToCpuMillicores,
+  quantityToMemoryMi,
+  quantityToStorageGi,
+  storageGiToQuantity
+} from '@/utils/resourceQuantity';
+import {
+  APP_NAME_BASE_MAX_LENGTH,
+  APP_NAME_BASE_PATTERN,
+  isValidAppNameBase
+} from '@/utils/appNameValidation';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
@@ -91,6 +104,16 @@ const Form = ({
     getValues,
     formState: { errors }
   } = formHook;
+
+  const getCpuMillicores = useCallback(
+    () => quantityToCpuMillicores(getValues('cpu')),
+    [getValues]
+  );
+  const getMemoryMi = useCallback(() => quantityToMemoryMi(getValues('memory')), [getValues]);
+  const getStorageGiTotal = useCallback(
+    () => getValues('storeList').reduce((sum, item) => sum + quantityToStorageGi(item.value), 0),
+    [getValues]
+  );
 
   const { fields: envs, replace: replaceEnvs } = useFieldArray({
     control,
@@ -164,8 +187,8 @@ const Form = ({
     if (!storageQuota) return 0;
 
     const newlyUsedStorage =
-      storeList.reduce((sum, item) => sum + item.value, 0) -
-      existingStores.reduce((sum, item) => sum + item.value, 0);
+      storeList.reduce((sum, item) => sum + quantityToStorageGi(item.value), 0) -
+      existingStores.reduce((sum, item) => sum + quantityToStorageGi(item.value), 0);
 
     return (
       (storageQuota.limit - storageQuota.used) / resourcePropertyMap.storage.scale -
@@ -262,8 +285,8 @@ const Form = ({
       }
     }
 
-    const cpu = getValues('cpu');
-    const memory = getValues('memory');
+    const cpu = getCpuMillicores();
+    const memory = getMemoryMi();
 
     const cpuList = formSliderListConfig[key].cpu;
     const memoryList = formSliderListConfig[key].memory;
@@ -292,7 +315,7 @@ const Form = ({
         gpuAmount: getValues('gpu.amount')
       })
     };
-  }, [formSliderListConfig, getValues]);
+  }, [formSliderListConfig, getCpuMillicores, getMemoryMi, getValues]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const SliderList = useMemo(() => countSliderList(), [already, refresh]);
@@ -410,9 +433,9 @@ const Form = ({
                       ? [getValues('hpa.minReplicas') || 1, getValues('hpa.maxReplicas') || 2]
                       : [getValues('replicas') || 1, getValues('replicas') || 1]
                   }
-                  cpu={getValues('cpu')}
-                  memory={getValues('memory')}
-                  storage={getValues('storeList').reduce((sum, item) => sum + item.value, 0)}
+                  cpu={getCpuMillicores()}
+                  memory={getMemoryMi()}
+                  storage={getStorageGiTotal()}
                   gpu={
                     !!getValues('gpu.type')
                       ? {
@@ -452,29 +475,42 @@ const Form = ({
                   disabled={isEdit}
                   title={isEdit ? t('Not allowed to change app name') || '' : ''}
                   autoFocus={true}
-                  maxLength={60}
-                  placeholder={
-                    t(
-                      'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
-                    ) || ''
-                  }
-                  {...register('appName', {
-                    required: t('App Name is required') || '',
-                    maxLength: 60,
-                    pattern: {
-                      value: /^[a-z]([-a-z0-9]*[a-z0-9])?$/,
-                      message: 'invalid'
-                    }
-                  })}
+                  maxLength={isEdit ? undefined : APP_NAME_BASE_MAX_LENGTH}
+                  placeholder={t('Enter an app name.') || ''}
+                  {...register(
+                    'appName',
+                    isEdit
+                      ? {}
+                      : {
+                          required: t('App Name is required') || '',
+                          maxLength: {
+                            value: APP_NAME_BASE_MAX_LENGTH,
+                            message: t('App name base length limit', {
+                              length: APP_NAME_BASE_MAX_LENGTH
+                            })
+                          },
+                          pattern: {
+                            value: APP_NAME_BASE_PATTERN,
+                            message: 'invalid'
+                          },
+                          validate: (value) => isValidAppNameBase(value) || 'invalid'
+                        }
+                  )}
                 />
                 {errors.appName && (
                   <div className="text-sm text-red-500">
-                    {errors.appName.type === 'pattern' ? (
+                    {errors.appName.type === 'pattern' || errors.appName.type === 'validate' ? (
                       <>
                         <p>{t('Invalid name')}</p>
                         <ul className="list-disc list-inside ml-1 mt-1">
                           <li>{t('Use only lowercase letters, numbers, or hyphens (-)')}</li>
-                          <li>{t('Must start/end with a letter or number')}</li>
+                          <li>{t('Must start with a lowercase letter')}</li>
+                          <li>{t('Must end with a lowercase letter or number')}</li>
+                          <li>
+                            {t('App name base length limit', {
+                              length: APP_NAME_BASE_MAX_LENGTH
+                            })}
+                          </li>
                         </ul>
                       </>
                     ) : (
@@ -830,8 +866,8 @@ const Form = ({
                         if (actualType === '' || (selected && inventory > 0)) {
                           setValue('gpu.type', actualType);
                           const sliderList = countSliderList();
-                          setValue('cpu', sliderList.cpu[1].value);
-                          setValue('memory', sliderList.memory[1].value);
+                          setValue('cpu', cpuMillicoresToQuantity(sliderList.cpu[1].value));
+                          setValue('memory', memoryMiToQuantity(sliderList.memory[1].value));
                         }
                       }}
                     >
@@ -886,8 +922,14 @@ const Form = ({
                                         onClick={() => {
                                           setValue('gpu.amount', item.value);
                                           const sliderList = countSliderList();
-                                          setValue('cpu', sliderList.cpu[1].value);
-                                          setValue('memory', sliderList.memory[1].value);
+                                          setValue(
+                                            'cpu',
+                                            cpuMillicoresToQuantity(sliderList.cpu[1].value)
+                                          );
+                                          setValue(
+                                            'memory',
+                                            memoryMiToQuantity(sliderList.memory[1].value)
+                                          );
                                         }}
                                         className={`w-10 h-10 rounded-lg border text-sm font-normal transition-all ${
                                           getValues('gpu.amount') === item.value
@@ -936,9 +978,11 @@ const Form = ({
                 <div className="flex-1 flex flex-col gap-3 px-1">
                   <Slider
                     value={[
-                      SliderList.cpu.findIndex((item) => item.value === getValues('cpu')) ?? 0
+                      SliderList.cpu.findIndex((item) => item.value === getCpuMillicores()) ?? 0
                     ]}
-                    onValueChange={([val]) => setValue('cpu', SliderList.cpu[val].value)}
+                    onValueChange={([val]) =>
+                      setValue('cpu', cpuMillicoresToQuantity(SliderList.cpu[val].value))
+                    }
                     max={SliderList.cpu.length - 1}
                     min={0}
                     step={1}
@@ -947,9 +991,9 @@ const Form = ({
                     {SliderList.cpu.map((item, i) => (
                       <span
                         key={i}
-                        onClick={() => setValue('cpu', item.value)}
+                        onClick={() => setValue('cpu', cpuMillicoresToQuantity(item.value))}
                         className={`absolute w-10 text-center -translate-x-1/2 cursor-pointer hover:text-zinc-700 ${
-                          getValues('cpu') === item.value ? 'text-zinc-900 font-medium' : ''
+                          getCpuMillicores() === item.value ? 'text-zinc-900 font-medium' : ''
                         }`}
                         style={{
                           left:
@@ -967,7 +1011,7 @@ const Form = ({
                   {exceededQuotas.some(({ type }) => type === 'cpu') && (
                     <p className="text-sm text-red-500">
                       {t('cpu_exceeds_quota', {
-                        requested: getValues('cpu') / resourcePropertyMap.cpu.scale,
+                        requested: getCpuMillicores() / resourcePropertyMap.cpu.scale,
                         limit:
                           (exceededQuotas.find(({ type }) => type === 'cpu')?.limit ?? 0) /
                           resourcePropertyMap.cpu.scale,
@@ -986,9 +1030,11 @@ const Form = ({
                 <div className="flex-1 flex flex-col gap-3 px-1">
                   <Slider
                     value={[
-                      SliderList.memory.findIndex((item) => item.value === getValues('memory')) ?? 0
+                      SliderList.memory.findIndex((item) => item.value === getMemoryMi()) ?? 0
                     ]}
-                    onValueChange={([val]) => setValue('memory', SliderList.memory[val].value)}
+                    onValueChange={([val]) =>
+                      setValue('memory', memoryMiToQuantity(SliderList.memory[val].value))
+                    }
                     max={SliderList.memory.length - 1}
                     min={0}
                     step={1}
@@ -997,9 +1043,9 @@ const Form = ({
                     {SliderList.memory.map((item, i) => (
                       <span
                         key={i}
-                        onClick={() => setValue('memory', item.value)}
+                        onClick={() => setValue('memory', memoryMiToQuantity(item.value))}
                         className={`absolute w-10 text-center -translate-x-1/2 cursor-pointer hover:text-zinc-700 ${
-                          getValues('memory') === item.value ? 'text-zinc-900 font-medium' : ''
+                          getMemoryMi() === item.value ? 'text-zinc-900 font-medium' : ''
                         }`}
                         style={{
                           left:
@@ -1017,7 +1063,7 @@ const Form = ({
                   {exceededQuotas.some(({ type }) => type === 'memory') && (
                     <p className="text-sm text-red-500">
                       {t('memory_exceeds_quota', {
-                        requested: getValues('memory') / resourcePropertyMap.memory.scale,
+                        requested: getMemoryMi() / resourcePropertyMap.memory.scale,
                         limit:
                           (exceededQuotas.find(({ type }) => type === 'memory')?.limit ?? 0) /
                           resourcePropertyMap.memory.scale,
@@ -1247,7 +1293,9 @@ const Form = ({
                       type="button"
                       variant="outline"
                       className="h-10 min-w-[86px] shadow-none hover:bg-zinc-50"
-                      onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
+                      onClick={() =>
+                        setStoreEdit({ name: '', path: '', value: storageGiToQuantity(1) })
+                      }
                     >
                       <Plus className="w-4 h-4" />
                       {t('Add')}
@@ -1273,7 +1321,11 @@ const Form = ({
                               {item.path}
                             </p>
                             <p className="text-xs text-neutral-500 truncate block w-full">
-                              {item.value} Gi
+                              {item.value.formatForDisplay({
+                                format: 'BinarySI',
+                                scale: 'auto',
+                                digits: 4
+                              })}
                             </p>
                           </div>
                           <Button
@@ -1361,10 +1413,18 @@ const Form = ({
         <StoreModal
           defaultValue={storeEdit}
           isEditStore={!!existingStores.find((item) => storeEdit.path === item.path)}
-          minValue={existingStores.find((item) => storeEdit.path === item.path)?.value ?? 1}
+          minValue={
+            quantityToStorageGi(
+              existingStores.find((item) => storeEdit.path === item.path)?.value ??
+                storageGiToQuantity(1)
+            ) || 1
+          }
           maxValue={Math.min(
             // left quota - this one
-            storageQuotaLeft + (storeList.find((item) => item.id === storeEdit.id)?.value ?? 0),
+            storageQuotaLeft +
+              quantityToStorageGi(
+                storeList.find((item) => item.id === storeEdit.id)?.value ?? storageGiToQuantity(0)
+              ),
             // But not exceed the size cap
             config.pvcStorageMax
           )}

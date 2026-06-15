@@ -149,17 +149,6 @@ const BillingSchema = z.strictObject({
   secret: z.string().describe('Billing service secret (server-side only)')
 });
 
-/**
- * Chat2DB managed database configuration.
- */
-const Chat2DbSchema = z.strictObject({
-  enabled: z.boolean().describe('Whether the Chat2DB managed DB feature is on'),
-  aesKey: z.string().describe('AES encryption key for Chat2DB passwords (server-side only)'),
-  apiKey: z.string().describe('Chat2DB API key (server-side only)'),
-  clientDomainName: z.string().describe('Chat2DB client domain name'),
-  gatewayDomainName: z.string().describe('Chat2DB gateway domain name')
-});
-
 const ComponentsSchema = z.strictObject({
   monitoring: MonitoringSchema.describe('Prometheus monitoring service URL'),
   alerting: AlertSchema.describe('Database alert service configuration (server-side only)'),
@@ -172,8 +161,7 @@ const ComponentsSchema = z.strictObject({
   storage: MinioStorageSchema.describe('MinIO object storage configuration (server-side only)'),
   eventAnalysis: EventAnalysisSchema.describe(
     'FastGPT event analysis configuration (server-side only)'
-  ),
-  chat2db: Chat2DbSchema.describe('Chat2DB managed database feature configuration')
+  )
 });
 
 /**
@@ -222,10 +210,7 @@ export const ClientAppConfigSchema = z.strictObject({
   backupJobCpuMillicores: z.number(),
   backupJobMemoryMiB: z.number(),
   billingUrl: z.string(),
-  chat2dbEnabled: z.boolean(),
-  chat2dbAesKey: z.string(),
-  chat2dbClientDomainName: z.string(),
-  chat2dbGatewayDomainName: z.string(),
+  dataflowEnabled: z.boolean(),
   eventAnalysisEnabled: z.boolean(),
   customScripts: z.array(CustomScriptSchema)
 });

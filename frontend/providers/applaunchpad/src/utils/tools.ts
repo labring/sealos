@@ -138,13 +138,6 @@ export const atobSecretYaml = (secret?: string): AppEditType['secret'] => {
 };
 
 /**
- * print memory to Mi of Gi
- */
-export const printMemory = (val: number) => {
-  return val >= 1024 ? `${val / 1024} Gi` : `${val} Mi`;
-};
-
-/**
  * format pod createTime
  */
 export const formatPodTime = (createTimeStamp: Date = new Date()) => {

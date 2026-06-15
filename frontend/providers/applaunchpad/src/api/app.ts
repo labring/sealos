@@ -7,6 +7,8 @@ import { LogQueryPayload } from '@/pages/api/log/queryLogs';
 import { PodListQueryPayload } from '@/pages/api/log/queryPodList';
 import { NetworkMonitorDataResult } from '@/services/networkMonitorFetch';
 import { track } from '@sealos/gtm';
+import { Quantity } from '@sealos/shared';
+import { quantityFromJSONOrZero } from '@/utils/resourceQuantity';
 
 export const postDeployApp = (yamlList: string[], mode: 'create' | 'replace' = 'create') =>
   POST('/api/applyApp', { yamlList, mode });
@@ -34,11 +36,32 @@ export const delAppByName = (name: string) => {
   return DELETE('/api/delApp', { name });
 };
 
+const hydrateQuantity = (value: unknown): Quantity =>
+  value instanceof Quantity ? value : quantityFromJSONOrZero(value);
+
+const hydrateAppDetail = (app: AppDetailType): AppDetailType => ({
+  ...app,
+  cpu: hydrateQuantity(app.cpu),
+  memory: hydrateQuantity(app.memory),
+  storeList: app.storeList.map((store) => ({
+    ...store,
+    value: hydrateQuantity(store.value)
+  }))
+});
+
+const hydratePodDetail = (pod: PodDetailType): PodDetailType => ({
+  ...pod,
+  cpu: hydrateQuantity(pod.cpu),
+  memory: hydrateQuantity(pod.memory)
+});
+
 export const getAppByName = (name: string, mock = false) =>
-  GET<AppDetailType>(`/api/getAppByAppName?appName=${name}&mock=${mock}`);
+  GET<AppDetailType>(`/api/getAppByAppName?appName=${name}&mock=${mock}`).then(hydrateAppDetail);
 
 export const getAppPodsByAppName = (name: string) =>
-  GET<PodDetailType[]>('/api/getAppPodsByAppName', { name });
+  GET<PodDetailType[]>('/api/getAppPodsByAppName', { name }).then((pods) =>
+    pods.map(hydratePodDetail)
+  );
 
 export const getPodsMetrics = (podsName: string[]) =>
   POST<SinglePodMetrics[]>('/api/getPodsMetrics', { podsName }).then((item) =>

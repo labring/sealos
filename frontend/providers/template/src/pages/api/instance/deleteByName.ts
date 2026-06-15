@@ -6,10 +6,10 @@ import { jsonRes } from '@/services/backend/response';
 import { withErrorHandler } from '@/services/backend/middleware';
 import {
   deleteInstanceOnly,
+  deleteOwnerReferencedInstance,
   getInstanceOrThrow404,
   isInstanceOwnerReferencesReady,
-  legacyDeleteInstanceAll,
-  legacyDeletePersistentVolumeClaimsOnly
+  legacyDeleteInstanceAll
 } from '@/services/backend/instanceDelete';
 
 export default withErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -29,13 +29,7 @@ export default withErrorHandler(async function handler(req: NextApiRequest, res:
   }
 
   if (isInstanceOwnerReferencesReady(instance)) {
-    // [FIXME] StatefulSet PVCs are not auto-deleted by GC in current cluster versions.
-    // ! Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#persistentvolumeclaim-retention
-    // ! This manual PVC list+delete workaround can be replaced on Kubernetes >= 1.32
-    // ! after adopting StatefulSet `persistentVolumeClaimRetentionPolicy` in templates.
-    await legacyDeletePersistentVolumeClaimsOnly(k8s, instanceName);
-
-    await deleteInstanceOnly(k8s.k8sCustomObjects, k8s.namespace, instance.metadata.name);
+    await deleteOwnerReferencedInstance(k8s, instance.metadata.name);
     return jsonRes(res, { message: `Instance "${instanceName}" deleted successfully` });
   }
 

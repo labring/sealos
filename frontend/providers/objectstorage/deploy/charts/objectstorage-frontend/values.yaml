@@ -1,0 +1,71 @@
+# Default values for objectstorage-frontend helm chart.
+
+image: ghcr.io/labring/sealos-objectstorage-frontend:latest
+imagePullPolicy: Always
+
+imagePullSecrets: []
+fullnameOverride: "object-storage-frontend"
+
+replicaCount: 1
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  className: nginx
+  host: ""
+  annotations: {}
+
+objectstorageConfig:
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  httpPort: ""
+  disableHttps: false
+  certSecretName: "wildcard-cert"
+  monitorUrl: "http://object-storage-monitor.objectstorage-system.svc.cluster.local:9090/q"
+  billingUrl: ""
+  billingSecret: ""
+  appLaunchpadUrl: "http://applaunchpad-frontend.applaunchpad-frontend.svc.cluster.local:3000/api/v1alpha"
+  appTokenJwtKey: ""
+  hostingPodCpuMilliCores: 200
+  hostingPodMemoryMiB: 128
+  hostingAppNamePrefix: "static-host"
+  hostingNetworkProtocol: "HTTP"
+  hostingNetworkPort: 80
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2048Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - object-storage-frontend
+          topologyKey: "kubernetes.io/hostname"

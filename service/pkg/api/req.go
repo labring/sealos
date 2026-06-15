@@ -37,6 +37,8 @@ type VMRequest struct {
 	NS            string
 	Type          string
 	LaunchPadName string
+	Service       string
+	Port          string
 	PvcName       string
 	Range         VMRange
 }

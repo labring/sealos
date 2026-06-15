@@ -31,13 +31,28 @@ export const processEnvValue = (obj: any, labelName: string) => {
   });
 
   if (labelName) {
-    newDeployment.metadata = newDeployment.metadata || {};
-    newDeployment.metadata.labels = newDeployment.metadata.labels || {};
-    newDeployment.metadata.labels[templateDeployKey] = labelName;
+    injectTemplateDeployLabels(newDeployment, labelName);
   }
 
   return newDeployment;
 };
+
+export function injectTemplateDeployLabels(resource: any, instanceName: string): void {
+  resource.metadata = resource.metadata || {};
+  resource.metadata.labels = resource.metadata.labels || {};
+  resource.metadata.labels[templateDeployKey] = instanceName;
+
+  if (resource.kind !== 'StatefulSet') return;
+
+  forEach(resource.spec?.volumeClaimTemplates, (volumeClaimTemplate) => {
+    volumeClaimTemplate.metadata = volumeClaimTemplate.metadata || {};
+    volumeClaimTemplate.metadata.labels = volumeClaimTemplate.metadata.labels || {};
+    volumeClaimTemplate.metadata.labels[templateDeployKey] = instanceName;
+  });
+
+  // Future K8s 1.32+ only clusters can consider injecting
+  // persistentVolumeClaimRetentionPolicy.whenDeleted=Delete here.
+}
 
 export function deepSearch(obj: any): string {
   if (has(obj, 'message')) {

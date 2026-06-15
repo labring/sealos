@@ -5,6 +5,16 @@ export const noGpuSliderKey = 'NoGpu';
 export const maxReplicasKey = 'deploy.cloud.sealos.io/maxReplicas';
 export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';
 export const appDeployKey = 'cloud.sealos.io/app-deploy-manager';
+/**
+ * Legacy Applaunchpad application label used by old templates and StatefulSet PVCs.
+ *
+ * Keep new Template lifecycle logic on `templateDeployKey`; use this label only for
+ * legacy cleanup/read paths that must find resources created before Template injected
+ * instance-level labels into `volumeClaimTemplates`.
+ *
+ * @deprecated Prefer `templateDeployKey` for Template instance ownership.
+ */
+export const legacyAppLabelKey = 'app';
 export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`;
 export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
 export const gpuResourceKey = 'nvidia.com/gpu';

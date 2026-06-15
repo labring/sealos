@@ -9,6 +9,9 @@ import type { AppPatchPropsType } from '@/types/app';
 import { initK8s } from 'sealos-desktop-sdk/service';
 import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
 import type { V1Service } from '@kubernetes/client-node';
+import { buildExternalUrl } from '@/utils/network-url';
+import { Config } from '@/config';
+import { storageAnnotationToQuantity } from '@/utils/resourceQuantity';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -61,10 +64,20 @@ async function updateAppCRUrl(
       return;
     }
 
+    const config = Config();
+    const newUrl = buildExternalUrl({
+      protocol: 'HTTP',
+      host,
+      config: {
+        disableHttps: config.cloud.disableHttps,
+        cloudPort: config.cloud.port,
+        httpPort: config.cloud.httpPort
+      }
+    });
     const appCrUrlPatch = {
       op: 'replace',
       path: '/spec/data/url',
-      value: `https://${host}`
+      value: newUrl
     };
 
     await k8sCustomObjects.patchNamespacedCustomObject(
@@ -80,7 +93,7 @@ async function updateAppCRUrl(
       { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
     );
 
-    infoLog('Successfully updated AppCR URL', { newUrl: `https://${host}` });
+    infoLog('Successfully updated AppCR URL', { newUrl });
   } catch (error) {
     errLog('Failed to update AppCR URL', error);
   }
@@ -300,26 +313,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           return k8sCore.deleteNamespacedPersistentVolumeClaim(pvc.metadata?.name || '', namespace);
         }
         // check storage change
+        const currentStorageQuantity = storageAnnotationToQuantity(
+          pvc.metadata?.annotations?.value
+        );
+        const nextStorageQuantity = storageAnnotationToQuantity(
+          volume.metadata?.annotations?.value
+        );
         if (
           pvc.metadata?.name &&
           pvc.metadata?.annotations?.value &&
           pvc.spec?.resources?.requests?.storage &&
-          pvc.metadata?.annotations?.value !== volume.metadata?.annotations?.value
+          !currentStorageQuantity.equals(nextStorageQuantity)
         ) {
+          const nextStorageDisplay = nextStorageQuantity.formatForDisplay({
+            format: 'BinarySI',
+            scale: 'auto',
+            digits: 4
+          });
           const pvcName = pvc.metadata.name;
           const jsonPatch = [
             {
               op: 'replace',
               path: '/spec/resources/requests/storage',
-              value: `${volume.metadata?.annotations?.value}Gi`
+              value: nextStorageQuantity.withFormat('BinarySI').toString()
             },
             {
               op: 'replace',
               path: '/metadata/annotations/value',
-              value: `${volume.metadata?.annotations?.value}`
+              value: nextStorageDisplay
             }
           ];
-          infoLog(`replace ${pvcName} storage: ${volume.metadata?.annotations?.value}Gi`);
+          infoLog(`replace ${pvcName} storage: ${nextStorageDisplay}`);
           return k8sCore
             .patchNamespacedPersistentVolumeClaim(
               pvcName,

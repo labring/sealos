@@ -9,6 +9,23 @@ export function K8sApiDefault(): k8s.KubeConfig {
   return kc;
 }
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error(`Timed out after ${timeoutMs} ms.`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
+}
+
 async function watchClusterObject({
   kc,
   group,
@@ -28,12 +45,16 @@ async function watchClusterObject({
 }) {
   let lastbody;
   const startTime = Date.now();
+  const deadline = startTime + timeout;
   const client = kc.makeApiClient(k8s.CustomObjectsApi);
-  while (true) {
-    await new Promise((resolve) => setTimeout(resolve, interval));
+  while (Date.now() < deadline) {
     let body = null;
     try {
-      const data = await client.getClusterCustomObjectStatus(group, version, plural, name);
+      const remainingTime = deadline - Date.now();
+      const data = await withTimeout(
+        client.getClusterCustomObjectStatus(group, version, plural, name),
+        remainingTime
+      );
       body = data.body;
       if (
         'status' in body &&
@@ -46,13 +67,14 @@ async function watchClusterObject({
         return body.status.kubeConfig as string;
       }
     } catch (err) {
-      console.error(err);
+      if (Date.now() < deadline) {
+        console.error(err);
+      }
     }
-    if (Date.now() - startTime >= timeout) {
-      console.error(`Timed out after ${timeout} ms.`);
-      break;
-    }
+    const sleepTime = Math.min(interval, deadline - Date.now());
+    if (sleepTime > 0) await sleep(sleepTime);
   }
+  console.error(`Timed out after ${timeout} ms.`);
 }
 
 async function watchCustomClusterObject({

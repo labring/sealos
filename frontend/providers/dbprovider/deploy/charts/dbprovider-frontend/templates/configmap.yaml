@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dbprovider-frontend.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "dbprovider-frontend.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    cloud:
+      domain: {{ .Values.dbproviderConfig.cloudDomain | quote }}
+      desktopDomain: {{ .Values.dbproviderConfig.cloudDomain | quote }}
+    dbprovider:
+      features:
+        guide: {{ .Values.dbproviderConfig.guideEnabled }}
+        showDocument: {{ .Values.dbproviderConfig.showDocument }}
+        fileImport: {{ .Values.dbproviderConfig.fileImportEnabled }}
+      ui:
+        currencySymbol: {{ .Values.dbproviderConfig.currencySymbol | quote }}
+        customScripts:
+          {{- toYaml .Values.dbproviderConfig.customScripts | nindent 10 }}
+      storage:
+        forcedClassName: {{ if .Values.dbproviderConfig.forcedStorageClassName }}{{ .Values.dbproviderConfig.forcedStorageClassName | quote }}{{ else }}null{{ end }}
+        maxSize: {{ .Values.dbproviderConfig.storageMaxSize }}
+      components:
+        monitoring:
+          url: {{ .Values.dbproviderConfig.monitorUrl | quote }}
+        alerting:
+          url: {{ .Values.dbproviderConfig.alertingUrl | quote }}
+          secret: {{ .Values.dbproviderConfig.alertingSecret | quote }}
+        billing:
+          url: {{ .Values.dbproviderConfig.billingUrl | quote }}
+          secret: {{ .Values.dbproviderConfig.billingSecret | quote }}
+        logging:
+          url: {{ .Values.dbproviderConfig.vlogsBaseUrl | quote }}
+        storage:
+          url: {{ .Values.dbproviderConfig.minioUrl | quote }}
+          port: {{ .Values.dbproviderConfig.minioPort }}
+          useSSL: {{ .Values.dbproviderConfig.minioUseSSL }}
+          bucketName: {{ .Values.dbproviderConfig.minioBucketName | quote }}
+          accessKey: {{ .Values.dbproviderConfig.minioAccessKey | quote }}
+          secretKey: {{ .Values.dbproviderConfig.minioSecretKey | quote }}
+        eventAnalysis:
+          enabled: {{ .Values.dbproviderConfig.eventAnalysisEnabled }}
+          url: {{ .Values.dbproviderConfig.eventAnalysisUrl | quote }}
+          modelId: {{ .Values.dbproviderConfig.eventAnalysisModelId | quote }}
+          fastGPTKey: {{ .Values.dbproviderConfig.eventAnalysisFastGPTKey | quote }}
+      migration:
+        fetchFileImage: {{ .Values.dbproviderConfig.migrateFileFetchFileImage | quote }}
+        importDataImage: {{ .Values.dbproviderConfig.migrateFileImportDataImage | quote }}
+        jobCpuMillicores: {{ .Values.dbproviderConfig.migrationJobCPURequirement }}
+        jobMemoryMiB: {{ .Values.dbproviderConfig.migrationJobMemoryRequirement }}
+        dumpImportCpuMillicores: {{ .Values.dbproviderConfig.dumpImportJobCPURequirement }}
+        dumpImportMemoryMiB: {{ .Values.dbproviderConfig.dumpImportJobMemoryRequirement }}
+      backup:
+        enabled: {{ .Values.dbproviderConfig.backupEnabled }}
+        jobCpuMillicores: {{ .Values.dbproviderConfig.backupJobCPURequirement }}
+        jobMemoryMiB: {{ .Values.dbproviderConfig.backupJobMemoryRequirement }}

@@ -64,6 +64,23 @@ export enum DBStatusEnum {
   Deleting = 'Deleting'
 }
 
+export const DB_OPERATION_LOCKED_STATUSES = new Set<`${DBStatusEnum}`>([
+  DBStatusEnum.Creating,
+  DBStatusEnum.Starting,
+  DBStatusEnum.Stopping,
+  DBStatusEnum.Updating,
+  DBStatusEnum.SpecUpdating,
+  DBStatusEnum.Rebooting,
+  DBStatusEnum.Upgrade,
+  DBStatusEnum.VerticalScaling,
+  DBStatusEnum.VolumeExpanding,
+  DBStatusEnum.UnKnow,
+  DBStatusEnum.Deleting
+]);
+
+export const isDBOperationLocked = (status?: `${DBStatusEnum}`) =>
+  !!status && DB_OPERATION_LOCKED_STATUSES.has(status);
+
 export enum ReconfigStatus {
   Deleting = 'Deleting',
   Creating = 'Creating',
@@ -358,7 +375,6 @@ export const defaultDBEditValue: DBEditType = {
   parameterConfig: {
     maxConnections: undefined,
     timeZone: 'UTC',
-    lowerCaseTableNames: '0',
     isMaxConnectionsCustomized: false
   }
 };

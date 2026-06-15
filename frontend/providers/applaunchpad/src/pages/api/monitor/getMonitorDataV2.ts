@@ -26,7 +26,10 @@ const adaptMonitorData = (
   }
 
   return response.data.result.map((item) => {
-    const name = type === 'storage' ? item.metric.persistentvolumeclaim : item.metric.pod;
+    const name =
+      type === 'storage' || type === 'size_n' || type === 'avail_n'
+        ? item.metric.persistentvolumeclaim
+        : item.metric.pod;
 
     // handle range query (matrix) and instant query (vector)
     if (response.data.resultType === 'matrix' && item.values) {
@@ -77,7 +80,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       'memory',
       'average_cpu',
       'average_memory',
-      'storage'
+      'storage',
+      'size_n',
+      'avail_n'
     ];
     if (!validTypes.includes(queryKey as MonitorQueryType)) {
       return jsonRes(res, {
