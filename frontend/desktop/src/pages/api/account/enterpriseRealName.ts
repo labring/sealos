@@ -196,7 +196,7 @@ async function handlePost(
 
     const data = validationResult.data;
 
-    const globalToken = generateLegacyGlobalToken({
+    const globalToken = await generateLegacyGlobalToken({
       userUid: payload.userUid,
       userId: payload.userId,
       regionUid: payload.regionUid
@@ -346,7 +346,7 @@ async function handleGetBanks(
     const config: UnionPay3060Config = realNameAuthProvider.config as UnionPay3060Config;
     const enterpriseRealNameAuthApi = config.api;
 
-    const globalToken = generateLegacyGlobalToken({
+    const globalToken = await generateLegacyGlobalToken({
       userUid: payload.userUid,
       userId: payload.userId,
       regionUid: payload.regionUid

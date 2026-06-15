@@ -187,7 +187,7 @@ export const exchangeDeviceCodeForToken = async (
     throw new OAuth2HttpError(400, 'invalid_grant');
   }
 
-  const accessToken = generateOAuth2AccessToken(
+  const accessToken = await generateOAuth2AccessToken(
     {
       sub: user.uid,
       user_id: user.id,
@@ -196,7 +196,7 @@ export const exchangeDeviceCodeForToken = async (
     },
     `${ACCESS_TOKEN_EXPIRES_IN_SECONDS}s`
   );
-  const refreshToken = generateOAuth2RefreshToken(
+  const refreshToken = await generateOAuth2RefreshToken(
     {
       sub: user.uid,
       user_id: user.id,
@@ -248,7 +248,7 @@ export const exchangeRefreshTokenForToken = async (
     throw new OAuth2HttpError(400, 'invalid_grant', 'Refresh token does not match client');
   }
 
-  const accessToken = generateOAuth2AccessToken(
+  const accessToken = await generateOAuth2AccessToken(
     {
       sub: refreshPayload.sub,
       user_id: refreshPayload.user_id,
@@ -258,7 +258,7 @@ export const exchangeRefreshTokenForToken = async (
     },
     `${ACCESS_TOKEN_EXPIRES_IN_SECONDS}s`
   );
-  const refreshToken = generateOAuth2RefreshToken(
+  const refreshToken = await generateOAuth2RefreshToken(
     {
       sub: refreshPayload.sub,
       user_id: refreshPayload.user_id,

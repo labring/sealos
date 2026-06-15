@@ -498,7 +498,7 @@ export const getGlobalToken = async ({
 
   // user is deleted or banned
   if (user.status !== UserStatus.NORMAL_USER) return null;
-  const token = generateGlobalAccessToken({
+  const token = await generateGlobalAccessToken({
     sub: user.uid,
     user_id: user.id,
     preferred_username: user.nickname

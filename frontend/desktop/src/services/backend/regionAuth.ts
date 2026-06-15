@@ -347,8 +347,8 @@ export async function getRegionToken({
   const { kubeconfig, payload } = result;
   return {
     kubeconfig,
-    token: generateRegionalToken(payload),
-    appToken: generateAppToken(payload)
+    token: await generateRegionalToken(payload),
+    appToken: await generateAppToken(payload)
   };
 }
 
@@ -573,8 +573,8 @@ export async function initRegionToken({
   const { kubeconfig, payload } = result;
   return {
     kubeconfig,
-    token: generateRegionalToken(payload),
-    appToken: generateAppToken(payload)
+    token: await generateRegionalToken(payload),
+    appToken: await generateAppToken(payload)
   };
 }
 

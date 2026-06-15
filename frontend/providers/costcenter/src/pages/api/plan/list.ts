@@ -5,7 +5,7 @@ import { PlanListResponse } from '@/types/plan';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const client = makeAPIClient(null);
+    const client = await makeAPIClient(null);
 
     const response = await client.post<PlanListResponse>(
       '/account/v1alpha1/workspace-subscription/plan-list'

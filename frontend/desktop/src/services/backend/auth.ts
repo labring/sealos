@@ -9,8 +9,8 @@ import {
   OAuth2RefreshTokenPayload,
   OnceTokenPayload
 } from '@/types/token';
+import { signJwt, verifyJwt as verifySharedJwt } from '@sealos/shared/server/jwt';
 import { IncomingHttpHeaders } from 'http';
-import { sign, verify } from 'jsonwebtoken';
 
 const regionUID = () => global.AppConfig?.cloud.regionUID || '123456789';
 export const globalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';
@@ -129,19 +129,11 @@ export const verifyGlobalToken = async (
   return null;
 };
 
+const signPayload = <T extends object>(payload: T, secret: string, expiresIn: string) =>
+  signJwt(payload as Record<string, unknown>, secret, { expiresIn });
+
 const verifyJwt = <T extends object = JWTPayload>(token: string | undefined, secret: string) =>
-  new Promise<T | null>((resolve) => {
-    if (!token) return resolve(null);
-    verify(token, secret, (err, payload) => {
-      if (err) {
-        resolve(null);
-      } else if (!payload) {
-        resolve(null);
-      } else {
-        resolve(payload as T);
-      }
-    });
-  });
+  verifySharedJwt(token, secret) as Promise<T | null>;
 
 export const verifyRegionalJwt = <T extends object = JWTPayload>(token?: string) =>
   verifyJwt<T>(token, regionalJwtSecret());
@@ -160,13 +152,13 @@ export const verifyAppToken = async (header: IncomingHttpHeaders) => {
 };
 
 export const generateBillingToken = (props: BillingTokenPayload) =>
-  sign(props, internalJwtSecret(), { expiresIn: '3600000' });
+  signPayload(props, internalJwtSecret(), '3600000');
 
 export const generateRegionalToken = (props: AccessTokenPayload) =>
-  sign(props, regionalJwtSecret(), { expiresIn: '7d' });
+  signPayload(props, regionalJwtSecret(), '7d');
 
 export const generateAppToken = (props: AccessTokenPayload) =>
-  sign(props, internalJwtSecret(), { expiresIn: '7d' });
+  signPayload(props, internalJwtSecret(), '7d');
 
 /**
  * Signs global token.
@@ -182,7 +174,7 @@ export const signGlobalToken = (props: GlobalJwtClaims, expiresIn?: string) => {
     ...props
   };
 
-  return sign(payload, globalJwtSecret(), { expiresIn: expiresIn ?? '7d' });
+  return signPayload(payload, globalJwtSecret(), expiresIn ?? '7d');
 };
 
 /**
@@ -199,7 +191,7 @@ export const generateLegacyGlobalToken = (props: GlobalTokenPayload, expiresIn?:
     // [FIXME] Should have a client_id in here but external services will reject the additional claim.
   };
 
-  return sign(payload, globalJwtSecret(), { expiresIn: expiresIn ?? '7d' });
+  return signPayload(payload, globalJwtSecret(), expiresIn ?? '7d');
 };
 
 /**
@@ -267,10 +259,10 @@ export const verifyOAuth2RefreshToken = (token?: string) =>
   verifyOAuth2TokenByType(token, REFRESH_TOKEN_TYPE);
 
 export const generateOnceToken = (props: OnceTokenPayload) =>
-  sign(props, regionalJwtSecret(), { expiresIn: '1800000' });
+  signPayload(props, regionalJwtSecret(), '1800000');
 
 export const generateCronJobToken = (props: CronJobTokenPayload) =>
-  sign(props, internalJwtSecret(), { expiresIn: '60000' });
+  signPayload(props, internalJwtSecret(), '60000');
 
 export const callBillingService = async (
   endpoint: string,
@@ -282,7 +274,7 @@ export const callBillingService = async (
     throw new Error('Billing service not configured');
   }
 
-  const billingToken = generateBillingToken(payload);
+  const billingToken = await generateBillingToken(payload);
   const regionDomain = body.regionDomain || global.AppConfig.cloud.domain;
   const requestBody = {
     ...body,

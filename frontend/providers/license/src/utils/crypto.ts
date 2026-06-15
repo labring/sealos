@@ -1,6 +1,6 @@
 import { LicenseToken } from '@/types';
+import { decodeJwt as decodeSharedJwt } from '@sealos/shared/server/jwt';
 import * as crypto from 'crypto';
-import * as jwt from 'jsonwebtoken';
 
 export const hashCrypto = (text: string): string => {
   const hash = crypto.createHash('sha256');
@@ -9,11 +9,5 @@ export const hashCrypto = (text: string): string => {
 };
 
 export const decodeJWT = <T = LicenseToken>(token: string): T | null => {
-  try {
-    const decoded = jwt.decode(token);
-    return decoded as T;
-  } catch (error) {
-    console.error('Invalid token:', error);
-    return null;
-  }
+  return decodeSharedJwt(token) as T | null;
 };
