@@ -98,6 +98,7 @@ func (vl *VLogsServer) verifyParams(req *http.Request) (*api.VlogsLaunchpadReque
 }
 
 func (vl *VLogsServer) queryDBLogs(rw http.ResponseWriter, req *http.Request) error {
+	fmt.Printf("database query: %s\n", req.URL)
 	resp, err := vl.executeDBQuery(req)
 	if err != nil {
 		return err
