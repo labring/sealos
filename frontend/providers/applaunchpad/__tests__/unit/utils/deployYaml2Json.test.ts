@@ -135,6 +135,90 @@ describe('json2Ingress', () => {
 
     expect(objects[0].metadata.labels['cloud.sealos.io/app-deploy-manager-port']).toBe('80');
   });
+
+  it('writes configured route rules into ingress paths', () => {
+    const app = createApp();
+    app.networks[0].routes = [
+      {
+        path: '/web',
+        pathType: 'Prefix',
+        serviceName: 'demo',
+        servicePort: 80
+      },
+      {
+        path: '/api',
+        pathType: 'Exact',
+        serviceName: 'demo-api',
+        servicePort: 81
+      }
+    ];
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: true
+      })
+    ) as any[];
+
+    expect(objects[0].spec.rules[0].host).toBe('demo.cloud.example.com');
+    expect(objects[0].spec.rules[0].http.paths).toEqual([
+      {
+        path: '/web',
+        pathType: 'Prefix',
+        backend: {
+          service: {
+            name: 'demo',
+            port: {
+              number: 80
+            }
+          }
+        }
+      },
+      {
+        path: '/api',
+        pathType: 'Exact',
+        backend: {
+          service: {
+            name: 'demo-api',
+            port: {
+              number: 81
+            }
+          }
+        }
+      }
+    ]);
+  });
+
+  it('does not require custom domains for generated public domains or node ports', () => {
+    const app = createApp();
+    app.networks = [
+      {
+        ...app.networks[0],
+        customDomain: ''
+      },
+      {
+        ...app.networks[0],
+        networkName: 'demo-tcp',
+        portName: 'tcp',
+        port: 8080,
+        protocol: 'TCP',
+        appProtocol: undefined,
+        openPublicDomain: false,
+        openNodePort: true,
+        nodePort: 30080,
+        customDomain: ''
+      }
+    ];
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: true
+      })
+    ) as any[];
+
+    expect(objects).toHaveLength(1);
+    expect(objects[0].metadata.name).toBe('demo-web');
+    expect(objects[0].spec.rules[0].host).toBe('demo.cloud.example.com');
+  });
 });
 
 describe('json2Service', () => {
