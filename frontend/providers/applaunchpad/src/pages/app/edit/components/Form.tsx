@@ -61,7 +61,8 @@ const Form = ({
   countGpuInventory,
   pxVal,
   refresh,
-  isAdvancedOpen
+  isAdvancedOpen,
+  onDomainVerified
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
@@ -70,6 +71,7 @@ const Form = ({
   pxVal: number;
   refresh: boolean;
   isAdvancedOpen: boolean;
+  onDomainVerified?: (params: { index: number; customDomain: string }) => void;
 }) => {
   if (!formHook) return null;
   const { t, i18n } = useTranslation();
@@ -906,7 +908,12 @@ const Form = ({
             </Box>
           </Box>
 
-          <NetworkSection formHook={formHook} boxStyles={boxStyles} headerStyles={headerStyles} />
+          <NetworkSection
+            formHook={formHook}
+            onDomainVerified={onDomainVerified}
+            boxStyles={boxStyles}
+            headerStyles={headerStyles}
+          />
           {/* settings */}
           {already && (
             <Accordion
