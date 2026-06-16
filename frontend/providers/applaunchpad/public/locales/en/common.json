@@ -1,5 +1,7 @@
 {
   "error_codes": "Error Codes",
+  "error_codes_tooltip_label": "Error code description",
+  "error_codes_tooltip_content": "Error code data comes from the gateway and may be affected by services such as nginx, so it is for reference only.",
   "last_5_mins": "last 5 mins",
   "counts": "counts",
   "no_errors_found": "No Errors Found",

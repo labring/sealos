@@ -75,4 +75,31 @@ describe('useAppStore intervalLoadPods', () => {
     expect(useAppStore.getState().appDetail?.usedCpu.yData).toEqual(new Array(30).fill('0'));
     expect(useAppStore.getState().appDetail?.usedMemory.yData).toEqual(new Array(30).fill('0'));
   });
+
+  it('sets list CPU and memory usage to zero when the app has no pods', async () => {
+    useAppStore.setState({
+      appList: [
+        {
+          ...MOCK_APPS[0],
+          name: MOCK_APP_DETAIL.appName,
+          usedCpu: { name: 'old-cpu', xData: [1], yData: ['9'] },
+          usedMemory: { name: 'old-memory', xData: [1], yData: ['8'] }
+        }
+      ]
+    });
+    mockedGetAppPodsByAppName.mockResolvedValueOnce([]);
+    mockedGetAppMonitorData.mockResolvedValue([
+      {
+        name: MOCK_APP_DETAIL.appName,
+        xData: [1],
+        yData: ['9']
+      }
+    ]);
+
+    await useAppStore.getState().loadAvgMonitorData(MOCK_APP_DETAIL.appName);
+
+    expect(mockedGetAppMonitorData).not.toHaveBeenCalled();
+    expect(useAppStore.getState().appList[0]?.usedCpu.yData).toEqual(new Array(30).fill('0'));
+    expect(useAppStore.getState().appList[0]?.usedMemory.yData).toEqual(new Array(30).fill('0'));
+  });
 });

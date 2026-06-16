@@ -102,6 +102,22 @@ export const useAppStore = create<State>()(
       },
       loadAvgMonitorData: async (appName) => {
         const pods = await getAppPodsByAppName(appName);
+
+        if (pods.length === 0) {
+          set((state) => {
+            state.appList = state.appList.map((item) =>
+              item.name === appName
+                ? {
+                    ...item,
+                    usedCpu: { ...EMPTY_MONITOR_DATA },
+                    usedMemory: { ...EMPTY_MONITOR_DATA }
+                  }
+                : item
+            );
+          });
+          return 'success';
+        }
+
         const queryName = pods?.[0]?.podName || appName;
         const [averageCpu, averageMemory] = await Promise.all([
           getAppMonitorData({
