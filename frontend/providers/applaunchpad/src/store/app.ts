@@ -1,10 +1,27 @@
 import { getAppByName, getAppMonitorData, getAppPodsByAppName, getMyApps } from '@/api/app';
 import { PodStatusEnum, appStatusMap } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
-import type { AppDetailType, AppListItemType, PodDetailType } from '@/types/app';
+import type { AppDetailType, AppListItemType, PodDetailType, AppStatusMapType } from '@/types/app';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+
+const getStatusFromPods = (
+  pods: PodDetailType[],
+  currentStatus: AppStatusMapType = appStatusMap.waiting
+): AppStatusMapType => {
+  const runningCount = pods.filter((pod) => pod.status.value === PodStatusEnum.running).length;
+  const terminatedCount = pods.filter(
+    (pod) => pod.status.value === PodStatusEnum.terminated
+  ).length;
+  const allTerminated = pods.length > 0 && terminatedCount === pods.length;
+
+  if (runningCount > 0) return appStatusMap.running;
+  if (allTerminated) return appStatusMap.error;
+  if (pods.length > 0) return appStatusMap.creating;
+
+  return currentStatus;
+};
 
 type State = {
   appList: AppListItemType[];
@@ -55,26 +72,15 @@ export const useAppStore = create<State>()(
         if (!appName) return Promise.reject('app name is empty');
         const pods = await getAppPodsByAppName(appName);
 
-        // one pod running, app is running
-        // NOTE: When pods is empty, it's usually "not loaded yet" instead of "all terminated".
-        const runningCount = pods.filter(
-          (pod) => pod.status.value === PodStatusEnum.running
-        ).length;
-        const terminatedCount = pods.filter(
-          (pod) => pod.status.value === PodStatusEnum.terminated
-        ).length;
-        const allTerminated = pods.length > 0 && terminatedCount === pods.length;
-
-        const appStatus =
-          pods.length === 0
-            ? appStatusMap.waiting
-            : runningCount > 0
-            ? appStatusMap.running
-            : allTerminated
-            ? appStatusMap.error
-            : appStatusMap.creating;
-
         set((state) => {
+          const currentAppDetailStatus =
+            state?.appDetail?.appName === appName ? state.appDetail.status : undefined;
+          const currentAppListStatus = state.appList.find((item) => item.name === appName)?.status;
+          const appStatus = getStatusFromPods(
+            pods,
+            currentAppDetailStatus || currentAppListStatus || appStatusMap.waiting
+          );
+
           if (state?.appDetail?.appName === appName && updateDetail) {
             state.appDetail.status = appStatus;
             state.appDetailPods = pods.map((pod) => {

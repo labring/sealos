@@ -1,7 +1,7 @@
 import '@/styles/tailwind.css';
 
 import { cleanup, render, screen, within } from '@testing-library/react';
-import type React from 'react';
+import React from 'react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import NetworkConfigurationTable, {
@@ -15,7 +15,17 @@ vi.mock('@sealos/shadcn-ui/tooltip', () => ({
 }));
 
 vi.mock('@/components/app/detail/index/ICPStatus', () => ({
-  default: () => <span data-testid="icp-status" />
+  default: ({
+    onRegistrationStatusChange
+  }: {
+    onRegistrationStatusChange?: (registered: boolean) => void;
+  }) => {
+    React.useEffect(() => {
+      onRegistrationStatusChange?.(false);
+    }, [onRegistrationStatusChange]);
+
+    return <span data-testid="icp-status">Domain not filed</span>;
+  }
 }));
 
 const publicAddress = 'https://very-long-public-domain-for-layout-regression.gzg.sealos.run';
@@ -77,13 +87,49 @@ describe('NetworkConfigurationTable layout', () => {
     expect(publicCell).toBeTruthy();
     expect(publicContentRow).toBeTruthy();
 
-    expect(getComputedStyle(table).minWidth).toBe('720px');
+    expect(getComputedStyle(table).tableLayout).toBe('auto');
     expect(getComputedStyle(tableHead as HTMLTableSectionElement).whiteSpace).toBe('nowrap');
     expect(getComputedStyle(tableBody as HTMLTableSectionElement).whiteSpace).toBe('nowrap');
     expect(getComputedStyle(publicContentRow as Element).whiteSpace).toBe('nowrap');
 
+    expect((publicCell as HTMLTableCellElement).getBoundingClientRect().width).toBeGreaterThan(
+      renderedPublicAddress.getBoundingClientRect().width
+    );
     const scrollContainer = table.parentElement;
     expect(scrollContainer?.clientWidth).toBeLessThan(scrollContainer?.scrollWidth ?? 0);
     expectOnSameLine(accessibleTag, renderedPublicAddress);
+  });
+
+  test('shows the ICP tag as the only left status tag when domain is unregistered', async () => {
+    await page.viewport(390, 844);
+    render(
+      <NetworkConfigurationTable
+        networks={[
+          {
+            ...networks[0],
+            customDomain: 'example.com'
+          }
+        ]}
+        networkStatus={[{ ready: true, url: publicAddress }]}
+        statusMap={{
+          [publicAddress]: {
+            ready: true,
+            url: publicAddress
+          }
+        }}
+        copyData={vi.fn()}
+        t={(key) => key}
+      />
+    );
+
+    const icpTag = screen.getByTestId('icp-status');
+    const renderedPublicAddress = screen.getByText(publicAddress);
+
+    expect(screen.queryByText('Accessible')).toBeNull();
+    expect(screen.queryByText('Ready')).toBeNull();
+    expect(icpTag.getBoundingClientRect().left).toBeLessThan(
+      renderedPublicAddress.getBoundingClientRect().left
+    );
+    expectOnSameLine(icpTag, renderedPublicAddress);
   });
 });
