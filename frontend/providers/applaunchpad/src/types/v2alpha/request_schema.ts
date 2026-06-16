@@ -24,6 +24,10 @@ import { validatePublicDomainPrefix } from '@/utils/public-domain';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
+function includePublicDomainPrefix() {
+  return isCustomPublicDomainPrefixEnabled();
+}
+
 const PublicDomainPrefixSchema = z.string().superRefine((value, ctx) => {
   if (!isCustomPublicDomainPrefixEnabled()) {
     ctx.addIssue({
@@ -661,7 +665,8 @@ export function transformFromLegacySchema(
           number: network.port,
           portName: network.portName,
           protocol: protocolLower,
-          ...(network.publicDomain && { publicDomain: network.publicDomain }),
+          ...(includePublicDomainPrefix() &&
+            network.publicDomain && { publicDomain: network.publicDomain }),
           ...(privateAddress && { privateAddress }),
           ...(publicAddress && { publicAddress }),
           ...(network.customDomain && { customDomain: network.customDomain })

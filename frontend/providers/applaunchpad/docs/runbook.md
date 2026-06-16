@@ -94,6 +94,7 @@ For most TypeScript/UI/API changes:
 ```bash
 pnpm exec tsc --noEmit --pretty false
 pnpm run lint
+pnpm dlx vitest@latest run __tests__/unit
 git diff --check
 ```
 
@@ -136,6 +137,10 @@ launchpad:
   publicDomain:
     customPrefixEnabled: true
 ```
+
+When `launchpad.publicDomain.customPrefixEnabled` is false, API responses intentionally omit `ports[].publicDomain` even though Launchpad keeps generated prefixes internally. This keeps GET-then-update API clients from resubmitting a custom-prefix field that is disabled by policy.
+
+The `/api/platform/getImagePorts` endpoint is only active when `launchpad.imagePorts.enabled` is true. It fetches registry manifest/config JSON server-side, so it must remain protected by host/IP checks, response-size limits, per-user rate/concurrency limits, and bearer challenge realm validation. Private registries that require a token service on a different host are intentionally rejected unless the trust model is expanded in code and tests.
 
 For Helm deployments:
 

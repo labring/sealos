@@ -70,7 +70,8 @@ Then run a bounded smoke test and wait for `✓ Ready` from Next.js.
 - Current-branch feature gates default off: image-derived port detection requires `launchpad.imagePorts.enabled: true`, and editable managed public-domain prefixes plus early availability checks require `launchpad.publicDomain.customPrefixEnabled: true`.
 - Public-domain prefix behavior is user-visible. Preserve normalization, configured reserved-prefix checks, conflict handling, and suffix/domain handling across create, update, apply, and API paths. The reserved prefix list comes from `launchpad.publicDomain.reservedPrefixes` and defaults to empty.
 - Same-workspace public-domain conflicts should return safe `conflictOwner` attribution from current-namespace Ingresses; cross-workspace `vingress.sealos.io` conflicts must stay generic and must not expose another namespace or resource name.
-- Image-derived exposed ports are defaults. Guard async updates so slower image lookups cannot overwrite later manual user edits.
+- When custom public-domain prefixes are disabled, keep generated prefixes internally but omit `ports[].publicDomain` from v1/v2alpha GET responses so API read-modify-write clients do not resubmit a disabled custom-prefix field.
+- Image-derived exposed ports are defaults. Guard async updates so slower image lookups cannot overwrite later manual user edits. The server-side registry fetch path must block localhost, private, link-local, metadata, multicast, and reserved IP ranges after DNS resolution; it must not forward registry credentials to an untrusted bearer challenge realm.
 
 ## Safety
 

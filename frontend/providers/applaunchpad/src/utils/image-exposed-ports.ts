@@ -1,3 +1,6 @@
+import { lookup } from 'dns/promises';
+import { isIP } from 'net';
+
 export type ImageRegistryAuth = {
   username?: string;
   password?: string;
@@ -30,8 +33,15 @@ type RegistryManifest = {
   }[];
 };
 
+type ChallengeParams = {
+  realm?: string;
+  service?: string;
+  scope?: string;
+};
+
 const DEFAULT_REGISTRY = 'registry-1.docker.io';
 const DOCKER_HUB_AUTH_SERVICE = 'registry.docker.io';
+const DOCKER_HUB_AUTH_HOST = 'auth.docker.io';
 const DOCKER_HUB_REGISTRY_ALIASES = new Set([
   'docker.io',
   'index.docker.io',
@@ -46,6 +56,152 @@ const ACCEPT_HEADER = [
   'application/vnd.docker.distribution.manifest.v1+json'
 ].join(', ');
 const REGISTRY_REQUEST_TIMEOUT = 10000;
+const MAX_REGISTRY_RESPONSE_BYTES = 1024 * 1024;
+const JSON_CONTENT_TYPES = new Set([
+  'application/json',
+  'application/vnd.oci.image.index.v1+json',
+  'application/vnd.docker.distribution.manifest.list.v2+json',
+  'application/vnd.oci.image.manifest.v1+json',
+  'application/vnd.docker.distribution.manifest.v2+json',
+  'application/vnd.docker.distribution.manifest.v1+json',
+  'application/vnd.oci.image.config.v1+json',
+  'application/vnd.docker.container.image.v1+json'
+]);
+const OCTET_STREAM_CONTENT_TYPE = 'application/octet-stream';
+
+function isBlockedIPv4(address: string) {
+  const parts = address.split('.').map((part) => Number(part));
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
+  ) {
+    return true;
+  }
+
+  const [a, b] = parts;
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 198 && (b === 18 || b === 19)) ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 192 && b === 0 && parts[2] === 0) ||
+    (a === 192 && b === 0 && parts[2] === 2) ||
+    (a === 198 && b === 51 && parts[2] === 100) ||
+    (a === 203 && b === 0 && parts[2] === 113) ||
+    a >= 224
+  );
+}
+
+function isBlockedIPv6(address: string) {
+  const normalized = address.toLowerCase();
+  return (
+    normalized === '::' ||
+    normalized === '::1' ||
+    normalized.startsWith('2001:db8:') ||
+    normalized.startsWith('fc') ||
+    normalized.startsWith('fd') ||
+    /^fe[89ab]:/.test(normalized) ||
+    normalized.startsWith('ff') ||
+    normalized.startsWith('::ffff:127.') ||
+    normalized.startsWith('::ffff:10.') ||
+    normalized.startsWith('::ffff:192.168.') ||
+    /^::ffff:172\.(1[6-9]|2\d|3[01])\./.test(normalized) ||
+    /^::ffff:169\.254\./.test(normalized)
+  );
+}
+
+function isBlockedAddress(address: string) {
+  const ipVersion = isIP(address);
+  if (ipVersion === 4) return isBlockedIPv4(address);
+  if (ipVersion === 6) return isBlockedIPv6(address);
+  return true;
+}
+
+function getUrlHost(value: string) {
+  const url = new URL(
+    value.startsWith('http://') || value.startsWith('https://') ? value : `https://${value}`
+  );
+  return url.hostname.replace(/^\[|\]$/g, '');
+}
+
+async function assertPublicRegistryHost(registry: string) {
+  const host = getUrlHost(registry);
+  const hostIsIp = isIP(host) !== 0;
+  if (host === 'localhost' || host.endsWith('.localhost') || (hostIsIp && isBlockedAddress(host))) {
+    throw new Error('Registry host is not allowed');
+  }
+
+  const addresses = await lookup(host, { all: true });
+  if (!addresses.length || addresses.some((item) => isBlockedAddress(item.address))) {
+    throw new Error('Registry host resolves to a private address');
+  }
+}
+
+function assertTrustedRealm(challenge: ChallengeParams, image: ImageRef) {
+  if (!challenge.realm) return;
+
+  let realmUrl: URL;
+  try {
+    realmUrl = new URL(challenge.realm);
+  } catch {
+    throw new Error('Registry auth realm is invalid');
+  }
+
+  if (realmUrl.protocol !== 'https:') {
+    throw new Error('Registry auth realm is not trusted');
+  }
+
+  const registryHost = getUrlHost(image.registry);
+  const allowedHosts =
+    image.registry === DEFAULT_REGISTRY ? new Set([DOCKER_HUB_AUTH_HOST]) : new Set([registryHost]);
+
+  if (!allowedHosts.has(realmUrl.hostname)) {
+    throw new Error('Registry auth realm is not trusted');
+  }
+}
+
+async function readJsonResponse<T>(
+  response: Response,
+  context: string,
+  options?: { allowOctetStream?: boolean }
+): Promise<T> {
+  const contentType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
+  const contentTypeAllowed =
+    contentType &&
+    (JSON_CONTENT_TYPES.has(contentType) ||
+      (options?.allowOctetStream && contentType === OCTET_STREAM_CONTENT_TYPE));
+  if (contentType && !contentTypeAllowed) {
+    throw new Error(`${context} returned unsupported content type`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    return (await response.json()) as T;
+  }
+
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+
+    total += value.byteLength;
+    if (total > MAX_REGISTRY_RESPONSE_BYTES) {
+      await reader.cancel();
+      throw new Error(`${context} is too large`);
+    }
+    chunks.push(value);
+  }
+
+  const buffer = Buffer.concat(chunks);
+  return JSON.parse(buffer.toString('utf8')) as T;
+}
 
 function normalizeRegistry(registry?: string) {
   const normalized = registry?.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -104,6 +260,10 @@ function parseAuthenticateHeader(header: string) {
 }
 
 async function getBearerToken(image: ImageRef, auth?: ImageRegistryAuth) {
+  if (image.registry !== DEFAULT_REGISTRY) {
+    throw new Error('Registry auth challenge is invalid');
+  }
+
   const service = image.registry === DEFAULT_REGISTRY ? DOCKER_HUB_AUTH_SERVICE : image.registry;
   const realm = 'https://auth.docker.io/token';
   const url = `${realm}?service=${encodeURIComponent(service)}&scope=${encodeURIComponent(
@@ -125,7 +285,10 @@ async function getBearerToken(image: ImageRef, auth?: ImageRegistryAuth) {
     throw new Error(`Registry auth failed: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data = await readJsonResponse<{ token?: string; access_token?: string }>(
+    response,
+    'Registry auth response'
+  );
   return data.token || data.access_token;
 }
 
@@ -148,6 +311,7 @@ async function registryFetch(url: string, image: ImageRef, auth?: ImageRegistryA
   if (response.status === 401) {
     const authenticate = response.headers.get('www-authenticate') || '';
     const challenge = parseAuthenticateHeader(authenticate);
+    assertTrustedRealm(challenge, image);
     const token =
       challenge.realm && challenge.service
         ? await fetch(
@@ -170,7 +334,10 @@ async function registryFetch(url: string, image: ImageRef, auth?: ImageRegistryA
           )
             .then((res) => {
               if (!res.ok) throw new Error(`Registry auth failed: ${res.status}`);
-              return res.json();
+              return readJsonResponse<{ token?: string; access_token?: string }>(
+                res,
+                'Registry auth response'
+              );
             })
             .then((data) => data.token || data.access_token)
         : await getBearerToken(image, auth);
@@ -198,7 +365,7 @@ async function fetchManifest(image: ImageRef, reference: string, auth?: ImageReg
     throw new Error(`Failed to fetch image manifest: ${manifestResponse.status}`);
   }
 
-  return (await manifestResponse.json()) as RegistryManifest;
+  return await readJsonResponse<RegistryManifest>(manifestResponse, 'Image manifest');
 }
 
 function selectManifestDigest(manifest: RegistryManifest) {
@@ -245,6 +412,7 @@ export async function getImageExposedPorts(
   auth?: ImageRegistryAuth
 ): Promise<ImageExposedPort[]> {
   const image = parseImageRef(imageName, auth?.serverAddress);
+  await assertPublicRegistryHost(image.registry);
   let manifest = await fetchManifest(image, image.reference, auth);
   const platformManifestDigest = selectManifestDigest(manifest);
   if (!manifest.config?.digest && platformManifestDigest) {
@@ -263,6 +431,10 @@ export async function getImageExposedPorts(
     throw new Error(`Failed to fetch image config: ${configResponse.status}`);
   }
 
-  const config = await configResponse.json();
+  const config = await readJsonResponse<{ config?: { ExposedPorts?: Record<string, unknown> } }>(
+    configResponse,
+    'Image config',
+    { allowOctetStream: true }
+  );
   return parseExposedPorts(config?.config?.ExposedPorts);
 }

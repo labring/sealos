@@ -26,7 +26,9 @@ flowchart TD
 
 The config controls cloud domain and user-domain suffixes, UI feature flags, pricing/monitor/log service URLs, file limits, domain registration links, Launchpad metadata, public-domain policy, and resource slider defaults.
 
-`launchpad.imagePorts.enabled` and `launchpad.publicDomain.customPrefixEnabled` gate the branch's create-time image port detection and editable managed public-domain prefix workflow. Both default to `false`. When custom prefixes are disabled, Launchpad keeps generated public-domain prefixes and skips app-side prefix pre-validation; cluster-side ingress admission remains the authoritative conflict and ownership guard.
+`launchpad.imagePorts.enabled` and `launchpad.publicDomain.customPrefixEnabled` gate the branch's create-time image port detection and editable managed public-domain prefix workflow. Both default to `false`. When custom prefixes are disabled, Launchpad keeps generated public-domain prefixes internally, omits `ports[].publicDomain` from v1/v2alpha GET responses, and skips app-side prefix pre-validation; cluster-side ingress admission remains the authoritative conflict and ownership guard.
+
+Image-derived port detection reads image registry manifests and config blobs for Docker/OCI `ExposedPorts` metadata. Because the lookup runs from the API server with user-provided image names and optional registry credentials, the registry fetch path rejects localhost, private, link-local, metadata, multicast, and reserved IP ranges after DNS resolution, caps JSON response bodies, limits per-user request rate/concurrency, and only sends Basic credentials to Docker Hub auth or a same-host trusted bearer challenge realm.
 
 `launchpad.publicDomain.reservedPrefixes` is an optional policy list. It defaults to empty, is loaded into the shared public-domain helper on both server startup and browser init data, and only affects Launchpad pre-validation when `customPrefixEnabled` is enabled.
 
