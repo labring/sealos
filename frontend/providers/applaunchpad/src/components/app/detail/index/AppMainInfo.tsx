@@ -6,7 +6,7 @@ import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import type { AppDetailType } from '@/types/app';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import { useCopyData, generatePvcNameRegex } from '@/utils/tools';
-import { calculateStorageUsagePercent } from '@/utils/storage-usage';
+import { calculateStorageUsagePercentFromUsageData } from '@/utils/storage-usage';
 import { getUserNamespace } from '@/utils/user';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -38,29 +38,20 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     queryKey: ['storageUsage', app.appName, pvcNameRegex],
     queryFn: async () => {
       if (!pvcNameRegex) return null;
-      const [sizeData, availData] = await Promise.all([
-        getAppMonitorData({
-          queryName: pvcNameRegex,
-          queryKey: 'size_n',
-          step: '2m',
-          pvcName: pvcNameRegex
-        }),
-        getAppMonitorData({
-          queryName: pvcNameRegex,
-          queryKey: 'avail_n',
-          step: '2m',
-          pvcName: pvcNameRegex
-        })
-      ]);
-      return { sizeData, availData };
+      return getAppMonitorData({
+        queryName: pvcNameRegex,
+        queryKey: 'storage',
+        step: '2m',
+        pvcName: pvcNameRegex
+      });
     },
     enabled: hasStorage && !!pvcNameRegex,
     refetchInterval: 2 * 60 * 1000
   });
 
   const storageUsagePercent = useMemo(() => {
-    return calculateStorageUsagePercent(storageData?.sizeData, storageData?.availData);
-  }, [storageData]);
+    return calculateStorageUsagePercentFromUsageData(storageData, app.storeList);
+  }, [app.storeList, storageData]);
 
   // Get all available networks for error codes query (non-NodePort networks only)
   const availableNetworks = useMemo(() => {
