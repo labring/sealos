@@ -440,10 +440,11 @@ describe('DNS Resolver', () => {
 
       const result = extractNSServers('example.org', answers);
 
-      expect(result.length).toBe(MAX_NAMESERVERS);
-      expect(result[0].ns).toBe('ns1.example.org');
-      expect(result[1].ns).toBe('ns2.example.org');
-      expect(result[2].ns).toBe('ns3.example.org');
+      expect(result?.zone).toBe('example.org');
+      expect(result?.nameservers.length).toBe(MAX_NAMESERVERS);
+      expect(result?.nameservers[0].ns).toBe('ns1.example.org');
+      expect(result?.nameservers[1].ns).toBe('ns2.example.org');
+      expect(result?.nameservers[2].ns).toBe('ns3.example.org');
     });
 
     it('should return all nameservers if less than MAX_NAMESERVERS', () => {
@@ -456,9 +457,10 @@ describe('DNS Resolver', () => {
 
       const result = extractNSServers('example.org', answers);
 
-      expect(result.length).toBe(2);
-      expect(result[0].ns).toBe('ns1.example.org');
-      expect(result[1].ns).toBe('ns2.example.org');
+      expect(result?.zone).toBe('example.org');
+      expect(result?.nameservers.length).toBe(2);
+      expect(result?.nameservers[0].ns).toBe('ns1.example.org');
+      expect(result?.nameservers[1].ns).toBe('ns2.example.org');
     });
 
     it('should return exactly MAX_NAMESERVERS when there are exactly MAX_NAMESERVERS nameservers', () => {
@@ -473,10 +475,11 @@ describe('DNS Resolver', () => {
 
       const result = extractNSServers('example.org', answers);
 
-      expect(result.length).toBe(MAX_NAMESERVERS);
-      expect(result[0].ns).toBe('ns1.example.org');
-      expect(result[1].ns).toBe('ns2.example.org');
-      expect(result[2].ns).toBe('ns3.example.org');
+      expect(result?.zone).toBe('example.org');
+      expect(result?.nameservers.length).toBe(MAX_NAMESERVERS);
+      expect(result?.nameservers[0].ns).toBe('ns1.example.org');
+      expect(result?.nameservers[1].ns).toBe('ns2.example.org');
+      expect(result?.nameservers[2].ns).toBe('ns3.example.org');
     });
 
     it('should filter by target domain name', () => {
@@ -490,9 +493,24 @@ describe('DNS Resolver', () => {
 
       const result = extractNSServers('example.org', answers);
 
-      expect(result.length).toBe(2);
-      expect(result[0].ns).toBe('ns1.example.org');
-      expect(result[1].ns).toBe('ns2.example.org');
+      expect(result?.zone).toBe('example.org');
+      expect(result?.nameservers.length).toBe(2);
+      expect(result?.nameservers[0].ns).toBe('ns1.example.org');
+      expect(result?.nameservers[1].ns).toBe('ns2.example.org');
+    });
+
+    it('should return the closest parent zone when response contains delegation NS records', () => {
+      const answers = [
+        { name: 'example.test', type: 'NS', ttl: 86400, data: 'ns1.example.test' },
+        { name: 'test', type: 'NS', ttl: 86400, data: 'a.test-servers.example' },
+        { name: 'ns1.example.test', type: 'A', ttl: 172800, data: '198.51.100.1' },
+        { name: 'a.test-servers.example', type: 'A', ttl: 172800, data: '192.0.2.1' }
+      ] as any;
+
+      const result = extractNSServers('app.platform.example.test', answers);
+
+      expect(result?.zone).toBe('example.test');
+      expect(result?.nameservers.map((ns) => ns.ns)).toEqual(['ns1.example.test']);
     });
   });
 
@@ -866,6 +884,17 @@ describe('DNS Resolver', () => {
         expect(result.zone).toBeTruthy();
         expect(result.nameservers.length).toBeGreaterThan(0);
       }
+    }, 2000);
+
+    it('should continue from a parent TLD delegation to the closest authoritative zone', async () => {
+      const result = await getAuthoritativeNsFromLocal('app.platform.example.test');
+
+      expect(result).not.toBeNull();
+      expect(result?.zone).toBe('example.test');
+      expect(result?.nameservers.map((ns) => ns.ns)).toEqual([
+        'ns1.example.test',
+        'ns2.example.test'
+      ]);
     }, 2000);
 
     it('should return null for empty domain', async () => {
