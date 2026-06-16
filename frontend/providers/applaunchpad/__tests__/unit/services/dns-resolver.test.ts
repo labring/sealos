@@ -111,6 +111,7 @@ vi.mock('node:dns/promises', async () => {
 describe('DNS Resolver', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   describe('ResolveErrorCode', () => {
@@ -613,7 +614,7 @@ describe('DNS Resolver', () => {
       }
     }, 2000);
 
-    it('should throw NO_RECORD error for mismatch.example.org (the final error is thrown)', async () => {
+    it('should report the origin domain when followed CNAME resolution fails', async () => {
       await expect(
         testCname('mismatch.example.org', 'expected-target.example.org')
       ).rejects.toThrow(ResolveError);
@@ -625,9 +626,22 @@ describe('DNS Resolver', () => {
         expect(error).toBeInstanceOf(ResolveError);
         if (error instanceof ResolveError) {
           expect(error.code).toBe(ResolveErrorCode.NO_RECORD);
-          expect(error.domain).toBe('wrong-target.example.org');
+          expect(error.domain).toBe('mismatch.example.org');
+          expect((error.details as any)?.failedDomain).toBe('wrong-target.example.org');
+          expect((error.details as any)?.cnameChain?.[0]?.data).toBe('wrong-target.example.org');
         }
       }
+    }, 2000);
+
+    it('should log trace when resolution fails', async () => {
+      await expect(
+        testCname('mismatch.example.org', 'expected-target.example.org')
+      ).rejects.toThrow(ResolveError);
+
+      expect(console.error).toHaveBeenCalledWith(
+        '[dns-resolver] resolve failed',
+        expect.stringContaining('"trace"')
+      );
     }, 2000);
 
     it('should use root lookup when local lookup only returns a TLD referral', async () => {

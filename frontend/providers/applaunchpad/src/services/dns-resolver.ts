@@ -34,6 +34,8 @@ export type DNSRecord = {
   readonly data: string;
 };
 
+type ResolveTraceEntry = Record<string, unknown>;
+
 export type QueryOptions = {
   recursionDesired: boolean;
 };
@@ -610,6 +612,29 @@ type FollowCnameOptions = {
   readonly step: number;
   readonly domain: string;
   readonly target: { type: dnsPacket.StringRecordType; value?: string };
+  readonly originDomain?: string;
+  readonly cnameChain?: readonly DNSRecord[];
+  readonly trace?: ResolveTraceEntry[];
+};
+
+const logResolveTrace = (
+  error: ResolveError,
+  trace: readonly ResolveTraceEntry[]
+): ResolveError => {
+  console.error(
+    '[dns-resolver] resolve failed',
+    JSON.stringify(
+      {
+        code: error.code,
+        domain: error.domain,
+        message: error.message,
+        trace
+      },
+      null,
+      2
+    )
+  );
+  return error;
 };
 
 /**
@@ -625,44 +650,84 @@ const queryDnsFollowCname = async (
     };
   }
 > => {
+  const originDomain = options.originDomain ?? options.domain;
+  const cnameChain = options.cnameChain ?? [];
+  const trace = options.trace ?? [];
+  trace.push({
+    step: 'start',
+    domain: options.domain,
+    originDomain,
+    queryType: options.target.type,
+    expectedValue: options.target.value
+  });
+
   if (options.step > MAX_CNAME_STEPS) {
-    throw new ResolveError(
-      ResolveErrorCode.MAX_CNAME_STEPS_EXCEEDED,
-      `Maximum CNAME steps (${MAX_CNAME_STEPS}) exceeded for domain ${options.domain}`,
-      {
-        domain: options.domain,
-        details: { step: options.step, visited: Array.from(options.visited) }
-      }
+    throw logResolveTrace(
+      new ResolveError(
+        ResolveErrorCode.MAX_CNAME_STEPS_EXCEEDED,
+        `Maximum CNAME steps (${MAX_CNAME_STEPS}) exceeded for domain ${options.domain}`,
+        {
+          domain: options.domain,
+          details: { step: options.step, visited: Array.from(options.visited) }
+        }
+      ),
+      trace
     );
   }
 
   let nsInfo: NSInfo | null = null;
   try {
     nsInfo = await getAuthoritativeNsFromLocal(options.domain);
+    trace.push({
+      step: 'local-ns',
+      domain: options.domain,
+      zone: nsInfo?.zone,
+      nameservers: nsInfo?.nameservers.map((ns) => ns.ns) ?? []
+    });
 
     if (!nsInfo || nsInfo.nameservers.length === 0 || isTopLevelOnly(options.domain, nsInfo.zone)) {
       nsInfo = await getAuthoritativeNsFromRoot(options.domain);
+      trace.push({
+        step: 'root-ns',
+        domain: options.domain,
+        zone: nsInfo?.zone,
+        nameservers: nsInfo?.nameservers.map((ns) => ns.ns) ?? []
+      });
     }
   } catch (err) {
     // Failed to get authoritative NS - re-throw as ResolveError if not already
     if (err instanceof ResolveError) {
-      throw err;
+      throw logResolveTrace(err, trace);
     }
-    throw new ResolveError(
-      ResolveErrorCode.NO_AUTHORITATIVE_NS,
-      `Failed to get authoritative NS for domain ${options.domain}`,
-      { domain: options.domain, details: { originalError: err } }
+    throw logResolveTrace(
+      new ResolveError(
+        ResolveErrorCode.NO_AUTHORITATIVE_NS,
+        `Failed to get authoritative NS for domain ${options.domain}`,
+        { domain: options.domain, details: { originalError: err } }
+      ),
+      trace
     );
   }
 
   if (!nsInfo || nsInfo.nameservers.length === 0) {
     // No authoritative NS found.
-    throw new ResolveError(
-      ResolveErrorCode.NO_AUTHORITATIVE_NS,
-      `No authoritative NS servers found for domain ${options.domain}`,
-      { domain: options.domain }
+    throw logResolveTrace(
+      new ResolveError(
+        ResolveErrorCode.NO_AUTHORITATIVE_NS,
+        `No authoritative NS servers found for domain ${options.domain}`,
+        { domain: options.domain }
+      ),
+      trace
     );
   }
+
+  trace.push({
+    step: 'query-record',
+    domain: options.domain,
+    queryType: options.target.type,
+    zone: nsInfo.zone,
+    nameservers: nsInfo.nameservers.map((ns) => ns.ns)
+  });
 
   const dnsResponse = await resolveWithNs(options.domain, options.target.type, nsInfo.nameservers, {
     recursionDesired: true
@@ -670,25 +735,45 @@ const queryDnsFollowCname = async (
 
   if (!dnsResponse) {
     // All tries failed - could be network error or no response
-    throw new ResolveError(
-      ResolveErrorCode.NO_RECORD,
-      `All authoritative NS servers failed for domain ${options.domain}`,
-      { domain: options.domain }
+    const message =
+      options.domain === originDomain
+        ? `All authoritative NS servers failed for domain ${options.domain}`
+        : `All authoritative NS servers failed for domain ${options.domain} while resolving ${originDomain}`;
+
+    throw logResolveTrace(
+      new ResolveError(ResolveErrorCode.NO_RECORD, message, {
+        domain: originDomain,
+        details: {
+          failedDomain: options.domain,
+          cnameChain
+        }
+      }),
+      trace
     );
   }
 
+  trace.push({
+    step: 'query-record-result',
+    domain: options.domain,
+    queryType: options.target.type,
+    nameserver: dnsResponse.ns
+  });
+
   // CNAME Loop detection
   if (options.visited.has(options.domain)) {
-    throw new ResolveError(
-      ResolveErrorCode.CNAME_LOOP,
-      `CNAME loop detected: ${options.domain} already visited`,
-      {
-        domain: options.domain,
-        details: {
-          chain: Array.from(options.visited).join(' -> '),
-          visited: Array.from(options.visited)
+    throw logResolveTrace(
+      new ResolveError(
+        ResolveErrorCode.CNAME_LOOP,
+        `CNAME loop detected: ${options.domain} already visited`,
+        {
+          domain: options.domain,
+          details: {
+            chain: Array.from(options.visited).join(' -> '),
+            visited: Array.from(options.visited)
+          }
         }
-      }
+      ),
+      trace
     );
   }
 
@@ -723,9 +808,48 @@ const queryDnsFollowCname = async (
     const cnameRecord = records.find((record) => record.type === 'CNAME');
     if (!cnameRecord) {
       // No CNAME record found, and target record also not found
-      throw new ResolveError(
-        ResolveErrorCode.NO_RECORD,
-        `No ${options.target.type} record pointing to domain ${options.target.value}`,
+      const message =
+        options.domain === originDomain
+          ? `No ${options.target.type} record pointing to domain ${options.target.value}`
+          : `No ${options.target.type} record pointing to domain ${options.target.value} while resolving ${originDomain}; stopped at ${options.domain}`;
+
+      throw logResolveTrace(
+        new ResolveError(ResolveErrorCode.NO_RECORD, message, {
+          domain: originDomain,
+          details: {
+            query: options,
+            response: dnsResponse,
+            failedDomain: options.domain,
+            cnameChain
+          }
+        }),
+        trace
+      );
+    }
+
+    trace.push({
+      step: 'follow-cname',
+      from: options.domain,
+      to: cnameRecord.data
+    });
+
+    return queryDnsFollowCname({
+      domain: cnameRecord.data,
+      step: options.step + 1,
+      target: options.target,
+      visited,
+      originDomain,
+      cnameChain: [...cnameChain, cnameRecord],
+      trace
+    });
+  }
+
+  // NS returned an error
+  if (dnsResponse.type === 'response' && isDefinitiveDNSError(rcode)) {
+    throw logResolveTrace(
+      new ResolveError(
+        ResolveErrorCode.DNS_ERROR,
+        `DNS server returned error code: ${rcode} for domain ${options.domain}`,
         {
           domain: options.domain,
           details: {
@@ -733,22 +857,16 @@ const queryDnsFollowCname = async (
             response: dnsResponse
           }
         }
-      );
-    }
-
-    return queryDnsFollowCname({
-      domain: cnameRecord.data,
-      step: options.step + 1,
-      target: options.target,
-      visited
-    });
+      ),
+      trace
+    );
   }
 
-  // NS returned an error
-  if (dnsResponse.type === 'response' && isDefinitiveDNSError(rcode)) {
-    throw new ResolveError(
+  // Unknown response type or code
+  throw logResolveTrace(
+    new ResolveError(
       ResolveErrorCode.DNS_ERROR,
-      `DNS server returned error code: ${rcode} for domain ${options.domain}`,
+      `Unknown DNS response for domain ${options.domain}`,
       {
         domain: options.domain,
         details: {
@@ -756,20 +874,8 @@ const queryDnsFollowCname = async (
           response: dnsResponse
         }
       }
-    );
-  }
-
-  // Unknown response type or code
-  throw new ResolveError(
-    ResolveErrorCode.DNS_ERROR,
-    `Unknown DNS response for domain ${options.domain}`,
-    {
-      domain: options.domain,
-      details: {
-        query: options,
-        response: dnsResponse
-      }
-    }
+    ),
+    trace
   );
 };
 
