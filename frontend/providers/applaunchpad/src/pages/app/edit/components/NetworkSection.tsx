@@ -4,13 +4,14 @@ import { APPLICATION_PROTOCOLS, ProtocolList } from '@/constants/app';
 import { DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT, SEALOS_DOMAIN } from '@/store/static';
 import { useTranslation } from 'next-i18next';
 import { customAlphabet } from 'nanoid';
-import { UseFormReturn, useFieldArray } from 'react-hook-form';
+import { UseFormReturn, useFieldArray, useWatch } from 'react-hook-form';
 import { Box, Button, Flex, IconButton, Input, Switch, Tooltip, useTheme } from '@chakra-ui/react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AppEditType } from '@/types/app';
 import RouteRulesModal from './RouteRulesModal';
 import { useCopyData } from '@/utils/tools';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
+import { syncDefaultRouteServicePort } from '@/utils/network-routes';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import dynamic from 'next/dynamic';
 
@@ -112,7 +113,9 @@ export function NetworkSection({
   const [routeRulesIndex, setRouteRulesIndex] = useState<number>();
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
 
-  const { register, control, getValues } = formHook;
+  const { register, control, getValues, setValue } = formHook;
+  const watchedNetworks = useWatch({ control, name: 'networks' });
+  const previousNetworkPortsRef = useRef<Record<string, number>>({});
 
   const {
     fields: networks,
@@ -123,6 +126,47 @@ export function NetworkSection({
     control,
     name: 'networks'
   });
+
+  useEffect(() => {
+    if (!watchedNetworks?.length) {
+      previousNetworkPortsRef.current = {};
+      return;
+    }
+
+    const previousPorts = previousNetworkPortsRef.current;
+    const nextPorts: Record<string, number> = {};
+
+    watchedNetworks.forEach((network, index) => {
+      const networkKey = network.portName || network.networkName || String(index);
+      const nextPort = Number(network.port);
+      const previousPort = previousPorts[networkKey];
+
+      if (nextPort) {
+        nextPorts[networkKey] = nextPort;
+      } else if (previousPort) {
+        nextPorts[networkKey] = previousPort;
+      }
+
+      if (!previousPort || !nextPort || previousPort === nextPort) {
+        return;
+      }
+
+      const syncedRoutes = syncDefaultRouteServicePort({
+        routes: network.routes,
+        previousPort,
+        nextPort,
+        networkServiceName: network.serviceName
+      });
+
+      if (syncedRoutes !== network.routes) {
+        setValue(`networks.${index}.routes`, syncedRoutes, {
+          shouldDirty: true
+        });
+      }
+    });
+
+    previousNetworkPortsRef.current = nextPorts;
+  }, [setValue, watchedNetworks]);
 
   const dispatch = useCallback(
     (action: NetworkAction) => {

@@ -188,6 +188,86 @@ describe('json2Ingress', () => {
     ]);
   });
 
+  it('syncs the default main service route port with the network port', () => {
+    const app = createApp();
+    app.networks[0].port = 8080;
+    app.networks[0].routes = [
+      {
+        path: '/',
+        pathType: 'Prefix',
+        serviceName: '',
+        servicePort: 80
+      }
+    ];
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: true
+      })
+    ) as any[];
+
+    expect(objects[0].spec.rules[0].http.paths[0].backend.service.port.number).toBe(8080);
+  });
+
+  it('preserves route rules that target another backend service port', () => {
+    const app = createApp();
+    app.networks[0].port = 8080;
+    app.networks[0].routes = [
+      {
+        path: '/',
+        pathType: 'Prefix',
+        serviceName: 'demo-api',
+        servicePort: 80
+      }
+    ];
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: true
+      })
+    ) as any[];
+
+    expect(objects[0].spec.rules[0].http.paths[0].backend.service).toEqual({
+      name: 'demo-api',
+      port: {
+        number: 80
+      }
+    });
+  });
+
+  it('preserves main service route ports that still exist on another network port', () => {
+    const app = createApp();
+    app.networks = [
+      {
+        ...app.networks[0],
+        port: 8080,
+        routes: [
+          {
+            path: '/',
+            pathType: 'Prefix',
+            serviceName: '',
+            servicePort: 80
+          }
+        ]
+      },
+      {
+        ...app.networks[0],
+        networkName: 'demo-web-80',
+        portName: 'web-80',
+        port: 80,
+        openPublicDomain: false
+      }
+    ];
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: true
+      })
+    ) as any[];
+
+    expect(objects[0].spec.rules[0].http.paths[0].backend.service.port.number).toBe(80);
+  });
+
   it('does not require custom domains for generated public domains or node ports', () => {
     const app = createApp();
     app.networks = [

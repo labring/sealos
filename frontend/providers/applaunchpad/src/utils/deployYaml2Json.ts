@@ -10,6 +10,7 @@ import {
 } from '@/constants/app';
 import { DISABLE_HTTPS, SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
+import { syncDefaultRouteServicePort } from '@/utils/network-routes';
 import { ensureUniquePortNames, getFallbackPortName, str2Num, strToBase64 } from '@/utils/tools';
 import type { V1OwnerReference } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
@@ -527,6 +528,13 @@ export const json2Ingress = (
     }
   };
 
+  const clusterIpPorts = new Set(
+    data.networks
+      .filter((network) => !network.openNodePort)
+      .map((network) => Number(network.port))
+      .filter(Boolean)
+  );
+
   const result = data.networks
     .filter((item) => item.openPublicDomain && !item.openNodePort)
     .map((network) => {
@@ -543,7 +551,15 @@ export const json2Ingress = (
       // Ingress only uses ClusterIP services, not NodePort
       const serviceName = getServiceName(data, false);
       const routes = network.routes?.length
-        ? network.routes
+        ? clusterIpPorts.has(80)
+          ? network.routes
+          : syncDefaultRouteServicePort({
+              routes: network.routes,
+              previousPort: network.port,
+              nextPort: network.port,
+              defaultServicePort: 80,
+              networkServiceName: serviceName
+            }) || network.routes
         : [
             {
               path: '/',
