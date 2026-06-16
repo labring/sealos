@@ -1,5 +1,6 @@
 import { getAppByName, getAppMonitorData, getAppPodsByAppName, getMyApps } from '@/api/app';
 import { PodStatusEnum, appStatusMap } from '@/constants/app';
+import { EMPTY_MONITOR_DATA } from '@/constants/monitor';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import type { AppDetailType, AppListItemType, PodDetailType, AppStatusMapType } from '@/types/app';
 import { create } from 'zustand';
@@ -125,7 +126,19 @@ export const useAppStore = create<State>()(
       },
       loadDetailMonitorData: async (appName) => {
         const pods = await getAppPodsByAppName(appName);
-        const queryName = pods?.[0]?.podName || appName;
+
+        if (pods.length === 0) {
+          set((state) => {
+            state.appDetailPods = [];
+            if (state?.appDetail?.appName === appName && state.appDetail?.isPause !== true) {
+              state.appDetail.usedCpu = { ...EMPTY_MONITOR_DATA };
+              state.appDetail.usedMemory = { ...EMPTY_MONITOR_DATA };
+            }
+          });
+          return 'success';
+        }
+
+        const queryName = pods[0].podName;
 
         set((state) => {
           state.appDetailPods = pods.map((pod) => {
@@ -149,10 +162,10 @@ export const useAppStore = create<State>()(
           if (state?.appDetail?.appName === appName && state.appDetail?.isPause !== true) {
             state.appDetail.usedCpu = averageCpuData[0]
               ? averageCpuData[0]
-              : { xData: new Array(30).fill(0), yData: new Array(30).fill('0'), name: '' };
+              : { ...EMPTY_MONITOR_DATA };
             state.appDetail.usedMemory = averageMemoryData[0]
               ? averageMemoryData[0]
-              : { xData: new Array(30).fill(0), yData: new Array(30).fill('0'), name: '' };
+              : { ...EMPTY_MONITOR_DATA };
           }
           state.appDetailPods = pods.map((pod) => {
             const currentCpu = cpuData.find((item) => item.name === pod.podName);

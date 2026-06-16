@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getAppPodsByAppName } from '@/api/app';
+import { getAppMonitorData, getAppPodsByAppName } from '@/api/app';
 import { appStatusMap } from '@/constants/app';
 import { MOCK_APPS } from '@/mock/apps';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
@@ -14,6 +14,7 @@ vi.mock('@/api/app', () => ({
 }));
 
 const mockedGetAppPodsByAppName = vi.mocked(getAppPodsByAppName);
+const mockedGetAppMonitorData = vi.mocked(getAppMonitorData);
 
 describe('useAppStore intervalLoadPods', () => {
   beforeEach(() => {
@@ -56,5 +57,22 @@ describe('useAppStore intervalLoadPods', () => {
     await useAppStore.getState().intervalLoadPods(MOCK_APP_DETAIL.appName, false);
 
     expect(useAppStore.getState().appList[0]?.status).toBe(appStatusMap.error);
+  });
+
+  it('sets detail CPU and memory usage to zero when the app has no pods', async () => {
+    mockedGetAppPodsByAppName.mockResolvedValueOnce([]);
+    mockedGetAppMonitorData.mockResolvedValue([
+      {
+        name: MOCK_APP_DETAIL.appName,
+        xData: [1],
+        yData: ['9']
+      }
+    ]);
+
+    await useAppStore.getState().loadDetailMonitorData(MOCK_APP_DETAIL.appName);
+
+    expect(mockedGetAppMonitorData).not.toHaveBeenCalled();
+    expect(useAppStore.getState().appDetail?.usedCpu.yData).toEqual(new Array(30).fill('0'));
+    expect(useAppStore.getState().appDetail?.usedMemory.yData).toEqual(new Array(30).fill('0'));
   });
 });
