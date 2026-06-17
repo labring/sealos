@@ -10,3 +10,5 @@ skills-lock.json
 .omx
 AGENTS.md
 .sisyphus
+**/test-results/
+.codegraph/
