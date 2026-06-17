@@ -1,5 +1,5 @@
 import { postDeployApp, putApp } from '@/api/app';
-import { checkPermission } from '@/api/platform';
+import { checkPermission, postAuthCname, postAuthDomainChallenge } from '@/api/platform';
 import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -9,7 +9,7 @@ import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
-import { adaptEditAppData } from '@/utils/adapt';
+import { adaptEditAppData, YamlKindEnum } from '@/utils/adapt';
 import type { V1OwnerReference } from '@kubernetes/client-node';
 import {
   generateOwnerReference,
@@ -22,8 +22,6 @@ import {
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
 import { getErrText, patchYamlList } from '@/utils/tools';
-
-import { YamlKindEnum } from '@/utils/adapt';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -39,6 +37,8 @@ import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
+import { SEALOS_DOMAIN } from '@/store/static';
+import { getCustomDomainBindings } from '@/utils/custom-domain';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -132,6 +132,36 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     return val;
   }, [screenWidth]);
   const { createCompleted } = useGuideStore();
+
+  const checkCustomDomainBindings = useCallback(async (data: AppEditType) => {
+    const bindings = getCustomDomainBindings(data.networks);
+
+    for (const binding of bindings) {
+      if (!binding.publicDomain) {
+        return binding;
+      }
+
+      try {
+        await postAuthCname({
+          customDomain: binding.customDomain,
+          publicDomain: binding.publicDomain
+        });
+      } catch (error) {
+        try {
+          const challengeResult = await postAuthDomainChallenge({
+            customDomain: binding.customDomain
+          });
+          if (!challengeResult?.verified) {
+            return binding;
+          }
+        } catch (challengeError) {
+          return binding;
+        }
+      }
+    }
+
+    return null;
+  }, []);
 
   // form
   const formHook = useForm<AppEditType>({
@@ -274,11 +304,11 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (!appName) return;
         const data = formHook.getValues();
         if (!data?.appName) return;
+
         if (data.networks?.[index]) {
           data.networks[index].customDomain = customDomain;
         }
 
-        // Get ownerReferences from existing workload
         let ownerReferences: V1OwnerReference[] | undefined;
         const workload = crOldYamls.current.find(
           (item) => item.kind === YamlKindEnum.Deployment || item.kind === YamlKindEnum.StatefulSet
@@ -297,6 +327,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           .then(() => {
             toast({ status: 'success', title: t('Deployment Successful') });
             formOldYamls.current = formData2Yamls(data);
+            setYamlList(formData2Yamls(data));
           })
           .catch((err) => {
             toast({ status: 'error', title: getErrText(err) });
@@ -304,7 +335,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           .finally(() => setIsLoading(false));
       } catch (error) {}
     },
-    [formHook, setIsLoading, toast, t, appName]
+    [appName, formHook, setIsLoading, t, toast]
   );
 
   useQuery(
@@ -400,7 +431,22 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           openNodePort: network.openNodePort || false,
           publicDomain: network.publicDomain || nanoid(),
           customDomain: network.customDomain || '',
-          domain: network.domain || 'gzg.sealos.run'
+          domain: network.domain || SEALOS_DOMAIN,
+          routes: network.routes?.length
+            ? network.routes.map((route) => ({
+                path: route.path || '/',
+                pathType: route.pathType || ('Prefix' as const),
+                serviceName: route.serviceName || '',
+                servicePort: route.servicePort || network.port || 80
+              }))
+            : [
+                {
+                  path: '/',
+                  pathType: 'Prefix' as const,
+                  serviceName: '',
+                  servicePort: network.port || 80
+                }
+              ]
         }));
         formHook.setValue('networks', completeNetworks);
       }
@@ -527,6 +573,17 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 });
               }
 
+              const invalidCustomDomain = await checkCustomDomainBindings(data);
+              if (invalidCustomDomain) {
+                return toast({
+                  status: 'warning',
+                  title: t('custom_domain_cname_required', {
+                    customDomain: invalidCustomDomain.customDomain,
+                    publicDomain: invalidCustomDomain.publicDomain
+                  })
+                });
+              }
+
               // check permission
               if (appName) {
                 try {
@@ -566,8 +623,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                             data.hpa.target === 'cpu'
                               ? 'CPU'
                               : data.hpa.target === 'gpu'
-                                ? 'GPU'
-                                : 'RAM',
+                              ? 'GPU'
+                              : 'RAM',
                           value: data.hpa.value
                         }
                       : undefined

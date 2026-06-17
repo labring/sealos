@@ -111,6 +111,56 @@ export const mountPathToConfigMapKey = (str: string) => {
   return result;
 };
 
+export const getFallbackPortName = ({
+  port,
+  protocol,
+  index
+}: {
+  port?: string | number;
+  protocol?: string;
+  index: number;
+}) =>
+  `p-${String(protocol || 'tcp').toLowerCase()[0] || 't'}-${str2Num(port) || 'unknown'}-${index}`;
+
+const getUniquePortName = (name: string, usedNames: Set<string>) => {
+  let index = 1;
+  let nextName = name;
+
+  while (usedNames.has(nextName)) {
+    const suffix = `-${index}`;
+    nextName = `${name.slice(0, Math.max(1, 15 - suffix.length)).replace(/-+$/, '')}${suffix}`;
+    index += 1;
+  }
+
+  return nextName;
+};
+
+export const ensureUniquePortNames = <T extends { name?: string; port?: any; containerPort?: any }>(
+  ports: T[] = []
+) => {
+  const usedNames = new Set<string>();
+
+  return ports.map((port, index) => {
+    const fallbackName = getFallbackPortName({
+      port: port?.port ?? port?.containerPort,
+      protocol: (port as T & { protocol?: string })?.protocol,
+      index
+    });
+    const currentName = typeof port?.name === 'string' ? port.name.trim() : '';
+    const uniqueName = getUniquePortName(
+      !currentName || usedNames.has(currentName) ? fallbackName : currentName,
+      usedNames
+    );
+
+    usedNames.add(uniqueName);
+
+    return {
+      ...port,
+      name: uniqueName
+    };
+  });
+};
+
 /**
  * read a file text content
  */
@@ -438,22 +488,17 @@ export const patchYamlList = ({
         actionsJson.kind === YamlKindEnum.Deployment ||
         actionsJson.kind === YamlKindEnum.StatefulSet
       ) {
-        // @ts-ignore
-        const ports = actionsJson?.spec.template.spec.containers[0].ports || [];
-        if (ports.length > 1 && !ports[0]?.name) {
-          // @ts-ignore
-          actionsJson.spec.template.spec.containers[0].ports[0].name = 'adaptport';
+        const workloadJson = actionsJson as any;
+        const ports = workloadJson?.spec.template.spec.containers[0].ports || [];
+        if (ports.length > 0) {
+          workloadJson.spec.template.spec.containers[0].ports = ensureUniquePortNames(ports);
         }
       }
       if (actionsJson.kind === YamlKindEnum.Service) {
-        // @ts-ignore
-        const ports = actionsJson?.spec.ports || [];
-        console.log(ports);
-
-        // @ts-ignore
-        if (ports.length > 1 && !ports[0]?.name) {
-          // @ts-ignore
-          actionsJson.spec.ports[0].name = 'adaptport';
+        const serviceJson = actionsJson as any;
+        const ports = serviceJson?.spec.ports || [];
+        if (ports.length > 0) {
+          serviceJson.spec.ports = ensureUniquePortNames(ports);
         }
       }
 

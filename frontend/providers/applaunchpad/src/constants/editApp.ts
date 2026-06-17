@@ -43,9 +43,18 @@ export const defaultEditVal: AppEditType = {
       openNodePort: false,
       publicDomain: '',
       customDomain: '',
-      domain: ''
+      domain: '',
+      routes: [
+        {
+          path: '/',
+          pathType: 'Prefix',
+          serviceName: '',
+          servicePort: 80
+        }
+      ]
     }
   ],
+  serviceList: [],
   envs: [],
   hpa: {
     use: false,
