@@ -197,6 +197,12 @@ describe('json2Ingress', () => {
         pathType: 'Prefix',
         serviceName: '',
         servicePort: 80
+      },
+      {
+        path: '/test',
+        pathType: 'Prefix',
+        serviceName: '',
+        servicePort: 80
       }
     ];
 
@@ -206,7 +212,9 @@ describe('json2Ingress', () => {
       })
     ) as any[];
 
-    expect(objects[0].spec.rules[0].http.paths[0].backend.service.port.number).toBe(8080);
+    expect(
+      objects[0].spec.rules[0].http.paths.map((path: any) => path.backend.service.port.number)
+    ).toEqual([8080, 8080]);
   });
 
   it('preserves route rules that target another backend service port', () => {

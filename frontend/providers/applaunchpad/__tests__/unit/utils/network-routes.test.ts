@@ -9,6 +9,12 @@ describe('syncDefaultRouteServicePort', () => {
         pathType: 'Prefix' as const,
         serviceName: '',
         servicePort: 80
+      },
+      {
+        path: '/test',
+        pathType: 'Prefix' as const,
+        serviceName: '',
+        servicePort: 80
       }
     ];
 
@@ -21,6 +27,12 @@ describe('syncDefaultRouteServicePort', () => {
     ).toEqual([
       {
         path: '/',
+        pathType: 'Prefix',
+        serviceName: '',
+        servicePort: 8080
+      },
+      {
+        path: '/test',
         pathType: 'Prefix',
         serviceName: '',
         servicePort: 8080

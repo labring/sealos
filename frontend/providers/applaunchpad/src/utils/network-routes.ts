@@ -1,8 +1,5 @@
 import type { AppNetworkRouteType } from '@/types/app';
 
-const isRootPrefixRoute = (route: AppNetworkRouteType) =>
-  (route.path || '/') === '/' && (route.pathType || 'Prefix') === 'Prefix';
-
 const targetsMainService = (route: AppNetworkRouteType, networkServiceName?: string) =>
   !route.serviceName || (!!networkServiceName && route.serviceName === networkServiceName);
 
@@ -37,7 +34,6 @@ export const syncDefaultRouteServicePort = ({
     const routePort = route.servicePort === undefined ? undefined : Number(route.servicePort);
 
     if (
-      isRootPrefixRoute(route) &&
       targetsMainService(route, networkServiceName) &&
       (routePort === undefined || routePort === oldPort || routePort === defaultPort)
     ) {
