@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { json2DeployCr, json2Ingress, json2Service, yamlString2Objects } from '@/utils/deployYaml2Json';
+import {
+  json2DeployCr,
+  json2Ingress,
+  json2Service,
+  yamlString2Objects
+} from '@/utils/deployYaml2Json';
 import type { AppEditType } from '@/types/app';
 import { deployPVCResizeKey } from '@/constants/app';
 import {
@@ -151,5 +156,14 @@ describe('json2Service', () => {
 
     expect(serviceName).toMatch(/^demo-nodeport-[a-z]{12}$/);
     expect(serviceName.length - app.appName.length).toBe(22);
+  });
+
+  it('keeps the numeric-prefix app name invalidity visible before apply', () => {
+    const app = createApp('', true);
+    app.appName = '111111hello-world';
+
+    const objects = yamlString2Objects(json2Service(app)) as any[];
+
+    expect(objects[0].metadata.name).toMatch(/^111111hello-world-nodeport-[a-z]{12}$/);
   });
 });
