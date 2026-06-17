@@ -9,7 +9,7 @@ import {
   queryA,
   queryAAAA,
   resolveWithNs,
-  extractNSServers,
+  extractNSServerMatch,
   ResolveError,
   ResolveErrorCode,
   type Nameserver
@@ -111,6 +111,7 @@ vi.mock('node:dns/promises', async () => {
 describe('DNS Resolver', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   describe('ResolveErrorCode', () => {
@@ -423,7 +424,7 @@ describe('DNS Resolver', () => {
     });
   });
 
-  describe('extractNSServers', () => {
+  describe('extractNSServerMatch', () => {
     it('should return at most MAX_NAMESERVERS nameservers', () => {
       const answers = [
         { name: 'example.org', type: 'NS', ttl: 86400, data: 'ns1.example.org' },
@@ -438,7 +439,7 @@ describe('DNS Resolver', () => {
         { name: 'ns5.example.org', type: 'A', ttl: 172800, data: '5.5.5.5' }
       ] as any;
 
-      const result = extractNSServers('example.org', answers);
+      const result = extractNSServerMatch('example.org', answers);
 
       expect(result?.zone).toBe('example.org');
       expect(result?.nameservers.length).toBe(MAX_NAMESERVERS);
@@ -455,7 +456,7 @@ describe('DNS Resolver', () => {
         { name: 'ns2.example.org', type: 'A', ttl: 172800, data: '2.2.2.2' }
       ] as any;
 
-      const result = extractNSServers('example.org', answers);
+      const result = extractNSServerMatch('example.org', answers);
 
       expect(result?.zone).toBe('example.org');
       expect(result?.nameservers.length).toBe(2);
@@ -473,7 +474,7 @@ describe('DNS Resolver', () => {
         { name: 'ns3.example.org', type: 'A', ttl: 172800, data: '3.3.3.3' }
       ] as any;
 
-      const result = extractNSServers('example.org', answers);
+      const result = extractNSServerMatch('example.org', answers);
 
       expect(result?.zone).toBe('example.org');
       expect(result?.nameservers.length).toBe(MAX_NAMESERVERS);
@@ -491,7 +492,7 @@ describe('DNS Resolver', () => {
         { name: 'ns2.example.org', type: 'A', ttl: 172800, data: '2.2.2.2' }
       ] as any;
 
-      const result = extractNSServers('example.org', answers);
+      const result = extractNSServerMatch('example.org', answers);
 
       expect(result?.zone).toBe('example.org');
       expect(result?.nameservers.length).toBe(2);
@@ -499,15 +500,15 @@ describe('DNS Resolver', () => {
       expect(result?.nameservers[1].ns).toBe('ns2.example.org');
     });
 
-    it('should return the closest parent zone when response contains delegation NS records', () => {
+    it('should use the closest parent NS records in a referral response', () => {
       const answers = [
-        { name: 'example.test', type: 'NS', ttl: 86400, data: 'ns1.example.test' },
         { name: 'test', type: 'NS', ttl: 86400, data: 'a.test-servers.example' },
-        { name: 'ns1.example.test', type: 'A', ttl: 172800, data: '198.51.100.1' },
-        { name: 'a.test-servers.example', type: 'A', ttl: 172800, data: '192.0.2.1' }
+        { name: 'example.test', type: 'NS', ttl: 86400, data: 'ns1.example.test' },
+        { name: 'a.test-servers.example', type: 'A', ttl: 172800, data: '192.0.2.1' },
+        { name: 'ns1.example.test', type: 'A', ttl: 172800, data: '198.51.100.1' }
       ] as any;
 
-      const result = extractNSServers('app.platform.example.test', answers);
+      const result = extractNSServerMatch('app.platform.example.test', answers);
 
       expect(result?.zone).toBe('example.test');
       expect(result?.nameservers.map((ns) => ns.ns)).toEqual(['ns1.example.test']);
@@ -613,7 +614,7 @@ describe('DNS Resolver', () => {
       }
     }, 2000);
 
-    it('should throw NO_RECORD error for mismatch.example.org (the final error is thrown)', async () => {
+    it('should report the origin domain when followed CNAME resolution fails', async () => {
       await expect(
         testCname('mismatch.example.org', 'expected-target.example.org')
       ).rejects.toThrow(ResolveError);
@@ -625,9 +626,29 @@ describe('DNS Resolver', () => {
         expect(error).toBeInstanceOf(ResolveError);
         if (error instanceof ResolveError) {
           expect(error.code).toBe(ResolveErrorCode.NO_RECORD);
-          expect(error.domain).toBe('wrong-target.example.org');
+          expect(error.domain).toBe('mismatch.example.org');
+          expect((error.details as any)?.failedDomain).toBe('wrong-target.example.org');
+          expect((error.details as any)?.cnameChain?.[0]?.data).toBe('wrong-target.example.org');
         }
       }
+    }, 2000);
+
+    it('should log trace when resolution fails', async () => {
+      await expect(
+        testCname('mismatch.example.org', 'expected-target.example.org')
+      ).rejects.toThrow(ResolveError);
+
+      expect(console.error).toHaveBeenCalledWith(
+        '[dns-resolver] resolve failed',
+        expect.stringContaining('"trace"')
+      );
+    }, 2000);
+
+    it('should use root lookup when local lookup only returns a TLD referral', async () => {
+      const result = await testCname('app.platform.example.test', 'target.platform.example.test');
+
+      expect(result.data).toBe('target.platform.example.test');
+      expect((result as any).ns.host).toBe('ns1.example.test');
     }, 2000);
   });
 
@@ -776,6 +797,18 @@ describe('DNS Resolver', () => {
       expect(result).toBeNull();
     }, 2000);
 
+    it('should ignore SOA-only authority responses for NS queries', async () => {
+      const soaOnlyNs: Nameserver = {
+        ns: 'soa-only.example.test',
+        resolveIPv4: async () => '203.0.113.2',
+        resolveIPv6: async () => null
+      };
+
+      const result = await resolveWithNs('soa-only.example.test', 'NS', [soaOnlyNs]);
+
+      expect(result).toBeNull();
+    }, 2000);
+
     it('should skip nameservers without IP addresses', async () => {
       const noIpNs: Nameserver = {
         ns: 'no-ip-ns.example.org',
@@ -842,6 +875,16 @@ describe('DNS Resolver', () => {
       }
     }, 2000);
 
+    it('should follow root referrals to the closest authoritative zone', async () => {
+      const result = await getAuthoritativeNsFromRoot('app.platform.example.test');
+
+      expect(result?.zone).toBe('example.test');
+      expect(result?.nameservers.map((ns) => ns.ns)).toEqual([
+        'ns1.example.test',
+        'ns2.example.test'
+      ]);
+    }, 2000);
+
     it('should throw error for domain that is too long', async () => {
       const longDomain = Array(12).fill('subdomain').join('.') + '.com';
 
@@ -886,10 +929,9 @@ describe('DNS Resolver', () => {
       }
     }, 2000);
 
-    it('should continue from a parent TLD delegation to the closest authoritative zone', async () => {
+    it('should follow local resolver referrals to the closest authoritative zone', async () => {
       const result = await getAuthoritativeNsFromLocal('app.platform.example.test');
 
-      expect(result).not.toBeNull();
       expect(result?.zone).toBe('example.test');
       expect(result?.nameservers.map((ns) => ns.ns)).toEqual([
         'ns1.example.test',
