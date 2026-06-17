@@ -8,10 +8,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/labring/sealos/service/pkg/api"
 )
+
+var namespaceMatcherPattern = regexp.MustCompile(`(^|,)\s*namespace\s*(=~|!~|=|!=)`)
 
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
 	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
@@ -83,8 +86,7 @@ func addNamespaceMatcher(query, namespace string) string {
 
 		selector := query[open+1 : close]
 		result.WriteString(query[:open+1])
-		if strings.Contains(selector, "namespace=") || strings.Contains(selector, "namespace!=") ||
-			strings.Contains(selector, "namespace=~") || strings.Contains(selector, "namespace!~") {
+		if namespaceMatcherPattern.MatchString(selector) {
 			result.WriteString(selector)
 		} else if strings.TrimSpace(selector) == "" {
 			result.WriteString(matcher)
