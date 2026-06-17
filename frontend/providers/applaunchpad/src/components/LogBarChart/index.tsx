@@ -1,9 +1,10 @@
 import dayjs from 'dayjs';
-import * as echarts from 'echarts';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useGlobalStore } from '@/store/global';
 import { MonitorDataResult } from '@/types/monitor';
+
+type EChartsInstance = import('echarts').ECharts;
 
 const map = {
   blue: {
@@ -113,7 +114,7 @@ const LogBarChart = ({
   const yData = data?.yData || new Array(30).fill('');
 
   const Dom = useRef<HTMLDivElement>(null);
-  const myChart = useRef<echarts.ECharts>();
+  const myChart = useRef<EChartsInstance>();
   const resizeObserver = useRef<ResizeObserver>();
 
   const optionStyle = useMemo(
@@ -188,25 +189,34 @@ const LogBarChart = ({
   // init chart
   useEffect(() => {
     if (!Dom.current || myChart?.current?.getOption() || !visible) return;
-    myChart.current = echarts.init(Dom.current);
-    myChart.current && myChart.current.setOption(option.current);
+    let ignore = false;
+
+    import('echarts').then((echarts) => {
+      if (ignore || !Dom.current || myChart?.current?.getOption() || !visible) return;
+      myChart.current = echarts.init(Dom.current);
+      myChart.current && myChart.current.setOption(option.current);
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, [Dom, visible]);
 
   // data changed, update
   useEffect(() => {
-    if (!myChart.current || !myChart?.current?.getOption() || !visible) return;
     option.current.xAxis.data = xData;
     option.current.series[0].data = yData;
+    if (!myChart.current || !myChart?.current?.getOption() || !visible) return;
     myChart.current.setOption(option.current);
   }, [xData, yData, visible]);
 
   // type changed, update
   useEffect(() => {
-    if (!myChart.current || !myChart?.current?.getOption()) return;
     option.current.series[0] = {
       ...option.current.series[0],
       ...optionStyle
     };
+    if (!myChart.current || !myChart?.current?.getOption()) return;
     myChart.current.setOption(option.current);
   }, [optionStyle]);
 

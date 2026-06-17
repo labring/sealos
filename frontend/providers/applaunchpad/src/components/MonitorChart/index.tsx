@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
 import dayjs from 'dayjs';
 import { LineStyleMap } from '@/constants/monitor';
@@ -12,6 +11,8 @@ type ChartColorStyle = {
   backgroundColor: string;
   lineColor: string;
 };
+
+type EChartsInstance = import('echarts').ECharts;
 
 type MonitorChart = FlexProps & {
   data: {
@@ -49,7 +50,7 @@ const MonitorChart = ({
 }: MonitorChart) => {
   const { screenWidth } = useGlobalStore();
   const chartDom = useRef<HTMLDivElement>(null);
-  const myChart = useRef<echarts.ECharts>();
+  const myChart = useRef<EChartsInstance>();
   const { t } = useTranslation();
 
   const option = useMemo(
@@ -204,15 +205,24 @@ const MonitorChart = ({
 
   useEffect(() => {
     if (!chartDom.current) return;
+    let ignore = false;
 
-    if (!myChart.current) {
-      myChart.current = echarts.init(chartDom.current);
-    } else {
-      myChart.current.dispose();
-      myChart.current = echarts.init(chartDom.current);
-    }
+    import('echarts').then((echarts) => {
+      if (ignore || !chartDom.current) return;
 
-    myChart.current.setOption(option);
+      if (!myChart.current) {
+        myChart.current = echarts.init(chartDom.current);
+      } else {
+        myChart.current.dispose();
+        myChart.current = echarts.init(chartDom.current);
+      }
+
+      myChart.current.setOption(option);
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, [data, option]);
 
   useEffect(() => {

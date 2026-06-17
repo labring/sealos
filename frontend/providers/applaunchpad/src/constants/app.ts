@@ -93,6 +93,7 @@ export const minReplicasKey = 'deploy.cloud.sealos.io/minReplicas';
 export const deployPVCResizeKey = 'deploy.cloud.sealos.io/resize';
 export const appDeployKey = 'cloud.sealos.io/app-deploy-manager';
 export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`;
+export const publicDomainPortKey = `cloud.sealos.io/app-deploy-manager-port`;
 export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
 export const gpuResourceKey = 'nvidia.com/gpu';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';

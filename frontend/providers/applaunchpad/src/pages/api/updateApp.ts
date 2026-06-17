@@ -18,6 +18,46 @@ export type Props = {
   appName: string;
 };
 
+const normalizeDnsName = (name: string) => name.trim().toLowerCase().replace(/\.+$/g, '');
+
+const normalizeIngressResource = <T extends Record<string, any>>(resource: T): T => {
+  if (resource.kind !== YamlKindEnum.Ingress) {
+    return resource;
+  }
+
+  resource.spec?.rules?.forEach((rule: any) => {
+    if (typeof rule.host === 'string') {
+      rule.host = normalizeDnsName(rule.host);
+    }
+  });
+  resource.spec?.tls?.forEach((tls: any) => {
+    if (Array.isArray(tls.hosts)) {
+      tls.hosts = tls.hosts.map((host: string) =>
+        typeof host === 'string' ? normalizeDnsName(host) : host
+      );
+    }
+  });
+
+  return resource;
+};
+
+const normalizeCertificateResource = <T extends Record<string, any>>(resource: T): T => {
+  if (resource.kind !== YamlKindEnum.Certificate) {
+    return resource;
+  }
+
+  if (Array.isArray(resource.spec?.dnsNames)) {
+    resource.spec.dnsNames = resource.spec.dnsNames.map((name: string) =>
+      typeof name === 'string' ? normalizeDnsName(name) : name
+    );
+  }
+
+  return resource;
+};
+
+const normalizeNetworkResource = <T extends Record<string, any>>(resource: T): T =>
+  normalizeCertificateResource(normalizeIngressResource(resource));
+
 async function updateAppCRUrl(
   k8sCustomObjects: CustomObjectsApi,
   namespace: string,
@@ -360,6 +400,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         if (!cr || item.type !== 'patch' || !item.value?.metadata) {
           return;
         }
+        normalizeNetworkResource(item.value);
         infoLog('patch cr', { kind: item.kind, name: item.value?.metadata?.name });
         return cr.patch(item.value);
       })
@@ -405,6 +446,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const ownerReferences = generateOwnerReference(appName, workloadKind, workloadUid);
         const updatedCreateYamlList = createYamlList.map((yamlStr) => {
           const resource = yaml.load(yamlStr as string) as any;
+          normalizeNetworkResource(resource);
           if (shouldHaveOwnerReference(resource.kind)) {
             if (!resource.metadata) {
               resource.metadata = {};
@@ -419,7 +461,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         });
         await applyYamlList(updatedCreateYamlList, 'create');
       } else {
-        await applyYamlList(createYamlList as string[], 'create');
+        await applyYamlList(
+          createYamlList.map((yamlStr) =>
+            yaml.dump(normalizeNetworkResource(yaml.load(yamlStr as string) as any))
+          ),
+          'create'
+        );
       }
     }
 
