@@ -364,6 +364,7 @@ export function NetworkSection({
       <Box px={'42px'} py={'24px'} userSelect={'none'}>
         {networks.map((network, i) => {
           const isExternalAccess = !!network.openPublicDomain || !!network.openNodePort;
+          const canConfigureRouteRules = !!network.openPublicDomain && !network.openNodePort;
 
           return (
             <Box
@@ -544,16 +545,18 @@ export function NetworkSection({
                             />
                           </Flex>
                         </Flex>
-                        <Button
-                          type={'button'}
-                          w={'113px'}
-                          minW={'113px'}
-                          variant={'outline'}
-                          {...actionButtonStyles}
-                          onClick={() => setRouteRulesIndex(i)}
-                        >
-                          {t('Configure Route Rules')}
-                        </Button>
+                        {canConfigureRouteRules && (
+                          <Button
+                            type={'button'}
+                            w={'113px'}
+                            minW={'113px'}
+                            variant={'outline'}
+                            {...actionButtonStyles}
+                            onClick={() => setRouteRulesIndex(i)}
+                          >
+                            {t('Configure Route Rules')}
+                          </Button>
+                        )}
                         {networks.length > 1 && (
                           <IconButton
                             ml={2}

@@ -157,6 +157,7 @@
   "Public Address": "Public Address",
   "Path Route Backend Service": "Backend Service",
   "Path Route Match Type": "Match Type",
+  "Path Route Path Duplicated": "Route path already exists",
   "Path Route Path Must Start With Slash": "Path must start with /",
   "Path Route Path Required": "Enter path",
   "Path Route Path": "Path",

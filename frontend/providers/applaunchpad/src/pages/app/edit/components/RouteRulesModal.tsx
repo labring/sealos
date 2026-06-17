@@ -141,6 +141,8 @@ export default function RouteRulesModal({
 
   const routes = watch('routes');
   const shouldScroll = fields.length > 2;
+  const getRouteIdentity = (route?: AppNetworkRouteType) =>
+    `${route?.path || ''}:${route?.pathType || 'Prefix'}`;
   const getPathError = (index: number) => {
     const message = errors.routes?.[index]?.path?.message;
     return typeof message === 'string' ? message : undefined;
@@ -274,10 +276,26 @@ export default function RouteRulesModal({
                           fontSize={'12px'}
                           {...register(`routes.${index}.path`, {
                             required: t('Path Route Path Required') || 'Path is required',
-                            validate: (value) =>
-                              String(value || '').startsWith('/')
-                                ? true
-                                : t('Path Route Path Must Start With Slash')
+                            validate: (value) => {
+                              const path = String(value || '');
+
+                              if (!path.startsWith('/')) {
+                                return t('Path Route Path Must Start With Slash');
+                              }
+
+                              const routeIdentity = getRouteIdentity({
+                                ...routes?.[index],
+                                path
+                              });
+                              const isDuplicate = routes?.some(
+                                (route, routeIndex) =>
+                                  routeIndex !== index && getRouteIdentity(route) === routeIdentity
+                              );
+
+                              return isDuplicate
+                                ? t('Path Route Path Duplicated') || 'Route path is duplicated'
+                                : true;
+                            }
                           })}
                         />
                       </MyFormControl>
