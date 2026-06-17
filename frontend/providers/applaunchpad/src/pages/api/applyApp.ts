@@ -7,10 +7,15 @@ import yaml from 'js-yaml';
 import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deployYaml2Json';
 import { appDeployKey } from '@/constants/app';
 import {
+  getInvalidGeneratedAppNameMessage,
+  getInvalidRfc1035ServiceNameMessage
+} from '@/utils/appNameValidation';
+import {
   ensurePublicDomainTargetsAvailable,
   PublicDomainError,
   PublicDomainTarget
 } from '@/services/backend/publicDomain';
+import { ResponseCode } from '@/types/response';
 
 type K8sResource = {
   kind?: string;
@@ -88,12 +93,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       allResources.push(...resources);
     });
 
+    const mainWorkloadIndex = allResources.findIndex(isWorkloadResource);
+    const invalidAppNameMessage =
+      mainWorkloadIndex === -1
+        ? undefined
+        : getInvalidGeneratedAppNameMessage(allResources[mainWorkloadIndex].metadata?.name);
+    if (mode === 'create' && invalidAppNameMessage) {
+      jsonRes(res, {
+        code: ResponseCode.BAD_REQUEST,
+        message: invalidAppNameMessage
+      });
+      return;
+    }
+
+    const invalidServiceNameMessage = getInvalidRfc1035ServiceNameMessage(allResources);
+    if (invalidServiceNameMessage) {
+      jsonRes(res, {
+        code: ResponseCode.BAD_REQUEST,
+        message: invalidServiceNameMessage
+      });
+      return;
+    }
+
     await ensurePublicDomainTargetsAvailable(getPublicDomainTargets(allResources), {
       k8sNetworkingApp,
       namespace
     });
-
-    const mainWorkloadIndex = allResources.findIndex(isWorkloadResource);
 
     if (mainWorkloadIndex === -1) {
       const applyRes = await applyYamlList(yamlList, mode);

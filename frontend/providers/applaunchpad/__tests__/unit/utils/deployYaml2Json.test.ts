@@ -328,6 +328,17 @@ describe('json2Service', () => {
     expect(portNames).toEqual(['p-t-80-0', 'p-t-80-1', 'p-t-80-2']);
     expect(new Set(portNames).size).toBe(portNames.length);
   });
+
+  it('keeps the numeric-prefix app name invalidity visible before apply', () => {
+    const app = createApp();
+    app.appName = '111111hello-world';
+    app.networks[0].openNodePort = true;
+    app.networks[0].nodePort = 30080;
+
+    const objects = yamlString2Objects(json2Service(app)) as any[];
+
+    expect(objects[0].metadata.name).toMatch(/^111111hello-world-nodeport-[a-z]{12}$/);
+  });
 });
 
 describe('json2DeployCr', () => {
@@ -379,4 +390,5 @@ describe('json2Secret', () => {
     expect(secretYaml).toContain('.dockerconfigjson: ********');
     expect(secretYaml).not.toContain(".dockerconfigjson: '********'");
   });
+
 });

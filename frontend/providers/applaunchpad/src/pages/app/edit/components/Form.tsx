@@ -54,6 +54,11 @@ import styles from './index.module.scss';
 import { NetworkSection } from './NetworkSection';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import { useQuery } from '@tanstack/react-query';
+import {
+  APP_NAME_BASE_MAX_LENGTH,
+  APP_NAME_BASE_PATTERN,
+  isValidAppNameBase
+} from '@/utils/appNameValidation';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
@@ -717,22 +722,39 @@ const Form = ({
                     disabled={isEdit}
                     title={isEdit ? t('Not allowed to change app name') || '' : ''}
                     autoFocus={true}
-                    maxLength={60}
+                    maxLength={isEdit ? undefined : APP_NAME_BASE_MAX_LENGTH}
                     placeholder={
                       t(
                         'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
                       ) || ''
                     }
-                    {...register('appName', {
-                      required: t('Not allowed to change app name') || '',
-                      maxLength: 60,
-                      pattern: {
-                        value: /[a-z]([-a-z0-9]*[a-z0-9])?/g,
-                        message: t(
-                          'The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter'
-                        )
-                      }
-                    })}
+                    {...register(
+                      'appName',
+                      isEdit
+                        ? {}
+                        : {
+                            required: t('App Name is required') || '',
+                            maxLength: {
+                              value: APP_NAME_BASE_MAX_LENGTH,
+                              message: t('App name base length limit', {
+                                length: APP_NAME_BASE_MAX_LENGTH
+                              })
+                            },
+                            pattern: {
+                              value: APP_NAME_BASE_PATTERN,
+                              message:
+                                t(
+                                  'The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter'
+                                ) || ''
+                            },
+                            validate: (value) =>
+                              isValidAppNameBase(value) ||
+                              t('App name base length limit', {
+                                length: APP_NAME_BASE_MAX_LENGTH
+                              }) ||
+                              ''
+                          }
+                    )}
                   />
                 </Flex>
               </FormControl>
