@@ -19,6 +19,8 @@ import { startDriver, detailDriverObj } from '@/hooks/driver';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { Button } from '@sealos/shadcn-ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
+import { CircleHelp } from 'lucide-react';
 import NetworkConfigurationTable from './NetworkConfigurationTable';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
@@ -274,7 +276,23 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         {hasNetwork && (
           <div className="p-5 pb-3 min-h-0 relative rounded-xl bg-white border-[0.5px] border-zinc-200 shadow-xs flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <div className="text-zinc-900 text-sm font-medium">{t('error_codes')}</div>
+              <div className="flex items-center gap-1.5">
+                <div className="text-zinc-900 text-sm font-medium">{t('error_codes')}</div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={t('error_codes_tooltip_label')}
+                      className="flex h-4 w-4 cursor-help items-center justify-center text-zinc-400"
+                    >
+                      <CircleHelp className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[260px] leading-5">
+                    {t('error_codes_tooltip_content')}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <div className="text-xs text-zinc-400">{t('last_5_mins')}</div>
             </div>
             {errorCodesCounts['3xx'] === 0 &&

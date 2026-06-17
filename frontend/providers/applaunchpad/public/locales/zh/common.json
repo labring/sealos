@@ -1,5 +1,7 @@
 {
   "error_codes": "错误码",
+  "error_codes_tooltip_label": "错误码说明",
+  "error_codes_tooltip_content": "错误码数据来自网关，可能会受到 nginx 等服务影响导致误差，故仅供参考。",
   "last_5_mins": "最近5分钟",
   "counts": "次",
   "no_errors_found": "暂无错误",
