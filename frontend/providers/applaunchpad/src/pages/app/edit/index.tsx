@@ -45,7 +45,8 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
 export const formData2Yamls = (
-  data: AppEditType
+  data: AppEditType,
+  options?: { maskSecret?: boolean }
   // handleType: 'edit' | 'create' = 'create',
   // crYamlList?: DeployKindsType[]
 ) => [
@@ -90,11 +91,14 @@ export const formData2Yamls = (
     ? [
         {
           filename: 'secret.yaml',
-          value: json2Secret(data)
+          value: json2Secret(data, undefined, { maskPassword: options?.maskSecret })
         }
       ]
     : [])
 ];
+
+export const formData2DisplayYamls = (data: AppEditType) =>
+  formData2Yamls(data, { maskSecret: true });
 
 const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
   const { t } = useTranslation();
@@ -376,7 +380,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
-        setYamlList(formData2Yamls(realTimeForm.current));
+        setYamlList(formData2DisplayYamls(realTimeForm.current));
       },
       onError(err) {
         toast({
@@ -393,7 +397,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   useEffect(() => {
     if (tabType === 'yaml') {
       try {
-        setYamlList(formData2Yamls(realTimeForm.current));
+        setYamlList(formData2DisplayYamls(realTimeForm.current));
       } catch (error) {}
     }
   }, [router.query.name, tabType]);
@@ -540,7 +544,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               console.log('data', data);
 
               const parseYamls = formData2Yamls(data);
-              setYamlList(parseYamls);
+              setYamlList(formData2DisplayYamls(data));
 
               // gpu inventory check
               if (data.gpu?.type) {
