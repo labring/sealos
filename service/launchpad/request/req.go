@@ -14,12 +14,16 @@ import (
 )
 
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
+	log.Printf("[launchpad-monitor] request vm addr=%s body=%s", addr, params.String())
+
 	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
 
 	if err != nil {
+		log.Printf("[launchpad-monitor] request vm failed addr=%s err=%v", addr, err)
 		return nil, err
 	}
 	defer resp.Body.Close()
+	log.Printf("[launchpad-monitor] vm response status=%s addr=%s", resp.Status, addr)
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		log.Printf("%v\n", resp)
@@ -40,11 +44,11 @@ func GetQuery(query *api.VMRequest) (string, error) {
 	case "cpu":
 		result = "round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) * 100,0.01)"
 	case "memory":
-		result = "round(sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\",namespace=~\"$namespace\",pod=~\"$pod.*\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod)* 100, 0.01)"
+		result = "round(sum(node_namespace_pod_container:container_memory_working_set_bytes{namespace=~\"$namespace\",pod=~\"$pod.*\",container!=\"\",image!=\"\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod)* 100, 0.01)"
 	case "average_cpu":
 		result = "avg(round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) * 100,0.01))"
 	case "average_memory":
-		result = "avg(round(sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\",namespace=~\"$namespace\",pod=~\"$pod.*\",container!=\"\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) * 100, 0.01))"
+		result = "avg(round(sum(node_namespace_pod_container:container_memory_working_set_bytes{namespace=~\"$namespace\",pod=~\"$pod.*\",container!=\"\",image!=\"\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"$namespace\",pod=~\"$pod.*\"}) by (pod) * 100, 0.01))"
 	case "storage":
 		result = "round((max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"$namespace\", persistentvolumeclaim=~\"@persistentvolumeclaim\"})) / (max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes {namespace=~\"$namespace\", persistentvolumeclaim=~\"@persistentvolumeclaim\"})) * 100, 0.01)"
 	case "gpu":
@@ -88,6 +92,13 @@ func buildClusterName(serviceName, port string) string {
 
 func VMNew(query *api.VMRequest) ([]byte, error) {
 	result, _ := GetQuery(query)
+	log.Printf(
+		"[launchpad-monitor] built query type=%s namespace=%s launchPadName=%s query=%s",
+		query.Type,
+		query.NS,
+		query.LaunchPadName,
+		result,
+	)
 
 	formData := url.Values{}
 	formData.Set("query", result)
@@ -107,8 +118,26 @@ func VMNew(query *api.VMRequest) ([]byte, error) {
 	}
 
 	if len(formData.Get("start")) == 0 {
+		log.Printf(
+			"[launchpad-monitor] query instant vmHost=%s type=%s namespace=%s launchPadName=%s time=%s",
+			vmHost,
+			query.Type,
+			query.NS,
+			query.LaunchPadName,
+			query.Range.Time,
+		)
 		return Request(vmHost+"/api/v1/query", bf)
 	}
+	log.Printf(
+		"[launchpad-monitor] query range vmHost=%s type=%s namespace=%s launchPadName=%s start=%s end=%s step=%s",
+		vmHost,
+		query.Type,
+		query.NS,
+		query.LaunchPadName,
+		query.Range.Start,
+		query.Range.End,
+		query.Range.Step,
+	)
 	return Request(vmHost+"/api/v1/query_range", bf)
 }
 
