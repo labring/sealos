@@ -15,7 +15,6 @@ import {
 import { enableSignUp, enableTracking, getRegionUid, getVersion } from '../enable';
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
-import { bindEmailSvc } from './svc/bindProvider';
 import { AdClickData } from '@/types/adClick';
 
 type TransactionClient = Omit<
