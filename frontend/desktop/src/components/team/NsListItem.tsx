@@ -25,6 +25,7 @@ const NsListItem = ({
 } & FlexProps) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const displayName = isPrivate ? t('common:default_team') : teamName;
 
   return (
     <Flex
@@ -58,10 +59,7 @@ const NsListItem = ({
             />
           </Box>
         )}
-        <Text textTransform={'capitalize'}>
-          {/* {isPrivate ? t('common:default_team') : teamName} */}
-          {teamName}
-        </Text>
+        <Text textTransform={'capitalize'}>{displayName}</Text>
         {isSelected && showCheck && (
           <CheckIcon style={{ marginLeft: 'auto' }} size={16} color={'#1C4EF5'} />
         )}

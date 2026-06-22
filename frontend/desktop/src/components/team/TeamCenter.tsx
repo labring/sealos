@@ -246,9 +246,7 @@ export default function TeamCenter({
                     <Box mx="10px">
                       <Flex align={'center'} justifyContent={'space-between'}>
                         <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
-                          {isPrivate
-                            ? `${t('common:default_team')} - ${namespace.teamName}`
-                            : namespace.teamName}
+                          {isPrivate ? t('common:default_team') : namespace.teamName}
                         </Text>
                         {curTeamUser?.role === UserRole.Owner && (
                           <HStack>
