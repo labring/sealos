@@ -53,6 +53,7 @@ desktop:
     forcedLanguage: "en"
     currencySymbol: "usd"
     protocol:
+      enabled: true
       serviceProtocol:
         zh: "https://sealos.io/zh-Hans/docs/msa/terms-of-service"
         en: "https://sealos.io/docs/msa/terms-of-service"
