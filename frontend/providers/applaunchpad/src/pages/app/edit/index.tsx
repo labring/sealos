@@ -40,7 +40,7 @@ import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import {
   cpuMillicoresToQuantity,
   memoryMiToQuantity,
-  quantityFromJSONOrZero,
+  quantityOrZero,
   quantityToCpuMillicores,
   quantityToMemoryMi,
   quantityToStorageGi
@@ -104,6 +104,16 @@ export const formData2Yamls = (
     : [])
 ];
 
+const normalizeFormQuantities = (data: AppEditType): AppEditType => ({
+  ...data,
+  cpu: quantityOrZero(data.cpu),
+  memory: quantityOrZero(data.memory),
+  storeList: data.storeList.map((store) => ({
+    ...store,
+    value: quantityOrZero(store.value)
+  }))
+});
+
 const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
   const { t } = useTranslation();
   const formOldYamls = useRef<YamlItemType[]>([]);
@@ -154,7 +164,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   // watch form change, compute new yaml
   formHook.watch((data) => {
     if (!data) return;
-    realTimeForm.current = data as AppEditType;
+    realTimeForm.current = normalizeFormQuantities(data as AppEditType);
     setForceUpdate(!forceUpdate);
   });
 
@@ -429,7 +439,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         ? quantityToCpuMillicores(realTimeForm.current.cpu) * newReplicas -
           quantityToCpuMillicores(
             formHook.formState.defaultValues?.cpu
-              ? quantityFromJSONOrZero(String(formHook.formState.defaultValues.cpu))
+              ? formHook.formState.defaultValues.cpu
               : defaultEditVal.cpu
           ) *
             oldReplicas
@@ -438,7 +448,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         ? quantityToMemoryMi(realTimeForm.current.memory) * newReplicas -
           quantityToMemoryMi(
             formHook.formState.defaultValues?.memory
-              ? quantityFromJSONOrZero(String(formHook.formState.defaultValues.memory))
+              ? formHook.formState.defaultValues.memory
               : defaultEditVal.memory
           ) *
             oldReplicas
@@ -517,7 +527,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       }
 
       openConfirm(() => {
-        const submitData = data;
+        const submitData = normalizeFormQuantities(data);
         formHook.setValue('appName', submitData.appName);
         realTimeForm.current = submitData;
 
@@ -535,10 +545,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             template_version: submitData.imageName.split(':')?.[1] ?? 'latest'
           },
           resources: {
-            cpu_cores: quantityToCpuMillicores(data.cpu) / 1000,
-            ram_mb: quantityToMemoryMi(data.memory),
-            replicas: data.hpa.use ? data.hpa.maxReplicas : Number(data.replicas),
-            scaling: data.hpa.use
+            cpu_cores: quantityToCpuMillicores(submitData.cpu) / 1000,
+            ram_mb: quantityToMemoryMi(submitData.memory),
+            replicas: submitData.hpa.use ? submitData.hpa.maxReplicas : Number(submitData.replicas),
+            scaling: submitData.hpa.use
               ? {
                   method:
                     submitData.hpa.target === 'cpu'

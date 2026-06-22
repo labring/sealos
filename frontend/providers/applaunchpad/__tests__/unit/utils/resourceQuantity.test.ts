@@ -30,6 +30,14 @@ describe('resourceQuantity helpers', () => {
     expect(quantityToCpuMillicores(quantity)).toBe(200);
   });
 
+  it('converts serialized quantity values back to numbers', () => {
+    expect(quantityToCpuMillicores('200m')).toBe(200);
+    expect(quantityToCpuMillicores(null)).toBe(0);
+    expect(quantityToCpuMillicores({})).toBe(0);
+    expect(quantityToMemoryMi('256Mi')).toBe(256);
+    expect(quantityToStorageGi('2Gi')).toBe(2);
+  });
+
   it('converts public memory Gi values to BinarySI Quantity and back', () => {
     const quantity = publicMemoryGiToQuantity(1);
 

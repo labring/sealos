@@ -114,10 +114,12 @@ export const getAppSource = (
   };
 };
 
-export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItemType => {
+export const adaptAppListItem = (app: V1Deployment | V1StatefulSet): AppListItemType => {
   // compute store amount
-  const storeAmount = app.spec?.volumeClaimTemplates
-    ? app.spec?.volumeClaimTemplates.reduce((sum, item) => {
+  const volumeClaimTemplates =
+    app.spec && 'volumeClaimTemplates' in app.spec ? app.spec.volumeClaimTemplates : undefined;
+  const storeAmount = volumeClaimTemplates
+    ? volumeClaimTemplates.reduce((sum, item) => {
         const storage = item?.spec?.resources?.requests?.storage
           ? parseK8sQuantityOrZero(item.spec.resources.requests.storage)
           : storageAnnotationToQuantity(item?.metadata?.annotations?.value);
