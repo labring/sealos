@@ -15,7 +15,7 @@ import {
 import { enableSignUp, enableTracking, getRegionUid, getVersion } from '../enable';
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
-import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
+import { bindEmailSvc } from './svc/bindProvider';
 import { AdClickData } from '@/types/adClick';
 
 type TransactionClient = Omit<
@@ -459,39 +459,8 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new AuthError('Failed to edit db', 'DATABASE_ERROR');
 
-  // Keep admin/user-managed nicknames stable across repeated third-party logins.
-  // Provider names are only used to initialize new users.
-  if (_user) {
-    const avatarToUpdate = avatar_url?.trim() ? avatar_url : null;
-    if (avatarToUpdate) {
-      user = await globalPrisma.user.update({
-        where: { uid: user.uid },
-        data: {
-          avatarUri: avatarToUpdate
-        }
-      });
-    }
-  }
-
-  if (!forceBindEmail(provider) && email) {
-    try {
-      const emailProvider = await globalPrisma.oauthProvider.findFirst({
-        where: {
-          providerType: ProviderType.EMAIL,
-          userUid: user.uid
-        }
-      });
-      if (!emailProvider) {
-        await addOauthProvider({
-          providerType: ProviderType.EMAIL,
-          providerId: email,
-          userUid: user.uid
-        });
-      }
-    } catch (error) {
-      console.error('globalAuth: Error during sign in bind email:', error);
-    }
-  }
+  // Returning users only authenticate here. Profile updates and provider binding
+  // must go through explicit profile/bind flows, not implicit login side effects.
 
   // user is deleted or banned
   if (user.status !== UserStatus.NORMAL_USER) return null;

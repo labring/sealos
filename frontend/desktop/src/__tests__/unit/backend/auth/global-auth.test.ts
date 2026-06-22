@@ -45,15 +45,18 @@ vi.mock('@/services/backend/tracking', () => ({
 }));
 
 vi.mock('@/services/backend/svc/bindProvider', () => ({
-  addOauthProvider: vi.fn()
+  addOauthProvider: vi.fn(),
+  bindEmailSvc: vi.fn()
 }));
 
 import { generateGlobalAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 import { getGlobalToken } from '@/services/backend/globalAuth';
+import { addOauthProvider } from '@/services/backend/svc/bindProvider';
 
 const mockPrisma = globalPrisma as any;
 const mockGenerateGlobalAccessToken = vi.mocked(generateGlobalAccessToken);
+const mockAddOauthProvider = vi.mocked(addOauthProvider);
 
 describe('getGlobalToken', () => {
   beforeEach(() => {
@@ -64,7 +67,7 @@ describe('getGlobalToken', () => {
     mockPrisma.userInfo.findUnique.mockResolvedValue({ isInited: true });
   });
 
-  it('does not overwrite an existing user nickname with provider profile name on sign in', async () => {
+  it('does not update existing user profile or bind providers on sign in', async () => {
     const existingUser = {
       uid: 'user-uid',
       id: 'user-id',
@@ -85,24 +88,18 @@ describe('getGlobalToken', () => {
         userUid: existingUser.uid,
         user: existingUser
       });
-    mockPrisma.user.update.mockResolvedValue({
-      ...existingUser,
-      avatarUri: 'new-avatar'
-    });
 
     const result = await getGlobalToken({
       provider: ProviderType.GITHUB,
       providerId: 'github-id',
       name: 'github-login',
-      avatar_url: 'new-avatar'
+      avatar_url: 'new-avatar',
+      email: 'github-user@example.com'
     });
 
-    expect(mockPrisma.user.update).toHaveBeenCalledWith({
-      where: { uid: existingUser.uid },
-      data: {
-        avatarUri: 'new-avatar'
-      }
-    });
+    expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    expect(mockPrisma.oauthProvider.findFirst).not.toHaveBeenCalled();
+    expect(mockAddOauthProvider).not.toHaveBeenCalled();
     expect(mockGenerateGlobalAccessToken).toHaveBeenCalledWith({
       sub: existingUser.uid,
       user_id: existingUser.id,
@@ -110,7 +107,7 @@ describe('getGlobalToken', () => {
     });
     expect(result?.user).toEqual({
       name: existingUser.nickname,
-      avatar: 'new-avatar',
+      avatar: existingUser.avatarUri,
       userUid: existingUser.uid
     });
   });
