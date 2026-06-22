@@ -61,6 +61,7 @@ data:
           zh: "{{.Values.desktopConfig.authBackgroundImage.zh}}"
           en: "{{.Values.desktopConfig.authBackgroundImage.en}}"
         protocol:
+          enabled: {{ .Values.desktopConfig.protocol.enabled }}
           serviceProtocol:
             zh: "{{.Values.desktopConfig.protocol.serviceProtocol.zh}}"
             en: "{{.Values.desktopConfig.protocol.serviceProtocol.en}}"

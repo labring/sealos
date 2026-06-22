@@ -27,6 +27,7 @@ export default function SigninComponent() {
 
   // State to control password login mode
   const [isPasswordMode, setIsPasswordMode] = useState(false);
+  const showProtocol = conf.layoutConfig?.protocol?.enabled !== false;
 
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
@@ -308,33 +309,35 @@ export default function SigninComponent() {
           )}
         </Stack>
 
-        <Box
-          mt={'8px'}
-          fontSize="14px"
-          color="gray.500"
-          width={'full'}
-          textAlign={'center'}
-          mr="2px"
-        >
-          {t('v2:terms_and_privacy_policy_text')}{' '}
+        {showProtocol && (
           <Box
-            as={Link}
-            href={protocol_data.service_protocol || ''}
-            target="_blank"
-            textDecoration="underline"
+            mt={'8px'}
+            fontSize="14px"
+            color="gray.500"
+            width={'full'}
+            textAlign={'center'}
+            mr="2px"
           >
-            {t('v2:terms_and_conditions')}
+            {t('v2:terms_and_privacy_policy_text')}{' '}
+            <Box
+              as={Link}
+              href={protocol_data.service_protocol || ''}
+              target="_blank"
+              textDecoration="underline"
+            >
+              {t('v2:terms_and_conditions')}
+            </Box>
+            ,
+            <Box
+              as={Link}
+              href={protocol_data.private_protocol || ''}
+              target="_blank"
+              textDecoration="underline"
+            >
+              {t('v2:privacy_policy')}
+            </Box>
           </Box>
-          ,
-          <Box
-            as={Link}
-            href={protocol_data.private_protocol || ''}
-            target="_blank"
-            textDecoration="underline"
-          >
-            {t('v2:privacy_policy')}
-          </Box>
-        </Box>
+        )}
 
         {/* Username/Password Login Button */}
         {passwordSigninEnabled && (

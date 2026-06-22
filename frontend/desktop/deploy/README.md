@@ -212,6 +212,14 @@ desktop:
     discordInviteLink: '' # Auto-configured: shown for "en", empty for "cn"
     gtmId: null
     currencySymbol: 'usd' # Auto-configured based on version: "cn"→"shellCoin", "en"→"usd"
+    protocol:
+      enabled: true
+      serviceProtocol:
+        zh: 'https://sealos.io/zh-Hans/docs/msa/terms-of-service'
+        en: 'https://sealos.io/docs/msa/terms-of-service'
+      privateProtocol:
+        zh: 'https://sealos.io/zh-Hans/docs/msa/privacy-policy'
+        en: 'https://sealos.io/docs/msa/privacy-policy'
     meta:
       title: 'Sealos Cloud'
       description: 'Sealos Cloud'
@@ -427,6 +435,10 @@ All config.yaml settings can be customized via Helm `--set` parameters through t
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.layoutTitle=\"My Cloud Platform\" --set desktopConfig.metaTitle=\"My Cloud\""
 
+# Hide sign-in terms and privacy prompt
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.protocol.enabled=false"
+
 # OAuth providers via HELM_OPTIONS
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=your-client-id --set desktopConfig.githubClientSecret=your-client-secret"
@@ -444,7 +456,7 @@ sealos run desktop-frontend:latest \
 
 **Common customization options:**
 
-- **UI customization**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`
+- **UI customization**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`, `protocol.enabled`
 - **OAuth providers**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` and their `*ClientId`, `*ClientSecret`
 - **Features**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **Communication**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`

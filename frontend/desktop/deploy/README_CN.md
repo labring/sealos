@@ -212,6 +212,14 @@ desktop:
     discordInviteLink: '' # 自动根据 version 配置: "en"时显示, "cn"时为空
     gtmId: null
     currencySymbol: 'usd' # 自动根据 version 配置: "cn"→"shellCoin", "en"→"usd"
+    protocol:
+      enabled: true
+      serviceProtocol:
+        zh: 'https://sealos.io/zh-Hans/docs/msa/terms-of-service'
+        en: 'https://sealos.io/docs/msa/terms-of-service'
+      privateProtocol:
+        zh: 'https://sealos.io/zh-Hans/docs/msa/privacy-policy'
+        en: 'https://sealos.io/docs/msa/privacy-policy'
     meta:
       title: 'Sealos Cloud'
       description: 'Sealos Cloud'
@@ -427,6 +435,10 @@ kubectl logs -n sealos -l app.kubernetes.io/name=desktop-frontend --tail=100 -f
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.layoutTitle=\"我的云平台\" --set desktopConfig.metaTitle=\"我的云平台\""
 
+# 隐藏登录页服务条款和隐私政策提示
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.protocol.enabled=false"
+
 # OAuth 提供商
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=your-client-id --set desktopConfig.githubClientSecret=your-client-secret"
@@ -444,7 +456,7 @@ sealos run desktop-frontend:latest \
 
 **常用自定义选项：**
 
-- **UI 自定义**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`
+- **UI 自定义**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`, `protocol.enabled`
 - **OAuth 提供商**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` 及其对应的 `*ClientId`, `*ClientSecret`
 - **功能开关**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **通讯配置**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`

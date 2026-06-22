@@ -54,6 +54,7 @@ export type MetaScriptType = {
 };
 
 export type ProtocolConfigType = {
+  enabled?: boolean;
   serviceProtocol: {
     zh: string;
     en: string;
@@ -305,6 +306,7 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   logo: '/logo.svg',
   backgroundImage: '/images/bg-light.svg',
   protocol: {
+    enabled: true,
     serviceProtocol: {
       zh: '',
       en: ''

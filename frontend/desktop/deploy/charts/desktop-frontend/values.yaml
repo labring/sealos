@@ -77,6 +77,7 @@ desktopConfig:
     zh: "/images/bg-light.svg"
     en: "/images/bg-light.svg"
   protocol:
+    enabled: true
     serviceProtocol:
       zh: https://sealos.io/zh-Hans/docs/msa/terms-of-service
       en: https://sealos.io/docs/msa/terms-of-service

@@ -124,6 +124,8 @@ desktopConfig:
   layoutBackgroundImage: "/images/bg-light.svg" # 背景图片
   customerServiceURL: ""                       # 客服 URL
   layoutDocsUrl: "https://sealos.run/docs/Intro/" # 文档 URL
+  protocol:
+    enabled: true                              # 是否显示登录页服务条款和隐私政策提示
 ```
 
 ### 11. Meta 标签配置
