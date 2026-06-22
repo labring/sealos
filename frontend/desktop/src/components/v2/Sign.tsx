@@ -27,7 +27,7 @@ export default function SigninComponent() {
 
   // State to control password login mode
   const [isPasswordMode, setIsPasswordMode] = useState(false);
-  const showProtocol = conf.layoutConfig?.protocol?.enabled !== false;
+  const showProtocol = conf.isLoaded && conf.layoutConfig?.protocol?.enabled !== false;
 
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
@@ -318,7 +318,7 @@ export default function SigninComponent() {
             textAlign={'center'}
             mr="2px"
           >
-            {t('v2:terms_and_privacy_policy_text')}{' '}
+            {`${t('v2:terms_and_privacy_policy_text')} `}
             <Box
               as={Link}
               href={protocol_data.service_protocol || ''}
