@@ -67,7 +67,7 @@ describe('getGlobalToken', () => {
     mockPrisma.userInfo.findUnique.mockResolvedValue({ isInited: true });
   });
 
-  it('does not update existing user profile or bind providers on sign in', async () => {
+  it('does not update existing user profile on sign in', async () => {
     const existingUser = {
       uid: 'user-uid',
       id: 'user-id',
@@ -98,8 +98,6 @@ describe('getGlobalToken', () => {
     });
 
     expect(mockPrisma.user.update).not.toHaveBeenCalled();
-    expect(mockPrisma.oauthProvider.findFirst).not.toHaveBeenCalled();
-    expect(mockAddOauthProvider).not.toHaveBeenCalled();
     expect(mockGenerateGlobalAccessToken).toHaveBeenCalledWith({
       sub: existingUser.uid,
       user_id: existingUser.id,
@@ -108,6 +106,44 @@ describe('getGlobalToken', () => {
     expect(result?.user).toEqual({
       name: existingUser.nickname,
       avatar: existingUser.avatarUri,
+      userUid: existingUser.uid
+    });
+  });
+
+  it('preserves automatic email provider binding on sign in', async () => {
+    const existingUser = {
+      uid: 'user-uid',
+      id: 'user-id',
+      nickname: 'Admin Nickname',
+      avatarUri: 'old-avatar',
+      status: UserStatus.NORMAL_USER
+    };
+
+    mockPrisma.oauthProvider.findUnique
+      .mockResolvedValueOnce({
+        providerId: 'github-id',
+        providerType: ProviderType.GITHUB,
+        userUid: existingUser.uid
+      })
+      .mockResolvedValueOnce({
+        providerId: 'github-id',
+        providerType: ProviderType.GITHUB,
+        userUid: existingUser.uid,
+        user: existingUser
+      });
+    mockPrisma.oauthProvider.findFirst.mockResolvedValue(null);
+
+    await getGlobalToken({
+      provider: ProviderType.GITHUB,
+      providerId: 'github-id',
+      name: 'github-login',
+      avatar_url: 'new-avatar',
+      email: 'github-user@example.com'
+    });
+
+    expect(mockAddOauthProvider).toHaveBeenCalledWith({
+      providerType: ProviderType.EMAIL,
+      providerId: 'github-user@example.com',
       userUid: existingUser.uid
     });
   });

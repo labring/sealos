@@ -15,6 +15,7 @@ import {
 import { enableSignUp, enableTracking, getRegionUid, getVersion } from '../enable';
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
+import { addOauthProvider } from './svc/bindProvider';
 import { AdClickData } from '@/types/adClick';
 
 type TransactionClient = Omit<
@@ -458,8 +459,27 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new AuthError('Failed to edit db', 'DATABASE_ERROR');
 
-  // Returning users only authenticate here. Profile updates and provider binding
-  // must go through explicit profile/bind flows, not implicit login side effects.
+  // Returning users only authenticate here. Provider profile fields are only used
+  // to initialize new users, so login must not overwrite user-managed profile data.
+  if (!forceBindEmail(provider) && email) {
+    try {
+      const emailProvider = await globalPrisma.oauthProvider.findFirst({
+        where: {
+          providerType: ProviderType.EMAIL,
+          userUid: user.uid
+        }
+      });
+      if (!emailProvider) {
+        await addOauthProvider({
+          providerType: ProviderType.EMAIL,
+          providerId: email,
+          userUid: user.uid
+        });
+      }
+    } catch (error) {
+      console.error('globalAuth: Error during sign in bind email:', error);
+    }
+  }
 
   // user is deleted or banned
   if (user.status !== UserStatus.NORMAL_USER) return null;
