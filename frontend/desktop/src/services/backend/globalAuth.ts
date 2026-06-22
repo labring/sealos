@@ -459,18 +459,15 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new AuthError('Failed to edit db', 'DATABASE_ERROR');
 
-  // For existing users, always sync latest profile info (when provided).
-  // - If `name` is empty, do not overwrite existing nickname.
-  // - If `avatar_url` is empty, do not overwrite existing avatar.
+  // Keep admin/user-managed nicknames stable across repeated third-party logins.
+  // Provider names are only used to initialize new users.
   if (_user) {
-    const nicknameToUpdate = name?.trim() ? name : null;
     const avatarToUpdate = avatar_url?.trim() ? avatar_url : null;
-    if (nicknameToUpdate || avatarToUpdate) {
+    if (avatarToUpdate) {
       user = await globalPrisma.user.update({
         where: { uid: user.uid },
         data: {
-          ...(nicknameToUpdate ? { nickname: nicknameToUpdate } : {}),
-          ...(avatarToUpdate ? { avatarUri: avatarToUpdate } : {})
+          avatarUri: avatarToUpdate
         }
       });
     }
