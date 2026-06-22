@@ -49,6 +49,13 @@ export const publicCpuCoresToQuantity = (value: number): Quantity =>
 export const quantityToPublicCpuCores = (quantity: unknown): number =>
   roundTo(quantityToCpuMillicores(quantity) / 1000);
 
+export const syncedCpuToQuantity = (value: unknown): Quantity =>
+  typeof value === 'number'
+    ? cpuMillicoresToQuantity(value)
+    : typeof value === 'string' && /^\d+$/.test(value.trim())
+    ? cpuMillicoresToQuantity(Number(value))
+    : quantityOrZero(value);
+
 export const memoryMiToQuantity = (value: number): Quantity =>
   Number.isInteger(value)
     ? Quantity.newBinaryScaledQuantity(BigInt(value), BinaryScale.Mebi)
@@ -62,6 +69,13 @@ export const publicMemoryGiToQuantity = (value: number): Quantity =>
 
 export const quantityToPublicMemoryGi = (quantity: unknown): number =>
   roundTo(quantityToMemoryMi(quantity) / 1024);
+
+export const syncedMemoryToQuantity = (value: unknown): Quantity =>
+  typeof value === 'number'
+    ? memoryMiToQuantity(value)
+    : typeof value === 'string' && /^\d+$/.test(value.trim())
+    ? memoryMiToQuantity(Number(value))
+    : quantityOrZero(value);
 
 export const storageGiToQuantity = (value: number): Quantity =>
   Number.isInteger(value)

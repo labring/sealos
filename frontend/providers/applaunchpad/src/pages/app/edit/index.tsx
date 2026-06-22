@@ -43,7 +43,9 @@ import {
   quantityOrZero,
   quantityToCpuMillicores,
   quantityToMemoryMi,
-  quantityToStorageGi
+  quantityToStorageGi,
+  syncedCpuToQuantity,
+  syncedMemoryToQuantity
 } from '@/utils/resourceQuantity';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
@@ -382,7 +384,13 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
       basicFields.forEach((field) => {
         if (parsedData[field] !== undefined) {
-          formHook.setValue(field, parsedData[field] as any);
+          const value =
+            field === 'cpu'
+              ? syncedCpuToQuantity(parsedData[field])
+              : field === 'memory'
+              ? syncedMemoryToQuantity(parsedData[field])
+              : parsedData[field];
+          formHook.setValue(field, value as any);
         }
       });
 

@@ -10,6 +10,8 @@ import {
   quantityToPublicCpuCores,
   quantityToPublicMemoryGi,
   quantityToStorageGi,
+  syncedCpuToQuantity,
+  syncedMemoryToQuantity,
   storageGiToQuantity,
   memoryMiToQuantity,
   storageAnnotationToQuantity
@@ -36,6 +38,14 @@ describe('resourceQuantity helpers', () => {
     expect(quantityToCpuMillicores({})).toBe(0);
     expect(quantityToMemoryMi('256Mi')).toBe(256);
     expect(quantityToStorageGi('2Gi')).toBe(2);
+  });
+
+  it('converts synced public resource values to Quantity', () => {
+    expect(syncedCpuToQuantity(2000).toString()).toBe('2');
+    expect(syncedCpuToQuantity('2000').toString()).toBe('2');
+    expect(syncedMemoryToQuantity(4096).toString()).toBe('4Gi');
+    expect(syncedMemoryToQuantity('4096').toString()).toBe('4Gi');
+    expect(syncedMemoryToQuantity('256Mi').toString()).toBe('256Mi');
   });
 
   it('converts public memory Gi values to BinarySI Quantity and back', () => {
