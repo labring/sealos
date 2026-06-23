@@ -15,7 +15,7 @@ import {
 import { enableSignUp, enableTracking, getRegionUid, getVersion } from '../enable';
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
-import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
+import { addOauthProvider } from './svc/bindProvider';
 import { AdClickData } from '@/types/adClick';
 
 type TransactionClient = Omit<
@@ -459,23 +459,8 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new AuthError('Failed to edit db', 'DATABASE_ERROR');
 
-  // For existing users, always sync latest profile info (when provided).
-  // - If `name` is empty, do not overwrite existing nickname.
-  // - If `avatar_url` is empty, do not overwrite existing avatar.
-  if (_user) {
-    const nicknameToUpdate = name?.trim() ? name : null;
-    const avatarToUpdate = avatar_url?.trim() ? avatar_url : null;
-    if (nicknameToUpdate || avatarToUpdate) {
-      user = await globalPrisma.user.update({
-        where: { uid: user.uid },
-        data: {
-          ...(nicknameToUpdate ? { nickname: nicknameToUpdate } : {}),
-          ...(avatarToUpdate ? { avatarUri: avatarToUpdate } : {})
-        }
-      });
-    }
-  }
-
+  // Returning users only authenticate here. Provider profile fields are only used
+  // to initialize new users, so login must not overwrite user-managed profile data.
   if (!forceBindEmail(provider) && email) {
     try {
       const emailProvider = await globalPrisma.oauthProvider.findFirst({
