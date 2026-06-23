@@ -6,6 +6,7 @@ import { ApiResp } from '@/services/kubernet';
 import { AppEditType } from '@/types/app';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Config } from '@/config';
+import { hydrateLegacyAppForm } from '@/utils/hydrateLegacyAppForm';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -15,12 +16,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    appForm.networks = appForm.networks.map((network) => ({
+    const hydratedAppForm = hydrateLegacyAppForm(appForm);
+
+    hydratedAppForm.networks = hydratedAppForm.networks.map((network) => ({
       ...network,
       domain: Config().cloud.domain
     }));
 
-    const parseYamls = formData2Yamls(appForm, Config().cloud.userDomains);
+    const parseYamls = formData2Yamls(hydratedAppForm, Config().cloud.userDomains);
 
     const yamls = parseYamls.map((item) => item.value);
 
