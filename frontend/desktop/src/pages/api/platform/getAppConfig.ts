@@ -13,6 +13,7 @@ import {
   CloudConfigType,
   CommonClientConfigType,
   DefaultAppClientConfig,
+  DesktopConfigType,
   LayoutConfigType,
   TrackingConfigType
 } from '@/types/system';
@@ -33,6 +34,7 @@ function genResConfig(
   authConf: AuthClientConfigType,
   commonConf: CommonClientConfigType,
   layoutConf: LayoutConfigType,
+  teamManagement: DesktopConfigType['teamManagement'],
   tracking: Required<TrackingConfigType>
 ): AppClientConfigType {
   return {
@@ -40,7 +42,8 @@ function genResConfig(
     common: commonConf,
     desktop: {
       auth: authConf,
-      layout: layoutConf
+      layout: layoutConf,
+      teamManagement
     },
     tracking: tracking
   };
@@ -57,7 +60,14 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
       websiteId: appConfig?.tracking?.websiteId || '',
       hostUrl: appConfig?.tracking?.hostUrl || ''
     };
-    const conf = genResConfig(cloudConf, authConf, commonConf, layoutConf, tracking);
+    const conf = genResConfig(
+      cloudConf,
+      authConf,
+      commonConf,
+      layoutConf,
+      appConfig?.desktop?.teamManagement,
+      tracking
+    );
     if (!global.commitCroner) {
       // console.log('init commit croner');
       global.commitCroner = new Cron('* * * * * *', commitTransactionjob, {

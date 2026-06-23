@@ -263,6 +263,7 @@ desktopConfig:
 desktopConfig:
   maxTeamCount: 10                             # 最大团队数
   maxTeamMemberCount: 100                      # 每个团队最大成员数
+  workspaceInviteExpiresInMinutes: [30, 1440, 10080] # 工作空间邀请链接有效期（分钟）
 ```
 
 ## 使用示例

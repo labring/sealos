@@ -19,7 +19,7 @@ import {
   HStack,
   useToast
 } from '@chakra-ui/react';
-import { MouseEventHandler, useState } from 'react';
+import { MouseEventHandler, useEffect, useMemo, useState } from 'react';
 import { ROLE_LIST, UserRole } from '@/types/team';
 import useSessionStore from '@/stores/session';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -30,6 +30,25 @@ import { useTranslation } from 'next-i18next';
 import { GroupAddIcon } from '@sealos/ui';
 import { useCopyData } from '@/hooks/useCopyData';
 import { track } from '@sealos/gtm';
+import { useConfigStore } from '@/stores/config';
+
+const getValidExpireOptions = (values?: number[]) => {
+  const validValues = values?.filter((value) => Number.isInteger(value) && value > 0) ?? [];
+  return validValues.length ? validValues : [30];
+};
+
+const formatExpireOption = (minutes: number, language?: string) => {
+  const isZh = language?.startsWith('zh');
+  if (minutes % 1440 === 0) {
+    const days = minutes / 1440;
+    return isZh ? `${days} 天` : `${days} ${days === 1 ? 'day' : 'days'}`;
+  }
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60;
+    return isZh ? `${hours} 小时` : `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  }
+  return isZh ? `${minutes} 分钟` : `${minutes} min`;
+};
 
 export default function InviteMember({
   ns_uid,
@@ -43,9 +62,16 @@ export default function InviteMember({
 }) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const session = useSessionStore((s) => s.session);
-  const k8s_username = session?.user.k8s_username;
-  const [userId, setUserId] = useState('');
+  const teamManagementConfig = useConfigStore((s) => s.teamManagementConfig);
+  const expireOptions = useMemo(
+    () => getValidExpireOptions(teamManagementConfig?.workspaceInviteExpiresInMinutes),
+    [teamManagementConfig?.workspaceInviteExpiresInMinutes]
+  );
   const [role, setRole] = useState(UserRole.Developer);
+  const [expiresInMinutes, setExpiresInMinutes] = useState(expireOptions[0]);
+  useEffect(() => {
+    if (!expireOptions.includes(expiresInMinutes)) setExpiresInMinutes(expireOptions[0]);
+  }, [expireOptions, expiresInMinutes]);
   const toast = useToast();
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -64,7 +90,7 @@ export default function InviteMember({
     }
   });
   const canManage = vaildManage(ownRole);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { copyData } = useCopyData();
   const getLinkCode = useMutation({
     mutationFn: getInviteCodeRequest,
@@ -92,7 +118,8 @@ export default function InviteMember({
     e.preventDefault();
     const data = await getLinkCode.mutateAsync({
       ns_uid,
-      role
+      role,
+      expiresInMinutes
     });
     const code = data.data?.code!;
     const link = generateLink(code);
@@ -136,52 +163,99 @@ export default function InviteMember({
                   workspace: workspaceName
                 })}
               </Text>
-              <HStack gap={'8px'} justifyContent={'stretch'}>
-                <Menu>
-                  <MenuButton
-                    as={Button}
-                    variant={'unstyled'}
-                    borderRadius="2px"
-                    border="1px solid #DEE0E2"
-                    bgColor="#FBFBFC"
-                    w="140px"
-                    mt="24px"
-                    px="12px"
-                  >
-                    <Flex alignItems={'center'} justifyContent={'space-between'}>
-                      <Text>{ROLE_LIST[role]}</Text>
-                      <Image
-                        src="/images/material-symbols_expand-more-rounded.svg"
-                        w="16px"
-                        h="16px"
-                        transform={'rotate(90deg)'}
-                      />
-                    </Flex>
-                  </MenuButton>
-                  <MenuList borderRadius={'2px'} minW={'unset'}>
-                    {ROLE_LIST.map((role, idx) => (
-                      <MenuItem
-                        w="140px"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setRole(idx);
-                        }}
-                        key={idx}
-                      >
-                        {role}
-                      </MenuItem>
-                    )).filter((_, i) => canManage(i, false) && i !== UserRole.Owner)}
-                  </MenuList>
-                </Menu>
+              <HStack gap={'8px'} justifyContent={'stretch'} mt="24px">
+                <Flex direction="column" flex="1" gap="6px">
+                  <Text fontSize="12px" color="#5A646E">
+                    {t('common:role')}
+                  </Text>
+                  <Menu>
+                    <MenuButton
+                      as={Button}
+                      variant={'unstyled'}
+                      borderRadius="2px"
+                      border="1px solid #DEE0E2"
+                      bgColor="#FBFBFC"
+                      w="100%"
+                      px="12px"
+                    >
+                      <Flex alignItems={'center'} justifyContent={'space-between'}>
+                        <Text>{ROLE_LIST[role]}</Text>
+                        <Image
+                          src="/images/material-symbols_expand-more-rounded.svg"
+                          w="16px"
+                          h="16px"
+                          transform={'rotate(90deg)'}
+                          alt="expand more"
+                        />
+                      </Flex>
+                    </MenuButton>
+                    <MenuList borderRadius={'2px'} minW={'unset'}>
+                      {ROLE_LIST.map((role, idx) => (
+                        <MenuItem
+                          w="140px"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setRole(idx);
+                          }}
+                          key={idx}
+                        >
+                          {role}
+                        </MenuItem>
+                      )).filter((_, i) => canManage(i, false) && i !== UserRole.Owner)}
+                    </MenuList>
+                  </Menu>
+                </Flex>
+                <Flex direction="column" flex="1" gap="6px">
+                  <Text fontSize="12px" color="#5A646E">
+                    {t('common:invite_link_expires')}
+                  </Text>
+                  <Menu>
+                    <MenuButton
+                      as={Button}
+                      variant={'unstyled'}
+                      borderRadius="2px"
+                      border="1px solid #DEE0E2"
+                      bgColor="#FBFBFC"
+                      w="100%"
+                      px="12px"
+                    >
+                      <Flex alignItems={'center'} justifyContent={'space-between'}>
+                        <Text>{formatExpireOption(expiresInMinutes, i18n.language)}</Text>
+                        <Image
+                          src="/images/material-symbols_expand-more-rounded.svg"
+                          w="16px"
+                          h="16px"
+                          transform={'rotate(90deg)'}
+                          alt="expand more"
+                        />
+                      </Flex>
+                    </MenuButton>
+                    <MenuList borderRadius={'2px'} minW={'unset'}>
+                      {expireOptions.map((minutes) => (
+                        <MenuItem
+                          w="116px"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setExpiresInMinutes(minutes);
+                          }}
+                          key={minutes}
+                        >
+                          {formatExpireOption(minutes, i18n.language)}
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Menu>
+                </Flex>
+              </HStack>
+              <Flex mt="16px">
                 <Button
-                  flex={'1'}
+                  w="100%"
                   variant={''}
                   bg="#24282C"
                   borderRadius={'4px'}
                   color="#fff"
                   py="6px"
                   px="12px"
-                  mt="24px"
                   _hover={{
                     opacity: '0.8'
                   }}
@@ -190,7 +264,7 @@ export default function InviteMember({
                 >
                   {t('common:generate_invitation_link')}
                 </Button>
-              </HStack>
+              </Flex>
             </ModalBody>
           )}
         </ModalContent>
