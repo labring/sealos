@@ -47,7 +47,8 @@ export async function register() {
           currencySymbol: Coin.shellCoin,
           pvcStorageMax: 20,
           imagePorts: {
-            enabled: false
+            enabled: false,
+            trustedRegistries: []
           },
           publicDomain: {
             customPrefixEnabled: false,

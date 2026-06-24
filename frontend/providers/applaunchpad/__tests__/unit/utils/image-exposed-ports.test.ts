@@ -35,6 +35,8 @@ type MockRequestCall = {
 };
 
 const requestCalls: MockRequestCall[] = [];
+const lookupCallbackAddresses: unknown[] = [];
+let connectionLookupOptions: Record<string, unknown> = {};
 
 function createResponse(response: MockRegistryResponse) {
   const body =
@@ -72,7 +74,8 @@ function createRequestMock(responses: MockRegistryResponse[]) {
         return;
       }
 
-      lookupFn(parsedUrl.hostname, {}, (error) => {
+      lookupFn(parsedUrl.hostname, connectionLookupOptions as any, (error, address) => {
+        lookupCallbackAddresses.push(address);
         if (error) {
           request.emit('error', error);
           return;
@@ -95,6 +98,9 @@ afterEach(() => {
   vi.clearAllMocks();
   lookupMock.mockReset();
   requestCalls.length = 0;
+  lookupCallbackAddresses.length = 0;
+  connectionLookupOptions = {};
+  delete (globalThis as any).AppConfig;
 });
 
 describe('parseExposedPorts', () => {
@@ -189,6 +195,99 @@ describe('getImageExposedPorts registry safety', () => {
     expect(requestMock).toHaveBeenCalledTimes(1);
   });
 
+  it('returns lookup address arrays when Node requests all connection addresses', async () => {
+    connectionLookupOptions = { all: true };
+    lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
+    mockRegistryRequests(
+      { body: { config: { digest: 'sha256:config' } } },
+      {
+        body: {
+          config: {
+            ExposedPorts: {
+              '80/tcp': {}
+            }
+          }
+        }
+      }
+    );
+
+    await expect(getImageExposedPorts('registry.example.com/team/api:latest')).resolves.toEqual([
+      { port: 80, protocol: 'TCP' }
+    ]);
+    expect(lookupCallbackAddresses).toHaveLength(2);
+    expect(lookupCallbackAddresses.every(Array.isArray)).toBe(true);
+  });
+
+  it('allows configured trusted registry hosts to resolve to private addresses', async () => {
+    (globalThis as any).AppConfig = {
+      launchpad: {
+        imagePorts: {
+          trustedRegistries: ['https://registry.192.168.10.70.nip.io']
+        }
+      }
+    };
+    lookupMock.mockResolvedValue([{ address: '192.168.10.70', family: 4 }]);
+    mockRegistryRequests(
+      { body: { config: { digest: 'sha256:config' } } },
+      {
+        body: {
+          config: {
+            ExposedPorts: {
+              '80/tcp': {}
+            }
+          }
+        }
+      }
+    );
+
+    await expect(
+      getImageExposedPorts('registry.192.168.10.70.nip.io/team/api:latest')
+    ).resolves.toEqual([{ port: 80, protocol: 'TCP' }]);
+  });
+
+  it('allows auth realms on configured trusted registry hosts', async () => {
+    (globalThis as any).AppConfig = {
+      launchpad: {
+        imagePorts: {
+          trustedRegistries: [
+            'registry.192.168.10.70.nip.io',
+            'hub.192.168.10.70.nip.io'
+          ]
+        }
+      }
+    };
+    lookupMock.mockResolvedValue([{ address: '192.168.10.70', family: 4 }]);
+    mockRegistryRequests(
+      {
+        status: 401,
+        body: '',
+        headers: {
+          'www-authenticate':
+            'Bearer realm="https://hub.192.168.10.70.nip.io/token",service="registry.192.168.10.70.nip.io"'
+        }
+      },
+      { body: { token: 'trusted-token' } },
+      { body: { config: { digest: 'sha256:config' } } },
+      {
+        body: {
+          config: {
+            ExposedPorts: {
+              '5000/tcp': {}
+            }
+          }
+        }
+      }
+    );
+
+    await expect(
+      getImageExposedPorts('registry.192.168.10.70.nip.io/team/api:latest', {
+        username: 'user',
+        password: 'password'
+      })
+    ).resolves.toEqual([{ port: 5000, protocol: 'TCP' }]);
+    expect(requestCalls[1].url.hostname).toBe('hub.192.168.10.70.nip.io');
+  });
+
   it('does not forward registry credentials to an untrusted challenge realm', async () => {
     lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
     const requestMock = mockRegistryRequests({
@@ -197,6 +296,33 @@ describe('getImageExposedPorts registry safety', () => {
       headers: {
         'www-authenticate':
           'Bearer realm="https://attacker.example/token",service="registry.example.com"'
+      }
+    });
+
+    await expect(
+      getImageExposedPorts('registry.example.com/team/api:latest', {
+        username: 'user',
+        password: 'password'
+      })
+    ).rejects.toThrow('Registry auth realm is not trusted');
+    expect(requestMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not trust configured internal auth realms for unrelated public registries', async () => {
+    (globalThis as any).AppConfig = {
+      launchpad: {
+        imagePorts: {
+          trustedRegistries: ['hub.192.168.10.70.nip.io']
+        }
+      }
+    };
+    lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
+    const requestMock = mockRegistryRequests({
+      status: 401,
+      body: '',
+      headers: {
+        'www-authenticate':
+          'Bearer realm="https://hub.192.168.10.70.nip.io/token",service="registry.example.com"'
       }
     });
 

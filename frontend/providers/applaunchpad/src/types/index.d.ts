@@ -64,6 +64,7 @@ export type AppConfigType = {
     pvcStorageMax: number;
     imagePorts?: {
       enabled?: boolean;
+      trustedRegistries?: string[];
     };
     publicDomain?: {
       customPrefixEnabled?: boolean;
