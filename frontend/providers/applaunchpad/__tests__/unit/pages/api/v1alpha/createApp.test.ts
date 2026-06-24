@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AppEditType } from '@/types/app';
-import { hydrateLegacyAppForm } from '@/utils/hydrateLegacyAppForm';
+import { hydrateLegacyAppForm, hydrateLegacyAppFormData } from '@/utils/hydrateLegacyAppForm';
 import {
   cpuMillicoresToQuantity,
   memoryMiToQuantity,
@@ -40,6 +40,16 @@ const createApp = (): AppEditType =>
   } as AppEditType);
 
 describe('hydrateLegacyAppForm', () => {
+  it('converts partial URL formData resources to Quantity values', () => {
+    const formData = hydrateLegacyAppFormData({
+      cpu: 2000,
+      memory: '4096'
+    } as unknown as Partial<AppEditType>);
+
+    expect(formData.cpu?.toString()).toBe('2');
+    expect(formData.memory?.toString()).toBe('4Gi');
+  });
+
   it('converts legacy numeric resources to Quantity values', () => {
     const app = hydrateLegacyAppForm({
       ...createApp(),
@@ -57,6 +67,21 @@ describe('hydrateLegacyAppForm', () => {
     expect(app.cpu.toString()).toBe('500m');
     expect(app.memory.toString()).toBe('1Gi');
     expect(app.storeList[0].value.toString()).toBe('2Gi');
+  });
+
+  it('fills missing legacy resources with default Quantity values', () => {
+    const app = hydrateLegacyAppForm({
+      ...createApp(),
+      cpu: undefined,
+      memory: undefined,
+      configMapList: undefined,
+      networks: undefined
+    } as unknown as AppEditType);
+
+    expect(app.cpu.toString()).toBe('200m');
+    expect(app.memory.toString()).toBe('256Mi');
+    expect(app.configMapList).toEqual([]);
+    expect(app.networks.length).toBe(1);
   });
 
   it('keeps Quantity resources unchanged', () => {

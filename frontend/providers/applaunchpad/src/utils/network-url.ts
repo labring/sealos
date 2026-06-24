@@ -38,6 +38,10 @@ export const getExternalDomainPort = (config: ExternalAccessConfig = {}): string
   return normalizePort(config.disableHttps ? config.httpPort : config.cloudPort);
 };
 
+const isDefaultSecurePort = (scheme: string, port: string): boolean => {
+  return port === '443' && ['https', 'grpcs', 'wss'].includes(scheme);
+};
+
 export const buildExternalUrl = ({
   protocol,
   host,
@@ -50,7 +54,9 @@ export const buildExternalUrl = ({
   config?: ExternalAccessConfig;
 }): string => {
   const scheme = getExternalProtocol(protocol, config);
-  const port = nodePort !== undefined ? normalizePort(nodePort) : getExternalDomainPort(config);
+  const isNodePort = nodePort !== undefined;
+  const port = isNodePort ? normalizePort(nodePort) : getExternalDomainPort(config);
+  const displayPort = !isNodePort && isDefaultSecurePort(scheme, port) ? '' : port;
 
-  return `${scheme}://${host}${formatPort(port)}`;
+  return `${scheme}://${host}${formatPort(displayPort)}`;
 };
