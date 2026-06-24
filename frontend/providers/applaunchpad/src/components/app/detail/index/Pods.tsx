@@ -25,6 +25,7 @@ import { useAppStore } from '@/store/app';
 import { track } from '@sealos/gtm';
 import { getUserSession } from '@/utils/user';
 import { useUserStore } from '@/store/user';
+import { getPodContainerName } from '@/utils/pod';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
@@ -168,80 +169,84 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
     {
       title: '',
       key: 'control',
-      render: (item: PodDetailType, i: number) => (
-        <div className="flex items-center gap-2 driver-detail-operate justify-end">
-          <Button
-            variant="outline"
-            className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
-            onClick={() => setDetailPodIndex(i)}
-          >
-            {t('Details')}
-          </Button>
+      render: (item: PodDetailType, i: number) => {
+        const containerName = getPodContainerName(item);
 
-          <Button
-            variant="outline"
-            className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
-            onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
-          >
-            {t('Restart')}
-          </Button>
+        return (
+          <div className="flex items-center gap-2 driver-detail-operate justify-end">
+            <Button
+              variant="outline"
+              className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
+              onClick={() => setDetailPodIndex(i)}
+            >
+              {t('Details')}
+            </Button>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-9 h-9 rounded-lg border-zinc-200 hover:bg-zinc-50 driver-detail-terminal"
-                onClick={() => {
-                  track('deployment_action', {
-                    event_type: 'terminal_open',
-                    module: 'applaunchpad'
-                  });
-                  sealosApp.runEvents('openDesktopApp', {
-                    appKey: 'system-terminal',
-                    pathname: '/exec',
-                    query: {
-                      ns: nsid,
-                      pod: item.podName,
-                      container: appName
-                    },
-                    messageData: {
-                      type: 'InternalAppCall',
-                      ns: nsid,
-                      pod: item.podName,
-                      container: appName
-                    }
-                  });
-                }}
-              >
-                <Terminal className="w-4 h-4 text-zinc-500" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="rounded-xl">
-              <p className="text-sm text-zinc-900 font-normal p-2">{t('Terminal')}</p>
-            </TooltipContent>
-          </Tooltip>
+            <Button
+              variant="outline"
+              className="px-3 py-2 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
+              onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
+            >
+              {t('Restart')}
+            </Button>
 
-          {appDetail.storeList?.length > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-9 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
+                  className="w-9 h-9 rounded-lg border-zinc-200 hover:bg-zinc-50 driver-detail-terminal"
                   onClick={() => {
-                    setDetailFilePodIndex(i);
-                    setIsOpenPodFile(true);
+                    track('deployment_action', {
+                      event_type: 'terminal_open',
+                      module: 'applaunchpad'
+                    });
+                    sealosApp.runEvents('openDesktopApp', {
+                      appKey: 'system-terminal',
+                      pathname: '/exec',
+                      query: {
+                        ns: nsid,
+                        pod: item.podName,
+                        container: containerName
+                      },
+                      messageData: {
+                        type: 'InternalAppCall',
+                        ns: nsid,
+                        pod: item.podName,
+                        container: containerName
+                      }
+                    });
                   }}
                 >
-                  <FolderOpen className="w-4 h-4 text-zinc-500" />
+                  <Terminal className="w-4 h-4 text-zinc-500" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="rounded-xl">
-                <p className="text-sm text-zinc-900 font-normal p-2">{t('File Management')}</p>
+                <p className="text-sm text-zinc-900 font-normal p-2">{t('Terminal')}</p>
               </TooltipContent>
             </Tooltip>
-          )}
-        </div>
-      )
+
+            {appDetail.storeList?.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-9 h-9 rounded-lg text-sm border-zinc-200 hover:bg-zinc-50"
+                    onClick={() => {
+                      setDetailFilePodIndex(i);
+                      setIsOpenPodFile(true);
+                    }}
+                  >
+                    <FolderOpen className="w-4 h-4 text-zinc-500" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="rounded-xl">
+                  <p className="text-sm text-zinc-900 font-normal p-2">{t('File Management')}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        );
+      }
     }
   ];
 
@@ -296,11 +301,13 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
         <LogsModal
           appName={appName}
           podName={pods[logsPodIndex]?.podName || ''}
+          pod={pods[logsPodIndex]}
           pods={pods
             .filter((pod) => pod.status.value === PodStatusEnum.running)
-            .map((item, i) => ({
+            .map((item) => ({
               alias: item.podName,
-              podName: item.podName
+              podName: item.podName,
+              pod: item
             }))}
           podAlias={pods[logsPodIndex]?.podName || ''}
           setLogsPodName={(name: string) =>

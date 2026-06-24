@@ -26,6 +26,7 @@ import styles from '@/components/app/detail/index/index.module.scss';
 import { useTranslation } from 'next-i18next';
 import { useClientAppConfig } from '@/hooks/useClientAppConfig';
 import { useRouter } from 'next/navigation';
+import { getPodContainerName } from '@/utils/pod';
 
 interface SinceItem {
   key: 'streaming_logs' | 'within_5_minute' | 'within_1_hour' | 'within_1_day' | 'terminated_logs';
@@ -79,6 +80,7 @@ const PodDetailModal = ({
   const [sinceTime, setSinceTime] = useState(0);
   const [previous, setPrevious] = useState(false);
   const sinceItems = useMemo(() => newSinceItems(Date.now()), []);
+  const containerName = getPodContainerName(pod);
 
   const RenderItem = useCallback(
     ({ label, children }: { label: string; children: React.ReactNode }) => {
@@ -148,6 +150,7 @@ const PodDetailModal = ({
       data: {
         appName,
         podName: pod.podName,
+        containerName,
         stream: true,
         sinceTime,
         previous
@@ -174,13 +177,14 @@ const PodDetailModal = ({
       }
     });
     return abortController;
-  }, [appName, pod.podName, sinceTime, previous]);
+  }, [appName, containerName, pod.podName, sinceTime, previous]);
 
   const exportLogs = useCallback(async () => {
     try {
       const allLogs = await getPodLogs({
         appName,
         podName: pod.podName,
+        containerName,
         stream: false,
         sinceTime,
         previous
@@ -189,7 +193,7 @@ const PodDetailModal = ({
     } catch (e) {
       console.log('download log error:', e);
     }
-  }, [appName, pod.podName, sinceTime, previous]);
+  }, [appName, containerName, pod.podName, sinceTime, previous]);
 
   useEffect(() => {
     controller.current = new AbortController();
