@@ -69,6 +69,21 @@ describe('hydrateLegacyAppForm', () => {
     expect(app.storeList[0].value.toString()).toBe('2Gi');
   });
 
+  it('fills missing legacy resources with default Quantity values', () => {
+    const app = hydrateLegacyAppForm({
+      ...createApp(),
+      cpu: undefined,
+      memory: undefined,
+      configMapList: undefined,
+      networks: undefined
+    } as unknown as AppEditType);
+
+    expect(app.cpu.toString()).toBe('200m');
+    expect(app.memory.toString()).toBe('256Mi');
+    expect(app.configMapList).toEqual([]);
+    expect(app.networks.length).toBe(1);
+  });
+
   it('keeps Quantity resources unchanged', () => {
     const cpu = cpuMillicoresToQuantity(300);
     const memory = memoryMiToQuantity(512);

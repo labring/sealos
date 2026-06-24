@@ -6,6 +6,7 @@ import {
   storageAnnotationToQuantity,
   storageGiToQuantity
 } from '@/utils/resourceQuantity';
+import { defaultEditVal } from '@/constants/editApp';
 import { Quantity } from '@sealos/shared';
 
 const isNumericString = (value: unknown): value is string =>
@@ -53,5 +54,20 @@ export const hydrateLegacyAppFormData = <T extends Partial<AppEditType>>(appForm
 
 export const hydrateLegacyAppForm = (appForm: AppEditType): AppEditType =>
   hydrateLegacyAppFormData({
-    ...appForm
+    ...defaultEditVal,
+    ...appForm,
+    kind: appForm.kind ?? defaultEditVal.kind,
+    replicas: appForm.replicas ?? defaultEditVal.replicas,
+    cpu: appForm.cpu ?? defaultEditVal.cpu,
+    memory: appForm.memory ?? defaultEditVal.memory,
+    networks: appForm.networks ?? defaultEditVal.networks,
+    envs: appForm.envs ?? defaultEditVal.envs,
+    hpa: appForm.hpa ?? defaultEditVal.hpa,
+    secret: appForm.secret ?? defaultEditVal.secret,
+    configMapList: appForm.configMapList ?? defaultEditVal.configMapList,
+    storeList: appForm.storeList ?? defaultEditVal.storeList,
+    volumes: appForm.volumes ?? defaultEditVal.volumes,
+    volumeMounts: appForm.volumeMounts ?? defaultEditVal.volumeMounts,
+    labels: appForm.labels ?? defaultEditVal.labels,
+    gpu: appForm.gpu ?? defaultEditVal.gpu
   });
