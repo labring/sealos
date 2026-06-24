@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 500, message: 'Billing service not configured' });
     }
 
-    const billingToken = generateBillingToken({
+    const billingToken = await generateBillingToken({
       userUid: session.userUid,
       userId: session.userId
     });

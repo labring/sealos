@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       code: 200,
       message: 'Successfully',
       data: {
-        token: generateGlobalAccessToken({
+        token: await generateGlobalAccessToken({
           sub: regionUserData.userUid,
           user_id: regionUserData.userId
         })

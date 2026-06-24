@@ -1,5 +1,5 @@
 import { IncomingHttpHeaders } from 'http';
-import { verify } from 'jsonwebtoken';
+import { verifyJwt as verifySharedJwt } from '@sealos/shared/server/jwt';
 
 export const authSession = async (header: IncomingHttpHeaders) => {
   if (!header) return Promise.reject('unAuthorization');
@@ -30,10 +30,5 @@ export const verifyJwt = async <TPayload>(
   token: string,
   secret: string
 ): Promise<TPayload | null> => {
-  try {
-    const payload = verify(token, secret) as TPayload;
-    return payload;
-  } catch (err) {
-    return null;
-  }
+  return verifySharedJwt<TPayload & object>(token, secret) as Promise<TPayload | null>;
 };

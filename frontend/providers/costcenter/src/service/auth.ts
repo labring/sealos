@@ -1,5 +1,5 @@
-import { sign, verify } from 'jsonwebtoken';
 import { Config } from '@/config';
+import { signJwt, verifyJwt as verifySharedJwt } from '@sealos/shared/server/jwt';
 
 const internalJwtSecret = () => Config().costCenter.auth.jwt.internal;
 
@@ -17,22 +17,11 @@ export type AccessTokenPayload = {
   workspaceId: string;
 } & AuthenticationTokenPayload;
 
-export const verifyJWT = <T extends Object = AccessTokenPayload>(token: string, secret: string) =>
-  new Promise<T | null>((resolve) => {
-    if (!token) return resolve(null);
-    verify(token, secret, (err, payload) => {
-      if (err) {
-        resolve(null);
-      } else if (!payload) {
-        resolve(null);
-      } else {
-        resolve(payload as T);
-      }
-    });
-  });
+export const verifyJWT = <T extends object = AccessTokenPayload>(token: string, secret: string) =>
+  verifySharedJwt<T>(token, secret);
 
 export const generateBillingToken = (props: AuthenticationTokenPayload) =>
-  sign(props, billingJwtSecret(), { expiresIn: '5d' });
+  signJwt(props, billingJwtSecret(), { expiresIn: '5d' });
 
 export const verifyInternalToken = (token: string) =>
   verifyJWT<AccessTokenPayload>(token, internalJwtSecret());

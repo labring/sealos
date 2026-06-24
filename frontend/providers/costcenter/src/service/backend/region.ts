@@ -51,17 +51,16 @@ export async function makeRegionListAPIClientByHeader(req: NextApiRequest, res: 
     return null;
   }
   const regionList = await getRegionList();
-  const clientList = regionList?.map((region) => {
-    const client = makeAPIClient(region, payload);
-    return client;
-  });
+  const clientList = regionList
+    ? await Promise.all(regionList.map((region) => makeAPIClient(region, payload)))
+    : undefined;
   return clientList;
 }
 
-export function makeAPIClient(
+export async function makeAPIClient(
   region: Region | undefined | null,
   payload?: AccessTokenPayload
-): AxiosInstance {
+): Promise<AxiosInstance> {
   const baseURL = region?.accountSvc
     ? `http://${region?.accountSvc}`
     : Config().costCenter.components.billing.url;
@@ -75,7 +74,7 @@ export function makeAPIClient(
       }
     });
   }
-  const token = generateBillingToken({
+  const token = await generateBillingToken({
     userUid: payload.userUid,
     userId: payload.userId
   });
@@ -97,6 +96,6 @@ export async function makeAPIClientByHeader(req: NextApiRequest, res: NextApiRes
     return null;
   }
   const region = await getRegionByUid(regionUid);
-  const client = makeAPIClient(region, payload);
+  const client = await makeAPIClient(region, payload);
   return client;
 }

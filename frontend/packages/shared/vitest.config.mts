@@ -9,6 +9,17 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          name: 'server',
+          globals: true,
+          environment: 'node',
+          passWithNoTests: true,
+          include: ['__tests__/server/**/*.{test,spec}.ts'],
+          exclude: ['node_modules', 'dist']
+        }
+      },
+      {
+        extends: true,
+        test: {
           name: 'components',
           globals: true,
           passWithNoTests: true,

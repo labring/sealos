@@ -126,7 +126,7 @@ export const otherRegionResourceGuard =
       (region) => region.uid !== global.AppConfig.cloud.regionUID
     );
     const otherCheckResp = await Promise.all(
-      regionTarget.map((region) =>
+      regionTarget.map(async (region) =>
         fetch(
           process.env.NODE_ENV === 'development'
             ? `http://127.0.0.1:3000/api/auth/delete/checkResource`
@@ -134,7 +134,7 @@ export const otherRegionResourceGuard =
           {
             headers: {
               authorization: encodeURI(
-                generateLegacyGlobalToken({
+                await generateLegacyGlobalToken({
                   userUid: userUid,
                   userId: userId
                 })

@@ -40,8 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       userId: payload.userId,
       userUid: payload.userUid
     };
-    const token = generateRegionalToken(jwtPayload);
-    const appToken = generateAppToken(jwtPayload);
+    const token = await generateRegionalToken(jwtPayload);
+    const appToken = await generateAppToken(jwtPayload);
     const data = {
       token,
       appToken

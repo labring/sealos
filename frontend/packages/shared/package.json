@@ -12,6 +12,7 @@
     "./shadcn": "./src/components/shadcn/index.ts",
     "./components/shadcn/styles.css": "./src/components/shadcn/styles.css",
     "./server/config": "./src-server/config/index.ts",
+    "./server/jwt": "./src-server/jwt/index.ts",
     "./server/v2alpha": "./src-server/v2alpha/error.ts"
   },
   "typesVersions": {
@@ -24,6 +25,9 @@
       ],
       "server/config": [
         "src-server/config/index.ts"
+      ],
+      "server/jwt": [
+        "src-server/jwt/index.ts"
       ],
       "server/v2alpha": [
         "src-server/v2alpha/error.ts"
@@ -50,6 +54,9 @@
     "sealos-desktop-sdk": "workspace:*",
     "zod": "^3 || ^4",
     "zustand": "^4 || ^5"
+  },
+  "dependencies": {
+    "jose": "^6.0.10"
   },
   "peerDependenciesMeta": {
     "@chakra-ui/icons": {
@@ -102,7 +109,7 @@
     "@chakra-ui/react": "^2.8.1",
     "@tanstack/react-query": "^4.36.1",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^20.7.1",
+    "@types/node": "^25.9.3",
     "@types/react": "18.3.27",
     "@types/react-dom": "18.3.7",
     "@vitejs/plugin-react": "^5.1.1",

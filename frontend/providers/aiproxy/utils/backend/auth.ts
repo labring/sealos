@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import { isJwtToken, signJwt, verifyJwt } from '@sealos/shared/server/jwt'
 
 import { getNamespaceFromKubeConfigString, verifyK8sConfigString } from './check-kc'
 
@@ -37,10 +37,13 @@ export async function kcOrAppTokenAuth(headers: Headers): Promise<string> {
   if (isJwtToken(token)) {
     // Handle JWT token validation
     try {
-      const decoded = jwt.verify(
+      const decoded = await verifyJwt<AppTokenPayload>(
         token,
         global.AppConfig?.auth.appTokenJwtKey || process.env.APP_TOKEN_JWT_KEY || ''
-      ) as AppTokenPayload
+      )
+      if (!decoded) {
+        return Promise.reject('Auth: Invalid JWT token')
+      }
       const now = Math.floor(Date.now() / 1000)
       if (decoded.exp && decoded.exp < now) {
         return Promise.reject('Auth: Token expired')
@@ -80,15 +83,17 @@ export async function kcOrAppTokenAuthDecoded(headers: Headers): Promise<string>
   if (token.includes('%')) {
     try {
       token = decodeURIComponent(token)
-    } catch (error) {
-    }
+    } catch {}
   }
   if (isJwtToken(token)) {
     try {
-      const decoded = jwt.verify(
+      const decoded = await verifyJwt<AppTokenPayload>(
         token,
         global.AppConfig?.auth.appTokenJwtKey || process.env.APP_TOKEN_JWT_KEY || ''
-      ) as AppTokenPayload
+      )
+      if (!decoded) {
+        return Promise.reject('Auth: Invalid JWT token')
+      }
       const now = Math.floor(Date.now() / 1000)
       if (decoded.exp && decoded.exp < now) {
         return Promise.reject('Auth: Token expired')
@@ -116,13 +121,6 @@ export async function kcOrAppTokenAuthDecoded(headers: Headers): Promise<string>
     }
   }
 }
-/**
- * Check if the token is a JWT token (contains dots separating header, payload, signature)
- */
-function isJwtToken(token: string): boolean {
-  return token.includes('.') && token.split('.').length === 3
-}
-
 export async function parseJwtToken(headers: Headers): Promise<string> {
   try {
     const token = headers.get('authorization')
@@ -130,10 +128,13 @@ export async function parseJwtToken(headers: Headers): Promise<string> {
       return Promise.reject('Auth: Token is missing')
     }
 
-    const decoded = jwt.verify(
+    const decoded = await verifyJwt<AppTokenPayload>(
       token,
       global.AppConfig?.auth.appTokenJwtKey || process.env.APP_TOKEN_JWT_KEY || ''
-    ) as AppTokenPayload
+    )
+    if (!decoded) {
+      return Promise.reject('Auth: Invalid token')
+    }
     const now = Math.floor(Date.now() / 1000)
     if (decoded.exp && decoded.exp < now) {
       return Promise.reject('Auth: Token expired')
@@ -166,10 +167,14 @@ export async function checkSealosUserIsRealName(headers: Headers): Promise<boole
       return false
     }
 
-    const decoded = jwt.verify(
+    const decoded = await verifyJwt<AppTokenPayload>(
       token,
       global.AppConfig?.auth.appTokenJwtKey || ''
-    ) as AppTokenPayload
+    )
+    if (!decoded) {
+      console.error('CheckSealosUserIsRealName: Token is invalid')
+      return false
+    }
     const now = Math.floor(Date.now() / 1000)
     if (decoded.exp && decoded.exp < now) {
       console.error('CheckSealosUserIsRealName: Token expired')
@@ -181,7 +186,7 @@ export async function checkSealosUserIsRealName(headers: Headers): Promise<boole
       return false
     }
 
-    const accountServerToken = jwt.sign(
+    const accountServerToken = await signJwt(
       {
         userUid: decoded.userUid,
         userId: decoded.userId,

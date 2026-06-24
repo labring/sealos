@@ -1,12 +1,16 @@
 import MyIcon from '@/components/Icon';
-import LogBarChart from '@/components/LogBarChart';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Loading } from '@sealos/shadcn-ui/loading';
 import { cn } from '@sealos/shadcn-ui';
 import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import EmptyChart from '@/components/Icon/icons/emptyChart.svg';
 import { ChevronRight, BarChart3 } from 'lucide-react';
+
+const LogBarChart = dynamic(() => import('@/components/LogBarChart'), {
+  ssr: false
+});
 
 export const LogCounts = ({
   logCountsData,

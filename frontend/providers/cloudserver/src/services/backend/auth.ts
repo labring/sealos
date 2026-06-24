@@ -1,5 +1,5 @@
 import { DesktopTokenPayload } from '@/types/user';
-import { verify } from 'jsonwebtoken';
+import { verifyJwtOrThrow } from '@sealos/shared/server/jwt';
 import type { NextApiRequest } from 'next';
 import { ERROR_ENUM } from '../error';
 
@@ -13,14 +13,4 @@ export const verifyAccessToken = async (req: NextApiRequest) => {
 };
 
 export const verifyDesktopToken: (token: string) => Promise<DesktopTokenPayload> = (token) =>
-  new Promise((resolve, reject) => {
-    verify(token, appJwtSecret, (err, payload) => {
-      if (err) {
-        reject(err);
-      } else if (!payload) {
-        reject('payload is null');
-      } else {
-        resolve(payload as DesktopTokenPayload);
-      }
-    });
-  });
+  verifyJwtOrThrow<DesktopTokenPayload>(token, appJwtSecret);

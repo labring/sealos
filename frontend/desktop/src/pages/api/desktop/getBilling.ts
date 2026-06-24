@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const base = global.AppConfig.desktop.auth.billingUrl as string;
     const consumptionUrl = base + '/account/v1alpha1/costs/all-region-consumption';
-    const billingToken = generateBillingToken({
+    const billingToken = await generateBillingToken({
       userUid: payload.userUid,
       userId: payload.userId
     });
