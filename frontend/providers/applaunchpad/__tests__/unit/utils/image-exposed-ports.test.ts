@@ -1,27 +1,100 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { lookup } from 'dns/promises';
+import { request as httpRequest } from 'http';
+import { request as httpsRequest } from 'https';
+import { EventEmitter } from 'events';
+import { Readable } from 'stream';
+import type { IncomingMessage, RequestOptions } from 'http';
 import { getImageExposedPorts, parseExposedPorts, parseImageRef } from '@/utils/image-exposed-ports';
 
 vi.mock('dns/promises', () => ({
   lookup: vi.fn()
 }));
 
-const lookupMock = vi.mocked(lookup);
+vi.mock('http', () => ({
+  request: vi.fn()
+}));
 
-function jsonResponse(body: unknown, init?: ResponseInit) {
-  return new Response(JSON.stringify(body), {
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers || {})
-    },
-    ...init
+vi.mock('https', () => ({
+  request: vi.fn()
+}));
+
+const lookupMock = vi.mocked(lookup);
+const httpRequestMock = vi.mocked(httpRequest);
+const httpsRequestMock = vi.mocked(httpsRequest);
+
+type MockRegistryResponse = {
+  body?: unknown;
+  headers?: Record<string, string>;
+  status?: number;
+};
+
+type MockRequestCall = {
+  url: URL;
+  options: RequestOptions;
+};
+
+const requestCalls: MockRequestCall[] = [];
+
+function createResponse(response: MockRegistryResponse) {
+  const body =
+    typeof response.body === 'string'
+      ? response.body
+      : JSON.stringify(response.body ?? {});
+  const stream = Readable.from([body]) as IncomingMessage;
+  stream.statusCode = response.status ?? 200;
+  stream.headers = {
+    'content-type': 'application/json',
+    ...(response.headers || {})
+  };
+  return stream;
+}
+
+function createRequestMock(responses: MockRegistryResponse[]) {
+  return vi.fn((url: string | URL, options: RequestOptions, callback: (res: IncomingMessage) => void) => {
+    const request = new EventEmitter() as EventEmitter & { end: () => void };
+    const parsedUrl = typeof url === 'string' ? new URL(url) : url;
+    requestCalls.push({ url: parsedUrl, options });
+
+    request.end = () => {
+      const lookupFn = options.lookup;
+      const finish = () => {
+        const response = responses.shift();
+        if (!response) {
+          request.emit('error', new Error(`Unexpected request to ${parsedUrl.toString()}`));
+          return;
+        }
+        callback(createResponse(response));
+      };
+
+      if (!lookupFn) {
+        finish();
+        return;
+      }
+
+      lookupFn(parsedUrl.hostname, {}, (error) => {
+        if (error) {
+          request.emit('error', error);
+          return;
+        }
+        finish();
+      });
+    };
+    return request;
   });
 }
 
+function mockRegistryRequests(...responses: MockRegistryResponse[]) {
+  const requestMock = createRequestMock([...responses]);
+  httpRequestMock.mockImplementation(requestMock);
+  httpsRequestMock.mockImplementation(requestMock);
+  return requestMock;
+}
+
 afterEach(() => {
-  vi.restoreAllMocks();
-  vi.unstubAllGlobals();
+  vi.clearAllMocks();
   lookupMock.mockReset();
+  requestCalls.length = 0;
 });
 
 describe('parseExposedPorts', () => {
@@ -63,38 +136,69 @@ describe('parseImageRef', () => {
 
 describe('getImageExposedPorts registry safety', () => {
   it('rejects loopback registry hosts before fetch', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
+    const requestMock = mockRegistryRequests();
 
     await expect(getImageExposedPorts('localhost:5000/team/api:latest')).rejects.toThrow(
       'Registry host is not allowed'
     );
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(requestMock).not.toHaveBeenCalled();
   });
 
   it('rejects registry hosts that resolve to private addresses', async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
+    const requestMock = mockRegistryRequests();
     lookupMock.mockResolvedValue([{ address: '169.254.169.254', family: 4 }]);
 
     await expect(getImageExposedPorts('registry.example.com/team/api:latest')).rejects.toThrow(
       'Registry host resolves to a private address'
     );
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(requestMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects registry redirects to private addresses', async () => {
+    lookupMock
+      .mockResolvedValueOnce([{ address: '8.8.8.8', family: 4 }])
+      .mockResolvedValueOnce([{ address: '8.8.8.8', family: 4 }])
+      .mockResolvedValueOnce([{ address: '8.8.8.8', family: 4 }])
+      .mockResolvedValueOnce([{ address: '169.254.169.254', family: 4 }]);
+    const requestMock = mockRegistryRequests({
+      status: 302,
+      headers: {
+        location: 'https://metadata.example/latest/meta-data'
+      }
+    });
+
+    await expect(getImageExposedPorts('registry.example.com/team/api:latest')).rejects.toThrow(
+      'Registry host resolves to a private address'
+    );
+    expect(requestMock).toHaveBeenCalledTimes(1);
+    expect(requestCalls[0].url.toString()).toBe(
+      'https://registry.example.com/v2/team/api/manifests/latest'
+    );
+  });
+
+  it('rejects DNS rebinding during the connection lookup', async () => {
+    lookupMock
+      .mockResolvedValueOnce([{ address: '8.8.8.8', family: 4 }])
+      .mockResolvedValueOnce([{ address: '8.8.8.8', family: 4 }])
+      .mockResolvedValueOnce([{ address: '10.0.0.8', family: 4 }]);
+    const requestMock = mockRegistryRequests({ body: { config: { digest: 'sha256:config' } } });
+
+    await expect(getImageExposedPorts('registry.example.com/team/api:latest')).rejects.toThrow(
+      'Registry host resolves to a private address'
+    );
+    expect(requestMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not forward registry credentials to an untrusted challenge realm', async () => {
     lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response('', {
-        status: 401,
-        headers: {
-          'www-authenticate':
-            'Bearer realm="https://attacker.example/token",service="registry.example.com"'
-        }
-      })
-    );
-    vi.stubGlobal('fetch', fetchMock);
+    const requestMock = mockRegistryRequests({
+      status: 401,
+      body: '',
+      headers: {
+        'www-authenticate':
+          'Bearer realm="https://attacker.example/token",service="registry.example.com"'
+      }
+    });
 
     await expect(
       getImageExposedPorts('registry.example.com/team/api:latest', {
@@ -102,20 +206,18 @@ describe('getImageExposedPorts registry safety', () => {
         password: 'password'
       })
     ).rejects.toThrow('Registry auth realm is not trusted');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(requestMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not fall back to Docker Hub auth for private registry challenges', async () => {
     lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response('', {
-        status: 401,
-        headers: {
-          'www-authenticate': 'Bearer'
-        }
-      })
-    );
-    vi.stubGlobal('fetch', fetchMock);
+    const requestMock = mockRegistryRequests({
+      status: 401,
+      body: '',
+      headers: {
+        'www-authenticate': 'Bearer'
+      }
+    });
 
     await expect(
       getImageExposedPorts('registry.example.com/team/api:latest', {
@@ -123,14 +225,13 @@ describe('getImageExposedPorts registry safety', () => {
         password: 'password'
       })
     ).rejects.toThrow('Registry auth challenge is invalid');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(requestMock).toHaveBeenCalledTimes(1);
   });
 
   it('aborts oversized registry JSON responses', async () => {
     lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
     const largeManifest = { manifests: [{ digest: 'sha256:' + 'a'.repeat(1024 * 1024) }] };
-    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(largeManifest));
-    vi.stubGlobal('fetch', fetchMock);
+    mockRegistryRequests({ body: largeManifest });
 
     await expect(getImageExposedPorts('registry.example.com/team/api:latest')).rejects.toThrow(
       'Image manifest is too large'
@@ -139,20 +240,19 @@ describe('getImageExposedPorts registry safety', () => {
 
   it('parses exposed ports after trusted registry manifest and config fetches', async () => {
     lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }]);
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse({ config: { digest: 'sha256:config' } }))
-      .mockResolvedValueOnce(
-        jsonResponse({
+    mockRegistryRequests(
+      { body: { config: { digest: 'sha256:config' } } },
+      {
+        body: {
           config: {
             ExposedPorts: {
               '8080/tcp': {},
               '8443/tcp': {}
             }
           }
-        })
-      );
-    vi.stubGlobal('fetch', fetchMock);
+        }
+      }
+    );
 
     await expect(getImageExposedPorts('registry.example.com/team/api:latest')).resolves.toEqual([
       { port: 8080, protocol: 'TCP' },

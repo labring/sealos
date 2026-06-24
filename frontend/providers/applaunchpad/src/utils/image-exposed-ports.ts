@@ -1,5 +1,9 @@
 import { lookup } from 'dns/promises';
+import { request as httpRequest } from 'http';
+import type { IncomingHttpHeaders, IncomingMessage, RequestOptions } from 'http';
+import { request as httpsRequest } from 'https';
 import { isIP } from 'net';
+import type { LookupFunction } from 'net';
 
 export type ImageRegistryAuth = {
   username?: string;
@@ -39,6 +43,15 @@ type ChallengeParams = {
   scope?: string;
 };
 
+type RegistryResponse = {
+  ok: boolean;
+  status: number;
+  headers: {
+    get: (name: string) => string | null;
+  };
+  json: () => Promise<unknown>;
+};
+
 const DEFAULT_REGISTRY = 'registry-1.docker.io';
 const DOCKER_HUB_AUTH_SERVICE = 'registry.docker.io';
 const DOCKER_HUB_AUTH_HOST = 'auth.docker.io';
@@ -57,6 +70,8 @@ const ACCEPT_HEADER = [
 ].join(', ');
 const REGISTRY_REQUEST_TIMEOUT = 10000;
 const MAX_REGISTRY_RESPONSE_BYTES = 1024 * 1024;
+const MAX_REGISTRY_REDIRECTS = 3;
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 const JSON_CONTENT_TYPES = new Set([
   'application/json',
   'application/vnd.oci.image.index.v1+json',
@@ -98,19 +113,19 @@ function isBlockedIPv4(address: string) {
 
 function isBlockedIPv6(address: string) {
   const normalized = address.toLowerCase();
+  const ipv4Mapped = normalized.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (ipv4Mapped) {
+    return isBlockedIPv4(ipv4Mapped[1]);
+  }
+
   return (
     normalized === '::' ||
     normalized === '::1' ||
     normalized.startsWith('2001:db8:') ||
     normalized.startsWith('fc') ||
     normalized.startsWith('fd') ||
-    /^fe[89ab]:/.test(normalized) ||
-    normalized.startsWith('ff') ||
-    normalized.startsWith('::ffff:127.') ||
-    normalized.startsWith('::ffff:10.') ||
-    normalized.startsWith('::ffff:192.168.') ||
-    /^::ffff:172\.(1[6-9]|2\d|3[01])\./.test(normalized) ||
-    /^::ffff:169\.254\./.test(normalized)
+    /^fe[89ab][0-9a-f]:/.test(normalized) ||
+    normalized.startsWith('ff')
   );
 }
 
@@ -130,15 +145,216 @@ function getUrlHost(value: string) {
 
 async function assertPublicRegistryHost(registry: string) {
   const host = getUrlHost(registry);
+  await assertPublicHost(host, 'Registry host');
+}
+
+async function assertPublicHost(host: string, context: string) {
   const hostIsIp = isIP(host) !== 0;
   if (host === 'localhost' || host.endsWith('.localhost') || (hostIsIp && isBlockedAddress(host))) {
-    throw new Error('Registry host is not allowed');
+    throw new Error(`${context} is not allowed`);
+  }
+
+  if (hostIsIp) {
+    return;
   }
 
   const addresses = await lookup(host, { all: true });
   if (!addresses.length || addresses.some((item) => isBlockedAddress(item.address))) {
-    throw new Error('Registry host resolves to a private address');
+    throw new Error(`${context} resolves to a private address`);
   }
+}
+
+function assertRegistryUrl(url: URL) {
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('Registry request protocol is not allowed');
+  }
+}
+
+const publicLookup: LookupFunction = (hostname, options, callback) => {
+  const lookupOptions = {
+    family: options.family,
+    hints: options.hints,
+    verbatim: options.verbatim
+  };
+
+  const hostIsIp = isIP(hostname) !== 0;
+  if (hostIsIp) {
+    if (isBlockedAddress(hostname)) {
+      callback(
+        Object.assign(new Error('Registry host is not allowed'), { code: 'EHOSTDENIED' }),
+        '',
+        0
+      );
+      return;
+    }
+
+    callback(null, hostname, isIP(hostname));
+    return;
+  }
+
+  lookup(hostname, { ...lookupOptions, all: true })
+    .then((addresses) => {
+      if (!addresses.length || addresses.some((item) => isBlockedAddress(item.address))) {
+        callback(
+          Object.assign(new Error('Registry host resolves to a private address'), {
+            code: 'EHOSTDENIED'
+          }),
+          '',
+          0
+        );
+        return;
+      }
+
+      const preferredFamily =
+        lookupOptions.family === 4 || lookupOptions.family === 6 ? lookupOptions.family : undefined;
+      const selected = preferredFamily
+        ? addresses.find((item) => item.family === preferredFamily)
+        : addresses[0];
+
+      if (!selected) {
+        callback(
+          Object.assign(new Error('Registry host address family is unavailable'), {
+            code: 'ENOTFOUND'
+          }),
+          '',
+          0
+        );
+        return;
+      }
+
+      callback(null, selected.address, selected.family);
+    })
+    .catch((error) => {
+      callback(error, '', 0);
+    });
+};
+
+function getHeader(headers: IncomingHttpHeaders, name: string) {
+  const value = headers[name.toLowerCase()];
+  if (Array.isArray(value)) return value.join(', ');
+  return value ?? null;
+}
+
+function createRegistryResponse(message: IncomingMessage, body: Buffer): RegistryResponse {
+  const status = message.statusCode || 0;
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: {
+      get: (name) => getHeader(message.headers, name)
+    },
+    json: async () => JSON.parse(body.toString('utf8'))
+  };
+}
+
+async function readRegistryResponseBody(message: IncomingMessage, context: string) {
+  return await new Promise<Buffer>((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    let settled = false;
+
+    const fail = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    };
+
+    message.on('data', (chunk: Buffer | string) => {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      total += buffer.byteLength;
+      if (total > MAX_REGISTRY_RESPONSE_BYTES) {
+        message.destroy();
+        fail(new Error(`${context} is too large`));
+        return;
+      }
+      chunks.push(buffer);
+    });
+    message.on('error', fail);
+    message.on('end', () => {
+      if (settled) return;
+      settled = true;
+      resolve(Buffer.concat(chunks));
+    });
+  });
+}
+
+async function requestRegistryUrl(
+  url: URL,
+  options: { headers?: Record<string, string>; signal?: AbortSignal; context: string }
+) {
+  assertRegistryUrl(url);
+  await assertPublicHost(url.hostname, 'Registry host');
+
+  const request = url.protocol === 'https:' ? httpsRequest : httpRequest;
+  const requestOptions: RequestOptions = {
+    method: 'GET',
+    headers: options.headers,
+    lookup: publicLookup,
+    signal: options.signal
+  };
+
+  return await new Promise<RegistryResponse>((resolve, reject) => {
+    const req = request(url, requestOptions, async (message) => {
+      try {
+        const body = await readRegistryResponseBody(message, options.context);
+        resolve(createRegistryResponse(message, body));
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+function stripRedirectHeaders(headers: Record<string, string> | undefined, from: URL, to: URL) {
+  if (from.origin === to.origin) return headers;
+  if (!headers) return headers;
+
+  const nextHeaders = { ...headers };
+  delete nextHeaders.Authorization;
+  delete nextHeaders.authorization;
+  return nextHeaders;
+}
+
+async function registryHttpRequest(
+  url: string,
+  options: { headers?: Record<string, string>; signal?: AbortSignal; context: string },
+  redirectCount = 0
+): Promise<RegistryResponse> {
+  const currentUrl = new URL(url);
+  const response = await requestRegistryUrl(currentUrl, options);
+
+  if (!REDIRECT_STATUSES.has(response.status)) {
+    return response;
+  }
+
+  if (redirectCount >= MAX_REGISTRY_REDIRECTS) {
+    throw new Error('Registry request redirected too many times');
+  }
+
+  const location = response.headers.get('location');
+  if (!location) {
+    throw new Error('Registry request redirect is invalid');
+  }
+
+  const redirectUrl = new URL(location, currentUrl);
+  assertRegistryUrl(redirectUrl);
+  if (currentUrl.protocol === 'https:' && redirectUrl.protocol !== 'https:') {
+    throw new Error('Registry request redirect is not trusted');
+  }
+
+  await assertPublicHost(redirectUrl.hostname, 'Registry host');
+
+  return await registryHttpRequest(
+    redirectUrl.toString(),
+    {
+      ...options,
+      headers: stripRedirectHeaders(options.headers, currentUrl, redirectUrl)
+    },
+    redirectCount + 1
+  );
 }
 
 function assertTrustedRealm(challenge: ChallengeParams, image: ImageRef) {
@@ -165,7 +381,7 @@ function assertTrustedRealm(challenge: ChallengeParams, image: ImageRef) {
 }
 
 async function readJsonResponse<T>(
-  response: Response,
+  response: RegistryResponse,
   context: string,
   options?: { allowOctetStream?: boolean }
 ): Promise<T> {
@@ -178,29 +394,7 @@ async function readJsonResponse<T>(
     throw new Error(`${context} returned unsupported content type`);
   }
 
-  const reader = response.body?.getReader();
-  if (!reader) {
-    return (await response.json()) as T;
-  }
-
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value) continue;
-
-    total += value.byteLength;
-    if (total > MAX_REGISTRY_RESPONSE_BYTES) {
-      await reader.cancel();
-      throw new Error(`${context} is too large`);
-    }
-    chunks.push(value);
-  }
-
-  const buffer = Buffer.concat(chunks);
-  return JSON.parse(buffer.toString('utf8')) as T;
+  return (await response.json()) as T;
 }
 
 function normalizeRegistry(registry?: string) {
@@ -277,9 +471,10 @@ async function getBearerToken(image: ImageRef, auth?: ImageRegistryAuth) {
     )}`;
   }
 
-  const response = await fetch(url, {
+  const response = await registryHttpRequest(url, {
     headers,
-    signal: AbortSignal.timeout(REGISTRY_REQUEST_TIMEOUT)
+    signal: AbortSignal.timeout(REGISTRY_REQUEST_TIMEOUT),
+    context: 'Registry auth response'
   });
   if (!response.ok) {
     throw new Error(`Registry auth failed: ${response.status}`);
@@ -292,7 +487,12 @@ async function getBearerToken(image: ImageRef, auth?: ImageRegistryAuth) {
   return data.token || data.access_token;
 }
 
-async function registryFetch(url: string, image: ImageRef, auth?: ImageRegistryAuth) {
+async function registryFetch(
+  url: string,
+  image: ImageRef,
+  auth?: ImageRegistryAuth,
+  context = 'Registry response'
+) {
   const headers: Record<string, string> = {
     Accept: ACCEPT_HEADER
   };
@@ -303,9 +503,10 @@ async function registryFetch(url: string, image: ImageRef, auth?: ImageRegistryA
     )}`;
   }
 
-  let response = await fetch(url, {
+  let response = await registryHttpRequest(url, {
     headers,
-    signal: AbortSignal.timeout(REGISTRY_REQUEST_TIMEOUT)
+    signal: AbortSignal.timeout(REGISTRY_REQUEST_TIMEOUT),
+    context
   });
 
   if (response.status === 401) {
@@ -314,7 +515,7 @@ async function registryFetch(url: string, image: ImageRef, auth?: ImageRegistryA
     assertTrustedRealm(challenge, image);
     const token =
       challenge.realm && challenge.service
-        ? await fetch(
+        ? await registryHttpRequest(
             `${challenge.realm}?service=${encodeURIComponent(
               challenge.service
             )}&scope=${encodeURIComponent(
@@ -329,7 +530,8 @@ async function registryFetch(url: string, image: ImageRef, auth?: ImageRegistryA
                       ).toString('base64')}`
                     }
                   : undefined,
-              signal: AbortSignal.timeout(REGISTRY_REQUEST_TIMEOUT)
+              signal: AbortSignal.timeout(REGISTRY_REQUEST_TIMEOUT),
+              context: 'Registry auth response'
             }
           )
             .then((res) => {
@@ -342,12 +544,13 @@ async function registryFetch(url: string, image: ImageRef, auth?: ImageRegistryA
             .then((data) => data.token || data.access_token)
         : await getBearerToken(image, auth);
 
-    response = await fetch(url, {
+    response = await registryHttpRequest(url, {
       headers: {
         ...headers,
         Authorization: `Bearer ${token}`
       },
-      signal: AbortSignal.timeout(REGISTRY_REQUEST_TIMEOUT)
+      signal: AbortSignal.timeout(REGISTRY_REQUEST_TIMEOUT),
+      context
     });
   }
 
@@ -359,7 +562,7 @@ async function fetchManifest(image: ImageRef, reference: string, auth?: ImageReg
     image.registry,
     `/v2/${image.repository}/manifests/${reference}`
   );
-  const manifestResponse = await registryFetch(manifestUrl, image, auth);
+  const manifestResponse = await registryFetch(manifestUrl, image, auth, 'Image manifest');
 
   if (!manifestResponse.ok) {
     throw new Error(`Failed to fetch image manifest: ${manifestResponse.status}`);
@@ -425,7 +628,7 @@ export async function getImageExposedPorts(
   }
 
   const configUrl = toRegistryUrl(image.registry, `/v2/${image.repository}/blobs/${configDigest}`);
-  const configResponse = await registryFetch(configUrl, image, auth);
+  const configResponse = await registryFetch(configUrl, image, auth, 'Image config');
 
   if (!configResponse.ok) {
     throw new Error(`Failed to fetch image config: ${configResponse.status}`);
