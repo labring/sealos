@@ -233,6 +233,10 @@ export const PortConfigSchema = z
       description: 'Public access address',
       example: 'https://xyz789.cloud.sealos.io'
     }),
+    publicDomain: z.string().optional().openapi({
+      description: 'Public subdomain prefix',
+      example: 'xyz789'
+    }),
     customDomain: z.string().optional().openapi({
       description: 'Custom domain (if configured)',
       example: 'api.example.com'

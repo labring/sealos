@@ -578,8 +578,8 @@ export const adaptAppDetail = async (
           domain: isCustomDomain
             ? SEALOS_DOMAIN
             : item?.nodePort
-            ? domain
-            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
+              ? domain
+              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
           routes: ingressPaths.length
             ? ingressPaths.map((path) => ({
                 path: path.path || '/',
@@ -714,8 +714,8 @@ export const sliderNumber2MarkList = ({
           ? `${item / 1024} G`
           : `${item} M`
         : type === 'ephemeralStorage'
-        ? `${item}`
-        : `${item / 1000}`,
+          ? `${item}`
+          : `${item / 1000}`,
     value: item
   }));
 };

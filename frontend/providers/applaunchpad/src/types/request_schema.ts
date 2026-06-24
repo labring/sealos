@@ -41,14 +41,79 @@ import {
   imageRegistrySchema,
   resourceConverters
 } from './schema';
+import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
+import { validatePublicDomainPrefix } from '@/utils/public-domain';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+function includePublicDomainPrefix() {
+  return isCustomPublicDomainPrefixEnabled();
+}
+
+const PublicDomainPrefixSchema = z.string().superRefine((value, ctx) => {
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Custom public domain prefixes are disabled'
+    });
+    return;
+  }
+
+  const result = validatePublicDomainPrefix(value);
+  if (!result.valid) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        result.reason === 'reserved'
+          ? `Public domain prefix "${result.value}" is reserved`
+          : `Public domain prefix "${result.value}" is invalid`
+    });
+  }
+});
+
+function getPublicDomainPrefixOrRandom(value?: string) {
+  if (!value) return nanoid();
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    throw new Error('Custom public domain prefixes are disabled');
+  }
+
+  const result = validatePublicDomainPrefix(value);
+  if (!result.valid) {
+    throw new Error(
+      result.reason === 'reserved'
+        ? `Public domain prefix "${result.value}" is reserved`
+        : `Public domain prefix "${result.value}" is invalid`
+    );
+  }
+  return result.value;
+}
 
 export const GetAppByAppNameQuerySchema = z.object({
   name: z.string().min(1, { message: 'name cannot be empty' })
 });
 
 export const GetAppByAppNameResponseSchema = z.array(z.any()).nullable();
+
+const CreatePortConfigSchema = PortConfigSchema.pick({
+  number: true,
+  protocol: true,
+  exposesPublicDomain: true,
+  publicDomain: true
+})
+  .extend({
+    publicDomain: PublicDomainPrefixSchema.optional()
+  })
+  .superRefine((data, ctx) => {
+    if (data.publicDomain === undefined) return;
+    const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(data.protocol);
+    if (!isApplicationProtocol || data.exposesPublicDomain === false) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['publicDomain'],
+        message: 'publicDomain can only be set for HTTP/GRPC/WS ports with public domain access'
+      });
+    }
+  });
 
 export const DeleteAppByNameQuerySchema = z.object({
   name: z.string().min(1, { message: 'name cannot be empty' })
@@ -84,6 +149,9 @@ export const PortUpdateSchema = z
       description:
         'Whether to expose this port via public domain (only effective for HTTP/GRPC/WS protocols)'
     }),
+    publicDomain: PublicDomainPrefixSchema.optional().openapi({
+      description: 'Custom public subdomain prefix. Omit to keep or auto-generate.'
+    }),
     portName: z.string().optional().openapi({
       description: 'Port name (include this to update existing port, omit to create new port)'
     }),
@@ -97,6 +165,18 @@ export const PortUpdateSchema = z
   .openapi({
     description:
       'Port configuration. Include portName to update existing port. Omit portName to create new port. Ports not included in the array will be deleted.'
+  })
+  .superRefine((data, ctx) => {
+    if (data.publicDomain === undefined) return;
+    const isKnownNonApplicationProtocol =
+      data.protocol !== undefined && !['HTTP', 'GRPC', 'WS'].includes(data.protocol);
+    if (isKnownNonApplicationProtocol || data.exposesPublicDomain === false) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['publicDomain'],
+        message: 'publicDomain can only be set for HTTP/GRPC/WS ports with public domain access'
+      });
+    }
   });
 
 export const UpdateImageSchema = z
@@ -316,13 +396,7 @@ export const CreateLaunchpadRequestSchema = z
     resource: ResourceSchema,
 
     ports: z
-      .array(
-        PortConfigSchema.pick({
-          number: true,
-          protocol: true,
-          exposesPublicDomain: true
-        })
-      )
+      .array(CreatePortConfigSchema)
       .default([
         {
           number: 80,
@@ -363,6 +437,11 @@ export function transformToLegacySchema(
 
   const networks = standardRequest.ports?.map((port) => {
     const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(port.protocol);
+    const publicDomain =
+      isApplicationProtocol && port.exposesPublicDomain
+        ? getPublicDomainPrefixOrRandom(port.publicDomain)
+        : '';
+
     return {
       serviceName: `service-${nanoid()}`,
       networkName: `network-${nanoid()}`,
@@ -371,7 +450,7 @@ export function transformToLegacySchema(
       protocol: (isApplicationProtocol ? 'TCP' : port.protocol) as TransportProtocolType,
       appProtocol: (isApplicationProtocol ? port.protocol : 'HTTP') as ApplicationProtocolType,
       openPublicDomain: isApplicationProtocol ? port.exposesPublicDomain : false,
-      publicDomain: isApplicationProtocol ? nanoid() : '',
+      publicDomain,
       customDomain: '',
       domain: '',
       nodePort: undefined,
@@ -542,7 +621,10 @@ export function transformFromLegacySchema(
           exposesPublicDomain: exposesPublicDomain,
           networkName: network.networkName,
           portName: network.portName,
-          publicDomain: network.publicDomain,
+          ...(includePublicDomainPrefix() &&
+            network.publicDomain && {
+              publicDomain: network.publicDomain
+            }),
           domain: network.domain,
           customDomain: network.customDomain,
           nodePort: network.nodePort
