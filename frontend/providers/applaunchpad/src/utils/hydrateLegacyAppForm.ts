@@ -34,7 +34,7 @@ const hydrateLegacyStorage = (value: unknown): Quantity =>
     ? value
     : typeof value === 'number'
     ? storageGiToQuantity(value)
-    : storageAnnotationToQuantity(value);
+    : storageAnnotationToQuantity(typeof value === 'string' ? value : undefined);
 
 export const hydrateLegacyAppFormData = <T extends Partial<AppEditType>>(appForm: T): T =>
   ({
