@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { json2DeployCr, json2Ingress, json2Service, yamlString2Objects } from '@/utils/deployYaml2Json';
+import {
+  json2DeployCr,
+  json2Ingress,
+  json2Service,
+  yamlString2Objects
+} from '@/utils/deployYaml2Json';
 import type { AppEditType } from '@/types/app';
 import { deployPVCResizeKey } from '@/constants/app';
 import {
