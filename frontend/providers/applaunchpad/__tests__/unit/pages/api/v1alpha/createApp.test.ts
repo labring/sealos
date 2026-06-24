@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AppEditType } from '@/types/app';
-import { hydrateLegacyAppForm } from '@/utils/hydrateLegacyAppForm';
+import { hydrateLegacyAppForm, hydrateLegacyAppFormData } from '@/utils/hydrateLegacyAppForm';
 import {
   cpuMillicoresToQuantity,
   memoryMiToQuantity,
@@ -40,6 +40,16 @@ const createApp = (): AppEditType =>
   } as AppEditType);
 
 describe('hydrateLegacyAppForm', () => {
+  it('converts partial URL formData resources to Quantity values', () => {
+    const formData = hydrateLegacyAppFormData({
+      cpu: 2000,
+      memory: '4096'
+    } as unknown as Partial<AppEditType>);
+
+    expect(formData.cpu?.toString()).toBe('2');
+    expect(formData.memory?.toString()).toBe('4Gi');
+  });
+
   it('converts legacy numeric resources to Quantity values', () => {
     const app = hydrateLegacyAppForm({
       ...createApp(),
