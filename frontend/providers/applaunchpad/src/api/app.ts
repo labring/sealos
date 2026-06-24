@@ -71,6 +71,7 @@ export const getPodsMetrics = (podsName: string[]) =>
 export const getPodLogs = (data: {
   appName: string;
   podName: string;
+  containerName?: string;
   stream: boolean;
   logSize?: number;
   sinceTime?: number;

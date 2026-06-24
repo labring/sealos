@@ -66,6 +66,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popov
 import { Label } from '@sealos/shadcn-ui/label';
 import { storageGiToQuantity } from '@/utils/resourceQuantity';
 import type { Quantity } from '@sealos/shared';
+import { getPodContainerName } from '@/utils/pod';
 
 const PodFile = ({
   isOpen,
@@ -96,7 +97,7 @@ const PodFile = ({
   );
 
   const [fileProgress, setFileProgress] = useState<number>(0);
-  const [appName, setAppName] = useState(appDetail.appName);
+  const containerName = getPodContainerName(podDetail);
   const [basePath, setBasePath] = useState(storeDetail?.path || '/');
   const basePathArray = useMemo(() => basePath?.split('/')?.filter(Boolean), [basePath]);
   const [newFileName, setNewFileName] = useState('');
@@ -120,10 +121,10 @@ const PodFile = ({
   });
 
   const { data, refetch } = useQuery(
-    ['KubeFileSystem-ls', basePath, showHidden, podDetail.podName, appName],
+    ['KubeFileSystem-ls', basePath, showHidden, podDetail.podName, containerName],
     () =>
       kubeFile_ls({
-        containerName: appName,
+        containerName,
         podName: podDetail.podName,
         path: basePath,
         showHidden: showHidden
@@ -267,7 +268,7 @@ const PodFile = ({
     try {
       await kubeFile_delete({
         podName: podDetail.podName,
-        containerName: appName,
+        containerName,
         path: file.path
       });
       toast.success(t('Delete Success') || 'success');
@@ -285,7 +286,7 @@ const PodFile = ({
       const to = file.path.replace(/\/[^/]+$/, `/${newName}`);
       await kubeFile_rename({
         podName: podDetail.podName,
-        containerName: appName,
+        containerName,
         from,
         to
       });
@@ -327,7 +328,7 @@ const PodFile = ({
         },
         body: JSON.stringify({
           podName: podDetail.podName,
-          containerName: appName,
+          containerName,
           path: file.path
         })
       });
@@ -380,7 +381,7 @@ const PodFile = ({
         return await kubeFile_upload(
           {
             podName: podDetail.podName,
-            containerName: appName,
+            containerName,
             path: `${basePath}/${name}`
           },
           form
@@ -399,7 +400,7 @@ const PodFile = ({
       if (!newFileName) return;
       await kubeFile_mkdir({
         podName: podDetail.podName,
-        containerName: appName,
+        containerName,
         path: `${basePath}/${newFileName}`
       });
       toast.success('success');
@@ -411,7 +412,7 @@ const PodFile = ({
       if (!folderName.trim()) return;
       await kubeFile_mkdir({
         podName: podDetail.podName,
-        containerName: appName,
+        containerName,
         path: `${basePath}/${folderName}`
       });
       toast.success(t('Create Folder Success') || 'success');
