@@ -880,7 +880,7 @@ export function NetworkSection({
           return (
             <Box
               key={field.id}
-              w={'697px'}
+              w={'100%'}
               maxW={'100%'}
               _notLast={{ pb: 6, mb: 6, borderBottom: theme.borders.base }}
             >
@@ -925,13 +925,12 @@ export function NetworkSection({
                 <Box ml={'32px'} flex={isExternalAccess ? '1 1 auto' : '0 0 93px'} minW={0}>
                   <Box {...fieldLabelStyles}>{t('Public Access')}</Box>
                   <FormControl isInvalid={!!publicDomainErrorMessage}>
-                    <Flex alignItems={'flex-start'} minW={0}>
+                    <Flex alignItems={'center'} h={'32px'} minW={0}>
                       <Switch
                         className="driver-deploy-network-switch"
                         size={'lg'}
                         isChecked={isExternalAccess}
                         mr={isExternalAccess ? '24px' : 0}
-                        mt={'1px'}
                         sx={{
                           lineHeight: 0,
                           '.chakra-switch__track': {
@@ -968,20 +967,8 @@ export function NetworkSection({
                       />
 
                       {isExternalAccess && (
-                        <Flex
-                          alignItems={'center'}
-                          flex={'1 1 0'}
-                          minW={0}
-                          flexWrap={'wrap'}
-                          gap={'8px'}
-                        >
-                          <Flex
-                            alignItems={'center'}
-                            flex={canConfigureRouteRules ? '1 1 100%' : '1 1 0'}
-                            w={canConfigureRouteRules ? '100%' : undefined}
-                            h={'32px'}
-                            minW={0}
-                          >
+                        <>
+                          <Flex alignItems={'center'} flex={'1 1 0'} mr={'8px'} h={'32px'} minW={0}>
                             <MySelect
                               width={'90px'}
                               height={'32px'}
@@ -1072,6 +1059,32 @@ export function NetworkSection({
                                 </Tooltip>
                               )}
 
+                              {network.openPublicDomain && !network.openNodePort && (
+                                <Box
+                                  flex={'0 0 auto'}
+                                  px={'8px'}
+                                  py={'4px'}
+                                  fontSize={'11px'}
+                                  lineHeight={'16px'}
+                                  fontWeight={500}
+                                  letterSpacing={'0.5px'}
+                                  color={'brightBlue.600'}
+                                  cursor={'pointer'}
+                                  onClick={async () => {
+                                    const publicDomain = network.customDomain
+                                      ? network.publicDomain
+                                      : await commitPublicDomainDraft(i, network.publicDomain);
+                                    if (!publicDomain) return;
+                                    setCustomAccessModalData({
+                                      publicDomain,
+                                      currentCustomDomain: network.customDomain,
+                                      domain: network.domain
+                                    });
+                                  }}
+                                >
+                                  {t('bind_custom_domain')}
+                                </Box>
+                              )}
                               {/* keep a hidden field registered so customDomain remains part of form state */}
                               <Input
                                 display={'none'}
@@ -1081,27 +1094,6 @@ export function NetworkSection({
                               />
                             </Flex>
                           </Flex>
-                          {network.openPublicDomain && !network.openNodePort && (
-                            <Button
-                              type={'button'}
-                              variant={'outline'}
-                              {...actionButtonStyles}
-                              color={'brightBlue.600'}
-                              onClick={async () => {
-                                const publicDomain = network.customDomain
-                                  ? network.publicDomain
-                                  : await commitPublicDomainDraft(i, network.publicDomain);
-                                if (!publicDomain) return;
-                                setCustomAccessModalData({
-                                  publicDomain,
-                                  currentCustomDomain: network.customDomain,
-                                  domain: network.domain
-                                });
-                              }}
-                            >
-                              {t('bind_custom_domain')}
-                            </Button>
-                          )}
                           {canConfigureRouteRules && (
                             <Button
                               type={'button'}
@@ -1116,6 +1108,7 @@ export function NetworkSection({
                           )}
                           {networks.length > 1 && (
                             <IconButton
+                              ml={2}
                               height={'32px'}
                               width={'32px'}
                               minW={'32px'}
@@ -1132,7 +1125,7 @@ export function NetworkSection({
                               }
                             />
                           )}
-                        </Flex>
+                        </>
                       )}
                     </Flex>
                     <FormErrorMessage mt={1} fontSize={'12px'}>
