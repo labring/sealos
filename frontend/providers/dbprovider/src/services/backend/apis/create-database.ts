@@ -1,4 +1,5 @@
 import { Config } from '@/config';
+import { getDBCreatePatchYamls } from '@/constants/db';
 import { createDatabaseSchemas } from '@/types/apis';
 import {
   getEffectiveParameterConfig,
@@ -174,6 +175,11 @@ export async function createDatabase(
   console.log('Applying YAML resources to K8s...');
 
   await k8s.applyYamlList(yamlList, 'create');
+
+  const createPatchYamls = getDBCreatePatchYamls(rawDbForm.dbType, rawDbForm.dbName);
+  if (createPatchYamls.length > 0) {
+    await k8s.applyYamlList(createPatchYamls, 'create');
+  }
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
 

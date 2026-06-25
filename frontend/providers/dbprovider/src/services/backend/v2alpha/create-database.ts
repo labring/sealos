@@ -1,4 +1,5 @@
 import { Config } from '@/config';
+import { getDBCreatePatchYamls } from '@/constants/db';
 import { createDatabaseSchemas } from '@/types/apis/v2alpha';
 import {
   getEffectiveParameterConfig,
@@ -184,6 +185,11 @@ export async function createDatabase(
   }
 
   await k8s.applyYamlList(yamlList, 'create');
+
+  const createPatchYamls = getDBCreatePatchYamls(rawDbForm.dbType, rawDbForm.dbName);
+  if (createPatchYamls.length > 0) {
+    await k8s.applyYamlList(createPatchYamls, 'create');
+  }
 
   const { body } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
     'apps.kubeblocks.io',

@@ -12,6 +12,7 @@ import {
 import { I18nCommonKey } from '@/types/i18next';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 import type { SecretResponse } from '@/pages/api/getSecretByName';
+import yaml from 'js-yaml';
 
 export const crLabelKey = 'sealos-db-provider-cr';
 export const CloudMigraionLabel = 'sealos-db-provider-cr-migrate';
@@ -44,6 +45,54 @@ export enum DBTypeEnum {
   pulsar = 'pulsar',
   clickhouse = 'clickhouse'
 }
+
+type DBCreatePatchYamlBuilder = (dbName: string) => string;
+type DBTypeValue = `${DBTypeEnum}`;
+
+export const DBCreatePatchYamlMap = {
+  [DBTypeEnum.postgresql]: [
+    (dbName: string) =>
+      yaml.dump({
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'OpsRequest',
+        metadata: {
+          generateName: `${dbName}-disable-bg-mon-`
+        },
+        spec: {
+          type: 'Reconfiguring',
+          clusterName: dbName,
+          force: false,
+          reconfigure: {
+            componentName: 'postgresql',
+            configurations: [
+              {
+                name: 'postgresql-configuration',
+                keys: [
+                  {
+                    key: 'postgresql.conf',
+                    parameters: [
+                      {
+                        key: 'shared_preload_libraries',
+                        value:
+                          "'pg_stat_statements,auto_explain,pgextwlist,pg_auth_mon,set_user,pg_cron,pg_stat_kcache,timescaledb,pgaudit'"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          preConditionDeadlineSeconds: 0
+        }
+      })
+  ]
+} as const satisfies Partial<Record<DBTypeValue, readonly DBCreatePatchYamlBuilder[]>>;
+
+const dbCreatePatchYamlMap: Partial<Record<DBTypeValue, readonly DBCreatePatchYamlBuilder[]>> =
+  DBCreatePatchYamlMap;
+
+export const getDBCreatePatchYamls = (dbType: DBType, dbName: string) =>
+  dbCreatePatchYamlMap[dbType]?.map((buildYaml) => buildYaml(dbName)) ?? [];
 
 export const DB_REMARK_KEY = 'cloud.sealos.io/remark';
 

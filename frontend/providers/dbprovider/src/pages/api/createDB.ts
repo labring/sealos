@@ -1,4 +1,5 @@
 import { Config } from '@/config';
+import { getDBCreatePatchYamls } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import {
   getDBConfigurationByName,
@@ -215,6 +216,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     await applyYamlList(yamlList, 'create');
+
+    const createPatchYamls = getDBCreatePatchYamls(dbForm.dbType, dbForm.dbName);
+    if (createPatchYamls.length > 0) {
+      await applyYamlList(createPatchYamls, 'create');
+    }
+
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
       'apps.kubeblocks.io',
       'v1alpha1',
