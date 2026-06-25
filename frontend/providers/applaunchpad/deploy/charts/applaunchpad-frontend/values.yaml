@@ -50,6 +50,7 @@ applaunchpadConfig:
   logUrl: ""
   tlsRejectUnauthorized: "1"
   imagePortsEnabled: false
+  imagePortsTrustedRegistries: []
   customPublicDomainPrefixEnabled: false
   publicDomainReservedPrefixes: []
 

@@ -157,9 +157,7 @@ function PublicDomainPrefixInput({
           bg={'transparent'}
           pl={3}
           pr={'30px'}
-          fontSize={'15px'}
-          fontWeight={500}
-          color={'grayModern.900'}
+          {...fieldInputStyles}
           cursor={'text'}
           userSelect={'text'}
           value={draft}
@@ -840,6 +838,22 @@ export function NetworkSection({
     [t]
   );
 
+  const getDomainHostDisplay = useCallback(
+    (network: AppEditType['networks'][number]) => {
+      if (network.customDomain) {
+        return network.customDomain;
+      }
+
+      if (network.openNodePort) {
+        const port = network?.nodePort || t('pending_to_allocated');
+        return `${network.protocol.toLowerCase()}.${network.domain}:${port}`;
+      }
+
+      return `${network.publicDomain}.${network.domain}`;
+    },
+    [t]
+  );
+
   const routeRulesNetwork =
     routeRulesIndex !== undefined ? getValues('networks')[routeRulesIndex] : undefined;
 
@@ -866,7 +880,7 @@ export function NetworkSection({
           return (
             <Box
               key={field.id}
-              w={'697px'}
+              w={'100%'}
               maxW={'100%'}
               _notLast={{ pb: 6, mb: 6, borderBottom: theme.borders.base }}
             >
@@ -954,7 +968,7 @@ export function NetworkSection({
 
                       {isExternalAccess && (
                         <>
-                          <Flex alignItems={'center'} w={'389px'} mr={'8px'} h={'32px'} minW={0}>
+                          <Flex alignItems={'center'} flex={'1 1 0'} mr={'8px'} h={'32px'} minW={0}>
                             <MySelect
                               width={'90px'}
                               height={'32px'}
@@ -985,7 +999,8 @@ export function NetworkSection({
                             <Flex
                               alignItems={'center'}
                               h={'32px'}
-                              w={'300px'}
+                              flex={'1 1 0'}
+                              minW={0}
                               bg={'grayModern.50'}
                               border={theme.borders.base}
                               borderLeft={0}
@@ -1039,7 +1054,7 @@ export function NetworkSection({
                                       copyData(getDomainDisplay(network));
                                     }}
                                   >
-                                    {getDomainDisplay(network)}
+                                    {getDomainHostDisplay(network)}
                                   </Box>
                                 </Tooltip>
                               )}

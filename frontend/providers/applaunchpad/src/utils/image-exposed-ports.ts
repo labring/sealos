@@ -4,6 +4,7 @@ import type { IncomingHttpHeaders, IncomingMessage, RequestOptions } from 'http'
 import { request as httpsRequest } from 'https';
 import { isIP } from 'net';
 import type { LookupFunction } from 'net';
+import type { LookupAddress } from 'dns';
 
 export type ImageRegistryAuth = {
   username?: string;
@@ -51,6 +52,19 @@ type RegistryResponse = {
   };
   json: () => Promise<unknown>;
 };
+
+type RegistryLookupOptions = {
+  all?: boolean;
+  family?: number;
+  hints?: number;
+  verbatim?: boolean;
+};
+
+type RegistryLookupCallback = (
+  error: NodeJS.ErrnoException | null,
+  address: string | LookupAddress[],
+  family?: number
+) => void;
 
 const DEFAULT_REGISTRY = 'registry-1.docker.io';
 const DOCKER_HUB_AUTH_SERVICE = 'registry.docker.io';
@@ -140,17 +154,51 @@ function getUrlHost(value: string) {
   const url = new URL(
     value.startsWith('http://') || value.startsWith('https://') ? value : `https://${value}`
   );
-  return url.hostname.replace(/^\[|\]$/g, '');
+  return normalizeHost(url.hostname);
+}
+
+function normalizeHost(host: string) {
+  return host
+    .replace(/^\[|\]$/g, '')
+    .replace(/\.$/, '')
+    .toLowerCase();
+}
+
+function getTrustedRegistryHosts() {
+  const registries = (globalThis as any).AppConfig?.launchpad?.imagePorts?.trustedRegistries;
+  if (!Array.isArray(registries)) return new Set<string>();
+
+  return new Set(
+    registries
+      .map((registry) => {
+        if (typeof registry !== 'string' || !registry.trim()) return null;
+        try {
+          return getUrlHost(registry.trim());
+        } catch {
+          return null;
+        }
+      })
+      .filter((host): host is string => !!host && isIP(host) === 0 && host !== 'localhost')
+  );
+}
+
+function isTrustedRegistryHost(host: string) {
+  return getTrustedRegistryHosts().has(normalizeHost(host));
 }
 
 async function assertPublicRegistryHost(registry: string) {
   const host = getUrlHost(registry);
-  await assertPublicHost(host, 'Registry host');
+  await assertRegistryHost(host, 'Registry host');
 }
 
-async function assertPublicHost(host: string, context: string) {
-  const hostIsIp = isIP(host) !== 0;
-  if (host === 'localhost' || host.endsWith('.localhost') || (hostIsIp && isBlockedAddress(host))) {
+async function assertRegistryHost(host: string, context: string) {
+  const normalizedHost = normalizeHost(host);
+  const hostIsIp = isIP(normalizedHost) !== 0;
+  if (
+    normalizedHost === 'localhost' ||
+    normalizedHost.endsWith('.localhost') ||
+    (hostIsIp && isBlockedAddress(normalizedHost))
+  ) {
     throw new Error(`${context} is not allowed`);
   }
 
@@ -158,8 +206,12 @@ async function assertPublicHost(host: string, context: string) {
     return;
   }
 
-  const addresses = await lookup(host, { all: true });
-  if (!addresses.length || addresses.some((item) => isBlockedAddress(item.address))) {
+  const addresses = await lookup(normalizedHost, { all: true });
+  if (
+    !addresses.length ||
+    (!isTrustedRegistryHost(normalizedHost) &&
+      addresses.some((item) => isBlockedAddress(item.address)))
+  ) {
     throw new Error(`${context} resolves to a private address`);
   }
 }
@@ -170,64 +222,91 @@ function assertRegistryUrl(url: URL) {
   }
 }
 
-const publicLookup: LookupFunction = (hostname, options, callback) => {
+function callbackLookupError(callback: RegistryLookupCallback, error: NodeJS.ErrnoException) {
+  callback(error, '', 0);
+}
+
+function callbackLookupSuccess(
+  callback: RegistryLookupCallback,
+  options: RegistryLookupOptions,
+  addresses: LookupAddress[]
+) {
+  if (options.all) {
+    callback(null, addresses);
+    return;
+  }
+
+  const preferredFamily = options.family === 4 || options.family === 6 ? options.family : undefined;
+  const selected = preferredFamily
+    ? addresses.find((item) => item.family === preferredFamily)
+    : addresses[0];
+
+  if (!selected) {
+    callbackLookupError(
+      callback,
+      Object.assign(new Error('Registry host address family is unavailable'), {
+        code: 'ENOTFOUND'
+      })
+    );
+    return;
+  }
+
+  callback(null, selected.address, selected.family);
+}
+
+const publicLookup = ((
+  hostname: string,
+  options: RegistryLookupOptions,
+  callback: RegistryLookupCallback
+) => {
   const lookupOptions = {
     family: options.family,
     hints: options.hints,
     verbatim: options.verbatim
   };
+  const normalizedHostname = normalizeHost(hostname);
+  const trusted = isTrustedRegistryHost(normalizedHostname);
 
-  const hostIsIp = isIP(hostname) !== 0;
+  const hostIsIp = isIP(normalizedHostname) !== 0;
   if (hostIsIp) {
-    if (isBlockedAddress(hostname)) {
-      callback(
-        Object.assign(new Error('Registry host is not allowed'), { code: 'EHOSTDENIED' }),
-        '',
-        0
+    if (isBlockedAddress(normalizedHostname)) {
+      callbackLookupError(
+        callback,
+        Object.assign(new Error('Registry host is not allowed'), { code: 'EHOSTDENIED' })
       );
       return;
     }
 
-    callback(null, hostname, isIP(hostname));
+    callbackLookupSuccess(callback, options, [
+      {
+        address: normalizedHostname,
+        family: isIP(normalizedHostname)
+      }
+    ]);
     return;
   }
 
-  lookup(hostname, { ...lookupOptions, all: true })
+  lookup(normalizedHostname, { ...lookupOptions, all: true })
     .then((addresses) => {
-      if (!addresses.length || addresses.some((item) => isBlockedAddress(item.address))) {
-        callback(
+      if (
+        !addresses.length ||
+        (!trusted && addresses.some((item) => isBlockedAddress(item.address)))
+      ) {
+        callbackLookupError(
+          callback,
           Object.assign(new Error('Registry host resolves to a private address'), {
             code: 'EHOSTDENIED'
-          }),
-          '',
-          0
+          })
         );
         return;
       }
 
-      const preferredFamily =
-        lookupOptions.family === 4 || lookupOptions.family === 6 ? lookupOptions.family : undefined;
-      const selected = preferredFamily
-        ? addresses.find((item) => item.family === preferredFamily)
-        : addresses[0];
-
-      if (!selected) {
-        callback(
-          Object.assign(new Error('Registry host address family is unavailable'), {
-            code: 'ENOTFOUND'
-          }),
-          '',
-          0
-        );
-        return;
-      }
-
-      callback(null, selected.address, selected.family);
+      callbackLookupSuccess(callback, options, addresses);
     })
     .catch((error) => {
-      callback(error, '', 0);
+      callbackLookupError(callback, error);
     });
-};
+}) as unknown as LookupFunction;
 
 function getHeader(headers: IncomingHttpHeaders, name: string) {
   const value = headers[name.toLowerCase()];
@@ -283,7 +362,7 @@ async function requestRegistryUrl(
   options: { headers?: Record<string, string>; signal?: AbortSignal; context: string }
 ) {
   assertRegistryUrl(url);
-  await assertPublicHost(url.hostname, 'Registry host');
+  await assertRegistryHost(url.hostname, 'Registry host');
 
   const request = url.protocol === 'https:' ? httpsRequest : httpRequest;
   const requestOptions: RequestOptions = {
@@ -345,7 +424,7 @@ async function registryHttpRequest(
     throw new Error('Registry request redirect is not trusted');
   }
 
-  await assertPublicHost(redirectUrl.hostname, 'Registry host');
+  await assertRegistryHost(redirectUrl.hostname, 'Registry host');
 
   return await registryHttpRequest(
     redirectUrl.toString(),
@@ -373,9 +452,14 @@ function assertTrustedRealm(challenge: ChallengeParams, image: ImageRef) {
 
   const registryHost = getUrlHost(image.registry);
   const allowedHosts =
-    image.registry === DEFAULT_REGISTRY ? new Set([DOCKER_HUB_AUTH_HOST]) : new Set([registryHost]);
+    image.registry === DEFAULT_REGISTRY
+      ? new Set([DOCKER_HUB_AUTH_HOST])
+      : new Set([
+          registryHost,
+          ...(isTrustedRegistryHost(registryHost) ? getTrustedRegistryHosts() : [])
+        ]);
 
-  if (!allowedHosts.has(realmUrl.hostname)) {
+  if (!allowedHosts.has(normalizeHost(realmUrl.hostname))) {
     throw new Error('Registry auth realm is not trusted');
   }
 }

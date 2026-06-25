@@ -13,5 +13,6 @@ resources:
 
 applaunchpadConfig:
   imagePortsEnabled: false
+  imagePortsTrustedRegistries: []
   customPublicDomainPrefixEnabled: false
   publicDomainReservedPrefixes: []

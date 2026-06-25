@@ -33,6 +33,7 @@ data:
         fastGPTKey: ""
       imagePorts:
         enabled: {{ .Values.applaunchpadConfig.imagePortsEnabled }}
+        trustedRegistries:{{ toYaml .Values.applaunchpadConfig.imagePortsTrustedRegistries | nindent 10 }}
       publicDomain:
         customPrefixEnabled: {{ .Values.applaunchpadConfig.customPublicDomainPrefixEnabled }}
         reservedPrefixes:{{ toYaml .Values.applaunchpadConfig.publicDomainReservedPrefixes | nindent 10 }}
