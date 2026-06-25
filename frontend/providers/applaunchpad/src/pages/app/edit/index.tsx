@@ -331,7 +331,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           .then(() => {
             toast({ status: 'success', title: t('Deployment Successful') });
             formOldYamls.current = formData2Yamls(data);
-            setYamlList(formData2Yamls(data));
+            setYamlList(formData2DisplayYamls(data));
           })
           .catch((err) => {
             toast({ status: 'error', title: getErrText(err) });
