@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from '@/services/backend/auth';
+import { deleteBackupAndCleanupRepoPVC } from '@/services/backend/backupCleanup';
 import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ResponseCode, ResponseMessages } from '@/types/response';
@@ -238,17 +239,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // Handle DELETE request
   if (req.method === 'DELETE') {
     try {
-      const group = 'dataprotection.kubeblocks.io';
-      const version = 'v1alpha1';
-      const plural = 'backups';
-
-      await k8s.k8sCustomObjects.deleteNamespacedCustomObject(
-        group,
-        version,
-        k8s.namespace,
-        plural,
-        backupName
-      );
+      await deleteBackupAndCleanupRepoPVC({
+        backupName,
+        k8sCore: k8s.k8sCore,
+        k8sCustomObjects: k8s.k8sCustomObjects,
+        namespace: k8s.namespace
+      });
 
       return jsonRes(res, {
         code: 200,
