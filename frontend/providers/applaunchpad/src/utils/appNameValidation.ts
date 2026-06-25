@@ -21,3 +21,34 @@ export const isValidGeneratedAppName = (appName: string) =>
   APP_GENERATED_NAME_PATTERN.test(appName);
 
 export const generateAppName = (baseName: string) => baseName;
+
+export const isValidRfc1035Name = (name: string) =>
+  name.length > 0 &&
+  name.length <= K8S_RFC1035_NAME_MAX_LENGTH &&
+  APP_GENERATED_NAME_PATTERN.test(name);
+
+type NamedKubernetesResource = {
+  kind?: string;
+  metadata?: {
+    name?: unknown;
+  };
+};
+
+export const getInvalidGeneratedAppNameMessage = (name: unknown) => {
+  if (typeof name !== 'string' || isValidGeneratedAppName(name)) return;
+
+  return `Application name "${name}" is invalid. Use ${APP_GENERATED_NAME_MAX_LENGTH} characters or fewer, start with a lowercase letter, use only lowercase letters, numbers, or hyphens, and end with a lowercase letter or number.`;
+};
+
+export const getInvalidRfc1035ServiceNameMessage = (resources: NamedKubernetesResource[]) => {
+  const invalidResource = resources.find((resource) => {
+    const name = resource?.metadata?.name;
+    return resource.kind === 'Service' && typeof name === 'string' && !isValidRfc1035Name(name);
+  });
+
+  if (!invalidResource) return;
+
+  return `${invalidResource.kind || 'Resource'} "${
+    invalidResource.metadata?.name
+  }" has an invalid name. Names must start with a lowercase letter, contain only lowercase letters, numbers, or hyphens, and end with a lowercase letter or number.`;
+};

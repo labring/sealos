@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   APP_NAME_BASE_MAX_LENGTH,
   K8S_RFC1035_NAME_MAX_LENGTH,
+  getInvalidGeneratedAppNameMessage,
+  getInvalidRfc1035ServiceNameMessage,
   generateAppName,
   isValidAppNameBase,
-  isValidGeneratedAppName
+  isValidGeneratedAppName,
+  isValidRfc1035Name
 } from '@/utils/appNameValidation';
 
 describe('app name validation', () => {
@@ -53,5 +56,29 @@ describe('app name validation', () => {
     expect(podName).toHaveLength(K8S_RFC1035_NAME_MAX_LENGTH);
     expect(isValidGeneratedAppName(podName)).toBe(false);
     expect(/^[a-z]([-a-z0-9]*[a-z0-9])?$/.test(podName)).toBe(true);
+  });
+
+  it('reports app names that exceed the generated name budget before apply', () => {
+    const tooLongBase = `a${'b'.repeat(APP_NAME_BASE_MAX_LENGTH)}`;
+
+    expect(isValidRfc1035Name(tooLongBase)).toBe(true);
+    expect(getInvalidGeneratedAppNameMessage(tooLongBase)).toContain(
+      `Use ${APP_NAME_BASE_MAX_LENGTH} characters or fewer`
+    );
+  });
+
+  it('reports invalid service names before the Kubernetes apply step', () => {
+    expect(
+      getInvalidRfc1035ServiceNameMessage([
+        {
+          kind: 'Deployment',
+          metadata: { name: '111111hello-world' }
+        },
+        {
+          kind: 'Service',
+          metadata: { name: '111111hello-world-yanexremmrtr' }
+        }
+      ])
+    ).toContain('Service "111111hello-world-yanexremmrtr" has an invalid name');
   });
 });
