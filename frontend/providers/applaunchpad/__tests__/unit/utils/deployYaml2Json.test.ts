@@ -390,5 +390,4 @@ describe('json2Secret', () => {
     expect(secretYaml).toContain('.dockerconfigjson: ********');
     expect(secretYaml).not.toContain(".dockerconfigjson: '********'");
   });
-
 });
