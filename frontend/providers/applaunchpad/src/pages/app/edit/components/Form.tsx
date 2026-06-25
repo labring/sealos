@@ -1149,7 +1149,7 @@ const Form = ({
                       onClick={onOpenEditEnvs}
                     >
                       <Plus className="w-4 h-4" />
-                      {t('Add')}
+                      {t('Update')}
                     </Button>
                   </div>
                   {envs.length > 0 && (

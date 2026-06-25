@@ -25,7 +25,11 @@ describe('useAppStore intervalLoadPods', () => {
         ...MOCK_APP_DETAIL,
         status: appStatusMap.error
       },
-      appDetailPods: []
+      appDetailPods: [],
+      appListPagination: {
+        pageIndex: 0,
+        pageSize: 10
+      }
     });
   });
 
@@ -101,5 +105,36 @@ describe('useAppStore intervalLoadPods', () => {
     expect(mockedGetAppMonitorData).not.toHaveBeenCalled();
     expect(useAppStore.getState().appList[0]?.usedCpu.yData).toEqual(new Array(30).fill('0'));
     expect(useAppStore.getState().appList[0]?.usedMemory.yData).toEqual(new Array(30).fill('0'));
+  });
+});
+
+describe('useAppStore app list pagination', () => {
+  beforeEach(() => {
+    useAppStore.setState({
+      appListPagination: {
+        pageIndex: 0,
+        pageSize: 10
+      }
+    });
+  });
+
+  it('stores app list pagination globally', () => {
+    useAppStore.getState().setAppListPagination({ pageIndex: 2, pageSize: 20 });
+
+    expect(useAppStore.getState().appListPagination).toEqual({
+      pageIndex: 2,
+      pageSize: 20
+    });
+  });
+
+  it('updates one pagination field without resetting the other', () => {
+    useAppStore.getState().setAppListPagination({ pageIndex: 3, pageSize: 20 });
+
+    useAppStore.getState().setAppListPagination({ pageIndex: 1 });
+
+    expect(useAppStore.getState().appListPagination).toEqual({
+      pageIndex: 1,
+      pageSize: 20
+    });
   });
 });

@@ -54,7 +54,11 @@ const EditEnvs = ({
 
   return (
     <Drawer open onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent direction="right" className="min-w-[560px] sm:max-w-[560px]">
+      <DrawerContent
+        direction="right"
+        className="min-w-[560px] sm:max-w-[560px]"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DrawerHeader>
           <DrawerTitle>{t('Edit Environment Variables')}</DrawerTitle>
         </DrawerHeader>

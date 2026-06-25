@@ -49,17 +49,22 @@ const NetworkConfigurationTable = ({
   );
 
   return (
-    <div className="overflow-auto pb-6">
-      <table className="w-max min-w-full table-auto">
+    <div className="min-w-0 overflow-auto pb-6">
+      <table className="w-full table-fixed">
+        <colgroup>
+          <col className="w-[85px]" />
+          <col className="w-[35%]" />
+          <col />
+        </colgroup>
         <thead className="sticky top-0 z-10 whitespace-nowrap">
           <tr className="bg-zinc-50">
-            <th className="w-[85px] min-w-[85px] h-10 text-sm font-normal text-zinc-500 px-4 py-3 rounded-l-lg text-left">
+            <th className="h-10 px-4 py-3 text-left text-sm font-normal text-zinc-500 rounded-l-lg">
               {t('Port')}
             </th>
-            <th className="min-w-max h-10 text-sm font-normal text-zinc-500 px-4 py-3 text-left">
+            <th className="h-10 px-4 py-3 text-left text-sm font-normal text-zinc-500">
               {t('Private Address')}
             </th>
-            <th className="min-w-max h-10 text-sm font-normal text-zinc-500 px-4 py-3 rounded-r-lg text-left">
+            <th className="h-10 px-4 py-3 text-left text-sm font-normal text-zinc-500 rounded-r-lg">
               {t('Public Address')}
             </th>
           </tr>
@@ -78,14 +83,14 @@ const NetworkConfigurationTable = ({
 
             return (
               <tr key={network.inline + index} className="!border-b border-zinc-100">
-                <td className="w-[85px] min-w-[85px] px-4 py-2">
+                <td className="px-4 py-2">
                   <div className="text-sm text-zinc-700">{network.port}</div>
                 </td>
-                <td className="min-w-max px-4 py-2">
+                <td className="min-w-0 px-4 py-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
-                        className="text-sm w-fit text-zinc-700 cursor-pointer"
+                        className="truncate text-sm text-zinc-700 cursor-pointer"
                         onClick={() => copyData(network.inline)}
                       >
                         {network.inline.replace('.svc.cluster.local', '')}
@@ -96,8 +101,8 @@ const NetworkConfigurationTable = ({
                     </TooltipContent>
                   </Tooltip>
                 </td>
-                <td className="px-4 py-2">
-                  <div className="flex items-center gap-2 whitespace-nowrap">
+                <td className="min-w-0 px-4 py-2">
+                  <div className="flex min-w-0 items-center gap-2 whitespace-nowrap">
                     {showIcpStatus && (
                       <ICPStatus
                         customDomain={customDomain}
@@ -135,11 +140,11 @@ const NetworkConfigurationTable = ({
                       </div>
                     )}
 
-                    <div className="flex min-w-max items-center gap-1 whitespace-nowrap">
+                    <div className="flex min-w-0 items-center gap-1 whitespace-nowrap">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div
-                            className={`text-sm ${
+                            className={`min-w-0 truncate text-sm ${
                               network.public ? 'text-zinc-700 cursor-pointer' : 'text-zinc-500'
                             }`}
                             {...(network.public

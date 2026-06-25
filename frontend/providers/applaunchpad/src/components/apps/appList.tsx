@@ -1,6 +1,7 @@
 import { pauseAppByName, restartAppByName, startAppByName, setAppRemark } from '@/api/app';
 import { useAppOperation } from '@/hooks/useAppOperation';
 import { useGlobalStore } from '@/store/global';
+import { useAppStore } from '@/store/app';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
@@ -71,6 +72,7 @@ const AppList = ({
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
+  const { appListPagination, setAppListPagination } = useAppStore();
   const { userSourcePrice } = useUserStore();
   const { executeOperation, errorModalState, closeErrorModal } = useAppOperation();
   const router = useRouter();
@@ -302,16 +304,25 @@ const AppList = ({
   const table = useReactTable({
     data: apps,
     columns,
+    state: {
+      pagination: appListPagination
+    },
+    onPaginationChange: (updater) => {
+      const nextPagination = typeof updater === 'function' ? updater(appListPagination) : updater;
+      setAppListPagination(nextPagination);
+    },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: PAGE_SIZE
-      }
-    },
     autoResetPageIndex: false,
     meta: tableMeta
   });
+
+  useEffect(() => {
+    const pageCount = table.getPageCount();
+    if (pageCount > 0 && appListPagination.pageIndex >= pageCount) {
+      setAppListPagination({ pageIndex: pageCount - 1 });
+    }
+  }, [appListPagination.pageIndex, setAppListPagination, table]);
 
   const handlePageSizeStartEdit = () => {
     setIsEditingPageSize(true);
@@ -321,8 +332,7 @@ const AppList = ({
   const handlePageSizeSave = () => {
     const newPageSize = parseInt(editingPageSizeValue, 10);
     if (Number.isFinite(newPageSize) && newPageSize > 0 && newPageSize <= 100) {
-      table.setPageSize(newPageSize);
-      table.setPageIndex(0);
+      setAppListPagination({ pageIndex: 0, pageSize: newPageSize });
     }
     setIsEditingPageSize(false);
   };
