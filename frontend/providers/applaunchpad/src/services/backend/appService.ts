@@ -28,6 +28,7 @@ import {
   KubernetesObject,
   User
 } from '@kubernetes/client-node';
+import { ensurePublicDomainPrefixesAvailable } from './publicDomain';
 
 export interface K8sContext {
   kc: KubeConfig;
@@ -117,6 +118,7 @@ export async function createApp(appForm: AppEditType, k8s: K8sContext) {
     ...network,
     domain: global.AppConfig.cloud.domain
   }));
+  await ensurePublicDomainPrefixesAvailable(appForm, k8s);
 
   const parseYamls = formData2Yamls(appForm);
   const yamls = parseYamls.map((item) => item.value);

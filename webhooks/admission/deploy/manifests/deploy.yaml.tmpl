@@ -293,6 +293,7 @@ spec:
         - --leader-elect
         - --ingress-mutating-annotations={{ .ingressMutatingAnnotations }}
         - --cnameDomains={{ .cnameDomains }}
+        - --cnameCheck={{ .cnameCheck }}
         - --denyDomains={{ .denyDomains }}
         command:
         - /manager

@@ -1,11 +1,17 @@
 import { postDeployApp, putApp } from '@/api/app';
-import { checkPermission, postAuthCname, postAuthDomainChallenge } from '@/api/platform';
+import {
+  checkPermission,
+  checkPublicDomain,
+  postAuthCname,
+  postAuthDomainChallenge
+} from '@/api/platform';
 import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
+import { CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED, SEALOS_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
@@ -37,15 +43,157 @@ import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { track } from '@sealos/gtm';
-import { SEALOS_DOMAIN } from '@/store/static';
+import {
+  PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
+  PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
+  PublicDomainConflictOwner,
+  getDuplicateManagedPublicDomainHosts,
+  validatePublicDomainPrefix
+} from '@/utils/public-domain';
 import { getCustomDomainBindings } from '@/utils/custom-domain';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
+const EDIT_PAGE_MIN_PADDING = 20;
+const EDIT_PAGE_NAV_WIDTH = 220;
+const EDIT_PAGE_COLUMN_GAP = 20;
+const EDIT_PAGE_CONTENT_TARGET_WIDTH = 1100;
+const EDIT_PAGE_TARGET_WIDTH =
+  EDIT_PAGE_NAV_WIDTH + EDIT_PAGE_COLUMN_GAP + EDIT_PAGE_CONTENT_TARGET_WIDTH;
+
+const getPublicDomainPrefixErrorMessage = (
+  t: ReturnType<typeof useTranslation>['t'],
+  reason: 'format' | 'reserved' | 'conflict' | 'duplicate',
+  conflictOwner?: PublicDomainConflictOwner
+) => {
+  if (reason === 'duplicate') {
+    return (
+      t('public_domain_prefix_duplicate_error') ||
+      'This public address prefix is duplicated in this app. Please choose another one.'
+    );
+  }
+
+  if (reason === 'conflict') {
+    if (conflictOwner) {
+      return (
+        t('public_domain_prefix_conflict_owner_error', {
+          type: conflictOwner.displayType,
+          name: conflictOwner.displayName
+        }) ||
+        `This public address prefix is already used by ${conflictOwner.displayType} "${conflictOwner.displayName}" in this workspace.`
+      );
+    }
+
+    return (
+      t('public_domain_prefix_conflict_error') ||
+      'This public address prefix is already in use. Please choose another one.'
+    );
+  }
+
+  if (reason === 'reserved') {
+    return (
+      t('public_domain_prefix_reserved_error') ||
+      'This public address prefix is reserved. Please choose another one.'
+    );
+  }
+
+  return (
+    t('public_domain_prefix_format_error', {
+      min: PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
+      max: PUBLIC_DOMAIN_PREFIX_MAX_LENGTH
+    }) ||
+    `Use ${PUBLIC_DOMAIN_PREFIX_MIN_LENGTH}-${PUBLIC_DOMAIN_PREFIX_MAX_LENGTH} lowercase letters, numbers, or hyphens. It cannot start or end with a hyphen.`
+  );
+};
+
+const getConflictOwnerFromError = (error: any): PublicDomainConflictOwner | undefined => {
+  return error?.error?.conflictOwner;
+};
+
+function validatePublicDomainPrefixBeforeSubmit(
+  data: AppEditType,
+  t: ReturnType<typeof useTranslation>['t'],
+  setFieldError: (index: number, message: string) => void
+) {
+  if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return '';
+
+  for (const [index, network] of data.networks.entries()) {
+    if (!network.openPublicDomain || network.openNodePort || network.customDomain) {
+      continue;
+    }
+
+    const result = validatePublicDomainPrefix(network.publicDomain);
+    if (result.valid) {
+      network.publicDomain = result.value;
+      continue;
+    }
+
+    const message = getPublicDomainPrefixErrorMessage(t, result.reason);
+    setFieldError(index, message);
+    return message;
+  }
+
+  return '';
+}
+
+function validateManagedPublicDomainHostDuplicatesBeforeSubmit(
+  data: AppEditType,
+  t: ReturnType<typeof useTranslation>['t'],
+  setFieldError: (index: number, message: string) => void
+) {
+  if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return '';
+
+  const duplicatedHosts = getDuplicateManagedPublicDomainHosts(data.networks, SEALOS_DOMAIN);
+  if (duplicatedHosts.length === 0) return '';
+
+  const message = getPublicDomainPrefixErrorMessage(t, 'duplicate');
+  duplicatedHosts.forEach(({ indexes }) => {
+    indexes.forEach((index) => setFieldError(index, message));
+  });
+  return message;
+}
+
+async function validatePublicDomainAvailabilityBeforeSubmit(
+  data: AppEditType,
+  t: ReturnType<typeof useTranslation>['t'],
+  setFieldError: (index: number, message: string) => void
+) {
+  if (!CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED) return '';
+
+  for (const [index, network] of data.networks.entries()) {
+    if (!network.openPublicDomain || network.openNodePort || network.customDomain) {
+      continue;
+    }
+
+    try {
+      await checkPublicDomain({
+        prefix: network.publicDomain,
+        domain: network.domain,
+        appName: data.appName
+      });
+    } catch (error: any) {
+      if (error?.error?.code !== 'PUBLIC_DOMAIN_CONFLICT') {
+        throw error;
+      }
+
+      const message = getPublicDomainPrefixErrorMessage(
+        t,
+        'conflict',
+        getConflictOwnerFromError(error)
+      );
+      setFieldError(index, message);
+      return message;
+    }
+  }
+
+  return '';
+}
+
 export const formData2Yamls = (
-  data: AppEditType
+  data: AppEditType,
+  options?: { maskSecret?: boolean }
   // handleType: 'edit' | 'create' = 'create',
   // crYamlList?: DeployKindsType[]
 ) => [
@@ -90,11 +238,14 @@ export const formData2Yamls = (
     ? [
         {
           filename: 'secret.yaml',
-          value: json2Secret(data)
+          value: json2Secret(data, undefined, { maskPassword: options?.maskSecret })
         }
       ]
     : [])
 ];
+
+export const formData2DisplayYamls = (data: AppEditType) =>
+  formData2Yamls(data, { maskSecret: true });
 
 const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) => {
   const { t } = useTranslation();
@@ -125,11 +276,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     content: applyMessage
   });
   const pxVal = useMemo(() => {
-    const val = Math.floor((screenWidth - 1050) / 2);
-    if (val < 20) {
-      return 20;
-    }
-    return val;
+    return Math.max(EDIT_PAGE_MIN_PADDING, Math.floor((screenWidth - EDIT_PAGE_TARGET_WIDTH) / 2));
   }, [screenWidth]);
   const { createCompleted } = useGuideStore();
 
@@ -327,7 +474,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           .then(() => {
             toast({ status: 'success', title: t('Deployment Successful') });
             formOldYamls.current = formData2Yamls(data);
-            setYamlList(formData2Yamls(data));
+            setYamlList(formData2DisplayYamls(data));
           })
           .catch((err) => {
             toast({ status: 'error', title: getErrText(err) });
@@ -376,7 +523,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
-        setYamlList(formData2Yamls(realTimeForm.current));
+        setYamlList(formData2DisplayYamls(realTimeForm.current));
       },
       onError(err) {
         toast({
@@ -393,7 +540,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   useEffect(() => {
     if (tabType === 'yaml') {
       try {
-        setYamlList(formData2Yamls(realTimeForm.current));
+        setYamlList(formData2DisplayYamls(realTimeForm.current));
       } catch (error) {}
     }
   }, [router.query.name, tabType]);
@@ -539,8 +686,56 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             formHook.handleSubmit(async (data) => {
               console.log('data', data);
 
+              const publicDomainErrorMessage = validatePublicDomainPrefixBeforeSubmit(
+                data,
+                t,
+                (index, message) => {
+                  formHook.setError(`networks.${index}.publicDomain`, {
+                    type: 'validate',
+                    message
+                  });
+                }
+              );
+
+              if (publicDomainErrorMessage) {
+                return toast({
+                  status: 'warning',
+                  title: publicDomainErrorMessage
+                });
+              }
+
+              const publicDomainDuplicateErrorMessage =
+                validateManagedPublicDomainHostDuplicatesBeforeSubmit(data, t, (index, message) => {
+                  formHook.setError(`networks.${index}.publicDomain`, {
+                    type: 'duplicate',
+                    message
+                  });
+                });
+
+              if (publicDomainDuplicateErrorMessage) {
+                return toast({
+                  status: 'warning',
+                  title: publicDomainDuplicateErrorMessage
+                });
+              }
+
+              const publicDomainAvailabilityErrorMessage =
+                await validatePublicDomainAvailabilityBeforeSubmit(data, t, (index, message) => {
+                  formHook.setError(`networks.${index}.publicDomain`, {
+                    type: 'validate',
+                    message
+                  });
+                });
+
+              if (publicDomainAvailabilityErrorMessage) {
+                return toast({
+                  status: 'warning',
+                  title: publicDomainAvailabilityErrorMessage
+                });
+              }
+
               const parseYamls = formData2Yamls(data);
-              setYamlList(parseYamls);
+              setYamlList(formData2DisplayYamls(data));
 
               // gpu inventory check
               if (data.gpu?.type) {
@@ -623,8 +818,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                             data.hpa.target === 'cpu'
                               ? 'CPU'
                               : data.hpa.target === 'gpu'
-                              ? 'GPU'
-                              : 'RAM',
+                                ? 'GPU'
+                                : 'RAM',
                           value: data.hpa.value
                         }
                       : undefined

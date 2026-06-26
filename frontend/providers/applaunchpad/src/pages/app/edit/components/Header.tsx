@@ -13,7 +13,7 @@ import { Info, X } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback } from 'react';
-import { formData2Yamls } from '../index';
+import { formData2DisplayYamls } from '../index';
 
 const Header = ({
   appName,
@@ -39,7 +39,7 @@ const Header = ({
     let exportYamlList: YamlItemType[];
     if (getFormData) {
       const formData = getFormData();
-      exportYamlList = formData2Yamls(formData);
+      exportYamlList = formData2DisplayYamls(formData);
     } else {
       exportYamlList = yamlList;
     }

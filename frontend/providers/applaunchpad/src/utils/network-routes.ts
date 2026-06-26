@@ -20,12 +20,7 @@ export const syncDefaultRouteServicePort = ({
   const newPort = Number(nextPort);
   const defaultPort = Number(defaultServicePort);
 
-  if (
-    !routes?.length ||
-    !oldPort ||
-    !newPort ||
-    (oldPort === newPort && defaultPort === oldPort)
-  ) {
+  if (!routes?.length || !oldPort || !newPort || (oldPort === newPort && defaultPort === oldPort)) {
     return routes;
   }
 

@@ -4,7 +4,7 @@ import {
   UpdateAppResourcesSchema,
   nanoid
 } from '@/types/request_schema';
-import { jsonRes } from '@/services/backend/response';
+import { getPublicDomainErrorResponse, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
@@ -24,6 +24,12 @@ import { mountPathToConfigMapKey } from '@/utils/tools';
 import { json2DeployCr, json2Service, json2Ingress } from '@/utils/deployYaml2Json';
 import type { AppEditType } from '@/types/app';
 import { appDeployKey } from '@/constants/app';
+import {
+  ensurePublicDomainPrefixesAvailable,
+  PublicDomainError
+} from '@/services/backend/publicDomain';
+import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
+import { validatePublicDomainPrefix } from '@/utils/public-domain';
 
 class PortError extends Error {
   constructor(
@@ -55,6 +61,29 @@ class PortValidationError extends PortError {
     super(message, 400, details);
     this.name = 'PortValidationError';
   }
+}
+
+function normalizePublicDomainPrefixOrThrow(value: string) {
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    throw new PortValidationError('Custom public domain prefixes are disabled', {
+      operation: 'UPDATE_PUBLIC_DOMAIN_PREFIX'
+    });
+  }
+
+  const result = validatePublicDomainPrefix(value);
+  if (!result.valid) {
+    throw new PortValidationError(
+      result.reason === 'reserved'
+        ? `Public domain prefix "${result.value}" is reserved`
+        : `Public domain prefix "${result.value}" is invalid`,
+      {
+        publicDomain: result.value,
+        reason: result.reason,
+        operation: 'VALIDATE_PUBLIC_DOMAIN_PREFIX'
+      }
+    );
+  }
+  return result.value;
 }
 
 async function validateAppExists(name: string, k8s: any, res: NextApiResponse<ApiResp>) {
@@ -229,6 +258,8 @@ async function updateConfigMap(
 }
 
 async function updateServiceAndIngress(appEditData: AppEditType, applyYamlList: any, k8s: any) {
+  await ensurePublicDomainPrefixesAvailable(appEditData, k8s);
+
   const yamlList: string[] = [];
 
   try {
@@ -749,8 +780,12 @@ async function manageAppPorts(
             updatedNetwork.customDomain = '';
             updatedNetwork.domain = '';
           } else if (isApplicationProtocol && portConfig.exposesPublicDomain) {
-            updatedNetwork.publicDomain =
-              portConfig.publicDomain || existingNetwork.publicDomain || nanoid();
+            updatedNetwork.publicDomain = existingNetwork.publicDomain || nanoid();
+            if (portConfig.publicDomain) {
+              updatedNetwork.publicDomain = normalizePublicDomainPrefixOrThrow(
+                portConfig.publicDomain
+              );
+            }
             updatedNetwork.domain =
               existingNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
           }
@@ -764,8 +799,12 @@ async function manageAppPorts(
             updatedNetwork.openPublicDomain = portConfig.exposesPublicDomain;
 
             if (portConfig.exposesPublicDomain) {
-              updatedNetwork.publicDomain =
-                portConfig.publicDomain || updatedNetwork.publicDomain || nanoid();
+              updatedNetwork.publicDomain = updatedNetwork.publicDomain || nanoid();
+              if (portConfig.publicDomain) {
+                updatedNetwork.publicDomain = normalizePublicDomainPrefixOrThrow(
+                  portConfig.publicDomain
+                );
+              }
               updatedNetwork.domain =
                 updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
 
@@ -796,25 +835,20 @@ async function manageAppPorts(
           }
         }
 
-        if (portConfig.publicDomain) {
+        if (portConfig.publicDomain !== undefined) {
           const finalAppProtocol = updatedNetwork.appProtocol;
           const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(finalAppProtocol || '');
-
           if (!isApplicationProtocol || !updatedNetwork.openPublicDomain) {
             throw new PortValidationError(
-              `Cannot set publicDomain for a non-public application protocol port. Current protocol: ${
-                finalAppProtocol || updatedNetwork.protocol
-              }`,
+              'Cannot set publicDomain for a port without public domain access',
               {
                 currentAppProtocol: finalAppProtocol,
                 currentProtocol: updatedNetwork.protocol,
-                supportedProtocols: ['HTTP', 'GRPC', 'WS'],
-                operation: 'UPDATE_PUBLIC_DOMAIN'
+                operation: 'UPDATE_PUBLIC_DOMAIN_PREFIX'
               }
             );
           }
-
-          updatedNetwork.publicDomain = portConfig.publicDomain;
+          updatedNetwork.publicDomain = normalizePublicDomainPrefixOrThrow(portConfig.publicDomain);
           updatedNetwork.domain =
             updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
         }
@@ -848,6 +882,13 @@ async function manageAppPorts(
         }
 
         const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(portConfig.protocol);
+        const openPublicDomain =
+          isApplicationProtocol &&
+          (portConfig.exposesPublicDomain !== undefined ? portConfig.exposesPublicDomain : false);
+        const publicDomain =
+          openPublicDomain && portConfig.publicDomain
+            ? normalizePublicDomainPrefixOrThrow(portConfig.publicDomain)
+            : nanoid();
         const newNetwork = {
           serviceName: `service-${nanoid()}`,
           networkName: `network-${nanoid()}`,
@@ -855,10 +896,8 @@ async function manageAppPorts(
           port: portConfig.number,
           protocol: isApplicationProtocol ? 'TCP' : portConfig.protocol || 'TCP',
           appProtocol: isApplicationProtocol ? portConfig.protocol || 'HTTP' : undefined,
-          openPublicDomain:
-            isApplicationProtocol &&
-            (portConfig.exposesPublicDomain !== undefined ? portConfig.exposesPublicDomain : false),
-          publicDomain: isApplicationProtocol ? portConfig.publicDomain || nanoid() : '',
+          openPublicDomain,
+          publicDomain: openPublicDomain ? publicDomain : '',
           customDomain: '',
           domain: isApplicationProtocol ? global.AppConfig?.cloud?.domain || 'cloud.sealos.io' : '',
           nodePort: undefined,
@@ -880,12 +919,13 @@ async function manageAppPorts(
     protocol: network.protocol
   }));
 
-  await updateAppPorts(app, appName, k8sApp, namespace, targetContainerPorts);
-
   const updatedAppData: AppEditType = {
     ...latestAppData,
     networks: resultNetworks
   };
+
+  await ensurePublicDomainPrefixesAvailable(updatedAppData, k8s);
+  await updateAppPorts(app, appName, k8sApp, namespace, targetContainerPorts);
 
   await updateServiceAndIngress(updatedAppData, applyYamlList, k8s);
 
@@ -1003,6 +1043,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           try {
             currentAppData = await manageAppPorts(name, updateData.ports, currentAppData!, k8s);
           } catch (error: any) {
+            if (error instanceof PublicDomainError) {
+              return jsonRes(res, {
+                code: error.status,
+                error: {
+                  type: 'PUBLIC_DOMAIN_ERROR',
+                  ...getPublicDomainErrorResponse(error)
+                }
+              });
+            }
+
             if (error instanceof PortConflictError) {
               return jsonRes(res, {
                 code: error.code,

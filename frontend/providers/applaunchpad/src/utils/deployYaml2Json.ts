@@ -104,10 +104,13 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       ? {
           [`${data.gpu.manufacturers}.com/use-gputype`]: data.gpu.type
         }
-      : supportedGpuManufacturers.reduce((acc, manufacturer) => {
-          acc[`${manufacturer}.com/use-gputype`] = null;
-          return acc;
-        }, {} as Record<string, null>);
+      : supportedGpuManufacturers.reduce(
+          (acc, manufacturer) => {
+            acc[`${manufacturer}.com/use-gputype`] = null;
+            return acc;
+          },
+          {} as Record<string, null>
+        );
 
   const metadata = {
     name: data.appName,
@@ -711,7 +714,15 @@ export const json2ConfigMap = (data: AppEditType, ownerReferences?: V1OwnerRefer
   return yaml.dump(template);
 };
 
-export const json2Secret = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
+const maskedDockerConfigJson = '********';
+const quotedMaskedDockerConfigJson = `.dockerconfigjson: '${maskedDockerConfigJson}'`;
+const unquotedMaskedDockerConfigJson = `.dockerconfigjson: ${maskedDockerConfigJson}`;
+
+export const json2Secret = (
+  data: AppEditType,
+  ownerReferences?: V1OwnerReference[],
+  options?: { maskPassword?: boolean }
+) => {
   const auth = strToBase64(`${data.secret.username}:${data.secret.password}`);
   const dockerconfigjson = strToBase64(
     JSON.stringify({
@@ -733,11 +744,14 @@ export const json2Secret = (data: AppEditType, ownerReferences?: V1OwnerReferenc
       ...(ownerReferences ? { ownerReferences } : {})
     },
     data: {
-      '.dockerconfigjson': dockerconfigjson
+      '.dockerconfigjson': options?.maskPassword ? maskedDockerConfigJson : dockerconfigjson
     },
     type: 'kubernetes.io/dockerconfigjson'
   };
-  return yaml.dump(template);
+  const secretYaml = yaml.dump(template);
+  return options?.maskPassword
+    ? secretYaml.replace(quotedMaskedDockerConfigJson, unquotedMaskedDockerConfigJson)
+    : secretYaml;
 };
 export const json2HPA = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
   const isDeployment = data.storeList?.length === 0;

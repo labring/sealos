@@ -25,6 +25,12 @@ launchpad:
     scripts: []
   gtmId: null
   pvcStorageMax: 100
+  imagePorts:
+    enabled: false
+    trustedRegistries: []
+  publicDomain:
+    customPrefixEnabled: false
+    reservedPrefixes: []
   eventAnalyze:
     enabled: false
     fastGPTKey: ''

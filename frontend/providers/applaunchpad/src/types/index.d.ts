@@ -62,6 +62,14 @@ export type AppConfigType = {
     gtmId: string | null;
     currencySymbol: Coin;
     pvcStorageMax: number;
+    imagePorts?: {
+      enabled?: boolean;
+      trustedRegistries?: string[];
+    };
+    publicDomain?: {
+      customPrefixEnabled?: boolean;
+      reservedPrefixes?: string[];
+    };
     eventAnalyze: {
       enabled: boolean;
       fastGPTKey?: string;
@@ -112,4 +120,7 @@ export type EnvResponse = {
   GPU_ENABLED: boolean;
   LOG_ENABLED: boolean;
   NETWORK_STORAGE_ENABLED: boolean;
+  IMAGE_PORTS_ENABLED: boolean;
+  CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED: boolean;
+  PUBLIC_DOMAIN_RESERVED_PREFIXES: string[];
 };

@@ -16,12 +16,55 @@ import {
   LaunchpadApplicationSchema,
   LaunchCommandSchema,
   ImageSchema,
-  publicDomainPrefixSchema,
   resourceConverters
 } from './schema';
 import { buildExternalUrl } from '@/utils/network-url';
+import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
+import { validatePublicDomainPrefix } from '@/utils/public-domain';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+function includePublicDomainPrefix() {
+  return isCustomPublicDomainPrefixEnabled();
+}
+
+const PublicDomainPrefixSchema = z.string().superRefine((value, ctx) => {
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Custom public domain prefixes are disabled'
+    });
+    return;
+  }
+
+  const result = validatePublicDomainPrefix(value);
+  if (!result.valid) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        result.reason === 'reserved'
+          ? `Public domain prefix "${result.value}" is reserved`
+          : `Public domain prefix "${result.value}" is invalid`
+    });
+  }
+});
+
+function getPublicDomainPrefixOrRandom(value?: string) {
+  if (!value) return nanoid();
+  if (!isCustomPublicDomainPrefixEnabled()) {
+    throw new Error('Custom public domain prefixes are disabled');
+  }
+
+  const result = validatePublicDomainPrefix(value);
+  if (!result.valid) {
+    throw new Error(
+      result.reason === 'reserved'
+        ? `Public domain prefix "${result.value}" is reserved`
+        : `Public domain prefix "${result.value}" is invalid`
+    );
+  }
+  return result.value;
+}
 
 function parseCreateTimeToDate(createTime: string): Date | null {
   // Common formats in this repo: 'YYYY/MM/DD HH:mm' or 'YYYY-MM-DD HH:mm' (sometimes with seconds).
@@ -102,10 +145,20 @@ export const CreatePortConfigSchema = z
       description:
         'Whether to expose this port via public domain (only effective for http/grpc/ws protocols)'
     }),
-    publicDomain: publicDomainPrefixSchema.optional().openapi({
-      description:
-        'Public domain prefix. Must be a single DNS label, up to 63 characters. Empty string uses an auto-generated prefix.'
+    publicDomain: PublicDomainPrefixSchema.optional().openapi({
+      description: 'Custom public subdomain prefix. Omit to auto-generate.'
     })
+  })
+  .superRefine((data, ctx) => {
+    if (data.publicDomain === undefined) return;
+    const isApplicationProtocol = ['http', 'grpc', 'ws'].includes(data.protocol);
+    if (!isApplicationProtocol || data.isPublic === false) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['publicDomain'],
+        message: 'publicDomain can only be set for http/grpc/ws ports with public domain access'
+      });
+    }
   })
   .openapi({
     description: 'Port configuration for creating applications'
@@ -124,17 +177,28 @@ export const PortUpdateSchema = z
       description:
         'Whether to expose this port via public domain (only effective for http/grpc/ws protocols)'
     }),
+    publicDomain: PublicDomainPrefixSchema.optional().openapi({
+      description: 'Custom public subdomain prefix. Omit to keep or auto-generate.'
+    }),
     portName: z.string().optional().openapi({
       description: 'Port name (include this to update existing port, omit to create new port)'
-    }),
-    publicDomain: publicDomainPrefixSchema.optional().openapi({
-      description:
-        'Public domain prefix. Must be a single DNS label, up to 63 characters. Empty string uses an auto-generated or existing prefix.'
     })
   })
   .openapi({
     description:
       'Port configuration. Include portName to update existing port. Omit portName to create new port. Ports not included in the array will be deleted.'
+  })
+  .superRefine((data, ctx) => {
+    if (data.publicDomain === undefined) return;
+    const isKnownNonApplicationProtocol =
+      data.protocol !== undefined && !['http', 'grpc', 'ws'].includes(data.protocol);
+    if (isKnownNonApplicationProtocol || data.isPublic === false) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['publicDomain'],
+        message: 'publicDomain can only be set for http/grpc/ws ports with public domain access'
+      });
+    }
   });
 
 export const UpdateImageSchema = z
@@ -378,6 +442,11 @@ export function transformToLegacySchema(
           const protocolLower = (port.protocol || 'http').toLowerCase();
           const isApplicationProtocol = ['http', 'grpc', 'ws'].includes(protocolLower);
           const protocolUpper = protocolLower.toUpperCase();
+          const openPublicDomain = isApplicationProtocol ? (port.isPublic ?? true) : false;
+          const publicDomain =
+            isApplicationProtocol && openPublicDomain
+              ? getPublicDomainPrefixOrRandom(port.publicDomain)
+              : '';
           return {
             serviceName: `${standardRequest.name}-${port.number}-${nanoid()}-service`,
             networkName: `${standardRequest.name}-${port.number}-${nanoid()}-network`,
@@ -387,8 +456,8 @@ export function transformToLegacySchema(
             appProtocol: (isApplicationProtocol
               ? protocolUpper
               : 'HTTP') as ApplicationProtocolType,
-            openPublicDomain: isApplicationProtocol ? (port.isPublic ?? true) : false,
-            publicDomain: isApplicationProtocol ? port.publicDomain || nanoid() : '',
+            openPublicDomain,
+            publicDomain,
             customDomain: '',
             domain: '',
             nodePort: undefined,
@@ -596,6 +665,8 @@ export function transformFromLegacySchema(
           number: network.port,
           portName: network.portName,
           protocol: protocolLower,
+          ...(includePublicDomainPrefix() &&
+            network.publicDomain && { publicDomain: network.publicDomain }),
           ...(privateAddress && { privateAddress }),
           ...(publicAddress && { publicAddress }),
           ...(network.customDomain && { customDomain: network.customDomain })

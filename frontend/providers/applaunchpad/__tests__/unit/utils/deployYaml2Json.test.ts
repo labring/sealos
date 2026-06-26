@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   json2DeployCr,
   json2Ingress,
+  json2Secret,
   json2Service,
   yamlString2Objects
 } from '@/utils/deployYaml2Json';
@@ -90,15 +91,9 @@ describe('json2Ingress', () => {
       })
     ) as any[];
 
-    expect(objects[0].spec.rules[0].host).toBe(
-      'codex-ms100066-launch.192.168.13.29.nip.io'
-    );
-    expect(objects[0].spec.tls[0].hosts).toEqual([
-      'codex-ms100066-launch.192.168.13.29.nip.io'
-    ]);
-    expect(objects[2].spec.dnsNames).toEqual([
-      'codex-ms100066-launch.192.168.13.29.nip.io'
-    ]);
+    expect(objects[0].spec.rules[0].host).toBe('codex-ms100066-launch.192.168.13.29.nip.io');
+    expect(objects[0].spec.tls[0].hosts).toEqual(['codex-ms100066-launch.192.168.13.29.nip.io']);
+    expect(objects[2].spec.dnsNames).toEqual(['codex-ms100066-launch.192.168.13.29.nip.io']);
   });
 
   it('normalizes configured app domain before writing generated ingress host', () => {
@@ -351,5 +346,37 @@ describe('json2DeployCr', () => {
 
     expect(portNames).toEqual(['p-t-80-0', 'p-t-80-1', 'p-t-80-2']);
     expect(new Set(portNames).size).toBe(portNames.length);
+  });
+});
+
+describe('json2Secret', () => {
+  it('keeps registry credentials in deploy yaml by default', () => {
+    const app = createApp();
+    app.secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'registry.example.com'
+    };
+
+    const objects = yamlString2Objects(json2Secret(app)) as any[];
+    const dockerconfigjson = Buffer.from(objects[0].data['.dockerconfigjson'], 'base64').toString();
+
+    expect(dockerconfigjson).toContain('real-password');
+  });
+
+  it('masks registry password in display yaml', () => {
+    const app = createApp();
+    app.secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'registry.example.com'
+    };
+
+    const secretYaml = json2Secret(app, undefined, { maskPassword: true });
+
+    expect(secretYaml).toContain('.dockerconfigjson: ********');
+    expect(secretYaml).not.toContain(".dockerconfigjson: '********'");
   });
 });
