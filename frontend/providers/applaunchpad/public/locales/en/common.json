@@ -160,6 +160,8 @@
   "Public Access": "Internet Access",
   "Public Address": "Public Address",
   "Path Route Backend Service": "Backend Service",
+  "Path Route Match Exact": "Exact match",
+  "Path Route Match Prefix": "Prefix match",
   "Path Route Match Type": "Match Type",
   "Path Route Path Duplicated": "Route path already exists",
   "Path Route Path Must Start With Slash": "Path must start with /",

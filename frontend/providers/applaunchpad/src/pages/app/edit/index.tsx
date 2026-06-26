@@ -1,4 +1,4 @@
-import { postDeployApp, putApp } from '@/api/app';
+import { getBackendServices, postDeployApp, putApp } from '@/api/app';
 import {
   checkPermission,
   checkPublicDomain,
@@ -489,6 +489,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     ['initLaunchpadApp'],
     () => {
       if (!appName) {
+        getBackendServices()
+          .then((serviceList) => {
+            formHook.setValue('serviceList', serviceList);
+          })
+          .catch(() => {});
+
         const defaultApp = {
           ...defaultEditVal,
           cpu: formSliderListConfig[defaultSliderKey].cpu[0],
@@ -818,8 +824,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                             data.hpa.target === 'cpu'
                               ? 'CPU'
                               : data.hpa.target === 'gpu'
-                                ? 'GPU'
-                                : 'RAM',
+                              ? 'GPU'
+                              : 'RAM',
                           value: data.hpa.value
                         }
                       : undefined

@@ -160,6 +160,8 @@
   "Public Access": "外网访问",
   "Public Address": "公网地址",
   "Path Route Backend Service": "目标后端服务（Backend Service）",
+  "Path Route Match Exact": "Exact（精确匹配）",
+  "Path Route Match Prefix": "Prefix（前缀匹配）",
   "Path Route Match Type": "匹配类型",
   "Path Route Path Duplicated": "路由路径已存在",
   "Path Route Path Must Start With Slash": "Path 路径必须以 / 开头",

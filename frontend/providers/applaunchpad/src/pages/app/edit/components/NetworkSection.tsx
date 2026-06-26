@@ -773,30 +773,27 @@ export function NetworkSection({
 
   const getServiceOptions = useCallback(() => {
     const currentForm = getValues();
-    const serviceOptions =
-      currentForm.serviceList
-        ?.flatMap((service) =>
-          service.ports.map((port) => ({
-            label: `${service.name}:${port.port}`,
-            value: getBackendServiceValue(service.name, port.port),
-            serviceName: service.name,
-            servicePort: port.port
-          }))
-        )
-        .filter(
-          (option, index, list) => list.findIndex((item) => item.value === option.value) === index
-        ) || [];
-
-    if (serviceOptions.length) {
-      return serviceOptions;
-    }
-
-    return currentForm.networks.map((network) => ({
-      label: `${t('Main Service')}:${network.port}`,
-      value: getBackendServiceValue('', network.port),
-      serviceName: '',
+    const currentServiceOptions = currentForm.networks.map((network) => ({
+      label: network.serviceName
+        ? `${network.serviceName}:${network.port}`
+        : `${t('Main Service')}:${network.port}`,
+      value: getBackendServiceValue(network.serviceName || '', network.port),
+      serviceName: network.serviceName || '',
       servicePort: network.port
     }));
+    const backendServiceOptions =
+      currentForm.serviceList?.flatMap((service) =>
+        service.ports.map((port) => ({
+          label: `${service.name}:${port.port}`,
+          value: getBackendServiceValue(service.name, port.port),
+          serviceName: service.name,
+          servicePort: port.port
+        }))
+      ) || [];
+
+    return [...currentServiceOptions, ...backendServiceOptions].filter(
+      (option, index, list) => list.findIndex((item) => item.value === option.value) === index
+    );
   }, [getValues, t]);
 
   const getDomainDisplay = useCallback(
@@ -982,8 +979,8 @@ export function NetworkSection({
                                 network.openPublicDomain
                                   ? network.appProtocol
                                   : network.openNodePort
-                                    ? network.protocol
-                                    : 'HTTP'
+                                  ? network.protocol
+                                  : 'HTTP'
                               }
                               list={ProtocolList}
                               onchange={(val: any) => {

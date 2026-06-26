@@ -47,31 +47,23 @@ const createDeployment = (): DeployKindsType =>
     }
   } as DeployKindsType);
 
-const createService = (): DeployKindsType =>
+const createService = (name = 'demo', ports = [80, 81]): DeployKindsType =>
   ({
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name: 'demo',
+      name,
       labels: {}
     },
     spec: {
-      ports: [
-        {
-          name: 'web',
-          port: 80,
-          targetPort: 80,
-          protocol: 'TCP'
-        },
-        {
-          name: 'api',
-          port: 81,
-          targetPort: 81,
-          protocol: 'TCP'
-        }
-      ],
+      ports: ports.map((port) => ({
+        name: port === 80 ? 'web' : `p-${port}`,
+        port,
+        targetPort: port,
+        protocol: 'TCP'
+      })),
       selector: {
-        app: 'demo'
+        app: name
       }
     }
   } as DeployKindsType);
@@ -80,12 +72,12 @@ const createIngress = (): DeployKindsType =>
   ({
     apiVersion: 'networking.k8s.io/v1',
     kind: 'Ingress',
-      metadata: {
-        name: 'network-demo',
-        labels: {
-          'cloud.sealos.io/app-deploy-manager-domain': 'demo',
-          'cloud.sealos.io/app-deploy-manager-port': '80'
-        },
+    metadata: {
+      name: 'network-demo',
+      labels: {
+        'cloud.sealos.io/app-deploy-manager-domain': 'demo',
+        'cloud.sealos.io/app-deploy-manager-port': '80'
+      },
       annotations: {
         'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP'
       }
@@ -186,5 +178,47 @@ describe('adaptAppDetail', () => {
     expect(publicNetworks[0].port).toBe(80);
     expect(publicNetworks[0].routes?.map((route) => route.servicePort)).toEqual([81, 80]);
     expect(app.networks.find((network) => network.port === 81)?.openPublicDomain).toBe(false);
+  });
+
+  it('can expose backend service candidates without treating them as current app ports', async () => {
+    const app = await adaptAppDetail([createDeployment(), createService(), createIngress()], {
+      SEALOS_DOMAIN: '192.168.13.209.nip.io',
+      SEALOS_USER_DOMAINS: [
+        {
+          name: '192.168.13.209.nip.io',
+          secretName: 'wildcard-cert'
+        }
+      ],
+      backendServices: [createService() as any, createService('api-demo', [8080]) as any]
+    });
+
+    expect(app.serviceList).toEqual([
+      {
+        name: 'demo',
+        ports: [
+          {
+            name: 'web',
+            port: 80,
+            protocol: 'TCP'
+          },
+          {
+            name: 'p-81',
+            port: 81,
+            protocol: 'TCP'
+          }
+        ]
+      },
+      {
+        name: 'api-demo',
+        ports: [
+          {
+            name: 'p-8080',
+            port: 8080,
+            protocol: 'TCP'
+          }
+        ]
+      }
+    ]);
+    expect(app.networks.map((network) => network.port)).toEqual([80, 81]);
   });
 });

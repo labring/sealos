@@ -262,6 +262,7 @@ export const adaptAppDetail = async (
       name: string;
       secretName: string;
     }[];
+    backendServices?: V1Service[];
   }
 ): Promise<AppDetailType> => {
   const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = options ?? (await getInitData());
@@ -269,6 +270,7 @@ export const adaptAppDetail = async (
   const allServices = configs
     .filter((item) => item.kind === YamlKindEnum.Service)
     .map((item) => item as V1Service);
+  const backendServices = options?.backendServices || allServices;
 
   const allServicePorts = allServices.flatMap((service) => service.spec?.ports || []);
 
@@ -529,7 +531,7 @@ export const adaptAppDetail = async (
           valueFrom: env.valueFrom
         };
       }) || [],
-    serviceList: allServices.map((service) => ({
+    serviceList: backendServices.map((service) => ({
       name: service.metadata?.name || '',
       ports:
         service.spec?.ports?.map((port) => ({
@@ -578,8 +580,8 @@ export const adaptAppDetail = async (
           domain: isCustomDomain
             ? SEALOS_DOMAIN
             : item?.nodePort
-              ? domain
-              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
+            ? domain
+            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
           routes: ingressPaths.length
             ? ingressPaths.map((path) => ({
                 path: path.path || '/',
@@ -714,8 +716,8 @@ export const sliderNumber2MarkList = ({
           ? `${item / 1024} G`
           : `${item} M`
         : type === 'ephemeralStorage'
-          ? `${item}`
-          : `${item / 1000}`,
+        ? `${item}`
+        : `${item / 1000}`,
     value: item
   }));
 };
