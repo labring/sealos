@@ -54,6 +54,7 @@ func main() {
 	var ingressAnnotationString string
 	var cnameDomains v1.DomainList
 	var denyDomains v1.DomainList
+	var cnameCheckEnabled bool
 	flag.StringVar(
 		&metricsAddr,
 		"metrics-bind-address",
@@ -85,6 +86,12 @@ func main() {
 		"denyDomains",
 		"Forbidden domain suffixes for user namespaces ingress hosts (comma-separated). Example: 'cloud.example.com,app.example.com'",
 	)
+	flag.BoolVar(
+		&cnameCheckEnabled,
+		"cnameCheck",
+		true,
+		"Enable CNAME validation for ingress hosts in user namespaces",
+	)
 	opts := zap.Options{
 		Development: true,
 	}
@@ -98,6 +105,7 @@ func main() {
 		os.Exit(1)
 	}
 	setupLog.Info("cname domains:", "domains", strings.Join(cnameDomains, ","))
+	setupLog.Info("cname check:", "enabled", cnameCheckEnabled)
 	if len(denyDomains) > 0 {
 		setupLog.Info("deny domains:", "domains", strings.Join(denyDomains, ","))
 	}
@@ -147,8 +155,9 @@ func main() {
 	}
 
 	if (&v1.IngressValidator{
-		CnameDomains: cnameDomains,
-		DenyDomains:  denyDomains,
+		CnameDomains:      cnameDomains,
+		DenyDomains:       denyDomains,
+		CnameCheckEnabled: cnameCheckEnabled,
 	}).SetupWithManager(mgr) != nil {
 		setupLog.Error(err, "unable to create ingress validator webhook")
 		os.Exit(1)
