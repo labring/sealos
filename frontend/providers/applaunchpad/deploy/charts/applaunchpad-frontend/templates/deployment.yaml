@@ -40,6 +40,9 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
+          env:
+            - name: HOSTNAME
+              value: "0.0.0.0"
           volumeMounts:
             - mountPath: /app/providers/applaunchpad/.env
               name: applaunchpad-frontend-volume
