@@ -20,16 +20,12 @@ import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 
-const pathTypeList: Array<{ label: NetworkRoutePathType; value: NetworkRoutePathType }> = [
-  { label: 'Prefix', value: 'Prefix' },
-  { label: 'Exact', value: 'Exact' },
-  { label: 'ImplementationSpecific', value: 'ImplementationSpecific' }
-];
 const routeRuleFieldWidthPx = 219.5;
 const routeRuleFieldGapPx = 19;
 const routeRuleFieldWidth = `${routeRuleFieldWidthPx}px`;
 const routeRuleFieldGap = `${routeRuleFieldGapPx}px`;
 const routeRuleContentWidth = `${routeRuleFieldWidthPx * 2 + routeRuleFieldGapPx}px`;
+const routeRuleSelectDropdownGap = '8px';
 const routeRulesScrollbarWidth = '6px';
 
 type RouteRulesForm = {
@@ -93,6 +89,13 @@ export default function RouteRulesModal({
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const pathTypeList: Array<{ label: string; value: NetworkRoutePathType }> = useMemo(
+    () => [
+      { label: t('Path Route Match Prefix'), value: 'Prefix' },
+      { label: t('Path Route Match Exact'), value: 'Exact' }
+    ],
+    [t]
+  );
 
   const backendServiceOptions = useMemo(() => {
     const options = serviceOptions.length ? serviceOptions : [];
@@ -343,6 +346,16 @@ export default function RouteRulesModal({
                           routes?.[index]?.servicePort || defaultServicePort
                         )}
                         list={backendServiceOptions}
+                        boxStyle={{
+                          sx: {
+                            '& [aria-haspopup="menu"][aria-expanded="true"] + .chakra-menu__menu-list':
+                              {
+                                position: 'static',
+                                transform: 'none !important',
+                                mt: routeRuleSelectDropdownGap
+                              }
+                          }
+                        }}
                         onchange={(val: string) => {
                           const backendService = parseBackendServiceValue(val);
                           setValue(`routes.${index}.serviceName`, backendService.serviceName, {
