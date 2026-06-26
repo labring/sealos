@@ -16,6 +16,7 @@ import {
   LaunchpadApplicationSchema,
   LaunchCommandSchema,
   ImageSchema,
+  publicDomainPrefixSchema,
   resourceConverters
 } from './schema';
 import { buildExternalUrl } from '@/utils/network-url';
@@ -100,6 +101,10 @@ export const CreatePortConfigSchema = z
     isPublic: z.boolean().default(true).openapi({
       description:
         'Whether to expose this port via public domain (only effective for http/grpc/ws protocols)'
+    }),
+    publicDomain: publicDomainPrefixSchema.optional().openapi({
+      description:
+        'Public domain prefix. Must be a single DNS label, up to 63 characters. Empty string uses an auto-generated prefix.'
     })
   })
   .openapi({
@@ -121,6 +126,10 @@ export const PortUpdateSchema = z
     }),
     portName: z.string().optional().openapi({
       description: 'Port name (include this to update existing port, omit to create new port)'
+    }),
+    publicDomain: publicDomainPrefixSchema.optional().openapi({
+      description:
+        'Public domain prefix. Must be a single DNS label, up to 63 characters. Empty string uses an auto-generated or existing prefix.'
     })
   })
   .openapi({
@@ -378,8 +387,8 @@ export function transformToLegacySchema(
             appProtocol: (isApplicationProtocol
               ? protocolUpper
               : 'HTTP') as ApplicationProtocolType,
-            openPublicDomain: isApplicationProtocol ? port.isPublic ?? true : false,
-            publicDomain: isApplicationProtocol ? nanoid() : '',
+            openPublicDomain: isApplicationProtocol ? (port.isPublic ?? true) : false,
+            publicDomain: isApplicationProtocol ? port.publicDomain || nanoid() : '',
             customDomain: '',
             domain: '',
             nodePort: undefined,

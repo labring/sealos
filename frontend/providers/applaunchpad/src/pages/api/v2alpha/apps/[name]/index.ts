@@ -51,7 +51,11 @@ const SIZE_UNITS = {
 
 // Custom Error Classes
 class PortError extends Error {
-  constructor(message: string, public code: number = 500, public details?: ApiErrorDetails) {
+  constructor(
+    message: string,
+    public code: number = 500,
+    public details?: ApiErrorDetails
+  ) {
     super(message);
     this.name = 'PortError';
   }
@@ -666,7 +670,7 @@ function createNetworkConfig(appName: string, portConfig: any): any {
     appProtocol: isAppProtocol ? protocol : undefined,
     openPublicDomain:
       isAppProtocol && (portConfig.isPublic !== undefined ? portConfig.isPublic : false),
-    publicDomain: isAppProtocol ? nanoid() : '',
+    publicDomain: isAppProtocol ? portConfig.publicDomain || nanoid() : '',
     customDomain: '',
     domain: isAppProtocol ? global.AppConfig?.cloud?.domain || 'cloud.sealos.io' : '',
     nodePort: undefined,
@@ -694,7 +698,8 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
       updatedNetwork.customDomain = '';
       updatedNetwork.domain = '';
     } else if (portConfig.isPublic) {
-      updatedNetwork.publicDomain = existingNetwork.publicDomain || nanoid();
+      updatedNetwork.publicDomain =
+        portConfig.publicDomain || existingNetwork.publicDomain || nanoid();
       updatedNetwork.domain =
         existingNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
     }
@@ -708,7 +713,8 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
       updatedNetwork.openPublicDomain = portConfig.isPublic;
 
       if (portConfig.isPublic) {
-        updatedNetwork.publicDomain = updatedNetwork.publicDomain || nanoid();
+        updatedNetwork.publicDomain =
+          portConfig.publicDomain || updatedNetwork.publicDomain || nanoid();
         updatedNetwork.domain =
           updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
 
@@ -737,6 +743,29 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
         }
       );
     }
+  }
+
+  if (portConfig.publicDomain) {
+    const finalAppProtocol = updatedNetwork.appProtocol;
+    const isAppProtocol = isApplicationProtocol(finalAppProtocol);
+
+    if (!isAppProtocol || !updatedNetwork.openPublicDomain) {
+      throw new PortValidationError(
+        `Cannot set publicDomain for a non-public application protocol port. Current protocol: ${
+          finalAppProtocol || updatedNetwork.protocol
+        }`,
+        {
+          currentAppProtocol: finalAppProtocol,
+          currentProtocol: updatedNetwork.protocol,
+          supportedProtocols: APPLICATION_PROTOCOLS,
+          operation: 'UPDATE_PUBLIC_DOMAIN'
+        }
+      );
+    }
+
+    updatedNetwork.publicDomain = portConfig.publicDomain;
+    updatedNetwork.domain =
+      updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
   }
 
   return updatedNetwork;
@@ -1002,12 +1031,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 updateData.image.imageRegistry === null
                   ? null
                   : updateData.image.imageRegistry
-                  ? {
-                      username: updateData.image.imageRegistry.username,
-                      password: updateData.image.imageRegistry.password,
-                      serverAddress: updateData.image.imageRegistry.apiUrl
-                    }
-                  : undefined
+                    ? {
+                        username: updateData.image.imageRegistry.username,
+                        password: updateData.image.imageRegistry.password,
+                        serverAddress: updateData.image.imageRegistry.apiUrl
+                      }
+                    : undefined
             })
           };
 

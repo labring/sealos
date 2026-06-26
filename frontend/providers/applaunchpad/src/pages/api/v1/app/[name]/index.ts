@@ -26,7 +26,11 @@ import type { AppEditType } from '@/types/app';
 import { appDeployKey } from '@/constants/app';
 
 class PortError extends Error {
-  constructor(message: string, public code: number = 500, public details?: any) {
+  constructor(
+    message: string,
+    public code: number = 500,
+    public details?: any
+  ) {
     super(message);
     this.name = 'PortError';
   }
@@ -745,7 +749,8 @@ async function manageAppPorts(
             updatedNetwork.customDomain = '';
             updatedNetwork.domain = '';
           } else if (isApplicationProtocol && portConfig.exposesPublicDomain) {
-            updatedNetwork.publicDomain = existingNetwork.publicDomain || nanoid();
+            updatedNetwork.publicDomain =
+              portConfig.publicDomain || existingNetwork.publicDomain || nanoid();
             updatedNetwork.domain =
               existingNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
           }
@@ -759,7 +764,8 @@ async function manageAppPorts(
             updatedNetwork.openPublicDomain = portConfig.exposesPublicDomain;
 
             if (portConfig.exposesPublicDomain) {
-              updatedNetwork.publicDomain = updatedNetwork.publicDomain || nanoid();
+              updatedNetwork.publicDomain =
+                portConfig.publicDomain || updatedNetwork.publicDomain || nanoid();
               updatedNetwork.domain =
                 updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
 
@@ -788,6 +794,29 @@ async function manageAppPorts(
               }
             );
           }
+        }
+
+        if (portConfig.publicDomain) {
+          const finalAppProtocol = updatedNetwork.appProtocol;
+          const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(finalAppProtocol || '');
+
+          if (!isApplicationProtocol || !updatedNetwork.openPublicDomain) {
+            throw new PortValidationError(
+              `Cannot set publicDomain for a non-public application protocol port. Current protocol: ${
+                finalAppProtocol || updatedNetwork.protocol
+              }`,
+              {
+                currentAppProtocol: finalAppProtocol,
+                currentProtocol: updatedNetwork.protocol,
+                supportedProtocols: ['HTTP', 'GRPC', 'WS'],
+                operation: 'UPDATE_PUBLIC_DOMAIN'
+              }
+            );
+          }
+
+          updatedNetwork.publicDomain = portConfig.publicDomain;
+          updatedNetwork.domain =
+            updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
         }
 
         newNetworks.push(updatedNetwork);
@@ -829,7 +858,7 @@ async function manageAppPorts(
           openPublicDomain:
             isApplicationProtocol &&
             (portConfig.exposesPublicDomain !== undefined ? portConfig.exposesPublicDomain : false),
-          publicDomain: isApplicationProtocol ? nanoid() : '',
+          publicDomain: isApplicationProtocol ? portConfig.publicDomain || nanoid() : '',
           customDomain: '',
           domain: isApplicationProtocol ? global.AppConfig?.cloud?.domain || 'cloud.sealos.io' : '',
           nodePort: undefined,

@@ -3,6 +3,21 @@ import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+export const PUBLIC_DOMAIN_PREFIX_MAX_LENGTH = 63;
+
+export const publicDomainPrefixSchema = z
+  .string()
+  .max(PUBLIC_DOMAIN_PREFIX_MAX_LENGTH, {
+    message: `publicDomain must be ${PUBLIC_DOMAIN_PREFIX_MAX_LENGTH} characters or less`
+  })
+  .regex(/^$|^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/, {
+    message:
+      'publicDomain must consist of lowercase alphanumeric characters or hyphens, and must start and end with an alphanumeric character'
+  })
+  .openapi({
+    description: 'Generated public domain prefix. Must be a single DNS label, up to 63 characters.',
+    example: 'my-app'
+  });
 
 export const resourceConverters = {
   cpuToMillicores: (cores: number): number => cores * 1000,

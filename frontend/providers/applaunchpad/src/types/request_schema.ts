@@ -39,6 +39,7 @@ import {
   LaunchCommandSchema,
   ImageSchema,
   imageRegistrySchema,
+  publicDomainPrefixSchema,
   resourceConverters
 } from './schema';
 
@@ -92,6 +93,10 @@ export const PortUpdateSchema = z
     }),
     serviceName: z.string().optional().openapi({
       description: 'Service name (read-only, for reference)'
+    }),
+    publicDomain: publicDomainPrefixSchema.optional().openapi({
+      description:
+        'Public domain prefix. Must be a single DNS label, up to 63 characters. Empty string uses an auto-generated or existing prefix.'
     })
   })
   .openapi({
@@ -320,7 +325,8 @@ export const CreateLaunchpadRequestSchema = z
         PortConfigSchema.pick({
           number: true,
           protocol: true,
-          exposesPublicDomain: true
+          exposesPublicDomain: true,
+          publicDomain: true
         })
       )
       .default([
@@ -371,7 +377,7 @@ export function transformToLegacySchema(
       protocol: (isApplicationProtocol ? 'TCP' : port.protocol) as TransportProtocolType,
       appProtocol: (isApplicationProtocol ? port.protocol : 'HTTP') as ApplicationProtocolType,
       openPublicDomain: isApplicationProtocol ? port.exposesPublicDomain : false,
-      publicDomain: isApplicationProtocol ? nanoid() : '',
+      publicDomain: isApplicationProtocol ? port.publicDomain || nanoid() : '',
       customDomain: '',
       domain: '',
       nodePort: undefined,
@@ -603,7 +609,8 @@ export const CreatePortsSchema = z.object({
       z.object({
         number: z.number().default(80),
         protocol: z.enum(['HTTP', 'GRPC', 'WS', 'TCP', 'UDP', 'SCTP']),
-        exposesPublicDomain: z.boolean()
+        exposesPublicDomain: z.boolean(),
+        publicDomain: publicDomainPrefixSchema.optional()
       })
     )
     .min(1)
@@ -622,7 +629,8 @@ export const UpdatePortsSchema = z.object({
           exposesPublicDomain: z.boolean(),
           networkName: z.string().optional(),
           portName: z.string().optional(),
-          serviceName: z.string().optional()
+          serviceName: z.string().optional(),
+          publicDomain: publicDomainPrefixSchema.optional()
         })
         .refine((data) => data.networkName || data.portName || data.serviceName, {
           message:
