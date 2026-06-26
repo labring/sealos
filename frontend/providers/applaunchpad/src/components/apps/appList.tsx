@@ -84,6 +84,8 @@ const AppList = ({
   // Pause confirm dialog state
   const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
   const [pendingPauseAppName, setPendingPauseAppName] = useState('');
+  const [restartDialogOpen, setRestartDialogOpen] = useState(false);
+  const [pendingRestartAppName, setPendingRestartAppName] = useState('');
 
   // Page size edit state
   const [isEditingPageSize, setIsEditingPageSize] = useState(false);
@@ -217,6 +219,11 @@ const AppList = ({
     setPauseDialogOpen(true);
   }, []);
 
+  const handleRestartAppWithDialog = useCallback((appName: string) => {
+    setPendingRestartAppName(appName);
+    setRestartDialogOpen(true);
+  }, []);
+
   // Stable columns definition - no inline functions for cell renderers
   const columns = useMemo<ColumnDef<AppListItemType>[]>(
     () =>
@@ -287,7 +294,7 @@ const AppList = ({
       onEditRemark: handleOpenRemarkModal,
       onPauseApp: handlePauseAppWithDialog,
       onStartApp: handleStartApp,
-      onRestartApp: handleRestartApp,
+      onRestartApp: handleRestartAppWithDialog,
       onDeleteApp: handleDeleteApp,
       onUpdateApp: handleUpdateApp
     }),
@@ -295,7 +302,7 @@ const AppList = ({
       handleOpenRemarkModal,
       handlePauseAppWithDialog,
       handleStartApp,
-      handleRestartApp,
+      handleRestartAppWithDialog,
       handleDeleteApp,
       handleUpdateApp
     ]
@@ -504,6 +511,38 @@ const AppList = ({
                 handlePauseApp(pendingPauseAppName);
                 setPauseDialogOpen(false);
                 setPendingPauseAppName('');
+              }}
+            >
+              {t('Yes')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={restartDialogOpen} onOpenChange={setRestartDialogOpen}>
+        <DialogContent className="w-[360px] text-foreground">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold leading-none">
+              <TriangleAlert className="h-4 w-4 text-yellow-600" />
+              {t('Warning')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-sm font-normal">{t('Confirm to restart this application?')}</div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="lg"
+              className="shadow-none"
+              onClick={() => setRestartDialogOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              size="lg"
+              className="shadow-none"
+              onClick={() => {
+                handleRestartApp(pendingRestartAppName);
+                setRestartDialogOpen(false);
+                setPendingRestartAppName('');
               }}
             >
               {t('Yes')}

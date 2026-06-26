@@ -207,7 +207,7 @@ export function NetworkSection({
           break;
       }
     },
-    [getValues, appendNetworks, removeNetworks, updateNetworks]
+    [config.domain, getValues, appendNetworks, removeNetworks, updateNetworks]
   );
 
   const getDomainDisplay = useCallback(
@@ -368,15 +368,15 @@ export function NetworkSection({
                                 ))}
                               </SelectContent>
                             </Select>
-                            <div className="flex-1 h-10 flex items-center px-3 border border-l-0 border-zinc-200  rounded-r-lg overflow-hidden">
+                            <div className="flex-1 min-w-0 h-10 flex items-center px-3 border border-l-0 border-zinc-200 rounded-r-lg overflow-hidden">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <div
-                                      className="flex-1 flex items-center cursor-pointer hover:text-zinc-900 transition-colors overflow-hidden"
+                                      className="flex-1 min-w-0 flex items-center cursor-pointer hover:text-zinc-900 transition-colors overflow-hidden"
                                       onClick={() => handleCopy(getDomainDisplay(network), i)}
                                     >
-                                      <span className="truncate text-sm text-muted-foreground">
+                                      <span className="min-w-0 truncate text-sm text-muted-foreground">
                                         {getDomainDisplay(network)}
                                       </span>
                                       {copiedIndex === i ? (
@@ -398,7 +398,7 @@ export function NetworkSection({
                                   type="button"
                                   variant="link"
                                   size="sm"
-                                  className="text-blue-600 shrink-0 h-auto px-2 font-normal text-sm"
+                                  className="ml-auto text-blue-600 shrink-0 h-auto px-2 font-normal text-sm"
                                   onClick={() =>
                                     setCustomAccessModalData({
                                       publicDomain: network.publicDomain,

@@ -12,6 +12,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Textarea } from '@sealos/shadcn-ui/textarea';
 import { Label } from '@sealos/shadcn-ui/label';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 export type ConfigMapType = {
   id?: string;
@@ -38,6 +39,7 @@ const ConfigmapModal = ({
   closeCb: () => void;
 }) => {
   const { t } = useTranslation();
+  const [isExpanded, setIsExpanded] = React.useState(false);
   const type = useMemo(() => (!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
   const {
     register,
@@ -57,11 +59,29 @@ const ConfigmapModal = ({
 
   return (
     <Drawer open onOpenChange={(open) => !open && closeCb()}>
-      <DrawerContent direction="right" className="min-w-[560px] sm:max-w-[560px]">
-        <DrawerHeader>
+      <DrawerContent
+        direction="right"
+        className={
+          isExpanded
+            ? '!w-[calc(100vw-24px)] !max-w-none sm:!max-w-none'
+            : 'min-w-[560px] sm:max-w-[560px]'
+        }
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DrawerHeader className="flex-row items-center justify-between">
           <DrawerTitle>
             {t(textMap[type].title)} {t('ConfigMap Tip')}
           </DrawerTitle>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={isExpanded ? 'Restore drawer size' : 'Expand drawer'}
+            className="mr-8 h-8 w-8 shadow-none"
+            onClick={() => setIsExpanded((value) => !value)}
+          >
+            {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
         </DrawerHeader>
 
         <div className="flex-1 min-h-0 px-6 py-6 flex flex-col gap-4">

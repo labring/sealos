@@ -112,7 +112,11 @@ const StoreModal = ({
 
   return (
     <Drawer open onOpenChange={(open) => !open && closeCb()}>
-      <DrawerContent direction="right" className="min-w-[560px] sm:max-w-[560px]">
+      <DrawerContent
+        direction="right"
+        className="min-w-[560px] sm:max-w-[560px]"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DrawerHeader>
           <DrawerTitle>{textMap[type].title}</DrawerTitle>
         </DrawerHeader>
