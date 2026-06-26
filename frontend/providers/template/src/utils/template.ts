@@ -2,6 +2,7 @@ import { EnvResponse, YamlItemType } from '@/types';
 import { TemplateSourceType } from '@/types/app';
 import type { TemplateCategory } from '@/types/config';
 import { reduce, mapValues } from 'lodash';
+import type { ExtraResourceLabels } from './common';
 import { developGenerateYamlList, generateYamlList, parseTemplateString } from './json-yaml';
 
 export function getCategorySlugs(categories: readonly TemplateCategory[] = []) {
@@ -51,7 +52,8 @@ export const generateYamlData = (
   templateSource: TemplateSourceType,
   inputs: Record<string, string>,
   platformEnvs?: EnvResponse,
-  isDevelop: boolean = false
+  isDevelop: boolean = false,
+  extraLabels: ExtraResourceLabels = {}
 ): YamlItemType[] => {
   if (!templateSource) return [];
 
@@ -71,6 +73,6 @@ export const generateYamlData = (
   const generateStr = parseTemplateString(templateSource.appYaml, data);
 
   return isDevelop
-    ? developGenerateYamlList(generateStr, app_name)
-    : generateYamlList(generateStr, app_name);
+    ? developGenerateYamlList(generateStr, app_name, extraLabels)
+    : generateYamlList(generateStr, app_name, extraLabels);
 };

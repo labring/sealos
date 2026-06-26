@@ -8,7 +8,7 @@ import {
   parseTemplateString,
   parseTemplateVariable
 } from '@/utils/json-yaml';
-import { getTemplateEnvs } from '@/utils/common';
+import { getTemplateEnvs, validateExtraLabels } from '@/utils/common';
 import { mapValues, reduce } from 'lodash';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import JsYaml from 'js-yaml';
@@ -126,12 +126,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const {
       yaml,
       args = {},
-      dryRun = false
+      dryRun = false,
+      extraLabels: rawExtraLabels
     } = req.body as {
       yaml?: string;
       args?: Record<string, string>;
       dryRun?: boolean;
+      extraLabels?: Record<string, string>;
     };
+    const extraLabelsValidation = validateExtraLabels(rawExtraLabels);
+    if (extraLabelsValidation.error) {
+      return sendError(res, {
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_VALUE,
+        message: extraLabelsValidation.error
+      });
+    }
+    const extraLabels = extraLabelsValidation.labels;
 
     // Validate required yaml field
     if (!yaml || typeof yaml !== 'string' || yaml.trim() === '') {
@@ -256,7 +268,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Generate YAML list with templateDeployKey labels
-    const correctYaml = generateYamlList(generateStr, instanceName);
+    const correctYaml = generateYamlList(generateStr, instanceName, extraLabels);
 
     if (!correctYaml || correctYaml.length === 0) {
       return sendError(res, {

@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+const ExtraLabelsSchema = z
+  .object({})
+  .catchall(z.string().describe('Kubernetes label value'))
+  .describe(
+    'Optional Kubernetes labels to attach to the Instance and rendered resources. Reserved Sealos ownership labels cannot be overridden.'
+  )
+  .meta({ example: { 'brain.io/project-id': 'project-uid' } });
+
 // Request body schema for creating an instance
 export const CreateInstanceRequestSchema = z.object({
   name: z
@@ -21,7 +29,8 @@ export const CreateInstanceRequestSchema = z.object({
       'Template variable key-value pairs. Only args without a default value are required. Use GET /templates/{name} to see which args are required and their defaults.'
     )
     .meta({ example: { OPENAI_API_KEY: 'sk-xxxxxxxxxxxxxxxxxxxx', OPENAI_MODEL_NAME: 'gpt-4o' } })
-    .optional()
+    .optional(),
+  extraLabels: ExtraLabelsSchema.optional()
 });
 
 // Quota schema for resources with compute/storage requirements
