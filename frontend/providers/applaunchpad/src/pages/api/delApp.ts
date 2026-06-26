@@ -60,13 +60,36 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
     }
   }
 
-  // If app has ownerReferences, only delete main workload (cascade delete handles rest)
+  // If app has ownerReferences, cascade delete handles owner-referenced resources.
+  // StatefulSet volumeClaimTemplates PVCs are retained by default, so clean PVCs explicitly.
   if (hasOwnerReferences && workloadKind) {
     if (workloadKind === 'Deployment') {
       await k8sApp.deleteNamespacedDeployment(name, namespace);
     } else {
       await k8sApp.deleteNamespacedStatefulSet(name, namespace);
     }
+
+    const delPvc = await Promise.allSettled([
+      k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
+        namespace,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `app=${name}`
+      )
+    ]);
+
+    delPvc.forEach((item) => {
+      console.log(item, 'delApp PVC err');
+      if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
+        throw new Error(
+          item?.reason?.body?.reason || item?.reason?.body?.message || '删除 App 异常'
+        );
+      }
+    });
+
     return;
   }
 
