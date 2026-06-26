@@ -250,11 +250,13 @@ export default function TeamCenter({
                         </Text>
                         {curTeamUser?.role === UserRole.Owner && (
                           <HStack>
-                            <RenameTeam
-                              ml="auto"
-                              ns_uid={ns_uid}
-                              defaultTeamName={namespace.teamName}
-                            />
+                            {!isPrivate && (
+                              <RenameTeam
+                                ml="auto"
+                                ns_uid={ns_uid}
+                                defaultTeamName={namespace.teamName}
+                              />
+                            )}
                             {!isPrivate && (
                               <DissolveTeam
                                 ml="auto"
