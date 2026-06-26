@@ -91,10 +91,11 @@ func (m *IngressMutator) mutateUserIngressAnnotations(i *netv1.Ingress) {
 
 type IngressValidator struct {
 	client.Client
-	CnameDomains DomainList
-	DenyDomains  DomainList
-	cache        cache.Cache
-	IcpValidator *IcpValidator
+	CnameDomains      DomainList
+	DenyDomains       DomainList
+	CnameCheckEnabled bool
+	cache             cache.Cache
+	IcpValidator      *IcpValidator
 }
 
 const IngressHostIndex = "host"
@@ -218,12 +219,11 @@ func (v *IngressValidator) validate(ctx context.Context, i *netv1.Ingress) error
 		return nil
 	}
 
-	checks := []func(*netv1.Ingress, *netv1.IngressRule) error{
-		v.checkDeny,
-		v.checkCname,
-		v.checkOwner,
-		v.checkIcp,
+	checks := []func(*netv1.Ingress, *netv1.IngressRule) error{v.checkDeny}
+	if v.CnameCheckEnabled {
+		checks = append(checks, v.checkCname)
 	}
+	checks = append(checks, v.checkOwner, v.checkIcp)
 
 	for _, rule := range i.Spec.Rules {
 		for _, check := range checks {
