@@ -1,159 +1,66 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Sealos Desktop Frontend
+
+Sealos Desktop Frontend is the Next.js web desktop for Sealos Cloud. It renders
+the signed-in desktop shell, workspace management, account settings, app launch
+surfaces, and the API routes that bridge the browser session to global and
+regional Sealos services.
+
+## Project Docs
+
+- [PRODUCT.md](./PRODUCT.md) describes the product context and UX principles.
+- [DESIGN.md](./DESIGN.md) captures the current Chakra-based visual system.
+- [ROADMAP.md](./ROADMAP.md) records near-term product priorities.
+- [AGENTS.md](./AGENTS.md) records project-specific agent rules and safety notes.
+- [docs/architecture.md](./docs/architecture.md) explains the main modules and data flow.
+- [docs/ia.md](./docs/ia.md) maps pages, API routes, and major UI surfaces.
+- [docs/runbook.md](./docs/runbook.md) lists local run, verify, deploy, and debug commands.
+- [docs/references.md](./docs/references.md) collects external references used by the project.
 
 ## Getting Started
 
 ```bash
+pnpm install
 pnpm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### 目录说明
+Common verification commands:
 
-```c
-.
-├── Dockerfile
-├── Makefile
-├── README.md
-├── deploy
-│   └── manifests
-│       └── frontend.yaml
-├── next-env.d.ts
-├── next.config.js
-├── package.json
-├── pnpm-lock.yaml
-├── public
-│   ├── favicon.ico
-│   ├── iconfont
-│   ├── icons
-│   ├── images
-│   └── locales
-├── src
-│   ├── components
-│   │   ├── account
-│   │   ├── app_window
-│   │   ├── background
-│   │   ├── desktop_content
-│   │   ├── floating_button
-│   │   ├── LangSelect
-│   │   ├── iconfont
-│   │   ├── layout
-│   │   ├── more_button
-│   │   ├── notification
-│   │   └── user_menu
-│   ├── hooks
-│   │   ├── useCopyData.ts
-│   │   ├── useCustomToast.ts
-│   │   ├── useRecharge.tsx
-│   │   └── useScreen.ts
-│   ├── pages
-│   │   ├── _app.tsx
-│   │   ├── _document.tsx
-│   │   ├── api
-│   │   │   ├── account
-│   │   │   ├── auth
-│   │   │   ├── desktop
-│   │   │   ├── notification
-│   │   │   └── price
-│   │   ├── index.tsx
-│   │   └── login
-│   ├── services
-│   │   ├── backend
-│   │   │   ├── auth.ts
-│   │   │   ├── oauth.ts
-│   │   │   ├── kubernetes
-│   │   │   │   ├── admin.ts
-│   │   │   │   └── user.ts
-│   │   │   └── response.ts
-│   │   ├── enable.ts
-│   │   └── request.ts
-│   ├── stores
-│   │   ├── app.ts
-│   │   ├── desktop.ts
-│   │   └── session.ts
-│   ├── styles
-│   │   ├── chakraTheme.ts
-│   │   └── globals.scss
-│   ├── types
-│   │   ├── api.ts
-│   │   ├── app.ts
-│   │   ├── crd.ts
-│   │   ├── index.ts
-│   │   ├── payment.ts
-│   │   ├── user.ts
-│   │   └── session.ts
-│   └── utils
-│       ├── crypto.ts
-│       ├── ProcessManager.ts
-│       ├── delay.ts
-│       ├── downloadFIle.ts
-│       ├── format.ts
-│       ├── i18n.ts
-│       └── tools.ts
-└── tsconfig.json
+```bash
+pnpm lint
+pnpm test:ci
 ```
 
-### 项目依赖的库
+When the local pnpm or Node.js version does not match this workspace, use the
+checked-in binaries directly for targeted checks, for example:
 
-```json
-{
-  "name": "desktop",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@chakra-ui/react": "^2.5.5",
-    "@emotion/react": "^11.10.6",
-    "@emotion/styled": "^11.10.6",
-    "@kubernetes/client-node": "^0.18.1",
-    "@tanstack/react-query": "^4.29.3",
-    "axios": "^1.3.5",
-    "clsx": "^1.2.1",
-    "dayjs": "^1.11.7",
-    "eslint": "8.38.0",
-    "eslint-config-next": "13.3.0",
-    "framer-motion": "^10.12.3",
-    "i18next": "^22.4.14",
-    "i18next-browser-languagedetector": "^7.0.1",
-    "i18next-http-backend": "^2.2.0",
-    "immer": "^10.0.1",
-    "js-yaml": "^4.1.0",
-    "lodash": "^4.17.21",
-    "next": "13.3.0",
-    "next-pwa": "^5.6.0",
-    "nprogress": "^0.2.0",
-    "qrcode.react": "^3.1.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-draggable": "^4.4.5",
-    "react-i18next": "^12.2.0",
-    "sass": "^1.62.0",
-    "sealos-desktop-sdk": "^0.1.12",
-    "typescript": "5.0.4",
-    "zustand": "^4.3.7"
-  },
-  "devDependencies": {
-    "@types/js-yaml": "^4.0.5",
-    "@types/lodash": "^4.14.194",
-    "@types/node": "18.15.11",
-    "@types/nprogress": "^0.2.0",
-    "@types/react": "18.0.37",
-    "@types/react-dom": "18.0.11"
-  }
-}
+```bash
+./node_modules/.bin/next lint
+./node_modules/.bin/jest --runInBand
 ```
+
+## Source Map
+
+- `src/pages/`: Next pages and API routes.
+- `src/components/`: desktop shell, account settings, workspace/team management,
+  sign-in, notifications, and app-window components.
+- `src/services/backend/`: API-side auth, database, Kubernetes, middleware, and
+  service helpers.
+- `src/stores/`: persisted session and runtime configuration stores.
+- `src/styles/`: Chakra theme overrides and global styles.
+- `prisma/`: global and regional database schemas and generated clients.
+- `deploy/`: Helm chart, Kubefile, and deployment entrypoint.
+
+Use `package.json` as the source of truth for current scripts and dependencies.
 
 ### 代码阅读说明
 
-1. src/pages/\_app.tsx // chakra-ui react-query
-2. src/pages/index.ts
-3. src/layout/index.tsx
-4. src/components/desktop_content.tsx
+1. `src/pages/_app.tsx`: Chakra UI and TanStack Query app bootstrap.
+2. `src/pages/index.tsx`: authenticated desktop entry.
+3. `src/components/desktop_content/index.tsx`: desktop background and app launch surface.
+4. `src/components/account/AccountCenter/index.tsx`: account settings.
+5. `src/components/team/TeamCenter.tsx`: workspace/team management.
 
 ### 安装 App 数据流
 
@@ -163,8 +70,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### 测试环境
 
-1. 需要设置环境变量`NODE_ENV=test` 或者 `$env:NODE_ENV="test"`
-2. 先启动`pnpm dev`, 再启动`pnpm test:w`
+1. 需要设置环境变量 `NODE_ENV=test` 或者 `$env:NODE_ENV="test"`。
+2. 常用命令见 [docs/runbook.md](./docs/runbook.md)。
 
 ### 其它
 
