@@ -32,6 +32,11 @@ export type PublicDomainPrefixValidationResult =
   | { valid: true; value: string }
   | { valid: false; value: string; reason: 'format' | 'reserved' };
 
+type InvalidPublicDomainPrefixValidationResult = Extract<
+  PublicDomainPrefixValidationResult,
+  { valid: false }
+>;
+
 export type ManagedPublicDomainNetwork = {
   openPublicDomain?: boolean;
   openNodePort?: boolean;
@@ -82,6 +87,16 @@ export function validatePublicDomainPrefix(value: string): PublicDomainPrefixVal
   }
 
   return { valid: true, value: normalized };
+}
+
+export function getPublicDomainPrefixValidationMessage(
+  result: InvalidPublicDomainPrefixValidationResult
+) {
+  if (result.reason === 'reserved') {
+    return `Public domain prefix "${result.value}" is reserved`;
+  }
+
+  return `Public domain prefix "${result.value}" must be ${PUBLIC_DOMAIN_PREFIX_MIN_LENGTH}-${PUBLIC_DOMAIN_PREFIX_MAX_LENGTH} characters and contain only lowercase letters, numbers, or hyphens. It cannot start or end with a hyphen.`;
 }
 
 export function getDuplicateManagedPublicDomainHosts(

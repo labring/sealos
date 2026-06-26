@@ -5,6 +5,8 @@ import {
 } from '@/utils/feature-gates';
 import {
   PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
+  PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
+  getPublicDomainPrefixValidationMessage,
   setPublicDomainReservedPrefixes,
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
@@ -54,6 +56,17 @@ describe('validatePublicDomainPrefix', () => {
     expect(validatePublicDomainPrefix('-bad')).toMatchObject({ valid: false, reason: 'format' });
     expect(validatePublicDomainPrefix('bad-')).toMatchObject({ valid: false, reason: 'format' });
     expect(validatePublicDomainPrefix('ab')).toMatchObject({ valid: false, reason: 'format' });
+  });
+
+  it('describes the DNS label length limit in format errors', () => {
+    const result = validatePublicDomainPrefix('a'.repeat(PUBLIC_DOMAIN_PREFIX_MAX_LENGTH + 1));
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(getPublicDomainPrefixValidationMessage(result)).toContain(
+        `${PUBLIC_DOMAIN_PREFIX_MIN_LENGTH}-${PUBLIC_DOMAIN_PREFIX_MAX_LENGTH}`
+      );
+    }
   });
 });
 
