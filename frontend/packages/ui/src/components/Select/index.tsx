@@ -12,7 +12,7 @@ import {
   MenuButton,
   Flex
 } from '@chakra-ui/react';
-import type { BoxProps, ButtonProps } from '@chakra-ui/react';
+import type { BoxProps, ButtonProps, MenuListProps, MenuProps } from '@chakra-ui/react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 
 interface Props extends ButtonProps {
@@ -27,6 +27,8 @@ interface Props extends ButtonProps {
   onchange?: (val: string) => void;
   isInvalid?: boolean;
   boxStyle?: BoxProps;
+  menuProps?: Omit<MenuProps, 'children'>;
+  menuListProps?: MenuListProps;
 }
 
 const MySelect = (
@@ -39,6 +41,8 @@ const MySelect = (
     onchange,
     isInvalid,
     boxStyle,
+    menuProps,
+    menuListProps,
     ...props
   }: Props,
   selectRef: any
@@ -66,7 +70,7 @@ const MySelect = (
   }, [list, value]);
 
   return (
-    <Menu autoSelect={false} isOpen={isOpen} onOpen={onOpen} onClose={onClose}>
+    <Menu autoSelect={false} isOpen={isOpen} onOpen={onOpen} onClose={onClose} {...menuProps}>
       <Box
         ref={SelectRef}
         position={'relative'}
@@ -130,6 +134,7 @@ const MySelect = (
           zIndex={99}
           overflow={'overlay'}
           maxH={'300px'}
+          {...menuListProps}
         >
           {list.map((item) => (
             <MenuItem
