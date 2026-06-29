@@ -37,6 +37,11 @@ data:
       publicDomain:
         customPrefixEnabled: {{ .Values.applaunchpadConfig.customPublicDomainPrefixEnabled }}
         reservedPrefixes:{{ toYaml .Values.applaunchpadConfig.publicDomainReservedPrefixes | nindent 10 }}
+      customDomain:
+        mode: {{ .Values.applaunchpadConfig.customDomainMode | quote }}
+        certificate:
+          tlsSecretName: {{ .Values.applaunchpadConfig.customDomainCertificateSecretName | quote }}
+          domains:{{ toYaml .Values.applaunchpadConfig.customDomainCertificateDomains | nindent 12 }}
       components:
         monitor:
           url: {{ .Values.applaunchpadConfig.monitorUrl }}

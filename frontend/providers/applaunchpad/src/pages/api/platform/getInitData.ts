@@ -2,6 +2,10 @@ import { Coin } from '@/constants/app';
 import { jsonRes } from '@/services/backend/response';
 import type { AppConfigType, EnvResponse } from '@/types';
 import { isCustomPublicDomainPrefixEnabled, isImagePortsEnabled } from '@/utils/feature-gates';
+import {
+  normalizeCustomDomainCertificateDomains,
+  normalizeCustomDomainMode
+} from '@/utils/custom-domain';
 import { normalizePublicDomainReservedPrefixes } from '@/utils/public-domain';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -57,6 +61,12 @@ export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
     CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED: isCustomPublicDomainPrefixEnabled(AppConfig),
     PUBLIC_DOMAIN_RESERVED_PREFIXES: normalizePublicDomainReservedPrefixes(
       AppConfig.launchpad.publicDomain?.reservedPrefixes
+    ),
+    CUSTOM_DOMAIN_MODE: normalizeCustomDomainMode(AppConfig.launchpad.customDomain?.mode),
+    CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME:
+      AppConfig.launchpad.customDomain?.certificate?.tlsSecretName || 'wildcard-cert',
+    CUSTOM_DOMAIN_CERTIFICATE_DOMAINS: normalizeCustomDomainCertificateDomains(
+      AppConfig.launchpad.customDomain?.certificate?.domains
     )
   };
 };

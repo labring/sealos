@@ -17,11 +17,19 @@ add_set_string() {
   local key="$1"
   local value="$2"
   if [ -n "${value}" ]; then
-    AUTO_CONFIG_HELM_OPTS="${AUTO_CONFIG_HELM_OPTS} --set-string ${key}=${value}"
+    AUTO_CONFIG_HELM_OPTS+=(--set-string "${key}=${value}")
   fi
 }
 
-AUTO_CONFIG_HELM_OPTS=""
+add_set_json() {
+  local key="$1"
+  local value="$2"
+  if [ -n "${value}" ]; then
+    AUTO_CONFIG_HELM_OPTS+=(--set-json "${key}=${value}")
+  fi
+}
+
+AUTO_CONFIG_HELM_OPTS=()
 
 CONFIG_CLOUD_DOMAIN=$(get_cm_value sealos-system sealos-config cloudDomain)
 CONFIG_CLOUD_PORT=$(get_cm_value sealos-system sealos-config cloudPort)
@@ -44,6 +52,9 @@ add_set_string applaunchpadConfig.monitorUrl "${monitorUrl:-}"
 add_set_string applaunchpadConfig.billingUrl "${billingUrl:-}"
 add_set_string applaunchpadConfig.logUrl "${logUrl:-}"
 add_set_string applaunchpadConfig.tlsRejectUnauthorized "${tlsRejectUnauthorized:-}"
+add_set_string applaunchpadConfig.customDomainMode "${customDomainMode:-}"
+add_set_string applaunchpadConfig.customDomainCertificateSecretName "${customDomainCertificateSecretName:-}"
+add_set_json applaunchpadConfig.customDomainCertificateDomains "${customDomainCertificateDomains:-}"
 
 adopt_namespaced_resource() {
   local namespace="$1"
@@ -82,5 +93,5 @@ echo "Deploying Helm chart..."
 helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "${CHART_PATH}" \
   -f "./charts/${SERVICE_NAME}/values.yaml" \
   -f "${USER_VALUES_PATH}" \
-  ${AUTO_CONFIG_HELM_OPTS} \
+  "${AUTO_CONFIG_HELM_OPTS[@]}" \
   ${HELM_OPTS}

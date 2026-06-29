@@ -70,6 +70,25 @@ describe('json2Ingress', () => {
     ]);
   });
 
+  it('uses the configured certificate secret without cert-manager resources in certificate mode', () => {
+    const objects = yamlString2Objects(
+      json2Ingress(createApp('custom.example.com'), {
+        disableHttps: false,
+        customDomainMode: 'certificate',
+        customDomainCertificateSecretName: 'wildcard-cert'
+      })
+    ) as any[];
+
+    expect(objects.map((item) => item.kind)).toEqual(['Ingress']);
+    expect(objects[0].spec.rules[0].host).toBe('custom.example.com');
+    expect(objects[0].spec.tls).toEqual([
+      {
+        hosts: ['custom.example.com'],
+        secretName: 'wildcard-cert'
+      }
+    ]);
+  });
+
   it('omits tls, ssl redirect annotations, and cert-manager resources in http-only mode', () => {
     const objects = yamlString2Objects(
       json2Ingress(createApp('custom.example.com'), {

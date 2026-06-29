@@ -11,7 +11,12 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
-import { CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED, SEALOS_DOMAIN } from '@/store/static';
+import {
+  CUSTOM_DOMAIN_CERTIFICATE_DOMAINS,
+  CUSTOM_DOMAIN_MODE,
+  CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
+  SEALOS_DOMAIN
+} from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
@@ -51,7 +56,10 @@ import {
   getDuplicateManagedPublicDomainHosts,
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
-import { getCustomDomainBindings } from '@/utils/custom-domain';
+import {
+  getCustomDomainBindings,
+  isDomainCoveredByCertificateDomains
+} from '@/utils/custom-domain';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -285,8 +293,33 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     const bindings = getCustomDomainBindings(data.networks);
 
     for (const binding of bindings) {
+      if (CUSTOM_DOMAIN_MODE === 'certificate') {
+        if (CUSTOM_DOMAIN_CERTIFICATE_DOMAINS.length === 0) {
+          return {
+            ...binding,
+            reason: 'certificate_domain_list_empty' as const
+          };
+        }
+
+        if (
+          !isDomainCoveredByCertificateDomains(
+            binding.customDomain,
+            CUSTOM_DOMAIN_CERTIFICATE_DOMAINS
+          )
+        ) {
+          return {
+            ...binding,
+            reason: 'certificate_domain_not_configured' as const
+          };
+        }
+        continue;
+      }
+
       if (!binding.publicDomain) {
-        return binding;
+        return {
+          ...binding,
+          reason: 'cname_not_verified' as const
+        };
       }
 
       try {
@@ -300,10 +333,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             customDomain: binding.customDomain
           });
           if (!challengeResult?.verified) {
-            return binding;
+            return {
+              ...binding,
+              reason: 'cname_not_verified' as const
+            };
           }
         } catch (challengeError) {
-          return binding;
+          return {
+            ...binding,
+            reason: 'cname_not_verified' as const
+          };
         }
       }
     }
@@ -780,10 +819,17 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               if (invalidCustomDomain) {
                 return toast({
                   status: 'warning',
-                  title: t('custom_domain_cname_required', {
-                    customDomain: invalidCustomDomain.customDomain,
-                    publicDomain: invalidCustomDomain.publicDomain
-                  })
+                  title:
+                    invalidCustomDomain.reason === 'certificate_domain_list_empty'
+                      ? t('custom_domain_certificate_list_empty')
+                      : invalidCustomDomain.reason === 'certificate_domain_not_configured'
+                        ? t('custom_domain_certificate_not_configured', {
+                            customDomain: invalidCustomDomain.customDomain
+                          })
+                        : t('custom_domain_cname_required', {
+                            customDomain: invalidCustomDomain.customDomain,
+                            publicDomain: invalidCustomDomain.publicDomain
+                          })
                 });
               }
 
@@ -826,8 +872,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                             data.hpa.target === 'cpu'
                               ? 'CPU'
                               : data.hpa.target === 'gpu'
-                              ? 'GPU'
-                              : 'RAM',
+                                ? 'GPU'
+                                : 'RAM',
                           value: data.hpa.value
                         }
                       : undefined

@@ -16,3 +16,6 @@ applaunchpadConfig:
   imagePortsTrustedRegistries: []
   customPublicDomainPrefixEnabled: false
   publicDomainReservedPrefixes: []
+  customDomainMode: "cname"
+  customDomainCertificateSecretName: "wildcard-cert"
+  customDomainCertificateDomains: []

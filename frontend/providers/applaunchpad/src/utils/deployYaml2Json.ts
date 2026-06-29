@@ -8,7 +8,13 @@ import {
   publicDomainKey,
   publicDomainPortKey
 } from '@/constants/app';
-import { DISABLE_HTTPS, SEALOS_USER_DOMAINS } from '@/store/static';
+import {
+  CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME,
+  CUSTOM_DOMAIN_MODE,
+  DISABLE_HTTPS,
+  SEALOS_USER_DOMAINS
+} from '@/store/static';
+import type { CustomDomainMode } from '@/types';
 import type { AppEditType } from '@/types/app';
 import { syncDefaultRouteServicePort } from '@/utils/network-routes';
 import { ensureUniquePortNames, getFallbackPortName, str2Num, strToBase64 } from '@/utils/tools';
@@ -498,9 +504,13 @@ export const json2Ingress = (
     | V1OwnerReference[]
     | {
         disableHttps?: boolean;
+        customDomainMode?: CustomDomainMode;
+        customDomainCertificateSecretName?: string;
       },
   options: {
     disableHttps?: boolean;
+    customDomainMode?: CustomDomainMode;
+    customDomainCertificateSecretName?: string;
   } = {}
 ) => {
   const ownerReferences = Array.isArray(ownerReferencesOrOptions)
@@ -510,6 +520,12 @@ export const json2Ingress = (
     ? options
     : ownerReferencesOrOptions || {};
   const disableHttps = configOptions.disableHttps ?? DISABLE_HTTPS;
+  const customDomainMode = configOptions.customDomainMode ?? CUSTOM_DOMAIN_MODE;
+  const customDomainCertificateSecretName =
+    configOptions.customDomainCertificateSecretName ??
+    CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME ??
+    'wildcard-cert';
+  const isCertificateMode = customDomainMode === 'certificate';
   // different protocol annotations
   const map = {
     HTTP: {
@@ -548,7 +564,9 @@ export const json2Ingress = (
         : normalizeIngressHost(`${network.publicDomain}.${domain}`);
 
       const secretName = customDomain
-        ? network.networkName
+        ? isCertificateMode
+          ? customDomainCertificateSecretName
+          : network.networkName
         : SEALOS_USER_DOMAINS.find((item) => normalizeIngressHost(item.name) === domain)
             ?.secretName || 'wildcard-cert';
       // Ingress only uses ClusterIP services, not NodePort
@@ -676,7 +694,7 @@ export const json2Ingress = (
       };
 
       let resYaml = yaml.dump(ingress);
-      if (customDomain && !disableHttps) {
+      if (customDomain && !disableHttps && !isCertificateMode) {
         resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
       }
       return resYaml;
