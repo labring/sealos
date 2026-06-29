@@ -26,6 +26,7 @@ const routeRuleFieldWidth = `${routeRuleFieldWidthPx}px`;
 const routeRuleFieldGap = `${routeRuleFieldGapPx}px`;
 const routeRuleContentWidth = `${routeRuleFieldWidthPx * 2 + routeRuleFieldGapPx}px`;
 const routeRuleSelectDropdownGap = '8px';
+const routeRuleBackendSelectMenuMaxH = '220px';
 const routeRulesScrollbarWidth = '6px';
 
 type RouteRulesForm = {
@@ -352,7 +353,11 @@ export default function RouteRulesModal({
                               {
                                 position: 'static',
                                 transform: 'none !important',
-                                mt: routeRuleSelectDropdownGap
+                                mt: routeRuleSelectDropdownGap,
+                                maxH: routeRuleBackendSelectMenuMaxH,
+                                overflowY: 'auto',
+                                overflowX: 'hidden',
+                                overscrollBehavior: 'contain'
                               }
                           }
                         }}
