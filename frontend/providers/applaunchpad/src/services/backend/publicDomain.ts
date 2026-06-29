@@ -3,7 +3,11 @@ import type { KubernetesObjectApi, NetworkingV1Api, V1Ingress } from '@kubernete
 import type { K8sContext } from '@/services/backend/appService';
 import type { AppEditType } from '@/types/app';
 import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
-import { PublicDomainConflictOwner, validatePublicDomainPrefix } from '@/utils/public-domain';
+import {
+  PublicDomainConflictOwner,
+  getPublicDomainPrefixValidationMessage,
+  validatePublicDomainPrefix
+} from '@/utils/public-domain';
 
 const INGRESS_OWNER_CONFLICT_CODE = '40301';
 const INGRESS_OWNER_CONFLICT_MESSAGE = 'owned by other user';
@@ -214,9 +218,7 @@ export function normalizeAndValidatePublicDomainPrefix(value: string) {
 
   if (!result.valid) {
     throw new PublicDomainError(
-      result.reason === 'reserved'
-        ? `Public domain prefix "${result.value}" is reserved`
-        : `Public domain prefix "${result.value}" is invalid`,
+      getPublicDomainPrefixValidationMessage(result),
       result.reason === 'reserved' ? 'RESERVED_PUBLIC_DOMAIN' : 'INVALID_PUBLIC_DOMAIN'
     );
   }

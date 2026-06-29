@@ -3,7 +3,13 @@ import {
   isCustomPublicDomainPrefixEnabled,
   isImagePortsEnabled
 } from '@/utils/feature-gates';
-import { setPublicDomainReservedPrefixes, validatePublicDomainPrefix } from '@/utils/public-domain';
+import {
+  PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
+  PUBLIC_DOMAIN_PREFIX_MIN_LENGTH,
+  getPublicDomainPrefixValidationMessage,
+  setPublicDomainReservedPrefixes,
+  validatePublicDomainPrefix
+} from '@/utils/public-domain';
 import {
   getPublicDomainConflictResponse,
   isIngressPublicDomainConflictError
@@ -21,6 +27,21 @@ describe('validatePublicDomainPrefix', () => {
     });
   });
 
+  it('allows prefixes up to one DNS label and rejects longer values', () => {
+    const maxLengthPrefix = 'a'.repeat(PUBLIC_DOMAIN_PREFIX_MAX_LENGTH);
+    const tooLongPrefix = 'a'.repeat(PUBLIC_DOMAIN_PREFIX_MAX_LENGTH + 1);
+
+    expect(validatePublicDomainPrefix(maxLengthPrefix)).toEqual({
+      valid: true,
+      value: maxLengthPrefix
+    });
+    expect(validatePublicDomainPrefix(tooLongPrefix)).toEqual({
+      valid: false,
+      value: tooLongPrefix,
+      reason: 'format'
+    });
+  });
+
   it('rejects reserved prefixes', () => {
     setPublicDomainReservedPrefixes(['admin']);
 
@@ -35,6 +56,17 @@ describe('validatePublicDomainPrefix', () => {
     expect(validatePublicDomainPrefix('-bad')).toMatchObject({ valid: false, reason: 'format' });
     expect(validatePublicDomainPrefix('bad-')).toMatchObject({ valid: false, reason: 'format' });
     expect(validatePublicDomainPrefix('ab')).toMatchObject({ valid: false, reason: 'format' });
+  });
+
+  it('describes the DNS label length limit in format errors', () => {
+    const result = validatePublicDomainPrefix('a'.repeat(PUBLIC_DOMAIN_PREFIX_MAX_LENGTH + 1));
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(getPublicDomainPrefixValidationMessage(result)).toContain(
+        `${PUBLIC_DOMAIN_PREFIX_MIN_LENGTH}-${PUBLIC_DOMAIN_PREFIX_MAX_LENGTH}`
+      );
+    }
   });
 });
 

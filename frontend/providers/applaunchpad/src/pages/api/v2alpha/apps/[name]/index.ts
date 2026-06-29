@@ -44,7 +44,10 @@ import {
   PublicDomainError
 } from '@/services/backend/publicDomain';
 import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
-import { validatePublicDomainPrefix } from '@/utils/public-domain';
+import {
+  getPublicDomainPrefixValidationMessage,
+  validatePublicDomainPrefix
+} from '@/utils/public-domain';
 
 // Constants
 const DELAY_SHORT = 2000;
@@ -98,16 +101,11 @@ function normalizePublicDomainPrefixOrThrow(value: string) {
 
   const result = validatePublicDomainPrefix(value);
   if (!result.valid) {
-    throw new PortValidationError(
-      result.reason === 'reserved'
-        ? `Public domain prefix "${result.value}" is reserved`
-        : `Public domain prefix "${result.value}" is invalid`,
-      {
-        publicDomain: result.value,
-        reason: result.reason,
-        operation: 'VALIDATE_PUBLIC_DOMAIN_PREFIX'
-      }
-    );
+    throw new PortValidationError(getPublicDomainPrefixValidationMessage(result), {
+      publicDomain: result.value,
+      reason: result.reason,
+      operation: 'VALIDATE_PUBLIC_DOMAIN_PREFIX'
+    });
   }
   return result.value;
 }

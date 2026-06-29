@@ -7,6 +7,10 @@ import {
   UpdateAppResourcesSchema as V2UpdateAppResourcesSchema,
   transformFromLegacySchema as transformFromLegacySchemaV2
 } from '@/types/v2alpha/request_schema';
+import {
+  PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
+  PUBLIC_DOMAIN_PREFIX_MIN_LENGTH
+} from '@/utils/public-domain';
 
 function setCustomPublicDomainPrefixEnabled(enabled: boolean) {
   (globalThis as any).AppConfig = {
@@ -126,5 +130,32 @@ describe('request schema publicDomain feature gate', () => {
       'publicDomain',
       'demo-prefix'
     );
+  });
+
+  it('returns the DNS label length range for invalid explicit prefixes', () => {
+    setCustomPublicDomainPrefixEnabled(true);
+
+    const tooLongPrefix = 'a'.repeat(PUBLIC_DOMAIN_PREFIX_MAX_LENGTH + 1);
+    const expectedRange = `${PUBLIC_DOMAIN_PREFIX_MIN_LENGTH}-${PUBLIC_DOMAIN_PREFIX_MAX_LENGTH}`;
+    const v1Result = V1UpdateAppResourcesSchema.safeParse({
+      ports: [{ portName: 'port-demo', publicDomain: tooLongPrefix }]
+    });
+    const v2Result = V2UpdateAppResourcesSchema.safeParse({
+      ports: [{ portName: 'port-demo', publicDomain: tooLongPrefix }]
+    });
+
+    expect(v1Result.success).toBe(false);
+    if (!v1Result.success) {
+      expect(v1Result.error.issues.map((issue) => issue.message).join('\n')).toContain(
+        expectedRange
+      );
+    }
+
+    expect(v2Result.success).toBe(false);
+    if (!v2Result.success) {
+      expect(v2Result.error.issues.map((issue) => issue.message).join('\n')).toContain(
+        expectedRange
+      );
+    }
   });
 });

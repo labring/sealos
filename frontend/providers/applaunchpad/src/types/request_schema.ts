@@ -42,7 +42,10 @@ import {
   resourceConverters
 } from './schema';
 import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
-import { validatePublicDomainPrefix } from '@/utils/public-domain';
+import {
+  getPublicDomainPrefixValidationMessage,
+  validatePublicDomainPrefix
+} from '@/utils/public-domain';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -63,10 +66,7 @@ const PublicDomainPrefixSchema = z.string().superRefine((value, ctx) => {
   if (!result.valid) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message:
-        result.reason === 'reserved'
-          ? `Public domain prefix "${result.value}" is reserved`
-          : `Public domain prefix "${result.value}" is invalid`
+      message: getPublicDomainPrefixValidationMessage(result)
     });
   }
 });
@@ -79,11 +79,7 @@ function getPublicDomainPrefixOrRandom(value?: string) {
 
   const result = validatePublicDomainPrefix(value);
   if (!result.valid) {
-    throw new Error(
-      result.reason === 'reserved'
-        ? `Public domain prefix "${result.value}" is reserved`
-        : `Public domain prefix "${result.value}" is invalid`
-    );
+    throw new Error(getPublicDomainPrefixValidationMessage(result));
   }
   return result.value;
 }
