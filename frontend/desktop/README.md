@@ -161,6 +161,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - 共享 App 保持 `displayType` 分组顺序 `normal -> more -> hidden`，组内按 `spec.position` 从小到大排序；没有 `position` 的旧数据按 `0` 处理，再按创建时间倒序和 key 稳定排序。
 - `spec.position` 由管理端共享 App 图标管理写入，集群 App CRD 需要先包含 `spec.position` schema；workspace App 管理不写这个字段。
 
+### Workspace 命名规则
+
+- 默认个人空间创建时按当前请求语言写入默认名：优先使用 `NEXT_LOCALE` cookie，其次使用 `Accept-Language`；中文为 `个人空间`，其他语言为 `Personal Workspace`。
+- 默认个人空间允许 Owner 重命名，重命名后的自定义名称按用户输入展示；默认个人空间仍不可解散或移交。
+- 历史默认占位名 `private team`、`Private Team`、`My Workspace`、`Personal Workspace`、`个人空间` 在展示层按当前语言显示为默认个人空间名，避免旧数据继续暴露内部命名。
+
 ### 测试环境
 
 1. 需要设置环境变量`NODE_ENV=test` 或者 `$env:NODE_ENV="test"`

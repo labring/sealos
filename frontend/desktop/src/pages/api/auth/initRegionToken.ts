@@ -6,6 +6,7 @@ import { filterAuthenticationToken } from '@/services/backend/middleware/access'
 import { initRegionTokenParamsSchema } from '@/schema/auth';
 import { HttpStatusCode } from 'axios';
 import { getRegionUid } from '@/services/enable';
+import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
   await filterAuthenticationToken(req, res, async ({ userId, userUid }) => {
@@ -21,7 +22,8 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
       userId,
       workspaceName,
       regionUid: getRegionUid(),
-      userUid
+      userUid,
+      defaultWorkspaceName: getRequestDefaultPrivateWorkspaceName(req)
     });
     return jsonRes(res, {
       code: 200,

@@ -35,6 +35,7 @@
   "apps_running_title": "确认关闭页面？",
   "attachment": "附件",
   "avatar": "头像",
+  "avatar_url": "头像 URL",
   "balance": "余额",
   "bank_name": "开户银行",
   "banner": {
@@ -86,6 +87,7 @@
   "delete_account_remain_resources": "账号中仍有以下资源未删除，请您手动删除下列所有资源，确保无遗漏。",
   "delete_account_tips": "将永久删除此账户及其所有内容",
   "delete_account_title": "注销账户",
+  "admin_delete_account_forbidden": "admin 账号不允许注销。",
   "deleteaccounttitle": "Sealos 将永久删除此账户。",
   "deletemyaccount": "删除我的账号",
   "deploy_an_application": "来部署一个应用吧～",
@@ -223,6 +225,7 @@
   "phone": "手机号",
   "phone_number_tips": "手机号",
   "phonechangesuccess": "手机号修改成功",
+  "profile_update_success": "账号资料修改成功",
   "plan": "计划",
   "please_enter": "请输入",
   "please_enter_account_number": "请输入银行账号",

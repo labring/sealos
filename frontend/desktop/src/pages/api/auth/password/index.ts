@@ -7,6 +7,8 @@ import { AuthError } from '@/services/backend/errors';
 import { ProviderType } from 'prisma/global/generated/client';
 import { initRegionToken } from '@/services/backend/regionAuth';
 import { getRegionUid } from '@/services/enable';
+import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
@@ -47,11 +49,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Auto init region for new users so callers can directly use regionToken API
     if (data.needInit && data.user) {
       try {
+        const defaultWorkspaceName = getRequestDefaultPrivateWorkspaceName(req);
         const regionData = await initRegionToken({
           userUid: data.user.userUid,
           userId: data.user.userId,
           regionUid: getRegionUid(),
-          workspaceName: 'My Workspace'
+          workspaceName: defaultWorkspaceName,
+          defaultWorkspaceName
         });
         if (!regionData) {
           return jsonRes(res, {

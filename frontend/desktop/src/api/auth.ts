@@ -73,6 +73,22 @@ export const _UserInfo = (request: AxiosInstance) => () =>
       };
     }>
   >('/api/auth/info');
+
+export const _updateUserProfile =
+  (request: AxiosInstance) => (data: { nickname: string; avatarUri: string }) =>
+    request.post<
+      typeof data,
+      ApiResp<{
+        info: {
+          uid: string;
+          updatedAt: Date;
+          avatarUri: string;
+          nickname: string;
+          id: string;
+          name: string;
+        };
+      }>
+    >('/api/auth/profile/update', data);
 export const _regionList = (request: AxiosInstance) => () =>
   request.get<
     any,
@@ -267,6 +283,7 @@ export const mergeUserRequest = _mergeUser(request);
 export const deleteUserRequest = _deleteUser(request);
 export const checkRemainResource = _checkRemainResource(request);
 export const forceDeleteUser = _forceDeleteUser(request);
+export const updateUserProfile = _updateUserProfile(request);
 export const enterpriseRealNameAuthPaymentRequest = _enterpriseRealNameAuthPaymentRequest(request);
 export const enterpriseRealNameAuthVerifyRequest = _enterpriseRealNameAuthVerifyRequest(request);
 export const enterpriseRealNameAuthInfoRequest = _enterpriseRealNameAuthInfoRequest(request);

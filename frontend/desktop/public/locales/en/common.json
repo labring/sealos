@@ -36,6 +36,7 @@
   "apps_running_title": "Confirm closing the page?",
   "attachment": "appendix",
   "avatar": "Avatar",
+  "avatar_url": "Avatar URL",
   "balance": "Balance",
   "bank_name": "Bank",
   "banner": {
@@ -88,6 +89,7 @@
   "delete_account_remain_resources": "The following resources in your account have not been deleted. Please manually delete all the resources listed below.",
   "delete_account_tips": "Permanently delete this account and all its content.",
   "delete_account_title": "Delete Account",
+  "admin_delete_account_forbidden": "The admin account cannot be deleted.",
   "deleteaccounttitle": "Sealos will permanently delete this account.",
   "deletemyaccount": "DeleteMyAccount",
   "deploy_an_application": "Let’s deploy an application~",
@@ -228,6 +230,7 @@
   "phone": "Phone",
   "phone_number_tips": "Phone Number",
   "phonechangesuccess": "Mobile phone number modified successfully",
+  "profile_update_success": "Profile updated successfully",
   "plan": "Plan",
   "please_enter": "Please enter",
   "please_enter_account_number": "Enter the bank account number",
