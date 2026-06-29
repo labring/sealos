@@ -25,7 +25,7 @@ const routeRuleFieldGapPx = 19;
 const routeRuleFieldWidth = `${routeRuleFieldWidthPx}px`;
 const routeRuleFieldGap = `${routeRuleFieldGapPx}px`;
 const routeRuleContentWidth = `${routeRuleFieldWidthPx * 2 + routeRuleFieldGapPx}px`;
-const routeRuleSelectDropdownGap = '8px';
+const routeRuleBackendSelectMenuMaxH = '220px';
 const routeRulesScrollbarWidth = '6px';
 
 type RouteRulesForm = {
@@ -346,15 +346,20 @@ export default function RouteRulesModal({
                           routes?.[index]?.servicePort || defaultServicePort
                         )}
                         list={backendServiceOptions}
-                        boxStyle={{
-                          sx: {
-                            '& [aria-haspopup="menu"][aria-expanded="true"] + .chakra-menu__menu-list':
-                              {
-                                position: 'static',
-                                transform: 'none !important',
-                                mt: routeRuleSelectDropdownGap
-                              }
-                          }
+                        menuProps={{
+                          strategy: 'fixed',
+                          gutter: 8,
+                          flip: true,
+                          preventOverflow: true,
+                          boundary: 'clippingParents'
+                        }}
+                        menuListPortal
+                        menuListProps={{
+                          zIndex: 1500,
+                          maxH: routeRuleBackendSelectMenuMaxH,
+                          overflowY: 'auto',
+                          overflowX: 'hidden',
+                          overscrollBehavior: 'contain'
                         }}
                         onchange={(val: string) => {
                           const backendService = parseBackendServiceValue(val);
