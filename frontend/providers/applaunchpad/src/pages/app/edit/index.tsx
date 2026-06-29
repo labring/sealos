@@ -28,13 +28,14 @@ import {
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
 import { getErrText, patchYamlList } from '@/utils/tools';
+import { getSubmitErrorMessage } from '@/utils/formErrorMessage';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitErrorHandler } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
@@ -427,23 +428,24 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     ]
   );
 
-  const submitError = useCallback(() => {
-    // deep search message
-    const deepSearch = (obj: any): string => {
-      if (!obj || typeof obj !== 'object') return t('Submit Error');
-      if (!!obj.message) {
-        return obj.message;
-      }
-      return deepSearch(Object.values(obj)[0]);
-    };
-    toast({
-      title: deepSearch(formHook.formState.errors),
-      status: 'error',
-      position: 'top',
-      duration: 3000,
-      isClosable: true
-    });
-  }, [formHook.formState.errors, t, toast]);
+  const submitError = useCallback<SubmitErrorHandler<AppEditType>>(
+    (errors) => {
+      toast({
+        title: getSubmitErrorMessage(
+          errors,
+          t('Submit Error'),
+          t(
+            'The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter'
+          )
+        ),
+        status: 'error',
+        position: 'top',
+        duration: 3000,
+        isClosable: true
+      });
+    },
+    [t, toast]
+  );
 
   const handleDomainVerified = useCallback(
     ({ index, customDomain }: { index: number; customDomain: string }) => {
