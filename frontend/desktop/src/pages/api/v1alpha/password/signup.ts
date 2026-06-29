@@ -9,6 +9,7 @@ import { getRegionToken } from '@/services/backend/regionAuth';
 import { verifyJWT } from '@/services/backend/auth';
 import { ProviderType } from 'prisma/global/generated/client';
 import { AccessTokenPayload } from '@/types/token';
+import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -49,7 +50,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
     if (!globalData) throw new Error('Failed to edit db');
     const realUser = globalData.user;
-    const data = await getRegionToken({ userUid: realUser.uid, userId: realUser.nickname });
+    const data = await getRegionToken({
+      userUid: realUser.uid,
+      userId: realUser.nickname,
+      defaultWorkspaceName: getRequestDefaultPrivateWorkspaceName(req)
+    });
     if (!data)
       return jsonRes(res, {
         code: 401,

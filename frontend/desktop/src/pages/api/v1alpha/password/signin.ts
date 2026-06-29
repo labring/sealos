@@ -6,6 +6,8 @@ import { signInByPassword } from '@/services/backend/globalAuth';
 import { getRegionToken } from '@/services/backend/regionAuth';
 import { verifyAccessToken, verifyJWT } from '@/services/backend/auth';
 import { AccessTokenPayload } from '@/types/token';
+import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
@@ -27,7 +29,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     const data = await getRegionToken({
       userUid: _data.user.uid,
-      userId: _data.user.name
+      userId: _data.user.name,
+      defaultWorkspaceName: getRequestDefaultPrivateWorkspaceName(req)
     });
     if (!data)
       return jsonRes(res, {

@@ -37,6 +37,7 @@ import RenameTeam from './RenameTeam';
 import { Plus } from 'lucide-react';
 import useAppStore from '@/stores/app';
 import { track } from '@sealos/gtm';
+import { getPrivateWorkspaceDisplayName } from '@/utils/workspace';
 
 export default function TeamCenter({
   isOpen,
@@ -77,6 +78,14 @@ export default function TeamCenter({
   const curTeamUser = users.find((user) => user.crUid === userCrUid);
   const namespace = data?.data?.namespace;
   const isPrivate = namespace?.nstype === NSType.Private;
+  const currentWorkspaceName = namespace
+    ? isPrivate
+      ? getPrivateWorkspaceDisplayName({
+          teamName: namespace.teamName,
+          defaultName: t('common:default_team')
+        })
+      : namespace.teamName
+    : '';
   // inviting message list
   const reciveMessage = useQuery({
     queryKey: ['teamRecive', 'teamGroup'],
@@ -246,17 +255,15 @@ export default function TeamCenter({
                     <Box mx="10px">
                       <Flex align={'center'} justifyContent={'space-between'}>
                         <Text fontSize={'24px'} fontWeight={'600'} mr="8px">
-                          {isPrivate ? t('common:default_team') : namespace.teamName}
+                          {currentWorkspaceName}
                         </Text>
                         {curTeamUser?.role === UserRole.Owner && (
                           <HStack>
-                            {!isPrivate && (
-                              <RenameTeam
-                                ml="auto"
-                                ns_uid={ns_uid}
-                                defaultTeamName={namespace.teamName}
-                              />
-                            )}
+                            <RenameTeam
+                              ml="auto"
+                              ns_uid={ns_uid}
+                              defaultTeamName={currentWorkspaceName}
+                            />
                             {!isPrivate && (
                               <DissolveTeam
                                 ml="auto"
@@ -303,9 +310,7 @@ export default function TeamCenter({
                           <InviteMember
                             ownRole={curTeamUser?.role ?? UserRole.Developer}
                             ns_uid={ns_uid}
-                            workspaceName={
-                              isPrivate ? t('common:default_team') : namespace.teamName
-                            }
+                            workspaceName={currentWorkspaceName}
                             ml="auto"
                           />
                         )}

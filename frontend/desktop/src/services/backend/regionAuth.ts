@@ -7,11 +7,9 @@ import { retrySerially } from '@/utils/tools';
 import { AccessTokenPayload } from '@/types/token';
 import { JoinStatus, Role } from 'prisma/region/generated/client';
 import { generateAccessToken, generateAppToken } from '@/services/backend/auth';
-import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import { withEncodedKubeconfig } from '@/services/backend/kubeconfigEncoding';
 import { v4 } from 'uuid';
-import { HttpStatusCode } from 'axios';
-import { userInfo } from 'node:os';
+import { getDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
 
 const LetterBytes = 'abcdefghijklmnopqrstuvwxyz0123456789';
 const HostnameLength = 8;
@@ -32,10 +30,12 @@ export async function get_k8s_username() {
 }
 export async function getRegionToken({
   userUid,
-  userId
+  userId,
+  defaultWorkspaceName
 }: {
   userUid: string;
   userId: string;
+  defaultWorkspaceName?: string;
 }): Promise<{
   kubeconfig: string;
   encodedKubeconfig: string;
@@ -269,7 +269,7 @@ export async function getRegionToken({
               create: {
                 uid: workspaceUid,
                 id: workspaceId,
-                displayName: 'private team'
+                displayName: defaultWorkspaceName || getDefaultPrivateWorkspaceName()
               }
             },
             userCr: {
@@ -345,12 +345,14 @@ export async function initRegionToken({
   userUid,
   userId,
   regionUid,
-  workspaceName
+  workspaceName,
+  defaultWorkspaceName
 }: {
   userUid: string;
   userId: string;
   regionUid: string;
   workspaceName: string;
+  defaultWorkspaceName?: string;
 }): Promise<{
   kubeconfig: string;
   encodedKubeconfig: string;
@@ -483,7 +485,8 @@ export async function initRegionToken({
                   // 保证和状态中的那个一样
                   uid: workspaceUid,
                   id: workspaceId,
-                  displayName: workspaceName
+                  displayName:
+                    workspaceName.trim() || defaultWorkspaceName || getDefaultPrivateWorkspaceName()
                 }
               },
               userCr: {
