@@ -353,7 +353,9 @@ export default function RouteRulesModal({
                           preventOverflow: true,
                           boundary: 'clippingParents'
                         }}
+                        menuListPortal
                         menuListProps={{
+                          zIndex: 1500,
                           maxH: routeRuleBackendSelectMenuMaxH,
                           overflowY: 'auto',
                           overflowX: 'hidden',
