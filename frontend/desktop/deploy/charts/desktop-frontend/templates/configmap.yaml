@@ -178,6 +178,10 @@ data:
       teamManagement:
         maxTeamCount: {{ .Values.desktopConfig.maxTeamCount }}
         maxTeamMemberCount: {{ .Values.desktopConfig.maxTeamMemberCount }}
+        workspaceInviteExpiresInMinutes:
+{{- range $minutes := .Values.desktopConfig.workspaceInviteExpiresInMinutes }}
+          - {{ $minutes }}
+{{- end }}
 
     tracking:
       websiteId: "{{ .Values.desktopConfig.trackingWebsiteId }}"

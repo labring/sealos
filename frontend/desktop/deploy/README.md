@@ -289,6 +289,7 @@ desktop:
   teamManagement:
     maxTeamCount: 0
     maxTeamMemberCount: 0
+    workspaceInviteExpiresInMinutes: [30, 1440, 10080]
 
 tracking:
   websiteId: ''

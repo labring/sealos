@@ -62,6 +62,14 @@ desktopConfig:
   databaseGlobalCockroachdbURI: ""     # Auto-fetched from sealos-config.databaseGlobalCockroachdbURI
   databaseLocalCockroachdbURI: ""      # Auto-fetched from sealos-config.databaseLocalCockroachdbURI
 
+  # Team management
+  maxTeamCount: 0
+  maxTeamMemberCount: 0
+  workspaceInviteExpiresInMinutes:
+    - 30
+    - 1440
+    - 10080
+
   # Authentication secrets (auto-configured from sealos-config)
   passwordSalt: "randomSalt"       # Auto-fetched from sealos-config.passwordSalt
   jwtInternal: ""                  # Auto-fetched from sealos-config.jwtInternal
