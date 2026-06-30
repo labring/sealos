@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { authSession } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { getCustomDomainCertificateCoverage } from '@/services/backend/customDomainCertificate';
 import { normalizeCustomDomainMode, normalizeDomainName } from '@/utils/custom-domain';
@@ -11,6 +12,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonRes(res, {
       code: 405,
       error: `Method ${req.method} Not Allowed`
+    });
+  }
+
+  try {
+    await authSession(req.headers);
+  } catch (error) {
+    if (error === 'unAuthorization') {
+      return jsonRes(res, {
+        code: 401,
+        error: 'Unauthorized'
+      });
+    }
+
+    return jsonRes(res, {
+      code: 500,
+      error
     });
   }
 
