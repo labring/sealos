@@ -1,13 +1,12 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
 import { validateExtraLabels } from '@/utils/common';
 import { mapValues, reduce } from 'lodash';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetTemplateByName } from '../../getTemplateSource';
-import JsYaml from 'js-yaml';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 import { applyWithInstanceOwnerReferences } from '@/services/backend/instanceOwnerReferencesApply';
+import { renderTemplateInstanceYamls } from '@/utils/templateInstanceRendering';
 
 interface CreateInstanceRequest {
   name: string;
@@ -281,94 +280,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const _defaults = mapValues(dataSource.defaults || {}, (value) => value?.value ?? '');
     _defaults['app_name'] = trimmedName;
 
-    // Replace Instance metadata.name with user-provided name
-    // The appYaml contains Instance YAML with default random name, we need to update it
-    let updatedAppYaml: string;
+    // Render template conditionals before YAML parsing. Some templates contain conditional
+    // blocks that are not valid YAML until parseTemplateString removes or expands them.
+    let yamls: string[] = [];
     try {
-      const yamlDocs = JsYaml.loadAll(appYaml).filter((doc) => doc);
-      if (yamlDocs.length === 0) {
-        return sendError(res, {
-          status: 500,
-          type: ErrorType.INTERNAL_ERROR,
-          code: ErrorCode.INTERNAL_ERROR,
-          message: 'Failed to parse template YAML: no valid documents found.'
-        });
-      }
-
-      let instanceFound = false;
-      const updatedDocs = yamlDocs.map((doc: any) => {
-        if (doc?.kind === 'Instance' && doc?.apiVersion === 'app.sealos.io/v1') {
-          instanceFound = true;
-          // Update Instance name to use user-provided name
-          return {
-            ...doc,
-            metadata: {
-              ...doc.metadata,
-              name: trimmedName
-            }
-          };
-        }
-        return doc;
+      yamls = renderTemplateInstanceYamls({
+        appYaml,
+        defaults: _defaults,
+        inputs: _inputs,
+        instanceName: trimmedName,
+        extraLabels,
+        templateEnvs: TemplateEnvs
       });
-
-      if (!instanceFound) {
-        return sendError(res, {
-          status: 500,
-          type: ErrorType.INTERNAL_ERROR,
-          code: ErrorCode.INTERNAL_ERROR,
-          message: 'Failed to process template: Instance resource not found in template YAML.'
-        });
-      }
-
-      updatedAppYaml = updatedDocs.map((doc) => JsYaml.dump(doc)).join('---\n');
     } catch (yamlErr: any) {
-      console.error('Failed to update Instance name in YAML:', yamlErr);
+      console.error('Failed to process template YAML:', yamlErr);
       return sendError(res, {
         status: 500,
         type: ErrorType.INTERNAL_ERROR,
         code: ErrorCode.INTERNAL_ERROR,
         message: 'Failed to process template YAML.',
         details: yamlErr?.message || String(yamlErr)
-      });
-    }
-
-    // Generate YAML from template
-    const generateStr = parseTemplateString(updatedAppYaml, {
-      ...TemplateEnvs,
-      defaults: _defaults,
-      inputs: _inputs
-    });
-
-    if (!generateStr || generateStr.trim() === '') {
-      return sendError(res, {
-        status: 500,
-        type: ErrorType.INTERNAL_ERROR,
-        code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to generate YAML from template: empty result.'
-      });
-    }
-
-    const correctYaml = generateYamlList(generateStr, trimmedName, extraLabels);
-
-    if (!correctYaml || correctYaml.length === 0) {
-      return sendError(res, {
-        status: 500,
-        type: ErrorType.INTERNAL_ERROR,
-        code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to generate YAML list from template: no resources generated.'
-      });
-    }
-
-    const yamls = correctYaml
-      .map((item) => item.value)
-      .filter((yaml) => yaml && yaml.trim() !== '');
-
-    if (yamls.length === 0) {
-      return sendError(res, {
-        status: 500,
-        type: ErrorType.INTERNAL_ERROR,
-        code: ErrorCode.INTERNAL_ERROR,
-        message: 'Failed to generate valid YAML: all resources are empty.'
       });
     }
 
