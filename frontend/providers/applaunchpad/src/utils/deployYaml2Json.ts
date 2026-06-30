@@ -37,6 +37,21 @@ const createDeterministicNanoid = (seed: string): string => {
   return deterministicNanoid();
 };
 
+const normalizeServiceNameBase = (name: string) => {
+  const normalized = name
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return /^[a-z]/.test(normalized) ? normalized : `app-${normalized || 'service'}`;
+};
+
+const truncateServiceNameBase = (name: string, maxLength: number) => {
+  const truncated = name.slice(0, maxLength).replace(/-+$/g, '');
+
+  return truncated || 'app';
+};
+
 export const generateOwnerReference = (
   name: string,
   kind: 'Deployment' | 'StatefulSet',
@@ -83,8 +98,13 @@ const getServiceName = (data: AppEditType, forNodePort: boolean = false): string
   const seed = `${data.appName}-${forNodePort ? 'nodeport' : 'cluster'}-${portSlugs.join(',')}`;
   const deterministicId = createDeterministicNanoid(seed);
   const suffix = forNodePort ? '-nodeport' : '';
+  const maxBaseLength = 63 - suffix.length - deterministicId.length - 1;
+  const serviceNameBase = truncateServiceNameBase(
+    normalizeServiceNameBase(data.appName),
+    maxBaseLength
+  );
 
-  return `${data.appName}${suffix}-${deterministicId}`;
+  return `${serviceNameBase}${suffix}-${deterministicId}`;
 };
 
 export const yamlString2Objects = (yamlString: string): object[] => {
@@ -416,7 +436,14 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   return yaml.dump(template[type]);
 };
 
-export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
+export const json2Service = (
+  data: AppEditType,
+  ownerReferences?: V1OwnerReference[],
+  options?: {
+    includeClusterIp?: boolean;
+    includeNodePort?: boolean;
+  }
+) => {
   const openPublicPorts: any[] = [];
   const closedPublicPorts: any[] = [];
 
@@ -490,8 +517,11 @@ export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReferen
     }
   };
 
-  const clusterIpYaml = closedPublicPorts.length > 0 ? yaml.dump(template) : '';
-  const nodePortYaml = openPublicPorts.length > 0 ? yaml.dump(templateNodePort) : '';
+  const includeClusterIp = options?.includeClusterIp ?? true;
+  const includeNodePort = options?.includeNodePort ?? true;
+  const clusterIpYaml = includeClusterIp && closedPublicPorts.length > 0 ? yaml.dump(template) : '';
+  const nodePortYaml =
+    includeNodePort && openPublicPorts.length > 0 ? yaml.dump(templateNodePort) : '';
 
   return clusterIpYaml && nodePortYaml
     ? `${clusterIpYaml}\n---\n${nodePortYaml}`

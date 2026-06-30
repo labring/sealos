@@ -81,4 +81,34 @@ describe('app name validation', () => {
       ])
     ).toContain('Service "111111hello-world-yanexremmrtr" has an invalid name');
   });
+
+  it('reports invalid ingress backend service names before the Kubernetes apply step', () => {
+    expect(
+      getInvalidRfc1035ServiceNameMessage([
+        {
+          kind: 'Ingress',
+          metadata: { name: 'network-nhvjfewaavfu' },
+          spec: {
+            rules: [
+              {
+                http: {
+                  paths: [
+                    {
+                      backend: {
+                        service: {
+                          name: '1hello-world-hzcqkfmixkri'
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ])
+    ).toContain(
+      'Ingress "network-nhvjfewaavfu" references invalid backend service "1hello-world-hzcqkfmixkri"'
+    );
+  });
 });

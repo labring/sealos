@@ -27,6 +27,15 @@ type K8sResource = {
   spec?: {
     rules?: {
       host?: string;
+      http?: {
+        paths?: {
+          backend?: {
+            service?: {
+              name?: string;
+            };
+          };
+        }[];
+      };
     }[];
   };
 };

@@ -32,6 +32,26 @@ type NamedKubernetesResource = {
   metadata?: {
     name?: unknown;
   };
+  spec?: {
+    rules?: {
+      http?: {
+        paths?: {
+          backend?: {
+            service?: {
+              name?: unknown;
+            };
+          };
+        }[];
+      };
+    }[];
+  };
+};
+
+type InvalidServiceNameTarget = {
+  resourceKind: string;
+  resourceName: unknown;
+  serviceName: string;
+  source: 'metadata' | 'ingress-backend';
 };
 
 export const getInvalidGeneratedAppNameMessage = (name: unknown) => {
@@ -41,14 +61,53 @@ export const getInvalidGeneratedAppNameMessage = (name: unknown) => {
 };
 
 export const getInvalidRfc1035ServiceNameMessage = (resources: NamedKubernetesResource[]) => {
-  const invalidResource = resources.find((resource) => {
-    const name = resource?.metadata?.name;
-    return resource.kind === 'Service' && typeof name === 'string' && !isValidRfc1035Name(name);
-  });
+  const invalidTarget = resources.reduce<InvalidServiceNameTarget | undefined>(
+    (result, resource) => {
+      if (result) return result;
 
-  if (!invalidResource) return;
+      const name = resource?.metadata?.name;
+      if (resource.kind === 'Service' && typeof name === 'string' && !isValidRfc1035Name(name)) {
+        return {
+          resourceKind: 'Service',
+          resourceName: name,
+          serviceName: name,
+          source: 'metadata'
+        };
+      }
 
-  return `${invalidResource.kind || 'Resource'} "${
-    invalidResource.metadata?.name
-  }" has an invalid name. Names must start with a lowercase letter, contain only lowercase letters, numbers, or hyphens, and end with a lowercase letter or number.`;
+      if (resource.kind === 'Ingress') {
+        const invalidBackendServiceName = resource.spec?.rules
+          ?.flatMap((rule) => rule.http?.paths || [])
+          .map((path) => path.backend?.service?.name)
+          .find(
+            (serviceName) => typeof serviceName === 'string' && !isValidRfc1035Name(serviceName)
+          );
+
+        if (typeof invalidBackendServiceName === 'string') {
+          return {
+            resourceKind: 'Ingress',
+            resourceName: name,
+            serviceName: invalidBackendServiceName,
+            source: 'ingress-backend'
+          };
+        }
+      }
+
+      return undefined;
+    },
+    undefined
+  );
+
+  if (!invalidTarget) return;
+
+  const ruleText =
+    'Names must start with a lowercase letter, contain only lowercase letters, numbers, or hyphens, and end with a lowercase letter or number.';
+
+  if (invalidTarget.source === 'ingress-backend') {
+    return `Ingress "${invalidTarget.resourceName || ''}" references invalid backend service "${
+      invalidTarget.serviceName
+    }". ${ruleText}`;
+  }
+
+  return `${invalidTarget.resourceKind} "${invalidTarget.serviceName}" has an invalid name. ${ruleText}`;
 };

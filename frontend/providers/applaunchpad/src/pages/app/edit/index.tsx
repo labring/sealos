@@ -511,9 +511,22 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           }
         }
 
+        const shouldCreateClusterIpService =
+          data.networks.some((network) => !network.openNodePort) &&
+          data.networks.every((network) => network.openNodePort || !network.serviceName);
         const ingressYaml = json2Ingress(data, ownerReferences);
+        const yamlList = [
+          ...(shouldCreateClusterIpService
+            ? [
+                json2Service(data, ownerReferences, {
+                  includeNodePort: false
+                })
+              ]
+            : []),
+          ingressYaml
+        ].filter((item) => item.trim());
         setIsLoading(true);
-        postDeployApp([ingressYaml], 'replace')
+        postDeployApp(yamlList, 'replace')
           .then(() => {
             toast({ status: 'success', title: t('Deployment Successful') });
             formOldYamls.current = formData2Yamls(data);
