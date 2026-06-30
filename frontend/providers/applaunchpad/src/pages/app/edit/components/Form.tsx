@@ -178,6 +178,7 @@ const Form = ({
   const [isEditEnvs, setIsEditEnvs] = useState(false);
   const onOpenEditEnvs = () => setIsEditEnvs(true);
   const onCloseEditEnvs = () => setIsEditEnvs(false);
+  const getFieldActionText = (hasValue: boolean) => t(hasValue ? 'Update' : 'Add');
 
   // For quota calculation in fields
   const { userQuota } = useUserQuota();
@@ -1149,7 +1150,7 @@ const Form = ({
                       onClick={onOpenEditEnvs}
                     >
                       <Plus className="w-4 h-4" />
-                      {t('Add')}
+                      {getFieldActionText(envs.length > 0)}
                     </Button>
                   </div>
                   {envs.length > 0 && (
@@ -1228,7 +1229,7 @@ const Form = ({
                       }
                     >
                       <Plus className="w-4 h-4" />
-                      {t('Add')}
+                      {getFieldActionText(configMaps.length > 0)}
                     </Button>
                   </div>
                   {configMaps.length > 0 && (
@@ -1335,7 +1336,7 @@ const Form = ({
                             className="h-8 w-8 shrink-0 text-neutral-500 hover:text-red-600 hover:bg-transparent"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (storeList.length === 1) {
+                              if (existingStores.length > 0 && storeList.length === 1) {
                                 toast.error(t('Store At Least One'));
                               } else {
                                 removeStoreList(index);

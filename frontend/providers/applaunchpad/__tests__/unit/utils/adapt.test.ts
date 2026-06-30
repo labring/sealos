@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { V1Deployment } from '@kubernetes/client-node';
 
 import { appStatusMap } from '@/constants/app';
-import { adaptAppListItem } from '@/utils/adapt';
+import { adaptAppListItem, normalizeCustomDomainHost } from '@/utils/adapt';
 
 const createDeployment = (status: V1Deployment['status']): V1Deployment => ({
   apiVersion: 'apps/v1',
@@ -57,6 +57,16 @@ describe('adaptAppListItem', () => {
       ]
     });
 
-    expect(adaptAppListItem(app).status).toBe(appStatusMap.error);
+    expect(adaptAppListItem(app as Parameters<typeof adaptAppListItem>[0]).status).toBe(
+      appStatusMap.error
+    );
+  });
+});
+
+describe('normalizeCustomDomainHost', () => {
+  it('strips scheme and path from custom domains', () => {
+    expect(normalizeCustomDomainHost('https://foo.example.com/app')).toBe('foo.example.com');
+    expect(normalizeCustomDomainHost('http://Bar.Example.com')).toBe('bar.example.com');
+    expect(normalizeCustomDomainHost('baz.example.com')).toBe('baz.example.com');
   });
 });

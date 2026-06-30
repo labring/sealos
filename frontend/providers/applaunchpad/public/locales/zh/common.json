@@ -83,6 +83,7 @@
   "Create Folder Success": "创建文件夹成功",
   "Create Folder Failed": "创建文件夹失败",
   "Please enter the folder name": "请输入文件夹名称",
+  "Prompt": "提示",
   "Creating": "创建中",
   "Creation Time": "创建时间",
   "Custom Domain": "自定义域名",

@@ -70,7 +70,7 @@ afterEach(() => {
 });
 
 describe('NetworkConfigurationTable layout', () => {
-  test('keeps cells, ready tag, and public address on one line in a narrow viewport', async () => {
+  test('keeps the network table inside its parent in a narrow viewport', async () => {
     await page.viewport(390, 844);
     renderNetworkConfigurationTable();
 
@@ -81,22 +81,18 @@ describe('NetworkConfigurationTable layout', () => {
     const accessibleTag = screen.getByText('Accessible');
     const renderedPublicAddress = screen.getByText(publicAddress);
     const publicContentRow = publicCell?.firstElementChild;
+    const scrollContainer = table.parentElement as HTMLElement;
 
     expect(tableHead).toBeTruthy();
     expect(tableBody).toBeTruthy();
     expect(publicCell).toBeTruthy();
     expect(publicContentRow).toBeTruthy();
 
-    expect(getComputedStyle(table).tableLayout).toBe('auto');
-    expect(getComputedStyle(tableHead as HTMLTableSectionElement).whiteSpace).toBe('nowrap');
-    expect(getComputedStyle(tableBody as HTMLTableSectionElement).whiteSpace).toBe('nowrap');
-    expect(getComputedStyle(publicContentRow as Element).whiteSpace).toBe('nowrap');
-
-    expect((publicCell as HTMLTableCellElement).getBoundingClientRect().width).toBeGreaterThan(
-      renderedPublicAddress.getBoundingClientRect().width
+    expect(getComputedStyle(table).tableLayout).toBe('fixed');
+    expect(Math.round(table.getBoundingClientRect().width)).toBeLessThanOrEqual(
+      scrollContainer.clientWidth
     );
-    const scrollContainer = table.parentElement;
-    expect(scrollContainer?.clientWidth).toBeLessThan(scrollContainer?.scrollWidth ?? 0);
+    expect(renderedPublicAddress.getBoundingClientRect().width).toBeLessThanOrEqual(220);
     expectOnSameLine(accessibleTag, renderedPublicAddress);
   });
 

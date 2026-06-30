@@ -6,7 +6,7 @@ import { UseFormReturn, useFieldArray } from 'react-hook-form';
 import { useCopyData } from '@/utils/tools';
 import { useState, useCallback } from 'react';
 import type { AppEditType } from '@/types/app';
-import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
+import { buildExternalUrl } from '@/utils/network-url';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import dynamic from 'next/dynamic';
 import { WorkspaceQuotaItem } from '@sealos/shared';
@@ -40,6 +40,16 @@ import { Separator } from '@sealos/shadcn-ui/separator';
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+const normalizeDisplayHost = (host: string) => {
+  try {
+    return new URL(host.includes('://') ? host : `https://${host}`).hostname;
+  } catch {
+    return host;
+  }
+};
+
+const stripDisplayScheme = (url: string) => url.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
 
 type NetworkAction =
   | { type: 'ADD_PORT'; payload: AppEditType['networks'][0] }
@@ -207,42 +217,48 @@ export function NetworkSection({
           break;
       }
     },
-    [getValues, appendNetworks, removeNetworks, updateNetworks]
+    [config.domain, getValues, appendNetworks, removeNetworks, updateNetworks]
   );
 
   const getDomainDisplay = useCallback(
     (network: AppEditType['networks'][0]) => {
       if (network.customDomain) {
-        return buildExternalUrl({
+        return stripDisplayScheme(
+          buildExternalUrl({
+            protocol: network.appProtocol,
+            host: normalizeDisplayHost(network.customDomain),
+            config: {
+              disableHttps: config.disableHttps,
+              cloudPort: config.port,
+              httpPort: config.httpPort
+            }
+          })
+        );
+      }
+      if (network.openNodePort) {
+        return network?.nodePort
+          ? stripDisplayScheme(
+              buildExternalUrl({
+                protocol: network.protocol,
+                host: normalizeDisplayHost(`${network.protocol.toLowerCase()}.${network.domain}`),
+                nodePort: network.nodePort
+              })
+            )
+          : `${normalizeDisplayHost(`${network.protocol.toLowerCase()}.${network.domain}`)}:${t(
+              'pending_to_allocated'
+            )}`;
+      }
+      return stripDisplayScheme(
+        buildExternalUrl({
           protocol: network.appProtocol,
-          host: network.customDomain,
+          host: normalizeDisplayHost(`${network.publicDomain}.${network.domain}`),
           config: {
             disableHttps: config.disableHttps,
             cloudPort: config.port,
             httpPort: config.httpPort
           }
-        });
-      }
-      if (network.openNodePort) {
-        return network?.nodePort
-          ? buildExternalUrl({
-              protocol: network.protocol,
-              host: `${network.protocol.toLowerCase()}.${network.domain}`,
-              nodePort: network.nodePort
-            })
-          : `${getExternalProtocol(network.protocol)}://${network.protocol.toLowerCase()}.${
-              network.domain
-            }:${t('pending_to_allocated')}`;
-      }
-      return buildExternalUrl({
-        protocol: network.appProtocol,
-        host: `${network.publicDomain}.${network.domain}`,
-        config: {
-          disableHttps: config.disableHttps,
-          cloudPort: config.port,
-          httpPort: config.httpPort
-        }
-      });
+        })
+      );
     },
     [config.disableHttps, config.httpPort, config.port, t]
   );
@@ -368,15 +384,15 @@ export function NetworkSection({
                                 ))}
                               </SelectContent>
                             </Select>
-                            <div className="flex-1 h-10 flex items-center px-3 border border-l-0 border-zinc-200  rounded-r-lg overflow-hidden">
+                            <div className="flex-1 min-w-0 h-10 flex items-center px-3 border border-l-0 border-zinc-200 rounded-r-lg overflow-hidden">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <div
-                                      className="flex-1 flex items-center cursor-pointer hover:text-zinc-900 transition-colors overflow-hidden"
+                                      className="flex w-0 flex-1 items-center cursor-pointer overflow-hidden transition-colors hover:text-zinc-900"
                                       onClick={() => handleCopy(getDomainDisplay(network), i)}
                                     >
-                                      <span className="truncate text-sm text-muted-foreground">
+                                      <span className="block w-full truncate text-sm text-muted-foreground">
                                         {getDomainDisplay(network)}
                                       </span>
                                       {copiedIndex === i ? (
@@ -388,7 +404,9 @@ export function NetworkSection({
                                   </TooltipTrigger>
                                   {copiedIndex !== i && (
                                     <TooltipContent>
-                                      <p>{t('click_to_copy_tooltip')}</p>
+                                      <p className="max-w-sm break-all">
+                                        {getDomainDisplay(network)}
+                                      </p>
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -398,7 +416,7 @@ export function NetworkSection({
                                   type="button"
                                   variant="link"
                                   size="sm"
-                                  className="text-blue-600 shrink-0 h-auto px-2 font-normal text-sm"
+                                  className="ml-auto text-blue-600 shrink-0 h-auto px-2 font-normal text-sm"
                                   onClick={() =>
                                     setCustomAccessModalData({
                                       publicDomain: network.publicDomain,

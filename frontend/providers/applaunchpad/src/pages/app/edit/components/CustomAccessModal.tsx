@@ -47,11 +47,15 @@ const CustomAccessModal = ({
   const config = useClientAppConfig();
 
   const [notBoundOpen, setNotBoundOpen] = useState(false);
+  const sanitizeDomain = (input: string) =>
+    input.match(/((?!-)[a-z0-9-]{1,63}(?<!-)\.)+[a-z]{2,6}/i)?.[0];
+  const normalizeCustomDomain = (input: string) => sanitizeDomain(input)?.toLowerCase() || '';
+  const normalizedCurrentCustomDomain = normalizeCustomDomain(currentCustomDomain);
 
   const [processPhase, setProcessPhase] = useState<'INPUT_DOMAIN' | 'VERIFY_DOMAIN' | 'SUCCESS'>(
     'INPUT_DOMAIN'
   );
-  const [customDomain, setCustomDomain] = useState(currentCustomDomain);
+  const [customDomain, setCustomDomain] = useState(normalizedCurrentCustomDomain);
   const [previousState, setPreviousState] = useState<{
     domain: string;
     phase: 'INPUT_DOMAIN' | 'VERIFY_DOMAIN' | 'SUCCESS';
@@ -62,9 +66,6 @@ const CustomAccessModal = ({
     proxyType?: string;
     details?: any;
   }>({ isProxy: false });
-
-  const sanitizeDomain = (input: string) =>
-    input.match(/((?!-)[a-z0-9-]{1,63}(?<!-)\.)+[a-z]{2,6}/i)?.[0];
 
   // Check if domain is an internal domain (any SEALOS_USER_DOMAINS)
   const isInternalDomain = (domain: string): boolean => {
@@ -85,15 +86,14 @@ const CustomAccessModal = ({
     return false;
   };
 
-  const isValidDomain = useMemo(() => {
-    return !!sanitizeDomain(customDomain);
-  }, [customDomain]);
+  const isValidDomain = !!normalizeCustomDomain(customDomain);
 
   const { mutate: authDomain, isLoading } = useRequest({
     mutationFn: async (silent: boolean) => {
+      const verifiedCustomDomain = normalizeCustomDomain(customDomain);
       let cnameResult = await postAuthCname({
         publicDomain: completePublicDomain,
-        customDomain: customDomain
+        customDomain: verifiedCustomDomain
       }).catch((error) => {
         return {
           error
@@ -102,7 +102,7 @@ const CustomAccessModal = ({
       if (!cnameResult?.error) {
         return {
           error: null,
-          customDomain,
+          customDomain: verifiedCustomDomain,
           silent,
           method: 'CNAME'
         };
@@ -110,13 +110,13 @@ const CustomAccessModal = ({
       setVerificationMethod('HTTP_CHALLENGE');
 
       const challengeResult = await postAuthDomainChallenge({
-        customDomain: customDomain
+        customDomain: verifiedCustomDomain
       });
       console.log('challengeResult', challengeResult);
 
       return {
         error: challengeResult?.verified ? null : cnameResult?.error,
-        customDomain,
+        customDomain: verifiedCustomDomain,
         silent,
         method: challengeResult?.verified ? 'HTTP_CHALLENGE' : 'CNAME',
         cnameResult: cnameResult,
@@ -176,7 +176,7 @@ const CustomAccessModal = ({
     if (
       processPhase !== 'SUCCESS' &&
       // Do not open the warning modal if not touched.
-      customDomain !== currentCustomDomain
+      customDomain !== normalizedCurrentCustomDomain
     ) {
       setNotBoundOpen(true);
     } else {
@@ -279,7 +279,7 @@ const CustomAccessModal = ({
 
                 {processPhase === 'INPUT_DOMAIN' ? (
                   <>
-                    {currentCustomDomain && !previousState && (
+                    {normalizedCurrentCustomDomain && !previousState && (
                       <Button
                         variant="outline"
                         onClick={() => {
@@ -296,7 +296,7 @@ const CustomAccessModal = ({
                     <Button
                       disabled={!isValidDomain}
                       onClick={() => {
-                        const sanitizedDomain = sanitizeDomain(customDomain);
+                        const sanitizedDomain = normalizeCustomDomain(customDomain);
                         if (sanitizedDomain) {
                           // Check if domain is an internal domain first
                           if (isInternalDomain(sanitizedDomain)) {

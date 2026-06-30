@@ -26,6 +26,11 @@ const getStatusFromPods = (
 
 type State = {
   appList: AppListItemType[];
+  appListPagination: {
+    pageIndex: number;
+    pageSize: number;
+  };
+  setAppListPagination: (pagination: Partial<State['appListPagination']>) => void;
   setAppList: (init?: boolean) => Promise<AppListItemType[]>;
   appDetail?: AppDetailType;
   appDetailPods: PodDetailType[];
@@ -39,6 +44,18 @@ export const useAppStore = create<State>()(
   devtools(
     immer((set, get) => ({
       appList: [] as AppListItemType[],
+      appListPagination: {
+        pageIndex: 0,
+        pageSize: 10
+      },
+      setAppListPagination: (pagination) => {
+        set((state) => {
+          state.appListPagination = {
+            ...state.appListPagination,
+            ...pagination
+          };
+        });
+      },
       appDetail: MOCK_APP_DETAIL,
       appDetailPods: [] as PodDetailType[],
       setAppList: async (init = false) => {
