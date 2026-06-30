@@ -94,6 +94,7 @@ const CertificateCustomAccessModal = ({
             <Input
               value={customDomain}
               onChange={(event) => setCustomDomain(event.target.value.trim().toLowerCase())}
+              w="full"
               bg="#F7F8FA"
               borderColor="#E8EBF0"
               placeholder={t('Input your custom domain') || 'Input your custom domain'}
