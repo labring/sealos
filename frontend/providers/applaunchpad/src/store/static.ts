@@ -1,10 +1,7 @@
 import { getInitData } from '@/api/platform';
 import { Coin } from '@/constants/app';
 import type { CustomDomainMode } from '@/types';
-import {
-  normalizeCustomDomainCertificateDomains,
-  normalizeCustomDomainMode
-} from '@/utils/custom-domain';
+import { normalizeCustomDomainMode } from '@/utils/custom-domain';
 import { setPublicDomainReservedPrefixes } from '@/utils/public-domain';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
@@ -30,7 +27,6 @@ export let CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED = false;
 export let PUBLIC_DOMAIN_RESERVED_PREFIXES: string[] = [];
 export let CUSTOM_DOMAIN_MODE: CustomDomainMode = 'cname';
 export let CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME = 'wildcard-cert';
-export let CUSTOM_DOMAIN_CERTIFICATE_DOMAINS: string[] = [];
 
 export const loadInitData = async () => {
   try {
@@ -60,7 +56,6 @@ export const loadInitData = async () => {
     CUSTOM_DOMAIN_MODE = res.CUSTOM_DOMAIN_MODE || 'cname';
     CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME =
       res.CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME || 'wildcard-cert';
-    CUSTOM_DOMAIN_CERTIFICATE_DOMAINS = res.CUSTOM_DOMAIN_CERTIFICATE_DOMAINS || [];
     setPublicDomainReservedPrefixes(PUBLIC_DOMAIN_RESERVED_PREFIXES);
 
     return {
@@ -76,8 +71,7 @@ export const loadInitData = async () => {
       CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
       PUBLIC_DOMAIN_RESERVED_PREFIXES,
       CUSTOM_DOMAIN_MODE,
-      CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME,
-      CUSTOM_DOMAIN_CERTIFICATE_DOMAINS
+      CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME
     };
   } catch (error) {}
 
@@ -103,9 +97,6 @@ export const serverLoadInitData = () => {
     CUSTOM_DOMAIN_MODE = normalizeCustomDomainMode(global.AppConfig.launchpad.customDomain?.mode);
     CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME =
       global.AppConfig.launchpad.customDomain?.certificate?.tlsSecretName || 'wildcard-cert';
-    CUSTOM_DOMAIN_CERTIFICATE_DOMAINS = normalizeCustomDomainCertificateDomains(
-      global.AppConfig.launchpad.customDomain?.certificate?.domains
-    );
     setPublicDomainReservedPrefixes(PUBLIC_DOMAIN_RESERVED_PREFIXES);
   } catch (error) {}
 };

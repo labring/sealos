@@ -93,8 +93,7 @@ describe('getServerEnv', () => {
     config.launchpad.customDomain = {
       mode: 'certificate',
       certificate: {
-        tlsSecretName: 'wildcard-cert',
-        domains: [' App.Example.Local. ', '*.Apps.Example.Local']
+        tlsSecretName: 'wildcard-cert'
       }
     };
 
@@ -102,10 +101,6 @@ describe('getServerEnv', () => {
 
     expect(env.CUSTOM_DOMAIN_MODE).toBe('certificate');
     expect(env.CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME).toBe('wildcard-cert');
-    expect(env.CUSTOM_DOMAIN_CERTIFICATE_DOMAINS).toEqual([
-      'app.example.local',
-      '*.apps.example.local'
-    ]);
   });
 
   it('defaults custom domain mode to cname', () => {
@@ -113,6 +108,5 @@ describe('getServerEnv', () => {
 
     expect(env.CUSTOM_DOMAIN_MODE).toBe('cname');
     expect(env.CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME).toBe('wildcard-cert');
-    expect(env.CUSTOM_DOMAIN_CERTIFICATE_DOMAINS).toEqual([]);
   });
 });

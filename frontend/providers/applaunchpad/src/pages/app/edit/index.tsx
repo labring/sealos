@@ -1,5 +1,6 @@
 import { getBackendServices, postDeployApp, putApp } from '@/api/app';
 import {
+  checkCustomDomainCertificateCoverage,
   checkPermission,
   checkPublicDomain,
   postAuthCname,
@@ -12,7 +13,6 @@ import { useLoading } from '@/hooks/useLoading';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
 import {
-  CUSTOM_DOMAIN_CERTIFICATE_DOMAINS,
   CUSTOM_DOMAIN_MODE,
   CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
   SEALOS_DOMAIN
@@ -56,10 +56,7 @@ import {
   getDuplicateManagedPublicDomainHosts,
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
-import {
-  getCustomDomainBindings,
-  isDomainCoveredByCertificateDomains
-} from '@/utils/custom-domain';
+import { getCustomDomainBindings } from '@/utils/custom-domain';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -294,25 +291,30 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
     for (const binding of bindings) {
       if (CUSTOM_DOMAIN_MODE === 'certificate') {
-        if (CUSTOM_DOMAIN_CERTIFICATE_DOMAINS.length === 0) {
-          return {
-            ...binding,
-            reason: 'certificate_domain_list_empty' as const
-          };
-        }
+        try {
+          const result = await checkCustomDomainCertificateCoverage({
+            customDomain: binding.customDomain
+          });
 
-        if (
-          !isDomainCoveredByCertificateDomains(
-            binding.customDomain,
-            CUSTOM_DOMAIN_CERTIFICATE_DOMAINS
-          )
-        ) {
+          if (result.status === 'covered') {
+            continue;
+          }
+
           return {
             ...binding,
-            reason: 'certificate_domain_not_configured' as const
+            reason:
+              result.status === 'pendingSync'
+                ? ('certificate_domain_pending_sync' as const)
+                : result.status === 'unsupported'
+                  ? ('certificate_domain_unsupported' as const)
+                  : ('certificate_domain_not_configured' as const)
+          };
+        } catch (error) {
+          return {
+            ...binding,
+            reason: 'certificate_domain_unsupported' as const
           };
         }
-        continue;
       }
 
       if (!binding.publicDomain) {
@@ -817,19 +819,28 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
               const invalidCustomDomain = await checkCustomDomainBindings(data);
               if (invalidCustomDomain) {
+                const certificateMessage =
+                  invalidCustomDomain.reason === 'certificate_domain_pending_sync'
+                    ? t('custom_domain_certificate_pending_sync', {
+                        customDomain: invalidCustomDomain.customDomain
+                      })
+                    : invalidCustomDomain.reason === 'certificate_domain_unsupported'
+                      ? t('custom_domain_certificate_unavailable')
+                      : t('custom_domain_certificate_not_configured', {
+                          customDomain: invalidCustomDomain.customDomain
+                        });
+
                 return toast({
                   status: 'warning',
                   title:
-                    invalidCustomDomain.reason === 'certificate_domain_list_empty'
-                      ? t('custom_domain_certificate_list_empty')
-                      : invalidCustomDomain.reason === 'certificate_domain_not_configured'
-                        ? t('custom_domain_certificate_not_configured', {
-                            customDomain: invalidCustomDomain.customDomain
-                          })
-                        : t('custom_domain_cname_required', {
-                            customDomain: invalidCustomDomain.customDomain,
-                            publicDomain: invalidCustomDomain.publicDomain
-                          })
+                    invalidCustomDomain.reason === 'certificate_domain_not_configured' ||
+                    invalidCustomDomain.reason === 'certificate_domain_pending_sync' ||
+                    invalidCustomDomain.reason === 'certificate_domain_unsupported'
+                      ? certificateMessage
+                      : t('custom_domain_cname_required', {
+                          customDomain: invalidCustomDomain.customDomain,
+                          publicDomain: invalidCustomDomain.publicDomain
+                        })
                 });
               }
 

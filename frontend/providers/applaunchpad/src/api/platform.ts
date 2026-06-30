@@ -5,6 +5,17 @@ import { AuthCnamePrams, AuthDomainChallengeParams } from './params';
 import type { EnvResponse } from '@/types';
 import type { PublicDomainConflictOwner } from '@/utils/public-domain';
 
+export type CustomDomainCertificateCoverageStatus =
+  'covered' | 'pendingSync' | 'notConfigured' | 'unsupported';
+
+export type CustomDomainCertificateCoverageResult = {
+  customDomain: string;
+  status: CustomDomainCertificateCoverageStatus;
+  matchingDomain?: string;
+  missingIn?: ('certificate' | 'higress')[];
+  reason?: string;
+};
+
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
 
 export const getInitData = () => GET<EnvResponse>('/api/platform/getInitData');
@@ -50,6 +61,9 @@ export const checkPublicDomain = (data: { prefix: string; domain: string; appNam
     host?: string;
     conflictOwner?: PublicDomainConflictOwner;
   }>('/api/platform/checkPublicDomain', data);
+
+export const checkCustomDomainCertificateCoverage = (data: { customDomain: string }) =>
+  POST<CustomDomainCertificateCoverageResult>('/api/platform/checkCustomDomainCertificate', data);
 
 export const getUserTasks = () =>
   GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {

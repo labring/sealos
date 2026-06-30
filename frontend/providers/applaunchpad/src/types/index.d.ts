@@ -76,7 +76,6 @@ export type AppConfigType = {
       mode?: CustomDomainMode;
       certificate?: {
         tlsSecretName?: string;
-        domains?: string[];
       };
     };
     eventAnalyze: {
@@ -134,5 +133,4 @@ export type EnvResponse = {
   PUBLIC_DOMAIN_RESERVED_PREFIXES: string[];
   CUSTOM_DOMAIN_MODE: CustomDomainMode;
   CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME: string;
-  CUSTOM_DOMAIN_CERTIFICATE_DOMAINS: string[];
 };

@@ -56,6 +56,17 @@ app.kubernetes.io/name: {{ include "applaunchpad-frontend.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{/*
+Create the name of the service account to use.
+*/}}
+{{- define "applaunchpad-frontend.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create }}
+{{- default (include "applaunchpad-frontend.fullname" .) .Values.serviceAccount.name }}
+{{- else }}
+{{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
 {{- define "applaunchpad-frontend.scheme" -}}
 {{- if eq (toString .Values.applaunchpadConfig.disableHttps) "true" -}}http{{- else -}}https{{- end -}}
 {{- end }}

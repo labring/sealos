@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   AlertDescription,
@@ -18,9 +18,12 @@ import {
 } from '@chakra-ui/react';
 import { CheckCircle, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
-import { CUSTOM_DOMAIN_CERTIFICATE_DOMAINS } from '@/store/static';
 import { useToast } from '@/hooks/useToast';
-import { findMatchingCertificateDomain, normalizeDomainName } from '@/utils/custom-domain';
+import { normalizeDomainName } from '@/utils/custom-domain';
+import {
+  checkCustomDomainCertificateCoverage,
+  type CustomDomainCertificateCoverageResult
+} from '@/api/platform';
 
 export type CertificateCustomAccessModalParams = {
   networkIndex: number;
@@ -40,16 +43,52 @@ const CertificateCustomAccessModal = ({
   const { t } = useTranslation();
   const { toast } = useToast();
   const [customDomain, setCustomDomain] = useState(currentCustomDomain);
+  const [isChecking, setIsChecking] = useState(false);
+  const [coverage, setCoverage] = useState<CustomDomainCertificateCoverageResult | null>(null);
 
   const normalizedDomain = normalizeDomainName(customDomain);
-  const matchingCertificateDomain = useMemo(
-    () => findMatchingCertificateDomain(normalizedDomain, CUSTOM_DOMAIN_CERTIFICATE_DOMAINS),
-    [normalizedDomain]
-  );
-  const hasCertificateDomainList = CUSTOM_DOMAIN_CERTIFICATE_DOMAINS.length > 0;
-  const isDomainCovered = hasCertificateDomainList && Boolean(matchingCertificateDomain);
+  const isDomainCovered = coverage?.status === 'covered';
 
-  const submit = () => {
+  const getCoverageMessage = (result: CustomDomainCertificateCoverageResult | null) => {
+    if (isChecking && !result) {
+      return t('custom_domain_certificate_checking');
+    }
+
+    if (!result) {
+      return t('custom_domain_certificate_runtime_tip');
+    }
+
+    if (result.status === 'covered') {
+      return t('custom_domain_certificate_match_tip', {
+        domain: result.matchingDomain
+      });
+    }
+
+    if (result.status === 'pendingSync') {
+      return t('custom_domain_certificate_pending_sync', {
+        customDomain: result.customDomain
+      });
+    }
+
+    if (result.status === 'unsupported') {
+      return t('custom_domain_certificate_unavailable');
+    }
+
+    return t('custom_domain_certificate_not_configured', {
+      customDomain: result.customDomain
+    });
+  };
+
+  const getCoverageTone = () => {
+    if (isDomainCovered) return 'success';
+    if (coverage?.status === 'unsupported') return 'error';
+    if (coverage?.status === 'pendingSync' || coverage?.status === 'notConfigured') {
+      return 'warning';
+    }
+    return 'info';
+  };
+
+  const submit = async () => {
     if (!normalizedDomain || !domainPattern.test(normalizedDomain)) {
       toast({
         title: t('domain_invalid_toast', { domain: customDomain }),
@@ -58,21 +97,42 @@ const CertificateCustomAccessModal = ({
       return;
     }
 
-    if (!isDomainCovered) {
-      toast({
-        title: hasCertificateDomainList
-          ? t('custom_domain_certificate_not_configured', {
-              customDomain: normalizedDomain
-            })
-          : t('custom_domain_certificate_list_empty'),
-        status: 'warning'
+    setIsChecking(true);
+    try {
+      const result = await checkCustomDomainCertificateCoverage({
+        customDomain: normalizedDomain
       });
-      return;
-    }
+      setCoverage(result);
 
-    onSuccess(normalizedDomain);
-    onClose();
+      if (result.status !== 'covered') {
+        toast({
+          title: getCoverageMessage(result),
+          status: result.status === 'unsupported' ? 'error' : 'warning'
+        });
+        return;
+      }
+
+      onSuccess(normalizedDomain);
+      onClose();
+    } catch (error) {
+      toast({
+        title: t('custom_domain_certificate_unavailable'),
+        status: 'error'
+      });
+    } finally {
+      setIsChecking(false);
+    }
   };
+
+  const coverageTone = getCoverageTone();
+  const coverageColor =
+    coverageTone === 'success' ? '#039855' : coverageTone === 'error' ? '#D92D20' : '#DC6803';
+  const coverageBorderColor =
+    coverageTone === 'success' ? '#A6EDC3' : coverageTone === 'error' ? '#FECDCA' : '#FED7AA';
+  const coverageBg =
+    coverageTone === 'success' ? '#EDFBF3' : coverageTone === 'error' ? '#FEF3F2' : '#FFFAEB';
+  const coverageTextColor =
+    coverageTone === 'success' ? '#027A48' : coverageTone === 'error' ? '#B42318' : '#B54708';
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
@@ -93,7 +153,10 @@ const CertificateCustomAccessModal = ({
 
             <Input
               value={customDomain}
-              onChange={(event) => setCustomDomain(event.target.value.trim().toLowerCase())}
+              onChange={(event) => {
+                setCustomDomain(event.target.value.trim().toLowerCase());
+                setCoverage(null);
+              }}
               w="full"
               bg="#F7F8FA"
               borderColor="#E8EBF0"
@@ -104,30 +167,18 @@ const CertificateCustomAccessModal = ({
               variant="subtle"
               borderRadius="lg"
               borderWidth={1}
-              borderColor={isDomainCovered ? '#A6EDC3' : '#FED7AA'}
-              bg={isDomainCovered ? '#EDFBF3' : '#FFFAEB'}
+              borderColor={coverageBorderColor}
+              bg={coverageBg}
             >
               <AlertDescription w="full">
                 <Flex alignItems="flex-start" gap={3}>
-                  {isDomainCovered ? (
-                    <ShieldCheck size={18} color="#039855" />
-                  ) : (
-                    <ShieldCheck size={18} color="#DC6803" />
-                  )}
+                  <ShieldCheck size={18} color={coverageColor} />
                   <Box>
-                    <Text fontWeight={500} color={isDomainCovered ? '#039855' : '#B54708'} mb={1}>
+                    <Text fontWeight={500} color={coverageColor} mb={1}>
                       {t('custom_domain_certificate_mode_title')}
                     </Text>
-                    <Text fontSize="14px" color={isDomainCovered ? '#027A48' : '#B54708'}>
-                      {hasCertificateDomainList
-                        ? isDomainCovered
-                          ? t('custom_domain_certificate_match_tip', {
-                              domain: matchingCertificateDomain
-                            })
-                          : t('custom_domain_certificate_not_configured', {
-                              customDomain: normalizedDomain || customDomain
-                            })
-                        : t('custom_domain_certificate_list_empty')}
+                    <Text fontSize="14px" color={coverageTextColor}>
+                      {getCoverageMessage(coverage)}
                     </Text>
                   </Box>
                 </Flex>
@@ -150,7 +201,7 @@ const CertificateCustomAccessModal = ({
           <Button variant="outline" onClick={onClose}>
             {t('close')}
           </Button>
-          <Button leftIcon={<CheckCircle size={16} />} onClick={submit}>
+          <Button leftIcon={<CheckCircle size={16} />} onClick={submit} isLoading={isChecking}>
             {t('domain_verification_input_save')}
           </Button>
         </ModalFooter>

@@ -41,7 +41,6 @@ data:
         mode: {{ .Values.applaunchpadConfig.customDomainMode | quote }}
         certificate:
           tlsSecretName: {{ .Values.applaunchpadConfig.customDomainCertificateSecretName | quote }}
-          domains:{{ toYaml .Values.applaunchpadConfig.customDomainCertificateDomains | nindent 12 }}
       components:
         monitor:
           url: {{ .Values.applaunchpadConfig.monitorUrl }}
