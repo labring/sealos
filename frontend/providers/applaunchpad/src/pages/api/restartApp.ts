@@ -2,7 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
+import { ResponseCode } from '@/types/response';
 import dayjs from 'dayjs';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -26,9 +27,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res);
   } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
+    jsonRes(res, handleK8sError(err, { forbiddenCode: ResponseCode.FORBIDDEN }));
   }
 }
