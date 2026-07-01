@@ -5,6 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { lauchpadRemarkKey } from '@/constants/account';
 import { PatchUtils } from '@kubernetes/client-node';
+import { ResponseCode } from '@/types/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -66,6 +67,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { data: 'success' });
   } catch (err: any) {
-    jsonRes(res, handleK8sError(err));
+    jsonRes(res, handleK8sError(err, { forbiddenCode: ResponseCode.FORBIDDEN }));
   }
 }

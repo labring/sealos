@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getPublicDomainErrorResponse, jsonRes } from '@/services/backend/response';
+import { getPublicDomainErrorResponse, handleK8sError, jsonRes } from '@/services/backend/response';
 import { createK8sContext } from '@/services/backend';
 import {
   dryRunPublicDomainIngress,
@@ -10,6 +10,7 @@ import {
   PublicDomainError
 } from '@/services/backend/publicDomain';
 import { isCustomPublicDomainPrefixEnabled } from '@/utils/feature-gates';
+import { ResponseCode } from '@/types/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -92,9 +93,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    return jsonRes(res, {
-      code: 500,
-      error: err?.body || err?.message || err
-    });
+    return jsonRes(res, handleK8sError(err, { forbiddenCode: ResponseCode.FORBIDDEN }));
   }
 }

@@ -86,6 +86,9 @@ export const startAppByName = (appName: string) => {
 
 export const restartPodByName = (podName: string) => GET(`/api/restartPod?podName=${podName}`);
 
+export const checkPodExecPermission = (podName: string) =>
+  GET<{ allowed: boolean }>('/api/checkPodExecPermission', { podName });
+
 export const getAppMonitorData = (payload: {
   queryName: string;
   queryKey: keyof MonitorQueryKey;

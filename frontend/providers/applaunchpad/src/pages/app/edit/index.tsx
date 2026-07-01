@@ -184,6 +184,13 @@ async function validatePublicDomainAvailabilityBeforeSubmit(
         appName: data.appName
       });
     } catch (error: any) {
+      if (
+        error?.code === ResponseCode.FORBIDDEN ||
+        /forbidden|permission denied|insufficient permissions/i.test(error?.message || '')
+      ) {
+        return t('Insufficient permissions');
+      }
+
       if (error?.error?.code !== 'PUBLIC_DOMAIN_CONFLICT') {
         throw error;
       }
@@ -436,6 +443,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           track('error_occurred', {
             module: 'applaunchpad',
             error_code: 'FORBIDDEN_CREATE_APP'
+          });
+        } else if (error?.code === ResponseCode.FORBIDDEN) {
+          setErrorMessage(t('Insufficient permissions'));
+          setErrorCode(ResponseCode.FORBIDDEN);
+
+          track('error_occurred', {
+            module: 'applaunchpad',
+            error_code: 'FORBIDDEN'
           });
         } else if (error?.code === ResponseCode.QUOTA_EXCEEDED) {
           setErrorMessage(t('quota_exceeded'));
@@ -883,7 +898,13 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 } catch (error: any) {
                   return toast({
                     status: 'warning',
-                    title: error?.message || 'Check Error'
+                    title:
+                      error?.code === ResponseCode.FORBIDDEN ||
+                      /forbidden|permission denied|insufficient permissions/i.test(
+                        error?.message || ''
+                      )
+                        ? t('Insufficient permissions')
+                        : error?.message || 'Check Error'
                   });
                 }
               }
