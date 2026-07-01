@@ -1,9 +1,11 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
-import { getCategorySlugs, parseTemplateCategories } from '@/utils/template';
+import { getCategorySlugs } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/templateCategories.server';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { readTemplatesFromFile } from '../../listTemplate';
+import { ensureRepoFresh } from '@/services/backend/template-repo';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = (req.query.language as string) || 'en';
@@ -11,7 +13,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const jsonPath = path.resolve(originalPath, 'templates.json');
 
   try {
-    const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
+    await ensureRepoFresh();
+
+    const configuredCategories = getConfiguredTemplateCategories(
+      path.resolve(originalPath, 'templates')
+    );
     const templates = readTemplatesFromFile(
       jsonPath,
       process.env.CDN_URL,

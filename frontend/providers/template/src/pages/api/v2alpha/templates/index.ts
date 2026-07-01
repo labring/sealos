@@ -1,9 +1,11 @@
 import { TemplateType } from '@/types/app';
-import { getCategorySlugs, parseTemplateCategories } from '@/utils/template';
+import { getCategorySlugs } from '@/utils/template';
+import { getConfiguredTemplateCategories } from '@/utils/templateCategories.server';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { getCachedTemplates } from './templateCache';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import { ensureRepoFresh } from '@/services/backend/template-repo';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -19,13 +21,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const originalPath = process.cwd();
   const jsonPath = path.resolve(originalPath, 'templates.json');
 
-  // Add caching headers for GET requests
-  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600'); // 5min client, 10min CDN
+  res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('ETag', `"template-list-${language}"`);
 
   try {
-    // Use shared cache instead of directly reading templates
-    const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
+    await ensureRepoFresh();
+
+    const configuredCategories = getConfiguredTemplateCategories(
+      path.resolve(originalPath, 'templates')
+    );
     const cacheResult = getCachedTemplates(
       jsonPath,
       process.env.CDN_URL,

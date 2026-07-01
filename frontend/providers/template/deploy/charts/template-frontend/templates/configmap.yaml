@@ -13,6 +13,7 @@ data:
     SEALOS_CERT_SECRET_NAME={{ .Values.templateConfig.certSecretName }}
     TEMPLATE_REPO_URL={{ .Values.templateConfig.templateRepoUrl }}
     TEMPLATE_REPO_BRANCH={{ .Values.templateConfig.templateRepoBranch }}
+    TEMPLATE_REPO_FOLDER={{ .Values.templateConfig.templateRepoPath }}
     SHOW_AUTHOR={{ .Values.templateConfig.showAuthor }}
     ACCOUNT_URL={{ .Values.templateConfig.accountUrl }}
     GUIDE_ENABLED={{ .Values.templateConfig.guideEnabled }}

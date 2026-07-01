@@ -1,5 +1,40 @@
 # sealos app launchpad
 
+## template repository configuration
+
+The Template App reads app-store templates from a Git repository configured by environment variables:
+
+- `TEMPLATE_REPO_URL`: Git clone URL, for example an internal Gogs URL.
+- `TEMPLATE_REPO_BRANCH`: branch to clone, default `main`.
+- `TEMPLATE_REPO_FOLDER`: folder inside the repository that contains template YAML files, default `template`.
+- `TEMPLATE_CATEGORIES_PATH`: optional category JSON path inside the cloned repo, default `config/categories.json`.
+- `TEMPLATE_CATEGORIES`: fallback category JSON when the repository category file is missing.
+
+When templates use repository-local README or icon paths such as `README.md`, `./README.md`, or `/shared/logo.svg`, the app serves them through `/api/templateAsset` from the cloned local repository. This keeps private/offline deployments from depending on public raw URLs.
+
+Template read APIs call a TTL-bound repository freshness check before reading `templates.json`. When the TTL has expired, the app pulls the configured repository, regenerates `templates.json`, and clears both README and v2 template/detail caches. This keeps `/api/listTemplate` and `/api/v2alpha/templates` aligned with the data source even when the repository is changed outside Admin. `TEMPLATE_REPO_SYNC_INTERVAL_MS` controls the freshness interval and defaults to `30000`.
+
+`/api/updateRepo` remains available as a manual immediate refresh endpoint.
+
+## template repository layout
+
+The app keeps backward compatibility with legacy single-file templates such as:
+
+```text
+template/wordpress.yaml
+```
+
+Managed templates may also use the split layout produced by Sealos Admin:
+
+```text
+template/<name>/index.yaml
+template/<name>/manifests/001-app.yaml
+template/<name>/README.md
+template/<name>/logo.svg
+```
+
+`index.yaml` must start with the `Template` document. App resources can either remain as following YAML documents in `index.yaml` or live in sibling `manifests/*.yaml` files. Catalog refresh skips `manifests/` so resource YAML files are not listed as templates. Template detail/source reads append sibling manifest files in lexical order.
+
 ## project tree
 ```bash
 .

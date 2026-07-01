@@ -13,6 +13,13 @@ const ReadMe = ({ readUrl, readmeContent }: { readUrl: string; readmeContent: st
   const myRewrite = (node, index, parent) => {
     if (node.tagName === 'img' && !node.properties.src.startsWith('http')) {
       const imgSrc = node.properties.src.replace(/^\.\/|^\//, '');
+      if (readUrl?.startsWith('/api/templateAsset?')) {
+        const params = new URLSearchParams(readUrl.split('?')[1] || '');
+        params.set('asset', imgSrc);
+        node.properties.referrerPolicy = 'no-referrer';
+        node.properties.src = `/api/templateAsset?${params.toString()}`;
+        return;
+      }
       const baseUrl = readUrl?.substring(0, readUrl?.lastIndexOf('/') + 1);
       node.properties.referrerPolicy = 'no-referrer';
       node.properties.src = `${baseUrl}${imgSrc}`;

@@ -18,6 +18,45 @@ import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
 import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
+import {
+  hasLocalTemplateAssets,
+  readTemplateAssetFile,
+  rewriteTemplateAssetsToLocalApi
+} from '@/utils/templateAssets';
+import { ensureRepoFresh } from '@/services/backend/template-repo';
+
+const TEMPLATE_MANIFESTS_DIR = 'manifests';
+
+const isTemplateIndexFile = (filePath: string) => {
+  const filename = path.basename(filePath).toLowerCase();
+  return filename === 'index.yaml' || filename === 'index.yml';
+};
+
+const joinYamlDocuments = (items: string[]) =>
+  items
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join('\n---\n');
+
+const readSiblingManifestYaml = (templateFilePath: string) => {
+  if (!isTemplateIndexFile(templateFilePath)) return '';
+
+  const manifestsDir = path.join(path.dirname(templateFilePath), TEMPLATE_MANIFESTS_DIR);
+  if (!fs.existsSync(manifestsDir) || !fs.statSync(manifestsDir).isDirectory()) {
+    return '';
+  }
+
+  const manifestContents = fs
+    .readdirSync(manifestsDir)
+    .filter((item) => {
+      const ext = path.extname(item).toLowerCase();
+      return ext === '.yaml' || ext === '.yml';
+    })
+    .sort((left, right) => left.localeCompare(right))
+    .map((item) => fs.readFileSync(path.join(manifestsDir, item), 'utf-8'));
+
+  return joinYamlDocuments(manifestContents);
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -118,6 +157,8 @@ export async function GetTemplateByName({
   locale?: string;
   includeReadme?: string;
 }) {
+  await ensureRepoFresh();
+
   const cdnUrl = process.env.CDN_URL;
   const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
 
@@ -135,6 +176,7 @@ export async function GetTemplateByName({
   const yamlString = fs.readFileSync(templateFilePath, 'utf-8');
 
   let { appYaml, templateYaml } = getYamlTemplate(yamlString);
+  appYaml = joinYamlDocuments([appYaml, readSiblingManifestYaml(templateFilePath)]);
 
   if (!templateYaml) {
     return {
@@ -143,14 +185,16 @@ export async function GetTemplateByName({
     };
   }
   templateYaml.spec.deployCount = _tempalte?.spec?.deployCount;
-  templateYaml = resolveTemplateAssetUrls(templateYaml, {
-    repo: {
-      url: TemplateEnvs.TEMPLATE_REPO_URL,
-      branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
-    },
-    templateFilePath,
-    repoRootPath
-  });
+  templateYaml = hasLocalTemplateAssets(templateYaml)
+    ? rewriteTemplateAssetsToLocalApi(templateYaml)
+    : resolveTemplateAssetUrls(templateYaml, {
+        repo: {
+          url: TemplateEnvs.TEMPLATE_REPO_URL,
+          branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
+        },
+        templateFilePath,
+        repoRootPath
+      });
 
   if (cdnUrl) {
     templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
@@ -187,7 +231,17 @@ export async function GetTemplateByName({
     readUrl = templateYaml?.spec?.i18n?.[locale]?.readme || templateYaml?.spec?.readme || '';
     if (readUrl) {
       try {
-        readmeContent = await fetchReadmeContentWithRetry(readUrl);
+        if (readUrl.startsWith('/api/templateAsset?')) {
+          const asset = new URLSearchParams(readUrl.split('?')[1] || '').get('asset') || '';
+          readmeContent = readTemplateAssetFile({
+            jsonPath,
+            templateName,
+            assetUrl: asset,
+            repoRootPath
+          }).content.toString('utf8');
+        } else {
+          readmeContent = await fetchReadmeContentWithRetry(readUrl);
+        }
       } catch (error) {
         readmeContent = '';
       }

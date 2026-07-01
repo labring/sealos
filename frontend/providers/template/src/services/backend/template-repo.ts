@@ -10,10 +10,23 @@ import * as k8s from '@kubernetes/client-node';
 import { getYamlTemplate } from '@/utils/json-yaml';
 import { getTemplateEnvs } from '@/utils/tools';
 import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
+import { hasLocalTemplateAssets, rewriteTemplateAssetsToLocalApi } from '@/utils/templateAssets';
+import { clearTemplateRuntimeCaches } from './template-runtime-cache';
 
 const execAsync = util.promisify(exec);
+const TEMPLATE_MANIFESTS_DIR = 'manifests';
+const DEFAULT_REPO_SYNC_INTERVAL_MS = 30_000;
 
-const readFileList = (targetPath: string, fileList: unknown[] = []) => {
+let lastRepoSyncAt = 0;
+let pendingRepoSync: Promise<void> | null = null;
+
+function getRepoSyncIntervalMs() {
+  const parsed = Number(process.env.TEMPLATE_REPO_SYNC_INTERVAL_MS);
+  if (!Number.isFinite(parsed) || parsed < 0) return DEFAULT_REPO_SYNC_INTERVAL_MS;
+  return parsed;
+}
+
+const readFileList = (targetPath: string, fileList: string[] = []) => {
   // fix ci
   const sanitizePath = (inputPath: string) => {
     if (typeof inputPath !== 'string') {
@@ -31,6 +44,7 @@ const readFileList = (targetPath: string, fileList: unknown[] = []) => {
     if (stats.isFile() && isYamlFile && item !== 'template.yaml') {
       fileList.push(filePath);
     } else if (stats.isDirectory()) {
+      if (item === TEMPLATE_MANIFESTS_DIR) return;
       readFileList(filePath, fileList);
     }
   });
@@ -94,7 +108,7 @@ export async function updateRepo() {
     throw new Error('missing template repository file');
   }
 
-  let fileList: unknown[] = [];
+  let fileList: string[] = [];
   const _targetPath = path.join(targetPath, targetFolder);
   readFileList(_targetPath, fileList);
 
@@ -108,14 +122,16 @@ export async function updateRepo() {
       const content = fs.readFileSync(item, 'utf-8');
       let { templateYaml } = getYamlTemplate(content);
       if (!!templateYaml) {
-        templateYaml = resolveTemplateAssetUrls(templateYaml, {
-          repo: {
-            url: TemplateEnvs.TEMPLATE_REPO_URL,
-            branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
-          },
-          templateFilePath: item,
-          repoRootPath: targetPath
-        });
+        templateYaml = hasLocalTemplateAssets(templateYaml)
+          ? rewriteTemplateAssetsToLocalApi(templateYaml)
+          : resolveTemplateAssetUrls(templateYaml, {
+              repo: {
+                url: TemplateEnvs.TEMPLATE_REPO_URL,
+                branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
+              },
+              templateFilePath: item,
+              repoRootPath: targetPath
+            });
         const appTitle = templateYaml.spec.title.toUpperCase();
         const currentCount = templateStaticMap[appTitle] || 0;
         const randomFactor = 11 + Math.floor(Math.random() * 5); // [11,12,13,14,15]
@@ -133,4 +149,33 @@ export async function updateRepo() {
 
   const jsonContent = JSON.stringify(jsonObjArr, null, 2);
   fs.writeFileSync(jsonPath, jsonContent, 'utf-8');
+  lastRepoSyncAt = Date.now();
+  clearTemplateRuntimeCaches();
+}
+
+export async function ensureRepoFresh({ force = false }: { force?: boolean } = {}) {
+  const jsonPath = path.resolve(process.cwd(), 'templates.json');
+  const now = Date.now();
+  const syncIntervalMs = getRepoSyncIntervalMs();
+
+  if (!force && fs.existsSync(jsonPath) && now - lastRepoSyncAt < syncIntervalMs) {
+    return;
+  }
+
+  if (!pendingRepoSync) {
+    pendingRepoSync = updateRepo().finally(() => {
+      pendingRepoSync = null;
+    });
+  }
+
+  try {
+    await pendingRepoSync;
+  } catch (error) {
+    if (fs.existsSync(jsonPath)) {
+      console.error('[template-repo] Failed to refresh repository, using local catalog:', error);
+      lastRepoSyncAt = Date.now();
+      return;
+    }
+    throw error;
+  }
 }
