@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { lauchpadRemarkKey } from '@/constants/account';
 import { PatchUtils } from '@kubernetes/client-node';
 
@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kind: 'deployment' | 'statefulset';
     };
 
-    if (!appName || !kind || !remark) {
+    if (!appName || !kind || typeof remark !== 'string') {
       throw new Error('appName or kind or remark is empty');
     }
 
@@ -66,9 +66,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { data: 'success' });
   } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
+    jsonRes(res, handleK8sError(err));
   }
 }

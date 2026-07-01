@@ -9,6 +9,8 @@ export const APP_GENERATED_NAME_MAX_LENGTH = APP_NAME_BASE_MAX_LENGTH;
 
 export const APP_NAME_BASE_PATTERN = /^[a-z]([-a-z0-9]*[a-z0-9])?$/;
 export const APP_GENERATED_NAME_PATTERN = /^[a-z]([-a-z0-9]*[a-z0-9])?$/;
+export const INVALID_APP_NAME_MESSAGE_KEY = 'invalid_app_name';
+export const INVALID_SERVICE_NAME_MESSAGE_KEY = 'invalid_service_name';
 
 export const isValidAppNameBase = (baseName: string) =>
   baseName.length > 0 &&
@@ -58,6 +60,21 @@ export const getInvalidGeneratedAppNameMessage = (name: unknown) => {
   if (typeof name !== 'string' || isValidGeneratedAppName(name)) return;
 
   return `Application name "${name}" is invalid. Use ${APP_GENERATED_NAME_MAX_LENGTH} characters or fewer, start with a lowercase letter, use only lowercase letters, numbers, or hyphens, and end with a lowercase letter or number.`;
+};
+
+export const getInvalidNameMessageI18nKey = (message: unknown) => {
+  if (typeof message !== 'string') return;
+
+  if (/^Application name ".+" is invalid\./.test(message)) {
+    return INVALID_APP_NAME_MESSAGE_KEY;
+  }
+
+  if (
+    /^Service ".+" has an invalid name\./.test(message) ||
+    /^Ingress ".+" references invalid backend service ".+"\./.test(message)
+  ) {
+    return INVALID_SERVICE_NAME_MESSAGE_KEY;
+  }
 };
 
 export const getInvalidRfc1035ServiceNameMessage = (resources: NamedKubernetesResource[]) => {

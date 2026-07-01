@@ -289,9 +289,24 @@ const Form = ({
           setValue('sharedMemory.sizeLimit', Math.max(memoryInGi, 1));
         }
       }
+
+      if (!isEdit && name === 'appName' && value.appName && value.configMapList?.length) {
+        const volumeName = `${value.appName}-cm`;
+        const configMapList = value.configMapList as AppEditType['configMapList'];
+        if (configMapList.some((item) => item.volumeName !== volumeName)) {
+          setValue(
+            'configMapList',
+            configMapList.map((item) => ({
+              ...item,
+              volumeName
+            })),
+            { shouldDirty: true }
+          );
+        }
+      }
     });
     return () => subscription.unsubscribe();
-  }, [watch, setValue]);
+  }, [watch, setValue, isEdit]);
 
   useEffect(() => {
     if (!IMAGE_PORTS_ENABLED || isEdit || !already) {
@@ -757,6 +772,11 @@ const Form = ({
                     )}
                   />
                 </Flex>
+                {errors.appName?.message && (
+                  <Box mt={1} pl={`${labelWidth}px`} fontSize={'sm'} color={'red.500'}>
+                    {errors.appName.message}
+                  </Box>
+                )}
               </FormControl>
               {/* image */}
               <Box mb={7} className="driver-deploy-image">

@@ -57,6 +57,10 @@ import {
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
 import { getCustomDomainBindings } from '@/utils/custom-domain';
+import {
+  APP_NAME_BASE_MAX_LENGTH,
+  getInvalidNameMessageI18nKey
+} from '@/utils/appNameValidation';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -449,6 +453,13 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             module: 'applaunchpad',
             error_code: 'APP_ALREADY_EXISTS'
           });
+        } else if (error?.code === ResponseCode.BAD_REQUEST) {
+          setErrorMessage(
+            t(getInvalidNameMessageI18nKey(error?.message) || error?.message || 'Submit Error', {
+              length: APP_NAME_BASE_MAX_LENGTH
+            })
+          );
+          setErrorCode(ResponseCode.BAD_REQUEST);
         } else {
           setErrorMessage(JSON.stringify(error));
         }

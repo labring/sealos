@@ -202,6 +202,8 @@
   "Terminal": "Terminal",
   "The Cpu target is empty": "Target CPU is required",
   "The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter": "Application name can only contain lowercase letters, digits, and hyphens (-), and must start with a letter",
+  "invalid_app_name": "Application name is invalid. Use {{length}} characters or fewer, start with a lowercase letter, use only lowercase letters, numbers, or hyphens, and end with a lowercase letter or number.",
+  "invalid_service_name": "Generated service name is invalid. Use an application name that starts with a lowercase letter, contains only lowercase letters, numbers, or hyphens, and ends with a lowercase letter or number.",
   "The cpu target value must be positive": "Target CPU must be a positive number",
   "The image cannot be empty": "Private image URL is required",
   "The maximum number of instances is 20": "Maximum instance count is 20",
