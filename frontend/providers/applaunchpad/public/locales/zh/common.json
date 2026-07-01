@@ -202,6 +202,8 @@
   "Terminal": "终端",
   "The Cpu target is empty": "CPU 目标值为空",
   "The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter": "应用名称只能包含小写字母、数字和连字符（-），且必须以字母开头",
+  "invalid_app_name": "应用名称不合法。最多输入 {{length}} 个字符，以小写字母开头，只能包含小写字母、数字和连字符（-），并以小写字母或数字结尾。",
+  "invalid_service_name": "生成的服务名称不合法。应用名称需要以小写字母开头，只能包含小写字母、数字和连字符（-），并以小写字母或数字结尾。",
   "The cpu target value must be positive": "CPU 目标值必须为正数",
   "The image cannot be empty": "私有镜像地址不能为空",
   "The maximum number of instances is 20": "实例数最大为20",
