@@ -3,6 +3,7 @@ import { checkPublicDomain } from '@/api/platform';
 import { MySelect } from '@sealos/ui';
 import { APPLICATION_PROTOCOLS, ProtocolList } from '@/constants/app';
 import {
+  CUSTOM_DOMAIN_MODE,
   CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
   DISABLE_HTTPS,
   DOMAIN_PORT,
@@ -31,6 +32,7 @@ import { useCopyData } from '@/utils/tools';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import { syncDefaultRouteServicePort } from '@/utils/network-routes';
 import type { CustomAccessModalParams } from './CustomAccessModal';
+import type { CertificateCustomAccessModalParams } from './CertificateCustomAccessModal';
 import dynamic from 'next/dynamic';
 import {
   PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
@@ -42,6 +44,7 @@ import {
 } from '@/utils/public-domain';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
+const CertificateCustomAccessModal = dynamic(() => import('./CertificateCustomAccessModal'));
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -229,6 +232,7 @@ type NetworkAction =
   | { type: 'ENABLE_EXTERNAL_ACCESS'; payload: { index: number } }
   | { type: 'DISABLE_EXTERNAL_ACCESS'; payload: { index: number } }
   | { type: 'UPDATE_PROTOCOL'; payload: { index: number; protocol: string } }
+  | { type: 'ENSURE_PUBLIC_DOMAIN'; payload: { index: number; publicDomain: string } }
   | { type: 'UPDATE_CUSTOM_DOMAIN'; payload: { index: number; customDomain: string } }
   | {
       type: 'UPDATE_ROUTES';
@@ -316,6 +320,8 @@ export function NetworkSection({
   const { copyData } = useCopyData();
   const [routeRulesIndex, setRouteRulesIndex] = useState<number>();
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
+  const [certificateAccessModalData, setCertificateAccessModalData] =
+    useState<CertificateCustomAccessModalParams>();
   const publicDomainCheckSeqRef = useRef<Record<number, number>>({});
   const publicDomainDraftCheckTimerRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
@@ -479,6 +485,17 @@ export function NetworkSection({
                 nodePort: undefined
               })
             );
+          }
+          break;
+        }
+
+        case 'ENSURE_PUBLIC_DOMAIN': {
+          const { index, publicDomain } = action.payload;
+          if (!currentNetworks[index]?.publicDomain) {
+            updateNetworks(index, {
+              ...currentNetworks[index],
+              publicDomain
+            });
           }
           break;
         }
@@ -979,8 +996,8 @@ export function NetworkSection({
                                 network.openPublicDomain
                                   ? network.appProtocol
                                   : network.openNodePort
-                                  ? network.protocol
-                                  : 'HTTP'
+                                    ? network.protocol
+                                    : 'HTTP'
                               }
                               list={ProtocolList}
                               onchange={(val: any) => {
@@ -1068,6 +1085,20 @@ export function NetworkSection({
                                   color={'brightBlue.600'}
                                   cursor={'pointer'}
                                   onClick={async () => {
+                                    if (CUSTOM_DOMAIN_MODE === 'certificate') {
+                                      const publicDomain = network.publicDomain || nanoid();
+                                      dispatch({
+                                        type: 'ENSURE_PUBLIC_DOMAIN',
+                                        payload: { index: i, publicDomain }
+                                      });
+                                      clearPublicDomainValidationError(i);
+                                      setCertificateAccessModalData({
+                                        networkIndex: i,
+                                        currentCustomDomain: network.customDomain
+                                      });
+                                      return;
+                                    }
+
                                     const publicDomain = network.customDomain
                                       ? network.publicDomain
                                       : await commitPublicDomainDraft(i, network.publicDomain);
@@ -1194,6 +1225,23 @@ export function NetworkSection({
             const index = getValues('networks').findIndex(
               (network) => network.publicDomain === customAccessModalData.publicDomain
             );
+            if (index === -1) return;
+
+            dispatch({
+              type: 'UPDATE_CUSTOM_DOMAIN',
+              payload: { index, customDomain }
+            });
+            onDomainVerified?.({ index, customDomain });
+          }}
+        />
+      )}
+
+      {!!certificateAccessModalData && (
+        <CertificateCustomAccessModal
+          {...certificateAccessModalData}
+          onClose={() => setCertificateAccessModalData(undefined)}
+          onSuccess={(customDomain) => {
+            const index = certificateAccessModalData.networkIndex;
             if (index === -1) return;
 
             dispatch({

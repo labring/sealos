@@ -24,6 +24,8 @@ export type FileMangerType = {
   downloadLimit: number;
 };
 
+export type CustomDomainMode = 'cname' | 'certificate';
+
 export type AppConfigType = {
   cloud: {
     domain: string; // Main promoted domain
@@ -69,6 +71,12 @@ export type AppConfigType = {
     publicDomain?: {
       customPrefixEnabled?: boolean;
       reservedPrefixes?: string[];
+    };
+    customDomain?: {
+      mode?: CustomDomainMode;
+      certificate?: {
+        tlsSecretName?: string;
+      };
     };
     eventAnalyze: {
       enabled: boolean;
@@ -123,4 +131,6 @@ export type EnvResponse = {
   IMAGE_PORTS_ENABLED: boolean;
   CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED: boolean;
   PUBLIC_DOMAIN_RESERVED_PREFIXES: string[];
+  CUSTOM_DOMAIN_MODE: CustomDomainMode;
+  CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME: string;
 };

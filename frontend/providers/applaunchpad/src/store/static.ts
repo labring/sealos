@@ -1,5 +1,7 @@
 import { getInitData } from '@/api/platform';
 import { Coin } from '@/constants/app';
+import type { CustomDomainMode } from '@/types';
+import { normalizeCustomDomainMode } from '@/utils/custom-domain';
 import { setPublicDomainReservedPrefixes } from '@/utils/public-domain';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
@@ -23,6 +25,8 @@ export let NETWORK_STORAGE_ENABLED = false;
 export let IMAGE_PORTS_ENABLED = false;
 export let CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED = false;
 export let PUBLIC_DOMAIN_RESERVED_PREFIXES: string[] = [];
+export let CUSTOM_DOMAIN_MODE: CustomDomainMode = 'cname';
+export let CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME = 'wildcard-cert';
 
 export const loadInitData = async () => {
   try {
@@ -49,6 +53,9 @@ export const loadInitData = async () => {
     IMAGE_PORTS_ENABLED = res.IMAGE_PORTS_ENABLED;
     CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED = res.CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED;
     PUBLIC_DOMAIN_RESERVED_PREFIXES = res.PUBLIC_DOMAIN_RESERVED_PREFIXES || [];
+    CUSTOM_DOMAIN_MODE = res.CUSTOM_DOMAIN_MODE || 'cname';
+    CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME =
+      res.CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME || 'wildcard-cert';
     setPublicDomainReservedPrefixes(PUBLIC_DOMAIN_RESERVED_PREFIXES);
 
     return {
@@ -62,7 +69,9 @@ export const loadInitData = async () => {
       GPU_ENABLED,
       IMAGE_PORTS_ENABLED,
       CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
-      PUBLIC_DOMAIN_RESERVED_PREFIXES
+      PUBLIC_DOMAIN_RESERVED_PREFIXES,
+      CUSTOM_DOMAIN_MODE,
+      CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME
     };
   } catch (error) {}
 
@@ -85,6 +94,9 @@ export const serverLoadInitData = () => {
       !!global.AppConfig.launchpad.publicDomain?.customPrefixEnabled;
     PUBLIC_DOMAIN_RESERVED_PREFIXES =
       global.AppConfig.launchpad.publicDomain?.reservedPrefixes || [];
+    CUSTOM_DOMAIN_MODE = normalizeCustomDomainMode(global.AppConfig.launchpad.customDomain?.mode);
+    CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME =
+      global.AppConfig.launchpad.customDomain?.certificate?.tlsSecretName || 'wildcard-cert';
     setPublicDomainReservedPrefixes(PUBLIC_DOMAIN_RESERVED_PREFIXES);
   } catch (error) {}
 };

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  findMatchingCertificateDomain,
   getCustomDomainBindings,
   getPublicDomainHost,
+  isDomainCoveredByCertificateDomain,
+  isDomainCoveredByCertificateDomains,
   normalizeDomainName
 } from '@/utils/custom-domain';
 import type { AppEditType } from '@/types/app';
@@ -63,5 +66,28 @@ describe('custom domain helpers', () => {
         publicDomain: 'codex-ms100066-launch.192.168.13.209.nip.io'
       }
     ]);
+  });
+
+  it('matches exact and single-label wildcard certificate domains', () => {
+    expect(isDomainCoveredByCertificateDomain('app.example.local', 'app.example.local')).toBe(true);
+    expect(isDomainCoveredByCertificateDomain('api.example.local', '*.example.local')).toBe(true);
+    expect(isDomainCoveredByCertificateDomain('deep.api.example.local', '*.example.local')).toBe(
+      false
+    );
+    expect(isDomainCoveredByCertificateDomain('example.local', '*.example.local')).toBe(false);
+  });
+
+  it('finds the first matching certificate domain from normalized config', () => {
+    expect(
+      findMatchingCertificateDomain(' API.Example.Local. ', [
+        '',
+        'app.example.local',
+        '*.example.local'
+      ])
+    ).toBe('*.example.local');
+    expect(isDomainCoveredByCertificateDomains('api.example.local', ['*.example.local'])).toBe(
+      true
+    );
+    expect(isDomainCoveredByCertificateDomains('api.example.local', ['*.other.local'])).toBe(false);
   });
 });

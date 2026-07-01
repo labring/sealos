@@ -31,6 +31,10 @@ launchpad:
   publicDomain:
     customPrefixEnabled: false
     reservedPrefixes: []
+  customDomain:
+    mode: cname
+    certificate:
+      tlsSecretName: wildcard-cert
   eventAnalyze:
     enabled: false
     fastGPTKey: ''

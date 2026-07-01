@@ -87,4 +87,26 @@ describe('getServerEnv', () => {
     expect(env.CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED).toBe(true);
     expect(env.PUBLIC_DOMAIN_RESERVED_PREFIXES).toEqual(['admin']);
   });
+
+  it('returns custom domain certificate mode config', () => {
+    const config = createConfig();
+    config.launchpad.customDomain = {
+      mode: 'certificate',
+      certificate: {
+        tlsSecretName: 'wildcard-cert'
+      }
+    };
+
+    const env = getServerEnv(config);
+
+    expect(env.CUSTOM_DOMAIN_MODE).toBe('certificate');
+    expect(env.CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME).toBe('wildcard-cert');
+  });
+
+  it('defaults custom domain mode to cname', () => {
+    const env = getServerEnv(createConfig());
+
+    expect(env.CUSTOM_DOMAIN_MODE).toBe('cname');
+    expect(env.CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME).toBe('wildcard-cert');
+  });
 });

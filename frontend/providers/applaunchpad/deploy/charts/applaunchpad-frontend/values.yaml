@@ -6,6 +6,11 @@ imagePullPolicy: Always
 imagePullSecrets: []
 fullnameOverride: "applaunchpad-frontend"
 
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "applaunchpad-frontend"
+
 replicaCount: 1
 
 podAnnotations: {}
@@ -53,6 +58,8 @@ applaunchpadConfig:
   imagePortsTrustedRegistries: []
   customPublicDomainPrefixEnabled: false
   publicDomainReservedPrefixes: []
+  customDomainMode: "cname"
+  customDomainCertificateSecretName: "wildcard-cert"
 
 affinity:
   podAntiAffinity:

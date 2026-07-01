@@ -1,5 +1,6 @@
 import { getBackendServices, postDeployApp, putApp } from '@/api/app';
 import {
+  checkCustomDomainCertificateCoverage,
   checkPermission,
   checkPublicDomain,
   postAuthCname,
@@ -11,7 +12,11 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
-import { CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED, SEALOS_DOMAIN } from '@/store/static';
+import {
+  CUSTOM_DOMAIN_MODE,
+  CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
+  SEALOS_DOMAIN
+} from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
@@ -285,8 +290,38 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     const bindings = getCustomDomainBindings(data.networks);
 
     for (const binding of bindings) {
+      if (CUSTOM_DOMAIN_MODE === 'certificate') {
+        try {
+          const result = await checkCustomDomainCertificateCoverage({
+            customDomain: binding.customDomain
+          });
+
+          if (result.status === 'covered') {
+            continue;
+          }
+
+          return {
+            ...binding,
+            reason:
+              result.status === 'pendingSync'
+                ? ('certificate_domain_pending_sync' as const)
+                : result.status === 'unsupported'
+                  ? ('certificate_domain_unsupported' as const)
+                  : ('certificate_domain_not_configured' as const)
+          };
+        } catch (error) {
+          return {
+            ...binding,
+            reason: 'certificate_domain_unsupported' as const
+          };
+        }
+      }
+
       if (!binding.publicDomain) {
-        return binding;
+        return {
+          ...binding,
+          reason: 'cname_not_verified' as const
+        };
       }
 
       try {
@@ -300,10 +335,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             customDomain: binding.customDomain
           });
           if (!challengeResult?.verified) {
-            return binding;
+            return {
+              ...binding,
+              reason: 'cname_not_verified' as const
+            };
           }
         } catch (challengeError) {
-          return binding;
+          return {
+            ...binding,
+            reason: 'cname_not_verified' as const
+          };
         }
       }
     }
@@ -470,9 +511,22 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           }
         }
 
+        const shouldCreateClusterIpService =
+          data.networks.some((network) => !network.openNodePort) &&
+          data.networks.every((network) => network.openNodePort || !network.serviceName);
         const ingressYaml = json2Ingress(data, ownerReferences);
+        const yamlList = [
+          ...(shouldCreateClusterIpService
+            ? [
+                json2Service(data, ownerReferences, {
+                  includeNodePort: false
+                })
+              ]
+            : []),
+          ingressYaml
+        ].filter((item) => item.trim());
         setIsLoading(true);
-        postDeployApp([ingressYaml], 'replace')
+        postDeployApp(yamlList, 'replace')
           .then(() => {
             toast({ status: 'success', title: t('Deployment Successful') });
             formOldYamls.current = formData2Yamls(data);
@@ -778,12 +832,28 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
               const invalidCustomDomain = await checkCustomDomainBindings(data);
               if (invalidCustomDomain) {
+                const certificateMessage =
+                  invalidCustomDomain.reason === 'certificate_domain_pending_sync'
+                    ? t('custom_domain_certificate_pending_sync', {
+                        customDomain: invalidCustomDomain.customDomain
+                      })
+                    : invalidCustomDomain.reason === 'certificate_domain_unsupported'
+                      ? t('custom_domain_certificate_unavailable')
+                      : t('custom_domain_certificate_not_configured', {
+                          customDomain: invalidCustomDomain.customDomain
+                        });
+
                 return toast({
                   status: 'warning',
-                  title: t('custom_domain_cname_required', {
-                    customDomain: invalidCustomDomain.customDomain,
-                    publicDomain: invalidCustomDomain.publicDomain
-                  })
+                  title:
+                    invalidCustomDomain.reason === 'certificate_domain_not_configured' ||
+                    invalidCustomDomain.reason === 'certificate_domain_pending_sync' ||
+                    invalidCustomDomain.reason === 'certificate_domain_unsupported'
+                      ? certificateMessage
+                      : t('custom_domain_cname_required', {
+                          customDomain: invalidCustomDomain.customDomain,
+                          publicDomain: invalidCustomDomain.publicDomain
+                        })
                 });
               }
 
@@ -826,8 +896,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                             data.hpa.target === 'cpu'
                               ? 'CPU'
                               : data.hpa.target === 'gpu'
-                              ? 'GPU'
-                              : 'RAM',
+                                ? 'GPU'
+                                : 'RAM',
                           value: data.hpa.value
                         }
                       : undefined

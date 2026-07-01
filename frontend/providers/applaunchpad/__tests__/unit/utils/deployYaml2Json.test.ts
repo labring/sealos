@@ -70,6 +70,25 @@ describe('json2Ingress', () => {
     ]);
   });
 
+  it('uses the configured certificate secret without cert-manager resources in certificate mode', () => {
+    const objects = yamlString2Objects(
+      json2Ingress(createApp('custom.example.com'), {
+        disableHttps: false,
+        customDomainMode: 'certificate',
+        customDomainCertificateSecretName: 'wildcard-cert'
+      })
+    ) as any[];
+
+    expect(objects.map((item) => item.kind)).toEqual(['Ingress']);
+    expect(objects[0].spec.rules[0].host).toBe('custom.example.com');
+    expect(objects[0].spec.tls).toEqual([
+      {
+        hosts: ['custom.example.com'],
+        secretName: 'wildcard-cert'
+      }
+    ]);
+  });
+
   it('omits tls, ssl redirect annotations, and cert-manager resources in http-only mode', () => {
     const objects = yamlString2Objects(
       json2Ingress(createApp('custom.example.com'), {
@@ -302,6 +321,21 @@ describe('json2Ingress', () => {
     expect(objects[0].metadata.name).toBe('demo-web');
     expect(objects[0].spec.rules[0].host).toBe('demo.cloud.example.com');
   });
+
+  it('uses an RFC 1035-safe generated backend service name for legacy numeric app names', () => {
+    const app = createApp('custom.example.com');
+    app.appName = '1hello-world';
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: true
+      })
+    ) as any[];
+
+    expect(objects[0].spec.rules[0].http.paths[0].backend.service.name).toMatch(
+      /^app-1hello-world-[a-z]{12}$/
+    );
+  });
 });
 
 describe('json2Service', () => {
@@ -329,7 +363,7 @@ describe('json2Service', () => {
     expect(new Set(portNames).size).toBe(portNames.length);
   });
 
-  it('keeps the numeric-prefix app name invalidity visible before apply', () => {
+  it('uses an RFC 1035-safe generated service name for legacy numeric app names', () => {
     const app = createApp();
     app.appName = '111111hello-world';
     app.networks[0].openNodePort = true;
@@ -337,7 +371,33 @@ describe('json2Service', () => {
 
     const objects = yamlString2Objects(json2Service(app)) as any[];
 
-    expect(objects[0].metadata.name).toMatch(/^111111hello-world-nodeport-[a-z]{12}$/);
+    expect(objects[0].metadata.name).toMatch(/^app-111111hello-world-nodeport-[a-z]{12}$/);
+  });
+
+  it('can render only the ClusterIP service when repairing ingress backends', () => {
+    const app = createApp();
+    app.networks = [
+      app.networks[0],
+      {
+        ...app.networks[0],
+        networkName: 'demo-nodeport',
+        portName: 'nodeport',
+        port: 8080,
+        openPublicDomain: false,
+        openNodePort: true,
+        nodePort: 30080
+      }
+    ];
+
+    const objects = yamlString2Objects(
+      json2Service(app, undefined, {
+        includeNodePort: false
+      })
+    ) as any[];
+
+    expect(objects).toHaveLength(1);
+    expect(objects[0].kind).toBe('Service');
+    expect(objects[0].spec.type).toBeUndefined();
   });
 });
 
