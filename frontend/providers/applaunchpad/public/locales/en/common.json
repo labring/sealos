@@ -13,7 +13,7 @@
   "AnticipatedPrice": "The Estimated Cost",
   "App Name": "Name",
   "App Name is required": "App name is required",
-  "App name base length limit": "Use {{length}} characters or fewer. We reserve space for the NodePort Service suffix and Pod suffix.",
+  "App name base length limit": "Use {{length}} characters or fewer.",
   "App Store": "App Store",
   "Application Deployment": "Application Deployment",
   "Application Source": "Application Source",
