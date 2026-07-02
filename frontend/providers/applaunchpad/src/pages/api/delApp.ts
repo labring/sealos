@@ -2,8 +2,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { appDeployKey, ownerReferencesKey, ownerReferencesReadyValue } from '@/constants/app';
+import { ResponseCode } from '@/types/response';
 
 export type DeleteAppParams = { name: string };
 
@@ -20,10 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       message: 'successfully deleted'
     });
   } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
+    jsonRes(res, handleK8sError(err, { forbiddenCode: ResponseCode.FORBIDDEN }));
   }
 }
 

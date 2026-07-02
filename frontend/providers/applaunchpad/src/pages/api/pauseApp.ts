@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
-import { jsonRes } from '@/services/backend/response';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { pauseApp, createK8sContext } from '@/services/backend';
+import { ResponseCode } from '@/types/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -22,9 +23,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
   } catch (err: any) {
     console.log('Pause app error:', err);
-    jsonRes(res, {
-      code: 500,
-      error: err.message || err
-    });
+    jsonRes(res, handleK8sError(err, { forbiddenCode: ResponseCode.FORBIDDEN }));
   }
 }

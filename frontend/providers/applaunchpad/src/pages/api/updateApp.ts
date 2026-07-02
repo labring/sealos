@@ -11,6 +11,7 @@ import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
 import type { V1Service } from '@kubernetes/client-node';
 import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deployYaml2Json';
 import { buildExternalUrl } from '@/utils/network-url';
+import { ResponseCode } from '@/types/response';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -489,6 +490,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     return jsonRes(res);
   } catch (err: any) {
-    return jsonRes(res, handleK8sError(err?.body || err));
+    return jsonRes(res, handleK8sError(err, { forbiddenCode: ResponseCode.FORBIDDEN }));
   }
 }
