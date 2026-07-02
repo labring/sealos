@@ -13,7 +13,7 @@
   "AnticipatedPrice": "预估价格",
   "App Name": "应用名称",
   "App Name is required": "应用名称不能为空",
-  "App name base length limit": "最多使用 {{length}} 个字符。系统需要为 NodePort Service 后缀和 Pod 后缀预留长度。",
+  "App name base length limit": "最多使用 {{length}} 个字符。",
   "App Store": "应用商店",
   "Application Deployment": "应用部署",
   "Application Source": "应用来源",

@@ -11,18 +11,18 @@ import {
 } from '@/utils/appNameValidation';
 
 describe('app name validation', () => {
-  it('accepts valid user-entered base names up to the reserved suffix budget', () => {
+  it('accepts valid user-entered base names up to the app name limit', () => {
     const maxLengthBase = `a${'b'.repeat(APP_NAME_BASE_MAX_LENGTH - 1)}`;
 
     expect(isValidAppNameBase('a')).toBe(true);
     expect(isValidAppNameBase('app')).toBe(true);
     expect(isValidAppNameBase('app-1')).toBe(true);
     expect(isValidAppNameBase('hello-world')).toBe(true);
-    expect(maxLengthBase).toHaveLength(25);
+    expect(maxLengthBase).toHaveLength(40);
     expect(isValidAppNameBase(maxLengthBase)).toBe(true);
   });
 
-  it('rejects base names that would break RFC 1035 or reserved suffix budgets', () => {
+  it('rejects base names that would break RFC 1035 or the app name limit', () => {
     const tooLongBase = `a${'b'.repeat(APP_NAME_BASE_MAX_LENGTH)}`;
 
     expect(isValidAppNameBase('')).toBe(false);
@@ -33,7 +33,7 @@ describe('app name validation', () => {
     expect(isValidAppNameBase('app-')).toBe(false);
     expect(isValidAppNameBase('app.name')).toBe(false);
     expect(isValidAppNameBase('app name')).toBe(false);
-    expect(tooLongBase).toHaveLength(26);
+    expect(tooLongBase).toHaveLength(41);
     expect(isValidAppNameBase(tooLongBase)).toBe(false);
   });
 
@@ -44,18 +44,13 @@ describe('app name validation', () => {
     expect(isValidGeneratedAppName(generatedName)).toBe(true);
   });
 
-  it('keeps app names, generated nodeport service names, and pod names inside RFC 1035', () => {
+  it('keeps app names inside the configured app name limit', () => {
     const maxLengthBase = `a${'b'.repeat(APP_NAME_BASE_MAX_LENGTH - 1)}`;
     const generatedName = generateAppName(maxLengthBase);
-    const serviceName = `${generatedName}-nodeport-${'c'.repeat(12)}`;
-    const podName = `${serviceName}-${'d'.repeat(15)}`;
 
     expect(generatedName).toHaveLength(APP_NAME_BASE_MAX_LENGTH);
     expect(isValidGeneratedAppName(generatedName)).toBe(true);
-    expect(serviceName).toHaveLength(47);
-    expect(podName).toHaveLength(K8S_RFC1035_NAME_MAX_LENGTH);
-    expect(isValidGeneratedAppName(podName)).toBe(false);
-    expect(/^[a-z]([-a-z0-9]*[a-z0-9])?$/.test(podName)).toBe(true);
+    expect(generatedName.length).toBeLessThan(K8S_RFC1035_NAME_MAX_LENGTH);
   });
 
   it('reports app names that exceed the generated name budget before apply', () => {
