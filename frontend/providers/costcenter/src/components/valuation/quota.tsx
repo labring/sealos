@@ -51,10 +51,20 @@ const quotaMeta: Record<UserQuotaItemType['type'], QuotaMeta> = {
 
 const formatQuotaValue = (value: number) => Number(value.toFixed(3));
 
-export default function Quota(props: StackProps) {
+export default function Quota({
+  namespace,
+  ...props
+}: StackProps & {
+  namespace?: string;
+}) {
   const { t } = useTranslation();
-  const { data } = useQuery(['quota'], () =>
-    request<any, ApiResp<{ quota: UserQuotaItemType[] }>>('/api/getQuota')
+  const { data } = useQuery(['quota', namespace], () =>
+    request<any, ApiResp<{ quota: UserQuotaItemType[] }>>('/api/getQuota', {
+      method: 'POST',
+      data: {
+        namespace
+      }
+    })
   );
   const { gpuEnabled } = useEnvStore();
   const quota = (data?.data?.quota || [])

@@ -12,7 +12,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     if (user === null) {
       return jsonRes(resp, { code: 403, message: 'user null' });
     }
-    const namespace = kc.contexts[0].namespace || GetUserDefaultNameSpace(user.name);
+    const namespace =
+      (typeof req.body?.namespace === 'string' && req.body.namespace) ||
+      kc.contexts[0].namespace ||
+      GetUserDefaultNameSpace(user.name);
     const quota = await getUserQuota(kc, namespace);
     return jsonRes(resp, {
       code: 200,
