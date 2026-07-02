@@ -20,7 +20,14 @@ const ObjectStorageIcon = (props: any) => (
   <Img src={objectStorageIcon.src} boxSize={'16px'} {...props} />
 );
 
-const quotaMeta = {
+type QuotaMeta = {
+  unit: string;
+  bg: string;
+  icon: ComponentType<any>;
+  pieTitle?: string;
+};
+
+const quotaMeta: Record<UserQuotaItemType['type'], QuotaMeta> = {
   cpu: { unit: 'Core', bg: '#33BABB', icon: CpuIcon },
   memory: { unit: 'GB', bg: '#36ADEF', icon: MemoryIcon },
   storage: { unit: 'GB', bg: '#9A8EE0', icon: StorageIcon },
@@ -28,12 +35,19 @@ const quotaMeta = {
   gpu: { unit: 'GPU Unit', bg: '#6FCA88', icon: GpuIcon },
   pods: { unit: 'pod_unit', bg: '#2EB67D', icon: NodeIcon },
   'services.nodeports': { unit: 'port_unit', bg: '#8774EE', icon: PortIcon },
-  'objectstorage/bucket': { unit: 'bucket_unit', bg: '#E6A23C', icon: ObjectStorageIcon },
-  'objectstorage/size': { unit: 'GB', bg: '#F182AA', icon: ObjectStorageIcon }
-} satisfies Record<
-  UserQuotaItemType['type'],
-  { unit: string; bg: string; icon: ComponentType<any> }
->;
+  'objectstorage/bucket': {
+    unit: 'bucket_unit',
+    bg: '#E6A23C',
+    icon: ObjectStorageIcon,
+    pieTitle: 'objectstorage/bucket_short'
+  },
+  'objectstorage/size': {
+    unit: 'GB',
+    bg: '#F182AA',
+    icon: ObjectStorageIcon,
+    pieTitle: 'objectstorage/size_short'
+  }
+};
 
 const formatQuotaValue = (value: number) => Number(value.toFixed(3));
 
@@ -58,6 +72,7 @@ export default function Quota(props: StackProps) {
           used: formatQuotaValue(d.used),
           remain: formatQuotaValue(remain),
           title: t(d.type),
+          pieTitle: t(entity.pieTitle || d.type),
           unit: t(entity.unit),
           bg: entity.bg,
           Icon: entity.icon
