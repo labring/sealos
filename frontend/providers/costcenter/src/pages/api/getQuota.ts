@@ -24,7 +24,16 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
   }
 }
 export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'storage' | 'gpu';
+  type:
+    | 'cpu'
+    | 'memory'
+    | 'storage'
+    | 'ephemeral-storage'
+    | 'gpu'
+    | 'pods'
+    | 'services.nodeports'
+    | 'objectstorage/bucket'
+    | 'objectstorage/size';
   used: number;
   limit: number;
 };
@@ -86,6 +95,16 @@ export const storageQuantityToMi = (quantity: string) => {
   return memoryFormatToMi(s);
 };
 
+export const countQuantityToNumber = (quantity: string) => {
+  if (!quantity || quantity === '0') return 0;
+  const s = String(quantity).trim();
+  const value = parseFloat(s);
+  if (Number.isNaN(value)) return 0;
+  if (/k$/i.test(s)) return value * 1000;
+  if (/M$/.test(s)) return value * 1000 * 1000;
+  return value;
+};
+
 export async function getUserQuota(
   kc: k8s.KubeConfig,
   namespace: string
@@ -95,26 +114,38 @@ export async function getUserQuota(
   const data = await k8sApi.readNamespacedResourceQuota(`quota-${namespace}`, namespace);
   const status = data?.body?.status;
   if (!status) return [];
-  return [
-    {
-      type: 'cpu',
-      limit: cpuFormatToM(status?.hard?.['limits.cpu'] || '') / 1000,
-      used: cpuFormatToM(status?.used?.['limits.cpu'] || '') / 1000
-    },
-    {
-      type: 'memory',
-      limit: memoryFormatToMi(status?.hard?.['limits.memory'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['limits.memory'] || '') / 1024
-    },
-    {
-      type: 'storage',
-      limit: storageQuantityToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: storageQuantityToMi(status?.used?.['requests.storage'] || '') / 1024
-    },
-    {
-      type: 'gpu',
-      limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
-      used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
-    }
-  ];
+  const hard = status.hard || {};
+  const used = status.used || {};
+  const hasQuota = (key: string) => Object.prototype.hasOwnProperty.call(hard, key);
+  const quota: UserQuotaItemType[] = [];
+
+  const addQuota = (
+    type: UserQuotaItemType['type'],
+    key: string,
+    parser: (quantity: string) => number
+  ) => {
+    if (!hasQuota(key)) return;
+    quota.push({
+      type,
+      limit: parser(hard[key] || ''),
+      used: parser(used[key] || '')
+    });
+  };
+
+  addQuota('cpu', 'limits.cpu', (value) => cpuFormatToM(value) / 1000);
+  addQuota('memory', 'limits.memory', (value) => memoryFormatToMi(value) / 1024);
+  addQuota('storage', 'requests.storage', (value) => storageQuantityToMi(value) / 1024);
+  addQuota('ephemeral-storage', 'limits.ephemeral-storage', (value) => storageQuantityToMi(value) / 1024);
+
+  const gpuKey = hasQuota('requests.nvidia.com/gpu')
+    ? 'requests.nvidia.com/gpu'
+    : 'limits.nvidia.com/gpu';
+  addQuota('gpu', gpuKey, (value) => Number(value || 0));
+
+  addQuota('pods', 'pods', countQuantityToNumber);
+  addQuota('services.nodeports', 'services.nodeports', countQuantityToNumber);
+  addQuota('objectstorage/bucket', 'objectstorage/bucket', countQuantityToNumber);
+  addQuota('objectstorage/size', 'objectstorage/size', (value) => storageQuantityToMi(value) / 1024);
+
+  return quota;
 }
