@@ -1,4 +1,4 @@
-import { getTemplateSource, postDeployApp } from '@/api/app';
+import { getTemplateReadme, getTemplateSource, postDeployApp } from '@/api/app';
 import { getPlatformEnv } from '@/api/platform';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -53,6 +53,10 @@ export default function EditApp({
   const { Loading, setIsLoading } = useLoading();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
   const [templateSource, setTemplateSource] = useState<TemplateSourceType>();
+  const [readmeSource, setReadmeSource] = useState<Pick<
+    TemplateSourceType,
+    'readUrl' | 'readmeContent'
+  > | null>(initTemplateData);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
@@ -252,7 +256,12 @@ export default function EditApp({
 
   const { data, isLoading: isTemplateLoading } = useQuery(
     ['getTemplateSource', templateName],
-    () => getTemplateSource(templateName),
+    () =>
+      getTemplateSource(templateName, {
+        locale: i18n.language,
+        includeReadme: false,
+        includeRequirements: false
+      }),
     {
       initialData: initTemplateData,
       enabled: !!initTemplateData,
@@ -267,6 +276,21 @@ export default function EditApp({
           duration: 3000,
           isClosable: true
         });
+      }
+    }
+  );
+
+  const { isLoading: isReadmeLoading } = useQuery(
+    ['getTemplateReadme', templateName, i18n.language],
+    () => getTemplateReadme(templateName, i18n.language),
+    {
+      enabled: !!templateName,
+      onSuccess(data) {
+        setReadmeSource(data);
+      },
+      onError(err) {
+        console.log(err);
+        setReadmeSource({ readUrl: '', readmeContent: '' });
       }
     }
   );
@@ -295,7 +319,7 @@ export default function EditApp({
     return (
       !isTemplateLoading && !isPlatformEnvsLoading && !!templateSource && !!data && !!platformEnvs
     );
-  }, [isTemplateLoading, isPlatformEnvsLoading, templateSource, data, platformEnvs, yamlList]);
+  }, [isTemplateLoading, isPlatformEnvsLoading, templateSource, data, platformEnvs]);
 
   return (
     <Box
@@ -393,9 +417,10 @@ export default function EditApp({
             {/* <QuotaBox /> */}
             <Form formHook={formHook} formSource={templateSource!} platformEnvs={platformEnvs!} />
             <ReadMe
-              key={templateSource?.readUrl || 'readme_url'}
-              readUrl={templateSource?.readUrl || ''}
-              readmeContent={templateSource?.readmeContent || ''}
+              key={readmeSource?.readUrl || 'readme_url'}
+              readUrl={readmeSource?.readUrl || ''}
+              readmeContent={readmeSource?.readmeContent || ''}
+              isLoading={isReadmeLoading}
             />
           </Flex>
         </Flex>
@@ -430,7 +455,7 @@ export async function getServerSideProps(content: any) {
 
   try {
     const response = await fetch(
-      `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=true`
+      `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=false&includeRequirements=false`
     );
     if (!response.ok) {
       throw new Error(`API request failed with status`);
