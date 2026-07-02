@@ -17,6 +17,70 @@ function base64(str: string) {
   return Buffer.from(str).toString('base64');
 }
 
+type ExpressionData = {
+  [key: string]: any;
+};
+
+type ExpressionContext = {
+  cache: Map<string, any>;
+};
+
+const createExpressionContext = (): ExpressionContext => ({
+  cache: new Map()
+});
+
+const randomCallReg = /(^|[^\w$])random\s*\(/;
+const simplePathReservedWords = new Set(['true', 'false', 'null', 'undefined', 'NaN', 'Infinity']);
+
+function isCacheableExpression(expression: string) {
+  return !randomCallReg.test(expression);
+}
+
+function evaluateSimplePath(
+  expression: string,
+  data?: ExpressionData
+): { matched: boolean; value?: any } {
+  if (simplePathReservedWords.has(expression)) {
+    return { matched: false };
+  }
+
+  const rootMatch = /^[A-Za-z_$][\w$]*/.exec(expression);
+  if (!rootMatch) {
+    return { matched: false };
+  }
+
+  const parts = [rootMatch[0]];
+  let rest = expression.slice(rootMatch[0].length);
+
+  while (rest) {
+    const dotMatch = /^\.([A-Za-z_$][\w$-]*)/.exec(rest);
+    if (dotMatch) {
+      parts.push(dotMatch[1]);
+      rest = rest.slice(dotMatch[0].length);
+      continue;
+    }
+
+    const bracketMatch = /^\[(?:"([^"\\]*)"|'([^'\\]*)'|(\d+))\]/.exec(rest);
+    if (bracketMatch) {
+      parts.push(bracketMatch[1] ?? bracketMatch[2] ?? bracketMatch[3]);
+      rest = rest.slice(bracketMatch[0].length);
+      continue;
+    }
+
+    return { matched: false };
+  }
+
+  let value: any = data;
+  for (const part of parts) {
+    if (value == null) {
+      return { matched: true, value: undefined };
+    }
+    value = value[part];
+  }
+
+  return { matched: true, value };
+}
+
 export const generateYamlList = (value: string, labelName: string): YamlItemType[] => {
   try {
     let _value = JsYaml.loadAll(value)
@@ -57,12 +121,13 @@ export const parseTemplateString = (
     [key: string]: string | Record<string, string>;
   }
 ): string => {
-  sourceString = parseYamlIfEndif(sourceString, dataSource);
+  const expressionContext = createExpressionContext();
+  sourceString = parseYamlIfEndif(sourceString, dataSource, expressionContext);
   const regex = /\$\{\{\s*(.*?)\s*\}\}/g;
 
   try {
     const replacedString = sourceString.replace(regex, (match: string, key: string) => {
-      const value = evaluateExpression(key, dataSource);
+      const value = evaluateExpression(key, dataSource, expressionContext);
       return value !== undefined ? value : '';
     });
     return replacedString;
@@ -182,14 +247,27 @@ export const handleTemplateToInstanceYaml = (
 // https://github.com/NeilFraser/JS-Interpreter
 export function evaluateExpression(
   expression: string,
-  data?: {
-    [key: string]: any;
-  }
+  data?: ExpressionData,
+  context?: ExpressionContext
 ): any | undefined {
+  const normalizedExpression = expression.trim();
+  const cacheable = isCacheableExpression(normalizedExpression);
+  if (context && cacheable && context.cache.has(normalizedExpression)) {
+    return context.cache.get(normalizedExpression);
+  }
+
   try {
+    const simplePathResult = evaluateSimplePath(normalizedExpression, data);
+    if (simplePathResult.matched) {
+      if (context && cacheable) {
+        context.cache.set(normalizedExpression, simplePathResult.value);
+      }
+      return simplePathResult.value;
+    }
+
     // console.log("expression: ", expression, " data: ", data)
     // const result = new Function('data', `with(data) { return ${expression}; }`)(data);
-    const processedExpression = expression.replace(
+    const processedExpression = normalizedExpression.replace(
       /(\w+)\.([a-zA-Z_$][\w\-]*)/g,
       (match, obj, prop) => {
         if (prop.includes('-')) {
@@ -209,6 +287,9 @@ export function evaluateExpression(
     );
     interpreter.run();
     // console.log('resoult: ', interpreter.value)
+    if (context && cacheable) {
+      context.cache.set(normalizedExpression, interpreter.value);
+    }
     return interpreter.value;
   } catch (error) {
     console.error('Failed to evaluate expression: ', expression, ' data: ', data, error);
@@ -220,10 +301,11 @@ export function parseYamlIfEndif(
   yamlStr: string,
   data: {
     [key: string]: string | Record<string, string>;
-  }
+  },
+  context = createExpressionContext()
 ): string {
   return __parseYamlIfEndif(yamlStr, (exp) => {
-    return !!evaluateExpression(exp, data);
+    return !!evaluateExpression(exp, data, context);
   });
 }
 
@@ -383,6 +465,8 @@ export function parseTemplateVariable(
   platformEnvs?: EnvResponse
 ): TemplateType {
   const regex = /\$\{\{\s*(.*?)\s*\}\}/g;
+  const defaultsExpressionContext = createExpressionContext();
+  const inputsExpressionContext = createExpressionContext();
 
   templateYaml = clone(templateYaml);
 
@@ -391,7 +475,7 @@ export function parseTemplateVariable(
       if (item.value) {
         item.value =
           item.value.replace(regex, (match: string, key: string) => {
-            return evaluateExpression(key, platformEnvs);
+            return evaluateExpression(key, platformEnvs, defaultsExpressionContext);
           }) || item.value;
       }
     }
@@ -405,19 +489,27 @@ export function parseTemplateVariable(
       if (item.description) {
         item.description =
           item.description.replace(regex, (match: string, key: string) => {
-            return evaluateExpression(key, {
-              ...platformEnvs,
-              defaults
-            });
+            return evaluateExpression(
+              key,
+              {
+                ...platformEnvs,
+                defaults
+              },
+              inputsExpressionContext
+            );
           }) || item.description;
       }
       if (item.default) {
         item.default =
           item.default.replace(regex, (match: string, key: string) => {
-            return evaluateExpression(key, {
-              ...platformEnvs,
-              defaults
-            });
+            return evaluateExpression(
+              key,
+              {
+                ...platformEnvs,
+                defaults
+              },
+              inputsExpressionContext
+            );
           }) || item.default;
       }
     }
