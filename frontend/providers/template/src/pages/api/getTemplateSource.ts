@@ -23,9 +23,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const envEnableReadme = process.env.ENABLE_README_FETCH;
     const queryIncludeReadme = req.query.includeReadme !== 'false';
+    const includeRequirements = req.query.includeRequirements !== 'false';
 
     const includeReadme =
-      envEnableReadme === 'false' ? 'false' : queryIncludeReadme ? 'true' : 'true';
+      envEnableReadme === 'false' ? 'false' : queryIncludeReadme ? 'true' : 'false';
 
     const { templateName, locale = 'en' } = req.query as {
       templateName: string;
@@ -79,16 +80,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     let requirements: ResourceUsage | null = null;
-    try {
-      const platformEnvs = getTemplateEnvs(user_namespace);
-      const renderedYaml = generateYamlData(
-        templateSource,
-        getTemplateDefaultValues(templateSource),
-        platformEnvs
-      );
-      requirements = getResourceUsage(renderedYaml.map((item) => item.value));
-    } catch (error) {
-      console.error(`Error getting default resource requirements for template '${templateName}'`);
+    if (includeRequirements) {
+      try {
+        const platformEnvs = getTemplateEnvs(user_namespace);
+        const renderedYaml = generateYamlData(
+          templateSource,
+          getTemplateDefaultValues(templateSource),
+          platformEnvs
+        );
+        requirements = getResourceUsage(renderedYaml.map((item) => item.value));
+      } catch (error) {
+        console.error(`Error getting default resource requirements for template '${templateName}'`);
+      }
     }
 
     jsonRes(res, {
@@ -118,53 +121,14 @@ export async function GetTemplateByName({
   locale?: string;
   includeReadme?: string;
 }) {
-  const cdnUrl = process.env.CDN_URL;
-  const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
-
   const TemplateEnvs = getTemplateEnvs(namespace);
-
-  const originalPath = process.cwd();
-  const repoRootPath = path.resolve(originalPath, 'templates');
-  const targetPath = path.resolve(repoRootPath, targetFolder);
-
-  const jsonPath = path.resolve(originalPath, 'templates.json');
-  const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-  const _tempalte = jsonData.find((item) => item.metadata.name === templateName);
-  const _tempalteName = _tempalte ? _tempalte.spec.fileName : `${templateName}.yaml`;
-  const templateFilePath = _tempalte?.spec?.filePath || `${targetPath}/${_tempalteName}`;
-  const yamlString = fs.readFileSync(templateFilePath, 'utf-8');
-
-  let { appYaml, templateYaml } = getYamlTemplate(yamlString);
+  let { appYaml, templateYaml } = getTemplateYamlByName(templateName, TemplateEnvs);
 
   if (!templateYaml) {
     return {
       code: 40000,
       message: 'Lack of kind template'
     };
-  }
-  templateYaml.spec.deployCount = _tempalte?.spec?.deployCount;
-  templateYaml = resolveTemplateAssetUrls(templateYaml, {
-    repo: {
-      url: TemplateEnvs.TEMPLATE_REPO_URL,
-      branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
-    },
-    templateFilePath,
-    repoRootPath
-  });
-
-  if (cdnUrl) {
-    templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
-    templateYaml.spec.icon = replaceRawWithCDN(templateYaml.spec.icon, cdnUrl);
-    if (templateYaml?.spec?.i18n) {
-      Object.keys(templateYaml?.spec?.i18n || {}).forEach((lang) => {
-        const i18nLang = templateYaml?.spec?.i18n?.[lang];
-        ['readme', 'icon'].forEach((field) => {
-          if (i18nLang?.[field]) {
-            i18nLang[field] = replaceRawWithCDN(i18nLang[field], cdnUrl);
-          }
-        });
-      });
-    }
   }
 
   templateYaml = parseTemplateVariable(templateYaml, TemplateEnvs);
@@ -204,6 +168,93 @@ export async function GetTemplateByName({
     readmeContent,
     readUrl
   };
+}
+
+export async function GetTemplateReadmeByName({
+  namespace,
+  templateName,
+  locale = 'en'
+}: {
+  namespace: string;
+  templateName: string;
+  locale?: string;
+}) {
+  if (process.env.ENABLE_README_FETCH === 'false') {
+    return {
+      code: 20000,
+      message: 'success',
+      readmeContent: '',
+      readUrl: ''
+    };
+  }
+
+  const TemplateEnvs = getTemplateEnvs(namespace);
+  const { templateYaml } = getTemplateYamlByName(templateName, TemplateEnvs);
+  const readUrl = templateYaml?.spec?.i18n?.[locale]?.readme || templateYaml?.spec?.readme || '';
+  let readmeContent = '';
+
+  if (readUrl) {
+    try {
+      readmeContent = await fetchReadmeContentWithRetry(readUrl);
+    } catch (error) {
+      readmeContent = '';
+    }
+  }
+
+  return {
+    code: 20000,
+    message: 'success',
+    readmeContent,
+    readUrl
+  };
+}
+
+function getTemplateYamlByName(
+  templateName: string,
+  TemplateEnvs: ReturnType<typeof getTemplateEnvs>
+) {
+  const cdnUrl = process.env.CDN_URL;
+  const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
+
+  const originalPath = process.cwd();
+  const repoRootPath = path.resolve(originalPath, 'templates');
+  const targetPath = path.resolve(repoRootPath, targetFolder);
+
+  const jsonPath = path.resolve(originalPath, 'templates.json');
+  const jsonData: TemplateType[] = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+  const template = jsonData.find((item) => item.metadata.name === templateName);
+  const templateFileName = template ? template.spec.fileName : `${templateName}.yaml`;
+  const templateFilePath = template?.spec?.filePath || `${targetPath}/${templateFileName}`;
+  const yamlString = fs.readFileSync(templateFilePath, 'utf-8');
+
+  const { appYaml, templateYaml: rawTemplateYaml } = getYamlTemplate(yamlString);
+  let templateYaml = rawTemplateYaml;
+  templateYaml.spec.deployCount = template?.spec?.deployCount;
+  templateYaml = resolveTemplateAssetUrls(templateYaml, {
+    repo: {
+      url: TemplateEnvs.TEMPLATE_REPO_URL,
+      branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
+    },
+    templateFilePath,
+    repoRootPath
+  });
+
+  if (cdnUrl) {
+    templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
+    templateYaml.spec.icon = replaceRawWithCDN(templateYaml.spec.icon, cdnUrl);
+    if (templateYaml?.spec?.i18n) {
+      Object.keys(templateYaml?.spec?.i18n || {}).forEach((lang) => {
+        const i18nLang = templateYaml?.spec?.i18n?.[lang];
+        ['readme', 'icon'].forEach((field) => {
+          if (i18nLang?.[field]) {
+            i18nLang[field] = replaceRawWithCDN(i18nLang[field], cdnUrl);
+          }
+        });
+      });
+    }
+  }
+
+  return { appYaml, templateYaml };
 }
 
 async function fetchReadmeContentWithRetry(url: string): Promise<string> {
