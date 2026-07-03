@@ -91,7 +91,9 @@ func TestHandleReturnsRuntimeClassPatch(t *testing.T) {
 }
 
 func TestSplitRegistries(t *testing.T) {
-	got := SplitRegistries("https://hub.staging-usw-1.sealos.io/, registry.internal:5000,hub.staging-usw-1.sealos.io")
+	got := SplitRegistries(
+		"https://hub.staging-usw-1.sealos.io/, registry.internal:5000,hub.staging-usw-1.sealos.io",
+	)
 	want := []string{"hub.staging-usw-1.sealos.io", "registry.internal:5000"}
 	if len(got) != len(want) {
 		t.Fatalf("got %v, want %v", got, want)

@@ -40,7 +40,10 @@ func NewPodRuntimeClassInjector(
 	}
 }
 
-func (i *PodRuntimeClassInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (i *PodRuntimeClassInjector) Handle(
+	ctx context.Context,
+	req admission.Request,
+) admission.Response {
 	wlog.Info("mutating pod",
 		"namespace", req.Namespace,
 		"name", req.Name,
@@ -76,7 +79,14 @@ func (i *PodRuntimeClassInjector) Handle(ctx context.Context, req admission.Requ
 	mutated.Spec.RuntimeClassName = &i.runtimeClassName
 	mutatedRaw, err := json.Marshal(mutated)
 	if err != nil {
-		wlog.Error(err, "failed to marshal mutated pod", "namespace", pod.Namespace, "name", pod.Name)
+		wlog.Error(
+			err,
+			"failed to marshal mutated pod",
+			"namespace",
+			pod.Namespace,
+			"name",
+			pod.Name,
+		)
 		return admission.Errored(500, err)
 	}
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedRaw)

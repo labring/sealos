@@ -6,13 +6,13 @@ import (
 	"os"
 	"strings"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
+	stargzwebhook "github.com/labring/sealos/webhook/stargz/internal/webhook"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -20,9 +20,6 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-
-	stargzwebhook "github.com/labring/sealos/webhook/stargz/internal/webhook"
-	// +kubebuilder:scaffold:imports
 )
 
 var (
@@ -36,7 +33,6 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
-// nolint:gocyclo
 func main() {
 	var metricsAddr string
 	var metricsCertPath, metricsCertName, metricsCertKey string
@@ -49,30 +45,73 @@ func main() {
 	var runtimeClassName string
 	var internalRegistries string
 	var skipAnnotation string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
-		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(
+		&metricsAddr,
+		"metrics-bind-address",
+		"0",
+		"The address the metrics endpoint binds to. "+
+			"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.",
+	)
+	flag.StringVar(
+		&probeAddr,
+		"health-probe-bind-address",
+		":8081",
+		"The address the probe endpoint binds to.",
+	)
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&secureMetrics, "metrics-secure", true,
-		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
-	flag.StringVar(&webhookCertPath, "webhook-cert-path", "/tls", "The directory that contains the webhook certificate.")
+	flag.BoolVar(
+		&secureMetrics,
+		"metrics-secure",
+		true,
+		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.",
+	)
+	flag.StringVar(
+		&webhookCertPath,
+		"webhook-cert-path",
+		"/tls",
+		"The directory that contains the webhook certificate.",
+	)
 	flag.StringVar(&webhookCertDir, "webhook-cert-dir", "", "Alias for --webhook-cert-path.")
-	flag.StringVar(&webhookCertName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
-	flag.StringVar(&webhookCertKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
+	flag.StringVar(
+		&webhookCertName,
+		"webhook-cert-name",
+		"tls.crt",
+		"The name of the webhook certificate file.",
+	)
+	flag.StringVar(
+		&webhookCertKey,
+		"webhook-cert-key",
+		"tls.key",
+		"The name of the webhook key file.",
+	)
 	flag.StringVar(&metricsCertPath, "metrics-cert-path", "",
 		"The directory that contains the metrics server certificate.")
-	flag.StringVar(&metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
-	flag.StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
+	flag.StringVar(
+		&metricsCertName,
+		"metrics-cert-name",
+		"tls.crt",
+		"The name of the metrics server certificate file.",
+	)
+	flag.StringVar(
+		&metricsCertKey,
+		"metrics-cert-key",
+		"tls.key",
+		"The name of the metrics server key file.",
+	)
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	flag.StringVar(&runtimeClassName, "runtime-class", envDefault("STARGZ_RUNTIME_CLASS", "stargz"),
 		"runtimeClassName to inject.")
 	flag.StringVar(&internalRegistries, "registries", envDefault("STARGZ_INTERNAL_REGISTRIES", ""),
 		"Comma-separated registry hosts that should use stargz.")
-	flag.StringVar(&skipAnnotation, "skip-annotation", envDefault("STARGZ_SKIP_ANNOTATION", "stargz.sealos.io/skip"),
-		"Annotation key; value true skips mutation.")
+	flag.StringVar(
+		&skipAnnotation,
+		"skip-annotation",
+		envDefault("STARGZ_SKIP_ANNOTATION", "stargz.sealos.io/skip"),
+		"Annotation key; value true skips mutation.",
+	)
 	opts := zap.Options{
 		Development: false,
 	}
@@ -87,7 +126,10 @@ func main() {
 
 	registries := stargzwebhook.SplitRegistries(internalRegistries)
 	if len(registries) == 0 {
-		setupLog.Error(nil, "no internal registries configured; set --registries or STARGZ_INTERNAL_REGISTRIES")
+		setupLog.Error(
+			nil,
+			"no internal registries configured; set --registries or STARGZ_INTERNAL_REGISTRIES",
+		)
 		os.Exit(1)
 	}
 
@@ -113,8 +155,15 @@ func main() {
 	}
 
 	if len(webhookCertPath) > 0 {
-		setupLog.Info("Initializing webhook certificate watcher using provided certificates",
-			"webhook-cert-path", webhookCertPath, "webhook-cert-name", webhookCertName, "webhook-cert-key", webhookCertKey)
+		setupLog.Info(
+			"Initializing webhook certificate watcher using provided certificates",
+			"webhook-cert-path",
+			webhookCertPath,
+			"webhook-cert-name",
+			webhookCertName,
+			"webhook-cert-key",
+			webhookCertKey,
+		)
 
 		webhookServerOptions.CertDir = webhookCertPath
 		webhookServerOptions.CertName = webhookCertName
@@ -150,8 +199,15 @@ func main() {
 	// managed by cert-manager for the metrics server.
 	// - [PROMETHEUS-WITH-CERTS] at config/prometheus/kustomization.yaml for TLS certification.
 	if len(metricsCertPath) > 0 {
-		setupLog.Info("Initializing metrics certificate watcher using provided certificates",
-			"metrics-cert-path", metricsCertPath, "metrics-cert-name", metricsCertName, "metrics-cert-key", metricsCertKey)
+		setupLog.Info(
+			"Initializing metrics certificate watcher using provided certificates",
+			"metrics-cert-path",
+			metricsCertPath,
+			"metrics-cert-name",
+			metricsCertName,
+			"metrics-cert-key",
+			metricsCertKey,
+		)
 
 		metricsServerOptions.CertDir = metricsCertPath
 		metricsServerOptions.CertName = metricsCertName
