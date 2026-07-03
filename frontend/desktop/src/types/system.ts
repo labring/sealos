@@ -247,6 +247,7 @@ export type DesktopConfigType<T = AuthConfigType> = {
   teamManagement?: {
     maxTeamCount: number;
     maxTeamMemberCount: number;
+    workspaceInviteExpiresInMinutes?: number[];
   };
 };
 
@@ -401,6 +402,11 @@ export const DefaultAppClientConfig: AppClientConfigType = {
   },
   desktop: {
     layout: DefaultLayoutConfig,
-    auth: DefaultAuthClientConfig
+    auth: DefaultAuthClientConfig,
+    teamManagement: {
+      maxTeamCount: 50,
+      maxTeamMemberCount: 50,
+      workspaceInviteExpiresInMinutes: [30]
+    }
   }
 };

@@ -12,8 +12,6 @@ type TWorkspace_invite_link = {
   inviterCrUid: string;
 };
 
-const WORKSPACE_INVITATION_EXPIRE_MS = 30 * 60 * 1000;
-
 function toInviteLink(record: {
   role: Role;
   invitationCode: string;
@@ -37,9 +35,11 @@ export async function addOrUpdateInviteCode({
   inviterUid,
   role,
   workspaceUid,
-  inviterCrUid
-}: Omit<TWorkspace_invite_link, 'createdAt'>) {
+  inviterCrUid,
+  expiresInMinutes = 30
+}: Omit<TWorkspace_invite_link, 'createdAt'> & { expiresInMinutes?: number }) {
   const prismaRole = UserRoleToRole(role);
+  const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
   return prisma.workspaceInvitations.upsert({
     where: {
@@ -56,11 +56,11 @@ export async function addOrUpdateInviteCode({
       inviterCrUid,
       role: prismaRole,
       invitationCode: code,
-      expiresAt: new Date(Date.now() + WORKSPACE_INVITATION_EXPIRE_MS)
+      expiresAt
     },
     update: {
       invitationCode: code,
-      expiresAt: new Date(Date.now() + WORKSPACE_INVITATION_EXPIRE_MS)
+      expiresAt
     }
   });
 }

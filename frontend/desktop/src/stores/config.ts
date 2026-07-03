@@ -4,6 +4,7 @@ import {
   CloudConfigType,
   CommonClientConfigType,
   LayoutConfigType,
+  DesktopConfigType,
   TrackingConfigType
 } from '@/types';
 import { create } from 'zustand';
@@ -15,6 +16,7 @@ type State = {
   authConfig?: AuthClientConfigType;
   commonConfig?: CommonClientConfigType;
   layoutConfig?: LayoutConfigType;
+  teamManagementConfig?: DesktopConfigType['teamManagement'];
   trackingConfig?: TrackingConfigType;
   isLoaded: boolean;
   initAppConfig: () => Promise<void>;
@@ -27,6 +29,7 @@ export const useConfigStore = create<State>()(
       authConfig: undefined,
       commonConfig: undefined,
       layoutConfig: undefined,
+      teamManagementConfig: undefined,
       trackingConfig: undefined,
       isLoaded: false,
       async initAppConfig() {
@@ -35,6 +38,7 @@ export const useConfigStore = create<State>()(
         set((state) => {
           state.trackingConfig = data.data.tracking;
           state.layoutConfig = data.data.desktop.layout;
+          state.teamManagementConfig = data.data.desktop.teamManagement;
           state.authConfig = data.data.desktop.auth;
           state.cloudConfig = data.data.cloud;
           state.commonConfig = data.data.common;
