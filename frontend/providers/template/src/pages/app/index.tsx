@@ -44,7 +44,8 @@ export default function MyApp() {
         </Tabs>
         <Center
           cursor={'pointer'}
-          w="124px"
+          minW="124px"
+          whiteSpace={'nowrap'}
           bg="rgba(150, 153, 180, 0.15)"
           p="4px 12px"
           borderRadius={'40px'}
