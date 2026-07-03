@@ -17,6 +17,7 @@ import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
 import { useQuery } from '@tanstack/react-query';
 import { getAmount, UserInfo, validateKubeconfig } from '@/api/auth';
+import { getResource } from '@/api/platform';
 import OnlineServiceButton from './serviceButton';
 import SaleBanner from '../banner';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
@@ -167,7 +168,10 @@ export default function Desktop() {
   useEffect(() => {
     const cleanup = createMasterAPP({
       allowedOrigins: cloudConfig?.allowedOrigins || ['*'],
-      getWorkspaceQuotaApi: async () => []
+      getWorkspaceQuotaApi: async () => {
+        const response = await getResource();
+        return response.data?.workspaceQuota || [];
+      }
     });
     return cleanup;
   }, [cloudConfig?.allowedOrigins]);
