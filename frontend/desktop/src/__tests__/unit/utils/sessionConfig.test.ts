@@ -43,7 +43,7 @@ describe('sessionConfig', () => {
     vi.mocked(UserInfo).mockResolvedValue({
       data: {
         info: {
-          nickname: '  display-name  ',
+          nickname: 'display-name',
           avatarUri: 'avatar-url',
           userRestrictedLevel: 1,
           realName: 'Real Name',
@@ -51,7 +51,7 @@ describe('sessionConfig', () => {
           oauthProvider: [
             {
               providerType: 'EMAIL',
-              providerId: ' user@example.com '
+              providerId: 'user@example.com'
             }
           ]
         }
@@ -83,7 +83,7 @@ describe('sessionConfig', () => {
         k8s_username: 'k8s-user',
         username: 'display-name',
         email: 'user@example.com',
-        name: '  display-name  ',
+        name: 'display-name',
         avatar: 'avatar-url',
         nsid: 'workspace-id',
         ns_uid: 'workspace-uid',

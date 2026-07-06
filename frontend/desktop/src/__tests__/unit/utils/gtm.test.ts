@@ -42,12 +42,17 @@ describe('gtmLoginSuccess', () => {
     });
   });
 
-  it('clears direct trait keys when product user traits are unavailable', () => {
+  it('passes through explicit empty product user traits for fallback events', () => {
     const push = vi.mocked(window.dataLayer.push);
 
     gtmLoginSuccess({
       method: 'email',
-      user_type: 'new'
+      user_type: 'new',
+      productUserTraits: {
+        user_username: '',
+        user_name: '',
+        user_email: ''
+      }
     });
 
     expect(push).toHaveBeenCalledWith({

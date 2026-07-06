@@ -3,7 +3,6 @@ import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { useSigninFormStore } from '@/stores/signinForm';
 import { ApiResp } from '@/types';
-import { ProductUserTraits } from '@/types/analytics';
 import { gtmLoginSuccess } from '@/utils/gtm';
 import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
@@ -31,11 +30,6 @@ interface PhoneCheckFormProps {
   isModal?: boolean;
   onBack?: () => void;
 }
-
-const removePhoneLoginEmail = (productUserTraits: ProductUserTraits): ProductUserTraits => ({
-  ...productUserTraits,
-  user_email: ''
-});
 
 export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps) {
   const { t } = useTranslation();
@@ -85,7 +79,10 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
           const initResult = await autoInitRegionToken();
 
           if (initResult?.data) {
-            const productUserTraits = removePhoneLoginEmail(await sessionConfig(initResult.data));
+            const productUserTraits = {
+              ...(await sessionConfig(initResult.data)),
+              user_email: ''
+            };
             gtmLoginSuccess({
               user_type: 'new',
               method: 'phone',
@@ -99,14 +96,22 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
           console.error('Auto init failed, fallback to manual:', error);
           gtmLoginSuccess({
             user_type: 'new',
-            method: 'phone'
+            method: 'phone',
+            productUserTraits: {
+              user_username: '',
+              user_name: '',
+              user_email: ''
+            }
           });
           window.location.href = oauth2RedirectPath || '/workspace';
         }
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
-          const productUserTraits = removePhoneLoginEmail(await sessionConfig(regionTokenRes.data));
+          const productUserTraits = {
+            ...(await sessionConfig(regionTokenRes.data)),
+            user_email: ''
+          };
           gtmLoginSuccess({
             user_type: 'existing',
             method: 'phone',

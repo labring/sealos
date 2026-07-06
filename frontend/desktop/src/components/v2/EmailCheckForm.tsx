@@ -91,7 +91,12 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
           console.error('Auto init failed, fallback to manual:', error);
           gtmLoginSuccess({
             user_type: 'new',
-            method: 'email'
+            method: 'email',
+            productUserTraits: {
+              user_username: '',
+              user_name: '',
+              user_email: ''
+            }
           });
           window.location.href = oauth2RedirectPath || '/workspace';
         }
