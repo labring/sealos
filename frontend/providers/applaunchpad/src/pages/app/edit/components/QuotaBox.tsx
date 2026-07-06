@@ -17,7 +17,7 @@ const sourceMap = {
   },
   storage: {
     color: '#8172D8',
-    unit: 'GB'
+    unit: 'Gi'
   },
   gpu: {
     color: '#89CD11',

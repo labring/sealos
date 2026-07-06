@@ -48,6 +48,41 @@ function isWorkloadResource(resource: K8sResource): resource is WorkloadResource
   return resource.kind === 'Deployment' || resource.kind === 'StatefulSet';
 }
 
+function isNotFoundError(err: any) {
+  return (
+    err?.body?.code === 404 ||
+    err?.response?.body?.code === 404 ||
+    err?.response?.statusCode === 404 ||
+    err?.statusCode === 404
+  );
+}
+
+async function workloadExists(readWorkload: () => Promise<unknown>) {
+  try {
+    await readWorkload();
+    return true;
+  } catch (err) {
+    if (isNotFoundError(err)) return false;
+    throw err;
+  }
+}
+
+async function hasExistingWorkload(
+  k8sApp: {
+    readNamespacedDeployment: (name: string, namespace: string) => Promise<unknown>;
+    readNamespacedStatefulSet: (name: string, namespace: string) => Promise<unknown>;
+  },
+  name: string,
+  namespace: string
+) {
+  const [deploymentExists, statefulSetExists] = await Promise.all([
+    workloadExists(() => k8sApp.readNamespacedDeployment(name, namespace)),
+    workloadExists(() => k8sApp.readNamespacedStatefulSet(name, namespace))
+  ]);
+
+  return deploymentExists || statefulSetExists;
+}
+
 function getManagedDomains() {
   return [
     global.AppConfig?.cloud?.domain,
@@ -124,22 +159,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       return;
     }
 
+    const mainWorkload =
+      mainWorkloadIndex === -1 ? undefined : (allResources[mainWorkloadIndex] as WorkloadResource);
+    const mainWorkloadName = mainWorkload?.metadata?.name;
+    if (mainWorkload && !mainWorkloadName) {
+      throw new Error('Workload metadata.name is required');
+    }
+
+    if (
+      mode === 'create' &&
+      mainWorkloadName &&
+      (await hasExistingWorkload(k8sApp, mainWorkloadName, namespace))
+    ) {
+      jsonRes(res, {
+        code: ResponseCode.APP_ALREADY_EXISTS
+      });
+      return;
+    }
+
     await ensurePublicDomainTargetsAvailable(getPublicDomainTargets(allResources), {
       k8sNetworkingApp,
       namespace
     });
 
-    if (mainWorkloadIndex === -1) {
+    if (!mainWorkload) {
       const applyRes = await applyYamlList(yamlList, mode);
       jsonRes(res, { data: applyRes.map((item) => item.kind) });
       return;
     }
-
-    const mainWorkload = allResources[mainWorkloadIndex] as WorkloadResource;
-    const mainWorkloadName = mainWorkload.metadata?.name;
-    if (!mainWorkloadName) {
+    const workloadName = mainWorkloadName;
+    if (!workloadName) {
       throw new Error('Workload metadata.name is required');
     }
+
     const dependentResources = allResources.filter((_, index) => index !== mainWorkloadIndex);
 
     const mainWorkloadYaml = yaml.dump(mainWorkload);
@@ -149,10 +201,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     let workloadUid: string;
     try {
       if (mainWorkload.kind === 'Deployment') {
-        const deployment = await k8sApp.readNamespacedDeployment(mainWorkloadName, namespace);
+        const deployment = await k8sApp.readNamespacedDeployment(workloadName, namespace);
         workloadUid = deployment.body.metadata?.uid || '';
       } else {
-        const statefulSet = await k8sApp.readNamespacedStatefulSet(mainWorkloadName, namespace);
+        const statefulSet = await k8sApp.readNamespacedStatefulSet(workloadName, namespace);
         workloadUid = statefulSet.body.metadata?.uid || '';
       }
     } catch (err) {
@@ -164,11 +216,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('Workload UID is empty');
     }
 
-    const ownerReferences = generateOwnerReference(
-      mainWorkloadName,
-      mainWorkload.kind,
-      workloadUid
-    );
+    const ownerReferences = generateOwnerReference(workloadName, mainWorkload.kind, workloadUid);
 
     dependentResources.forEach((resource) => {
       if (resource.kind && shouldHaveOwnerReference(resource.kind)) {
