@@ -140,14 +140,7 @@ export default function SecondaryLinks() {
       <Text fontSize="13px" fontWeight={500} lineHeight="20px" color="rgba(45, 65, 91, 0.68)">
         {label}
       </Text>
-      <Text
-        fontSize="14px"
-        fontWeight={600}
-        lineHeight="20px"
-        color="primary"
-        noOfLines={1}
-        sx={{ fontVariantNumeric: 'tabular-nums' }}
-      >
+      <Text fontSize="14px" fontWeight={600} lineHeight="20px" color="primary" noOfLines={1}>
         {value}
       </Text>
     </Flex>
