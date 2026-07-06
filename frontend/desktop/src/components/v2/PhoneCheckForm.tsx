@@ -3,6 +3,7 @@ import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { useSigninFormStore } from '@/stores/signinForm';
 import { ApiResp } from '@/types';
+import { ProductUserTraits } from '@/types/analytics';
 import { gtmLoginSuccess } from '@/utils/gtm';
 import { getAdClickData, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
@@ -30,6 +31,11 @@ interface PhoneCheckFormProps {
   isModal?: boolean;
   onBack?: () => void;
 }
+
+const removePhoneLoginEmail = (productUserTraits: ProductUserTraits): ProductUserTraits => ({
+  ...productUserTraits,
+  user_email: ''
+});
 
 export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps) {
   const { t } = useTranslation();
@@ -79,10 +85,11 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
           const initResult = await autoInitRegionToken();
 
           if (initResult?.data) {
-            await sessionConfig(initResult.data);
+            const productUserTraits = removePhoneLoginEmail(await sessionConfig(initResult.data));
             gtmLoginSuccess({
               user_type: 'new',
-              method: 'phone'
+              method: 'phone',
+              productUserTraits
             });
             const { setInitGuide } = useGuideModalStore.getState();
             setInitGuide(true);
@@ -99,10 +106,11 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
-          await sessionConfig(regionTokenRes.data);
+          const productUserTraits = removePhoneLoginEmail(await sessionConfig(regionTokenRes.data));
           gtmLoginSuccess({
             user_type: 'existing',
-            method: 'phone'
+            method: 'phone',
+            productUserTraits
           });
           window.location.href = postLoginRedirect;
         }

@@ -1,4 +1,5 @@
 import { getPlanInfo, UserInfo } from '@/api/auth';
+import { ProductUserTraits } from '@/types/analytics';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
 import useSessionStore from '@/stores/session';
@@ -19,7 +20,7 @@ export const sessionConfig = async ({
   token: string;
   kubeconfig: string;
   appToken: string;
-}) => {
+}): Promise<ProductUserTraits> => {
   const store = useSessionStore.getState();
   store.setToken(token); // Sets region token for API requests
   const payload = jwtDecode<AccessTokenPayload>(token);
@@ -28,6 +29,11 @@ export const sessionConfig = async ({
     infoData.data?.info.oauthProvider?.find((provider) => provider.providerType === 'EMAIL')
       ?.providerId
   );
+  const productUserTraits: ProductUserTraits = {
+    user_username: cleanTraitValue(infoData.data?.info.nickname),
+    user_name: cleanTraitValue(infoData.data?.info.nickname),
+    user_email: primaryEmail
+  };
 
   store.setSession({
     token: appToken,
@@ -52,6 +58,8 @@ export const sessionConfig = async ({
 
   const sessionStore = useSessionStore.getState();
   sessionStore.setHasEverLoggedIn(true);
+
+  return productUserTraits;
 };
 
 export const getUserSemData = (): SemData | null => {

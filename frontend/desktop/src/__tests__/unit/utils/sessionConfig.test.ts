@@ -66,7 +66,7 @@ describe('sessionConfig', () => {
   });
 
   it('persists username and email into session for downstream analytics variables', async () => {
-    await sessionConfig({
+    const productUserTraits = await sessionConfig({
       token: 'region-token',
       kubeconfig: 'kube-config',
       appToken: 'app-token'
@@ -94,5 +94,10 @@ describe('sessionConfig', () => {
       kubeconfig: 'kube-config'
     });
     expect(mockSetHasEverLoggedIn).toHaveBeenCalledWith(true);
+    expect(productUserTraits).toEqual({
+      user_username: 'display-name',
+      user_name: 'display-name',
+      user_email: 'user@example.com'
+    });
   });
 });
