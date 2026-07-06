@@ -66,9 +66,29 @@ const formatQuotaValue = (value: number, type: WorkspaceQuotaItem['type']) => {
   return value.toFixed(digits).replace(/\.?0+$/, '');
 };
 
+const formatCompactNumber = (value: number, unit: string) =>
+  `${value.toFixed(2).replace(/\.?0+$/, '')}${unit}`;
+
+const formatCompactCredits = (value: number, language?: string) => {
+  const sign = value < 0 ? '-' : '';
+  const absValue = Math.abs(value);
+  const isZh = language?.startsWith('zh') ?? true;
+
+  if (isZh) {
+    if (absValue >= 100000000) return `${sign}${formatCompactNumber(absValue / 100000000, '亿')}`;
+    if (absValue >= 10000) return `${sign}${formatCompactNumber(absValue / 10000, '万')}`;
+    return `${sign}${absValue.toFixed(2).replace(/\.?0+$/, '')}`;
+  }
+
+  if (absValue >= 1000000000) return `${sign}${formatCompactNumber(absValue / 1000000000, 'B')}`;
+  if (absValue >= 1000000) return `${sign}${formatCompactNumber(absValue / 1000000, 'M')}`;
+  if (absValue >= 1000) return `${sign}${formatCompactNumber(absValue / 1000, 'K')}`;
+  return `${sign}${absValue.toFixed(2).replace(/\.?0+$/, '')}`;
+};
+
 export default function SecondaryLinks() {
   const { layoutConfig } = useConfigStore();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { openGuideModal, setInitGuide } = useGuideModalStore();
   const { openDesktopApp } = useAppStore();
   const { session } = useSessionStore();
@@ -83,6 +103,13 @@ export default function SecondaryLinks() {
   const openWorkOrderApp = () => {
     openDesktopApp({
       appKey: 'system-workorder',
+      pathname: '/'
+    });
+  };
+
+  const openCostCenterApp = () => {
+    openDesktopApp({
+      appKey: 'system-costcenter',
       pathname: '/'
     });
   };
@@ -127,16 +154,22 @@ export default function SecondaryLinks() {
       ? t('common:loading')
       : '--';
 
-  const creditsSummary = amountData?.data
-    ? formatMoney((amountData.data.balance || 0) - (amountData.data.deductionBalance || 0)).toFixed(
-        2
-      )
-    : isAmountLoading
-      ? t('common:loading')
-      : '--';
+  const creditsValue = amountData?.data
+    ? formatMoney((amountData.data.balance || 0) - (amountData.data.deductionBalance || 0))
+    : null;
 
-  const renderHeaderMetric = (label: string, value: string) => (
-    <Flex alignItems="baseline" gap="4px" whiteSpace="nowrap" minW={0}>
+  const creditsSummary =
+    creditsValue !== null
+      ? formatCompactCredits(creditsValue, i18n.language)
+      : isAmountLoading
+        ? t('common:loading')
+        : '--';
+
+  const creditsSummaryTitle =
+    creditsValue !== null ? `${t('common:credits')} ${creditsValue.toFixed(2)}` : undefined;
+
+  const renderHeaderMetric = (label: string, value: string, title?: string) => (
+    <Flex alignItems="baseline" gap="4px" whiteSpace="nowrap" minW={0} title={title}>
       <Text fontSize="13px" fontWeight={500} lineHeight="20px" color="rgba(45, 65, 91, 0.68)">
         {label}
       </Text>
@@ -150,9 +183,13 @@ export default function SecondaryLinks() {
     <Flex alignItems="center" gap="8px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
       {renderHeaderMetric(t('common:resources'), resourceSummary)}
       <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.14)" />
-      {renderHeaderMetric(t('common:credits'), creditsSummary)}
+      {renderHeaderMetric(t('common:credits'), creditsSummary, creditsSummaryTitle)}
     </Flex>
   );
+
+  const handleHeaderClick = () => {
+    openCostCenterApp();
+  };
 
   const getQuotaLabel = (type: WorkspaceQuotaItem['type']) => {
     if (type === 'cpu') return 'CPU';
@@ -248,7 +285,8 @@ export default function SecondaryLinks() {
               color="#2563EB"
               fontSize={'14px'}
               fontWeight={'500'}
-              cursor={'default'}
+              cursor={'pointer'}
+              onClick={handleHeaderClick}
             >
               <Activity size={16} />
               <Box ml="8px">{renderHeaderSummary()}</Box>
@@ -351,6 +389,8 @@ export default function SecondaryLinks() {
           borderRadius="8px"
           bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
           p="12px"
+          cursor="pointer"
+          onClick={handleHeaderClick}
         >
           <Flex
             alignItems="center"
