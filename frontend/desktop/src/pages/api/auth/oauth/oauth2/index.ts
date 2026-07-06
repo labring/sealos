@@ -64,6 +64,14 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
 
   // If name_path and user_name exist in attributes, combine them
   const attributes = (result as any)?.attributes;
+  const emailCandidate =
+    (result as any)?.email ||
+    attributes?.email ||
+    attributes?.mail ||
+    result?.preferred_username ||
+    '';
+  const email =
+    typeof emailCandidate === 'string' && emailCandidate.includes('@') ? emailCandidate : undefined;
   const name =
     attributes?.name_path && attributes?.user_name
       ? `${attributes.name_path} ${attributes.user_name}`
@@ -76,6 +84,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     providerId: id + '',
     avatar_url,
     name,
+    email,
     semData,
     adClickData
   });
