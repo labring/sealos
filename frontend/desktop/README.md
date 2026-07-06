@@ -169,7 +169,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### Workspace 资源展示
 
-- 桌面右上角摘要展示当前 workspace 的可用 CPU 以及账号积分；积分复用 `/api/account/getAmount` 的余额净额口径，即 `balance - deductionBalance`。头部摘要的大额积分按当前语言缩写（中文 `万`/`亿`，英文 `K`/`M`/`B`），完整数值保留在 hover title 中，点击摘要进入费用中心。
+- 桌面右上角摘要展示当前 workspace 的可用 CPU 以及账号积分；积分复用 `/api/account/getAmount` 的余额净额口径，即 `balance - deductionBalance` 后保留两位小数展示，点击摘要进入费用中心。
 - 桌面右上角的资源入口通过 `src/pages/api/desktop/getResource.ts` 读取当前登录 workspace namespace 的 Kubernetes `ResourceQuota`，默认 quota 名称为 `quota-${namespace}`。
 - `/api/desktop/getResource` 保留原有 Pod/PVC 运行资源统计，同时返回 `workspaceQuota`，用于展示 CPU、内存、存储、GPU、NodePort 的总量、已用和可用量。
 - `sealos-desktop-sdk` 的 `getWorkspaceQuotaApi` 复用同一个接口，子应用通过 master bridge 获取到的 workspace quota 与桌面右上角展示保持同源。
