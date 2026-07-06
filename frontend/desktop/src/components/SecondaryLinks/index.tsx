@@ -64,6 +64,12 @@ const formatQuotaValue = (value: number, type: WorkspaceQuotaItem['type']) => {
   return value.toFixed(digits).replace(/\.?0+$/, '');
 };
 
+type ResourceSummaryItem = {
+  type: WorkspaceQuotaItem['type'];
+  label: string;
+  value: string;
+};
+
 export default function SecondaryLinks() {
   const { layoutConfig } = useConfigStore();
   const { t } = useTranslation();
@@ -120,6 +126,46 @@ export default function SecondaryLinks() {
     : isResourceLoading
       ? t('common:loading')
       : '--';
+
+  const resourceSummaryItems: ResourceSummaryItem[] = [
+    quotaItems.find((item) => item.type === 'cpu'),
+    quotaItems.find((item) => item.type === 'memory')
+  ].reduce<ResourceSummaryItem[]>((acc, item) => {
+    if (!item) return acc;
+    acc.push({
+      type: item.type,
+      label: item.type === 'memory' ? t('common:memory') : 'CPU',
+      value: formatQuotaWithUnit(item, getAvailableValue(item))
+    });
+    return acc;
+  }, []);
+
+  const renderResourceSummary = ({ allowWrap = false }: { allowWrap?: boolean } = {}) =>
+    resourceSummaryItems.length > 0 ? (
+      <Flex alignItems="center" gap="6px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
+        {resourceSummaryItems.map((item) => (
+          <Flex
+            key={item.type}
+            alignItems="baseline"
+            gap="4px"
+            h="22px"
+            px="7px"
+            borderRadius="6px"
+            bg="rgba(37, 99, 235, 0.08)"
+            whiteSpace="nowrap"
+          >
+            <Text fontSize="11px" fontWeight={600} color="rgba(37, 99, 235, 0.72)">
+              {item.label}
+            </Text>
+            <Text fontSize="13px" fontWeight={700} color="#2563EB">
+              {item.value}
+            </Text>
+          </Flex>
+        ))}
+      </Flex>
+    ) : (
+      <Text noOfLines={1}>{resourceSummary}</Text>
+    );
 
   const getQuotaLabel = (type: WorkspaceQuotaItem['type']) => {
     if (type === 'cpu') return 'CPU';
@@ -208,8 +254,8 @@ export default function SecondaryLinks() {
                 'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
               }
               h={'36px'}
-              minW="166px"
-              maxW="220px"
+              minW="252px"
+              maxW="320px"
               px={'12px'}
               py={'8px'}
               color="#2563EB"
@@ -220,7 +266,7 @@ export default function SecondaryLinks() {
               <Activity size={16} />
               <Text ml="6px">{t('common:resources')}</Text>
               <Divider orientation="vertical" mx={'10px'} />
-              <Text noOfLines={1}>{resourceSummary}</Text>
+              {renderResourceSummary()}
             </Center>
           </PopoverTrigger>
           <Portal>
@@ -321,14 +367,18 @@ export default function SecondaryLinks() {
           bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
           p="12px"
         >
-          <Flex alignItems="center" justifyContent="space-between" color="#2563EB">
+          <Flex
+            alignItems="center"
+            justifyContent="space-between"
+            gap="10px"
+            color="#2563EB"
+            flexWrap="wrap"
+          >
             <Flex alignItems="center" gap="6px" fontSize="14px" fontWeight={600}>
               <Activity size={16} />
               <Text>{t('common:resources')}</Text>
             </Flex>
-            <Text fontSize="13px" fontWeight={600}>
-              {resourceSummary}
-            </Text>
+            {renderResourceSummary({ allowWrap: true })}
           </Flex>
           <Box mt="12px">{renderResourceRows({ showTitle: false })}</Box>
         </Box>
