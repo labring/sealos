@@ -136,20 +136,27 @@ export default function SecondaryLinks() {
       : '--';
 
   const renderHeaderMetric = (label: string, value: string) => (
-    <Flex alignItems="baseline" gap="6px" whiteSpace="nowrap" minW={0}>
-      <Text fontSize="14px" fontWeight={700}>
+    <Flex alignItems="baseline" gap="4px" whiteSpace="nowrap" minW={0}>
+      <Text fontSize="13px" fontWeight={500} lineHeight="20px" color="rgba(45, 65, 91, 0.68)">
         {label}
       </Text>
-      <Text fontSize="15px" fontWeight={700} noOfLines={1}>
+      <Text
+        fontSize="14px"
+        fontWeight={600}
+        lineHeight="20px"
+        color="primary"
+        noOfLines={1}
+        sx={{ fontVariantNumeric: 'tabular-nums' }}
+      >
         {value}
       </Text>
     </Flex>
   );
 
   const renderHeaderSummary = ({ allowWrap = false }: { allowWrap?: boolean } = {}) => (
-    <Flex alignItems="center" gap="10px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
+    <Flex alignItems="center" gap="8px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
       {renderHeaderMetric(t('common:resources'), resourceSummary)}
-      <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.22)" />
+      <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.14)" />
       {renderHeaderMetric(t('common:credits'), creditsSummary)}
     </Flex>
   );
