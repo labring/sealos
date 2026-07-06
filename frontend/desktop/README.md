@@ -167,6 +167,13 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - 默认个人空间允许 Owner 重命名，重命名后的自定义名称按用户输入展示；默认个人空间仍不可解散或移交。
 - 历史默认占位名 `private team`、`Private Team`、`My Workspace`、`Personal Workspace`、`个人空间` 在展示层按当前语言显示为默认个人空间名，避免旧数据继续暴露内部命名。
 
+### Workspace 资源展示
+
+- 桌面右上角摘要展示当前 workspace 的可用 CPU 以及账号积分；积分复用 `/api/account/getAmount` 的余额净额口径，即 `balance - deductionBalance` 后保留两位小数展示，点击摘要进入费用中心。
+- 桌面右上角的资源入口通过 `src/pages/api/desktop/getResource.ts` 读取当前登录 workspace namespace 的 Kubernetes `ResourceQuota`，默认 quota 名称为 `quota-${namespace}`。
+- `/api/desktop/getResource` 保留原有 Pod/PVC 运行资源统计，同时返回 `workspaceQuota`，用于展示 CPU、内存、存储、GPU、NodePort 的总量、已用和可用量。
+- `sealos-desktop-sdk` 的 `getWorkspaceQuotaApi` 复用同一个接口，子应用通过 master bridge 获取到的 workspace quota 与桌面右上角展示保持同源。
+
 ### 测试环境
 
 1. 需要设置环境变量`NODE_ENV=test` 或者 `$env:NODE_ENV="test"`

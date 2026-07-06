@@ -11,17 +11,23 @@ import {
   Menu,
   MenuButton,
   MenuList,
-  MenuItem
+  MenuItem,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
+  PopoverArrow,
+  Portal,
+  Progress
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
+import { getResource } from '@/api/platform';
 import { getAmount } from '@/api/auth';
-import Decimal from 'decimal.js';
-import { CurrencySymbol } from '@sealos/ui';
-import { formatMoney } from '@/utils/format';
 import useSessionStore from '@/stores/session';
-import { MoreHorizontal } from 'lucide-react';
+import { formatMoney } from '@/utils/format';
+import { Activity, MoreHorizontal } from 'lucide-react';
 import { JoinDiscordPrompt } from '../account/JoinDiscordPrompt';
 
 const baseItemStyle = {
@@ -35,15 +41,37 @@ const baseItemStyle = {
   }
 };
 
+type WorkspaceQuotaItem = {
+  type: 'cpu' | 'memory' | 'storage' | 'gpu' | 'traffic' | 'nodeport';
+  used: number;
+  limit: number;
+  available: number;
+  usagePercent: number;
+};
+
+const resourceDisplayOrder: WorkspaceQuotaItem['type'][] = [
+  'cpu',
+  'memory',
+  'storage',
+  'gpu',
+  'nodeport'
+];
+
+const getAvailableValue = (item: WorkspaceQuotaItem) =>
+  item.available ?? Math.max(item.limit - item.used, 0);
+
+const formatQuotaValue = (value: number, type: WorkspaceQuotaItem['type']) => {
+  if (type === 'gpu' || type === 'nodeport') return `${Math.round(value)}`;
+  const digits = value > 0 && value < 10 ? 2 : 1;
+  return value.toFixed(digits).replace(/\.?0+$/, '');
+};
+
 export default function SecondaryLinks() {
   const { layoutConfig } = useConfigStore();
   const { t } = useTranslation();
   const { openGuideModal, setInitGuide } = useGuideModalStore();
   const { openDesktopApp } = useAppStore();
   const { session } = useSessionStore();
-  const currencySymbol = useConfigStore(
-    (state) => state.layoutConfig?.currencySymbol || 'shellCoin'
-  );
 
   const user = session?.user;
 
@@ -66,20 +94,139 @@ export default function SecondaryLinks() {
     });
   };
 
-  const { data } = useQuery({
+  const { data: resourceData, isLoading: isResourceLoading } = useQuery({
+    queryKey: ['getResource', { userId: user?.userCrUid, workspaceId: user?.ns_uid }],
+    queryFn: getResource,
+    enabled: !!user,
+    staleTime: 60 * 1000
+  });
+
+  const { data: amountData, isLoading: isAmountLoading } = useQuery({
     queryKey: ['getAmount', { userId: user?.userCrUid }],
     queryFn: getAmount,
     enabled: !!user,
     staleTime: 60 * 1000
   });
 
-  const balance = useMemo(() => {
-    let realBalance = new Decimal(data?.data?.balance || 0);
-    if (data?.data?.deductionBalance) {
-      realBalance = realBalance.minus(new Decimal(data.data.deductionBalance));
-    }
-    return realBalance.toNumber();
-  }, [data]);
+  const quotaItems = useMemo(() => {
+    const items = resourceData?.data?.workspaceQuota || [];
+    return resourceDisplayOrder.reduce<WorkspaceQuotaItem[]>((acc, type) => {
+      const item = items.find((item) => item.type === type);
+      if (item && (item.limit > 0 || item.used > 0)) acc.push(item);
+      return acc;
+    }, []);
+  }, [resourceData?.data?.workspaceQuota]);
+
+  const getQuotaUnit = (type: WorkspaceQuotaItem['type']) => {
+    if (type === 'cpu') return 'C';
+    if (type === 'memory' || type === 'storage') return 'GB';
+    if (type === 'gpu') return t('common:resource_unit_card');
+    return '';
+  };
+
+  const formatQuotaWithUnit = (item: WorkspaceQuotaItem, value: number) =>
+    `${formatQuotaValue(value, item.type)}${getQuotaUnit(item.type)}`;
+
+  const primaryQuota = quotaItems.find((item) => item.type === 'cpu') || quotaItems[0];
+  const resourceSummary = primaryQuota
+    ? formatQuotaWithUnit(primaryQuota, getAvailableValue(primaryQuota))
+    : isResourceLoading
+      ? t('common:loading')
+      : '--';
+
+  const creditsValue = amountData?.data
+    ? formatMoney((amountData.data.balance || 0) - (amountData.data.deductionBalance || 0))
+    : null;
+
+  const creditsSummary =
+    creditsValue !== null ? creditsValue.toFixed(2) : isAmountLoading ? t('common:loading') : '--';
+
+  const renderHeaderMetric = (label: string, value: string) => (
+    <Flex alignItems="baseline" gap="4px" whiteSpace="nowrap" minW={0}>
+      <Text fontSize="13px" fontWeight={500} lineHeight="20px" color="rgba(45, 65, 91, 0.68)">
+        {label}
+      </Text>
+      <Text fontSize="14px" fontWeight={600} lineHeight="20px" color="primary" noOfLines={1}>
+        {value}
+      </Text>
+    </Flex>
+  );
+
+  const renderHeaderSummary = ({ allowWrap = false }: { allowWrap?: boolean } = {}) => (
+    <Flex alignItems="center" gap="8px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
+      {renderHeaderMetric(t('common:resources'), resourceSummary)}
+      <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.14)" />
+      {renderHeaderMetric(t('common:credits'), creditsSummary)}
+    </Flex>
+  );
+
+  const handleHeaderClick = () => {
+    openCostCenterApp();
+  };
+
+  const getQuotaLabel = (type: WorkspaceQuotaItem['type']) => {
+    if (type === 'cpu') return 'CPU';
+    if (type === 'memory') return t('common:memory');
+    if (type === 'storage') return t('common:storage');
+    if (type === 'gpu') return 'GPU';
+    if (type === 'nodeport') return 'NodePort';
+    return type;
+  };
+
+  const renderResourceRows = ({ showTitle = true }: { showTitle?: boolean } = {}) => (
+    <Flex flexDirection="column" gap="12px" w="100%">
+      {showTitle && (
+        <Flex alignItems="center" justifyContent="space-between">
+          <Text fontSize="13px" fontWeight={700} color="gray.900">
+            {t('common:workspace_resources')}
+          </Text>
+          <Text fontSize="11px" color="gray.500">
+            {t('common:resource_used')} / {t('common:resource_total')}
+          </Text>
+        </Flex>
+      )}
+
+      {quotaItems.length > 0 ? (
+        quotaItems.map((item) => {
+          const usagePercent =
+            item.usagePercent ?? (item.limit > 0 ? Math.round((item.used / item.limit) * 100) : 0);
+          const available = getAvailableValue(item);
+          return (
+            <Box key={item.type}>
+              <Flex alignItems="center" justifyContent="space-between" gap="12px">
+                <Text fontSize="12px" fontWeight={600} color="gray.700">
+                  {getQuotaLabel(item.type)}
+                </Text>
+                <Text fontSize="12px" fontWeight={600} color="gray.900">
+                  {formatQuotaWithUnit(item, item.used)} / {formatQuotaWithUnit(item, item.limit)}
+                </Text>
+              </Flex>
+              <Progress
+                mt="6px"
+                value={usagePercent}
+                size="xs"
+                borderRadius="full"
+                bg="rgba(37, 99, 235, 0.12)"
+                colorScheme={usagePercent >= 85 ? 'red' : 'blue'}
+              />
+              <Flex mt="4px" alignItems="center" justifyContent="space-between">
+                <Text fontSize="11px" color="gray.500">
+                  {t('common:resource_available')}: {formatQuotaWithUnit(item, available)}
+                </Text>
+                <Text fontSize="11px" color="gray.500">
+                  {usagePercent}%
+                </Text>
+              </Flex>
+            </Box>
+          );
+        })
+      ) : (
+        <Text fontSize="12px" color="gray.500">
+          {isResourceLoading ? t('common:loading') : t('common:resource_quota_empty')}
+        </Text>
+      )}
+    </Flex>
+  );
 
   const handleGuideClick = () => {
     openGuideModal();
@@ -95,24 +242,40 @@ export default function SecondaryLinks() {
   if (!isCollapsed) {
     return (
       <Flex gap={'4px'} ml={'auto'}>
-        <Center
-          mr={'12px'}
-          borderRadius={'8px'}
-          bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
-          h={'36px'}
-          px={'12px'}
-          py={'8px'}
-          color="#2563EB"
-          fontSize={'14px'}
-          fontWeight={'500'}
-          cursor={'pointer'}
-          onClick={openCostCenterApp}
-        >
-          <Text>{t('common:balance')}</Text>
-          <Divider orientation="vertical" mx={'12px'} />
-          <CurrencySymbol type={currencySymbol} />
-          <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
-        </Center>
+        <Popover trigger="hover" placement="bottom-end" openDelay={120}>
+          <PopoverTrigger>
+            <Center
+              mr={'12px'}
+              borderRadius={'8px'}
+              bg={
+                'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
+              }
+              h={'36px'}
+              minW="252px"
+              maxW="320px"
+              px={'12px'}
+              py={'8px'}
+              color="#2563EB"
+              fontSize={'14px'}
+              fontWeight={'500'}
+              cursor={'pointer'}
+              onClick={handleHeaderClick}
+            >
+              <Activity size={16} />
+              <Box ml="8px">{renderHeaderSummary()}</Box>
+            </Center>
+          </PopoverTrigger>
+          <Portal>
+            <PopoverContent
+              w="320px"
+              borderRadius="8px"
+              boxShadow="0 12px 32px rgba(15, 23, 42, 0.16)"
+            >
+              <PopoverArrow />
+              <PopoverBody p="14px">{renderResourceRows()}</PopoverBody>
+            </PopoverContent>
+          </Portal>
+        </Popover>
 
         <Center
           className="guide-button"
@@ -195,23 +358,27 @@ export default function SecondaryLinks() {
         border="1px solid rgba(0, 0, 0, 0.05)"
         minW="200px"
       >
-        <MenuItem
+        <Box
           borderRadius="8px"
-          _hover={{ bg: 'rgba(129, 203, 252, 0.12)' }}
-          onClick={openCostCenterApp}
           bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
-          color="#2563EB"
-          fontSize="14px"
-          fontWeight="500"
-          justifyContent="center"
+          p="12px"
+          cursor="pointer"
+          onClick={handleHeaderClick}
         >
-          <Flex height={'16px'} alignItems="center" my="8px" px="12px">
-            <Text>{t('common:balance')}</Text>
-            <Divider orientation="vertical" mx="8px" />
-            <CurrencySymbol type={currencySymbol} />
-            <Text ml="4px">{formatMoney(balance).toFixed(2)}</Text>
+          <Flex
+            alignItems="center"
+            justifyContent="space-between"
+            gap="10px"
+            color="#2563EB"
+            flexWrap="wrap"
+          >
+            <Flex alignItems="center" gap="6px" fontSize="14px" fontWeight={600}>
+              <Activity size={16} />
+            </Flex>
+            {renderHeaderSummary({ allowWrap: true })}
           </Flex>
-        </MenuItem>
+          <Box mt="12px">{renderResourceRows({ showTitle: false })}</Box>
+        </Box>
 
         <Divider my="8px" mx="-8px" w="calc(100% + 16px)" bg="rgba(0, 0, 0, 0.1)" />
 
