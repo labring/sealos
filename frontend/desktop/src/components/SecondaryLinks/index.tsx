@@ -142,24 +142,20 @@ export default function SecondaryLinks() {
 
   const renderResourceSummary = ({ allowWrap = false }: { allowWrap?: boolean } = {}) =>
     resourceSummaryItems.length > 0 ? (
-      <Flex alignItems="center" gap="6px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
-        {resourceSummaryItems.map((item) => (
-          <Flex
-            key={item.type}
-            alignItems="baseline"
-            gap="4px"
-            h="22px"
-            px="7px"
-            borderRadius="6px"
-            bg="rgba(37, 99, 235, 0.08)"
-            whiteSpace="nowrap"
-          >
-            <Text fontSize="11px" fontWeight={600} color="rgba(37, 99, 235, 0.72)">
-              {item.label}
-            </Text>
-            <Text fontSize="13px" fontWeight={700} color="#2563EB">
-              {item.value}
-            </Text>
+      <Flex alignItems="center" gap="8px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
+        {resourceSummaryItems.map((item, index) => (
+          <Flex key={item.type} alignItems="center" gap="8px" whiteSpace="nowrap">
+            {index > 0 && (
+              <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.22)" />
+            )}
+            <Flex alignItems="baseline" gap="4px">
+              <Text fontSize="12px" fontWeight={600} color="rgba(37, 99, 235, 0.72)">
+                {item.label}
+              </Text>
+              <Text fontSize="14px" fontWeight={700} color="#2563EB">
+                {item.value}
+              </Text>
+            </Flex>
           </Flex>
         ))}
       </Flex>
