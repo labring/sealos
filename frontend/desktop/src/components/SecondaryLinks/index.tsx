@@ -24,7 +24,9 @@ import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { getResource } from '@/api/platform';
+import { getAmount } from '@/api/auth';
 import useSessionStore from '@/stores/session';
+import { formatMoney } from '@/utils/format';
 import { Activity, MoreHorizontal } from 'lucide-react';
 import { JoinDiscordPrompt } from '../account/JoinDiscordPrompt';
 
@@ -64,12 +66,6 @@ const formatQuotaValue = (value: number, type: WorkspaceQuotaItem['type']) => {
   return value.toFixed(digits).replace(/\.?0+$/, '');
 };
 
-type ResourceSummaryItem = {
-  type: WorkspaceQuotaItem['type'];
-  label: string;
-  value: string;
-};
-
 export default function SecondaryLinks() {
   const { layoutConfig } = useConfigStore();
   const { t } = useTranslation();
@@ -98,6 +94,13 @@ export default function SecondaryLinks() {
     staleTime: 60 * 1000
   });
 
+  const { data: amountData, isLoading: isAmountLoading } = useQuery({
+    queryKey: ['getAmount', { userId: user?.userCrUid }],
+    queryFn: getAmount,
+    enabled: !!user,
+    staleTime: 60 * 1000
+  });
+
   const quotaItems = useMemo(() => {
     const items = resourceData?.data?.workspaceQuota || [];
     return resourceDisplayOrder.reduce<WorkspaceQuotaItem[]>((acc, type) => {
@@ -119,49 +122,37 @@ export default function SecondaryLinks() {
 
   const primaryQuota = quotaItems.find((item) => item.type === 'cpu') || quotaItems[0];
   const resourceSummary = primaryQuota
-    ? `${t('common:resource_available')} ${formatQuotaWithUnit(
-        primaryQuota,
-        getAvailableValue(primaryQuota)
-      )}`
+    ? formatQuotaWithUnit(primaryQuota, getAvailableValue(primaryQuota))
     : isResourceLoading
       ? t('common:loading')
       : '--';
 
-  const resourceSummaryItems: ResourceSummaryItem[] = [
-    quotaItems.find((item) => item.type === 'cpu'),
-    quotaItems.find((item) => item.type === 'memory')
-  ].reduce<ResourceSummaryItem[]>((acc, item) => {
-    if (!item) return acc;
-    acc.push({
-      type: item.type,
-      label: item.type === 'memory' ? t('common:memory') : 'CPU',
-      value: formatQuotaWithUnit(item, getAvailableValue(item))
-    });
-    return acc;
-  }, []);
+  const creditsSummary = amountData?.data
+    ? formatMoney((amountData.data.balance || 0) - (amountData.data.deductionBalance || 0)).toFixed(
+        2
+      )
+    : isAmountLoading
+      ? t('common:loading')
+      : '--';
 
-  const renderResourceSummary = ({ allowWrap = false }: { allowWrap?: boolean } = {}) =>
-    resourceSummaryItems.length > 0 ? (
-      <Flex alignItems="center" gap="8px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
-        {resourceSummaryItems.map((item, index) => (
-          <Flex key={item.type} alignItems="center" gap="8px" whiteSpace="nowrap">
-            {index > 0 && (
-              <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.22)" />
-            )}
-            <Flex alignItems="baseline" gap="4px">
-              <Text fontSize="12px" fontWeight={600} color="rgba(37, 99, 235, 0.72)">
-                {item.label}
-              </Text>
-              <Text fontSize="14px" fontWeight={700} color="#2563EB">
-                {item.value}
-              </Text>
-            </Flex>
-          </Flex>
-        ))}
-      </Flex>
-    ) : (
-      <Text noOfLines={1}>{resourceSummary}</Text>
-    );
+  const renderHeaderMetric = (label: string, value: string) => (
+    <Flex alignItems="baseline" gap="6px" whiteSpace="nowrap" minW={0}>
+      <Text fontSize="14px" fontWeight={700}>
+        {label}
+      </Text>
+      <Text fontSize="15px" fontWeight={700} noOfLines={1}>
+        {value}
+      </Text>
+    </Flex>
+  );
+
+  const renderHeaderSummary = ({ allowWrap = false }: { allowWrap?: boolean } = {}) => (
+    <Flex alignItems="center" gap="10px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
+      {renderHeaderMetric(t('common:resources'), resourceSummary)}
+      <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.22)" />
+      {renderHeaderMetric(t('common:credits'), creditsSummary)}
+    </Flex>
+  );
 
   const getQuotaLabel = (type: WorkspaceQuotaItem['type']) => {
     if (type === 'cpu') return 'CPU';
@@ -260,9 +251,7 @@ export default function SecondaryLinks() {
               cursor={'default'}
             >
               <Activity size={16} />
-              <Text ml="6px">{t('common:resources')}</Text>
-              <Divider orientation="vertical" mx={'10px'} />
-              {renderResourceSummary()}
+              <Box ml="8px">{renderHeaderSummary()}</Box>
             </Center>
           </PopoverTrigger>
           <Portal>
@@ -372,9 +361,8 @@ export default function SecondaryLinks() {
           >
             <Flex alignItems="center" gap="6px" fontSize="14px" fontWeight={600}>
               <Activity size={16} />
-              <Text>{t('common:resources')}</Text>
             </Flex>
-            {renderResourceSummary({ allowWrap: true })}
+            {renderHeaderSummary({ allowWrap: true })}
           </Flex>
           <Box mt="12px">{renderResourceRows({ showTitle: false })}</Box>
         </Box>
