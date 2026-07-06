@@ -42,17 +42,12 @@ describe('gtmLoginSuccess', () => {
     });
   });
 
-  it('passes through explicit empty product user traits for fallback events', () => {
+  it('omits product user traits when they are not provided', () => {
     const push = vi.mocked(window.dataLayer.push);
 
     gtmLoginSuccess({
       method: 'email',
-      user_type: 'new',
-      productUserTraits: {
-        user_username: '',
-        user_name: '',
-        user_email: ''
-      }
+      user_type: 'new'
     });
 
     expect(push).toHaveBeenCalledWith({
@@ -61,10 +56,7 @@ describe('gtmLoginSuccess', () => {
       oauth2_provider: undefined,
       user_type: 'new',
       module: 'auth',
-      context: 'app',
-      user_username: '',
-      user_name: '',
-      user_email: ''
+      context: 'app'
     });
   });
 });

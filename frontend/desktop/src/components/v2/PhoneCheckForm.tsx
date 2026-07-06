@@ -96,12 +96,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
           console.error('Auto init failed, fallback to manual:', error);
           gtmLoginSuccess({
             user_type: 'new',
-            method: 'phone',
-            productUserTraits: {
-              user_username: '',
-              user_name: '',
-              user_email: ''
-            }
+            method: 'phone'
           });
           window.location.href = oauth2RedirectPath || '/workspace';
         }

@@ -156,12 +156,7 @@ export default function Callback() {
                   gtmLoginSuccess({
                     user_type: 'new',
                     method: 'oauth2',
-                    oauth2Provider: provider,
-                    productUserTraits: {
-                      user_username: '',
-                      user_name: '',
-                      user_email: ''
-                    }
+                    oauth2Provider: provider
                   });
                   await router.push('/workspace');
                 }
