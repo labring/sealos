@@ -77,11 +77,12 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
           const initResult = await autoInitRegionToken();
 
           if (initResult?.data) {
+            const productUserTraits = await sessionConfig(initResult.data);
             gtmLoginSuccess({
               user_type: 'new',
-              method: 'email'
+              method: 'email',
+              productUserTraits
             });
-            await sessionConfig(initResult.data);
             const { setInitGuide } = useGuideModalStore.getState();
             setInitGuide(true);
             window.location.href = postLoginRedirect;
@@ -97,11 +98,12 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
+          const productUserTraits = await sessionConfig(regionTokenRes.data);
           gtmLoginSuccess({
             user_type: 'existing',
-            method: 'email'
+            method: 'email',
+            productUserTraits
           });
-          await sessionConfig(regionTokenRes.data);
           window.location.href = postLoginRedirect;
         }
       }

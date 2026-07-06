@@ -140,12 +140,13 @@ export default function Callback() {
                   const initResult = await autoInitRegionToken();
 
                   if (initResult?.data) {
+                    const productUserTraits = await sessionConfig(initResult.data);
                     gtmLoginSuccess({
                       user_type: 'new',
                       method: 'oauth2',
-                      oauth2Provider: provider
+                      oauth2Provider: provider,
+                      productUserTraits
                     });
-                    await sessionConfig(initResult.data);
                     const { setInitGuide } = useGuideModalStore.getState();
                     setInitGuide(true);
                     await handleLoginRedirect();
@@ -161,14 +162,15 @@ export default function Callback() {
                 }
                 return;
               }
-              gtmLoginSuccess({
-                user_type: 'existing',
-                method: 'oauth2',
-                oauth2Provider: provider
-              });
               const regionTokenRes = await getRegionToken();
               if (regionTokenRes?.data) {
-                await sessionConfig(regionTokenRes.data);
+                const productUserTraits = await sessionConfig(regionTokenRes.data);
+                gtmLoginSuccess({
+                  user_type: 'existing',
+                  method: 'oauth2',
+                  oauth2Provider: provider,
+                  productUserTraits
+                });
                 await handleLoginRedirect();
               }
             } else {
