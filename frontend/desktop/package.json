@@ -59,6 +59,7 @@
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
     "framer-motion": "^10.16.4",
+    "google-auth-library": "^10.9.0",
     "i18next": "^23.11.5",
     "immer": "^10.0.2",
     "js-cookie": "^3.0.5",
@@ -97,6 +98,7 @@
     "zustand": "^4.4.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
     "@testing-library/react": "^14.0.0",
     "@types/js-cookie": "^3.0.4",
     "@types/js-yaml": "^4.0.6",
@@ -110,13 +112,12 @@
     "@types/react-dom": "18.3.7",
     "@types/umami-browser": "^2.3.2",
     "@types/uuid": "^9.0.4",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/browser": "4.0.15",
+    "@vitest/browser-playwright": "4.0.15",
     "dotenv-cli": "^7.3.0",
     "prettier": "^2.8.8",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.12",
-    "@playwright/test": "^1.58.1",
-    "@vitest/browser": "4.0.15",
-    "@vitest/browser-playwright": "4.0.15",
-    "@vitejs/plugin-react": "^5.1.1"
+    "vitest": "^4.0.12"
   }
 }
