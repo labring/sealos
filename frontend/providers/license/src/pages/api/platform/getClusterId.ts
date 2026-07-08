@@ -2,6 +2,7 @@ import { authSession } from '@/services/backend/auth';
 import { K8sApiDefault, getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
+import { parseKubernetesQuantity } from '@/utils/kubernetesQuantity';
 import * as k8s from '@kubernetes/client-node';
 import { Decimal } from 'decimal.js';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -53,16 +54,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const totalWorkspaces = usersResult?.body?.items?.length || 0;
 
     let totalCpu = new Decimal(0);
-    let totalMemoryKi = new Decimal(0);
+    let totalMemoryBytes = new Decimal(0);
 
     nodesResult.body.items.forEach((node) => {
       if (!node?.status?.capacity) return;
-      const cpu = new Decimal(node.status.capacity.cpu);
-      const memoryKi = new Decimal(node.status.capacity.memory.replace('Ki', ''));
-      totalCpu = totalCpu.plus(cpu);
-      totalMemoryKi = totalMemoryKi.plus(memoryKi);
+      const { cpu, memory } = node.status.capacity;
+      if (cpu) {
+        totalCpu = totalCpu.plus(parseKubernetesQuantity(cpu));
+      }
+      if (memory) {
+        totalMemoryBytes = totalMemoryBytes.plus(parseKubernetesQuantity(memory));
+      }
     });
-    const totalMemoryGB = totalMemoryKi.dividedBy(Decimal.pow(2, 20)).ceil(); // 1 GB = 2^20 Ki
+    const totalMemoryGB = totalMemoryBytes.dividedBy(Decimal.pow(2, 30)).ceil();
 
     jsonRes<TSystemInfo>(res, {
       data: {
