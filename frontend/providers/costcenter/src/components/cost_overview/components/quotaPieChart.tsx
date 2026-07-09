@@ -12,7 +12,7 @@ export default function CostChart({
   data,
   color = '#13C4B9'
 }: {
-  data: UserQuotaItemType & { title: string };
+  data: UserQuotaItemType & { title: string; pieTitle?: string };
   color?: string;
 }) {
   const radius = ['45%', '70%'];
@@ -23,7 +23,7 @@ export default function CostChart({
     sm: '5/4'
   });
   const publicOption = {
-    name: data.title,
+    name: data.pieTitle || data.title,
     radius: radius || ['45%', '70%'],
     avoidLabelOverlap: false,
     center: ['50%', '60%'],
@@ -39,7 +39,7 @@ export default function CostChart({
           show: true,
           position: 'center',
           formatter() {
-            return data.title;
+            return data.pieTitle || data.title;
           }
         },
         startAngle: 45,

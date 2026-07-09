@@ -25,13 +25,14 @@ export default function Resource() {
   const [totalPage, setTotalPage] = useState(1);
   const [totalItem, setTotalItem] = useState(0);
   const [pageSize, setPageSize] = useState(4);
+  const namespace = getNamespace()?.[0] || '';
   const queryBody = {
     endTime,
     startTime,
     regionUid,
     appType: getAppType(),
     appName: getAppName(),
-    namespace: getNamespace()?.[0] || '',
+    namespace,
     page,
     pageSize
   };
@@ -88,7 +89,7 @@ export default function Resource() {
             <Text fontSize={'12px'} width={'80px'}>
               {t('workspace')}
             </Text>
-            <NamespaceMenu isDisabled={isFetching} />
+            <NamespaceMenu isDisabled={isFetching} defaultToPrivateTeam />
           </Flex>
           <Refresh
             onRefresh={() => {
@@ -102,7 +103,7 @@ export default function Resource() {
       <Flex flex={1} gap="8px" wrap={'wrap-reverse'}>
         <VStack gap="8px" bg={'white'} p="32px" flex={1} borderRadius={'8px'}>
           <Text alignSelf={'flex-start'}>{t('Source Quota')}</Text>
-          <Quota />
+          <Quota namespace={namespace} />
         </VStack>
         <Stack bg={'white'} p="32px" flex={'1'} borderRadius={'8px'}>
           <Cost />
