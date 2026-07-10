@@ -14,6 +14,10 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
+  Modal,
+  ModalCloseButton,
+  ModalContent,
+  ModalOverlay,
   Text,
   useBreakpointValue,
   useDisclosure,
@@ -28,7 +32,9 @@ import WorkspaceToggle from '../team/WorkspaceToggle';
 import useAppStore from '@/stores/app';
 import {
   ArrowLeftRight,
+  ArrowRight,
   Bell,
+  ChevronRight,
   Copy,
   Dock,
   FileCode,
@@ -44,6 +50,7 @@ import { useGuideModalStore } from '@/stores/guideModal';
 import SecondaryLinks from '../SecondaryLinks';
 import { useSubscriptionStore } from '@/stores/subscription';
 import { Badge } from '@sealos/shadcn-ui/badge';
+import { Button } from '@sealos/shadcn-ui/button';
 import { cn } from '@sealos/shadcn-ui';
 import { getPlanBackgroundClass } from '@/utils/styling';
 import { AlertSettings } from './AlertSettings';
@@ -71,6 +78,7 @@ export default function Account() {
   const kubeconfig = session?.kubeconfig || '';
   const toast = useToast();
   const showDisclosure = useDisclosure();
+  const communityDisclosure = useDisclosure();
   const [, setNotificationAmount] = useState(0);
   const { openDesktopApp, autolaunch } = useAppStore();
   const { openGuideModal, initGuide, autoOpenBlocked, blockAutoOpen } = useGuideModalStore();
@@ -83,6 +91,9 @@ export default function Account() {
   const emailAlertEnabled = layoutConfig?.common.emailAlertEnabled && authConfig?.idp.email.enabled;
   const phoneAlertEnabled = layoutConfig?.common.phoneAlertEnabled && authConfig?.idp.sms.enabled;
   const alertSettingsEnabled = emailAlertEnabled || phoneAlertEnabled;
+  const communityEnabled = layoutConfig?.common.communityEnabled !== false;
+  const communityQRCodeImage = layoutConfig?.common.communityQRCodeImage;
+  const communityLink = layoutConfig?.common.communityLink;
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
@@ -394,7 +405,87 @@ export default function Account() {
                   </Flex>
                 </MenuItem>
               </Box>
+              {communityEnabled && (
+                <>
+                  <Divider bg={'#E4E4E7'} />
+
+                  <Box p={'8px'}>
+                    <MenuItem
+                      mt="0px"
+                      py="6px"
+                      px="8px"
+                      borderRadius="8px"
+                      bg={'rgba(59, 130, 246, 0.15)'}
+                      border={'1px solid rgba(59, 130, 246, 0.15)'}
+                      position="relative"
+                      overflow="hidden"
+                      _before={{
+                        content: '""',
+                        position: 'absolute',
+                        inset: 0,
+                        bgGradient:
+                          'linear(to bottom right, var(--color-background) 13.69%, var(--color-blue-300) 91.5%)',
+                        maskImage: "url('/images/hexgrid.svg')",
+                        WebkitMaskImage: "url('/images/hexgrid.svg')",
+                        maskPosition: 'right center',
+                        WebkitMaskPosition: 'right center',
+                        maskRepeat: 'no-repeat',
+                        WebkitMaskRepeat: 'no-repeat',
+                        maskSize: '197px 55px',
+                        WebkitMaskSize: '197px 55px',
+                        pointerEvents: 'none'
+                      }}
+                      _hover={{
+                        cursor: 'pointer',
+
+                        _before: {
+                          bgGradient:
+                            'linear(to bottom right, var(--color-background) 13.69%, var(--color-blue-500) 91.5%)'
+                        }
+                      }}
+                      _active={{
+                        _before: {
+                          bgGradient:
+                            'linear(to bottom right, var(--color-background) 13.69%, var(--color-blue-500) 91.5%)'
+                        }
+                      }}
+                      className="group"
+                      onClick={communityDisclosure.onOpen}
+                    >
+                      <Flex
+                        alignItems="center"
+                        gap="8px"
+                        w="full"
+                        justifyContent="space-between"
+                        position="relative"
+                      >
+                        <div>
+                          <div className="flex gap-2 items-center">
+                            <span className="font-medium text-sm">
+                              {t('common:community.menu.title')}
+                            </span>
+                            <span className="font-semibold text-xs text-blue-600 py-0.5 px-2.5 rounded-full border-t-[0.5px] border-l-[0.5px] border-t-blue-500 border-l-blue-500 bg-gradient-to-br from-blue-400/40 to-pink-300/40 inset-shadow-[-1px_-1px_2px_0] inset-shadow-white/50">
+                              {t('common:community.menu.badge')}
+                            </span>
+                          </div>
+
+                          <div>
+                            <span className="text-xs">
+                              {t('common:community.menu.description')}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <ChevronRight className="size-4 text-muted-foreground group-hover:text-blue-600" />
+                        </div>
+                      </Flex>
+                    </MenuItem>
+                  </Box>
+                </>
+              )}
+
               <Divider bg={'#E4E4E7'} />
+
               <Box p={'8px'}>
                 {/* <MenuItem
                   py="6px"
@@ -534,6 +625,43 @@ export default function Account() {
           emailEnabled={emailAlertEnabled}
           phoneEnabled={phoneAlertEnabled}
         />
+
+        <Modal isOpen={communityDisclosure.isOpen} onClose={communityDisclosure.onClose} isCentered>
+          <ModalOverlay />
+          <ModalContent
+            className="relative items-center gap-7 overflow-hidden bg-white p-8"
+            width="24rem"
+          >
+            <div className="pointer-events-none absolute inset-x-0 -top-[20%] h-48 bg-[url('/images/sealos-box.svg')] bg-[length:80%_auto] bg-top bg-no-repeat [mask-image:linear-gradient(to_bottom,black_20%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_20%,transparent_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-[url('/images/boxgrid.svg')] bg-no-repeat bg-cover bg-top" />
+            <ModalCloseButton className="z-20" />
+            <h1 className="relative z-10 bg-gradient-to-r from-foreground to-blue-800 bg-clip-text text-2xl font-semibold tracking-tight text-transparent">
+              {t('common:community.modal.title')}
+            </h1>
+            <div className="relative z-10 size-40 rounded-xl border border-blue-500 p-2">
+              {communityQRCodeImage && (
+                <Image
+                  src={communityQRCodeImage}
+                  alt={t('common:community.modal.qr_alt')}
+                  className="size-full rounded-lg object-cover"
+                />
+              )}
+            </div>
+            <span className="relative z-10 text-sm font-medium">
+              {t('common:community.modal.description')}
+            </span>
+            <Button
+              className="relative z-10 h-10 w-full"
+              disabled={!communityLink}
+              onClick={() =>
+                communityLink && window.open(communityLink, '_blank', 'noopener,noreferrer')
+              }
+            >
+              {t('common:community.modal.button')}
+              <ArrowRight className="size-4" />
+            </Button>
+          </ModalContent>
+        </Modal>
 
         {/*
         {layoutConfig?.common.workorderEnabled && (

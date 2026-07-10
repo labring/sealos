@@ -98,6 +98,9 @@ export type LayoutConfigType = {
     phoneAlertEnabled: boolean;
     announcementEnabled: boolean;
     kcRotationEnabled: boolean;
+    communityEnabled?: boolean;
+    communityQRCodeImage?: string;
+    communityLink?: string;
   };
   gtmId: string | null;
 };
@@ -332,7 +335,10 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     emailAlertEnabled: false,
     phoneAlertEnabled: false,
     announcementEnabled: false,
-    kcRotationEnabled: true
+    kcRotationEnabled: true,
+    communityEnabled: true,
+    communityQRCodeImage: '',
+    communityLink: ''
   },
   gtmId: null
 };
