@@ -85,12 +85,12 @@ export function makeAPIClient(
 }
 export async function makeAPIClientByHeader(req: NextApiRequest, res: NextApiResponse) {
   const token = req.body.internalToken;
-  const regionUid = req.body.regionUid;
   const payload = await verifyInternalToken(token);
   if (!payload) {
     jsonRes(res, { code: 401, message: 'Authorization failed' });
     return null;
   }
+  const regionUid = req.body.regionUid || payload.regionUid || global.AppConfig.cloud.regionUID;
   const region = await getRegionByUid(regionUid);
   const client = makeAPIClient(region, payload);
   return client;
