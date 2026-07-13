@@ -25,10 +25,7 @@ import {
   quantityToPublicCpuCores,
   quantityToPublicMemoryGi
 } from '@/utils/resourceQuantity';
-import {
-  APP_NAME_BASE_MAX_LENGTH,
-  APP_GENERATED_NAME_PATTERN
-} from '@/utils/appNameValidation';
+import { APP_NAME_BASE_MAX_LENGTH, APP_GENERATED_NAME_PATTERN } from '@/utils/appNameValidation';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 

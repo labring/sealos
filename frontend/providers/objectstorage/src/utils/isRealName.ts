@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
 import { Config } from '@/config';
+import { signJwt, verifyJwt } from '@sealos/shared/server/jwt';
 
 interface AppTokenPayload {
   workspaceUid: string;
@@ -49,7 +49,11 @@ export async function checkSealosUserIsRealName(token: string): Promise<boolean>
       return false;
     }
 
-    const decoded = jwt.verify(token, sealosAppTokenJwtKey) as AppTokenPayload;
+    const decoded = await verifyJwt<AppTokenPayload>(token, sealosAppTokenJwtKey);
+    if (!decoded) {
+      console.error('CheckSealosUserIsRealName: Token is invalid');
+      return false;
+    }
     const now = Math.floor(Date.now() / 1000);
     if (decoded.exp && decoded.exp < now) {
       console.error('CheckSealosUserIsRealName: Token expired');
@@ -61,7 +65,7 @@ export async function checkSealosUserIsRealName(token: string): Promise<boolean>
       return false;
     }
 
-    const accountServerToken = jwt.sign(
+    const accountServerToken = await signJwt(
       {
         userUid: decoded.userUid,
         userId: decoded.userId

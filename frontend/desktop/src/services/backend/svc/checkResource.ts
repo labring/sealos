@@ -48,7 +48,7 @@ const checkResourceResponse = async (userId: string, userUid: string, userCrName
   const authorization =
     'Bearer ' +
     encodeURI(
-      generateBillingToken({
+      await generateBillingToken({
         userUid,
         userId
       })
@@ -157,7 +157,7 @@ export const allRegionResourceSvc =
         resource: currentResourceCheck
       });
     const otherCheckResp = await Promise.all(
-      regionTarget.map((region) =>
+      regionTarget.map(async (region) =>
         fetch(
           process.env.NODE_ENV === 'development'
             ? `http://127.0.0.1:3000/api/auth/delete/checkCurrentResource`
@@ -165,7 +165,7 @@ export const allRegionResourceSvc =
           {
             headers: {
               authorization: encodeURI(
-                generateLegacyGlobalToken({
+                await generateLegacyGlobalToken({
                   userUid: userUid,
                   userId: userId
                 })

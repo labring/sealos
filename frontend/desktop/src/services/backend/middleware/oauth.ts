@@ -2,7 +2,6 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '../response';
 import { isNumber } from 'lodash';
 import { TgithubToken, TgithubUser, TWechatToken, TWechatUser } from '@/types/user';
-import * as jwt from 'jsonwebtoken';
 import { userCanMerge } from '@/utils/tools';
 import { ProviderType } from 'prisma/global/generated/client';
 import { globalPrisma } from '../db/init';
@@ -13,6 +12,7 @@ import { UNBIND_STATUS } from '@/types/response/unbind';
 import { SemData } from '@/types/sem';
 import axios from 'axios';
 import { AdClickData } from '@/types/adClick';
+import { decodeJwt } from '@sealos/shared/server/jwt';
 
 export const OauthCodeFilter = async (
   req: NextApiRequest,
@@ -95,7 +95,7 @@ export const googleOAuthGuard =
       token_type: string;
       id_token: string;
     };
-    const userInfo = jwt.decode(__data.id_token) as {
+    const userInfo = decodeJwt<{
       iss: string;
       azp: string;
       aud: string;
@@ -109,7 +109,8 @@ export const googleOAuthGuard =
       locale: string;
       iat: number;
       exp: number;
-    };
+    }>(__data.id_token);
+    if (!userInfo) throw Error('get userInfo error');
     const name = userInfo.name;
     const id = userInfo.sub;
     const avatar_url = userInfo.picture;

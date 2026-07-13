@@ -5,7 +5,7 @@ import {
   generateOAuth2RefreshToken,
   verifyGlobalToken
 } from '@/services/backend/auth';
-import { sign } from 'jsonwebtoken';
+import { signJwt } from '@sealos/shared/server/jwt';
 
 describe('verifyGlobalToken', () => {
   beforeEach(() => {
@@ -31,7 +31,7 @@ describe('verifyGlobalToken', () => {
     } as any);
 
   it('maps oauth2 access token claims to legacy payload', async () => {
-    const token = generateOAuth2AccessToken({
+    const token = await generateOAuth2AccessToken({
       sub: 'oauth-uid',
       user_id: 'oauth-user-id',
       client_id: GLOBAL_TOKEN_CLIENT_ID
@@ -46,7 +46,7 @@ describe('verifyGlobalToken', () => {
   });
 
   it('rejects oauth2 refresh token', async () => {
-    const token = generateOAuth2RefreshToken({
+    const token = await generateOAuth2RefreshToken({
       sub: 'oauth-uid',
       user_id: 'oauth-user-id',
       client_id: GLOBAL_TOKEN_CLIENT_ID
@@ -58,7 +58,7 @@ describe('verifyGlobalToken', () => {
   });
 
   it('rejects oauth2 access token without subject', async () => {
-    const token = sign(
+    const token = await signJwt(
       {
         client_id: GLOBAL_TOKEN_CLIENT_ID,
         token_type: 'access_token',
@@ -74,7 +74,7 @@ describe('verifyGlobalToken', () => {
   });
 
   it('rejects oauth2 access token without user_id', async () => {
-    const token = sign(
+    const token = await signJwt(
       {
         sub: 'oauth-uid',
         client_id: GLOBAL_TOKEN_CLIENT_ID,

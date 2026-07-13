@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Box, Button, Center, Flex, Text } from '@chakra-ui/react';
 import { CurrencySymbol, MySelect } from '@sealos/ui';
 import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import dynamic from 'next/dynamic';
 
 import { getDashboardData } from '@/api/platform';
 import { useTranslationClientSide } from '@/app/i18n/client';
@@ -12,7 +13,9 @@ import { useBackendStore } from '@/store/backend';
 import { QueryKey } from '@/types/query-key';
 import { DashboardResponse } from '@/types/user/dashboard';
 
-import RequestDataChart from './components/RequestDataChart';
+const RequestDataChart = dynamic(() => import('./components/RequestDataChart'), {
+  ssr: false,
+});
 
 export default function Home(): React.JSX.Element {
   const { lng } = useI18n();

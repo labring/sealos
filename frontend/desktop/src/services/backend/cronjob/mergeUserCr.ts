@@ -264,21 +264,21 @@ export class MergeUserCrJob implements CronJobStatus {
           headers: {
             Authorization:
               'Bearer ' +
-              generateBillingToken({
+              (await generateBillingToken({
                 userUid: mergeUser.uid,
                 userId: mergeUser.id
-              })
+              }))
           }
         }
       ),
       axios.post(workorderUrl, {
-        token: generateCronJobToken({
+        token: await generateCronJobToken({
           userUid: user.id,
           mergeUserUid: mergeUser.id
         })
       }),
       axios.post(cvmUrl, {
-        token: generateCronJobToken({
+        token: await generateCronJobToken({
           userUid: user.uid,
           mergeUserUid: mergeUser.uid
         })
