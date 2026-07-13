@@ -185,20 +185,6 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
           {dbType === DBTypeEnum.postgresql && (
             <>
               <ChartTemplate
-                apiUrl="/api/monitor/getTransactions"
-                chartTitle={'commits_per_second'}
-                dbName={dbName}
-                dbType={dbType}
-                db={db}
-              />
-              <ChartTemplate
-                apiUrl="/api/monitor/getRollback"
-                chartTitle={'rollbacks_per_second'}
-                dbName={dbName}
-                dbType={dbType}
-                db={db}
-              />
-              <ChartTemplate
                 apiUrl="/api/monitor/getDurationTransaction"
                 chartTitle={'duration_of_transaction'}
                 dbName={dbName}
@@ -206,15 +192,6 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
                 db={db}
                 unit="ms"
               />
-              <ChartTemplate
-                apiUrl="/api/monitor/getBlockReadTime"
-                chartTitle={'block_read_time'}
-                dbName={dbName}
-                dbType={dbType}
-                db={db}
-                unit="ms"
-              />
-
               <ChartTemplate
                 apiUrl="/api/monitor/getBlockWriteTime"
                 chartTitle={'block_write_time'}
@@ -298,15 +275,6 @@ const Monitor = ({ db, dbName, dbType }: { dbName: string; dbType: string; db?: 
                 dbType={dbType}
                 db={db}
                 queryKey={'Redis_KeyEvictions'}
-              />
-              <ChartTemplate
-                apiUrl="/api/monitor/getRedisPerformance"
-                chartTitle={'hits_ratio'}
-                dbName={dbName}
-                dbType={dbType}
-                db={db}
-                queryKey={'Redis_HitsRatio'}
-                unit="%"
               />
             </>
           )}

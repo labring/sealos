@@ -57,6 +57,9 @@ desktopConfig:
   trackingEnabled: false
   realNameAuthEnabled: false
   kcRotationEnabled: false
+  communityEnabled: true
+  communityQRCodeImage: ""
+  communityLink: ""
 
   # Common URLs (default values)
   realNameReward: 0

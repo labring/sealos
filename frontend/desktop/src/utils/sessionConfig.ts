@@ -1,4 +1,5 @@
 import { getPlanInfo, UserInfo } from '@/api/auth';
+import { ProductUserTraits } from '@/types/analytics';
 import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
 import useSessionStore from '@/stores/session';
@@ -13,11 +14,19 @@ export const sessionConfig = async ({
   token: string;
   kubeconfig: string;
   appToken: string;
-}) => {
+}): Promise<ProductUserTraits> => {
   const store = useSessionStore.getState();
   store.setToken(token); // Sets region token for API requests
   const payload = jwtDecode<AccessTokenPayload>(token);
   const [infoData, planInfo] = await Promise.all([UserInfo(), getPlanInfo(payload.workspaceId)]);
+  const primaryEmail =
+    infoData.data?.info.oauthProvider?.find((provider) => provider.providerType === 'EMAIL')
+      ?.providerId || '';
+  const productUserTraits: ProductUserTraits = {
+    user_username: infoData.data?.info.nickname || '',
+    user_name: infoData.data?.info.nickname || '',
+    user_email: primaryEmail
+  };
 
   store.setSession({
     token: appToken,
@@ -27,6 +36,8 @@ export const sessionConfig = async ({
       realName: infoData.data?.info.realName || undefined,
       enterpriseRealName: infoData.data?.info.enterpriseRealName || undefined,
       k8s_username: payload.userCrName,
+      username: infoData.data?.info.nickname || '',
+      email: primaryEmail,
       name: infoData.data?.info.nickname || '',
       avatar: infoData.data?.info.avatarUri || '',
       nsid: payload.workspaceId,
@@ -40,6 +51,8 @@ export const sessionConfig = async ({
 
   const sessionStore = useSessionStore.getState();
   sessionStore.setHasEverLoggedIn(true);
+
+  return productUserTraits;
 };
 
 export const getUserSemData = (): SemData | null => {

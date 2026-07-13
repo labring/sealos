@@ -79,11 +79,15 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
           const initResult = await autoInitRegionToken();
 
           if (initResult?.data) {
+            const productUserTraits = {
+              ...(await sessionConfig(initResult.data)),
+              user_email: ''
+            };
             gtmLoginSuccess({
               user_type: 'new',
-              method: 'phone'
+              method: 'phone',
+              productUserTraits
             });
-            await sessionConfig(initResult.data);
             const { setInitGuide } = useGuideModalStore.getState();
             setInitGuide(true);
             window.location.href = postLoginRedirect;
@@ -99,11 +103,15 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
+          const productUserTraits = {
+            ...(await sessionConfig(regionTokenRes.data)),
+            user_email: ''
+          };
           gtmLoginSuccess({
             user_type: 'existing',
-            method: 'phone'
+            method: 'phone',
+            productUserTraits
           });
-          await sessionConfig(regionTokenRes.data);
           window.location.href = postLoginRedirect;
         }
       }

@@ -74,7 +74,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           if (
             response.status === 503 &&
-            (text.includes('upstream connect error') || text.includes('upstream not health'))
+            (text.includes('upstream connect error') ||
+              text.includes('upstream not health') ||
+              text.includes('no healthy upstream'))
           ) {
             return { ready: false, url, error: 'Upstream not healthy' };
           }

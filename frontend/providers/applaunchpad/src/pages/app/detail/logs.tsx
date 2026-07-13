@@ -109,6 +109,7 @@ export default function LogsPage({ appName }: { appName: string }) {
   });
 
   const selectedPods = formHook.watch('pods').filter((pod) => pod.checked);
+  const selectedContainers = formHook.watch('containers').filter((container) => container.checked);
   const jsonFilters = formHook
     .watch('jsonFilters')
     .filter((item) => item.key && item.key.trim() !== '');
@@ -116,6 +117,7 @@ export default function LogsPage({ appName }: { appName: string }) {
   const timeRange = formatTimeRange(startDateTime, endDateTime);
 
   const allPods = formHook.watch('pods');
+  const allContainers = formHook.watch('containers');
 
   // Build the pod -> containers mapping
   const podContainerMap = useMemo(() => {
@@ -183,6 +185,16 @@ export default function LogsPage({ appName }: { appName: string }) {
     return selectedPods.map((pod) => pod.value);
   }, [selectedPods, allPods]);
 
+  const containerParam = useMemo(() => {
+    if (selectedContainers.length === 0 && allContainers.length > 0) {
+      return ['__none__'];
+    }
+    if (selectedContainers.length === allContainers.length) {
+      return [];
+    }
+    return selectedContainers.map((container) => container.value);
+  }, [selectedContainers, allContainers]);
+
   const { isLoading, refetch: refetchLogsData } = useQuery(
     [
       'logs-data',
@@ -192,7 +204,8 @@ export default function LogsPage({ appName }: { appName: string }) {
       formHook.watch('limit'),
       formHook.watch('isJsonMode'),
       formHook.watch('keyword'),
-      podParam
+      podParam,
+      containerParam
     ],
     () =>
       getAppLogs({
@@ -204,7 +217,7 @@ export default function LogsPage({ appName }: { appName: string }) {
         jsonMode: formHook.watch('isJsonMode').toString(),
         keyword: formHook.watch('keyword'),
         pod: podParam,
-        container: [],
+        container: containerParam,
         jsonQuery: jsonFilters
       }),
     {
@@ -230,6 +243,7 @@ export default function LogsPage({ appName }: { appName: string }) {
       startDateTime.getTime(),
       endDateTime.getTime(),
       podParam,
+      containerParam,
       formHook.watch('isJsonMode'),
       formHook.watch('keyword')
     ],
@@ -242,7 +256,7 @@ export default function LogsPage({ appName }: { appName: string }) {
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         pod: podParam,
-        container: [],
+        container: containerParam,
         jsonQuery: jsonFilters,
         keyword: formHook.watch('keyword')
       }),

@@ -1,6 +1,7 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { generateYamlList, parseTemplateString } from '@/utils/json-yaml';
+import { validateExtraLabels } from '@/utils/common';
 import { mapValues, reduce } from 'lodash';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetTemplateByName } from '../../getTemplateSource';
@@ -12,6 +13,7 @@ interface CreateInstanceRequest {
   name: string;
   template: string;
   args?: Record<string, string>;
+  extraLabels?: Record<string, string>;
 }
 
 interface ResourceQuota {
@@ -122,7 +124,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { name, template: templateName, args = {} } = req.body as CreateInstanceRequest;
+    const {
+      name,
+      template: templateName,
+      args = {},
+      extraLabels: rawExtraLabels
+    } = req.body as CreateInstanceRequest;
+    const extraLabelsValidation = validateExtraLabels(rawExtraLabels);
+    if (extraLabelsValidation.error) {
+      return sendError(res, {
+        status: 400,
+        type: ErrorType.VALIDATION_ERROR,
+        code: ErrorCode.INVALID_VALUE,
+        message: extraLabelsValidation.error
+      });
+    }
+    const extraLabels = extraLabelsValidation.labels;
 
     // Validate required fields
     if (!name || typeof name !== 'string' || name.trim() === '') {
@@ -331,7 +348,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const correctYaml = generateYamlList(generateStr, trimmedName);
+    const correctYaml = generateYamlList(generateStr, trimmedName, extraLabels);
 
     if (!correctYaml || correctYaml.length === 0) {
       return sendError(res, {

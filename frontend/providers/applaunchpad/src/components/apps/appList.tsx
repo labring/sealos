@@ -1,6 +1,7 @@
 import { pauseAppByName, restartAppByName, startAppByName, setAppRemark } from '@/api/app';
 import { useAppOperation } from '@/hooks/useAppOperation';
 import { useGlobalStore } from '@/store/global';
+import { useAppStore } from '@/store/app';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
@@ -71,6 +72,7 @@ const AppList = ({
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
+  const { appListPagination, setAppListPagination } = useAppStore();
   const { userSourcePrice } = useUserStore();
   const { executeOperation, errorModalState, closeErrorModal } = useAppOperation();
   const router = useRouter();
@@ -82,6 +84,8 @@ const AppList = ({
   // Pause confirm dialog state
   const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
   const [pendingPauseAppName, setPendingPauseAppName] = useState('');
+  const [restartDialogOpen, setRestartDialogOpen] = useState(false);
+  const [pendingRestartAppName, setPendingRestartAppName] = useState('');
 
   // Page size edit state
   const [isEditingPageSize, setIsEditingPageSize] = useState(false);
@@ -215,6 +219,11 @@ const AppList = ({
     setPauseDialogOpen(true);
   }, []);
 
+  const handleRestartAppWithDialog = useCallback((appName: string) => {
+    setPendingRestartAppName(appName);
+    setRestartDialogOpen(true);
+  }, []);
+
   // Stable columns definition - no inline functions for cell renderers
   const columns = useMemo<ColumnDef<AppListItemType>[]>(
     () =>
@@ -285,7 +294,7 @@ const AppList = ({
       onEditRemark: handleOpenRemarkModal,
       onPauseApp: handlePauseAppWithDialog,
       onStartApp: handleStartApp,
-      onRestartApp: handleRestartApp,
+      onRestartApp: handleRestartAppWithDialog,
       onDeleteApp: handleDeleteApp,
       onUpdateApp: handleUpdateApp
     }),
@@ -293,7 +302,7 @@ const AppList = ({
       handleOpenRemarkModal,
       handlePauseAppWithDialog,
       handleStartApp,
-      handleRestartApp,
+      handleRestartAppWithDialog,
       handleDeleteApp,
       handleUpdateApp
     ]
@@ -302,16 +311,25 @@ const AppList = ({
   const table = useReactTable({
     data: apps,
     columns,
+    state: {
+      pagination: appListPagination
+    },
+    onPaginationChange: (updater) => {
+      const nextPagination = typeof updater === 'function' ? updater(appListPagination) : updater;
+      setAppListPagination(nextPagination);
+    },
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: PAGE_SIZE
-      }
-    },
     autoResetPageIndex: false,
     meta: tableMeta
   });
+
+  useEffect(() => {
+    const pageCount = table.getPageCount();
+    if (pageCount > 0 && appListPagination.pageIndex >= pageCount) {
+      setAppListPagination({ pageIndex: pageCount - 1 });
+    }
+  }, [appListPagination.pageIndex, setAppListPagination, table]);
 
   const handlePageSizeStartEdit = () => {
     setIsEditingPageSize(true);
@@ -321,8 +339,7 @@ const AppList = ({
   const handlePageSizeSave = () => {
     const newPageSize = parseInt(editingPageSizeValue, 10);
     if (Number.isFinite(newPageSize) && newPageSize > 0 && newPageSize <= 100) {
-      table.setPageSize(newPageSize);
-      table.setPageIndex(0);
+      setAppListPagination({ pageIndex: 0, pageSize: newPageSize });
     }
     setIsEditingPageSize(false);
   };
@@ -494,6 +511,38 @@ const AppList = ({
                 handlePauseApp(pendingPauseAppName);
                 setPauseDialogOpen(false);
                 setPendingPauseAppName('');
+              }}
+            >
+              {t('Yes')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={restartDialogOpen} onOpenChange={setRestartDialogOpen}>
+        <DialogContent className="w-[360px] text-foreground">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold leading-none">
+              <TriangleAlert className="h-4 w-4 text-yellow-600" />
+              {t('Warning')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-sm font-normal">{t('Confirm to restart this application?')}</div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="lg"
+              className="shadow-none"
+              onClick={() => setRestartDialogOpen(false)}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button
+              size="lg"
+              className="shadow-none"
+              onClick={() => {
+                handleRestartApp(pendingRestartAppName);
+                setRestartDialogOpen(false);
+                setPendingRestartAppName('');
               }}
             >
               {t('Yes')}

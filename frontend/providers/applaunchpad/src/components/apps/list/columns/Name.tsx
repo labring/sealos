@@ -15,13 +15,13 @@ export const Name = memo<CellContext<AppListItemType, unknown>>(
     return (
       <div className="group/name-column flex w-full cursor-pointer items-center pr-4 h-full">
         <div className="flex w-full flex-1 flex-col leading-none">
-          <div className="flex items-center gap-1">
+          <div className="relative flex min-w-0 items-center">
             <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900">
               {item.name}
             </span>
             {!item.remark && (
               <div
-                className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity select-none group-hover/name-column:opacity-100"
+                className="absolute right-0 flex items-center gap-1 bg-white pl-2 opacity-0 transition-opacity select-none group-hover/name-column:opacity-100 group-hover:bg-zinc-50"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEditRemark(item.name);

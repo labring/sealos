@@ -1,5 +1,6 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { CircleHelpIcon, Copy } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import ICPStatus from './ICPStatus';
 
 export type NetworkConfigurationTableItem = {
@@ -30,34 +31,66 @@ const NetworkConfigurationTable = ({
   copyData,
   t
 }: NetworkConfigurationTableProps) => {
+  const [icpRegisteredByPublicUrl, setIcpRegisteredByPublicUrl] = useState<
+    Record<string, boolean | null>
+  >({});
+
+  const handleIcpRegistrationStatusChange = useCallback(
+    (publicUrl: string, registered: boolean | null) => {
+      setIcpRegisteredByPublicUrl((prev) => {
+        if (prev[publicUrl] === registered) return prev;
+        return {
+          ...prev,
+          [publicUrl]: registered
+        };
+      });
+    },
+    []
+  );
+
   return (
-    <div className="overflow-auto pb-6">
-      <table className="w-full min-w-[720px] table-fixed">
+    <div className="min-w-0 overflow-auto pb-6">
+      <table className="w-full table-fixed">
+        <colgroup>
+          <col className="w-[85px]" />
+          <col className="w-[35%]" />
+          <col />
+        </colgroup>
         <thead className="sticky top-0 z-10 whitespace-nowrap">
           <tr className="bg-zinc-50">
-            <th className="w-[85px] h-10 text-sm font-normal text-zinc-500 px-4 py-3 rounded-l-lg text-left">
+            <th className="h-10 px-4 py-3 text-left text-sm font-normal text-zinc-500 rounded-l-lg">
               {t('Port')}
             </th>
-            <th className="h-10 text-sm font-normal text-zinc-500 px-4 py-3 text-left">
+            <th className="h-10 px-4 py-3 text-left text-sm font-normal text-zinc-500">
               {t('Private Address')}
             </th>
-            <th className="h-10 text-sm font-normal text-zinc-500 px-4 py-3 rounded-r-lg text-left">
+            <th className="h-10 px-4 py-3 text-left text-sm font-normal text-zinc-500 rounded-r-lg">
               {t('Public Address')}
             </th>
           </tr>
         </thead>
         <tbody className="whitespace-nowrap">
           {networks.map((network, index) => {
+            const publicUrl = network.public;
+            const customDomain = network.customDomain ?? '';
+            const isIcpUnregistered = !!publicUrl && icpRegisteredByPublicUrl[publicUrl] === false;
+            const showReadyTag = publicUrl && network.showReadyStatus && !isIcpUnregistered;
+            const showIcpStatus =
+              network.customDomain !== null &&
+              network.showReadyStatus === true &&
+              !!publicUrl &&
+              !!customDomain;
+
             return (
               <tr key={network.inline + index} className="!border-b border-zinc-100">
-                <td className="w-[85px] px-4 py-2">
+                <td className="px-4 py-2">
                   <div className="text-sm text-zinc-700">{network.port}</div>
                 </td>
-                <td className="px-4 py-2">
+                <td className="min-w-0 px-4 py-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div
-                        className="text-sm w-fit text-zinc-700 cursor-pointer"
+                        className="truncate text-sm text-zinc-700 cursor-pointer"
                         onClick={() => copyData(network.inline)}
                       >
                         {network.inline.replace('.svc.cluster.local', '')}
@@ -68,9 +101,19 @@ const NetworkConfigurationTable = ({
                     </TooltipContent>
                   </Tooltip>
                 </td>
-                <td className="px-4 py-2">
-                  <div className="flex items-center gap-2 whitespace-nowrap">
-                    {network.public && network.showReadyStatus && (
+                <td className="min-w-0 px-4 py-2">
+                  <div className="flex min-w-0 items-center gap-2 whitespace-nowrap">
+                    {showIcpStatus && (
+                      <ICPStatus
+                        customDomain={customDomain}
+                        enabled={Boolean(showIcpStatus)}
+                        onRegistrationStatusChange={(registered) =>
+                          handleIcpRegistrationStatusChange(publicUrl, registered)
+                        }
+                      />
+                    )}
+
+                    {showReadyTag && (
                       <div className="min-w-[70px] shrink-0">
                         {statusMap[network.public]?.ready ? (
                           <div className="w-fit relative top-[1px] h-5 flex shrink-0 items-center gap-1 whitespace-nowrap text-xs font-medium bg-emerald-50 text-emerald-600 rounded-full px-2 py-0.5 border-[0.5px] border-emerald-200">
@@ -101,7 +144,7 @@ const NetworkConfigurationTable = ({
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div
-                            className={`text-sm ${
+                            className={`min-w-0 truncate text-sm ${
                               network.public ? 'text-zinc-700 cursor-pointer' : 'text-zinc-500'
                             }`}
                             {...(network.public
@@ -128,22 +171,6 @@ const NetworkConfigurationTable = ({
                         </div>
                       )}
                     </div>
-
-                    {network.customDomain !== null &&
-                      network.showReadyStatus === true &&
-                      network.public &&
-                      !statusMap[network.public]?.ready && (
-                        <ICPStatus
-                          customDomain={network.customDomain}
-                          enabled={
-                            !!networkStatus &&
-                            !!network.customDomain &&
-                            network.showReadyStatus === true &&
-                            !!network.public &&
-                            !statusMap[network.public]?.ready
-                          }
-                        />
-                      )}
                   </div>
                 </td>
               </tr>

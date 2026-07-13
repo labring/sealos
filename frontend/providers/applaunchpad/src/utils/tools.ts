@@ -10,6 +10,37 @@ import { useTranslation } from 'next-i18next';
 import * as jsonpatch from 'fast-json-patch';
 import { Base64 } from 'js-base64';
 
+const preserveInitContainerVolumes = (source: any, target: any) => {
+  const initVolumeMountNames = new Set<string>();
+
+  source?.spec?.template?.spec?.initContainers?.forEach((container: any) => {
+    container?.volumeMounts?.forEach((mount: any) => {
+      if (mount?.name) {
+        initVolumeMountNames.add(mount.name);
+      }
+    });
+  });
+
+  if (initVolumeMountNames.size === 0) return;
+
+  const sourceVolumes = source?.spec?.template?.spec?.volumes || [];
+  const targetSpec = target?.spec?.template?.spec;
+  if (!targetSpec) return;
+
+  const targetVolumes = targetSpec.volumes || [];
+  const targetVolumeNames = new Set(
+    targetVolumes.map((volume: any) => volume?.name).filter(Boolean)
+  );
+  const missingVolumes = sourceVolumes.filter(
+    (volume: any) =>
+      volume?.name && initVolumeMountNames.has(volume.name) && !targetVolumeNames.has(volume.name)
+  );
+
+  if (missingVolumes.length === 0) return;
+
+  targetSpec.volumes = [...targetVolumes, ...missingVolumes];
+};
+
 export function formatSize(size: number, fixedNumber = 2) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
   let i = 0;
@@ -358,6 +389,20 @@ export const patchYamlList = ({
           }
 
           const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument;
+
+          if (
+            oldFormJson.kind === YamlKindEnum.Deployment ||
+            oldFormJson.kind === YamlKindEnum.StatefulSet
+          ) {
+            preserveInitContainerVolumes(
+              originalYamlList.find(
+                (item) =>
+                  item.kind === oldFormJson?.kind &&
+                  item?.metadata?.name === oldFormJson?.metadata?.name
+              ),
+              patchResYamlJson
+            );
+          }
 
           // delete invalid field
           // @ts-ignore

@@ -46,4 +46,21 @@ describe('network-url helpers', () => {
       `ws${'://'}ws.example.com:80`
     );
   });
+
+  it('omits the default secure public port', () => {
+    const config = { disableHttps: false, httpPort: ':80', cloudPort: ':443' };
+
+    expect(buildExternalUrl({ protocol: 'HTTP', host: 'app.example.com', config })).toBe(
+      'https://app.example.com'
+    );
+    expect(buildExternalUrl({ protocol: 'GRPC', host: 'grpc.example.com', config })).toBe(
+      'grpcs://grpc.example.com'
+    );
+    expect(buildExternalUrl({ protocol: 'WS', host: 'ws.example.com', config })).toBe(
+      `wss${'://'}ws.example.com`
+    );
+    expect(
+      buildExternalUrl({ protocol: 'TCP', host: 'tcp.example.com', nodePort: 443, config })
+    ).toBe('tcp://tcp.example.com:443');
+  });
 });

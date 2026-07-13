@@ -52,6 +52,15 @@ import {
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
+export const normalizeCustomDomainHost = (input: string) => {
+  try {
+    const url = input.includes('://') ? new URL(input) : new URL(`https://${input}`);
+    return url.hostname.toLowerCase();
+  } catch {
+    return input.trim().toLowerCase();
+  }
+};
+
 // Calculate app  status
 function calculateAppStatus(
   appDeploy: V1Deployment | V1StatefulSet
@@ -130,7 +139,7 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
   return {
     id: app.metadata?.uid || ``,
     name: app.metadata?.name || 'app name',
-    status: appStatusMap.waiting,
+    status: calculateAppStatus(app),
     isPause: !!app?.metadata?.annotations?.[pauseKey],
     createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: parseK8sQuantityOrZero(
@@ -512,7 +521,7 @@ export const adaptAppDetail = async (
           publicDomain: isCustomDomain
             ? ingress?.metadata?.labels?.[publicDomainKey] || ''
             : domain.split('.')[0],
-          customDomain: isCustomDomain ? domain : '',
+          customDomain: isCustomDomain ? normalizeCustomDomainHost(domain) : '',
           domain: isCustomDomain
             ? cloudOptions.domain
             : item?.nodePort

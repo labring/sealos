@@ -232,6 +232,9 @@ desktop:
       emailAlertEnabled: false
       phoneAlertEnabled: false
       announcementEnabled: false
+      communityEnabled: true
+      communityQRCodeImage: ''
+      communityLink: ''
   auth:
     proxyAddress: ''
     callbackURL: 'https://cloud.example.com/callback'

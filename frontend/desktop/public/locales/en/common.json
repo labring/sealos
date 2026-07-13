@@ -90,6 +90,19 @@
   "click_on_any_shadow_to_skip": "Click on any shadow to skip",
   "click_to_upload_file": "Click to upload file",
   "completed": "Finish",
+  "community": {
+    "menu": {
+      "title": "Community",
+      "badge": "Featured",
+      "description": "Updates • Events • Stories"
+    },
+    "modal": {
+      "title": "Join the Sealos Community",
+      "description": "Help shape the future of Sealos.",
+      "button": "Join Us",
+      "qr_alt": "Sealos community QR code"
+    }
+  },
   "completed_the_deployment_of_an_nginx_for_the_first_time": "Completed a deployment of nginx for the first time",
   "confirm": "Confirm",
   "confirm_again": "confirm again",

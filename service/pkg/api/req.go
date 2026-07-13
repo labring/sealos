@@ -128,7 +128,7 @@ var (
 		"disk_used":     "(max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-mysql-\\\\d\"}))",
 		"disk":          "round((max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_used_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-mysql-\\\\d\"})) / (max by (persistentvolumeclaim,namespace) (kubelet_volume_stats_capacity_bytes {namespace=~\"#\", persistentvolumeclaim=~\"data-@-mysql-\\\\d\"})) * 100, 0.01)",
 		"uptime":        "sum(mysql_global_status_uptime{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}) by (namespace,app_kubernetes_io_instance,pod)",
-		"connections":   "sum(max_over_time(mysql_global_status_threads_connected{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])) by (namespace,app_kubernetes_io_instance,pod)",
+		"connections":   "sum(max_over_time(mysql_global_status_threads_connected{namespace=~\"#\", workloads_kubeblocks_io_instance=~\"@\"}[1m])) by (namespace,app_kubernetes_io_instance,pod)",
 		"commands":      "topk(5, rate(mysql_global_status_commands_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m]) > 0)",
 
 		"innodb":       "sum(mysql_global_variables_innodb_buffer_pool_size{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}) by (namespace,app_kubernetes_io_instance,pod)",

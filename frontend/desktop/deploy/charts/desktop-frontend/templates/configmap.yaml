@@ -91,6 +91,9 @@ data:
           phoneAlertEnabled: false
           announcementEnabled: false
           kcRotationEnabled: {{ .Values.desktopConfig.kcRotationEnabled }}
+          communityEnabled: {{ .Values.desktopConfig.communityEnabled }}
+          communityQRCodeImage: {{ .Values.desktopConfig.communityQRCodeImage | quote }}
+          communityLink: {{ .Values.desktopConfig.communityLink | quote }}
       auth:
         callbackURL: "https://{{ .Values.desktopConfig.cloudDomain }}{{ if .Values.desktopConfig.cloudPort }}:{{ .Values.desktopConfig.cloudPort }}{{ end }}/callback"
         signUpEnabled: {{ .Values.desktopConfig.signUpEnabled }}

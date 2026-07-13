@@ -4,14 +4,7 @@
 
 import { Config } from '@/config';
 
-export type MonitorQueryType =
-  | 'cpu'
-  | 'memory'
-  | 'average_cpu'
-  | 'average_memory'
-  | 'storage'
-  | 'size_n'
-  | 'avail_n';
+export type MonitorQueryType = 'cpu' | 'memory' | 'average_cpu' | 'average_memory' | 'storage';
 
 export interface MonitorQueryParams {
   namespace: string;

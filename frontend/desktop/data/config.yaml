@@ -73,6 +73,9 @@ desktop:
       phoneAlertEnabled: false
       announcementEnabled: false
       kcRotationEnabled: true
+      communityEnabled: true
+      communityQRCodeImage: ""
+      communityLink: ""
     gtmId: null
   auth:
     billingToken: ""

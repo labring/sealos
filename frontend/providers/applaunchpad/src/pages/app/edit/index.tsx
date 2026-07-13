@@ -45,6 +45,7 @@ import {
   quantityToMemoryMi,
   quantityToStorageGi
 } from '@/utils/resourceQuantity';
+import { hydrateLegacyAppFormData } from '@/utils/hydrateLegacyAppForm';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -362,8 +363,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       const query = router.query as { formData?: string; name?: string };
       if (!query.formData) return;
 
-      const parsedData: Partial<AppEditSyncedFields> = JSON.parse(
-        decodeURIComponent(query.formData)
+      const parsedData: Partial<AppEditSyncedFields> = hydrateLegacyAppFormData(
+        JSON.parse(decodeURIComponent(query.formData))
       );
 
       const basicFields: (keyof AppEditSyncedFields)[] = router.query?.name

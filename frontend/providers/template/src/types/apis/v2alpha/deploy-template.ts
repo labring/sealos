@@ -1,6 +1,14 @@
 import { z } from 'zod';
 import { InstanceResourceQuotaSchema, ResourceSchema, InstanceSchema } from './create-instance';
 
+const ExtraLabelsSchema = z
+  .object({})
+  .catchall(z.string().describe('Kubernetes label value'))
+  .describe(
+    'Optional Kubernetes labels to attach to the Instance and rendered resources. Reserved Sealos ownership labels cannot be overridden.'
+  )
+  .meta({ example: { 'brain.io/project-id': 'project-uid' } });
+
 // Request body schema for deploying a template from raw YAML
 export const DeployTemplateRequestSchema = z.object({
   yaml: z
@@ -26,7 +34,8 @@ export const DeployTemplateRequestSchema = z.object({
       'If true, validates the resources against the Kubernetes API but does not create anything. Returns 200 with a preview. Default: false.'
     )
     .meta({ example: true })
-    .optional()
+    .optional(),
+  extraLabels: ExtraLabelsSchema.optional()
 });
 
 // Dry-run preview response
