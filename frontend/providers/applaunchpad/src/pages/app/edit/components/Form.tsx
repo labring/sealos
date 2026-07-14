@@ -236,7 +236,7 @@ const Form = ({
 
   const storageQuotaLeft = useMemo(() => {
     const storageQuota = userQuota?.find((item) => item.type === 'storage');
-    if (!storageQuota) return 0;
+    if (!storageQuota) return PVC_STORAGE_MAX;
 
     const newlyUsedStorage =
       storeList.reduce((sum, item) => sum + item.value, 0) -
