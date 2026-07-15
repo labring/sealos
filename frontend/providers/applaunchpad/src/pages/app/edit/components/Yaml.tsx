@@ -21,8 +21,12 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
   return (
     <Grid
       h={'100%'}
-      templateColumns={'220px 1fr'}
-      gridGap={5}
+      templateColumns={{
+        base: 'minmax(0, 1fr)',
+        md: '180px minmax(0, 1fr)',
+        lg: '220px minmax(0, 1fr)'
+      }}
+      gridGap={{ base: 3, lg: 5 }}
       alignItems={'start'}
       px={`${pxVal}px`}
     >
