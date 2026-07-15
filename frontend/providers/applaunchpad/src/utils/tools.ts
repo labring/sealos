@@ -464,6 +464,17 @@ export const patchYamlList = ({
 
           const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument;
 
+          if (
+            (oldFormJson.kind === YamlKindEnum.Deployment ||
+              oldFormJson.kind === YamlKindEnum.StatefulSet) &&
+            patchRes.some(
+              (item) => item.op === 'remove' && item.path === '/spec/template/spec/imagePullSecrets'
+            )
+          ) {
+            // JSON Merge Patch requires null to delete a field; omission preserves the old value.
+            (patchResYamlJson as any).spec.template.spec.imagePullSecrets = null;
+          }
+
           // delete invalid field
           // @ts-ignore
           delete patchResYamlJson.status;
