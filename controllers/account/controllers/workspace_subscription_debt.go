@@ -205,7 +205,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(
 		}
 
 		// 处理状态变更
-		if err := wdp.processExpiredWorkspace(ctx, subscription, now); err != nil {
+		if err := wdp.processExpiredWorkspace(ctx, subscription, currentStatus); err != nil {
 			wdp.Logger.Error(fmt.Errorf("failed to process workspace: %w", err),
 				"", "workspace", subscription.Workspace)
 			continue
@@ -220,9 +220,9 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspaces(
 func (wdp *WorkspaceSubscriptionDebtProcessor) processExpiredWorkspace(
 	ctx context.Context,
 	subscription *types.WorkspaceSubscription,
-	now time.Time,
+	currentStatus types.SubscriptionStatus,
 ) error {
-	currentStatus, lastStatus := wdp.determineCurrentStatus(now), subscription.Status
+	lastStatus := subscription.Status
 	if lastStatus == currentStatus {
 		return nil
 	}
@@ -265,15 +265,23 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 		return wdp.updateSubscriptionStatus(ctx, subscription, types.SubscriptionStatusDeleted)
 	}
 
-	userUID := subscription.UserUID
-	nr, err := wdp.AccountV2.GetNotificationRecipient(subscription.UserUID)
-	if err != nil {
-		// logrus.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
-		wdp.VLogger.Errorf("failed to get notification recipient for user %s: %v", userUID, err)
+	if err := wdp.syncWorkspaceDebtStatus(ctx, subscription, lastDebtStatus, currentDebtStatus, namespaces); err != nil {
+		return err
 	}
-	wdp.UserContactProvider.SetUserContact(userUID, nr)
-	defer wdp.UserContactProvider.RemoveUserContact(userUID)
+	if err := wdp.updateSubscriptionStatus(ctx, subscription, currentDebtStatus); err != nil {
+		return fmt.Errorf("update subscription status error: %w", err)
+	}
 
+	return nil
+}
+
+func (wdp *WorkspaceSubscriptionDebtProcessor) syncWorkspaceDebtStatus(
+	ctx context.Context,
+	subscription *types.WorkspaceSubscription,
+	lastDebtStatus,
+	currentDebtStatus types.SubscriptionStatus,
+	namespaces []string,
+) error {
 	eventData := &usernotify.WorkspaceSubscriptionDebtEventData{
 		Type:          usernotify.EventTypeWorkspaceSubscriptionDebt,
 		PlanName:      subscription.PlanName,
@@ -301,14 +309,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 		if err := wdp.updateWorkspaceDebtStatus(ctx, types.SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
 			return fmt.Errorf("update workspace debt status error: %w", err)
 		}
-		if _, err = wdp.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeDebt, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
-			wdp.VLogger.Errorf(
-				"failed to send subscription success notification for user %s: %v",
-				userUID,
-				err,
-			)
-			// return fmt.Errorf("failed to send subscription success notification to user %s: %w", userUID, err)
-		}
+		wdp.sendWorkspaceDebtEmail(subscription, eventData)
 
 	case types.SubscriptionStatusDebtPreDeletion:
 		if err := wdp.sendWorkspaceDesktopNotice(ctx, currentDebtStatus, namespaces); err != nil {
@@ -332,11 +333,40 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) flushWorkspaceDebtStatus(
 	if err := wdp.readWorkspaceNotices(ctx, namespaces, wdp.getWorkspaceStatusesGreaterThan(currentDebtStatus)...); err != nil {
 		return fmt.Errorf("read workspace notices error: %w", err)
 	}
-	if err := wdp.updateSubscriptionStatus(ctx, subscription, currentDebtStatus); err != nil {
-		return fmt.Errorf("update subscription status error: %w", err)
-	}
 
 	return nil
+}
+
+func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDebtEmail(
+	subscription *types.WorkspaceSubscription,
+	eventData usernotify.EventData,
+) {
+	if wdp.AccountV2 == nil || wdp.UserContactProvider == nil || wdp.UserNotificationService == nil {
+		return
+	}
+
+	userUID := subscription.UserUID
+	nr, err := wdp.AccountV2.GetNotificationRecipient(userUID)
+	if err != nil {
+		wdp.logWorkspaceDebtErrorf("failed to get notification recipient for user %s: %v", userUID, err)
+		return
+	}
+	wdp.UserContactProvider.SetUserContact(userUID, nr)
+	defer wdp.UserContactProvider.RemoveUserContact(userUID)
+
+	if _, err = wdp.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeDebt, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
+		wdp.logWorkspaceDebtErrorf(
+			"failed to send workspace debt notification for user %s: %v",
+			userUID,
+			err,
+		)
+	}
+}
+
+func (wdp *WorkspaceSubscriptionDebtProcessor) logWorkspaceDebtErrorf(format string, args ...any) {
+	if wdp.VLogger != nil {
+		wdp.VLogger.Errorf(format, args...)
+	}
 }
 
 // updateSubscriptionStatus 更新订阅状态
