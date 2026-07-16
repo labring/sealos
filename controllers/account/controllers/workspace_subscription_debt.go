@@ -356,7 +356,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDebtEmail(
 
 	if _, err = wdp.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeDebt, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
 		wdp.logWorkspaceDebtErrorf(
-			"failed to send subscription success notification for user %s: %v",
+			"failed to send workspace debt notification for user %s: %v",
 			userUID,
 			err,
 		)
