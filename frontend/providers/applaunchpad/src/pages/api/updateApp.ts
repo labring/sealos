@@ -59,6 +59,14 @@ const normalizeCertificateResource = <T extends Record<string, any>>(resource: T
 const normalizeNetworkResource = <T extends Record<string, any>>(resource: T): T =>
   normalizeCertificateResource(normalizeIngressResource(resource));
 
+const isWorkloadKind = (kind?: string) =>
+  kind === YamlKindEnum.Deployment || kind === YamlKindEnum.StatefulSet;
+
+const isRestartTimeWorkloadPatch = (item: AppPatchPropsType[number]) =>
+  item.type === 'patch' &&
+  isWorkloadKind(item.kind) &&
+  !!item.value?.spec?.template?.metadata?.labels?.restartTime;
+
 async function updateAppCRUrl(
   k8sCustomObjects: CustomObjectsApi,
   namespace: string,
@@ -394,18 +402,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
     );
 
-    // patch
-    await Promise.all(
-      patch.map((item) => {
+    const patchItems = patch.filter(
+      (item): item is Extract<AppPatchPropsType[number], { type: 'patch' }> => {
         const cr = crMap[item.kind];
-        if (!cr || item.type !== 'patch' || !item.value?.metadata) {
-          return;
-        }
-        normalizeNetworkResource(item.value);
-        infoLog('patch cr', { kind: item.kind, name: item.value?.metadata?.name });
-        return cr.patch(item.value);
-      })
+        return !!cr && item.type === 'patch' && !!item.value?.metadata;
+      }
     );
+    const restartTimeWorkloadPatches = patchItems.filter(isRestartTimeWorkloadPatch);
+    const regularPatches = patchItems.filter((item) => !isRestartTimeWorkloadPatch(item));
+    const applyPatchItem = (
+      item: Extract<AppPatchPropsType[number], { type: 'patch' }>
+    ): Promise<any> | undefined => {
+      const cr = crMap[item.kind];
+      if (!cr) return;
+      normalizeNetworkResource(item.value);
+      infoLog('patch cr', { kind: item.kind, name: item.value?.metadata?.name });
+      return cr.patch(item.value);
+    };
+
+    // Patch ConfigMap/Service/etc. first. ConfigMap subPath updates need the file content
+    // replaced before the restartTime workload patch creates fresh Pods.
+    await Promise.all(regularPatches.map(applyPatchItem));
+    await Promise.all(restartTimeWorkloadPatches.map(applyPatchItem));
 
     // create
     const createYamlList = patch
