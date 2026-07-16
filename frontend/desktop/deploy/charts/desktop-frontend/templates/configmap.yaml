@@ -134,6 +134,8 @@ data:
             proxyAddress: "{{ .Values.desktopConfig.googleProxyAddress }}"
             clientID: "{{ .Values.desktopConfig.googleClientId }}"
             clientSecret: "{{ .Values.desktopConfig.googleClientSecret }}"
+            oneTapOrigins:
+{{ toYaml .Values.desktopConfig.googleOneTapOrigins | indent 14 }}
           oauth2:
             enabled: {{ .Values.desktopConfig.oauth2Enabled }}
             pkce: {{ .Values.desktopConfig.oauth2Pkce }}

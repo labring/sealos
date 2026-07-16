@@ -57,6 +57,7 @@ desktopConfig:
   allowedOrigins:
     - "costcenter"
     - "license"
+  googleOneTapOrigins: []
 
   # Database connections (auto-configured from sealos-config)
   databaseMongodbURI: ""               # Auto-fetched from sealos-config.databaseMongodbURI

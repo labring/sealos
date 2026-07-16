@@ -121,6 +121,7 @@ desktop:
         proxyAddress: ""
         clientID: ""
         clientSecret: ""
+        oneTapOrigins: []
       oauth2:
         enabled: false
         pkce: false

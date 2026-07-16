@@ -150,6 +150,7 @@ export type AuthConfigType = {
       proxyAddress?: string;
       clientID: string;
       clientSecret?: string;
+      oneTapOrigins?: string[];
     };
     oauth2?: {
       enabled: boolean;
@@ -363,7 +364,8 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
     google: {
       enabled: false,
       clientID: '',
-      proxyAddress: ''
+      proxyAddress: '',
+      oneTapOrigins: []
     },
     sms: {
       enabled: false
