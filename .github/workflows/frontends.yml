@@ -68,8 +68,8 @@ jobs:
     outputs:
       modules: ${{ steps.set-matrix.outputs.modules }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
         id: filter
         with:
           filters: |
@@ -106,20 +106,36 @@ jobs:
               - 'frontend/providers/objectstorage/**'
             kubepanel:
               - 'frontend/providers/kubepanel/**'
-            devbox:
-              - 'frontend/providers/devbox/**'
             desktop:
               - 'frontend/desktop/**'
       - name: Generate build matrix
         id: set-matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          FILTER_AIPROXY: ${{ steps.filter.outputs.aiproxy }}
+          FILTER_APPLAUNCHPAD: ${{ steps.filter.outputs.applaunchpad }}
+          FILTER_CLOUDSERVER: ${{ steps.filter.outputs.cloudserver }}
+          FILTER_COSTCENTER: ${{ steps.filter.outputs.costcenter }}
+          FILTER_CRONJOB: ${{ steps.filter.outputs.cronjob }}
+          FILTER_DBPROVIDER: ${{ steps.filter.outputs.dbprovider }}
+          FILTER_DESKTOP: ${{ steps.filter.outputs.desktop }}
+          FILTER_INVITE: ${{ steps.filter.outputs.invite }}
+          FILTER_KUBEPANEL: ${{ steps.filter.outputs.kubepanel }}
+          FILTER_LICENSE: ${{ steps.filter.outputs.license }}
+          FILTER_OBJECTSTORAGE: ${{ steps.filter.outputs.objectstorage }}
+          FILTER_PACKAGES: ${{ steps.filter.outputs.packages }}
+          FILTER_ROOT_CONFIG: ${{ steps.filter.outputs.root-config }}
+          FILTER_TEMPLATE: ${{ steps.filter.outputs.template }}
+          FILTER_TERMINAL: ${{ steps.filter.outputs.terminal }}
+          FORCE_ALL: ${{ inputs.force_all }}
         run: |
           modules=()
 
           # Check if we need to build all modules
-          if [[ "${{ steps.filter.outputs.packages }}" == "true" || \
-                "${{ steps.filter.outputs.root-config }}" == "true" || \
-                "${{ inputs.force_all }}" == "true" || \
-                "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "${FILTER_PACKAGES}" == "true" || \
+                "${FILTER_ROOT_CONFIG}" == "true" || \
+                "${FORCE_ALL}" == "true" || \
+                "${EVENT_NAME}" == "workflow_dispatch" ]]; then
             modules=(
               "providers/aiproxy"
               "providers/license"
@@ -133,25 +149,23 @@ jobs:
               "providers/invite"
               "providers/objectstorage"
               "providers/kubepanel"
-              "providers/devbox"
               "desktop"
             )
           else
             # Only build changed modules
-            [[ "${{ steps.filter.outputs.aiproxy }}" == "true" ]] && modules+=("providers/aiproxy")
-            [[ "${{ steps.filter.outputs.license }}" == "true" ]] && modules+=("providers/license")
-            [[ "${{ steps.filter.outputs.cronjob }}" == "true" ]] && modules+=("providers/cronjob")
-            [[ "${{ steps.filter.outputs.template }}" == "true" ]] && modules+=("providers/template")
-            [[ "${{ steps.filter.outputs.applaunchpad }}" == "true" ]] && modules+=("providers/applaunchpad")
-            [[ "${{ steps.filter.outputs.terminal }}" == "true" ]] && modules+=("providers/terminal")
-            [[ "${{ steps.filter.outputs.dbprovider }}" == "true" ]] && modules+=("providers/dbprovider")
-            [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
-            [[ "${{ steps.filter.outputs.cloudserver }}" == "true" ]] && modules+=("providers/cloudserver")
-            [[ "${{ steps.filter.outputs.invite }}" == "true" ]] && modules+=("providers/invite")
-            [[ "${{ steps.filter.outputs.objectstorage }}" == "true" ]] && modules+=("providers/objectstorage")
-            [[ "${{ steps.filter.outputs.kubepanel }}" == "true" ]] && modules+=("providers/kubepanel")
-            [[ "${{ steps.filter.outputs.devbox }}" == "true" ]] && modules+=("providers/devbox")
-            [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
+            [[ "${FILTER_AIPROXY}" == "true" ]] && modules+=("providers/aiproxy")
+            [[ "${FILTER_LICENSE}" == "true" ]] && modules+=("providers/license")
+            [[ "${FILTER_CRONJOB}" == "true" ]] && modules+=("providers/cronjob")
+            [[ "${FILTER_TEMPLATE}" == "true" ]] && modules+=("providers/template")
+            [[ "${FILTER_APPLAUNCHPAD}" == "true" ]] && modules+=("providers/applaunchpad")
+            [[ "${FILTER_TERMINAL}" == "true" ]] && modules+=("providers/terminal")
+            [[ "${FILTER_DBPROVIDER}" == "true" ]] && modules+=("providers/dbprovider")
+            [[ "${FILTER_COSTCENTER}" == "true" ]] && modules+=("providers/costcenter")
+            [[ "${FILTER_CLOUDSERVER}" == "true" ]] && modules+=("providers/cloudserver")
+            [[ "${FILTER_INVITE}" == "true" ]] && modules+=("providers/invite")
+            [[ "${FILTER_OBJECTSTORAGE}" == "true" ]] && modules+=("providers/objectstorage")
+            [[ "${FILTER_KUBEPANEL}" == "true" ]] && modules+=("providers/kubepanel")
+            [[ "${FILTER_DESKTOP}" == "true" ]] && modules+=("desktop")
           fi
 
           # Convert to JSON array (compact format for GitHub Actions)
@@ -172,14 +186,16 @@ jobs:
       matrix:
         module: ${{ fromJSON(needs.detect-changes.outputs.modules) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: azure/setup-helm@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
       - name: Validate Helm charts
         shell: bash
+        env:
+          MODULE: ${{ matrix.module }}
         run: |
-          chart_root="frontend/${{ matrix.module }}/deploy/charts"
+          chart_root="frontend/${MODULE}/deploy/charts"
           if [[ ! -d "${chart_root}" ]]; then
-            echo "No Helm chart found for ${{ matrix.module }}; skipping"
+            echo "No Helm chart found for ${MODULE}; skipping"
             exit 0
           fi
 
@@ -203,7 +219,7 @@ jobs:
           done < <(find "${chart_root}" -mindepth 2 -maxdepth 2 -name Chart.yaml -print0)
 
           if [[ "${found}" == "false" ]]; then
-            echo "No Helm chart found for ${{ matrix.module }}; skipping"
+            echo "No Helm chart found for ${MODULE}; skipping"
           fi
 
   image-build:
