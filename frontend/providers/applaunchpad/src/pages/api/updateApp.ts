@@ -62,11 +62,6 @@ const normalizeNetworkResource = <T extends Record<string, any>>(resource: T): T
 const isWorkloadKind = (kind?: string) =>
   kind === YamlKindEnum.Deployment || kind === YamlKindEnum.StatefulSet;
 
-const isRestartTimeWorkloadPatch = (item: AppPatchPropsType[number]) =>
-  item.type === 'patch' &&
-  isWorkloadKind(item.kind) &&
-  !!item.value?.spec?.template?.metadata?.labels?.restartTime;
-
 async function updateAppCRUrl(
   k8sCustomObjects: CustomObjectsApi,
   namespace: string,
@@ -408,8 +403,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         return !!cr && item.type === 'patch' && !!item.value?.metadata;
       }
     );
-    const restartTimeWorkloadPatches = patchItems.filter(isRestartTimeWorkloadPatch);
-    const regularPatches = patchItems.filter((item) => !isRestartTimeWorkloadPatch(item));
+    const workloadPatches = patchItems.filter((item) => isWorkloadKind(item.kind));
+    const regularPatches = patchItems.filter((item) => !isWorkloadKind(item.kind));
     const applyPatchItem = (
       item: Extract<AppPatchPropsType[number], { type: 'patch' }>
     ): Promise<any> | undefined => {
@@ -420,10 +415,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       return cr.patch(item.value);
     };
 
-    // Patch ConfigMap/Service/etc. first. ConfigMap subPath updates need the file content
-    // replaced before the restartTime workload patch creates fresh Pods.
+    // Patch ConfigMap/Service/etc. first. Workload patches can create fresh Pods, so run them
+    // after referenced resources are patched or created.
     await Promise.all(regularPatches.map(applyPatchItem));
-    await Promise.all(restartTimeWorkloadPatches.map(applyPatchItem));
 
     // create
     const createYamlList = patch
@@ -488,6 +482,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         );
       }
     }
+
+    await Promise.all(workloadPatches.map(applyPatchItem));
 
     // delete
     await Promise.all(
