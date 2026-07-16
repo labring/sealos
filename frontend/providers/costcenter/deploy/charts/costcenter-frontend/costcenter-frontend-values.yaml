@@ -20,7 +20,18 @@ costcenterConfig:
   # Invoice configuration
   invoice:
     enabled: false
+    # Deprecated compatibility key. Prefer invoice.feishApp.feiShuBotURL.
     feiShuBotURL: ""
+    feishApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      template:
+        id: ""
+        version: ""
+    serviceToken: ""
     aliSms:
       endpoint: ""
       accessKeyID: ""

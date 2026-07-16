@@ -4,5 +4,6 @@ USER 65532:65532
 
 COPY registry registry
 COPY charts charts
+COPY license-frontend-entrypoint.sh license-frontend-entrypoint.sh
 
-CMD ["./license-frontend-entrypoint.sh"]
+CMD ["bash license-frontend-entrypoint.sh"]

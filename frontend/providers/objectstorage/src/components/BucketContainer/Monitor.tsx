@@ -2,7 +2,6 @@ import { monitor } from '@/api/monitor';
 import { useOssStore } from '@/store/ossStore';
 import { Box, BoxProps, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import { connect } from 'echarts';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import { useTranslation } from 'next-i18next';
@@ -90,7 +89,7 @@ export default function DataMonitor({ ...styles }: BoxProps) {
               styles={chartStyles[idx]}
               onChartReady={(instance) => {
                 instance.group = 'group1';
-                connect('group1');
+                void import('echarts/core').then(({ connect }) => connect('group1'));
               }}
             />
           </Box>

@@ -10,6 +10,6 @@ spec:
     - name: http
       port: {{ .Values.service.port }}
       protocol: TCP
-      targetPort: {{ .Values.service.port }}
+      targetPort: http
   selector:
     {{- include "license-frontend.selectorLabels" . | nindent 4 }}

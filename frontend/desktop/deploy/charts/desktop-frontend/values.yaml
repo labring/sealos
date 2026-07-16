@@ -31,6 +31,14 @@ securityContext:
 service:
   port: 3000
 
+databaseMigration:
+  # Keep existing install behavior. Set to false for frontend-only validation.
+  enabled: true
+
+tests:
+  image: busybox:1.36.1
+  path: /api/platform/getAppConfig
+
 # Auto configure from sealos-system configmap
 autoConfigEnabled: true
 
@@ -96,6 +104,14 @@ desktopConfig:
 # End of auto-configured values
 # ============================================================================
 
+startupProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 60
+
 livenessProbe:
   httpGet:
     path: /api/platform/getAppConfig
@@ -120,9 +136,16 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-  # Will be auto-configured from desktopConfig.cloudDomain
-  hosts: []
-  tls: []
+  # Render-safe defaults. The entrypoint replaces these with cloudDomain.
+  hosts:
+    - host: "127.0.0.1.nip.io"
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - "127.0.0.1.nip.io"
+      secretName: "wildcard-cert"
 
 nodeSelector: {}
 

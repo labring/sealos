@@ -32,6 +32,37 @@ service:
   type: ClusterIP
   port: 3000
 
+app:
+  namespace: ns-admin
+
+startupProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 30
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+tests:
+  image: busybox:1.36.1
+  path: /
+
 ingress:
   className: nginx
   host: ""
@@ -43,7 +74,7 @@ ingress:
 # Note: cloudDomain and mongodbURI are auto-configured by entrypoint.sh from sealos-config ConfigMap
 # For business configuration (licensePurchaseDomain), see license-frontend-values.yaml
 licenseConfig:
-  cloudDomain: ""  # Auto-injected by entrypoint script
+  cloudDomain: "127.0.0.1.nip.io"  # Auto-injected by entrypoint script
   mongodbURI: ""   # Auto-injected by entrypoint script
 
 # Affinity for pod anti-affinity

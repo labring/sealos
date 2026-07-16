@@ -38,4 +38,4 @@ spec:
   tls:
     - hosts:
         - {{ include "template-frontend.host" . | quote }}
-      secretName: wildcard-cert
+      secretName: {{ .Values.templateConfig.certSecretName | quote }}

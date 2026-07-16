@@ -41,6 +41,12 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
 ---
 apiVersion: v1
 kind: Service

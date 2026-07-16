@@ -6,6 +6,15 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: false,
   compress: true,
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/jobs',
+        permanent: false
+      }
+    ];
+  },
   webpack: (config, { isServer }) => {
     config.module.rules = config.module.rules.concat([
       {

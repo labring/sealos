@@ -1,10 +1,9 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 RELEASE_NAME=${RELEASE_NAME:-"applaunchpad-frontend"}
 RELEASE_NAMESPACE=${RELEASE_NAMESPACE:-"applaunchpad-frontend"}
 CHART_PATH=${CHART_PATH:-"./charts/applaunchpad-frontend"}
-HELM_OPTS=${HELM_OPTS:-""}
 
 get_cm_value() {
   local namespace="$1"
@@ -30,6 +29,15 @@ add_set_json() {
 }
 
 AUTO_CONFIG_HELM_OPTS=()
+HELM_EXTRA_ARGS=()
+if [ -n "${HELM_OPTIONS:-}" ]; then
+  read -r -a PARSED_HELM_OPTIONS <<< "${HELM_OPTIONS}"
+  HELM_EXTRA_ARGS+=("${PARSED_HELM_OPTIONS[@]}")
+fi
+if [ -n "${HELM_OPTS:-}" ]; then
+  read -r -a PARSED_HELM_OPTS <<< "${HELM_OPTS}"
+  HELM_EXTRA_ARGS+=("${PARSED_HELM_OPTS[@]}")
+fi
 
 CONFIG_CLOUD_DOMAIN=$(get_cm_value sealos-system sealos-config cloudDomain)
 CONFIG_CLOUD_PORT=$(get_cm_value sealos-system sealos-config cloudPort)
@@ -60,17 +68,26 @@ adopt_namespaced_resource() {
   local kind="$2"
   local name="$3"
   if kubectl -n "${namespace}" get "${kind}" "${name}" >/dev/null 2>&1; then
+    local ownership managed_by owner_release owner_namespace
+    ownership=$(kubectl -n "${namespace}" get "${kind}" "${name}" \
+      -o jsonpath='{.metadata.labels.app\.kubernetes\.io/managed-by}{"|"}{.metadata.annotations.meta\.helm\.sh/release-name}{"|"}{.metadata.annotations.meta\.helm\.sh/release-namespace}')
+    IFS='|' read -r managed_by owner_release owner_namespace <<< "${ownership}"
+    if { [ "${managed_by}" = "Helm" ] || [ -n "${owner_release}" ] || [ -n "${owner_namespace}" ]; } && \
+      { [ "${owner_release}" != "${RELEASE_NAME}" ] || [ "${owner_namespace}" != "${RELEASE_NAMESPACE}" ]; }; then
+      echo "Refusing to adopt ${kind} ${namespace}/${name}: owned by Helm release ${owner_namespace}/${owner_release}" >&2
+      return 1
+    fi
+    if [ "${managed_by}" = "Helm" ]; then
+      return 0
+    fi
     echo "Adopting ${kind} ${namespace}/${name}..."
-    kubectl -n "${namespace}" label "${kind}" "${name}" app.kubernetes.io/managed-by=Helm --overwrite >/dev/null 2>&1 || true
-    kubectl -n "${namespace}" annotate "${kind}" "${name}" meta.helm.sh/release-name="${RELEASE_NAME}" meta.helm.sh/release-namespace="${RELEASE_NAMESPACE}" --overwrite >/dev/null 2>&1 || true
+    kubectl -n "${namespace}" label "${kind}" "${name}" app.kubernetes.io/managed-by=Helm --overwrite >/dev/null
+    kubectl -n "${namespace}" annotate "${kind}" "${name}" meta.helm.sh/release-name="${RELEASE_NAME}" meta.helm.sh/release-namespace="${RELEASE_NAMESPACE}" --overwrite >/dev/null
   fi
 }
 
 echo "Checking and adopting existing resources..."
 if kubectl get namespace "${RELEASE_NAMESPACE}" >/dev/null 2>&1; then
-  kubectl label namespace "${RELEASE_NAMESPACE}" app.kubernetes.io/managed-by=Helm --overwrite >/dev/null 2>&1 || true
-  kubectl annotate namespace "${RELEASE_NAMESPACE}" meta.helm.sh/release-name="${RELEASE_NAME}" meta.helm.sh/release-namespace="${RELEASE_NAMESPACE}" --overwrite >/dev/null 2>&1 || true
-
   adopt_namespaced_resource "${RELEASE_NAMESPACE}" configmap applaunchpad-frontend-config
   adopt_namespaced_resource "${RELEASE_NAMESPACE}" deployment applaunchpad-frontend
   adopt_namespaced_resource "${RELEASE_NAMESPACE}" serviceaccount applaunchpad-frontend
@@ -98,4 +115,4 @@ helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "
   -f "./charts/${SERVICE_NAME}/values.yaml" \
   -f "${USER_VALUES_PATH}" \
   "${AUTO_CONFIG_HELM_OPTS[@]}" \
-  ${HELM_OPTS}
+  "${HELM_EXTRA_ARGS[@]}"

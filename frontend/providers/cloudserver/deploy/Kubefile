@@ -3,11 +3,15 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY manifests manifests
+COPY charts charts
+COPY cloudserver-frontend-entrypoint.sh cloudserver-frontend-entrypoint.sh
 
 ENV cloudDomain="127.0.0.1.nip.io"
 ENV cloudPort=""
+ENV httpPort=""
+ENV disableHttps="false"
 ENV certSecretName="wildcard-cert"
 ENV lafBaseUrl=""
+ENV jwtSecretApp=""
 
-CMD ["kubectl apply -f manifests"]
+CMD ["bash cloudserver-frontend-entrypoint.sh"]

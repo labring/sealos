@@ -26,7 +26,7 @@ sealos run desktop-frontend:latest \
 
 The Helm Chart uses two values files to manage configuration:
 
-### 1. values-default.yaml
+### 1. values.yaml
 
 Contains default Helm Chart configurations that should not be modified.
 
@@ -37,9 +37,9 @@ Contains default Helm Chart configurations that should not be modified.
 
 **Modification**: ❌ Do not modify
 
-### 2. values-custom.yaml
+### 2. desktop-frontend-values.yaml
 
-Contains user-customizable configurations.
+Contains the template for user-customizable configurations. On the first install it is copied to `/root/.sealos/cloud/values/core/desktop-values.yaml`; existing installs keep that persisted file.
 
 **Content**:
 
@@ -53,9 +53,9 @@ Contains user-customizable configurations.
 
 **Modification**: ✅ Modify as needed
 
-**Note**: Auto-configured items in values-default.yaml (such as cloudDomain, jwtInternal, etc.) are automatically fetched by the entrypoint script from the `sealos-system/sealos-config` ConfigMap and will be overridden. To modify these values, edit the ConfigMap or use HELM_OPTIONS.
+**Note**: The entrypoint applies values in this order: `values.yaml`, persisted user values, optional `global.yaml`, auto-configuration from `sealos-system/sealos-config`, then explicit `HELM_OPTIONS` / `HELM_OPTS`. Later sources win.
 
-For detailed documentation, see [VALUES_FILES_GUIDE.md](./VALUES_FILES_GUIDE.md).
+For detailed documentation, see [HELM_VALUES_GUIDE.md](./HELM_VALUES_GUIDE.md).
 
 ## Environment Variables
 
@@ -312,7 +312,7 @@ Desktop Frontend supports adding custom subdomains to the `allowedOrigins` list.
 
 ### Configuration
 
-Add `additionalAllowedOriginsPrefixes` in `values-custom.yaml`:
+Add `additionalAllowedOriginsPrefixes` in the persisted `desktop-values.yaml` user values file:
 
 ```yaml
 desktopConfig:
@@ -376,6 +376,7 @@ For more details, see [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md).
 | `serviceAccount.create`     | Create service account         | `true`                                           |
 | `serviceAccount.name`       | Service account name           | `desktop-frontend`                               |
 | `service.port`              | Service port                   | `3000`                                           |
+| `databaseMigration.enabled` | Run Prisma migrations on start | `true`                                           |
 | `resources.requests.cpu`    | CPU request                    | `100m`                                           |
 | `resources.requests.memory` | Memory request                 | `128Mi`                                          |
 | `resources.limits.cpu`      | CPU limit                      | `2000m`                                          |
@@ -422,6 +423,10 @@ kubectl logs -n sealos -l app.kubernetes.io/name=desktop-frontend --tail=100 -f
 **Issue**: Existing resources prevent installation
 
 - **Solution**: The script automatically adopts existing resources by adding Helm labels
+
+**Issue**: A frontend-only smoke test must not write to the database
+
+- **Solution**: Set `HELM_OPTIONS="--set databaseMigration.enabled=false"`. Normal installs keep the default `true`; disabling it removes only the `init-database` init container.
 
 ## Advanced Usage
 
@@ -480,6 +485,8 @@ sealos run desktop-frontend:latest \
 ```bash
 sealos run desktop-frontend:latest -e HELM_OPTIONS="--timeout 10m"
 ```
+
+Explicit `HELM_OPTIONS` and `HELM_OPTS` are appended after auto-configuration, so they have the highest precedence.
 
 ### Override Namespace
 

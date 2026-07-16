@@ -98,6 +98,10 @@ jobs:
               - 'frontend/providers/dbprovider/**'
             costcenter:
               - 'frontend/providers/costcenter/**'
+            cloudserver:
+              - 'frontend/providers/cloudserver/**'
+            invite:
+              - 'frontend/providers/invite/**'
             objectstorage:
               - 'frontend/providers/objectstorage/**'
             kubepanel:
@@ -125,6 +129,8 @@ jobs:
               "providers/terminal"
               "providers/dbprovider"
               "providers/costcenter"
+              "providers/cloudserver"
+              "providers/invite"
               "providers/objectstorage"
               "providers/kubepanel"
               "providers/devbox"
@@ -140,6 +146,8 @@ jobs:
             [[ "${{ steps.filter.outputs.terminal }}" == "true" ]] && modules+=("providers/terminal")
             [[ "${{ steps.filter.outputs.dbprovider }}" == "true" ]] && modules+=("providers/dbprovider")
             [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
+            [[ "${{ steps.filter.outputs.cloudserver }}" == "true" ]] && modules+=("providers/cloudserver")
+            [[ "${{ steps.filter.outputs.invite }}" == "true" ]] && modules+=("providers/invite")
             [[ "${{ steps.filter.outputs.objectstorage }}" == "true" ]] && modules+=("providers/objectstorage")
             [[ "${{ steps.filter.outputs.kubepanel }}" == "true" ]] && modules+=("providers/kubepanel")
             [[ "${{ steps.filter.outputs.devbox }}" == "true" ]] && modules+=("providers/devbox")
@@ -155,8 +163,53 @@ jobs:
           echo "modules=$json_modules" >> $GITHUB_OUTPUT
           echo "Building modules: $json_modules"
 
-  image-build:
+  helm-validate:
     needs: detect-changes
+    if: needs.detect-changes.outputs.modules != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.detect-changes.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Validate Helm charts
+        shell: bash
+        run: |
+          chart_root="frontend/${{ matrix.module }}/deploy/charts"
+          if [[ ! -d "${chart_root}" ]]; then
+            echo "No Helm chart found for ${{ matrix.module }}; skipping"
+            exit 0
+          fi
+
+          found=false
+          while IFS= read -r -d '' chart_file; do
+            found=true
+            chart_dir=$(dirname "${chart_file}")
+            chart_name=$(basename "${chart_dir}")
+            user_values=$(find "${chart_dir}" -maxdepth 1 -type f -name '*-values.yaml' -print -quit)
+
+            helm lint "${chart_dir}"
+            helm template "${chart_name}" "${chart_dir}" \
+              --namespace "${chart_name}" >/dev/null
+
+            if [[ -n "${user_values}" ]]; then
+              helm lint "${chart_dir}" --values "${user_values}"
+              helm template "${chart_name}" "${chart_dir}" \
+                --namespace "${chart_name}" \
+                --values "${user_values}" >/dev/null
+            fi
+          done < <(find "${chart_root}" -mindepth 2 -maxdepth 2 -name Chart.yaml -print0)
+
+          if [[ "${found}" == "false" ]]; then
+            echo "No Helm chart found for ${{ matrix.module }}; skipping"
+          fi
+
+  image-build:
+    needs:
+      - detect-changes
+      - helm-validate
     if: needs.detect-changes.outputs.modules != '[]'
     uses: ./.github/workflows/frontend.yml
     permissions:
