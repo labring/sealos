@@ -41,20 +41,20 @@ func TestBuildPolicyPublicReadDoesNotAllowAnonymousList(t *testing.T) {
 	assertNoAction(t, actions, "s3:DeleteObject")
 }
 
-func TestBuildPolicyPublicReadwriteAllowsAnonymousListAndObjectWrites(t *testing.T) {
+func TestBuildPolicyPublicReadwriteDoesNotAllowAnonymousList(t *testing.T) {
 	t.Parallel()
 
 	policy := mustParsePolicy(t, buildPolicy(PublicReadwriteBucketPolicy, "test-bucket"))
 	actions := collectActions(policy)
 
-	assertHasAction(t, actions, "s3:GetBucketLocation")
-	assertHasAction(t, actions, "s3:ListBucket")
-	assertHasAction(t, actions, "s3:ListBucketMultipartUploads")
 	assertHasAction(t, actions, "s3:GetObject")
 	assertHasAction(t, actions, "s3:PutObject")
 	assertHasAction(t, actions, "s3:DeleteObject")
 	assertHasAction(t, actions, "s3:AbortMultipartUpload")
 	assertHasAction(t, actions, "s3:ListMultipartUploadParts")
+	assertNoAction(t, actions, "s3:GetBucketLocation")
+	assertNoAction(t, actions, "s3:ListBucket")
+	assertNoAction(t, actions, "s3:ListBucketMultipartUploads")
 }
 
 func TestBuildPolicyBucketServiceAccountSeparatesBucketAndObjectResources(t *testing.T) {
