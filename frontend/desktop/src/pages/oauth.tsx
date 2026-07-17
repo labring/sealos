@@ -74,6 +74,30 @@ export default function OAuth() {
       workspaceName
     } = router.query;
 
+    const openBrainTemplateDeploy = async () => {
+      if (
+        openapp !== 'system-brain' ||
+        typeof templateName !== 'string' ||
+        typeof templateForm !== 'string'
+      ) {
+        return false;
+      }
+
+      const brainDeployQuery = new URLSearchParams({
+        templateName,
+        templateForm
+      });
+
+      setAutoLaunch('system-brain', {
+        pathname: '/deploy',
+        raw: brainDeployQuery.toString()
+      });
+      cancelAutoDeployTemplate();
+      await router.replace('/');
+
+      return true;
+    };
+
     const handleTokenLogin = async () => {
       hasProcessedRef.current = true;
 
@@ -124,6 +148,10 @@ export default function OAuth() {
               await switchWorkspaceMutation.mutateAsync(existNamespace.uid);
             }
           }
+        }
+
+        if (await openBrainTemplateDeploy()) {
+          return;
         }
 
         const { instanceName, error: deploymentError } = await handleTemplateDeployment();
@@ -361,6 +389,10 @@ export default function OAuth() {
       hasProcessedRef.current = true;
 
       (async () => {
+        if (await openBrainTemplateDeploy()) {
+          return;
+        }
+
         let instanceName: string | null = null;
         let deploymentError: string | null = null;
         try {
