@@ -19,7 +19,6 @@ import type { AppEditType } from '@/types/app';
 import { syncDefaultRouteServicePort } from '@/utils/network-routes';
 import { ensureUniquePortNames, getFallbackPortName, str2Num, strToBase64 } from '@/utils/tools';
 import type { V1OwnerReference } from '@kubernetes/client-node';
-import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { customRandom } from 'nanoid';
 import crypto from 'crypto';
@@ -168,8 +167,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   };
   const templateMetadata = {
     labels: {
-      app: data.appName,
-      restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
+      app: data.appName
     },
     annotations: gpuAnnotations
   };
