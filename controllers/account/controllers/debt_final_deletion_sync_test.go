@@ -16,9 +16,17 @@ func TestFinalDeletionDebtNamespaceFlushReq(t *testing.T) {
 		t.Fatalf("expected user uid %s, got %s", userUID, req.UserUID)
 	}
 	if req.LastDebtStatus != types.DebtDeletionPeriod {
-		t.Fatalf("expected last debt status %s, got %s", types.DebtDeletionPeriod, req.LastDebtStatus)
+		t.Fatalf(
+			"expected last debt status %s, got %s",
+			types.DebtDeletionPeriod,
+			req.LastDebtStatus,
+		)
 	}
 	if req.CurrentDebtStatus != types.FinalDeletionPeriod {
-		t.Fatalf("expected current debt status %s, got %s", types.FinalDeletionPeriod, req.CurrentDebtStatus)
+		t.Fatalf(
+			"expected current debt status %s, got %s",
+			types.FinalDeletionPeriod,
+			req.CurrentDebtStatus,
+		)
 	}
 }

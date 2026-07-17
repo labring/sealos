@@ -668,7 +668,10 @@ func (r *DebtReconciler) syncFinalDeletionDebtNamespaces(ctx context.Context, db
 	var errs []error
 	for _, userUID := range users {
 		if err := r.syncFinalDeletionDebtNamespacesForUser(userUID); err != nil {
-			errs = append(errs, fmt.Errorf("failed to sync final deletion debt namespaces for user %s: %w", userUID, err))
+			errs = append(
+				errs,
+				fmt.Errorf("failed to sync final deletion debt namespaces for user %s: %w", userUID, err),
+			)
 		}
 	}
 	if len(users) > 0 {
