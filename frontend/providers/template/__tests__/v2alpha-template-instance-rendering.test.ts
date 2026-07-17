@@ -68,4 +68,62 @@ spec:
       }
     });
   });
+
+  it.each([
+    { expectedBucket: true, useSealosObjectStorage: 'true' },
+    { expectedBucket: false, useSealosObjectStorage: 'false' }
+  ])(
+    'renders APITable-style top-level conditional documents when object storage is $useSealosObjectStorage',
+    ({ expectedBucket, useSealosObjectStorage }) => {
+      const appYaml = `apiVersion: app.sealos.io/v1
+kind: Instance
+metadata:
+  name: apitable-default
+spec: {}
+---
+\${{ if(inputs.use_sealos_objectstorage === 'true') }}
+apiVersion: objectstorage.sealos.io/v1
+kind: ObjectStorageBucket
+metadata:
+  name: \${{ defaults.app_name }}
+spec:
+  policy: private
+---
+\${{ endif() }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: \${{ defaults.app_name }}
+spec:
+  ports:
+    - port: 80
+`;
+
+      expect(() => JsYaml.loadAll(appYaml)).toThrow(/end of the stream/i);
+
+      const [yaml] = renderTemplateInstanceYamls({
+        appYaml,
+        defaults: {
+          app_name: 'apitable-brain'
+        },
+        inputs: {
+          use_sealos_objectstorage: useSealosObjectStorage
+        },
+        instanceName: 'apitable-brain',
+        templateEnvs: {}
+      });
+      const docs = JsYaml.loadAll(yaml).filter(Boolean) as any[];
+      const instance = docs.find((doc) => doc.kind === 'Instance');
+      const bucket = docs.find((doc) => doc.kind === 'ObjectStorageBucket');
+      const service = docs.find((doc) => doc.kind === 'Service');
+
+      expect(instance?.metadata?.name).toBe('apitable-brain');
+      expect(Boolean(bucket)).toBe(expectedBucket);
+      if (expectedBucket) {
+        expect(bucket?.metadata?.name).toBe('apitable-brain');
+      }
+      expect(service?.metadata?.name).toBe('apitable-brain');
+    }
+  );
 });
