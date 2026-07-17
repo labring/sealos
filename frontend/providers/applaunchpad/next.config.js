@@ -27,15 +27,6 @@ const nextConfig = {
     outputFileTracingRoot: path.join(__dirname, '../../'),
     instrumentationHook: true
   },
-  async redirects () {
-    return [
-      {
-        source: '/',
-        destination: '/apps',
-        permanent: false
-      }
-    ]
-  },
   async rewrites () {
     return [
       {

@@ -117,7 +117,7 @@ helm template <release> frontend/providers/<app>/deploy/charts/<release> \
   -f frontend/providers/<app>/deploy/charts/<release>/<release>-values.yaml >/dev/null
 ```
 
-After deployment, run `helm test <release> -n <namespace> --logs` and smoke-test the public root URL. App CR URLs must remain the root of each provider's independent subdomain; route-specific redirects belong inside the application.
+After deployment, run `helm test <release> -n <namespace> --logs` and smoke-test the rendered App CR URL. Deployment-only migrations must preserve existing application routing; route behavior changes belong in a separate application change.
 
 ## multiple namespaces
 

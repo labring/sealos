@@ -19,15 +19,6 @@ const nextConfig = {
   },
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../../')
-  },
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/kubepanel',
-        permanent: false
-      }
-    ];
   }
 };
 
