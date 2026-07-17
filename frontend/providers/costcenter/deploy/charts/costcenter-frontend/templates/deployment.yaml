@@ -20,7 +20,7 @@ spec:
       labels:
         {{- include "costcenter-frontend.selectorLabels" . | nindent 8 }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
@@ -51,5 +51,5 @@ spec:
       {{- end }}
       volumes:
         - name: costcenter-frontend-volume
-          secret:
-            secretName: {{ include "costcenter-frontend.fullname" . }}-config
+          configMap:
+            name: {{ include "costcenter-frontend.fullname" . }}-config

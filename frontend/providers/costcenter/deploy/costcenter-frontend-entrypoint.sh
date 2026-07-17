@@ -160,13 +160,8 @@ adopt_namespaced_resource() {
 
 # Pre-check and adopt existing resources before Helm upgrade (both fresh and upgrade)
 echo "Checking and adopting existing resources..."
-LEGACY_CONFIGMAP_PRESENT=false
 if kubectl get namespace "${RELEASE_NAMESPACE}" >/dev/null 2>&1; then
-  if kubectl -n "${RELEASE_NAMESPACE}" get configmap costcenter-frontend-config >/dev/null 2>&1; then
-    assert_namespaced_resource_adoptable "${RELEASE_NAMESPACE}" configmap costcenter-frontend-config
-    LEGACY_CONFIGMAP_PRESENT=true
-  fi
-  adopt_namespaced_resource "${RELEASE_NAMESPACE}" secret costcenter-frontend-config
+  adopt_namespaced_resource "${RELEASE_NAMESPACE}" configmap costcenter-frontend-config
   adopt_namespaced_resource "${RELEASE_NAMESPACE}" service costcenter-frontend
   adopt_namespaced_resource "${RELEASE_NAMESPACE}" ingress costcenter-frontend
 fi
@@ -205,8 +200,4 @@ DEPLOYMENT_REPLACEMENT_COMPLETE=true
 if [ -n "${DEPLOYMENT_BACKUP_FILE}" ]; then
   rm -f "${DEPLOYMENT_BACKUP_FILE}"
   DEPLOYMENT_BACKUP_FILE=""
-fi
-
-if [ "${LEGACY_CONFIGMAP_PRESENT}" = true ]; then
-  kubectl -n "${RELEASE_NAMESPACE}" delete configmap costcenter-frontend-config --ignore-not-found
 fi

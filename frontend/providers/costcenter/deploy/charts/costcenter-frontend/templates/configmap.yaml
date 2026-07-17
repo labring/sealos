@@ -1,10 +1,9 @@
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
   name: {{ include "costcenter-frontend.fullname" . }}-config
   namespace: {{ .Release.Namespace }}
-type: Opaque
-stringData:
+data:
   config.yaml: |-
     costCenter:
       transferEnabled: {{ .Values.costcenterConfig.transferEnabled }}
