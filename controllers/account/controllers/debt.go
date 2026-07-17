@@ -47,6 +47,8 @@ import (
 const (
 	DebtDetectionCycleEnv = "DebtDetectionCycleSeconds"
 
+	finalDeletionDebtNamespaceSyncInterval = 5 * time.Minute
+
 	SMSAccessKeyIDEnv     = "SMS_AK"
 	SMSAccessKeySecretEnv = "SMS_SK"
 	VmsAccessKeyIDEnv     = "VMS_AK"
@@ -525,6 +527,13 @@ func (r *DebtReconciler) start() {
 		}
 	}()
 
+	// 1.4 replay final deletion status for accounts that are already in the terminal debt state.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r.syncFinalDeletionDebtNamespacesLoop(db)
+	}()
+
 	// 2.1 recharge record processing
 	// wg.Add(1)
 	// go func() {
@@ -630,6 +639,54 @@ func (r *DebtReconciler) start() {
 	}()
 
 	wg.Wait()
+}
+
+func (r *DebtReconciler) syncFinalDeletionDebtNamespacesLoop(db *gorm.DB) {
+	run := func() {
+		if err := r.syncFinalDeletionDebtNamespaces(context.Background(), db); err != nil {
+			r.Error(err, "failed to sync final deletion debt namespaces")
+		}
+	}
+
+	run()
+	ticker := time.NewTicker(finalDeletionDebtNamespaceSyncInterval)
+	defer ticker.Stop()
+	for range ticker.C {
+		run()
+	}
+}
+
+func (r *DebtReconciler) syncFinalDeletionDebtNamespaces(ctx context.Context, db *gorm.DB) error {
+	var users []uuid.UUID
+	if err := db.WithContext(ctx).Model(&types.Debt{}).
+		Where("account_debt_status = ?", types.FinalDeletionPeriod).
+		Distinct("user_uid").
+		Pluck("user_uid", &users).Error; err != nil {
+		return fmt.Errorf("failed to query final deletion debt users: %w", err)
+	}
+
+	var errs []error
+	for _, userUID := range users {
+		if err := r.syncFinalDeletionDebtNamespacesForUser(userUID); err != nil {
+			errs = append(errs, fmt.Errorf("failed to sync final deletion debt namespaces for user %s: %w", userUID, err))
+		}
+	}
+	if len(users) > 0 {
+		r.Info("synced final deletion debt namespaces", "users", len(users))
+	}
+	return errors.Join(errs...)
+}
+
+func (r *DebtReconciler) syncFinalDeletionDebtNamespacesForUser(userUID uuid.UUID) error {
+	return r.sendFlushDebtResourceStatusRequest(finalDeletionDebtNamespaceFlushReq(userUID))
+}
+
+func finalDeletionDebtNamespaceFlushReq(userUID uuid.UUID) AdminFlushResourceStatusReq {
+	return AdminFlushResourceStatusReq{
+		UserUID:           userUID,
+		LastDebtStatus:    types.DebtDeletionPeriod,
+		CurrentDebtStatus: types.FinalDeletionPeriod,
+	}
 }
 
 func (r *DebtReconciler) RefreshDebtStatus(userUID uuid.UUID) error {
