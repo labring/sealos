@@ -5,8 +5,6 @@ import { fallbackLng, languages } from '@/app/i18n/settings'
 
 acceptLanguage.languages(languages)
 
-const deploymentFallbackLng = process.env.CURRENCY_SYMBOL === 'usd' ? 'en' : fallbackLng
-
 export const config = {
   matcher: [
     /*
@@ -40,7 +38,7 @@ export function middleware(req: NextRequest): NextResponse {
 
   // if pathname does not contain valid language code, use fallback language
   if (!languages.includes(lng)) {
-    lng = deploymentFallbackLng
+    lng = fallbackLng
   }
 
   // handle root path and language path redirect

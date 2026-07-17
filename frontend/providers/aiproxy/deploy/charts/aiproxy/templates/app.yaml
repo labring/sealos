@@ -6,7 +6,7 @@ metadata:
 spec:
   data:
     desc: Sealos AI Proxy
-    url: https://{{ include "aiproxy.fullname" . }}.{{ .Values.cloudDomain }}{{- if and .Values.cloudPort (ne (toString .Values.cloudPort) "443") }}:{{ .Values.cloudPort }}{{- end }}
+    url: https://{{ include "aiproxy.fullname" . }}.{{ .Values.cloudDomain }}{{- if and .Values.cloudPort (ne (toString .Values.cloudPort) "443") }}:{{ .Values.cloudPort }}{{- end }}{{- if eq .Values.aiproxy.CURRENCY_SYMBOL "usd" }}/en/home{{- end }}
   displayType: more
   i18n:
     zh:
