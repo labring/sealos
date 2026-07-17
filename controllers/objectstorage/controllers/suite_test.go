@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	//+kubebuilder:scaffold:imports
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 

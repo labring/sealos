@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-//nolint:gci,gofumpt
 package main
 
 import (
@@ -22,8 +21,7 @@ import (
 	"os"
 
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
-	"github/labring/sealos/controllers/objectstorage/controllers"
-
+	objectstoragecontrollers "github/labring/sealos/controllers/objectstorage/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -31,6 +29,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	//+kubebuilder:scaffold:imports
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
@@ -56,6 +55,7 @@ func main() {
 		":8080",
 		"The address the metric endpoint binds to.",
 	)
+	// Accept the legacy monitor flag passed by existing deployments.
 	flag.String("monitor-bind-address", ":9090", "The address the monitor endpoint binds to.")
 	flag.StringVar(
 		&probeAddr,
@@ -99,14 +99,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ObjectStorageUserReconciler{
+	if err = (&objectstoragecontrollers.ObjectStorageUserReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ObjectStorageUser")
 		os.Exit(1)
 	}
-	if err = (&controllers.ObjectStorageBucketReconciler{
+	if err = (&objectstoragecontrollers.ObjectStorageBucketReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
