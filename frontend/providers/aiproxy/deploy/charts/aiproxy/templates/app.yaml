@@ -6,13 +6,13 @@ metadata:
 spec:
   data:
     desc: Sealos AI Proxy
-    url: https://{{ include "aiproxy.fullname" . }}.{{.Values.cloudDomain}}{{.Values.suffix}}
+    url: https://{{ include "aiproxy.fullname" . }}.{{ .Values.cloudDomain }}{{- if and .Values.cloudPort (ne (toString .Values.cloudPort) "443") }}:{{ .Values.cloudPort }}{{- end }}{{- if eq .Values.aiproxy.CURRENCY_SYMBOL "usd" }}/en/home{{- end }}
   displayType: more
   i18n:
     zh:
       name: AI Proxy
     zh-Hans:
       name: AI Proxy
-  icon: https://{{ include "aiproxy.fullname" . }}.{{.Values.cloudDomain}}/logo.svg
+  icon: https://{{ include "aiproxy.fullname" . }}.{{ .Values.cloudDomain }}{{- if and .Values.cloudPort (ne (toString .Values.cloudPort) "443") }}:{{ .Values.cloudPort }}{{- end }}/logo.svg
   name: AI Proxy
   type: iframe

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "terminal-frontend.fullname" . }}-test-connection
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  restartPolicy: Never
+  containers:
+    - name: wget
+      image: {{ .Values.tests.image | quote }}
+      imagePullPolicy: IfNotPresent
+      command: ["/bin/sh", "-ec"]
+      args:
+        - wget -q -T 10 -O /dev/null "http://{{ include "terminal-frontend.fullname" . }}:{{ .Values.service.port }}{{ .Values.tests.path }}"

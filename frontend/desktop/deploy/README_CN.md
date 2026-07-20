@@ -26,7 +26,7 @@ sealos run desktop-frontend:latest \
 
 Helm Chart 使用两个 values 文件来管理配置：
 
-### 1. values-default.yaml
+### 1. values.yaml
 
 包含 Helm Chart 的默认配置，不应修改。
 
@@ -37,9 +37,9 @@ Helm Chart 使用两个 values 文件来管理配置：
 
 **是否修改**: ❌ 不建议修改
 
-### 2. values-custom.yaml
+### 2. desktop-frontend-values.yaml
 
-包含需要用户手动配置的自定义选项。
+包含用户自定义配置模板。首次安装时会复制到 `/root/.sealos/cloud/values/core/desktop-values.yaml`，已有安装继续保留该持久化文件。
 
 **内容**:
 
@@ -53,9 +53,9 @@ Helm Chart 使用两个 values 文件来管理配置：
 
 **是否修改**: ✅ 根据需要修改
 
-**注意**: values-default.yaml 中的自动配置项（如 cloudDomain、jwtInternal 等）会被 entrypoint 脚本从 `sealos-system/sealos-config` ConfigMap 自动获取并覆盖。如需修改这些值，请修改 ConfigMap 或使用 HELM_OPTIONS。
+**注意**: entrypoint 按以下顺序应用配置：`values.yaml`、持久化用户 values、可选 `global.yaml`、来自 `sealos-system/sealos-config` 的自动配置、显式 `HELM_OPTIONS` / `HELM_OPTS`。后面的配置优先。
 
-详细文档请参考 [VALUES_FILES_GUIDE.md](./VALUES_FILES_GUIDE.md)。
+详细文档请参考 [HELM_VALUES_GUIDE_CN.md](./HELM_VALUES_GUIDE_CN.md)。
 
 ## 环境变量
 
@@ -312,7 +312,7 @@ Desktop Frontend 支持在 `allowedOrigins` 列表中添加自定义的子域名
 
 ### 配置方式
 
-在 `values-custom.yaml` 中添加 `additionalAllowedOriginsPrefixes`：
+在持久化用户 values 文件 `desktop-values.yaml` 中添加 `additionalAllowedOriginsPrefixes`：
 
 ```yaml
 desktopConfig:
@@ -376,6 +376,7 @@ export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my
 | `serviceAccount.create`     | 创建服务账号              | `true`                                           |
 | `serviceAccount.name`       | 服务账号名称              | `desktop-frontend`                               |
 | `service.port`              | 服务端口                  | `3000`                                           |
+| `databaseMigration.enabled` | 启动时执行 Prisma migration | `true`                                         |
 | `resources.requests.cpu`    | CPU 请求                  | `100m`                                           |
 | `resources.requests.memory` | 内存请求                  | `128Mi`                                          |
 | `resources.limits.cpu`      | CPU 限制                  | `2000m`                                          |
@@ -422,6 +423,10 @@ kubectl logs -n sealos -l app.kubernetes.io/name=desktop-frontend --tail=100 -f
 **问题**: 现有资源阻止安装
 
 - **解决**: 脚本会自动通过添加 Helm 标签来接纳现有资源
+
+**问题**: 只验证前端部署，不允许写数据库
+
+- **解决**: 设置 `HELM_OPTIONS="--set databaseMigration.enabled=false"`。正常安装保持默认值 `true`；关闭后只会移除 `init-database` init container。
 
 ## 高级用法
 
@@ -481,6 +486,8 @@ sealos run desktop-frontend:latest \
 ```bash
 sealos run desktop-frontend:latest -e HELM_OPTIONS="--timeout 10m --install"
 ```
+
+显式 `HELM_OPTIONS` 和 `HELM_OPTS` 会追加在自动配置之后，因此优先级最高。
 
 ### 覆盖命名空间
 
@@ -563,7 +570,7 @@ kubectl get configmap sealos-desktop-config -n sealos -o yaml
 kubectl exec -n sealos deployment/sealos-desktop -- cat /app/data/config.yaml
 ```
 
-### 5. 环境变量和 HELM_OPTIONS 的区别和优先级？
+### 5. 配置来源和 HELM_OPTIONS 的优先级？
 
 **使用场景：**
 
@@ -572,17 +579,18 @@ kubectl exec -n sealos deployment/sealos-desktop -- cat /app/data/config.yaml
 
 **优先级从高到低：**
 
-1. 环境变量（如 `CLOUD_DOMAIN`）
-2. HELM_OPTIONS 中的 `--set` 参数
-3. values.yaml 默认值
+1. `HELM_OPTIONS` / `HELM_OPTS` 中的显式参数
+2. 从 `sealos-system/sealos-config` 读取的自动配置
+3. 可选 `global.yaml`
+4. 持久化用户 values
+5. `values.yaml` 默认值
 
 **示例：**
 
 ```bash
-# 环境变量会覆盖 HELM_OPTIONS 的值
+# HELM_OPTIONS 会覆盖自动配置值，最终使用 from-helm.com
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com" \
-  -e CLOUD_DOMAIN=from-env.com  # 这个值会生效
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com"
 ```
 
 ## 技术支持

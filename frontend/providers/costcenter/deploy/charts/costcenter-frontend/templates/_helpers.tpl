@@ -47,3 +47,29 @@ Selector labels
 app.kubernetes.io/name: {{ include "costcenter-frontend.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{- define "costcenter-frontend.scheme" -}}
+{{- if eq (toString .Values.costcenterConfig.disableHttps) "true" -}}http{{- else -}}https{{- end -}}
+{{- end }}
+
+{{- define "costcenter-frontend.rawPort" -}}
+{{- $port := toString .Values.costcenterConfig.cloudPort -}}
+{{- if eq (include "costcenter-frontend.scheme" .) "http" -}}
+{{- $port = toString .Values.costcenterConfig.httpPort -}}
+{{- end -}}
+{{- trimPrefix ":" $port -}}
+{{- end }}
+
+{{- define "costcenter-frontend.portSuffix" -}}
+{{- $scheme := include "costcenter-frontend.scheme" . -}}
+{{- $port := include "costcenter-frontend.rawPort" . -}}
+{{- if and $port (not (or (and (eq $scheme "https") (eq $port "443")) (and (eq $scheme "http") (eq $port "80")))) -}}:{{ $port }}{{- end -}}
+{{- end }}
+
+{{- define "costcenter-frontend.host" -}}
+{{- default (printf "costcenter.%s" .Values.costcenterConfig.cloudDomain) .Values.ingress.host -}}
+{{- end }}
+
+{{- define "costcenter-frontend.url" -}}
+{{- include "costcenter-frontend.scheme" . -}}://{{ include "costcenter-frontend.host" . }}{{ include "costcenter-frontend.portSuffix" . }}
+{{- end }}

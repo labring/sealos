@@ -8,9 +8,13 @@
 #   - passwordSalt
 #   - databaseGlobalCockroachdbURI, databaseLocalCockroachdbURI
 #
-# See values-auto.yaml for reference values and documentation.
+# See values.yaml for chart defaults and auto-configured reference values.
 
 replicaCount: 1
+
+databaseMigration:
+  # Disable only when database migrations are managed separately.
+  enabled: true
 
 # Prisma database backend used by the init container migrations.
 # Supported values: cockroachdb, postgresql

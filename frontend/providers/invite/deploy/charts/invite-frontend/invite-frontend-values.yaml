@@ -1,0 +1,14 @@
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+inviteConfig:
+  lafBaseUrl: ""
+  giftRatio: "0.1"
+  inviterReward: "5"

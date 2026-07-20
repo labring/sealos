@@ -40,6 +40,7 @@ spec:
       serviceAccountName: {{ include "desktop.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.databaseMigration.enabled }}
       initContainers:
         - name: init-database
           image: "{{ .Values.image }}"
@@ -57,6 +58,7 @@ spec:
             - mountPath: /app/data/config.yaml
               name: desktop-frontend-volume
               subPath: config.yaml
+      {{- end }}
       containers:
         - name: {{ include "desktop.name" . }}
           securityContext:
@@ -70,6 +72,8 @@ spec:
               REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"') \
               GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"') \
               node /app/desktop/server.js
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           livenessProbe:

@@ -25,6 +25,32 @@ service:
   type: ClusterIP
   port: 3000
 
+tests:
+  image: busybox:1.36.1
+  path: /
+
+startupProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+
 resources:
   limits:
     cpu: 2000m
