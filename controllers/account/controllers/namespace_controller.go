@@ -682,6 +682,7 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 		opsSpec := map[string]any{
 			"clusterRef":             clusterName,
 			"type":                   "Stop",
+			"force":                  true,
 			"ttlSecondsAfterSucceed": int64(1),
 			"ttlSecondsBeforeAbort":  int64(60 * 60),
 		}
