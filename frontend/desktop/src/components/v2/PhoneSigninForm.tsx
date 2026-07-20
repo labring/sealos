@@ -117,9 +117,17 @@ export function PhoneSigninForm({ isModal = false, onVerifyStep }: PhoneSigninFo
       }
     } catch (error) {
       console.error('Failed to send verification phone:', error);
+      const requestError = error as {
+        message?: string;
+        data?: { error?: string; retryAfter?: number };
+      };
+      const retryAfter = requestError.data?.retryAfter;
       toast({
         title: t('common:get_code_failed'),
-        description: (error as Error)?.message || t('v2:unknown_error'),
+        description:
+          requestError.data?.error === 'send_rate_limited' && typeof retryAfter === 'number'
+            ? t('common:verification_send_rate_limited', { countdown: retryAfter })
+            : requestError.message || t('v2:unknown_error'),
         status: 'error',
         duration: 3000,
         isClosable: true,

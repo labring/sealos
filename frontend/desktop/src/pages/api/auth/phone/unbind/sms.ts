@@ -23,9 +23,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
               await sendSmsCodeGuard({
                 id: phoneNumbers,
                 smsType: 'phone_unbind'
-              })(req, res, async () => {
-                await sendPhoneCodeSvc(phoneNumbers, 'phone_unbind')(res);
-              })
+              })(req, res, () => sendPhoneCodeSvc(phoneNumbers, 'phone_unbind')(res))
           )
       );
     });

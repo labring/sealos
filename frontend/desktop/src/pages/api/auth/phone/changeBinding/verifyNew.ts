@@ -4,7 +4,8 @@ import { bindPhoneGuard, unbindPhoneGuard } from '@/services/backend/middleware/
 import {
   filterCodeUid,
   filterPhoneVerifyParams,
-  verifyCodeUidGuard,
+  consumeFlowTicketGuard,
+  verifyFlowTicketGuard,
   verifyCodeGuard
 } from '@/services/backend/middleware/sms';
 import { cnVersionMiddleware } from '@/services/backend/middleware/version';
@@ -29,18 +30,28 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
               req,
               res,
               async ({ uid }) =>
-                await verifyCodeUidGuard(uid)(res, async ({ smsInfo: oldPhoneInfo }) => {
+                await verifyFlowTicketGuard(
+                  uid,
+                  userUid,
+                  'PHONE'
+                )(res, async ({ ticket }) => {
                   await verifyCodeGuard(
                     phoneNumbers,
                     code,
                     'phone_change_new'
-                  )(res, async ({ smsInfo: newPhoneInfo }) =>
-                    unbindPhoneGuard(oldPhoneInfo.id, userUid)(res, () =>
-                      bindPhoneGuard(newPhoneInfo.id, userUid)(res, () =>
-                        changePhoneBindingSvc(oldPhoneInfo.id, newPhoneInfo.id, userUid)(res)
+                  )(res, async ({ smsInfo: newPhoneInfo }) => {
+                    await consumeFlowTicketGuard(
+                      uid,
+                      userUid,
+                      'PHONE'
+                    )(res, () =>
+                      unbindPhoneGuard(ticket.oldProviderId, userUid)(res, () =>
+                        bindPhoneGuard(newPhoneInfo.id, userUid)(res, () =>
+                          changePhoneBindingSvc(ticket.oldProviderId, newPhoneInfo.id, userUid)(res)
+                        )
                       )
-                    )
-                  );
+                    );
+                  });
                 })
             )
         )

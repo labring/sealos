@@ -25,6 +25,7 @@ declare global {
   var commitCroner: Cron | undefined;
   var finishCroner: Cron | undefined;
   var runCroner: Cron | undefined;
+  var verificationCleanupCroner: Cron | undefined;
   var WechatAccessToken: string | undefined;
   var WechatExpiresIn: number | undefined;
   var nodemailer: Transporter<SMTPPool.SentMessageInfo> | undefined;

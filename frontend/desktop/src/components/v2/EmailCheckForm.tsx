@@ -23,12 +23,29 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import { MailCheck, OctagonAlertIcon, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface EmailCheckFormProps {
   isModal?: boolean;
   onBack?: () => void;
+}
+
+type VerificationErrorType = 'invalid_code' | 'attempts_exhausted' | 'expired_code' | 'unknown';
+
+interface VerificationRequestError {
+  code?: number;
+  message?: string;
+  data?: {
+    error?: string;
+    remainingAttempts?: number;
+    retryAfter?: number;
+  };
+}
+
+interface VerificationErrorState {
+  type: VerificationErrorType;
+  remainingAttempts?: number;
 }
 
 export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps) {
@@ -37,6 +54,10 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
   const { setGlobalToken } = useSessionStore();
 
   const [pinValue, setPinValue] = useState('');
+  const [verificationError, setVerificationError] = useState<VerificationErrorState | null>(null);
+  const [retryUntil, setRetryUntil] = useState<number | null>(null);
+  const [retryRemainingTime, setRetryRemainingTime] = useState(0);
+  const firstInputRef = useRef<HTMLInputElement>(null);
   const { formValues, startTime } = useSigninFormStore();
 
   // Countdown
@@ -59,7 +80,24 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
     return () => clearInterval(interval);
   }, [startTime, getRemainingTime]);
 
-  const verifyMutation = useMutation({
+  useEffect(() => {
+    if (retryUntil === null) return;
+
+    setRetryRemainingTime(Math.max(0, retryUntil - Date.now()));
+    const interval = window.setInterval(() => {
+      const nextRemainingTime = Math.max(0, retryUntil - Date.now());
+      setRetryRemainingTime(nextRemainingTime);
+      if (nextRemainingTime <= 0) window.clearInterval(interval);
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [retryUntil]);
+
+  const verifyMutation = useMutation<
+    ApiResp<{ token: string; needInit: boolean }>,
+    VerificationRequestError,
+    { id: string; code: string }
+  >({
     mutationFn: (data: { id: string; code: string }) =>
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/email/verify', {
         id: data.id,
@@ -107,6 +145,31 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
           window.location.href = postLoginRedirect;
         }
       }
+    },
+    onError(error) {
+      const errorType = error.data?.error;
+      const remainingAttempts = error.data?.remainingAttempts;
+
+      if (errorType === 'attempts_exhausted') {
+        const retryAfter =
+          typeof error.data?.retryAfter === 'number' ? Math.max(0, error.data.retryAfter) : 0;
+        setRetryRemainingTime(retryAfter * 1000);
+        setRetryUntil(Date.now() + retryAfter * 1000);
+        setVerificationError({ type: 'attempts_exhausted', remainingAttempts: 0 });
+        return;
+      }
+
+      if (errorType === 'expired_code') {
+        setVerificationError({ type: 'expired_code' });
+        return;
+      }
+
+      setVerificationError({
+        type: errorType === 'invalid_code' ? 'invalid_code' : 'unknown',
+        remainingAttempts
+      });
+      setPinValue('');
+      window.setTimeout(() => firstInputRef.current?.focus(), 0);
     }
   });
 
@@ -116,6 +179,31 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
     } else {
       router.back();
     }
+  };
+
+  const isVerificationLocked =
+    verificationError?.type === 'attempts_exhausted' || verificationError?.type === 'expired_code';
+  const retryCountdown = Math.ceil(retryRemainingTime / 1000);
+  const getVerificationErrorMessage = () => {
+    if (
+      verificationError?.type === 'invalid_code' &&
+      typeof verificationError.remainingAttempts === 'number'
+    ) {
+      return t('common:invalid_verification_code_with_attempts', {
+        count: verificationError.remainingAttempts
+      });
+    }
+    if (verificationError?.type === 'attempts_exhausted') {
+      return retryCountdown > 0
+        ? t('common:verification_attempts_exhausted_with_retry', {
+            countdown: retryCountdown
+          })
+        : t('common:verification_attempts_exhausted');
+    }
+    if (verificationError?.type === 'expired_code') {
+      return t('common:verification_code_expired');
+    }
+    return t('common:invalid_verification_code');
   };
 
   const bg = useColorModeValue('white', 'gray.700');
@@ -149,15 +237,24 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
               focusBorderColor="#18181B"
               autoFocus
               value={pinValue}
-              onChange={setPinValue}
-              isDisabled={verifyMutation.isLoading}
+              onChange={(value) => {
+                setPinValue(value);
+                if (!isVerificationLocked && verificationError) {
+                  setVerificationError(null);
+                  verifyMutation.reset();
+                }
+              }}
+              isDisabled={verifyMutation.isLoading || isVerificationLocked}
               onComplete={(value) => {
-                verifyMutation.mutate({ code: value, id: formValues?.providerId || '' });
+                if (!isVerificationLocked) {
+                  verifyMutation.mutate({ code: value, id: formValues?.providerId || '' });
+                }
               }}
             >
               {Array.from({ length: 6 }, (_, index) => (
                 <PinInputField
                   key={index}
+                  ref={index === 0 ? firstInputRef : undefined}
                   placeholder=""
                   mr={{ base: '4px', lg: '8px' }}
                   boxSize={{ base: '40px', lg: '56px' }}
@@ -180,13 +277,13 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
             </Text>
           ) : (
             <Flex>
-              {verifyMutation.isError && (
+              {verificationError && (
                 <Center boxSize={'20px'} mr={'2px'}>
                   <OctagonAlertIcon size={14} color="#DC2626"></OctagonAlertIcon>
                 </Center>
               )}
               <Box>
-                {verifyMutation.isError && (
+                {verificationError && (
                   <Text
                     style={{
                       fontWeight: 400,
@@ -195,11 +292,11 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
                     }}
                     color={'#DC2626'}
                   >
-                    {t('common:invalid_verification_code')}
+                    {getVerificationErrorMessage()}
                   </Text>
                 )}
 
-                {remainingTime > 0 ? (
+                {!isVerificationLocked && remainingTime > 0 ? (
                   <Text
                     fontWeight="400"
                     fontSize="14px"
@@ -211,7 +308,7 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
                   >
                     {t('v2:can_request_new_link', { countdown: Math.floor(remainingTime / 1000) })}
                   </Text>
-                ) : (
+                ) : retryRemainingTime <= 0 ? (
                   <Text
                     as="a"
                     fontWeight="400"
@@ -227,7 +324,7 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
                   >
                     {t('v2:request_new_link')}
                   </Text>
-                )}
+                ) : null}
               </Box>
             </Flex>
           )}

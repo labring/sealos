@@ -1,20 +1,15 @@
 import { jsonRes } from '../response';
 import { NextApiRequest, NextApiResponse } from 'next';
-import {
-  SmsType,
-  TVerification_Codes,
-  checkCode,
-  checkSendable,
-  deleteByUid,
-  getInfoByUid
-} from '../db/verifyCode';
+import { SmsType, TVerification_Codes, verifyAndConsumeCode } from '../db/verifyCode';
 import { isEmail } from '@/utils/crypto';
 import { EMAIL_STATUS } from '@/types/response/email';
 import { SemData } from '@/types/sem';
 import { captchaReq } from '../sms';
 import { isDisposableEmail } from 'disposable-email-domains-js';
-import { createMiddleware } from '@/utils/factory';
 import { AdClickData } from '@/types/adClick';
+import { releaseVerificationSend, reserveVerificationSend } from '../db/verificationRateLimit';
+import { consumeVerificationFlowTicket, getVerificationFlowTicket } from '../db/verificationTicket';
+import { z } from 'zod';
 
 export const filterPhoneParams = async (
   req: NextApiRequest,
@@ -101,14 +96,15 @@ export const filterCodeUid = async (
   next: (data: { uid: string }) => void
 ) => {
   const { uid } = req.body as { uid?: string };
-  if (!uid)
+  const parsedUid = z.string().uuid().safeParse(uid);
+  if (!parsedUid.success)
     return jsonRes(res, {
       message: 'uid is invalid',
       code: 400
     });
   return await Promise.resolve(
     next({
-      uid
+      uid: parsedUid.data
     })
   );
 };
@@ -207,101 +203,139 @@ export const captchaSvc = async (req: NextApiRequest, res: NextApiResponse) => {
     });
 };
 
-// once code
-export const verifyCodeUidGuard =
-  (uid: string) =>
-  async (res: NextApiResponse, next: (d: { smsInfo: TVerification_Codes }) => void) => {
-    const oldSmsInfo = await getInfoByUid({ uid });
-    if (!oldSmsInfo)
+export const verifyFlowTicketGuard =
+  (uid: string, userUid: string, providerType: string) =>
+  async (res: NextApiResponse, next: (d: { ticket: { oldProviderId: string } }) => void) => {
+    const ticket = await getVerificationFlowTicket({
+      uid,
+      userUid,
+      providerType,
+      scenario: 'change_binding'
+    });
+    if (!ticket)
       return jsonRes(res, {
-        message: 'uid is expired',
+        message: 'Verification flow has expired',
+        data: { error: 'expired_code' },
         code: 409
       });
-    await Promise.resolve(next({ smsInfo: oldSmsInfo }));
-    // once code
-    await deleteByUid({ uid: oldSmsInfo.uid });
+    return Promise.resolve(next({ ticket }));
+  };
+
+export const consumeFlowTicketGuard =
+  (uid: string, userUid: string, providerType: string) =>
+  async (res: NextApiResponse, next: () => void) => {
+    const consumed = await consumeVerificationFlowTicket({
+      uid,
+      userUid,
+      providerType,
+      scenario: 'change_binding'
+    });
+    if (!consumed)
+      return jsonRes(res, {
+        message: 'Verification flow has expired',
+        data: { error: 'expired_code' },
+        code: 409
+      });
+    return Promise.resolve(next());
   };
 
 export const verifyCodeGuard =
   (id: string, code: string, smsType: SmsType) =>
   async (res: NextApiResponse, next: (d: { smsInfo: TVerification_Codes }) => void) => {
-    const smsInfo = await checkCode({ id, smsType, code });
-    if (!smsInfo) {
+    const result = await verifyAndConsumeCode({ id, smsType, code });
+    if (result.status === 'expired') {
       return jsonRes(res, {
-        message: 'SMS code is wrong',
+        message: 'Verification code has expired',
+        data: { error: 'expired_code' },
         code: 409
       });
     }
-    return await Promise.resolve(next({ smsInfo }));
+    if (result.status === 'invalid') {
+      return jsonRes(res, {
+        message: 'Verification code is incorrect',
+        data: {
+          error: 'invalid_code',
+          remainingAttempts: result.remainingAttempts
+        },
+        code: 409
+      });
+    }
+    if (result.status === 'locked') {
+      return jsonRes(res, {
+        message: 'Verification attempts exhausted',
+        data: {
+          error: 'attempts_exhausted',
+          remainingAttempts: 0,
+          retryAfter: result.retryAfter
+        },
+        code: 429
+      });
+    }
+    return await Promise.resolve(next({ smsInfo: result.smsInfo }));
   };
 
 // export const verifyPhoneCodeGuard = verifyCodeGuard('phone');
 // export const verifyEmailCodeGuard = verifyCodeGuard('email');
 
-export const sendSmsCodeGuard = createMiddleware<{ id: string; smsType: SmsType }>(
-  async ({ req, res, ctx, next }) => {
-    const { id, smsType } = ctx;
-    if (!(await checkSendable({ smsType, id }))) {
+const getProviderType = (smsType: SmsType) =>
+  smsType.startsWith('phone') || smsType === 'alert_bind_phone' ? 'PHONE' : 'EMAIL';
+
+export const sendSmsCodeGuard =
+  ({ id, smsType }: { id: string; smsType: SmsType }) =>
+  async (req: NextApiRequest, res: NextApiResponse, next?: () => unknown) => {
+    const limit = await reserveVerificationSend(req, id, getProviderType(smsType));
+    if (!limit.allowed) {
       return jsonRes(res, {
-        message: 'code already sent',
+        message: 'Verification code sending is rate limited',
         data: {
-          error: 'too_frequent'
+          error: 'send_rate_limited',
+          retryAfter: limit.retryAfter
         },
-        code: 409
+        code: 429
       });
     }
-    await Promise.resolve(next?.());
-  }
-);
-export const sendNewSmsCodeGuard = createMiddleware<
-  {
+
+    const succeeded = await Promise.resolve(next?.());
+    if (succeeded === false) {
+      try {
+        await releaseVerificationSend(limit.reservation);
+      } catch (error) {
+        console.error('Failed to release verification send rate limit:', error);
+      }
+    }
+  };
+
+export const sendNewSmsCodeGuard =
+  ({
+    smsType,
+    codeUid,
+    smsId,
+    userUid
+  }: {
     smsType: SmsType;
     codeUid: string;
     smsId: string;
-  },
-  { smsInfo: TVerification_Codes }
->(async ({ res, req, next, ctx }) => {
-  const { smsType, smsId, codeUid } = ctx;
-  await sendSmsCodeGuard({ smsType, id: smsId })(req, res, async () => {
-    const oldSmsInfo = await getInfoByUid({ uid: codeUid });
-    if (!oldSmsInfo)
+    userUid: string;
+  }) =>
+  async (
+    req: NextApiRequest,
+    res: NextApiResponse,
+    next: (d: { oldProviderId: string }) => unknown
+  ) => {
+    const ticket = await getVerificationFlowTicket({
+      uid: codeUid,
+      userUid,
+      providerType: getProviderType(smsType),
+      scenario: 'change_binding'
+    });
+    if (!ticket) {
       return jsonRes(res, {
-        message: 'uid is expired',
+        message: 'Verification flow has expired',
+        data: { error: 'expired_code' },
         code: 409
       });
-    await Promise.resolve(next({ smsInfo: oldSmsInfo }));
-  });
-});
-// need to get queryParam from after filter
-// export const sendSmsCodeGuard =
-//   (smsType: SmsType) => (id: string) => async (res: NextApiResponse, next?: () => void) => {
-//     if (!(await checkSendable({ smsType, id }))) {
-//       return jsonRes(res, {
-//         message: 'code already sent',
-//         code: 409
-//       });
-//     }
-//     await Promise.resolve(next?.());
-//   };
-// export const sendNewSmsCodeGuard =
-//   (smsType: SmsType) =>
-//   (codeUid: string, smsId: string) =>
-//   (res: NextApiResponse, next: (d: { smsInfo: TVerification_Codes }) => void) =>
-//     sendSmsCodeGuard(smsType)(smsId)(res, async () => {
-//       const oldSmsInfo = await getInfoByUid({ uid: codeUid });
-//       if (!oldSmsInfo)
-//         return jsonRes(res, {
-//           message: 'uid is expired',
-//           code: 409
-//         });
-//       await Promise.resolve(next({ smsInfo: oldSmsInfo }));
-//     });
-
-// export const sendPhoneCodeGuard = sendSmsCodeGuard('phone');
-// export const sendEmailCodeGuard = (email: string) => {
-
-//   return sendSmsCodeGuard('email')(email);
-// };
-
-// export const sendNewPhoneCodeGuard = sendNewSmsCodeGuard('phone_change_new');
-// export const sendNewEmailCodeGuard = sendNewSmsCodeGuard('email');
+    }
+    return sendSmsCodeGuard({ smsType, id: smsId })(req, res, () =>
+      next({ oldProviderId: ticket.oldProviderId })
+    );
+  };

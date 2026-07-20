@@ -7,10 +7,11 @@ export const sendSmsCodeResp =
   (smsType: SmsType, id: string, code: string) =>
   async (res: NextApiResponse, next?: () => void) => {
     await addOrUpdateCode({ id, smsType, code });
-    return jsonRes(res, {
+    jsonRes(res, {
       message: 'successfully',
       code: 200
     });
+    return true;
   };
 export const sendPhoneCodeSvc =
   (phone: string, smsType: SmsType) => async (res: NextApiResponse) => {
@@ -19,10 +20,11 @@ export const sendPhoneCodeSvc =
       return sendSmsCodeResp(smsType, phone, code)(res);
     } catch (error) {
       console.error('sendPhoneCodeSvc failed:', error);
-      return jsonRes(res, {
+      jsonRes(res, {
         message: 'SMS sending failed',
         code: 500
       });
+      return false;
     }
   };
 export const sendEmailCodeSvc =
@@ -32,9 +34,10 @@ export const sendEmailCodeSvc =
       return sendSmsCodeResp(smsType, email, code)(res);
     } catch (error) {
       console.error('sendEmailCodeSvc failed:', error);
-      return jsonRes(res, {
+      jsonRes(res, {
         message: 'Email sending failed',
         code: 500
       });
+      return false;
     }
   };

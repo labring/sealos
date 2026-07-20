@@ -72,7 +72,9 @@ function OldSms({
     },
     onError(err) {
       getCodeMutation.reset();
-      if ((err as ApiResp)?.data?.error === 'too_frequent') {
+      if (
+        ['too_frequent', 'send_rate_limited'].includes(String((err as ApiResp)?.data?.error || ''))
+      ) {
         toast({
           status: 'error',
           title: t('common:get_code_too_frequent')

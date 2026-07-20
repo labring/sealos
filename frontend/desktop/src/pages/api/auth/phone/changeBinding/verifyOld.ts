@@ -5,6 +5,7 @@ import { filterPhoneVerifyParams, verifyCodeGuard } from '@/services/backend/mid
 import { cnVersionMiddleware } from '@/services/backend/middleware/version';
 import { jsonRes } from '@/services/backend/response';
 import { enablePhoneSms } from '@/services/enable';
+import { createVerificationFlowTicket } from '@/services/backend/db/verificationTicket';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -23,6 +24,13 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
               code,
               'phone_change_old'
             )(res, async ({ smsInfo: phoneInfo }) => {
+              await createVerificationFlowTicket({
+                uid: phoneInfo.uid,
+                userUid,
+                providerType: 'PHONE',
+                oldProviderId: phoneInfo.id,
+                scenario: 'change_binding'
+              });
               return jsonRes(res, {
                 code: 200,
                 message: 'Successfully',

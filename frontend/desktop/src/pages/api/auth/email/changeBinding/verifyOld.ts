@@ -4,6 +4,7 @@ import { unbindEmailGuard } from '@/services/backend/middleware/oauth';
 import { filterEmailVerifyParams, verifyCodeGuard } from '@/services/backend/middleware/sms';
 import { jsonRes } from '@/services/backend/response';
 import { enableEmailSms } from '@/services/enable';
+import { createVerificationFlowTicket } from '@/services/backend/db/verificationTicket';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -21,6 +22,13 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
             code,
             'email_change_old'
           )(res, async ({ smsInfo }) => {
+            await createVerificationFlowTicket({
+              uid: smsInfo.uid,
+              userUid,
+              providerType: 'EMAIL',
+              oldProviderId: smsInfo.id,
+              scenario: 'change_binding'
+            });
             return jsonRes(res, {
               code: 200,
               message: 'Successfully',
