@@ -364,22 +364,33 @@ export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my
 
 ## Helm Chart 参数
 
-| 参数                        | 描述                      | 默认值                                           |
-| --------------------------- | ------------------------- | ------------------------------------------------ |
-| `replicaCount`              | 副本数                    | `1`                                              |
-| `image`                     | 容器镜像                  | `ghcr.io/labring/sealos-desktop-frontend:latest` |
-| `imagePullPolicy`           | 镜像拉取策略              | `IfNotPresent`                                   |
-| `fullnameOverride`          | 覆盖完整资源名称          | `sealos-desktop`                                 |
-| `serviceAccount.create`     | 创建服务账号              | `true`                                           |
-| `serviceAccount.name`       | 服务账号名称              | `desktop-frontend`                               |
-| `service.port`              | 服务端口                  | `3000`                                           |
-| `resources.requests.cpu`    | CPU 请求                  | `100m`                                           |
-| `resources.requests.memory` | 内存请求                  | `128Mi`                                          |
-| `resources.limits.cpu`      | CPU 限制                  | `2000m`                                          |
-| `resources.limits.memory`   | 内存限制                  | `2048Mi`                                         |
-| `ingress.enabled`           | 启用 Ingress              | `true`                                           |
-| `ingress.className`         | Ingress 类                | `nginx`                                          |
-| `autoConfigEnabled`         | 从 sealos-config 自动配置 | `true`                                           |
+| 参数                          | 描述                       | 默认值                                           |
+| ----------------------------- | -------------------------- | ------------------------------------------------ |
+| `replicaCount`                | 副本数                     | `1`                                              |
+| `image`                       | 容器镜像                   | `ghcr.io/labring/sealos-desktop-frontend:latest` |
+| `imagePullPolicy`             | 镜像拉取策略               | `IfNotPresent`                                   |
+| `fullnameOverride`            | 覆盖完整资源名称           | `sealos-desktop`                                 |
+| `serviceAccount.create`       | 创建服务账号               | `true`                                           |
+| `serviceAccount.name`         | 服务账号名称               | `desktop-frontend`                               |
+| `service.port`                | 服务端口                   | `3000`                                           |
+| `ciliumNetworkPolicy.enabled` | 仅允许 Cilium 节点身份访问 | `true`                                           |
+| `resources.requests.cpu`      | CPU 请求                   | `100m`                                           |
+| `resources.requests.memory`   | 内存请求                   | `128Mi`                                          |
+| `resources.limits.cpu`        | CPU 限制                   | `2000m`                                          |
+| `resources.limits.memory`     | 内存限制                   | `2048Mi`                                         |
+| `ingress.enabled`             | 启用 Ingress               | `true`                                           |
+| `ingress.className`           | Ingress 类                 | `nginx`                                          |
+| `autoConfigEnabled`           | 从 sealos-config 自动配置  | `true`                                           |
+
+启用 `ciliumNetworkPolicy.enabled` 时，集群必须提供
+`cilium.io/v2/CiliumNetworkPolicy` CRD，否则 Helm 将终止安装。该策略仅允许
+节点上运行的网关（Cilium `host` 和 `remote-node` 身份）访问 Desktop 的 TCP
+3000 端口，应用 Pod 不能直接访问。
+
+升级已有环境时，必须先将所有集群内 Desktop 调用方迁移到公网 HTTPS 网关并
+验证成功，再启用或应用该策略。尤其需要先发布 Costcenter，再发布 Desktop。
+回滚时顺序相反：如果调用方要恢复为 Desktop ClusterIP，必须先删除该策略，
+否则 workspace 创建功能会不可用。
 
 ## 故障排查
 

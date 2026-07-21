@@ -364,22 +364,35 @@ For more details, see [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md).
 
 ## Helm Chart Values
 
-| Parameter                   | Description                    | Default                                          |
-| --------------------------- | ------------------------------ | ------------------------------------------------ |
-| `replicaCount`              | Deployment replica count       | `1`                                              |
-| `image`                     | Container image                | `ghcr.io/labring/sealos-desktop-frontend:latest` |
-| `imagePullPolicy`           | Image pull policy              | `IfNotPresent`                                   |
-| `fullnameOverride`          | Override full resource names   | `sealos-desktop`                                 |
-| `serviceAccount.create`     | Create service account         | `true`                                           |
-| `serviceAccount.name`       | Service account name           | `desktop-frontend`                               |
-| `service.port`              | Service port                   | `3000`                                           |
-| `resources.requests.cpu`    | CPU request                    | `100m`                                           |
-| `resources.requests.memory` | Memory request                 | `128Mi`                                          |
-| `resources.limits.cpu`      | CPU limit                      | `2000m`                                          |
-| `resources.limits.memory`   | Memory limit                   | `2048Mi`                                         |
-| `ingress.enabled`           | Enable ingress                 | `true`                                           |
-| `ingress.className`         | Ingress class                  | `nginx`                                          |
-| `autoConfigEnabled`         | Auto-config from sealos-config | `true`                                           |
+| Parameter                     | Description                                    | Default                                          |
+| ----------------------------- | ---------------------------------------------- | ------------------------------------------------ |
+| `replicaCount`                | Deployment replica count                       | `1`                                              |
+| `image`                       | Container image                                | `ghcr.io/labring/sealos-desktop-frontend:latest` |
+| `imagePullPolicy`             | Image pull policy                              | `IfNotPresent`                                   |
+| `fullnameOverride`            | Override full resource names                   | `sealos-desktop`                                 |
+| `serviceAccount.create`       | Create service account                         | `true`                                           |
+| `serviceAccount.name`         | Service account name                           | `desktop-frontend`                               |
+| `service.port`                | Service port                                   | `3000`                                           |
+| `ciliumNetworkPolicy.enabled` | Allow ingress only from Cilium node identities | `true`                                           |
+| `resources.requests.cpu`      | CPU request                                    | `100m`                                           |
+| `resources.requests.memory`   | Memory request                                 | `128Mi`                                          |
+| `resources.limits.cpu`        | CPU limit                                      | `2000m`                                          |
+| `resources.limits.memory`     | Memory limit                                   | `2048Mi`                                         |
+| `ingress.enabled`             | Enable ingress                                 | `true`                                           |
+| `ingress.className`           | Ingress class                                  | `nginx`                                          |
+| `autoConfigEnabled`           | Auto-config from sealos-config                 | `true`                                           |
+
+When `ciliumNetworkPolicy.enabled` is `true`, the cluster must provide the
+`cilium.io/v2/CiliumNetworkPolicy` CRD or Helm stops the installation. The
+policy allows only the node-hosted gateway (`host` and `remote-node` Cilium
+identities) to reach Desktop on TCP port 3000; direct traffic from application
+pods is denied.
+
+For an existing installation, migrate every in-cluster Desktop caller to the
+public HTTPS gateway and verify that path before enabling or applying this
+policy. In particular, roll out Costcenter first and Desktop second. During a
+rollback, remove the policy before restoring a caller that uses the Desktop
+ClusterIP, otherwise workspace creation will be unavailable.
 
 ## Troubleshooting
 
