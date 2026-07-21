@@ -18,7 +18,6 @@ declare -A images=(
   ["ghcr.io/labring/sealos-cloud-costcenter-frontend:latest"]="frontend-costcenter.tar"
   ["ghcr.io/labring/sealos-cloud-template-frontend:latest"]="frontend-template.tar"
   ["ghcr.io/labring/sealos-cloud-license-frontend:latest"]="frontend-license.tar"
-  ["ghcr.io/labring/sealos-cloud-cronjob-frontend:latest"]="frontend-cronjob.tar"
 
   # services
   ["ghcr.io/labring/sealos-cloud-database-service:latest"]="database-service.tar"

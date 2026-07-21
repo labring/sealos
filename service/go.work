@@ -4,7 +4,6 @@ use (
 	.
 	./account
 	./database
-	./devbox
 	./exceptionmonitor
 	./hubble
 	./launchpad
