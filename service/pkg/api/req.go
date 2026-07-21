@@ -189,13 +189,6 @@ var (
 		"key_evictions":       "irate(redis_evicted_keys_total{namespace=~\"#\", app_kubernetes_io_instance=~\"@\"}[1m])",
 	}
 
-	Minio = map[string]string{
-		"minio_bucket_usage_object_total":     "minio_bucket_usage_object_total{bucket=\"@\", instance=\"#\"}",
-		"minio_bucket_usage_total_bytes":      "minio_bucket_usage_total_bytes{bucket=\"@\", instance=\"#\"}",
-		"minio_bucket_traffic_received_bytes": "sum(minio_bucket_traffic_received_bytes{bucket=\"@\", instance=\"#\"}) by (bucket, instance, job, namespace)",
-		"minio_bucket_traffic_sent_bytes":     "sum(minio_bucket_traffic_sent_bytes{bucket=\"@\", instance=\"#\"}) by (bucket, instance, job, namespace)",
-	}
-
 	Kafka = map[string]string{
 		"cpu":           "round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~\"#\",pod=~\"@-kafka-.*\"}) by (pod) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{namespace=~\"#\",pod=~\"@-kafka-.*\"}) by (pod)*100,0.01)",
 		"memory":        "round(sum(container_memory_working_set_bytes{job=\"kubelet\", metrics_path=\"/metrics/cadvisor\",namespace=~\"#\",container!=\"\", image!=\"\",pod=~\"@-kafka-.*\"}) by(pod) / sum(cluster:namespace:pod_memory:active:kube_pod_container_resource_limits{namespace=~\"#\", pod=~\"@-kafka-.*\"}) by (pod) * 100, 0.01)",

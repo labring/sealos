@@ -12,7 +12,6 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/minio/madmin-go/v3"
 	// kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -682,10 +681,11 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user, status 
 		}
 		accessKey := string(secret.Data[OSAccessKey])
 		secretKey := string(secret.Data[OSSecretKey])
-		oSAdminClient, err := objectstoragev1.NewOSAdminClient(
+		oSAdminClient, err := madmin.New(
 			r.InternalEndpoint,
 			accessKey,
 			secretKey,
+			false,
 		)
 		if err != nil {
 			r.Log.Error(err, "failed to new object storage admin client")
