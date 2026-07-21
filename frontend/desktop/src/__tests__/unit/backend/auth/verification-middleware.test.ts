@@ -48,6 +48,30 @@ describe('verification middleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  it('rejects object-shaped codes before building a Mongo query', async () => {
+    const json = vi.fn();
+    const next = vi.fn();
+
+    await filterPhoneVerifyParams(
+      {
+        body: {
+          id: '13800138000',
+          code: { $ne: null },
+          challengeId: '00000000-0000-4000-8000-000000000001'
+        }
+      } as any,
+      { json } as any,
+      next
+    );
+
+    expect(json).toHaveBeenCalledWith({
+      code: 400,
+      message: 'code is invalid',
+      data: null
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
   it('passes the challenge ID to verification handlers', async () => {
     const challengeId = '00000000-0000-4000-8000-000000000001';
     const next = vi.fn();

@@ -1,10 +1,9 @@
 import { verifyAccessToken, generateBillingToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
-import { CreateAlertRequest, CreateAlertResponse, ProviderType } from '@/types/alert';
+import { CreateAlertRequestSchema, CreateAlertResponse, ProviderType } from '@/types/alert';
 import { verifyCodeGuard } from '@/services/backend/middleware/sms';
 import { globalPrisma } from '@/services/backend/db/init';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { z } from 'zod';
 
 /**
  * Creates a new alert notification account.
@@ -23,15 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const body: CreateAlertRequest = req.body;
-    const { providerType, providerId, code, challengeId } = body;
-
-    if (!providerType || !providerId) {
+    const parsedBody = CreateAlertRequestSchema.safeParse(req.body);
+    if (!parsedBody.success) {
       return jsonRes(res, {
         code: 400,
-        message: 'Missing required fields: providerType, providerId'
+        message: 'Invalid verification request'
       });
     }
+    const { providerType, providerId, code, challengeId } = parsedBody.data;
 
     // Check if phone/email is already bound to user account
     const userInfo = await globalPrisma.user.findUnique({
@@ -56,13 +54,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, {
         code: 400,
         message: 'Cannot create alert for phone/email already bound to account'
-      });
-    }
-
-    if (!code || !z.string().uuid().safeParse(challengeId).success) {
-      return jsonRes(res, {
-        code: 400,
-        message: 'Missing required fields: code, challengeId'
       });
     }
 

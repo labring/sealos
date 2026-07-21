@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import type { NextApiRequest } from 'next';
-import { MongoServerError } from 'mongodb';
+import { MongoServerError, type Collection } from 'mongodb';
 import { connectToDatabase } from './mongodb';
 import { getClientIp } from '../requestIp';
 
@@ -17,6 +17,8 @@ type VerificationRateLimit = {
   expiresAt: Date;
 };
 
+type VerificationRateLimitCollection = Collection<VerificationRateLimit>;
+
 export type VerificationRateLimitReservation = {
   entries: Array<Pick<VerificationRateLimit, 'key' | 'windowStartedAt'>>;
 };
@@ -31,11 +33,25 @@ class RateLimitExceededError extends Error {
   }
 }
 
+const indexInitializations = new WeakMap<object, Promise<void>>();
+
 async function connectToCollection() {
   const client = await connectToDatabase();
   const collection = client.db().collection<VerificationRateLimit>('verification_rate_limits');
-  await collection.createIndex({ key: 1 }, { unique: true });
-  await collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  let initialization = indexInitializations.get(client);
+  if (!initialization) {
+    initialization = Promise.all([
+      collection.createIndex({ key: 1 }, { unique: true }),
+      collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+    ])
+      .then(() => undefined)
+      .catch((error) => {
+        indexInitializations.delete(client);
+        throw error;
+      });
+    indexInitializations.set(client, initialization);
+  }
+  await initialization;
   return collection;
 }
 
@@ -64,9 +80,11 @@ const makeRules = (req: NextApiRequest, id: string, providerType: string): RateL
 const retryAfterFor = (expiresAt: Date, now: Date) =>
   Math.max(1, Math.ceil((expiresAt.getTime() - now.getTime()) / 1000));
 
-async function reserveRule(rule: RateLimitRule, now: Date) {
-  const limits = await connectToCollection();
-
+async function reserveRule(
+  limits: VerificationRateLimitCollection,
+  rule: RateLimitRule,
+  now: Date
+) {
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const current = await limits.findOne({ key: rule.key });
     if (!current || current.expiresAt <= now) {
@@ -130,10 +148,11 @@ export async function reserveVerificationSend(
   id: string,
   providerType: string
 ): Promise<VerificationRateLimitResult> {
+  const limits = await connectToCollection();
   const reservation: VerificationRateLimitReservation = { entries: [] };
   try {
     for (const rule of makeRules(req, id, providerType)) {
-      reservation.entries.push(await reserveRule(rule, new Date()));
+      reservation.entries.push(await reserveRule(limits, rule, new Date()));
     }
     return { allowed: true, reservation };
   } catch (error) {

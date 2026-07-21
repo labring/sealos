@@ -63,7 +63,11 @@ describe('Mongo verification code', () => {
         id: '13800138000',
         smsType: 'phone_login',
         challengeId,
-        code: { $ne: '000000' }
+        code: { $ne: '000000' },
+        $or: [
+          { attemptCount: { $lt: MAX_VERIFICATION_ATTEMPTS } },
+          { attemptCount: { $exists: false } }
+        ]
       }),
       { $inc: { attemptCount: 1 } },
       { returnDocument: 'after' }

@@ -11,26 +11,29 @@ import { releaseVerificationSend, reserveVerificationSend } from '../db/verifica
 import { consumeVerificationFlowTicket, getVerificationFlowTicket } from '../db/verificationTicket';
 import { z } from 'zod';
 
+const phoneSchema = z.string().regex(/^1[3-9]\d{9}$/);
+const verificationCodeSchema = z.string().regex(/^\d{6}$/);
+
 export const filterPhoneParams = async (
   req: NextApiRequest,
   res: NextApiResponse,
   next: (data: { phoneNumbers: string }) => void
 ) => {
-  const { id: phoneNumbers } = req.body as { id?: string };
-  if (!phoneNumbers)
+  const parsedPhone = phoneSchema.safeParse(req.body?.id);
+  if (!parsedPhone.success)
     return jsonRes(res, {
       message: 'phoneNumbers is invalid',
       code: 400
     });
-  await Promise.resolve(next({ phoneNumbers }));
+  await Promise.resolve(next({ phoneNumbers: parsedPhone.data }));
 };
 export const filterEmailParams = async (
   req: NextApiRequest,
   res: NextApiResponse,
   next: (data: { email: string }) => void
 ) => {
-  const { id: email } = req.body as { id?: string };
-  if (!email || !isEmail(email) || isDisposableEmail(email))
+  const email = req.body?.id;
+  if (typeof email !== 'string' || !isEmail(email) || isDisposableEmail(email))
     return jsonRes(res, {
       message: EMAIL_STATUS.INVALID_PARAMS,
       code: 400
@@ -55,8 +58,9 @@ export const filterPhoneVerifyParams = (
       semData?: SemData;
       adClickData?: AdClickData;
     };
+    const parsedCode = verificationCodeSchema.safeParse(code);
     const parsedChallengeId = z.string().uuid().safeParse(challengeId);
-    if (!code || !parsedChallengeId.success)
+    if (!parsedCode.success || !parsedChallengeId.success)
       return jsonRes(res, {
         message: 'code is invalid',
         code: 400
@@ -65,7 +69,7 @@ export const filterPhoneVerifyParams = (
     await Promise.resolve(
       next({
         ...data,
-        code,
+        code: parsedCode.data,
         challengeId: parsedChallengeId.data,
         semData,
         adClickData
@@ -82,8 +86,9 @@ export const filterEmailVerifyParams = (
       code?: string;
       challengeId?: string;
     };
+    const parsedCode = verificationCodeSchema.safeParse(code);
     const parsedChallengeId = z.string().uuid().safeParse(challengeId);
-    if (!code || !parsedChallengeId.success)
+    if (!parsedCode.success || !parsedChallengeId.success)
       return jsonRes(res, {
         message: EMAIL_STATUS.INVALID_PARAMS,
         code: 400
@@ -91,7 +96,7 @@ export const filterEmailVerifyParams = (
     await Promise.resolve(
       next({
         ...data,
-        code,
+        code: parsedCode.data,
         challengeId: parsedChallengeId.data
       })
     );

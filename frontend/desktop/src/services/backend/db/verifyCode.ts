@@ -31,13 +31,27 @@ export const VERIFICATION_CODE_TTL_MS = 5 * 60_000;
 export const VERIFICATION_CODE_RESEND_MS = 60_000;
 export const MAX_VERIFICATION_ATTEMPTS = 10;
 
+const indexInitializations = new WeakMap<object, Promise<void>>();
+
 async function connectToCollection() {
   const client = await connectToDatabase();
   const collection = client.db().collection<TVerification_Codes>('sms_verification_codes');
-  await collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 5 });
-  await collection.createIndex({ uid: 1 }, { unique: true });
-  await collection.createIndex({ challengeId: 1 }, { unique: true, sparse: true });
-  await collection.createIndex({ id: 1, smsType: 1 }, { unique: true });
+  let initialization = indexInitializations.get(client);
+  if (!initialization) {
+    initialization = Promise.all([
+      collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 5 }),
+      collection.createIndex({ uid: 1 }, { unique: true }),
+      collection.createIndex({ challengeId: 1 }, { unique: true, sparse: true }),
+      collection.createIndex({ id: 1, smsType: 1 }, { unique: true })
+    ])
+      .then(() => undefined)
+      .catch((error) => {
+        indexInitializations.delete(client);
+        throw error;
+      });
+    indexInitializations.set(client, initialization);
+  }
+  await initialization;
   return collection;
 }
 

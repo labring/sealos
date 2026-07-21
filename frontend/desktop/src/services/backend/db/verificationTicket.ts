@@ -11,12 +11,26 @@ type VerificationFlowTicket = {
   expiresAt: Date;
 };
 
+const indexInitializations = new WeakMap<object, Promise<void>>();
+
 async function connectToCollection() {
   const client = await connectToDatabase();
   const collection = client.db().collection<VerificationFlowTicket>('verification_flow_tickets');
-  await collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-  await collection.createIndex({ userUid: 1, providerType: 1, scenario: 1 }, { unique: true });
-  await collection.createIndex({ uid: 1 }, { unique: true });
+  let initialization = indexInitializations.get(client);
+  if (!initialization) {
+    initialization = Promise.all([
+      collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      collection.createIndex({ userUid: 1, providerType: 1, scenario: 1 }, { unique: true }),
+      collection.createIndex({ uid: 1 }, { unique: true })
+    ])
+      .then(() => undefined)
+      .catch((error) => {
+        indexInitializations.delete(client);
+        throw error;
+      });
+    indexInitializations.set(client, initialization);
+  }
+  await initialization;
   return collection;
 }
 
