@@ -33,8 +33,6 @@ import (
 
 	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	"github.com/labring/sealos/controllers/resources/controllers"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -177,10 +175,7 @@ func main() {
 	)
 	if endpoint, ak, sk, mAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" && ak != "" && sk != "" && mAddr != "" {
 		reconciler.Logger.Info("init minio client")
-		if reconciler.ObjStorageClient, err = minio.New(endpoint, &minio.Options{
-			Creds:  credentials.NewStaticV4(ak, sk, ""),
-			Secure: false,
-		}); err != nil {
+		if reconciler.ObjStorageClient, err = objectstorage.NewOSClient(endpoint, ak, sk); err != nil {
 			reconciler.Logger.Error(err, "failed to new minio client")
 			os.Exit(1)
 		}

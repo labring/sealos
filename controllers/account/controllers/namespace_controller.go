@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
+	objectstoragev1 "github.com/labring/sealos/controllers/pkg/objectstorage"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/minio/madmin-go/v3"
 	// kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
@@ -681,11 +682,10 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user, status 
 		}
 		accessKey := string(secret.Data[OSAccessKey])
 		secretKey := string(secret.Data[OSSecretKey])
-		oSAdminClient, err := madmin.New(
+		oSAdminClient, err := objectstoragev1.NewOSAdminClient(
 			r.InternalEndpoint,
 			accessKey,
 			secretKey,
-			false,
 		)
 		if err != nil {
 			r.Log.Error(err, "failed to new object storage admin client")
