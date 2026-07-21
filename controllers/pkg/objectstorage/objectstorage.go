@@ -20,9 +20,69 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
+	"github.com/minio/minio-go/v7"
 	"github.com/prometheus/prom2json"
 )
+
+func ListUserObjectStorageBucket(client *minio.Client, username string) ([]string, error) {
+	buckets, err := client.ListBuckets(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	var userBuckets []string
+	for _, bucket := range buckets {
+		if strings.HasPrefix(bucket.Name, username) {
+			userBuckets = append(userBuckets, bucket.Name)
+		}
+	}
+	return userBuckets, nil
+}
+
+func ListAllObjectStorageBucket(client *minio.Client) ([]string, error) {
+	buckets, err := client.ListBuckets(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	allBuckets := make([]string, 0, len(buckets))
+	for _, bucket := range buckets {
+		allBuckets = append(allBuckets, bucket.Name)
+	}
+	return allBuckets, nil
+}
+
+func GetObjectStorageSize(client *minio.Client, bucket string) (int64, int64) {
+	objects := client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{
+		Recursive: true,
+	})
+	var totalSize int64
+	var objectsCount int64
+	for object := range objects {
+		totalSize += object.Size
+		objectsCount++
+	}
+	return totalSize, objectsCount
+}
+
+// GetUserObjectStorageSize remains public for the migrated objectstorage controller.
+func GetUserObjectStorageSize(client *minio.Client, username string) (int64, int64, error) {
+	buckets, err := ListUserObjectStorageBucket(client, username)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to list object storage buckets: %w", err)
+	}
+
+	var totalSize int64
+	var objectsCount int64
+	for _, bucketName := range buckets {
+		size, count := GetObjectStorageSize(client, bucketName)
+		totalSize += size
+		objectsCount += count
+	}
+	return totalSize, objectsCount, nil
+}
 
 type MetricData struct {
 	// key: bucket name, value: usage
