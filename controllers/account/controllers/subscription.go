@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -533,7 +534,10 @@ func (sp *SubscriptionProcessor) checkDowngradeConditions(
 		return false, fmt.Errorf("failed to generate token: %w", err)
 	}
 
-	url := "http://desktop-frontend.sealos.svc.cluster.local:3000/api/v1alpha/downGrade/check"
+	url, err := desktopDowngradeCheckURL(sp.localDomain, os.Getenv("PORT"))
+	if err != nil {
+		return false, err
+	}
 
 	var lastErr error
 	backoffTime := time.Second

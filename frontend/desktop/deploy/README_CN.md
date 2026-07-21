@@ -388,9 +388,10 @@ export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my
 3000 端口，应用 Pod 不能直接访问。
 
 升级已有环境时，必须先将所有集群内 Desktop 调用方迁移到公网 HTTPS 网关并
-验证成功，再启用或应用该策略。尤其需要先发布 Costcenter，再发布 Desktop。
-回滚时顺序相反：如果调用方要恢复为 Desktop ClusterIP，必须先删除该策略，
-否则 workspace 创建功能会不可用。
+验证成功，再启用或应用该策略。必须先发布 Costcenter 和 Account Controller，
+再发布 Desktop；使用私有 CA 的环境还需要先将 CA 加入这两个调用方的系统信任链。
+回滚时顺序相反：如果任一调用方要恢复为 Desktop ClusterIP，必须先删除该策略，
+否则 workspace 创建或订阅降级检查功能会不可用。
 
 ## 故障排查
 

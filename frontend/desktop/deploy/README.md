@@ -390,9 +390,11 @@ pods is denied.
 
 For an existing installation, migrate every in-cluster Desktop caller to the
 public HTTPS gateway and verify that path before enabling or applying this
-policy. In particular, roll out Costcenter first and Desktop second. During a
-rollback, remove the policy before restoring a caller that uses the Desktop
-ClusterIP, otherwise workspace creation will be unavailable.
+policy. Roll out Costcenter and Account Controller before Desktop. Environments
+using a private CA must also add that CA to both callers' system trust stores.
+During a rollback, remove the policy before restoring either caller to the
+Desktop ClusterIP, otherwise workspace creation or subscription downgrade
+checks will be unavailable.
 
 ## Troubleshooting
 
