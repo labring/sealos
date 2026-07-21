@@ -43,17 +43,20 @@ export const filterPhoneVerifyParams = (
   next: (data: {
     phoneNumbers: string;
     code: string;
+    challengeId: string;
     semData?: SemData;
     adClickData?: AdClickData;
   }) => void
 ) =>
   filterPhoneParams(req, res, async (data) => {
-    const { code, semData, adClickData } = req.body as {
+    const { code, challengeId, semData, adClickData } = req.body as {
       code?: string;
+      challengeId?: string;
       semData?: SemData;
       adClickData?: AdClickData;
     };
-    if (!code)
+    const parsedChallengeId = z.string().uuid().safeParse(challengeId);
+    if (!code || !parsedChallengeId.success)
       return jsonRes(res, {
         message: 'code is invalid',
         code: 400
@@ -63,6 +66,7 @@ export const filterPhoneVerifyParams = (
       next({
         ...data,
         code,
+        challengeId: parsedChallengeId.data,
         semData,
         adClickData
       })
@@ -71,13 +75,15 @@ export const filterPhoneVerifyParams = (
 export const filterEmailVerifyParams = (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: { email: string; code: string }) => void
+  next: (data: { email: string; code: string; challengeId: string }) => void
 ) =>
   filterEmailParams(req, res, async (data) => {
-    const { code } = req.body as {
+    const { code, challengeId } = req.body as {
       code?: string;
+      challengeId?: string;
     };
-    if (!code)
+    const parsedChallengeId = z.string().uuid().safeParse(challengeId);
+    if (!code || !parsedChallengeId.success)
       return jsonRes(res, {
         message: EMAIL_STATUS.INVALID_PARAMS,
         code: 400
@@ -85,7 +91,8 @@ export const filterEmailVerifyParams = (
     await Promise.resolve(
       next({
         ...data,
-        code
+        code,
+        challengeId: parsedChallengeId.data
       })
     );
   });
@@ -240,9 +247,9 @@ export const consumeFlowTicketGuard =
   };
 
 export const verifyCodeGuard =
-  (id: string, code: string, smsType: SmsType) =>
+  (id: string, code: string, smsType: SmsType, challengeId: string) =>
   async (res: NextApiResponse, next: (d: { smsInfo: TVerification_Codes }) => void) => {
-    const result = await verifyAndConsumeCode({ id, smsType, code });
+    const result = await verifyAndConsumeCode({ id, smsType, code, challengeId });
     if (result.status === 'expired') {
       return jsonRes(res, {
         message: 'Verification code has expired',

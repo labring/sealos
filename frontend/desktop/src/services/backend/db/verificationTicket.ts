@@ -1,7 +1,24 @@
-import { globalPrisma } from './init';
-import { withSerializableTransaction } from './transaction';
+import { connectToDatabase } from './mongodb';
 
 const FLOW_TICKET_TTL_MS = 5 * 60_000;
+
+type VerificationFlowTicket = {
+  uid: string;
+  userUid: string;
+  providerType: string;
+  oldProviderId: string;
+  scenario: string;
+  expiresAt: Date;
+};
+
+async function connectToCollection() {
+  const client = await connectToDatabase();
+  const collection = client.db().collection<VerificationFlowTicket>('verification_flow_tickets');
+  await collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  await collection.createIndex({ userUid: 1, providerType: 1, scenario: 1 }, { unique: true });
+  await collection.createIndex({ uid: 1 }, { unique: true });
+  return collection;
+}
 
 export async function createVerificationFlowTicket({
   uid,
@@ -9,19 +26,12 @@ export async function createVerificationFlowTicket({
   providerType,
   oldProviderId,
   scenario
-}: {
-  uid: string;
-  userUid: string;
-  providerType: string;
-  oldProviderId: string;
-  scenario: string;
-}) {
-  return withSerializableTransaction(async (tx) => {
-    await tx.verificationFlowTicket.deleteMany({
-      where: { userUid, providerType, scenario }
-    });
-    return tx.verificationFlowTicket.create({
-      data: {
+}: Omit<VerificationFlowTicket, 'expiresAt'>) {
+  const tickets = await connectToCollection();
+  return tickets.findOneAndUpdate(
+    { userUid, providerType, scenario },
+    {
+      $set: {
         uid,
         userUid,
         providerType,
@@ -29,55 +39,23 @@ export async function createVerificationFlowTicket({
         scenario,
         expiresAt: new Date(Date.now() + FLOW_TICKET_TTL_MS)
       }
-    });
-  });
+    },
+    { upsert: true, returnDocument: 'after' }
+  );
 }
 
-export async function getVerificationFlowTicket({
-  uid,
-  userUid,
-  providerType,
-  scenario
-}: {
-  uid: string;
-  userUid: string;
-  providerType: string;
-  scenario: string;
-}) {
-  return globalPrisma.verificationFlowTicket.findFirst({
-    where: {
-      uid,
-      userUid,
-      providerType,
-      scenario,
-      expiresAt: { gt: new Date() }
-    }
-  });
+type TicketSelector = Pick<VerificationFlowTicket, 'uid' | 'userUid' | 'providerType' | 'scenario'>;
+
+export async function getVerificationFlowTicket(selector: TicketSelector) {
+  const tickets = await connectToCollection();
+  return tickets.findOne({ ...selector, expiresAt: { $gt: new Date() } });
 }
 
-export async function consumeVerificationFlowTicket({
-  uid,
-  userUid,
-  providerType,
-  scenario
-}: {
-  uid: string;
-  userUid: string;
-  providerType: string;
-  scenario: string;
-}) {
-  const result = await globalPrisma.verificationFlowTicket.deleteMany({
-    where: {
-      uid,
-      userUid,
-      providerType,
-      scenario,
-      expiresAt: { gt: new Date() }
-    }
+export async function consumeVerificationFlowTicket(selector: TicketSelector) {
+  const tickets = await connectToCollection();
+  const result = await tickets.findOneAndDelete({
+    ...selector,
+    expiresAt: { $gt: new Date() }
   });
-  return result.count === 1;
-}
-
-export async function deleteExpiredVerificationFlowTickets(now = new Date()) {
-  return globalPrisma.verificationFlowTicket.deleteMany({ where: { expiresAt: { lte: now } } });
+  return !!result.value;
 }

@@ -17,7 +17,6 @@ import {
   TrackingConfigType
 } from '@/types/system';
 import { Cron } from 'croner';
-import { cleanupExpiredVerificationData } from '@/services/backend/cronjob/verificationCleanup';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getCommonClientConfig } from './getCommonConfig';
 
@@ -83,14 +82,6 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
         name: 'finishTransactionJob',
         catch: (err) => {
           console.error('[finishTransactionJob Cron] Error:', err);
-        }
-      });
-    }
-    if (!global.verificationCleanupCroner) {
-      global.verificationCleanupCroner = new Cron('*/10 * * * *', cleanupExpiredVerificationData, {
-        name: 'verificationCleanupJob',
-        catch: (err) => {
-          console.error('[verificationCleanupJob Cron] Error:', err);
         }
       });
     }

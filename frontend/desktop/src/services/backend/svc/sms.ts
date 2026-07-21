@@ -6,9 +6,14 @@ import { captchaReq, emailSmsReq, smsReq } from '../sms';
 export const sendSmsCodeResp =
   (smsType: SmsType, id: string, code: string) =>
   async (res: NextApiResponse, next?: () => void) => {
-    await addOrUpdateCode({ id, smsType, code });
+    const { challengeId } = await addOrUpdateCode({ id, smsType, code });
     jsonRes(res, {
       message: 'successfully',
+      data: {
+        challengeId,
+        expiresIn: 300,
+        resendAfter: 60
+      },
       code: 200
     });
     return true;

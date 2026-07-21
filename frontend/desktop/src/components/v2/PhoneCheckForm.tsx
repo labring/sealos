@@ -58,7 +58,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
   const [retryUntil, setRetryUntil] = useState<number | null>(null);
   const [retryRemainingTime, setRetryRemainingTime] = useState(0);
   const firstInputRef = useRef<HTMLInputElement>(null);
-  const { formValues, startTime } = useSigninFormStore();
+  const { formValues, startTime, challengeId } = useSigninFormStore();
 
   // Countdown
   const getRemainingTime = useCallback(
@@ -102,6 +102,7 @@ export function PhoneCheckForm({ isModal = false, onBack }: PhoneCheckFormProps)
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/phone/verify', {
         id: data.id,
         code: data.code,
+        challengeId,
         semData: getUserSemData(),
         adClickData: getAdClickData()
       }),

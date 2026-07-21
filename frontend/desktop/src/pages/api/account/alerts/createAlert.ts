@@ -4,6 +4,7 @@ import { CreateAlertRequest, CreateAlertResponse, ProviderType } from '@/types/a
 import { verifyCodeGuard } from '@/services/backend/middleware/sms';
 import { globalPrisma } from '@/services/backend/db/init';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { z } from 'zod';
 
 /**
  * Creates a new alert notification account.
@@ -23,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const body: CreateAlertRequest = req.body;
-    const { providerType, providerId, code } = body;
+    const { providerType, providerId, code, challengeId } = body;
 
     if (!providerType || !providerId) {
       return jsonRes(res, {
@@ -58,10 +59,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    if (!code) {
+    if (!code || !z.string().uuid().safeParse(challengeId).success) {
       return jsonRes(res, {
         code: 400,
-        message: 'Missing required field: code'
+        message: 'Missing required fields: code, challengeId'
       });
     }
 
@@ -70,7 +71,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await verifyCodeGuard(
       providerId,
       code,
-      smsType
+      smsType,
+      challengeId
     )(res, async () => {
       const billingUrl = global.AppConfig.desktop.auth.billingUrl;
       if (!billingUrl) {

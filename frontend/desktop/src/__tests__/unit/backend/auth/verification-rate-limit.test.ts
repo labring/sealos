@@ -1,46 +1,45 @@
 import { createHash } from 'crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const collection = {
+  createIndex: vi.fn(),
+  findOne: vi.fn(),
+  findOneAndUpdate: vi.fn(),
+  updateOne: vi.fn()
+};
+
 vi.mock('@/services/backend/requestIp', () => ({
   getClientIp: vi.fn(() => '203.0.113.42')
 }));
 
-vi.mock('@/services/backend/db/init', () => ({
-  globalPrisma: {
-    $transaction: vi.fn(),
-    verificationRateLimit: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-      update: vi.fn(),
-      updateMany: vi.fn(),
-      deleteMany: vi.fn()
-    }
-  }
+vi.mock('@/services/backend/db/mongodb', () => ({
+  connectToDatabase: vi.fn(async () => ({
+    db: () => ({ collection: () => collection })
+  }))
 }));
 
-import { globalPrisma } from '@/services/backend/db/init';
 import {
   releaseVerificationSend,
   reserveVerificationSend
 } from '@/services/backend/db/verificationRateLimit';
 
-const mockPrisma = globalPrisma as any;
 const now = new Date('2026-07-20T08:00:00.000Z');
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 
-describe('verification send rate limit', () => {
+describe('Mongo verification send rate limit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(now);
-    mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
-      callback(mockPrisma)
-    );
+    collection.createIndex.mockResolvedValue('index');
+    collection.updateOne.mockResolvedValue({ acknowledged: true });
   });
 
-  it('reserves identifier and IP windows without putting plaintext in keys', async () => {
-    mockPrisma.verificationRateLimit.findUnique.mockResolvedValue(null);
-    mockPrisma.verificationRateLimit.upsert.mockResolvedValue({});
+  it('atomically reserves identifier and IP windows without plaintext keys', async () => {
+    collection.findOne.mockResolvedValue(null);
+    collection.findOneAndUpdate.mockImplementation(async (filter: { key: string }) => ({
+      value: { key: filter.key, windowStartedAt: now }
+    }));
 
     const result = await reserveVerificationSend({} as any, ' User@Example.com ', 'EMAIL');
 
@@ -51,40 +50,52 @@ describe('verification send rate limit', () => {
       `verification:id:hour:${identifierHash}`,
       `verification:ip:ten-minute:${ipHash}`
     ];
-
     expect(result).toEqual({
       allowed: true,
       reservation: {
         entries: expectedKeys.map((key) => ({ key, windowStartedAt: now }))
       }
     });
-    expect(mockPrisma.verificationRateLimit.upsert).toHaveBeenCalledTimes(3);
-    expect(
-      mockPrisma.verificationRateLimit.upsert.mock.calls.map(([args]: any[]) => args.where.key)
-    ).toEqual(expectedKeys);
     for (const key of expectedKeys) {
-      expect(key).not.toContain('User@Example.com');
       expect(key).not.toContain('user@example.com');
       expect(key).not.toContain('203.0.113.42');
     }
   });
 
   it('returns retryAfter when the identifier minute window is full', async () => {
-    mockPrisma.verificationRateLimit.findUnique.mockResolvedValue({
+    collection.findOne.mockResolvedValue({
       key: 'minute-key',
       count: 1,
+      windowStartedAt: new Date(now.getTime() - 21_000),
       expiresAt: new Date(now.getTime() + 39_000)
     });
 
-    const result = await reserveVerificationSend({} as any, '13800138000', 'PHONE');
-
-    expect(result).toEqual({ allowed: false, retryAfter: 39 });
-    expect(mockPrisma.verificationRateLimit.upsert).not.toHaveBeenCalled();
-    expect(mockPrisma.verificationRateLimit.update).not.toHaveBeenCalled();
+    await expect(reserveVerificationSend({} as any, '13800138000', 'PHONE')).resolves.toEqual({
+      allowed: false,
+      retryAfter: 39
+    });
+    expect(collection.findOneAndUpdate).not.toHaveBeenCalled();
   });
 
-  it('releases all reserved counters without allowing negative values', async () => {
-    mockPrisma.verificationRateLimit.updateMany.mockResolvedValue({ count: 3 });
+  it('compensates earlier reservations when a later rule is full', async () => {
+    collection.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      key: 'hour-key',
+      count: 5,
+      windowStartedAt: now,
+      expiresAt: new Date(now.getTime() + 120_000)
+    });
+    collection.findOneAndUpdate.mockImplementation(async (filter: { key: string }) => ({
+      value: { key: filter.key, windowStartedAt: now }
+    }));
+
+    await expect(reserveVerificationSend({} as any, '13800138000', 'PHONE')).resolves.toEqual({
+      allowed: false,
+      retryAfter: 120
+    });
+    expect(collection.updateOne).toHaveBeenCalledOnce();
+  });
+
+  it('releases each reserved counter only within the matching window', async () => {
     const reservation = {
       entries: [
         { key: 'verification:id:minute:a', windowStartedAt: now },
@@ -95,15 +106,14 @@ describe('verification send rate limit', () => {
 
     await releaseVerificationSend(reservation);
 
-    expect(mockPrisma.verificationRateLimit.updateMany).toHaveBeenCalledWith({
-      where: {
-        OR: reservation.entries.map(({ key, windowStartedAt }) => ({
-          key,
-          windowStartedAt,
-          count: { gt: 0 }
-        }))
+    expect(collection.updateOne).toHaveBeenCalledTimes(3);
+    expect(collection.updateOne).toHaveBeenCalledWith(
+      {
+        key: reservation.entries[0].key,
+        windowStartedAt: now,
+        count: { $gt: 0 }
       },
-      data: { count: { decrement: 1 } }
-    });
+      { $inc: { count: -1 } }
+    );
   });
 });

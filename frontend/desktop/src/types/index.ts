@@ -18,6 +18,7 @@ export * from './region';
 export * from './session';
 export * from './system';
 export * from './tools';
+export * from './verification';
 export * from './loginFailureMesage';
 declare global {
   var mongodb: MongoClient | null;
@@ -25,7 +26,6 @@ declare global {
   var commitCroner: Cron | undefined;
   var finishCroner: Cron | undefined;
   var runCroner: Cron | undefined;
-  var verificationCleanupCroner: Cron | undefined;
   var WechatAccessToken: string | undefined;
   var WechatExpiresIn: number | undefined;
   var nodemailer: Transporter<SMTPPool.SentMessageInfo> | undefined;

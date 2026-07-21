@@ -2,7 +2,7 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import request from '@/services/request';
 import { useConfigStore } from '@/stores/config';
 import { useSigninFormStore } from '@/stores/signinForm';
-import { ApiResp } from '@/types';
+import { ApiResp, VerificationChallenge } from '@/types';
 import { gtmLoginStart } from '@/utils/gtm';
 import { Button, Input } from '@chakra-ui/react';
 import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
@@ -30,6 +30,7 @@ export function EmailSigninForm({ isModal = false, onVerifyStep }: EmailSigninFo
     captchaToken,
     setCaptchaToken,
     clearCaptchaToken,
+    setChallengeId,
     startTime,
     updateStartTime,
     clearStartTime
@@ -82,7 +83,7 @@ export function EmailSigninForm({ isModal = false, onVerifyStep }: EmailSigninFo
   };
 
   const sendCodeMutation = useMutation(({ id, cfToken }: { id: string; cfToken: string | null }) =>
-    request.post<any, ApiResp<any>>('/api/auth/email/sms', {
+    request.post<any, ApiResp<VerificationChallenge>>('/api/auth/email/sms', {
       id,
       cfToken: cfToken ?? undefined
     })
@@ -98,9 +99,10 @@ export function EmailSigninForm({ isModal = false, onVerifyStep }: EmailSigninFo
         id: formValues.providerId,
         cfToken
       });
-      if (result.code !== 200) {
+      if (result.code !== 200 || !result.data?.challengeId) {
         throw Error(result.message);
       } else {
+        setChallengeId(result.data.challengeId);
         return true;
       }
     } catch (error) {

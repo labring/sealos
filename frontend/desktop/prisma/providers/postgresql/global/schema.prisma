@@ -10,47 +10,6 @@ datasource db {
   relationMode = "prisma"
 }
 
-model VerificationCode {
-  uid          String   @id @default(uuid()) @db.Uuid
-  userUid      String?  @db.Uuid
-  scenario     String
-  providerType String
-  providerId   String
-  code         String
-  attemptCount Int      @default(0)
-  expiresAt    DateTime @db.Timestamptz(3)
-  createdAt    DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
-
-  @@unique([scenario, providerType, providerId])
-  @@index([expiresAt])
-}
-
-model VerificationRateLimit {
-  key             String   @id
-  count           Int      @default(0)
-  windowStartedAt DateTime @db.Timestamptz(3)
-  expiresAt       DateTime @db.Timestamptz(3)
-  createdAt       DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
-
-  @@index([expiresAt])
-}
-
-model VerificationFlowTicket {
-  uid           String   @id @default(uuid()) @db.Uuid
-  userUid       String   @db.Uuid
-  providerType  String
-  oldProviderId String
-  scenario      String
-  expiresAt     DateTime @db.Timestamptz(3)
-  createdAt     DateTime @default(now()) @db.Timestamptz(3)
-  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
-
-  @@index([expiresAt])
-  @@index([userUid, providerType, scenario])
-}
-
 model OauthProvider {
   uid          String       @id @default(uuid()) @db.Uuid
   userUid      String       @db.Uuid

@@ -1,8 +1,8 @@
 import { createHash } from 'crypto';
-import { getClientIp } from '../requestIp';
 import type { NextApiRequest } from 'next';
-import { globalPrisma } from './init';
-import { withSerializableTransaction } from './transaction';
+import { MongoServerError } from 'mongodb';
+import { connectToDatabase } from './mongodb';
+import { getClientIp } from '../requestIp';
 
 type RateLimitRule = {
   key: string;
@@ -10,11 +10,15 @@ type RateLimitRule = {
   windowMs: number;
 };
 
+type VerificationRateLimit = {
+  key: string;
+  count: number;
+  windowStartedAt: Date;
+  expiresAt: Date;
+};
+
 export type VerificationRateLimitReservation = {
-  entries: Array<{
-    key: string;
-    windowStartedAt: Date;
-  }>;
+  entries: Array<Pick<VerificationRateLimit, 'key' | 'windowStartedAt'>>;
 };
 
 export type VerificationRateLimitResult =
@@ -25,6 +29,14 @@ class RateLimitExceededError extends Error {
   constructor(readonly retryAfter: number) {
     super('Verification send rate limit exceeded');
   }
+}
+
+async function connectToCollection() {
+  const client = await connectToDatabase();
+  const collection = client.db().collection<VerificationRateLimit>('verification_rate_limits');
+  await collection.createIndex({ key: 1 }, { unique: true });
+  await collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+  return collection;
 }
 
 const hashSubject = (value: string) => createHash('sha256').update(value).digest('hex');
@@ -49,75 +61,92 @@ const makeRules = (req: NextApiRequest, id: string, providerType: string): RateL
   return rules;
 };
 
+const retryAfterFor = (expiresAt: Date, now: Date) =>
+  Math.max(1, Math.ceil((expiresAt.getTime() - now.getTime()) / 1000));
+
+async function reserveRule(rule: RateLimitRule, now: Date) {
+  const limits = await connectToCollection();
+
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const current = await limits.findOne({ key: rule.key });
+    if (!current || current.expiresAt <= now) {
+      try {
+        const reset = await limits.findOneAndUpdate(
+          {
+            key: rule.key,
+            $or: [{ expiresAt: { $lte: now } }, { expiresAt: { $exists: false } }]
+          },
+          {
+            $set: {
+              count: 1,
+              windowStartedAt: now,
+              expiresAt: new Date(now.getTime() + rule.windowMs)
+            }
+          },
+          { upsert: true, returnDocument: 'after' }
+        );
+        if (reset.value) {
+          return { key: rule.key, windowStartedAt: reset.value.windowStartedAt };
+        }
+      } catch (error) {
+        if (!(error instanceof MongoServerError) || error.code !== 11000) throw error;
+      }
+      continue;
+    }
+
+    if (current.count >= rule.limit) {
+      throw new RateLimitExceededError(retryAfterFor(current.expiresAt, now));
+    }
+
+    const incremented = await limits.findOneAndUpdate(
+      {
+        key: rule.key,
+        windowStartedAt: current.windowStartedAt,
+        expiresAt: { $gt: now },
+        count: { $lt: rule.limit }
+      },
+      { $inc: { count: 1 } },
+      { returnDocument: 'after' }
+    );
+    if (incremented.value) {
+      return { key: rule.key, windowStartedAt: incremented.value.windowStartedAt };
+    }
+  }
+
+  throw new Error('Failed to reserve verification rate limit after concurrent updates');
+}
+
+export async function releaseVerificationSend(reservation: VerificationRateLimitReservation) {
+  const limits = await connectToCollection();
+  await Promise.all(
+    reservation.entries.map(({ key, windowStartedAt }) =>
+      limits.updateOne({ key, windowStartedAt, count: { $gt: 0 } }, { $inc: { count: -1 } })
+    )
+  );
+}
+
 export async function reserveVerificationSend(
   req: NextApiRequest,
   id: string,
   providerType: string
 ): Promise<VerificationRateLimitResult> {
-  const rules = makeRules(req, id, providerType);
-  const now = new Date();
-
+  const reservation: VerificationRateLimitReservation = { entries: [] };
   try {
-    const entries = await withSerializableTransaction(async (tx) => {
-      const reservedEntries: VerificationRateLimitReservation['entries'] = [];
-      for (const rule of rules) {
-        const current = await tx.verificationRateLimit.findUnique({ where: { key: rule.key } });
-        if (!current || current.expiresAt <= now) {
-          await tx.verificationRateLimit.upsert({
-            where: { key: rule.key },
-            create: {
-              key: rule.key,
-              count: 1,
-              windowStartedAt: now,
-              expiresAt: new Date(now.getTime() + rule.windowMs)
-            },
-            update: {
-              count: 1,
-              windowStartedAt: now,
-              expiresAt: new Date(now.getTime() + rule.windowMs)
-            }
-          });
-          reservedEntries.push({ key: rule.key, windowStartedAt: now });
-          continue;
-        }
-        if (current.count >= rule.limit) {
-          throw new RateLimitExceededError(
-            Math.max(1, Math.ceil((current.expiresAt.getTime() - now.getTime()) / 1000))
-          );
-        }
-        await tx.verificationRateLimit.update({
-          where: { key: rule.key },
-          data: { count: { increment: 1 } }
-        });
-        reservedEntries.push({
-          key: rule.key,
-          windowStartedAt: current.windowStartedAt
-        });
-      }
-      return reservedEntries;
-    });
-    return { allowed: true, reservation: { entries } };
+    for (const rule of makeRules(req, id, providerType)) {
+      reservation.entries.push(await reserveRule(rule, new Date()));
+    }
+    return { allowed: true, reservation };
   } catch (error) {
+    if (reservation.entries.length > 0) {
+      try {
+        await releaseVerificationSend(reservation);
+      } catch (releaseError) {
+        console.error('Failed to roll back verification rate limit reservation:', releaseError);
+      }
+    }
     if (error instanceof RateLimitExceededError) {
       return { allowed: false, retryAfter: error.retryAfter };
     }
     throw error;
   }
-}
-
-export async function releaseVerificationSend(reservation: VerificationRateLimitReservation) {
-  await globalPrisma.verificationRateLimit.updateMany({
-    where: {
-      OR: reservation.entries.map(({ key, windowStartedAt }) => ({
-        key,
-        windowStartedAt,
-        count: { gt: 0 }
-      }))
-    },
-    data: { count: { decrement: 1 } }
-  });
-}
-
-export async function deleteExpiredVerificationRateLimits(now = new Date()) {
-  return globalPrisma.verificationRateLimit.deleteMany({ where: { expiresAt: { lte: now } } });
 }

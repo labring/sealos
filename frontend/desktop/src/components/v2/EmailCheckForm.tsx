@@ -58,7 +58,7 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
   const [retryUntil, setRetryUntil] = useState<number | null>(null);
   const [retryRemainingTime, setRetryRemainingTime] = useState(0);
   const firstInputRef = useRef<HTMLInputElement>(null);
-  const { formValues, startTime } = useSigninFormStore();
+  const { formValues, startTime, challengeId } = useSigninFormStore();
 
   // Countdown
   const getRemainingTime = useCallback(
@@ -101,7 +101,8 @@ export function EmailCheckForm({ isModal = false, onBack }: EmailCheckFormProps)
     mutationFn: (data: { id: string; code: string }) =>
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/email/verify', {
         id: data.id,
-        code: data.code
+        code: data.code,
+        challengeId
       }),
     async onSuccess(result) {
       const oauth2RedirectPath = consumePendingOauth2RedirectPath();

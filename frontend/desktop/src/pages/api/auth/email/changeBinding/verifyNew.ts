@@ -17,7 +17,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     throw new Error('SMS is not enabled');
   }
   await filterAccessToken(req, res, ({ userUid }) =>
-    filterEmailVerifyParams(req, res, ({ email, code }) =>
+    filterEmailVerifyParams(req, res, ({ email, code, challengeId }) =>
       filterCodeUid(req, res, ({ uid }) =>
         verifyFlowTicketGuard(
           uid,
@@ -27,7 +27,8 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
           verifyCodeGuard(
             email,
             code,
-            'email_change_new'
+            'email_change_new',
+            challengeId
           )(res, ({ smsInfo: newEmailInfo }) =>
             consumeFlowTicketGuard(
               uid,

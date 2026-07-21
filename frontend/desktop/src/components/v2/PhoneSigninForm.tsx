@@ -2,7 +2,7 @@ import { useCustomToast } from '@/hooks/useCustomToast';
 import request from '@/services/request';
 import { useConfigStore } from '@/stores/config';
 import { useSigninFormStore } from '@/stores/signinForm';
-import { ApiResp } from '@/types';
+import { ApiResp, VerificationChallenge } from '@/types';
 import { gtmLoginStart } from '@/utils/gtm';
 import { Button, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
 import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
@@ -31,6 +31,7 @@ export function PhoneSigninForm({ isModal = false, onVerifyStep }: PhoneSigninFo
     captchaToken,
     setCaptchaToken,
     clearCaptchaToken,
+    setChallengeId,
     startTime,
     updateStartTime,
     clearStartTime
@@ -85,16 +86,7 @@ export function PhoneSigninForm({ isModal = false, onVerifyStep }: PhoneSigninFo
 
   const sendCodeMutation = useMutation(
     ({ id, captchaVerifyParam }: { id: string; captchaVerifyParam?: string }) =>
-      request.post<
-        any,
-        ApiResp<
-          | {
-              result: boolean;
-              code: string;
-            }
-          | undefined
-        >
-      >('/api/auth/phone/sms', {
+      request.post<any, ApiResp<VerificationChallenge>>('/api/auth/phone/sms', {
         id,
         captchaVerifyParam
       })
@@ -110,9 +102,10 @@ export function PhoneSigninForm({ isModal = false, onVerifyStep }: PhoneSigninFo
         id: formValues.providerId,
         captchaVerifyParam: captchaVerifyParam ?? undefined
       });
-      if (result.code !== 200) {
+      if (result.code !== 200 || !result.data?.challengeId) {
         throw Error(result.message);
       } else {
+        setChallengeId(result.data.challengeId);
         return true;
       }
     } catch (error) {

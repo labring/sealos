@@ -15,11 +15,12 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
       req,
       res,
       async ({ userUid }) =>
-        await filterPhoneVerifyParams(req, res, async ({ phoneNumbers, code }) => {
+        await filterPhoneVerifyParams(req, res, async ({ phoneNumbers, code, challengeId }) => {
           await verifyCodeGuard(
             phoneNumbers,
             code,
-            'phone_unbind'
+            'phone_unbind',
+            challengeId
           )(res, async ({ smsInfo: phoneInfo }) => {
             await unbindPhoneSvc(phoneInfo.id, userUid)(res);
           });

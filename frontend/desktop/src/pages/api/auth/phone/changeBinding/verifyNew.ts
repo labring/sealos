@@ -25,7 +25,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
         await filterPhoneVerifyParams(
           req,
           res,
-          async ({ phoneNumbers, code }) =>
+          async ({ phoneNumbers, code, challengeId }) =>
             await filterCodeUid(
               req,
               res,
@@ -38,7 +38,8 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
                   await verifyCodeGuard(
                     phoneNumbers,
                     code,
-                    'phone_change_new'
+                    'phone_change_new',
+                    challengeId
                   )(res, async ({ smsInfo: newPhoneInfo }) => {
                     await consumeFlowTicketGuard(
                       uid,

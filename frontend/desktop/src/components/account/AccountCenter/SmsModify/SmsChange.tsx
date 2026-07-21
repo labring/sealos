@@ -46,6 +46,7 @@ function OldSms({
 }) {
   const { t } = useTranslation();
   const { toast } = useCustomToast({ status: 'error' });
+  const [challengeId, setChallengeId] = useState('');
   const { register, handleSubmit, trigger, getValues, reset, formState } = useForm<{
     id: string;
     verifyCode: string;
@@ -64,6 +65,7 @@ function OldSms({
       return getOldSmsCodeRequest(smsType)({ id });
     },
     onSuccess(data) {
+      setChallengeId(data.data?.challengeId || '');
       startTimer();
       toast({
         status: 'success',
@@ -109,13 +111,22 @@ function OldSms({
     getCodeMutation.mutate({ id, smsType });
   };
   const mutation = useMutation({
-    mutationFn({ smsType, ...data }: { smsType: SmsType; id: string; code: string }) {
+    mutationFn({
+      smsType,
+      ...data
+    }: {
+      smsType: SmsType;
+      id: string;
+      code: string;
+      challengeId: string;
+    }) {
       return verifyOldSmsRequest(smsType)(data);
     },
     onSuccess(data) {
       const status = data.message || '';
       if (data.code === 200) {
         reset();
+        setChallengeId('');
         onSuccess?.(data?.data?.uid || '');
       }
     },
@@ -133,6 +144,7 @@ function OldSms({
           mutation.mutate({
             id: data.id,
             code: data.verifyCode,
+            challengeId,
             smsType
           });
         },
@@ -224,6 +236,7 @@ function NewSms({
 }) {
   const { t } = useTranslation();
   const { toast } = useCustomToast({ status: 'error' });
+  const [challengeId, setChallengeId] = useState('');
   const { setMergeUserData, setMergeUserStatus } = useCallbackStore();
   const { register, handleSubmit, trigger, getValues, reset, formState } = useForm<{
     id: string;
@@ -239,6 +252,7 @@ function NewSms({
       return getNewSmsCodeRequest(smsType)({ id, uid });
     },
     onSuccess(data) {
+      setChallengeId(data.data?.challengeId || '');
       startTimer();
       toast({
         status: 'success',
@@ -315,7 +329,8 @@ function NewSms({
           mutation.mutate({
             id: data.id,
             code: data.verifyCode,
-            uid
+            uid,
+            challengeId
           });
         },
         (errors) => {

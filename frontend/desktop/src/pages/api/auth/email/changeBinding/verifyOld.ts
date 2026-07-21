@@ -15,12 +15,13 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     req,
     res,
     async ({ userUid }) =>
-      await filterEmailVerifyParams(req, res, async ({ email, code }) => {
+      await filterEmailVerifyParams(req, res, async ({ email, code, challengeId }) => {
         await unbindEmailGuard(email, userUid)(res, async () => {
           await verifyCodeGuard(
             email,
             code,
-            'email_change_old'
+            'email_change_old',
+            challengeId
           )(res, async ({ smsInfo }) => {
             await createVerificationFlowTicket({
               uid: smsInfo.uid,

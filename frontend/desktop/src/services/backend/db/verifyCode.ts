@@ -1,6 +1,5 @@
 import { v4 } from 'uuid';
-import { globalPrisma } from './init';
-import { withSerializableTransaction } from './transaction';
+import { connectToDatabase } from './mongodb';
 
 export type SmsType =
   | 'phone'
@@ -23,35 +22,24 @@ export type TVerification_Codes = {
   smsType: SmsType;
   code: string;
   uid: string;
+  challengeId: string;
   createdAt: Date;
-  expiresAt: Date;
-  attemptCount: number;
+  attemptCount?: number;
 };
 
 export const VERIFICATION_CODE_TTL_MS = 5 * 60_000;
 export const VERIFICATION_CODE_RESEND_MS = 60_000;
 export const MAX_VERIFICATION_ATTEMPTS = 10;
 
-const getProviderType = (smsType: SmsType) =>
-  smsType.startsWith('phone') || smsType === 'alert_bind_phone' ? 'PHONE' : 'EMAIL';
-
-const toVerificationInfo = (record: {
-  uid: string;
-  scenario: string;
-  providerId: string;
-  code: string;
-  createdAt: Date;
-  expiresAt: Date;
-  attemptCount: number;
-}): TVerification_Codes => ({
-  uid: record.uid,
-  id: record.providerId,
-  smsType: record.scenario as SmsType,
-  code: record.code,
-  createdAt: record.createdAt,
-  expiresAt: record.expiresAt,
-  attemptCount: record.attemptCount
-});
+async function connectToCollection() {
+  const client = await connectToDatabase();
+  const collection = client.db().collection<TVerification_Codes>('sms_verification_codes');
+  await collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 5 });
+  await collection.createIndex({ uid: 1 }, { unique: true });
+  await collection.createIndex({ challengeId: 1 }, { unique: true, sparse: true });
+  await collection.createIndex({ id: 1, smsType: 1 }, { unique: true });
+  return collection;
+}
 
 export async function addOrUpdateCode({
   id,
@@ -62,33 +50,35 @@ export async function addOrUpdateCode({
   code: string;
   smsType: SmsType;
 }) {
-  const now = new Date();
-  return globalPrisma.verificationCode.upsert({
-    where: {
-      scenario_providerType_providerId: {
-        scenario: smsType,
-        providerType: getProviderType(smsType),
-        providerId: id
+  const codes = await connectToCollection();
+  const uid = v4();
+  const challengeId = v4();
+  await codes.updateOne(
+    { id, smsType },
+    {
+      $set: {
+        id,
+        smsType,
+        code,
+        uid,
+        challengeId,
+        attemptCount: 0,
+        createdAt: new Date()
       }
     },
-    create: {
-      uid: v4(),
-      scenario: smsType,
-      providerType: getProviderType(smsType),
-      providerId: id,
-      code,
-      attemptCount: 0,
-      expiresAt: new Date(now.getTime() + VERIFICATION_CODE_TTL_MS),
-      createdAt: now
-    },
-    update: {
-      uid: v4(),
-      code,
-      attemptCount: 0,
-      expiresAt: new Date(now.getTime() + VERIFICATION_CODE_TTL_MS),
-      createdAt: now
-    }
+    { upsert: true }
+  );
+  return { uid, challengeId };
+}
+
+export async function checkSendable({ id, smsType }: { id: string; smsType: SmsType }) {
+  const codes = await connectToCollection();
+  const result = await codes.findOne({
+    id,
+    smsType,
+    createdAt: { $gt: new Date(Date.now() - VERIFICATION_CODE_RESEND_MS) }
   });
+  return !result;
 }
 
 export type VerifyCodeResult =
@@ -97,84 +87,79 @@ export type VerifyCodeResult =
   | { status: 'locked'; retryAfter: number }
   | { status: 'expired' };
 
+const retryAfterFor = (createdAt: Date, now: Date) =>
+  Math.max(
+    0,
+    Math.ceil((createdAt.getTime() + VERIFICATION_CODE_RESEND_MS - now.getTime()) / 1000)
+  );
+
 export async function verifyAndConsumeCode({
   id,
   smsType,
-  code
+  code,
+  challengeId
 }: {
   id: string;
   smsType: SmsType;
   code: string;
+  challengeId: string;
 }): Promise<VerifyCodeResult> {
-  return withSerializableTransaction(async (tx) => {
-    const now = new Date();
-    const record = await tx.verificationCode.findUnique({
-      where: {
-        scenario_providerType_providerId: {
-          scenario: smsType,
-          providerType: getProviderType(smsType),
-          providerId: id
-        }
-      }
-    });
+  const codes = await connectToCollection();
+  const now = new Date();
+  const baseFilter = {
+    id,
+    smsType,
+    challengeId
+  };
+  const usableFilter = {
+    ...baseFilter,
+    createdAt: { $gt: new Date(now.getTime() - VERIFICATION_CODE_TTL_MS) },
+    $or: [
+      { attemptCount: { $lt: MAX_VERIFICATION_ATTEMPTS } },
+      { attemptCount: { $exists: false } }
+    ]
+  };
 
-    if (!record || record.expiresAt <= now) return { status: 'expired' };
-    if (record.attemptCount >= MAX_VERIFICATION_ATTEMPTS) {
-      return {
-        status: 'locked',
-        retryAfter: Math.max(
-          0,
-          Math.ceil(
-            (record.createdAt.getTime() + VERIFICATION_CODE_RESEND_MS - now.getTime()) / 1000
-          )
-        )
-      };
-    }
+  const verified = await codes.findOneAndDelete({ ...usableFilter, code });
+  if (verified.value) {
+    return { status: 'verified', smsInfo: verified.value };
+  }
 
-    if (record.code === code) {
-      const deleted = await tx.verificationCode.deleteMany({
-        where: {
-          uid: record.uid,
-          code,
-          attemptCount: { lt: MAX_VERIFICATION_ATTEMPTS },
-          expiresAt: { gt: now }
-        }
-      });
-      return deleted.count === 1
-        ? { status: 'verified', smsInfo: toVerificationInfo(record) }
-        : { status: 'expired' };
-    }
-
-    const updated = await tx.verificationCode.updateMany({
-      where: {
-        uid: record.uid,
-        code: { not: code },
-        attemptCount: { lt: MAX_VERIFICATION_ATTEMPTS },
-        expiresAt: { gt: now }
-      },
-      data: { attemptCount: { increment: 1 } }
-    });
-    if (updated.count !== 1) return { status: 'expired' };
-
-    const attemptCount = record.attemptCount + 1;
+  const invalid = await codes.findOneAndUpdate(
+    { ...usableFilter, code: { $ne: code } },
+    { $inc: { attemptCount: 1 } },
+    { returnDocument: 'after' }
+  );
+  if (invalid.value) {
+    const attemptCount = invalid.value.attemptCount || 0;
     if (attemptCount >= MAX_VERIFICATION_ATTEMPTS) {
       return {
         status: 'locked',
-        retryAfter: Math.max(
-          0,
-          Math.ceil(
-            (record.createdAt.getTime() + VERIFICATION_CODE_RESEND_MS - now.getTime()) / 1000
-          )
-        )
+        retryAfter: retryAfterFor(invalid.value.createdAt, now)
       };
     }
     return {
       status: 'invalid',
       remainingAttempts: MAX_VERIFICATION_ATTEMPTS - attemptCount
     };
-  });
+  }
+
+  const current = await codes.findOne(baseFilter);
+  if (!current || current.createdAt <= new Date(now.getTime() - VERIFICATION_CODE_TTL_MS)) {
+    return { status: 'expired' };
+  }
+  if ((current.attemptCount || 0) >= MAX_VERIFICATION_ATTEMPTS) {
+    return { status: 'locked', retryAfter: retryAfterFor(current.createdAt, now) };
+  }
+  return { status: 'expired' };
 }
 
-export async function deleteExpiredVerificationCodes(now = new Date()) {
-  return globalPrisma.verificationCode.deleteMany({ where: { expiresAt: { lte: now } } });
+export async function getInfoByUid({ uid }: { uid: string }) {
+  const codes = await connectToCollection();
+  return codes.findOne({ uid });
+}
+
+export async function deleteByUid({ uid }: { uid: string }) {
+  const codes = await connectToCollection();
+  return codes.deleteOne({ uid });
 }

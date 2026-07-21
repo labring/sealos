@@ -17,7 +17,8 @@ export type AlertNotificationAccount = z.infer<typeof AlertNotificationAccountSc
 export const CreateAlertRequestSchema = z.object({
   providerType: ProviderTypeSchema,
   providerId: z.string(),
-  code: z.string()
+  code: z.string(),
+  challengeId: z.string().uuid()
 });
 export type CreateAlertRequest = z.infer<typeof CreateAlertRequestSchema>;
 

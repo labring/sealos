@@ -1,175 +1,202 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('uuid', () => ({
-  v4: vi.fn(() => 'new-verification-uid')
+const collection = {
+  createIndex: vi.fn(),
+  updateOne: vi.fn(),
+  findOne: vi.fn(),
+  findOneAndDelete: vi.fn(),
+  findOneAndUpdate: vi.fn(),
+  deleteOne: vi.fn()
+};
+
+vi.mock('@/services/backend/db/mongodb', () => ({
+  connectToDatabase: vi.fn(async () => ({
+    db: () => ({ collection: () => collection })
+  }))
 }));
 
-vi.mock('@/services/backend/db/init', () => ({
-  globalPrisma: {
-    $transaction: vi.fn(),
-    verificationCode: {
-      findUnique: vi.fn(),
-      updateMany: vi.fn(),
-      deleteMany: vi.fn(),
-      upsert: vi.fn()
-    }
-  }
-}));
+vi.mock('uuid', () => ({ v4: vi.fn() }));
 
-import { globalPrisma } from '@/services/backend/db/init';
+import { v4 } from 'uuid';
 import {
   addOrUpdateCode,
   MAX_VERIFICATION_ATTEMPTS,
-  VERIFICATION_CODE_TTL_MS,
   verifyAndConsumeCode
 } from '@/services/backend/db/verifyCode';
 
-const mockPrisma = globalPrisma as any;
 const now = new Date('2026-07-20T08:00:00.000Z');
-
-const verificationRecord = (overrides: Record<string, unknown> = {}) => ({
-  uid: 'verification-uid',
-  scenario: 'phone_login',
-  providerType: 'PHONE',
-  providerId: '13800138000',
+const challengeId = '00000000-0000-4000-8000-000000000002';
+const record = (overrides: Record<string, unknown> = {}) => ({
+  uid: '00000000-0000-4000-8000-000000000001',
+  challengeId,
+  id: '13800138000',
+  smsType: 'phone_login',
   code: '123456',
   attemptCount: 0,
   createdAt: new Date(now.getTime() - 21_000),
-  expiresAt: new Date(now.getTime() + 5 * 60_000),
   ...overrides
 });
 
-describe('verification code', () => {
+describe('Mongo verification code', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(now);
-    mockPrisma.$transaction.mockImplementation(async (callback: (tx: unknown) => unknown) =>
-      callback(mockPrisma)
+    collection.createIndex.mockResolvedValue('index');
+  });
+
+  it('atomically increments an incorrect attempt and returns the remaining count', async () => {
+    collection.findOneAndDelete.mockResolvedValue({ value: null });
+    collection.findOneAndUpdate.mockResolvedValue({ value: record({ attemptCount: 1 }) });
+
+    await expect(
+      verifyAndConsumeCode({
+        id: '13800138000',
+        smsType: 'phone_login',
+        code: '000000',
+        challengeId
+      })
+    ).resolves.toEqual({ status: 'invalid', remainingAttempts: 9 });
+
+    expect(collection.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: '13800138000',
+        smsType: 'phone_login',
+        challengeId,
+        code: { $ne: '000000' }
+      }),
+      { $inc: { attemptCount: 1 } },
+      { returnDocument: 'after' }
     );
   });
 
-  it('returns 9 remaining attempts after the first incorrect code', async () => {
-    mockPrisma.verificationCode.findUnique.mockResolvedValue(verificationRecord());
-    mockPrisma.verificationCode.updateMany.mockResolvedValue({ count: 1 });
-
-    const result = await verifyAndConsumeCode({
-      id: '13800138000',
-      smsType: 'phone_login',
-      code: '000000'
+  it('logically invalidates the code on the tenth failed attempt', async () => {
+    collection.findOneAndDelete.mockResolvedValue({ value: null });
+    collection.findOneAndUpdate.mockResolvedValue({
+      value: record({ attemptCount: MAX_VERIFICATION_ATTEMPTS })
     });
 
-    expect(result).toEqual({ status: 'invalid', remainingAttempts: 9 });
-    expect(mockPrisma.verificationCode.updateMany).toHaveBeenCalledWith({
-      where: {
-        uid: 'verification-uid',
-        code: { not: '000000' },
-        attemptCount: { lt: MAX_VERIFICATION_ATTEMPTS },
-        expiresAt: { gt: now }
-      },
-      data: { attemptCount: { increment: 1 } }
-    });
+    await expect(
+      verifyAndConsumeCode({
+        id: '13800138000',
+        smsType: 'phone_login',
+        code: '000000',
+        challengeId
+      })
+    ).resolves.toEqual({ status: 'locked', retryAfter: 39 });
   });
 
-  it('locks the code on the tenth incorrect attempt', async () => {
-    mockPrisma.verificationCode.findUnique.mockResolvedValue(
-      verificationRecord({ attemptCount: MAX_VERIFICATION_ATTEMPTS - 1 })
-    );
-    mockPrisma.verificationCode.updateMany.mockResolvedValue({ count: 1 });
-
-    const result = await verifyAndConsumeCode({
-      id: '13800138000',
-      smsType: 'phone_login',
-      code: '000000'
+  it('allows at most ten increments under concurrent incorrect attempts', async () => {
+    let attemptCount = 0;
+    collection.findOneAndDelete.mockResolvedValue({ value: null });
+    collection.findOneAndUpdate.mockImplementation(async () => {
+      if (attemptCount >= MAX_VERIFICATION_ATTEMPTS) return { value: null };
+      attemptCount += 1;
+      return { value: record({ attemptCount }) };
     });
+    collection.findOne.mockImplementation(async () => record({ attemptCount }));
 
-    expect(result).toEqual({ status: 'locked', retryAfter: 39 });
-    expect(mockPrisma.verificationCode.updateMany).toHaveBeenCalledOnce();
-  });
-
-  it('rejects an already locked code without another write', async () => {
-    mockPrisma.verificationCode.findUnique.mockResolvedValue(
-      verificationRecord({ attemptCount: MAX_VERIFICATION_ATTEMPTS })
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () =>
+        verifyAndConsumeCode({
+          id: '13800138000',
+          smsType: 'phone_login',
+          code: '000000',
+          challengeId
+        })
+      )
     );
 
-    const result = await verifyAndConsumeCode({
-      id: '13800138000',
-      smsType: 'phone_login',
-      code: '123456'
-    });
-
-    expect(result).toEqual({ status: 'locked', retryAfter: 39 });
-    expect(mockPrisma.verificationCode.updateMany).not.toHaveBeenCalled();
-    expect(mockPrisma.verificationCode.deleteMany).not.toHaveBeenCalled();
+    expect(attemptCount).toBe(MAX_VERIFICATION_ATTEMPTS);
+    expect(results.filter((result) => result.status === 'invalid')).toHaveLength(9);
+    expect(results.filter((result) => result.status === 'locked')).toHaveLength(11);
   });
 
-  it('deletes a correct code and returns its verification info', async () => {
-    const record = verificationRecord();
-    mockPrisma.verificationCode.findUnique.mockResolvedValue(record);
-    mockPrisma.verificationCode.deleteMany.mockResolvedValue({ count: 1 });
+  it('returns a stable lock response after attempts are exhausted', async () => {
+    collection.findOneAndDelete.mockResolvedValue({ value: null });
+    collection.findOneAndUpdate.mockResolvedValue({ value: null });
+    collection.findOne.mockResolvedValue(record({ attemptCount: MAX_VERIFICATION_ATTEMPTS }));
 
-    const result = await verifyAndConsumeCode({
-      id: '13800138000',
-      smsType: 'phone_login',
-      code: '123456'
-    });
-
-    expect(mockPrisma.verificationCode.deleteMany).toHaveBeenCalledWith({
-      where: {
-        uid: 'verification-uid',
-        code: '123456',
-        attemptCount: { lt: MAX_VERIFICATION_ATTEMPTS },
-        expiresAt: { gt: now }
-      }
-    });
-    expect(result).toEqual({
-      status: 'verified',
-      smsInfo: {
-        uid: 'verification-uid',
+    await expect(
+      verifyAndConsumeCode({
         id: '13800138000',
         smsType: 'phone_login',
         code: '123456',
-        createdAt: record.createdAt,
-        expiresAt: record.expiresAt,
-        attemptCount: 0
-      }
-    });
+        challengeId
+      })
+    ).resolves.toEqual({ status: 'locked', retryAfter: 39 });
   });
 
-  it('resets attempts and replaces the old code when resending', async () => {
-    mockPrisma.verificationCode.upsert.mockResolvedValue({ uid: 'new-verification-uid' });
+  it('atomically consumes a correct code once', async () => {
+    collection.findOneAndDelete
+      .mockResolvedValueOnce({ value: record() })
+      .mockResolvedValueOnce({ value: null });
+    collection.findOneAndUpdate.mockResolvedValue({ value: null });
+    collection.findOne.mockResolvedValue(null);
 
-    await addOrUpdateCode({
-      id: 'user@example.com',
-      smsType: 'email_login',
-      code: '654321'
-    });
+    const params = {
+      id: '13800138000',
+      smsType: 'phone_login' as const,
+      code: '123456',
+      challengeId
+    };
+    const [first, second] = await Promise.all([
+      verifyAndConsumeCode(params),
+      verifyAndConsumeCode(params)
+    ]);
 
-    expect(mockPrisma.verificationCode.upsert).toHaveBeenCalledWith({
-      where: {
-        scenario_providerType_providerId: {
-          scenario: 'email_login',
-          providerType: 'EMAIL',
-          providerId: 'user@example.com'
-        }
-      },
-      create: {
-        uid: 'new-verification-uid',
-        scenario: 'email_login',
-        providerType: 'EMAIL',
-        providerId: 'user@example.com',
-        code: '654321',
-        attemptCount: 0,
-        expiresAt: new Date(now.getTime() + VERIFICATION_CODE_TTL_MS),
-        createdAt: now
-      },
-      update: {
-        uid: 'new-verification-uid',
-        code: '654321',
-        attemptCount: 0,
-        expiresAt: new Date(now.getTime() + VERIFICATION_CODE_TTL_MS),
-        createdAt: now
-      }
+    expect([first.status, second.status].sort()).toEqual(['expired', 'verified']);
+  });
+
+  it('does not let an old challenge affect a replacement code', async () => {
+    collection.findOneAndDelete.mockResolvedValue({ value: null });
+    collection.findOneAndUpdate.mockResolvedValue({ value: null });
+    collection.findOne.mockResolvedValue(null);
+
+    await expect(
+      verifyAndConsumeCode({
+        id: '13800138000',
+        smsType: 'phone_login',
+        code: '000000',
+        challengeId: '00000000-0000-4000-8000-000000000099'
+      })
+    ).resolves.toEqual({ status: 'expired' });
+    expect(collection.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        challengeId: '00000000-0000-4000-8000-000000000099'
+      }),
+      expect.anything(),
+      expect.anything()
+    );
+  });
+
+  it('resets attempts and rotates both internal and public IDs when resending', async () => {
+    vi.mocked(v4)
+      .mockReturnValueOnce('00000000-0000-4000-8000-000000000010')
+      .mockReturnValueOnce('00000000-0000-4000-8000-000000000011');
+    collection.updateOne.mockResolvedValue({ acknowledged: true });
+
+    await expect(
+      addOrUpdateCode({
+        id: 'user@example.com',
+        smsType: 'email_login',
+        code: '654321'
+      })
+    ).resolves.toEqual({
+      uid: '00000000-0000-4000-8000-000000000010',
+      challengeId: '00000000-0000-4000-8000-000000000011'
     });
+    expect(collection.updateOne).toHaveBeenCalledWith(
+      { id: 'user@example.com', smsType: 'email_login' },
+      {
+        $set: expect.objectContaining({
+          code: '654321',
+          attemptCount: 0,
+          uid: '00000000-0000-4000-8000-000000000010',
+          challengeId: '00000000-0000-4000-8000-000000000011'
+        })
+      },
+      { upsert: true }
+    );
   });
 });
