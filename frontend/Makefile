@@ -19,14 +19,9 @@ buildTargets := \
 	providers/costcenter \
 	providers/dbprovider \
 	providers/applaunchpad \
-	providers/cloudserver \
-	providers/invite \
-	providers/imagehub \
+	providers/aiproxy \
 	providers/template \
-	providers/cronjob \
-	providers/license \
-	providers/kubepanel \
-	providers/objectstorage
+	providers/license
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))
 pushTargets-all := $(addprefix image-push-,$(buildTargets))
