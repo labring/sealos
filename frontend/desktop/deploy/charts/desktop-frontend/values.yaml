@@ -32,10 +32,12 @@ service:
   port: 3000
 
 # Higress runs as a hostNetwork DaemonSet in Sealos Cloud. Restrict Desktop
-# ingress to local and remote node identities so only node-hosted gateways can
-# reach the application and its forwarded client IP headers can be trusted.
+# ingress to node-hosted gateways and explicitly trusted internal callers.
 ciliumNetworkPolicy:
   enabled: true
+  accountController:
+    namespace: account-system
+    serviceAccountName: account-controller-manager
 
 # Auto configure from sealos-system configmap
 autoConfigEnabled: true
