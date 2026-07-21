@@ -82,8 +82,6 @@ jobs:
               - 'frontend/tsconfig*.json'
               - '.github/workflows/frontend.yml'
               - '.github/workflows/frontends.yml'
-            aiproxy:
-              - 'frontend/providers/aiproxy/**'
             license:
               - 'frontend/providers/license/**'
             template:
@@ -102,7 +100,6 @@ jobs:
         id: set-matrix
         env:
           EVENT_NAME: ${{ github.event_name }}
-          FILTER_AIPROXY: ${{ steps.filter.outputs.aiproxy }}
           FILTER_APPLAUNCHPAD: ${{ steps.filter.outputs.applaunchpad }}
           FILTER_COSTCENTER: ${{ steps.filter.outputs.costcenter }}
           FILTER_DBPROVIDER: ${{ steps.filter.outputs.dbprovider }}
@@ -122,7 +119,6 @@ jobs:
                 "${FORCE_ALL}" == "true" || \
                 "${EVENT_NAME}" == "workflow_dispatch" ]]; then
             modules=(
-              "providers/aiproxy"
               "providers/license"
               "providers/template"
               "providers/applaunchpad"
@@ -133,7 +129,6 @@ jobs:
             )
           else
             # Only build changed modules
-            [[ "${FILTER_AIPROXY}" == "true" ]] && modules+=("providers/aiproxy")
             [[ "${FILTER_LICENSE}" == "true" ]] && modules+=("providers/license")
             [[ "${FILTER_TEMPLATE}" == "true" ]] && modules+=("providers/template")
             [[ "${FILTER_APPLAUNCHPAD}" == "true" ]] && modules+=("providers/applaunchpad")

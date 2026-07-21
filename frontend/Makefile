@@ -19,7 +19,6 @@ buildTargets := \
 	providers/costcenter \
 	providers/dbprovider \
 	providers/applaunchpad \
-	providers/aiproxy \
 	providers/template \
 	providers/license
 
