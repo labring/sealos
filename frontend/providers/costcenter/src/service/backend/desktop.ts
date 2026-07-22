@@ -1,7 +1,4 @@
-import type { AppConfig } from '@/types/config';
 import { z } from 'zod';
-
-type CloudEndpoint = Pick<AppConfig['cloud'], 'domain' | 'port'>;
 
 const DEFAULT_DESKTOP_TIMEOUT_MS = 30_000;
 
@@ -35,12 +32,6 @@ export class DesktopRequestError extends Error {
 
 function upstreamErrorCode(code: number): number {
   return code >= 400 && code <= 504 ? code : 502;
-}
-
-export function getDesktopPublicOrigin({ domain, port }: CloudEndpoint): string {
-  const url = new URL(`https://${domain}`);
-  url.port = String(port);
-  return url.origin;
 }
 
 export async function createWorkspaceViaDesktop({

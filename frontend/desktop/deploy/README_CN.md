@@ -374,8 +374,10 @@ export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my
 | `serviceAccount.name`                                      | 服务账号名称                | `desktop-frontend`                               |
 | `service.port`                                             | 服务端口                    | `3000`                                           |
 | `ciliumNetworkPolicy.enabled`                              | 限制 Desktop 的入站访问     | `true`                                           |
-| `ciliumNetworkPolicy.accountController.namespace`          | Account Controller 命名空间 | `account-system`                                 |
-| `ciliumNetworkPolicy.accountController.serviceAccountName` | Account Controller 服务账号 | `account-controller-manager`                     |
+| `ciliumNetworkPolicy.trustedCallers[0].namespace`          | Account Controller 命名空间 | `account-system`                                 |
+| `ciliumNetworkPolicy.trustedCallers[0].serviceAccountName` | Account Controller 服务账号 | `account-controller-manager`                     |
+| `ciliumNetworkPolicy.trustedCallers[1].namespace`          | Costcenter 命名空间         | `costcenter-frontend`                            |
+| `ciliumNetworkPolicy.trustedCallers[1].serviceAccountName` | Costcenter 服务账号         | `default`                                        |
 | `resources.requests.cpu`                                   | CPU 请求                    | `100m`                                           |
 | `resources.requests.memory`                                | 内存请求                    | `128Mi`                                          |
 | `resources.limits.cpu`                                     | CPU 限制                    | `2000m`                                          |
@@ -386,14 +388,14 @@ export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my
 
 启用 `ciliumNetworkPolicy.enabled` 时，集群必须提供
 `cilium.io/v2/CiliumNetworkPolicy` CRD，否则 Helm 将终止安装。该策略允许
-节点上运行的网关（Cilium `host` 和 `remote-node` 身份）及配置的 Account
-Controller ServiceAccount 访问 Desktop 的 TCP 3000 端口，其他应用 Pod 不能直接访问。
+节点上运行的网关（Cilium `host` 和 `remote-node` 身份）及
+`ciliumNetworkPolicy.trustedCallers` 中配置的 namespace + ServiceAccount 访问 Desktop
+的 TCP 3000 端口，其他应用 Pod 不能直接访问。
 
-升级已有环境时，必须先将所有集群内 Desktop 调用方迁移到公网 HTTPS 网关并
-验证成功，再启用或应用该策略；Account Controller 保留为显式白名单。尤其需要
-先发布 Costcenter，再发布 Desktop。使用私有 CA 的环境还需要先将 CA 加入
-Costcenter 的系统信任链。回滚时顺序相反：如果调用方要恢复为 Desktop
-ClusterIP，必须先删除该策略，否则 workspace 创建功能会不可用。
+Costcenter 和 Account Controller 保持通过 ClusterIP 调用 Desktop，必须加入
+`trustedCallers`。如果它们的 namespace 或 ServiceAccount 发生变化，应先更新并验证
+策略，再发布调用方；其他未受信任的集群内调用方必须迁移到公网 HTTPS 网关。
+回滚时不得先移除仍在使用 ClusterIP 的调用方白名单，否则对应功能会不可用。
 
 ## 故障排查
 

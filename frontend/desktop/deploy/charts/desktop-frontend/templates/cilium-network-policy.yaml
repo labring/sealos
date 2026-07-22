@@ -21,7 +21,7 @@ spec:
         - ports:
             - port: "3000"
               protocol: TCP
-    {{- with .Values.ciliumNetworkPolicy.accountController }}
+    {{- range .Values.ciliumNetworkPolicy.trustedCallers }}
     {{- if and .namespace .serviceAccountName }}
     - fromEndpoints:
         - matchLabels:

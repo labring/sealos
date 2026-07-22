@@ -1,5 +1,4 @@
 import { Config } from '@/config';
-import { getDesktopPublicOrigin } from '@/service/backend/desktop';
 import { jsonRes } from '@/service/backend/response';
 import { ClientAppConfigSchema, type ClientAppConfig } from '@/types/config';
 import {
@@ -26,7 +25,7 @@ export function getClientAppConfigServer(): ClientAppConfig {
     },
     components: {
       billing: { url: fullConfig.costCenter.components.billing.url },
-      desktop: { url: getDesktopPublicOrigin(fullConfig.cloud) }
+      desktop: { url: fullConfig.costCenter.components.desktop.url }
     }
   });
 }

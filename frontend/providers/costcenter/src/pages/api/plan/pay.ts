@@ -1,10 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Config } from '@/config';
-import {
-  createWorkspaceViaDesktop,
-  DesktopRequestError,
-  getDesktopPublicOrigin
-} from '@/service/backend/desktop';
+import { createWorkspaceViaDesktop, DesktopRequestError } from '@/service/backend/desktop';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import {
@@ -60,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           });
         }
         finalWorkspace = await createWorkspaceViaDesktop({
-          origin: getDesktopPublicOrigin(Config().cloud),
+          origin: Config().costCenter.components.desktop.url,
           internalToken,
           teamName: createWorkspace.teamName,
           userType: createWorkspace.userType

@@ -1,26 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  createWorkspaceViaDesktop,
-  DesktopRequestError,
-  getDesktopPublicOrigin
-} from '@/service/backend/desktop';
-
-describe('getDesktopPublicOrigin', () => {
-  it('uses the standard HTTPS origin without an explicit port', () => {
-    expect(getDesktopPublicOrigin({ domain: 'cloud.example.com', port: 443 })).toBe(
-      'https://cloud.example.com'
-    );
-  });
-
-  it('keeps a non-standard HTTPS port', () => {
-    expect(getDesktopPublicOrigin({ domain: 'cloud.example.com', port: 8443 })).toBe(
-      'https://cloud.example.com:8443'
-    );
-  });
-});
+import { createWorkspaceViaDesktop, DesktopRequestError } from '@/service/backend/desktop';
 
 describe('createWorkspaceViaDesktop', () => {
-  it('creates a workspace through the public Desktop endpoint', async () => {
+  it('creates a workspace through the configured Desktop endpoint', async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
       Response.json({
         code: 200,
@@ -31,7 +13,7 @@ describe('createWorkspaceViaDesktop', () => {
 
     await expect(
       createWorkspaceViaDesktop({
-        origin: 'https://cloud.example.com',
+        origin: 'http://desktop-frontend.sealos.svc.cluster.local:3000',
         internalToken: 'test-token',
         teamName: 'test-team',
         userType: 'payg',
@@ -41,7 +23,9 @@ describe('createWorkspaceViaDesktop', () => {
 
     expect(fetchImpl).toHaveBeenCalledOnce();
     const [url, init] = fetchImpl.mock.calls[0];
-    expect(String(url)).toBe('https://cloud.example.com/api/auth/namespace/create');
+    expect(String(url)).toBe(
+      'http://desktop-frontend.sealos.svc.cluster.local:3000/api/auth/namespace/create'
+    );
     expect(init).toMatchObject({
       method: 'POST',
       headers: {

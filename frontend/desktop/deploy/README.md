@@ -374,8 +374,10 @@ For more details, see [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md).
 | `serviceAccount.name`                                      | Service account name               | `desktop-frontend`                               |
 | `service.port`                                             | Service port                       | `3000`                                           |
 | `ciliumNetworkPolicy.enabled`                              | Restrict inbound access to Desktop | `true`                                           |
-| `ciliumNetworkPolicy.accountController.namespace`          | Account Controller namespace       | `account-system`                                 |
-| `ciliumNetworkPolicy.accountController.serviceAccountName` | Account Controller service account | `account-controller-manager`                     |
+| `ciliumNetworkPolicy.trustedCallers[0].namespace`          | Account Controller namespace       | `account-system`                                 |
+| `ciliumNetworkPolicy.trustedCallers[0].serviceAccountName` | Account Controller service account | `account-controller-manager`                     |
+| `ciliumNetworkPolicy.trustedCallers[1].namespace`          | Costcenter namespace               | `costcenter-frontend`                            |
+| `ciliumNetworkPolicy.trustedCallers[1].serviceAccountName` | Costcenter service account         | `default`                                        |
 | `resources.requests.cpu`                                   | CPU request                        | `100m`                                           |
 | `resources.requests.memory`                                | Memory request                     | `128Mi`                                          |
 | `resources.limits.cpu`                                     | CPU limit                          | `2000m`                                          |
@@ -387,16 +389,16 @@ For more details, see [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md).
 When `ciliumNetworkPolicy.enabled` is `true`, the cluster must provide the
 `cilium.io/v2/CiliumNetworkPolicy` CRD or Helm stops the installation. The
 policy allows the node-hosted gateway (`host` and `remote-node` Cilium
-identities) and the configured Account Controller service account to reach
-Desktop on TCP port 3000; direct traffic from other application pods is denied.
+identities) and the namespace + service account pairs configured in
+`ciliumNetworkPolicy.trustedCallers` to reach Desktop on TCP port 3000. Direct
+traffic from other application pods is denied.
 
-For an existing installation, migrate every in-cluster Desktop caller to the
-public HTTPS gateway and verify that path before enabling or applying this
-policy; Account Controller remains an explicit allowlisted caller. Roll out
-Costcenter before Desktop. Environments using a private CA must add that CA to
-Costcenter's system trust store. During a rollback, remove the policy before
-restoring a caller that uses the Desktop ClusterIP, otherwise workspace creation
-will be unavailable.
+Costcenter and Account Controller continue to call Desktop through its
+ClusterIP and must be included in `trustedCallers`. If either namespace or
+service account changes, update and verify the policy before rolling out the
+caller. Other untrusted in-cluster callers must migrate to the public HTTPS
+gateway. During a rollback, do not remove an allowlist entry while its caller
+still uses the ClusterIP.
 
 ## Troubleshooting
 
