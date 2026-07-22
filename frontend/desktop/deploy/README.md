@@ -373,7 +373,7 @@ For more details, see [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md).
 | `serviceAccount.create`                                    | Create service account             | `true`                                           |
 | `serviceAccount.name`                                      | Service account name               | `desktop-frontend`                               |
 | `service.port`                                             | Service port                       | `3000`                                           |
-| `ciliumNetworkPolicy.enabled`                              | Restrict inbound access to Desktop | `true`                                           |
+| `ciliumNetworkPolicy.enabled`                              | Restrict inbound access to Desktop | `false`                                          |
 | `ciliumNetworkPolicy.trustedCallers[0].namespace`          | Account Controller namespace       | `account-system`                                 |
 | `ciliumNetworkPolicy.trustedCallers[0].serviceAccountName` | Account Controller service account | `account-controller-manager`                     |
 | `ciliumNetworkPolicy.trustedCallers[1].namespace`          | Costcenter namespace               | `costcenter-frontend`                            |
@@ -386,7 +386,13 @@ For more details, see [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md).
 | `ingress.className`                                        | Ingress class                      | `nginx`                                          |
 | `autoConfigEnabled`                                        | Auto-config from sealos-config     | `true`                                           |
 
-When `ciliumNetworkPolicy.enabled` is `true`, the cluster must provide the
+The chart does not create an ingress policy by default. Unless another network
+policy selects Desktop, all pods can connect to the service and callers that
+bypass Higress can supply forwarding headers such as `X-Real-IP` themselves.
+Deployments that use gateway-derived client IPs for security controls must
+enable this policy or enforce equivalent traffic isolation.
+
+When `ciliumNetworkPolicy.enabled` is set to `true`, the cluster must provide the
 `cilium.io/v2/CiliumNetworkPolicy` CRD or Helm stops the installation. The
 policy allows the node-hosted gateway (`host` and `remote-node` Cilium
 identities) and the namespace + service account pairs configured in

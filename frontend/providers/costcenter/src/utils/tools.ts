@@ -41,7 +41,9 @@ export const isValidEmail = (email: string) => {
   return regExp.test(email);
 };
 export function getClientIPFromRequest(req: NextApiRequest) {
-  // Higress overwrites this header with the downstream remote address.
+  // Higress `addXRealIpHeader` replaces X-Real-IP with one downstream peer
+  // address, so there is no left/right selection as there is with XFF. This
+  // header is trustworthy only when untrusted callers cannot bypass Higress.
   const realIp = req.headers['x-real-ip'];
   const trustedIp = Array.isArray(realIp) ? realIp[0]?.trim() : realIp?.trim();
 

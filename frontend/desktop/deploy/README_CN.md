@@ -373,7 +373,7 @@ export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my
 | `serviceAccount.create`                                    | 创建服务账号                | `true`                                           |
 | `serviceAccount.name`                                      | 服务账号名称                | `desktop-frontend`                               |
 | `service.port`                                             | 服务端口                    | `3000`                                           |
-| `ciliumNetworkPolicy.enabled`                              | 限制 Desktop 的入站访问     | `true`                                           |
+| `ciliumNetworkPolicy.enabled`                              | 限制 Desktop 的入站访问     | `false`                                          |
 | `ciliumNetworkPolicy.trustedCallers[0].namespace`          | Account Controller 命名空间 | `account-system`                                 |
 | `ciliumNetworkPolicy.trustedCallers[0].serviceAccountName` | Account Controller 服务账号 | `account-controller-manager`                     |
 | `ciliumNetworkPolicy.trustedCallers[1].namespace`          | Costcenter 命名空间         | `costcenter-frontend`                            |
@@ -386,7 +386,11 @@ export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my
 | `ingress.className`                                        | Ingress 类                  | `nginx`                                          |
 | `autoConfigEnabled`                                        | 从 sealos-config 自动配置   | `true`                                           |
 
-启用 `ciliumNetworkPolicy.enabled` 时，集群必须提供
+Chart 默认不创建入站网络策略。如果没有其他网络策略选择 Desktop，则所有 Pod
+都可以连接该服务；绕过 Higress 的调用方也可以自行设置 `X-Real-IP` 等转发头。
+使用网关提供的客户端 IP 实施安全控制时，必须启用此策略或提供等价的流量隔离。
+
+将 `ciliumNetworkPolicy.enabled` 设置为 `true` 时，集群必须提供
 `cilium.io/v2/CiliumNetworkPolicy` CRD，否则 Helm 将终止安装。该策略允许
 节点上运行的网关（Cilium `host` 和 `remote-node` 身份）及
 `ciliumNetworkPolicy.trustedCallers` 中配置的 namespace + ServiceAccount 访问 Desktop
