@@ -16,9 +16,7 @@ limitations under the License.
 
 package v1
 
-import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
+import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 type Data struct {
 	URL  string `json:"url,omitempty"`
@@ -65,8 +63,7 @@ type AppSpec struct {
 }
 
 // AppStatus defines the observed state of App
-type AppStatus struct {
-}
+type AppStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

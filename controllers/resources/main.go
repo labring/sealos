@@ -23,27 +23,23 @@ import (
 	"os"
 	"time"
 
+	"github.com/apecloud/kubeblocks/apis/dataprotection/v1alpha1"
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
 	"github.com/labring/sealos/controllers/pkg/objectstorage"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"github.com/apecloud/kubeblocks/apis/dataprotection/v1alpha1"
-
-	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	"github.com/labring/sealos/controllers/resources/controllers"
-
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	//+kubebuilder:scaffold:imports
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var (
@@ -62,8 +58,18 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(
+		&metricsAddr,
+		"metrics-bind-address",
+		":8080",
+		"The address the metric endpoint binds to.",
+	)
+	flag.StringVar(
+		&probeAddr,
+		"health-probe-bind-address",
+		":8081",
+		"The address the probe endpoint binds to.",
+	)
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -107,7 +113,7 @@ func main() {
 		setupLog.Error(err, "failed to init index field")
 		os.Exit(1)
 	}
-	//if env.GetBoolWithDefault("ENABLE_AUTO_RESOURCE_QUOTA", false) {
+	// if env.GetBoolWithDefault("ENABLE_AUTO_RESOURCE_QUOTA", false) {
 	//	if err = (&controllers.NamespaceQuotaReconciler{
 	//		Client:   mgr.GetClient(),
 	//		Scheme:   mgr.GetScheme(),
@@ -117,10 +123,10 @@ func main() {
 	//		os.Exit(1)
 	//	}
 	//}
-	//if err = (&controllers.NetworkReconciler{}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "Network")
-	//	os.Exit(1)
-	//}
+	// if err = (&controllers.NetworkReconciler{}).SetupWithManager(mgr); err != nil {
+	// setupLog.Error(err, "unable to create controller", "controller", "Network")
+	// os.Exit(1)
+	// }
 
 	go func() {
 		if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -134,7 +140,10 @@ func main() {
 		setupLog.Error(err, "failed to init monitor reconciler")
 		os.Exit(1)
 	}
-	reconciler.DBClient, err = mongo.NewMongoInterface(context.Background(), os.Getenv(database.MongoURI))
+	reconciler.DBClient, err = mongo.NewMongoInterface(
+		context.Background(),
+		os.Getenv(database.MongoURI),
+	)
 	if err != nil {
 		setupLog.Error(err, "failed to init db client")
 		os.Exit(1)
@@ -173,33 +182,48 @@ func main() {
 		MinioMetricsAddr       = "MINIO_METRICS_ADDR"
 		MinioMetricsAddrSecure = "MINIO_METRICS_SECURE"
 	)
-	if endpoint, ak, sk, mAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" && ak != "" && sk != "" && mAddr != "" {
-		reconciler.Logger.Info("init minio client")
+	if endpoint, ak, sk, mAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" &&
+		ak != "" &&
+		sk != "" &&
+		mAddr != "" {
+		reconciler.Info("init minio client")
 		if reconciler.ObjStorageClient, err = objectstorage.NewOSClient(endpoint, ak, sk); err != nil {
-			reconciler.Logger.Error(err, "failed to new minio client")
+			reconciler.Error(err, "failed to new minio client")
 			os.Exit(1)
 		}
 		_, err := reconciler.ObjStorageClient.ListBuckets(context.Background())
 		if err != nil {
-			reconciler.Logger.Error(err, "failed to list minio buckets")
+			reconciler.Error(err, "failed to list minio buckets")
 			os.Exit(1)
 		}
 		if reconciler.PromURL = os.Getenv(PromURL); reconciler.PromURL == "" {
-			reconciler.Logger.Info("prometheus url not found, please check env: PROM_URL")
+			reconciler.Info("prometheus url not found, please check env: PROM_URL")
 		}
 		secure := env.GetBoolWithDefault(MinioMetricsAddrSecure, false)
-		reconciler.ObjStorageMetricsClient, err = objectstorage.NewMetricsClient(mAddr, ak, sk, secure)
+		reconciler.ObjStorageMetricsClient, err = objectstorage.NewMetricsClient(
+			mAddr,
+			ak,
+			sk,
+			secure,
+		)
 		if err != nil {
-			reconciler.Logger.Error(err, "failed to new minio metrics client")
+			reconciler.Error(err, "failed to new minio metrics client")
 			os.Exit(1)
 		}
-		reconciler.Logger.Info(fmt.Sprintf("init minio client with info (endpoint %s, metrics addr %s, metrics addr secure %v) success", endpoint, mAddr, secure))
+		reconciler.Info(
+			fmt.Sprintf(
+				"init minio client with info (endpoint %s, metrics addr %s, metrics addr secure %v) success",
+				endpoint,
+				mAddr,
+				secure,
+			),
+		)
 	} else {
-		reconciler.Logger.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK, MINIO_METRICS_ADDR")
+		reconciler.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK, MINIO_METRICS_ADDR")
 	}
 	err = reconciler.DBClient.CreateTTLTrafficTimeSeries()
 	if err != nil {
-		reconciler.Logger.Error(err, "failed to create ttl traffic time series")
+		reconciler.Error(err, "failed to create ttl traffic time series")
 	}
 	// timer creates tomorrow's timing table in advance to ensure that tomorrow's table exists
 	// Execute immediately and then every 24 hours.
@@ -207,12 +231,14 @@ func main() {
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
 		for {
-			err := reconciler.DBClient.CreateMonitorTimeSeriesIfNotExist(time.Now().UTC().Add(24 * time.Hour))
+			err := reconciler.DBClient.CreateMonitorTimeSeriesIfNotExist(
+				time.Now().UTC().Add(24 * time.Hour),
+			)
 			if err != nil {
-				reconciler.Logger.Error(err, "failed to create monitor time series")
+				reconciler.Error(err, "failed to create monitor time series")
 			}
 			if err := reconciler.DropMonitorCollectionOlder(); err != nil {
-				reconciler.Logger.Error(err, "failed to drop monitor collection")
+				reconciler.Error(err, "failed to drop monitor collection")
 			}
 			<-ticker.C
 		}

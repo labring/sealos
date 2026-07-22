@@ -7,9 +7,9 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/labring/sealos/service/exceptionmonitor/api"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -36,7 +36,12 @@ func StartServer() {
 	addr := ":8000"
 	log.Printf("exceptionmonitor HTTP server listening on %s", addr)
 	// nosemgrep: go.lang.security.audit.net.use-tls.use-tls
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 30 * time.Second,
+	}
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("HTTP server failed: %v", err)
 	}
 }
@@ -54,9 +59,15 @@ func handleListDatabases(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	ctx := context.Background()
-	clusters, err := api.DynamicClient.Resource(databaseClusterGVR).Namespace(ns).List(ctx, metav1.ListOptions{})
+	clusters, err := api.DynamicClient.Resource(databaseClusterGVR).
+		Namespace(ns).
+		List(ctx, metav1.ListOptions{})
 	if err != nil {
-		http.Error(rw, fmt.Sprintf("failed to list clusters: %v", err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("failed to list clusters: %v", err),
+			http.StatusInternalServerError,
+		)
 		return
 	}
 
@@ -71,18 +82,26 @@ func handleListDatabases(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	encoder := json.NewEncoder(rw)
 	if err := encoder.Encode(response); err != nil {
-		http.Error(rw, fmt.Sprintf("failed to encode response: %v", err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("failed to encode response: %v", err),
+			http.StatusInternalServerError,
+		)
 		return
 	}
 }
 
-func collectDatabaseInfo(ctx context.Context, namespace string, cluster metav1unstructured.Unstructured) DatabaseInfo {
+func collectDatabaseInfo(
+	ctx context.Context,
+	namespace string,
+	cluster metav1unstructured.Unstructured,
+) DatabaseInfo {
 	name := cluster.GetName()
 	status, _, _ := metav1unstructured.NestedString(cluster.Object, "status", "phase")
 
 	// Gather related events as details
 	events, err := api.ClientSet.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
-		FieldSelector: fmt.Sprintf("involvedObject.name=%s", name),
+		FieldSelector: "involvedObject.name=" + name,
 	})
 	details := ""
 	if err == nil {

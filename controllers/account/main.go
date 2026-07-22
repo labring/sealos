@@ -24,8 +24,6 @@ import (
 	"strconv"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
@@ -51,6 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 var (
@@ -289,7 +288,12 @@ func main() {
 		}
 		go func() {
 			setupLog.Info("starting property reload HTTP server", "port", 9444)
-			if err := http.ListenAndServe(":9444", reloadHandler); err != nil {
+			server := &http.Server{
+				Addr:              ":9444",
+				Handler:           reloadHandler,
+				ReadHeaderTimeout: 5 * time.Second,
+			}
+			if err := server.ListenAndServe(); err != nil {
 				setupLog.Error(err, "failed to start property reload HTTP server")
 			}
 		}()

@@ -341,14 +341,20 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDebtEmail(
 	subscription *types.WorkspaceSubscription,
 	eventData usernotify.EventData,
 ) {
-	if wdp.AccountV2 == nil || wdp.UserContactProvider == nil || wdp.UserNotificationService == nil {
+	if wdp.AccountV2 == nil ||
+		wdp.UserContactProvider == nil ||
+		wdp.UserNotificationService == nil {
 		return
 	}
 
 	userUID := subscription.UserUID
 	nr, err := wdp.AccountV2.GetNotificationRecipient(userUID)
 	if err != nil {
-		wdp.logWorkspaceDebtErrorf("failed to get notification recipient for user %s: %v", userUID, err)
+		wdp.logWorkspaceDebtErrorf(
+			"failed to get notification recipient for user %s: %v",
+			userUID,
+			err,
+		)
 		return
 	}
 	wdp.UserContactProvider.SetUserContact(userUID, nr)

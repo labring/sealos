@@ -643,7 +643,7 @@ func (m *Account) ReloadConfig() error {
 	if err != nil {
 		return fmt.Errorf("failed to reload account config: %w", err)
 	}
-	err = m.MongoDB.ReloadPropertyTypeLS()
+	err = m.ReloadPropertyTypeLS()
 	if err != nil {
 		return fmt.Errorf("failed to reload property type ls: %w", err)
 	}
@@ -1225,7 +1225,7 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 	}
 
 	if strings.ToUpper(req.AppType) != resources.AppStore {
-		var match = make(bson.D, len(matchConditions))
+		match := make(bson.D, len(matchConditions))
 		copy(match, matchConditions[:])
 		if req.AppType != "" {
 			match = append(

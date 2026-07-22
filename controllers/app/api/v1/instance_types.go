@@ -16,9 +16,7 @@ limitations under the License.
 
 package v1
 
-import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
+import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 // InstanceSpec defines the desired state of Instance
 // +kubebuilder:validation:XValidation:rule="'app_name' in self.defaults",message="defaults must have app_name key"
@@ -27,8 +25,7 @@ type InstanceSpec struct {
 }
 
 // InstanceStatus defines the observed state of Instance
-type InstanceStatus struct {
-}
+type InstanceStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

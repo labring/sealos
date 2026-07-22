@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/labring/sealos/service/pkg/server"
 )
@@ -20,8 +21,9 @@ func (rs *DatabaseServer) Serve(c *server.Config) {
 	}
 
 	hs := &http.Server{
-		Addr:    c.Server.ListenAddress,
-		Handler: ps,
+		Addr:              c.Server.ListenAddress,
+		Handler:           ps,
+		ReadHeaderTimeout: 30 * time.Second,
 	}
 
 	listener, err := net.Listen("tcp", c.Server.ListenAddress)

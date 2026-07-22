@@ -14,8 +14,8 @@ import (
 )
 
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
+	// #nosec G107 -- addr is derived from the trusted VM_SERVICE_HOST deployment setting.
 	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
-
 	if err != nil {
 		return nil, err
 	}

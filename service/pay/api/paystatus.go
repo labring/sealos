@@ -13,7 +13,12 @@ import (
 func GetPayStatus(c *gin.Context, client *mongo.Client) {
 	request, err := helper.Init(c, client)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("init failed before get payment status: %v, %v", request, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": fmt.Sprintf("init failed before get payment status: %v, %v", request, err),
+			},
+		)
 		return
 	}
 
@@ -23,7 +28,10 @@ func GetPayStatus(c *gin.Context, client *mongo.Client) {
 	case "stripe":
 		method.GetStripePaymentStatus(c, request, client)
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is illegal: %v", request.PayMethod)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("paymethod is illegal: %v", request.PayMethod)},
+		)
 	}
 	// TODO The other status of this area except notpaid has not been tested, and it will be tested later
 }

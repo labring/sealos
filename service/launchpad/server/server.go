@@ -8,10 +8,9 @@ import (
 	"net/url"
 	"text/template"
 
-	"github.com/labring/sealos/service/pkg/auth"
-
 	"github.com/labring/sealos/service/launchpad/request"
 	"github.com/labring/sealos/service/pkg/api"
+	"github.com/labring/sealos/service/pkg/auth"
 )
 
 type VMServer struct {
@@ -55,7 +54,6 @@ func (vs *VMServer) ParseRequest(req *http.Request) (*api.VMRequest, error) {
 	if vr.Pwd == "" {
 		return nil, api.ErrEmptyKubeconfig
 	}
-	//fmt.Printf("VR Password: %q\n", vr.Pwd)
 	if err := req.ParseForm(); err != nil {
 		return nil, err
 	}
@@ -91,8 +89,8 @@ func (vs *VMServer) ParseRequest(req *http.Request) (*api.VMRequest, error) {
 // 获取客户端请求的信息
 func (vs *VMServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	pathPrefix := ""
-	switch {
-	case req.URL.Path == pathPrefix+"/query":
+	switch req.URL.Path {
+	case pathPrefix + "/query":
 		vs.doReqNew(rw, req)
 	default:
 		http.Error(rw, "Not found", http.StatusNotFound)
@@ -109,7 +107,11 @@ func (vs *VMServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := vs.Authenticate(vr); err != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("Authentication failed (%s)", err),
+			http.StatusInternalServerError,
+		)
 		log.Printf("Authentication failed (%s)\n", err)
 		return
 	}

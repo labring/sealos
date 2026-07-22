@@ -139,7 +139,7 @@ func defaultAliasForNvidiaGPUProduct(s string) string {
 	return s
 }
 
-func matchesNvidiaGPUType(val string, gpuType string) bool {
+func matchesNvidiaGPUType(val, gpuType string) bool {
 	v := normalizeNvidiaGPUProduct(val)
 	if v == "" {
 		return false
@@ -227,7 +227,7 @@ func parseHamiNvidiaRegisterVirtualCount(s string) int64 {
 	return 0
 }
 
-func parseHamiNvidiaRegister(s string) (prod string, mem string) {
+func parseHamiNvidiaRegister(s string) (prod, mem string) {
 	s = strings.TrimSpace(s)
 	if strings.HasPrefix(s, "[") {
 		type hamiDevice struct {
@@ -269,6 +269,82 @@ func parseHamiNvidiaRegister(s string) (prod string, mem string) {
 	return prod, mem
 }
 
+func (r *GpuReconciler) collectGPUNodeInfo(
+	ctx context.Context,
+	reader client.Reader,
+	nodeList *corev1.NodeList,
+	refIndex map[string]string,
+) (map[string]map[string]string, map[string]string) {
+	nodeMap := make(map[string]map[string]string, len(nodeList.Items))
+	aliasMap := make(map[string]string)
+
+	// Get the GPU product, GPU memory, and allocatable number on each node.
+	for i := range nodeList.Items {
+		node := &nodeList.Items[i]
+		nodeName := node.Name
+		gpuProduct, hasProduct := node.Labels[NvidiaGPUProduct]
+		gpuMemory, hasMemory := node.Labels[NvidiaGPUMemory]
+		gpuCount, hasCount := node.Status.Allocatable[NvidiaGPU]
+		if node.Annotations != nil {
+			if reg := node.Annotations["hami.io/node-nvidia-register"]; reg != "" {
+				product, memory := parseHamiNvidiaRegister(reg)
+				if product != "" {
+					hasProduct = true
+					gpuProduct = strings.TrimSpace(product)
+				}
+				if memory != "" {
+					hasMemory = true
+					gpuMemory = memory
+				}
+			}
+		}
+		if !hasProduct || !hasMemory || !hasCount {
+			continue
+		}
+
+		if _, ok := nodeMap[nodeName]; !ok {
+			nodeMap[nodeName] = make(map[string]string)
+		}
+		effectiveCount := gpuCount.Value()
+		if node.Annotations != nil {
+			virtualCount := parseHamiNvidiaRegisterVirtualCount(
+				node.Annotations["hami.io/node-nvidia-register"],
+			)
+			if virtualCount > 0 {
+				effectiveCount = virtualCount
+			}
+		}
+		aliasMap[gpuProduct] = defaultAliasForNvidiaGPUProduct(gpuProduct)
+		nodeMap[nodeName][GPUProduct] = gpuProduct
+		nodeMap[nodeName][GPUMemory] = gpuMemory
+		nodeMap[nodeName][GPUCount] = strconv.FormatInt(effectiveCount, 10)
+
+		ref := ""
+		if len(refIndex) > 0 {
+			if value, ok := refIndex[strings.TrimSpace(gpuProduct)]; ok {
+				ref = value
+			} else if normalized := normalizeNvidiaGPUProduct(gpuProduct); normalized != "" {
+				ref = refIndex[normalized]
+			}
+		}
+		nodeMap[nodeName][GPURef] = ref
+
+		used := r.QueryGPUAllocation(ctx, reader, node, gpuProduct)
+		nodeMap[nodeName][GPUDevbox] = "false"
+		if _, ok := node.Labels[devboxLabel]; ok {
+			nodeMap[nodeName][GPUDevbox] = "true"
+		}
+		nodeMap[nodeName][GPUUse] = strconv.FormatInt(used, 10)
+		available := effectiveCount - used
+		if available < 0 {
+			available = 0
+		}
+		nodeMap[nodeName][GPUAvailable] = strconv.FormatInt(available, 10)
+	}
+
+	return nodeMap, aliasMap
+}
+
 func (r *GpuReconciler) applyGPUInfoCM(
 	ctx context.Context,
 	reader client.Reader,
@@ -285,8 +361,6 @@ func (r *GpuReconciler) applyGPUInfoCM(
 		return ctrl.Result{}, err
 	}
 
-	nodeMap := make(map[string]map[string]string, len(nodeList.Items))
-	aliasMap := make(map[string]string)
 	refIndex := map[string]string{}
 	existingNodeLabelStr := ""
 	legacyLabelMappingStr := ""
@@ -335,64 +409,7 @@ func (r *GpuReconciler) applyGPUInfoCM(
 			legacyLabelMappingStr = strings.TrimSpace(gpuInfoCM.Data[legacyGPULabelMapping])
 		}
 	}
-	// get the GPU product, GPU memory, GPU allocatable number on the node
-	for i := range nodeList.Items {
-		node := &nodeList.Items[i]
-		nodeName := node.Name
-		gpuProduct, ok1 := node.Labels[NvidiaGPUProduct]
-		gpuMemory, ok2 := node.Labels[NvidiaGPUMemory]
-		gpuCount, ok3 := node.Status.Allocatable[NvidiaGPU]
-		if node.Annotations != nil {
-			if reg := node.Annotations["hami.io/node-nvidia-register"]; reg != "" {
-				p, m := parseHamiNvidiaRegister(reg)
-				if p != "" {
-					ok1 = true
-					gpuProduct = strings.TrimSpace(p)
-				}
-				if m != "" {
-					ok2 = true
-					gpuMemory = m
-				}
-			}
-		}
-		if !ok1 || !ok2 || !ok3 {
-			continue
-		}
-		if _, ok := nodeMap[nodeName]; !ok {
-			nodeMap[nodeName] = make(map[string]string)
-		}
-		effectiveCount := gpuCount.Value()
-		if node.Annotations != nil {
-			virtualCount := parseHamiNvidiaRegisterVirtualCount(node.Annotations["hami.io/node-nvidia-register"])
-			if virtualCount > 0 {
-				effectiveCount = virtualCount
-			}
-		}
-		aliasMap[gpuProduct] = defaultAliasForNvidiaGPUProduct(gpuProduct)
-		nodeMap[nodeName][GPUProduct] = gpuProduct
-		nodeMap[nodeName][GPUMemory] = gpuMemory
-		nodeMap[nodeName][GPUCount] = strconv.FormatInt(effectiveCount, 10)
-		ref := ""
-		if len(refIndex) > 0 {
-			if v, ok := refIndex[strings.TrimSpace(gpuProduct)]; ok {
-				ref = v
-			} else if nk := normalizeNvidiaGPUProduct(gpuProduct); nk != "" {
-				ref = refIndex[nk]
-			}
-		}
-		nodeMap[nodeName][GPURef] = ref
-		used := r.QueryGPUAllocation(ctx, reader, node, gpuProduct)
-		nodeMap[nodeName][GPUDevbox] = "false"
-		if _, ok := node.Labels[devboxLabel]; ok {
-			nodeMap[nodeName][GPUDevbox] = "true"
-		}
-		nodeMap[nodeName][GPUUse] = strconv.FormatInt(used, 10)
-		available := effectiveCount - used
-		if available < 0 {
-			available = 0
-		}
-		nodeMap[nodeName][GPUAvailable] = strconv.FormatInt(available, 10)
-	}
+	nodeMap, aliasMap := r.collectGPUNodeInfo(ctx, reader, nodeList, refIndex)
 
 	aliasConfigmap := &corev1.ConfigMap{}
 	err = reader.Get(
@@ -433,12 +450,13 @@ func (r *GpuReconciler) applyGPUInfoCM(
 		return ctrl.Result{}, err
 	}
 	aliasMapStr := string(aliasMapBytes)
-	nodeLabelStr := ""
-	if existingNodeLabelStr != "" {
+	var nodeLabelStr string
+	switch {
+	case existingNodeLabelStr != "":
 		nodeLabelStr = existingNodeLabelStr
-	} else if legacyLabelMappingStr != "" {
+	case legacyLabelMappingStr != "":
 		nodeLabelStr = legacyLabelMappingStr
-	} else {
+	default:
 		nodeLabelMap := map[string]string{
 			"kunlunxin": "xpu=on",
 			"nvidia":    "gpu=on",
@@ -492,21 +510,24 @@ func (r *GpuReconciler) applyGPUInfoCM(
 	}
 	if configmap.Data[GPU] != nodeMapStr {
 		configmap.Data[GPU] = nodeMapStr
-		if updateErr := r.Update(ctx, configmap); updateErr != nil && !errors.IsConflict(updateErr) {
+		if updateErr := r.Update(ctx, configmap); updateErr != nil &&
+			!errors.IsConflict(updateErr) {
 			r.Logger.Error(updateErr, "failed to update gpu-info configmap")
 			return ctrl.Result{}, updateErr
 		}
 	}
 	if configmap.Data[GPUAlias] == "" && configmap.Data[GPUAlias] != aliasMapStr {
 		configmap.Data[GPUAlias] = aliasMapStr
-		if updateErr := r.Update(ctx, configmap); updateErr != nil && !errors.IsConflict(updateErr) {
+		if updateErr := r.Update(ctx, configmap); updateErr != nil &&
+			!errors.IsConflict(updateErr) {
 			r.Logger.Error(updateErr, "failed to update gpu-info configmap")
 			return ctrl.Result{}, updateErr
 		}
 	}
 	if configmap.Data[GPUNodeLabel] == "" && configmap.Data[GPUNodeLabel] != nodeLabelStr {
 		configmap.Data[GPUNodeLabel] = nodeLabelStr
-		if updateErr := r.Update(ctx, configmap); updateErr != nil && !errors.IsConflict(updateErr) {
+		if updateErr := r.Update(ctx, configmap); updateErr != nil &&
+			!errors.IsConflict(updateErr) {
 			r.Logger.Error(updateErr, "failed to update gpu-info configmap")
 			return ctrl.Result{}, updateErr
 		}
