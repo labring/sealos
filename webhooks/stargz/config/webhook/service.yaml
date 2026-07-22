@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: stargz-runtime-injector
+    app.kubernetes.io/managed-by: kustomize
+  name: webhook-service
+  namespace: system
+spec:
+  ports:
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    app.kubernetes.io/name: stargz-runtime-injector
+    control-plane: controller-manager
