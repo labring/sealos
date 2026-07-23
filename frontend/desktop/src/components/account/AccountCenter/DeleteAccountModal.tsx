@@ -54,7 +54,6 @@ const appKeyList = [
   'system-cronjob',
   '',
   'system-objectstorage',
-  'system-cloudserver',
   'system-template'
 ] as const;
 const generateURL = (resource: ResourceType, domain: string) => {
