@@ -82,8 +82,6 @@ jobs:
               - 'frontend/tsconfig*.json'
               - '.github/workflows/frontend.yml'
               - '.github/workflows/frontends.yml'
-            aiproxy:
-              - 'frontend/providers/aiproxy/**'
             license:
               - 'frontend/providers/license/**'
             cronjob:
@@ -115,7 +113,6 @@ jobs:
                 "${{ inputs.force_all }}" == "true" || \
                 "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             modules=(
-              "providers/aiproxy"
               "providers/license"
               "providers/cronjob"
               "providers/template"
@@ -129,7 +126,6 @@ jobs:
             )
           else
             # Only build changed modules
-            [[ "${{ steps.filter.outputs.aiproxy }}" == "true" ]] && modules+=("providers/aiproxy")
             [[ "${{ steps.filter.outputs.license }}" == "true" ]] && modules+=("providers/license")
             [[ "${{ steps.filter.outputs.cronjob }}" == "true" ]] && modules+=("providers/cronjob")
             [[ "${{ steps.filter.outputs.template }}" == "true" ]] && modules+=("providers/template")
