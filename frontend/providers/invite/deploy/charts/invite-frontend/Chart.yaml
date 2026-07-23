@@ -1,6 +1,0 @@
-apiVersion: v2
-name: invite-frontend
-description: Sealos Invite Frontend Helm Chart
-type: application
-version: 1.0.0
-appVersion: "latest"
