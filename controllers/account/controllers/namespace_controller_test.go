@@ -424,7 +424,20 @@ func TestSuspendResumeKBCluster(t *testing.T) {
 				_ = unstructured.SetNestedField(cluster.Object, true, "spec", "backup", "enabled")
 			}
 
-			dynamicClient := fake.NewSimpleDynamicClient(scheme, cluster)
+			clusterGVR := schema.GroupVersionResource{
+				Group:    "apps.kubeblocks.io",
+				Version:  "v1alpha1",
+				Resource: "clusters",
+			}
+			opsGVR := schema.GroupVersionResource{
+				Group:    "apps.kubeblocks.io",
+				Version:  "v1alpha1",
+				Resource: "opsrequests",
+			}
+			dynamicClient := fake.NewSimpleDynamicClientWithCustomListKinds(scheme, map[schema.GroupVersionResource]string{
+				clusterGVR: "ClusterList",
+				opsGVR:     "OpsRequestList",
+			}, cluster)
 
 			reconciler := &NamespaceReconciler{
 				dynamicClient: dynamicClient,
@@ -440,12 +453,6 @@ func TestSuspendResumeKBCluster(t *testing.T) {
 			}
 
 			// Verify suspension
-			clusterGVR := schema.GroupVersionResource{
-				Group:    "apps.kubeblocks.io",
-				Version:  "v1alpha1",
-				Resource: "clusters",
-			}
-
 			suspendedCluster, err := dynamicClient.Resource(clusterGVR).
 				Namespace("test-ns").
 				Get(ctx, "test-cluster", v1.GetOptions{})
@@ -488,6 +495,22 @@ func TestSuspendResumeKBCluster(t *testing.T) {
 				} else if enabled {
 					t.Error("expected backup to be disabled")
 				}
+			}
+
+			opsList, err := dynamicClient.Resource(opsGVR).Namespace("test-ns").List(ctx, v1.ListOptions{})
+			if err != nil {
+				t.Fatalf("failed to list OpsRequests: %v", err)
+			}
+			if tt.shouldCreateOps {
+				if len(opsList.Items) != 1 {
+					t.Fatalf("expected one Stop OpsRequest, got %d", len(opsList.Items))
+				}
+				force, found, err := unstructured.NestedBool(opsList.Items[0].Object, "spec", "force")
+				if err != nil || !found || !force {
+					t.Fatalf("expected force Stop OpsRequest, force=%v found=%v err=%v", force, found, err)
+				}
+			} else if len(opsList.Items) != 0 {
+				t.Fatalf("expected no Stop OpsRequest, got %d", len(opsList.Items))
 			}
 
 			// Simulate cluster being stopped
