@@ -1,0 +1,12 @@
+FROM scratch
+COPY registry registry
+COPY manifests manifests
+COPY scripts scripts
+
+ENV USER=""
+ENV PASSWORD=""
+ENV GIN_MODE=""
+ENV LOG_LEVEL=""
+ENV JWTSecret=""
+
+CMD ["bash scripts/init.sh"]

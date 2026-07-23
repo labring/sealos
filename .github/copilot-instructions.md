@@ -21,7 +21,7 @@ sudo apt-get update && sudo apt-get install -y pkg-config libdevmapper-dev libbt
 ### Repository Structure
 - **`/lifecycle`**: Main sealos CLI and core binaries (sealos, sealctl, lvscare, image-cri-shim) 
 - **`/controllers`**: Multiple Kubernetes controllers with individual Go modules and Makefiles
-- **`/frontend`**: Next.js pnpm workspace containing the desktop, shared packages, and provider apps
+- **`/frontend`**: Next.js workspace with pnpm, 23 sub-projects (desktop, providers)
 - **`/service`**: Backend Go services with individual modules  
 - **`/webhooks`**: Kubernetes admission webhooks
 - **`/docs`**: Documentation and guides
@@ -158,8 +158,7 @@ make lint                  # Takes 1 minute - NEVER CANCEL, may show type errors
 - Main CI pipeline: `.github/workflows/ci.yml`
 - Format checking: `.github/workflows/check-format-code.yml`  
 - License checking: `.github/workflows/check-license.yml`
-- Frontend build matrix: `.github/workflows/frontends.yml`
-- Reusable single-module frontend build: `.github/workflows/frontend.yml`
+- Frontend builds: `.github/workflows/frontend.yml`
 
 Always run `make format` before committing to pass CI format checks.
 

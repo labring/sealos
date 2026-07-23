@@ -75,6 +75,8 @@ func GetQuery(query *api.PromRequest) (string, error) {
 		result = api.Mongo[query.Query]
 	case "postgresql":
 		result = api.Pgsql[query.Query]
+	case "minio":
+		result = api.Minio[query.Query]
 	case "kafka":
 		result = api.Kafka[query.Query]
 	case "milvus":
@@ -84,6 +86,10 @@ func GetQuery(query *api.PromRequest) (string, error) {
 	}
 
 	fmt.Println(query.Cluster)
+	if query.Type == "minio" {
+		instance := os.Getenv("OBJECT_STORAGE_INSTANCE")
+		result = strings.ReplaceAll(result, "#", instance)
+	}
 	result = strings.ReplaceAll(result, "#", query.NS)
 	result = strings.ReplaceAll(result, "@", query.Cluster)
 	return result, nil

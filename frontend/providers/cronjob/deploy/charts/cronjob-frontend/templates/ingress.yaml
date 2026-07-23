@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "cronjob-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "{{ include "cronjob-frontend.cloudOrigin" . }}, {{ include "cronjob-frontend.wildcardCloudOrigin" . }}"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-max-age: "600"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }}; img-src * data: blob: resource: *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} resource: *.baidu.com *.bdstatic.com https://js.stripe.com; frame-src 'self' *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} mailto: tel: weixin: mtt: *.baidu.com https://js.stripe.com; frame-ancestors 'self' {{ include "cronjob-frontend.cloudOrigin" . }} {{ include "cronjob-frontend.wildcardCloudOrigin" . }}";
+      more_set_headers "X-Xss-Protection: 1; mode=block";
+    higress.io/response-header-control-remove: X-Frame-Options
+    higress.io/response-header-control-update: |
+      Content-Security-Policy "default-src * blob: data: *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }}; img-src * data: blob: resource: *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} resource: *.baidu.com *.bdstatic.com https://js.stripe.com; frame-src 'self' *.{{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} {{ .Values.cronjobConfig.cloudDomain }}{{ include "cronjob-frontend.portSuffix" . }} mailto: tel: weixin: mtt: *.baidu.com https://js.stripe.com; frame-ancestors 'self' {{ include "cronjob-frontend.cloudOrigin" . }} {{ include "cronjob-frontend.wildcardCloudOrigin" . }}"
+      X-Xss-Protection "1; mode=block"
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ include "cronjob-frontend.host" . | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "cronjob-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+  {{- if not (eq (toString .Values.cronjobConfig.disableHttps) "true") }}
+  tls:
+    - hosts:
+        - {{ include "cronjob-frontend.host" . | quote }}
+      secretName: {{ .Values.cronjobConfig.certSecretName | quote }}
+  {{- end }}
