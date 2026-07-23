@@ -6,7 +6,8 @@ import {
   AuthClientConfigType,
   AppClientConfigType,
   CommonClientConfigType,
-  TNotification
+  TNotification,
+  VerificationChallenge
 } from '@/types';
 import { AdClickData } from '@/types/adClick';
 import { LicenseCheckResponse } from '@/types/license';
@@ -150,10 +151,10 @@ export const deleteAlerts = (data: DeleteAlertsRequest) =>
   request.post<any, ApiResp<DeleteAlertsResponse>>('/api/account/alerts/deleteAlerts', data);
 
 export const sendAlertBindEmailCode = (data: { id: string }) =>
-  request.post<any, ApiResp>('/api/account/alerts/bind/email/sms', data);
+  request.post<any, ApiResp<VerificationChallenge>>('/api/account/alerts/bind/email/sms', data);
 
 export const sendAlertBindPhoneCode = (data: { id: string }) =>
-  request.post<any, ApiResp>('/api/account/alerts/bind/phone/sms', data);
+  request.post<any, ApiResp<VerificationChallenge>>('/api/account/alerts/bind/phone/sms', data);
 
 export const createTemplateInstance = (data: {
   templateName: string;

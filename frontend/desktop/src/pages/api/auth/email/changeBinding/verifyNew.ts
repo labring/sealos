@@ -4,7 +4,8 @@ import { bindEmailGuard, unbindEmailGuard } from '@/services/backend/middleware/
 import {
   filterCodeUid,
   filterEmailVerifyParams,
-  verifyCodeUidGuard,
+  consumeFlowTicketGuard,
+  verifyFlowTicketGuard,
   verifyCodeGuard
 } from '@/services/backend/middleware/sms';
 import { changeEmailBindingSvc } from '@/services/backend/svc/bindProvider';
@@ -16,17 +17,28 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     throw new Error('SMS is not enabled');
   }
   await filterAccessToken(req, res, ({ userUid }) =>
-    filterEmailVerifyParams(req, res, ({ email, code }) =>
+    filterEmailVerifyParams(req, res, ({ email, code, challengeId }) =>
       filterCodeUid(req, res, ({ uid }) =>
-        verifyCodeUidGuard(uid)(res, ({ smsInfo: oldEmailInfo }) =>
+        verifyFlowTicketGuard(
+          uid,
+          userUid,
+          'EMAIL'
+        )(res, ({ ticket }) =>
           verifyCodeGuard(
             email,
             code,
-            'email_change_new'
+            'email_change_new',
+            challengeId
           )(res, ({ smsInfo: newEmailInfo }) =>
-            unbindEmailGuard(oldEmailInfo.id, userUid)(res, () =>
-              bindEmailGuard(newEmailInfo.id, userUid)(res, () =>
-                changeEmailBindingSvc(oldEmailInfo.id, newEmailInfo.id, userUid)(res)
+            consumeFlowTicketGuard(
+              uid,
+              userUid,
+              'EMAIL'
+            )(res, () =>
+              unbindEmailGuard(ticket.oldProviderId, userUid)(res, () =>
+                bindEmailGuard(newEmailInfo.id, userUid)(res, () =>
+                  changeEmailBindingSvc(ticket.oldProviderId, newEmailInfo.id, userUid)(res)
+                )
               )
             )
           )

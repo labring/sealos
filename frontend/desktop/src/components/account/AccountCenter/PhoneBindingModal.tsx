@@ -52,6 +52,7 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
   const [mergeData, setMergeData] = useState<MergeData | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
+  const [challengeId, setChallengeId] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [isSending, setIsSending] = useState(false);
 
@@ -77,7 +78,8 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
   // Send verification code
   const sendCodeMutation = useMutation({
     mutationFn: () => getSmsBindCodeRequest('phone')({ id: phoneNumber }),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setChallengeId(data.data?.challengeId || '');
       toast({
         position: 'top',
         title: t('common:already_sent_code'),
@@ -121,7 +123,8 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
     mutationFn: () =>
       verifySmsBindRequest('phone')({
         id: phoneNumber,
-        code: verifyCode
+        code: verifyCode,
+        challengeId
       }),
     onSuccess: (data) => {
       const status = data.message || '';
@@ -326,8 +329,8 @@ export function PhoneBindingModal({ isOpen, onClose }: PhoneBindingModalProps) {
                           {countdown > 0
                             ? `${countdown}s`
                             : isSending
-                              ? t('common:sending')
-                              : t('common:get_code')}
+                            ? t('common:sending')
+                            : t('common:get_code')}
                         </Button>
                       </InputRightElement>
                     </InputGroup>

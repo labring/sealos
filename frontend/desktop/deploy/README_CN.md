@@ -364,22 +364,42 @@ export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my
 
 ## Helm Chart 参数
 
-| 参数                        | 描述                      | 默认值                                           |
-| --------------------------- | ------------------------- | ------------------------------------------------ |
-| `replicaCount`              | 副本数                    | `1`                                              |
-| `image`                     | 容器镜像                  | `ghcr.io/labring/sealos-desktop-frontend:latest` |
-| `imagePullPolicy`           | 镜像拉取策略              | `IfNotPresent`                                   |
-| `fullnameOverride`          | 覆盖完整资源名称          | `sealos-desktop`                                 |
-| `serviceAccount.create`     | 创建服务账号              | `true`                                           |
-| `serviceAccount.name`       | 服务账号名称              | `desktop-frontend`                               |
-| `service.port`              | 服务端口                  | `3000`                                           |
-| `resources.requests.cpu`    | CPU 请求                  | `100m`                                           |
-| `resources.requests.memory` | 内存请求                  | `128Mi`                                          |
-| `resources.limits.cpu`      | CPU 限制                  | `2000m`                                          |
-| `resources.limits.memory`   | 内存限制                  | `2048Mi`                                         |
-| `ingress.enabled`           | 启用 Ingress              | `true`                                           |
-| `ingress.className`         | Ingress 类                | `nginx`                                          |
-| `autoConfigEnabled`         | 从 sealos-config 自动配置 | `true`                                           |
+| 参数                                                       | 描述                        | 默认值                                           |
+| ---------------------------------------------------------- | --------------------------- | ------------------------------------------------ |
+| `replicaCount`                                             | 副本数                      | `1`                                              |
+| `image`                                                    | 容器镜像                    | `ghcr.io/labring/sealos-desktop-frontend:latest` |
+| `imagePullPolicy`                                          | 镜像拉取策略                | `IfNotPresent`                                   |
+| `fullnameOverride`                                         | 覆盖完整资源名称            | `sealos-desktop`                                 |
+| `serviceAccount.create`                                    | 创建服务账号                | `true`                                           |
+| `serviceAccount.name`                                      | 服务账号名称                | `desktop-frontend`                               |
+| `service.port`                                             | 服务端口                    | `3000`                                           |
+| `ciliumNetworkPolicy.enabled`                              | 限制 Desktop 的入站访问     | `false`                                          |
+| `ciliumNetworkPolicy.trustedCallers[0].namespace`          | Account Controller 命名空间 | `account-system`                                 |
+| `ciliumNetworkPolicy.trustedCallers[0].serviceAccountName` | Account Controller 服务账号 | `account-controller-manager`                     |
+| `ciliumNetworkPolicy.trustedCallers[1].namespace`          | Costcenter 命名空间         | `costcenter-frontend`                            |
+| `ciliumNetworkPolicy.trustedCallers[1].serviceAccountName` | Costcenter 服务账号         | `default`                                        |
+| `resources.requests.cpu`                                   | CPU 请求                    | `100m`                                           |
+| `resources.requests.memory`                                | 内存请求                    | `128Mi`                                          |
+| `resources.limits.cpu`                                     | CPU 限制                    | `2000m`                                          |
+| `resources.limits.memory`                                  | 内存限制                    | `2048Mi`                                         |
+| `ingress.enabled`                                          | 启用 Ingress                | `true`                                           |
+| `ingress.className`                                        | Ingress 类                  | `nginx`                                          |
+| `autoConfigEnabled`                                        | 从 sealos-config 自动配置   | `true`                                           |
+
+Chart 默认不创建入站网络策略。如果没有其他网络策略选择 Desktop，则所有 Pod
+都可以连接该服务；绕过 Higress 的调用方也可以自行设置 `X-Real-IP` 等转发头。
+使用网关提供的客户端 IP 实施安全控制时，必须启用此策略或提供等价的流量隔离。
+
+将 `ciliumNetworkPolicy.enabled` 设置为 `true` 时，集群必须提供
+`cilium.io/v2/CiliumNetworkPolicy` CRD，否则 Helm 将终止安装。该策略允许
+节点上运行的网关（Cilium `host` 和 `remote-node` 身份）及
+`ciliumNetworkPolicy.trustedCallers` 中配置的 namespace + ServiceAccount 访问 Desktop
+的 TCP 3000 端口，其他应用 Pod 不能直接访问。
+
+Costcenter 和 Account Controller 保持通过 ClusterIP 调用 Desktop，必须加入
+`trustedCallers`。如果它们的 namespace 或 ServiceAccount 发生变化，应先更新并验证
+策略，再发布调用方；其他未受信任的集群内调用方必须迁移到公网 HTTPS 网关。
+回滚时不得先移除仍在使用 ClusterIP 的调用方白名单，否则对应功能会不可用。
 
 ## 故障排查
 

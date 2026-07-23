@@ -5,7 +5,7 @@ import { OAuth2AuthorizeContextResponse } from '@/schema/oauth2';
 import { SmsType } from '@/services/backend/db/verifyCode';
 import { RegionResourceType } from '@/services/backend/svc/checkResource';
 import request from '@/services/request';
-import { ApiResp, Region } from '@/types';
+import { ApiResp, Region, VerificationChallenge } from '@/types';
 import { AdClickData } from '@/types/adClick';
 import { BIND_STATUS } from '@/types/response/bind';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
@@ -79,40 +79,58 @@ export const _regionList = (request: AxiosInstance) => () =>
   >('/api/auth/regionList');
 const _getSmsBindCodeRequest =
   (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; cfToken?: string }) =>
-    request.post<typeof data, ApiResp>(`/api/auth/${smsType}/bind/sms`, data);
+    request.post<typeof data, ApiResp<VerificationChallenge>>(
+      `/api/auth/${smsType}/bind/sms`,
+      data
+    );
 
 export const _verifySmsBindRequest =
-  (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; code: string }) =>
+  (request: AxiosInstance) =>
+  (smsType: SmsType) =>
+  (data: { id: string; code: string; challengeId: string }) =>
     request.post<
       typeof data,
       ApiResp<{ code: string | null | undefined }, ValueOf<typeof BIND_STATUS>>
     >(`/api/auth/${smsType}/bind/verify`, data);
 
 export const _verifySmsUnbindRequest =
-  (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; code: string }) =>
+  (request: AxiosInstance) =>
+  (smsType: SmsType) =>
+  (data: { id: string; code: string; challengeId: string }) =>
     request.post<typeof data, ApiResp>(`/api/auth/${smsType}/unbind/verify`, data);
 export const _getSmsUnbindCodeRequest =
   (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; cfToken?: string }) =>
-    request.post<typeof data, ApiResp>(`/api/auth/${smsType}/unbind/sms`, data);
+    request.post<typeof data, ApiResp<VerificationChallenge>>(
+      `/api/auth/${smsType}/unbind/sms`,
+      data
+    );
 export const _verifyOldSmsRequest =
-  (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; code: string }) =>
+  (request: AxiosInstance) =>
+  (smsType: SmsType) =>
+  (data: { id: string; code: string; challengeId: string }) =>
     request.post<typeof data, ApiResp<{ uid: string }>>(
       `/api/auth/${smsType}/changeBinding/verifyOld`,
       data
     );
 export const _getOldSmsCodeRequest =
   (request: AxiosInstance) => (smsType: SmsType) => (data: { id: string; cfToken?: string }) =>
-    request.post<typeof data, ApiResp>(`/api/auth/${smsType}/changeBinding/oldSms`, data);
+    request.post<typeof data, ApiResp<VerificationChallenge>>(
+      `/api/auth/${smsType}/changeBinding/oldSms`,
+      data
+    );
 export const _verifyNewSmsRequest =
   (request: AxiosInstance) =>
   (smsType: SmsType) =>
-  (data: { id: string; code: string; uid: string }) =>
+  (data: { id: string; code: string; uid: string; challengeId: string }) =>
     request.post<typeof data, ApiResp>(`/api/auth/${smsType}/changeBinding/verifyNew`, data);
 export const _getNewSmsCodeRequest =
   (request: AxiosInstance) =>
   (smsType: SmsType) =>
   (data: { id: string; cfToken?: string; uid: string }) =>
-    request.post<typeof data, ApiResp>(`/api/auth/${smsType}/changeBinding/newSms`, data);
+    request.post<typeof data, ApiResp<VerificationChallenge>>(
+      `/api/auth/${smsType}/changeBinding/newSms`,
+      data
+    );
 
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>

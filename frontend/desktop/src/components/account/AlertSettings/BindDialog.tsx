@@ -14,7 +14,7 @@ interface BindDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   type: 'phone' | 'email';
-  onConfirm?: (value: string, code: string) => Promise<void>;
+  onConfirm?: (value: string, code: string, challengeId: string) => Promise<void>;
   userPhone?: string;
   userEmail?: string;
 }
@@ -30,6 +30,7 @@ export function BindDialog({
   const { t } = useTranslation();
   const [value, setValue] = useState('');
   const [code, setCode] = useState('');
+  const [challengeId, setChallengeId] = useState('');
   const [valueError, setValueError] = useState('');
   const [codeError, setCodeError] = useState('');
   const [cooldown, setCooldown] = useState(0);
@@ -48,6 +49,7 @@ export function BindDialog({
       // Reset all state when dialog closes
       setValue('');
       setCode('');
+      setChallengeId('');
       setValueError('');
       setCodeError('');
       setCooldown(0);
@@ -109,14 +111,16 @@ export function BindDialog({
     try {
       if (type === 'phone') {
         const res = await sendAlertBindPhoneCode({ id: value });
-        if (res.code !== 200) {
+        if (res.code !== 200 || !res.data?.challengeId) {
           throw new Error(res.message || t('common:alert_settings.bind.send_code_failed'));
         }
+        setChallengeId(res.data.challengeId);
       } else {
         const res = await sendAlertBindEmailCode({ id: value });
-        if (res.code !== 200) {
+        if (res.code !== 200 || !res.data?.challengeId) {
           throw new Error(res.message || t('common:alert_settings.bind.send_code_failed'));
         }
+        setChallengeId(res.data.challengeId);
       }
       setCooldown(60);
       toast({ title: t('common:alert_settings.bind.code_sent'), status: 'success' });
@@ -162,7 +166,7 @@ export function BindDialog({
       }
     }
 
-    if (!code) {
+    if (!code || !challengeId) {
       setCodeError(t('common:alert_settings.bind.code_required'));
       hasError = true;
     }
@@ -174,9 +178,10 @@ export function BindDialog({
     setVerifying(true);
     setCodeError('');
     try {
-      await onConfirm?.(value, code);
+      await onConfirm?.(value, code, challengeId);
       setValue('');
       setCode('');
+      setChallengeId('');
       setValueError('');
       setCodeError('');
       onOpenChange?.(false);
@@ -209,6 +214,7 @@ export function BindDialog({
   const handleClose = () => {
     setValue('');
     setCode('');
+    setChallengeId('');
     setValueError('');
     setCodeError('');
     setCooldown(0);
@@ -266,8 +272,8 @@ export function BindDialog({
                   {sendingCode
                     ? t('common:alert_settings.bind.sending')
                     : cooldown > 0
-                      ? t('common:alert_settings.bind.resend', { count: cooldown })
-                      : t('common:alert_settings.bind.send_code')}
+                    ? t('common:alert_settings.bind.resend', { count: cooldown })
+                    : t('common:alert_settings.bind.send_code')}
                 </button>
               </div>
               {valueError && <p className="text-sm leading-5 text-red-600">{valueError}</p>}

@@ -31,6 +31,17 @@ securityContext:
 service:
   port: 3000
 
+# Opt in to restricting Desktop ingress to node-hosted Higress gateways and
+# explicitly trusted internal callers. When disabled, this chart creates no
+# ingress policy; absent another policy, every pod can connect to Desktop.
+ciliumNetworkPolicy:
+  enabled: false
+  trustedCallers:
+    - namespace: account-system
+      serviceAccountName: account-controller-manager
+    - namespace: costcenter-frontend
+      serviceAccountName: default
+
 # Auto configure from sealos-system configmap
 autoConfigEnabled: true
 

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { Config } from '@/config';
+import { createWorkspaceViaDesktop, DesktopRequestError } from '@/service/backend/desktop';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import {
@@ -47,73 +48,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Step 1: Create workspace if needed
     if (createWorkspace) {
       try {
-        const desktopUrl = Config().costCenter.components.desktop.url;
         const internalToken = req.body.internalToken;
-        if (!desktopUrl) {
-          return jsonRes(res, {
-            code: 500,
-            message: 'Desktop URL is not set'
-          });
-        }
         if (!internalToken) {
           return jsonRes(res, {
             code: 401,
             message: 'Unauthorized'
           });
         }
-        console.log(
-          'internalToken',
+        finalWorkspace = await createWorkspaceViaDesktop({
+          origin: Config().costCenter.components.desktop.url,
           internalToken,
-          desktopUrl,
-          `${desktopUrl}/api/auth/namespace/create`
-        );
-        const createWorkspaceResponse = await fetch(`${desktopUrl}/api/auth/namespace/create`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `${internalToken}`
-          },
-          body: JSON.stringify({
-            teamName: createWorkspace.teamName,
-            userType: createWorkspace.userType
-          })
+          teamName: createWorkspace.teamName,
+          userType: createWorkspace.userType
         });
-        console.log('createWorkspaceResponse', createWorkspaceResponse);
-
-        const workspaceData: {
-          code: number;
-          message: string;
-          data: {
-            namespace: {
-              id: string; // namespace id ns-xxxx
-              createTime: Date;
-              role: string;
-              uid: string;
-              nstype: string;
-              teamName: string; // team name without the 'ns-' prefix
-            };
-          };
-        } = await createWorkspaceResponse.json();
-        console.log('workspaceData', workspaceData);
-
-        if (workspaceData.code !== 200) {
+      } catch (error) {
+        console.error('Create workspace error:', error);
+        if (error instanceof DesktopRequestError) {
           return jsonRes(res, {
-            code: 409,
-            message:
-              'The new space has the same name as the existing space, please modify it and try again.'
+            code: error.code,
+            message: error.message
           });
         }
-
-        finalWorkspace = workspaceData.data?.namespace?.id;
-
-        if (!finalWorkspace) {
-          throw new Error('Failed to get workspace ID from creation response');
-        }
-      } catch (error: any) {
-        console.error('Create workspace error:', error);
         return jsonRes(res, {
-          code: 500,
-          message: error.message || 'Failed to create workspace'
+          code: 502,
+          message: 'Failed to create workspace'
         });
       }
     }
@@ -154,14 +112,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       requestBody.promotionCode = promotionCode;
     }
 
-    console.log('requestBody', requestBody);
     const response = (await client.post<PaymentResponse>(
       '/account/v1alpha1/workspace-subscription/pay',
       requestBody,
       { headers }
     )) as { data: PaymentResponse };
-
-    console.log('response', response.data);
 
     return jsonRes<PaymentResponse>(res, {
       data: response.data

@@ -364,22 +364,47 @@ For more details, see [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md).
 
 ## Helm Chart Values
 
-| Parameter                   | Description                    | Default                                          |
-| --------------------------- | ------------------------------ | ------------------------------------------------ |
-| `replicaCount`              | Deployment replica count       | `1`                                              |
-| `image`                     | Container image                | `ghcr.io/labring/sealos-desktop-frontend:latest` |
-| `imagePullPolicy`           | Image pull policy              | `IfNotPresent`                                   |
-| `fullnameOverride`          | Override full resource names   | `sealos-desktop`                                 |
-| `serviceAccount.create`     | Create service account         | `true`                                           |
-| `serviceAccount.name`       | Service account name           | `desktop-frontend`                               |
-| `service.port`              | Service port                   | `3000`                                           |
-| `resources.requests.cpu`    | CPU request                    | `100m`                                           |
-| `resources.requests.memory` | Memory request                 | `128Mi`                                          |
-| `resources.limits.cpu`      | CPU limit                      | `2000m`                                          |
-| `resources.limits.memory`   | Memory limit                   | `2048Mi`                                         |
-| `ingress.enabled`           | Enable ingress                 | `true`                                           |
-| `ingress.className`         | Ingress class                  | `nginx`                                          |
-| `autoConfigEnabled`         | Auto-config from sealos-config | `true`                                           |
+| Parameter                                                  | Description                        | Default                                          |
+| ---------------------------------------------------------- | ---------------------------------- | ------------------------------------------------ |
+| `replicaCount`                                             | Deployment replica count           | `1`                                              |
+| `image`                                                    | Container image                    | `ghcr.io/labring/sealos-desktop-frontend:latest` |
+| `imagePullPolicy`                                          | Image pull policy                  | `IfNotPresent`                                   |
+| `fullnameOverride`                                         | Override full resource names       | `sealos-desktop`                                 |
+| `serviceAccount.create`                                    | Create service account             | `true`                                           |
+| `serviceAccount.name`                                      | Service account name               | `desktop-frontend`                               |
+| `service.port`                                             | Service port                       | `3000`                                           |
+| `ciliumNetworkPolicy.enabled`                              | Restrict inbound access to Desktop | `false`                                          |
+| `ciliumNetworkPolicy.trustedCallers[0].namespace`          | Account Controller namespace       | `account-system`                                 |
+| `ciliumNetworkPolicy.trustedCallers[0].serviceAccountName` | Account Controller service account | `account-controller-manager`                     |
+| `ciliumNetworkPolicy.trustedCallers[1].namespace`          | Costcenter namespace               | `costcenter-frontend`                            |
+| `ciliumNetworkPolicy.trustedCallers[1].serviceAccountName` | Costcenter service account         | `default`                                        |
+| `resources.requests.cpu`                                   | CPU request                        | `100m`                                           |
+| `resources.requests.memory`                                | Memory request                     | `128Mi`                                          |
+| `resources.limits.cpu`                                     | CPU limit                          | `2000m`                                          |
+| `resources.limits.memory`                                  | Memory limit                       | `2048Mi`                                         |
+| `ingress.enabled`                                          | Enable ingress                     | `true`                                           |
+| `ingress.className`                                        | Ingress class                      | `nginx`                                          |
+| `autoConfigEnabled`                                        | Auto-config from sealos-config     | `true`                                           |
+
+The chart does not create an ingress policy by default. Unless another network
+policy selects Desktop, all pods can connect to the service and callers that
+bypass Higress can supply forwarding headers such as `X-Real-IP` themselves.
+Deployments that use gateway-derived client IPs for security controls must
+enable this policy or enforce equivalent traffic isolation.
+
+When `ciliumNetworkPolicy.enabled` is set to `true`, the cluster must provide the
+`cilium.io/v2/CiliumNetworkPolicy` CRD or Helm stops the installation. The
+policy allows the node-hosted gateway (`host` and `remote-node` Cilium
+identities) and the namespace + service account pairs configured in
+`ciliumNetworkPolicy.trustedCallers` to reach Desktop on TCP port 3000. Direct
+traffic from other application pods is denied.
+
+Costcenter and Account Controller continue to call Desktop through its
+ClusterIP and must be included in `trustedCallers`. If either namespace or
+service account changes, update and verify the policy before rolling out the
+caller. Other untrusted in-cluster callers must migrate to the public HTTPS
+gateway. During a rollback, do not remove an allowlist entry while its caller
+still uses the ClusterIP.
 
 ## Troubleshooting
 

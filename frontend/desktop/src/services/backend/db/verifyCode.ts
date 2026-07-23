@@ -1,5 +1,6 @@
 import { v4 } from 'uuid';
 import { connectToDatabase } from './mongodb';
+
 export type SmsType =
   | 'phone'
   | 'phone_login'
@@ -15,24 +16,45 @@ export type SmsType =
   | 'email_change_old'
   | 'email_change_new'
   | 'alert_bind_email';
+
 export type TVerification_Codes = {
   id: string;
   smsType: SmsType;
   code: string;
   uid: string;
+  challengeId: string;
   createdAt: Date;
+  attemptCount?: number;
 };
+
+export const VERIFICATION_CODE_TTL_MS = 5 * 60_000;
+export const VERIFICATION_CODE_RESEND_MS = 60_000;
+export const MAX_VERIFICATION_ATTEMPTS = 10;
+
+const indexInitializations = new WeakMap<object, Promise<void>>();
 
 async function connectToCollection() {
   const client = await connectToDatabase();
   const collection = client.db().collection<TVerification_Codes>('sms_verification_codes');
-  await collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 5 });
-  await collection.createIndex({ uid: 1 }, { unique: true });
-  await collection.createIndex({ id: 1, smsType: 1 }, { unique: true });
+  let initialization = indexInitializations.get(client);
+  if (!initialization) {
+    initialization = Promise.all([
+      collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 5 }),
+      collection.createIndex({ uid: 1 }, { unique: true }),
+      collection.createIndex({ challengeId: 1 }, { unique: true, sparse: true }),
+      collection.createIndex({ id: 1, smsType: 1 }, { unique: true })
+    ])
+      .then(() => undefined)
+      .catch((error) => {
+        indexInitializations.delete(client);
+        throw error;
+      });
+    indexInitializations.set(client, initialization);
+  }
+  await initialization;
   return collection;
 }
 
-// addOrUpdateCode
 export async function addOrUpdateCode({
   id,
   smsType,
@@ -43,68 +65,115 @@ export async function addOrUpdateCode({
   smsType: SmsType;
 }) {
   const codes = await connectToCollection();
-  const result = await codes.updateOne(
-    {
-      id,
-      smsType
-    },
+  const uid = v4();
+  const challengeId = v4();
+  await codes.updateOne(
+    { id, smsType },
     {
       $set: {
+        id,
+        smsType,
         code,
-        createdAt: new Date(),
-        uid: v4()
+        uid,
+        challengeId,
+        attemptCount: 0,
+        createdAt: new Date()
       }
     },
-    {
-      upsert: true
-    }
+    { upsert: true }
   );
-  return result;
+  return { uid, challengeId };
 }
-// checkCode
+
 export async function checkSendable({ id, smsType }: { id: string; smsType: SmsType }) {
   const codes = await connectToCollection();
   const result = await codes.findOne({
     id,
     smsType,
-    createdAt: {
-      $gt: new Date(new Date().getTime() - 60 * 1000)
-    }
+    createdAt: { $gt: new Date(Date.now() - VERIFICATION_CODE_RESEND_MS) }
   });
   return !result;
 }
-// checkCode
-export async function checkCode({
+
+export type VerifyCodeResult =
+  | { status: 'verified'; smsInfo: TVerification_Codes }
+  | { status: 'invalid'; remainingAttempts: number }
+  | { status: 'locked'; retryAfter: number }
+  | { status: 'expired' };
+
+const retryAfterFor = (createdAt: Date, now: Date) =>
+  Math.max(
+    0,
+    Math.ceil((createdAt.getTime() + VERIFICATION_CODE_RESEND_MS - now.getTime()) / 1000)
+  );
+
+export async function verifyAndConsumeCode({
   id,
   smsType,
-  code
+  code,
+  challengeId
 }: {
   id: string;
-  code: string;
   smsType: SmsType;
-}) {
+  code: string;
+  challengeId: string;
+}): Promise<VerifyCodeResult> {
   const codes = await connectToCollection();
-  const result = await codes.findOne({
+  const now = new Date();
+  const baseFilter = {
     id,
     smsType,
-    code,
-    createdAt: {
-      $gt: new Date(new Date().getTime() - 5 * 60 * 1000)
+    challengeId
+  };
+  const usableFilter = {
+    ...baseFilter,
+    createdAt: { $gt: new Date(now.getTime() - VERIFICATION_CODE_TTL_MS) },
+    $or: [
+      { attemptCount: { $lt: MAX_VERIFICATION_ATTEMPTS } },
+      { attemptCount: { $exists: false } }
+    ]
+  };
+
+  const verified = await codes.findOneAndDelete({ ...usableFilter, code });
+  if (verified.value) {
+    return { status: 'verified', smsInfo: verified.value };
+  }
+
+  const invalid = await codes.findOneAndUpdate(
+    { ...usableFilter, code: { $ne: code } },
+    { $inc: { attemptCount: 1 } },
+    { returnDocument: 'after' }
+  );
+  if (invalid.value) {
+    const attemptCount = invalid.value.attemptCount || 0;
+    if (attemptCount >= MAX_VERIFICATION_ATTEMPTS) {
+      return {
+        status: 'locked',
+        retryAfter: retryAfterFor(invalid.value.createdAt, now)
+      };
     }
-  });
-  return result;
+    return {
+      status: 'invalid',
+      remainingAttempts: MAX_VERIFICATION_ATTEMPTS - attemptCount
+    };
+  }
+
+  const current = await codes.findOne(baseFilter);
+  if (!current || current.createdAt <= new Date(now.getTime() - VERIFICATION_CODE_TTL_MS)) {
+    return { status: 'expired' };
+  }
+  if ((current.attemptCount || 0) >= MAX_VERIFICATION_ATTEMPTS) {
+    return { status: 'locked', retryAfter: retryAfterFor(current.createdAt, now) };
+  }
+  return { status: 'expired' };
 }
+
 export async function getInfoByUid({ uid }: { uid: string }) {
   const codes = await connectToCollection();
-  const result = await codes.findOne({
-    uid
-  });
-  return result;
+  return codes.findOne({ uid });
 }
+
 export async function deleteByUid({ uid }: { uid: string }) {
   const codes = await connectToCollection();
-  const result = await codes.deleteOne({
-    uid
-  });
-  return result;
+  return codes.deleteOne({ uid });
 }
