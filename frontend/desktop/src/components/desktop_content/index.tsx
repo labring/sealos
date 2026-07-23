@@ -156,10 +156,11 @@ export default function Desktop() {
 
   const quitGuide = useCallback(
     ({ appKey }: { appKey: string }) => {
+      if (!commonConfig?.guideEnabled) return;
       closeDesktopApp({ appKey });
       guideModal.openGuideModal();
     },
-    [closeDesktopApp, guideModal]
+    [closeDesktopApp, commonConfig?.guideEnabled, guideModal]
   );
 
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
@@ -358,7 +359,7 @@ export default function Desktop() {
 
       {isAppBar ? <AppDock /> : <FloatButton />}
 
-      <GuideModal />
+      {commonConfig?.guideEnabled ? <GuideModal /> : null}
 
       {/* opened apps */}
       {runningInfo.map((process) => {
