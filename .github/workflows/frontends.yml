@@ -86,8 +86,6 @@ jobs:
               - 'frontend/providers/aiproxy/**'
             license:
               - 'frontend/providers/license/**'
-            cronjob:
-              - 'frontend/providers/cronjob/**'
             template:
               - 'frontend/providers/template/**'
             applaunchpad:
@@ -117,7 +115,6 @@ jobs:
             modules=(
               "providers/aiproxy"
               "providers/license"
-              "providers/cronjob"
               "providers/template"
               "providers/applaunchpad"
               "providers/terminal"
@@ -131,7 +128,6 @@ jobs:
             # Only build changed modules
             [[ "${{ steps.filter.outputs.aiproxy }}" == "true" ]] && modules+=("providers/aiproxy")
             [[ "${{ steps.filter.outputs.license }}" == "true" ]] && modules+=("providers/license")
-            [[ "${{ steps.filter.outputs.cronjob }}" == "true" ]] && modules+=("providers/cronjob")
             [[ "${{ steps.filter.outputs.template }}" == "true" ]] && modules+=("providers/template")
             [[ "${{ steps.filter.outputs.applaunchpad }}" == "true" ]] && modules+=("providers/applaunchpad")
             [[ "${{ steps.filter.outputs.terminal }}" == "true" ]] && modules+=("providers/terminal")
