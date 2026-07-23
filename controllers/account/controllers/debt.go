@@ -425,12 +425,12 @@ func (r *DebtReconciler) Start(ctx context.Context) error {
 		}
 	}()
 	log.Printf("debt reconciler lock acquired, process ID: %s", r.processID)
-	r.start()
+	r.start(ctx)
 	log.Printf("debt reconciler started")
 	return nil
 }
 
-func (r *DebtReconciler) start() {
+func (r *DebtReconciler) start(ctx context.Context) {
 	db := r.AccountV2.GetGlobalDB()
 	var wg sync.WaitGroup
 
@@ -533,7 +533,7 @@ func (r *DebtReconciler) start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.syncFinalDeletionDebtNamespacesLoop(db)
+		r.syncFinalDeletionDebtNamespacesLoop(ctx, db)
 	}()
 
 	// 2.1 recharge record processing
@@ -643,9 +643,9 @@ func (r *DebtReconciler) start() {
 	wg.Wait()
 }
 
-func (r *DebtReconciler) syncFinalDeletionDebtNamespacesLoop(db *gorm.DB) {
+func (r *DebtReconciler) syncFinalDeletionDebtNamespacesLoop(ctx context.Context, db *gorm.DB) {
 	run := func() {
-		if err := r.syncFinalDeletionDebtNamespaces(context.Background(), db); err != nil {
+		if err := r.syncFinalDeletionDebtNamespaces(ctx, db); err != nil {
 			r.Error(err, "failed to sync final deletion debt namespaces")
 		}
 	}
@@ -653,8 +653,13 @@ func (r *DebtReconciler) syncFinalDeletionDebtNamespacesLoop(db *gorm.DB) {
 	run()
 	ticker := time.NewTicker(finalDeletionDebtNamespaceSyncInterval)
 	defer ticker.Stop()
-	for range ticker.C {
-		run()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			run()
+		}
 	}
 }
 
