@@ -48,6 +48,8 @@ const (
 	DebtDetectionCycleEnv = "DebtDetectionCycleSeconds"
 
 	finalDeletionDebtNamespaceSyncInterval = 5 * time.Minute
+	finalDeletionDebtNamespaceQueryTimeout = 30 * time.Second
+	flushDebtResourceStatusRequestTimeout  = 30 * time.Second
 
 	SMSAccessKeyIDEnv     = "SMS_AK"
 	SMSAccessKeySecretEnv = "SMS_SK"
@@ -658,7 +660,10 @@ func (r *DebtReconciler) syncFinalDeletionDebtNamespacesLoop(db *gorm.DB) {
 
 func (r *DebtReconciler) syncFinalDeletionDebtNamespaces(ctx context.Context, db *gorm.DB) error {
 	var users []uuid.UUID
-	if err := db.WithContext(ctx).Model(&types.Debt{}).
+	queryCtx, cancel := context.WithTimeout(ctx, finalDeletionDebtNamespaceQueryTimeout)
+	defer cancel()
+
+	if err := db.WithContext(queryCtx).Model(&types.Debt{}).
 		Where("account_debt_status = ?", types.FinalDeletionPeriod).
 		Distinct("user_uid").
 		Pluck("user_uid", &users).Error; err != nil {
@@ -667,7 +672,7 @@ func (r *DebtReconciler) syncFinalDeletionDebtNamespaces(ctx context.Context, db
 
 	var errs []error
 	for _, userUID := range users {
-		if err := r.syncFinalDeletionDebtNamespacesForUser(userUID); err != nil {
+		if err := r.syncFinalDeletionDebtNamespacesForUser(ctx, userUID); err != nil {
 			errMsg := "failed to sync final deletion debt namespaces " +
 				"for user %s: %w"
 			errs = append(errs, fmt.Errorf(errMsg, userUID, err))
@@ -679,8 +684,11 @@ func (r *DebtReconciler) syncFinalDeletionDebtNamespaces(ctx context.Context, db
 	return errors.Join(errs...)
 }
 
-func (r *DebtReconciler) syncFinalDeletionDebtNamespacesForUser(userUID uuid.UUID) error {
-	return r.sendFlushDebtResourceStatusRequest(finalDeletionDebtNamespaceFlushReq(userUID))
+func (r *DebtReconciler) syncFinalDeletionDebtNamespacesForUser(ctx context.Context, userUID uuid.UUID) error {
+	return r.sendFlushDebtResourceStatusRequestWithContext(
+		ctx,
+		finalDeletionDebtNamespaceFlushReq(userUID),
+	)
 }
 
 func finalDeletionDebtNamespaceFlushReq(userUID uuid.UUID) AdminFlushResourceStatusReq {
@@ -1002,6 +1010,17 @@ type AdminFlushResourceStatusReq struct {
 func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(
 	quotaReq AdminFlushResourceStatusReq,
 ) error {
+	return r.sendFlushDebtResourceStatusRequestWithContext(context.Background(), quotaReq)
+}
+
+func (r *DebtReconciler) sendFlushDebtResourceStatusRequestWithContext(
+	ctx context.Context,
+	quotaReq AdminFlushResourceStatusReq,
+) error {
+	client := http.Client{
+		Timeout: flushDebtResourceStatusRequestTimeout,
+	}
+
 	for _, domain := range r.allRegionDomain {
 		token, err := r.jwtManager.GenerateToken(utils.JwtUser{
 			Requester: AdminUserName,
@@ -1029,14 +1048,18 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(
 
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(quotaReqBody))
+			req, err := http.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				url,
+				bytes.NewBuffer(quotaReqBody),
+			)
 			if err != nil {
 				return fmt.Errorf("failed to create request: %w", err)
 			}
 
 			req.Header.Set("Authorization", "Bearer "+token)
 			req.Header.Set("Content-Type", "application/json")
-			client := http.Client{}
 
 			resp, err := client.Do(req)
 			if err != nil {
