@@ -13,7 +13,7 @@ import { track } from '@sealos/gtm';
 
 function GlobalAnnouncementComponent() {
   const { i18n, t } = useTranslation();
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, commonConfig } = useConfigStore();
   const { isGuest } = useSessionStore();
   const { openGuideModal } = useGuideModalStore();
 
@@ -55,7 +55,7 @@ function GlobalAnnouncementComponent() {
     onClick = () => {};
   } else {
     // Show guide message (fallback)
-    if (isGuest()) {
+    if (isGuest() || !commonConfig?.guideEnabled) {
       return null;
     }
     content = t('v2:onboard_guide');

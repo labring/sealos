@@ -5,7 +5,7 @@ import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindi
 import { trackEventName } from '@/constants/account';
 import { useSemParams } from '@/hooks/useSemParams';
 import { useLicenseCheck } from '@/hooks/useLicenseCheck';
-import useAppStore from '@/stores/app';
+import useAppStore, { BRAIN_APP_KEY, SESSION_RESTORE_APP_KEY } from '@/stores/app';
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
@@ -15,6 +15,8 @@ import { SemData } from '@/types/sem';
 import { NSType } from '@/types/team';
 import { AccessTokenPayload } from '@/types/token';
 import { parseOpenappQuery } from '@/utils/format';
+import { resolveInitialAppTarget } from '@/utils/initialAppTarget';
+import type { InitialAppLaunchState } from '@/utils/initialAppTarget';
 import { sessionConfig, setAdClickData, setUserSemData } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
@@ -27,7 +29,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
-import { createContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import 'react-contexify/dist/ReactContexify.css';
 
 const destination = '/signin';
@@ -55,6 +57,11 @@ interface IMoreAppsContext {
 }
 export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
 
+type InitialOpenAppIntent = {
+  hasOpenAppQuery: boolean;
+  value: string;
+};
+
 export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: string }) {
   const router = useRouter();
   const { firstUse, setFirstUse, isUserLogin, setGuestSession, setSessionProp } = useSessionStore();
@@ -67,6 +74,18 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
   const { setCanShowGuide } = useDesktopConfigStore();
   const { setCaptchaIsLoad } = useScriptStore();
+  const [initialAppLaunch, setInitialAppLaunch] = useState<InitialAppLaunchState>({
+    status: 'resolving'
+  });
+  const initialOpenAppIntentRef = useRef<InitialOpenAppIntent | null>(null);
+  const initialLaunchResolvedRef = useRef(false);
+  const initialLaunchInFlightRef = useRef(false);
+
+  const handleInitialAppLoaded = useCallback((appKey: string) => {
+    setInitialAppLaunch((current) =>
+      current.status === 'loading' && current.appKey === appKey ? { status: 'ready' } : current
+    );
+  }, []);
 
   // Initialize license check after user login
   useLicenseCheck({
@@ -145,29 +164,160 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
 
   // openApp by query && switch workspace
   useEffect(() => {
+    if (!router.isReady || initialLaunchResolvedRef.current || initialLaunchInFlightRef.current) {
+      return;
+    }
+
+    if (!initialOpenAppIntentRef.current) {
+      initialOpenAppIntentRef.current = {
+        hasOpenAppQuery: Object.hasOwn(router.query, 'openapp'),
+        value: isString(router.query.openapp) ? router.query.openapp : ''
+      };
+    }
+
     const handleInit = async () => {
+      initialLaunchInFlightRef.current = true;
       const { query } = router;
-      const is_login = isUserLogin();
+      const initialOpenAppIntent = initialOpenAppIntentRef.current;
+      const parsedOpenApp = parseOpenappQuery(initialOpenAppIntent?.value || '');
 
-      if (!is_login) {
-        // check if user has logged in before
-        const hasLoggedInBefore = checkIfEverLoggedIn();
-        console.log('hasLoggedInBefore', hasLoggedInBefore);
-        setFirstUse(null);
+      const completeWithDesktop = () => {
+        initialLaunchResolvedRef.current = true;
+        setCanShowGuide(true);
+        setInitialAppLaunch({ status: 'ready' });
+      };
 
-        const { appkey, appQuery, appPath } = parseOpenappQuery((query?.openapp as string) || '');
-
-        // save autolaunch info (for guest and logged in user)
-        let workspaceUid: string | undefined;
-        if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
-        if (appkey && (appQuery || appPath)) {
-          setAutoLaunch(appkey, { raw: appQuery, pathname: appPath }, workspaceUid);
+      const openInitialApp = async ({
+        state,
+        appKey,
+        raw = '',
+        pathname = '/',
+        cancelAutoLaunch = false
+      }: {
+        state: Awaited<ReturnType<typeof init>>;
+        appKey: string;
+        raw?: string;
+        pathname?: string;
+        cancelAutoLaunch?: boolean;
+      }) => {
+        const app = state.installedApps.find((item) => item.key === appKey);
+        if (!app) {
+          completeWithDesktop();
+          return;
         }
 
-        if (hasLoggedInBefore) {
-          // logged in user (logged out) → redirect to login page
-          router.replace('/signin');
-        } else {
+        let appQuery = raw;
+        let appRoute = pathname;
+        if (appKey === BRAIN_APP_KEY && appRoute === '/trial') {
+          appRoute = '/';
+          if (appQuery) {
+            const params = new URLSearchParams(appQuery);
+            params.delete('sessionId');
+            appQuery = params.toString();
+          }
+        }
+
+        const wasAlreadyRunning = state.runningInfo.some((item) => item.key === appKey);
+        initialLaunchResolvedRef.current = true;
+        setCanShowGuide(false);
+        setInitialAppLaunch({ status: 'loading', appKey });
+
+        try {
+          await state.openApp(app, { raw: appQuery, pathname: appRoute });
+          if (cancelAutoLaunch) {
+            state.cancelAutoLaunch();
+          }
+
+          const isRunning = useAppStore.getState().runningInfo.some((item) => item.key === appKey);
+          if (wasAlreadyRunning || !isRunning) {
+            setInitialAppLaunch({ status: 'ready' });
+          }
+        } catch (error) {
+          console.error(`Failed to open initial app ${appKey}`, error);
+          setInitialAppLaunch({ status: 'ready' });
+        }
+      };
+
+      const resolveAndOpenInitialApp = async (
+        state: Awaited<ReturnType<typeof init>>,
+        guestMode: boolean
+      ) => {
+        const target = resolveInitialAppTarget({
+          installedAppKeys: state.installedApps.map((app) => app.key),
+          autolaunchAppKey: state.autolaunch,
+          hasOpenAppQuery: initialOpenAppIntent?.hasOpenAppQuery || false,
+          queryAppKey: parsedOpenApp.appkey,
+          restoreAppKeys: [
+            state.currentAppKey,
+            sessionStorage.getItem(SESSION_RESTORE_APP_KEY) || undefined
+          ],
+          defaultAppKey: BRAIN_APP_KEY,
+          allowedAppKeys: guestMode ? [BRAIN_APP_KEY] : undefined
+        });
+
+        if (
+          target.source === 'query' ||
+          (target.kind === 'desktop' &&
+            target.source === 'explicit-unavailable' &&
+            initialOpenAppIntent?.value)
+        ) {
+          void router.replace(router.pathname, undefined, { shallow: true });
+        }
+
+        if (target.kind === 'desktop') {
+          if (target.source === 'explicit-desktop') {
+            sessionStorage.removeItem(SESSION_RESTORE_APP_KEY);
+          }
+          completeWithDesktop();
+          return;
+        }
+
+        let raw = '';
+        let pathname = '/';
+        if (target.source === 'autolaunch') {
+          raw = state.launchQuery.raw || '';
+          pathname = state.launchQuery.pathname || '';
+        } else if (target.source === 'query') {
+          raw = parsedOpenApp.appQuery;
+          pathname = parsedOpenApp.appPath || '';
+        }
+
+        await openInitialApp({
+          state,
+          appKey: target.appKey,
+          raw,
+          pathname,
+          cancelAutoLaunch: target.source === 'autolaunch' || target.source === 'query'
+        });
+      };
+
+      try {
+        const is_login = isUserLogin();
+
+        if (!is_login) {
+          // check if user has logged in before
+          const hasLoggedInBefore = checkIfEverLoggedIn();
+          console.log('hasLoggedInBefore', hasLoggedInBefore);
+          setFirstUse(null);
+
+          // save autolaunch info (for guest and logged in user)
+          let workspaceUid: string | undefined;
+          if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
+          if (parsedOpenApp.appkey && (parsedOpenApp.appQuery || parsedOpenApp.appPath)) {
+            setAutoLaunch(
+              parsedOpenApp.appkey,
+              { raw: parsedOpenApp.appQuery, pathname: parsedOpenApp.appPath },
+              workspaceUid
+            );
+          }
+
+          if (hasLoggedInBefore) {
+            // logged in user (logged out) → redirect to login page
+            initialLaunchResolvedRef.current = true;
+            await router.replace('/signin');
+            return;
+          }
+
           // Set guest session by default to prevent requests from being blocked while the config is loading
           const isGuest = useSessionStore.getState().isGuest();
           if (!isGuest) {
@@ -180,151 +330,111 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           if (layoutConfig.common.guestModeEnabled !== true) {
             // Clear guest session
             useSessionStore.getState().delSession();
-            return router.replace('/signin');
+            initialLaunchResolvedRef.current = true;
+            await router.replace('/signin');
+            return;
           }
 
           // Guest mode enabled, continue guest session process
           const state = await init();
-          if (appkey) {
-            const guestAllowedApps = ['system-brain'];
-            if (guestAllowedApps.includes(appkey)) {
-              const app = state.installedApps.find((item) => item.key === appkey);
-              if (app) {
-                console.log(`Guest mode: Opening app ${appkey}`);
-                state.openApp(app, { raw: appQuery, pathname: appPath }).then(() => {
-                  state.cancelAutoLaunch();
-                });
-              }
-            }
-          }
+          await resolveAndOpenInitialApp(state, true);
           return;
         }
-      } else {
+
         useSessionStore.getState().setHasEverLoggedIn(true);
-      }
-      // Check for Stripe callback with workspace switch
-      const isStripeCallback = query?.stripeState === 'success' && query?.payId;
-      // logged in user logic
-      let workspaceUid: string | undefined;
 
-      // For Stripe callback, convert namespace (ns-xxx) to workspace UID
-      if (isStripeCallback && isString(query?.workspaceId)) {
-        // query.workspaceId contains the namespace (e.g., "ns-abc123")
-        // Find the corresponding workspace object to get the UID
-        const targetWorkspace = workspaces.find((w) => w.id === query.workspaceId);
-        workspaceUid = targetWorkspace?.uid;
-      } else if (!autolaunchWorkspaceUid) {
-        // Use workspace UID from query if no autolaunch (backwards compatibility)
-        if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
-      } else {
-        // Use autolaunch workspace UID if available
-        workspaceUid = autolaunchWorkspaceUid;
-      }
+        // Check for Stripe callback with workspace switch
+        const isStripeCallback = query?.stripeState === 'success' && !!query?.payId;
+        let workspaceUid: string | undefined;
 
-      Promise.resolve()
-        .then(() => {
-          // Handle Stripe callback - workspace switch required
-          if (isStripeCallback && workspaceUid) {
-            // Create callback action to execute after workspace switch
-            const afterSwitchAction = async () => {
-              const state = await init();
+        // workspaceId is a namespace, so wait until the namespace-to-UID mapping is available.
+        if (isStripeCallback && isString(query?.workspaceId) && workspaceQuery.isLoading) {
+          return;
+        }
 
-              // Build query parameters for costcenter
-              const callbackParams = new URLSearchParams();
-              callbackParams.set('stripeState', 'success');
-              callbackParams.set('payId', query.payId as string);
-              if (query.workspaceId) {
-                callbackParams.set('workspaceId', query.workspaceId as string);
-              }
+        // For Stripe callback, convert namespace (ns-xxx) to workspace UID
+        if (isStripeCallback && isString(query?.workspaceId)) {
+          // query.workspaceId contains the namespace (e.g., "ns-abc123")
+          // Find the corresponding workspace object to get the UID
+          const targetWorkspace = workspaces.find((w) => w.id === query.workspaceId);
+          workspaceUid = targetWorkspace?.uid;
+        } else if (!autolaunchWorkspaceUid) {
+          // Use workspace UID from query if no autolaunch (backwards compatibility)
+          if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
+        } else {
+          // Use autolaunch workspace UID if available
+          workspaceUid = autolaunchWorkspaceUid;
+        }
 
-              // Open costcenter with callback parameters
-              const app = state.installedApps.find((item) => item.key === 'system-costcenter');
-              if (app) {
-                setCanShowGuide(false);
-                await state.openApp(app, { raw: callbackParams.toString() });
-              }
-
-              // Clear the URL parameters to avoid re-triggering
-              router.replace(router.pathname, undefined, { shallow: true });
-            };
-
-            // Switch workspace with callback action
-            return swtichWorksapceMutation
-              .mutateAsync(workspaceUid)
-              .then(() => {
-                // Execute callback action after workspace switch completes
-                return afterSwitchAction();
-              })
-              .catch((err) => {
-                console.error(err);
-                return Promise.resolve();
-              });
+        if (isStripeCallback) {
+          if (!workspaceUid) {
+            completeWithDesktop();
+            return;
           }
 
-          // Handle normal workspace switch (non-Stripe)
-          if (workspaceUid) {
-            return swtichWorksapceMutation
-              .mutateAsync(workspaceUid)
-              .then(() => {
-                return Promise.resolve();
-              })
-              .catch((err) => {
-                // workspace not found or other error
-                console.error(err);
-                return Promise.resolve();
-              });
+          try {
+            await swtichWorksapceMutation.mutateAsync(workspaceUid);
+          } catch (error) {
+            console.error(error);
+            completeWithDesktop();
+            return;
           }
 
-          return Promise.resolve();
-        })
-        .then(() => {
-          // Skip normal app opening logic if this is a Stripe callback
-          if (isStripeCallback) return;
-
-          return init();
-        })
-        .then(async (state) => {
-          // Skip normal app opening logic if this is a Stripe callback
-          if (isStripeCallback || !state) return;
-
-          let appQuery = '';
-          let appkey = '';
-          let appRoute = '';
-
-          if (!state.autolaunch) {
-            setCanShowGuide(true);
-            const result = parseOpenappQuery((query?.openapp as string) || '');
-            appQuery = result.appQuery;
-            appkey = result.appkey;
-            appRoute = result.appPath || '';
-            if (!!query.openapp) router.replace(router.pathname);
-          } else {
-            appkey = state.autolaunch;
-            appQuery = state.launchQuery.raw || '';
-            appRoute = state.launchQuery.pathname || '';
+          const state = await init();
+          const callbackParams = new URLSearchParams();
+          callbackParams.set('stripeState', 'success');
+          callbackParams.set('payId', query.payId as string);
+          if (query.workspaceId) {
+            callbackParams.set('workspaceId', query.workspaceId as string);
           }
 
-          if (!appkey) return;
-          if (appkey === 'system-brain' && appRoute === '/trial') {
-            appRoute = '/';
-            // Remove sessionId from appQuery but keep other parameters
-            if (appQuery) {
-              const params = new URLSearchParams(appQuery);
-              params.delete('sessionId');
-              appQuery = params.toString();
-            }
-          }
-          const app = state.installedApps.find((item) => item.key === appkey);
-
-          if (!app) return;
-          setCanShowGuide(false);
-          state.openApp(app, { raw: appQuery, pathname: appRoute }).then(() => {
-            state.cancelAutoLaunch();
+          await openInitialApp({
+            state,
+            appKey: 'system-costcenter',
+            raw: callbackParams.toString()
           });
-        });
+          void router.replace(router.pathname, undefined, { shallow: true });
+          return;
+        }
+
+        // Handle normal workspace switch
+        if (workspaceUid) {
+          try {
+            await swtichWorksapceMutation.mutateAsync(workspaceUid);
+          } catch (error) {
+            // workspace not found or other error
+            console.error(error);
+          }
+        }
+
+        const state = await init();
+        await resolveAndOpenInitialApp(state, false);
+      } catch (error) {
+        console.error('Failed to initialize Desktop', error);
+        if (!initialLaunchResolvedRef.current) {
+          completeWithDesktop();
+        }
+      } finally {
+        initialLaunchInFlightRef.current = false;
+      }
     };
-    handleInit();
-  }, [router, sealos_cloud_domain, workspaces, layoutConfig?.common]);
+    void handleInit();
+  }, [
+    autolaunchWorkspaceUid,
+    init,
+    isUserLogin,
+    layoutConfig?.common,
+    router,
+    router.isReady,
+    sealos_cloud_domain,
+    setAutoLaunch,
+    setCanShowGuide,
+    setFirstUse,
+    setGuestSession,
+    swtichWorksapceMutation,
+    workspaceQuery.isLoading,
+    workspaces
+  ]);
 
   // check workspace
   useEffect(() => {
@@ -443,7 +553,10 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         />
       )}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
-        <DesktopContent />
+        <DesktopContent
+          initialAppLaunch={initialAppLaunch}
+          onInitialAppLoaded={handleInitialAppLoaded}
+        />
       </MoreAppsContext.Provider>
 
       {/* Phone binding modal for domestic version */}

@@ -7,9 +7,9 @@ import { WindowSize } from '@/types';
 import { Box, Flex, Image, Button, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
+import type { InitialAppLaunchState } from '@/utils/initialAppTarget';
 import { ChakraIndicator } from './ChakraIndicator';
 // import Apps from './apps';
 import IframeWindow from './iframe_window';
@@ -39,9 +39,13 @@ export const blurBackgroundStyles = {
   borderRadius: '12px'
 };
 
-export default function Desktop() {
+type DesktopProps = {
+  initialAppLaunch: InitialAppLaunchState;
+  onInitialAppLoaded: (appKey: string) => void;
+};
+
+export default function Desktop({ initialAppLaunch, onInitialAppLoaded }: DesktopProps) {
   const { t } = useTranslation();
-  const router = useRouter();
   const { isAppBar } = useDesktopConfigStore();
   const {
     installedApps: apps,
@@ -50,8 +54,7 @@ export default function Desktop() {
     setToHighestLayerById,
     closeAppById,
     setAutoLaunch,
-    currentAppKey,
-    autolaunch
+    currentAppKey
   } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
@@ -64,8 +67,8 @@ export default function Desktop() {
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
   const prevRestoreAppKeyRef = useRef<string>('');
   const [isClient, setIsClient] = useState(false);
-  const [isRestoring, setIsRestoring] = useState(true);
   const guideModal = useGuideModalStore();
+  const isInitialAppLoading = initialAppLaunch.status !== 'ready';
 
   useEffect(() => {
     setIsClient(true);
@@ -78,7 +81,7 @@ export default function Desktop() {
     prevRestoreAppKeyRef.current = currentAppKey;
 
     if (!currentAppKey) {
-      if (!isRestoring && prevKey) {
+      if (!isInitialAppLoading && prevKey) {
         sessionStorage.removeItem(SESSION_RESTORE_APP_KEY);
       }
       return;
@@ -90,56 +93,17 @@ export default function Desktop() {
     }
 
     sessionStorage.setItem(SESSION_RESTORE_APP_KEY, currentAppKey);
-  }, [isClient, currentAppKey, isRestoring]);
+  }, [isClient, currentAppKey, isInitialAppLoading]);
 
-  // Restore current app after page refresh
+  // Do not keep the startup mask forever when an iframe fails to report load.
   useEffect(() => {
-    if (!isClient) {
+    if (initialAppLaunch.status !== 'loading') {
       return;
     }
 
-    // openapp/autolaunch has higher priority than restore
-    if (router.isReady) {
-      const hasOpenAppQuery = Object.hasOwn(router.query, 'openapp');
-      const isStripeCallback = router.query?.stripeState === 'success' && !!router.query?.payId;
-      if (hasOpenAppQuery || !!autolaunch || isStripeCallback) {
-        setIsRestoring(false);
-        return;
-      }
-    }
-
-    if (apps.length === 0) {
-      return;
-    }
-
-    const sessionRestoreKey = sessionStorage.getItem(SESSION_RESTORE_APP_KEY) || '';
-    const restoreAppKey = currentAppKey || sessionRestoreKey;
-
-    if (restoreAppKey) {
-      const savedApp = apps.find((app) => app.key === restoreAppKey);
-      const isAppRunning = runningInfo.some((app) => app.key === restoreAppKey);
-
-      if (savedApp && !isAppRunning) {
-        openApp(savedApp).then(() => {
-          // Wait a bit for the app to render before hiding loading
-          setTimeout(() => setIsRestoring(false), 100);
-        });
-        return;
-      }
-    }
-
-    // No app to restore or app already running
-    setIsRestoring(false);
-  }, [
-    router.isReady,
-    router.query,
-    autolaunch,
-    currentAppKey,
-    apps,
-    runningInfo,
-    openApp,
-    isClient
-  ]);
+    const timeout = window.setTimeout(() => onInitialAppLoaded(initialAppLaunch.appKey), 10_000);
+    return () => window.clearTimeout(timeout);
+  }, [initialAppLaunch, onInitialAppLoaded]);
 
   const infoData = useQuery({
     queryFn: UserInfo,
@@ -213,10 +177,11 @@ export default function Desktop() {
 
   const quitGuide = useCallback(
     ({ appKey }: { appKey: string }) => {
+      if (!commonConfig?.guideEnabled) return;
       closeDesktopApp({ appKey });
       guideModal.openGuideModal();
     },
-    [closeDesktopApp, guideModal]
+    [closeDesktopApp, commonConfig?.guideEnabled, guideModal]
   );
 
   const handleRequestLogin = useCallback(
@@ -303,8 +268,8 @@ export default function Desktop() {
     }
   }, []);
 
-  // Show loading during app restoration
-  if (isRestoring) {
+  // Keep Desktop chrome hidden until the initial target is resolved and loaded.
+  if (isInitialAppLoading) {
     return (
       <Box
         id="desktop"
@@ -313,34 +278,28 @@ export default function Desktop() {
         display="flex"
         alignItems="center"
         justifyContent="center"
+        bg="#080A11"
+        aria-busy="true"
       >
-        <Box
-          position="absolute"
-          top="0"
-          left="0"
-          right="0"
-          bottom="0"
-          zIndex={-10}
-          overflow="hidden"
-        >
-          <Image
-            src={backgroundImage || desktopBackgroundImage || '/images/bg-light.svg'}
-            alt=""
-            width="100%"
-            height="100vh"
-            objectFit="cover"
-            objectPosition="bottom"
-          />
-        </Box>
-
-        {/* opened apps - need to render during restore */}
+        {/* Open the target behind the startup mask so its iframe can load immediately. */}
         {runningInfo.map((process) => {
           return (
             <AppWindow key={process.pid} style={{ height: '100vh' }} pid={process.pid}>
-              <IframeWindow pid={process.pid} />
+              <IframeWindow pid={process.pid} onLoad={() => onInitialAppLoaded(process.key)} />
             </AppWindow>
           );
         })}
+
+        {initialAppLaunch.status === 'loading' && initialAppLaunch.appKey === BRAIN_APP_KEY && (
+          <Box
+            data-testid="brain-startup-mask"
+            position="fixed"
+            inset={0}
+            zIndex={1000}
+            bg="#080A11"
+            pointerEvents="none"
+          />
+        )}
       </Box>
     );
   }
@@ -412,13 +371,13 @@ export default function Desktop() {
 
       {!isGuest() && (isAppBar ? <AppDock /> : <FloatButton />)}
 
-      <GuideModal />
+      {commonConfig?.guideEnabled ? <GuideModal /> : null}
 
       {/* opened apps */}
       {runningInfo.map((process) => {
         return (
           <AppWindow key={process.pid} style={{ height: '100vh' }} pid={process.pid}>
-            <IframeWindow pid={process.pid} />
+            <IframeWindow pid={process.pid} onLoad={() => onInitialAppLoaded(process.key)} />
           </AppWindow>
         );
       })}
