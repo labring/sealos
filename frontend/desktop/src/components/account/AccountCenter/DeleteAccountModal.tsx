@@ -1,68 +1,64 @@
 import {
-  checkRemainResource,
-  deleteUserRequest,
-  forceDeleteUser,
-  getAmount,
-  getDeleteUserStatus,
-  getWorkspacesPlans
+    checkRemainResource,
+    deleteUserRequest,
+    forceDeleteUser,
+    getAmount,
+    getDeleteUserStatus,
+    getWorkspacesPlans
 } from '@/api/auth';
-import { nsListRequest } from '@/api/namespace';
-import { RegionResourceType, ResourceType } from '@/services/backend/svc/checkResource';
+import {nsListRequest} from '@/api/namespace';
+import {RegionResourceType, ResourceType} from '@/services/backend/svc/checkResource';
 import useAppStore from '@/stores/app';
 import useSessionStore from '@/stores/session';
-import { ApiResp, ValueOf } from '@/types';
-import { RESOURCE_STATUS } from '@/types/response/checkResource';
+import {ApiResp, ValueOf} from '@/types';
+import {RESOURCE_STATUS} from '@/types/response/checkResource';
 import {
-  DELETE_USER_EXECUTION_STATUS,
-  DeleteUserFailure,
-  DeleteUserFinalStatusResponse,
-  DeleteUserInitiateResponse
+    DELETE_USER_EXECUTION_STATUS,
+    DeleteUserFailure,
+    DeleteUserFinalStatusResponse,
+    DeleteUserInitiateResponse
 } from '@/types/response/deleteUser';
-import { getPlanBackgroundClass } from '@/utils/styling';
+import {getPlanBackgroundClass} from '@/utils/styling';
 import {
-  Alert,
-  AlertDescription,
-  AlertIcon,
-  AlertTitle,
-  Button,
-  ButtonProps,
-  Center,
-  Divider,
-  FormControl,
-  HStack,
-  IconButton,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalHeader,
-  ModalOverlay,
-  Spinner,
-  Table,
-  TableContainer,
-  Tbody,
-  Td,
-  Text,
-  Th,
-  Thead,
-  Tr,
-  useDisclosure,
-  VStack
+    Alert,
+    AlertDescription,
+    AlertIcon,
+    AlertTitle,
+    Button,
+    ButtonProps,
+    Center,
+    Divider,
+    FormControl,
+    HStack,
+    IconButton,
+    Modal,
+    ModalBody,
+    ModalCloseButton,
+    ModalContent,
+    ModalHeader,
+    ModalOverlay,
+    Spinner,
+    Table,
+    TableContainer,
+    Tbody,
+    Td,
+    Text,
+    Th,
+    Thead,
+    Tr,
+    useDisclosure,
+    VStack
 } from '@chakra-ui/react';
-import { Badge } from '@sealos/shadcn-ui/badge';
-import { cn } from '@sealos/shadcn-ui';
-import { InfoCircleIcon, LinkIcon, WarnTriangeIcon } from '@sealos/ui';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'next-i18next';
-import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  buildSubscribedWorkspaceRows,
-  DeleteFlowStep,
-  getDeleteFlowStepFromStatus
-} from './DeleteAccountModal.utils';
-import { SettingInput } from './SettingInput';
-import { SettingInputGroup } from './SettingInputGroup';
+import {Badge} from '@sealos/shadcn-ui/badge';
+import {cn} from '@sealos/shadcn-ui';
+import {InfoCircleIcon, LinkIcon, WarnTriangeIcon} from '@sealos/ui';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {useTranslation} from 'next-i18next';
+import {useRouter} from 'next/router';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {buildSubscribedWorkspaceRows, DeleteFlowStep, getDeleteFlowStepFromStatus} from './DeleteAccountModal.utils';
+import {SettingInput} from './SettingInput';
+import {SettingInputGroup} from './SettingInputGroup';
 
 type DeleteExecutionState = {
   deleteId: string;
@@ -78,7 +74,6 @@ const appKeyList = [
   'system-cronjob',
   '',
   'system-objectstorage',
-  'system-cloudserver',
   'system-template'
 ] as const;
 
