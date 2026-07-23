@@ -1,0 +1,159 @@
+body,
+h1,
+h2,
+h3,
+h4,
+hr,
+p,
+blockquote,
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+pre,
+form,
+fieldset,
+legend,
+button,
+input,
+textarea,
+th,
+td {
+  margin: 0;
+}
+body,
+button,
+input,
+select,
+textarea {
+  font: 12px/1.5tahoma, arial, \5b8b\4f53;
+}
+
+address,
+cite,
+dfn,
+em,
+var {
+  font-style: normal;
+}
+body {
+  background-color: #f4f4f7 !important;
+}
+small {
+  font-size: 12px;
+}
+ul,
+ol {
+  list-style: none;
+  padding: 0;
+}
+a {
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+sup {
+  vertical-align: text-top;
+}
+sub {
+  vertical-align: text-bottom;
+}
+legend {
+  color: #000;
+}
+fieldset,
+img {
+  border: 0;
+}
+button,
+input,
+select,
+textarea {
+  font-size: 100%;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  overflow: hidden;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--chakra-colors-blackAlpha-400);
+}
+
+#__next {
+  height: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-track {
+  margin: 24px 0;
+  background: transparent !important;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  min-height: 40px;
+  border-radius: 6px;
+  background: var(--Gray-Modern-200, #e8ebf0) !important;
+}
+
+div {
+  &::-webkit-scrollbar-thumb {
+    min-height: 40px;
+    background: transparent !important;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+  }
+
+  &::-webkit-scrollbar-track {
+    margin: 24px 0;
+  }
+
+  &:hover {
+    &::-webkit-scrollbar-thumb {
+      background: var(--Gray-Modern-200, #e8ebf0) !important;
+    }
+  }
+}
+
+.hover-button {
+  display: none;
+}
+
+.hover-container:hover .hover-button {
+  display: block;
+}
+
+div.rdp {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: black;
+  --rdp-background-color: #f4f6f8;
+  /* black theme color */
+  --rdp-accent-color-dark: #3003e1;
+  --rdp-background-color-dark: #180270;
+  /* focus element outline border */
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  /* focus and selected element outline border */
+  --rdp-outline-selected: 2px solid rgba(0, 0, 0, 0.75);
+}

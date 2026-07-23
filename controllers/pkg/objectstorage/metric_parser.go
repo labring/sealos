@@ -77,6 +77,13 @@ func NewMetricsClient(
 	return privateNewMetricsClient(endpointURL, jwtToken, secure)
 }
 
+// BucketUsageTotalBytesMetrics - returns Bucket Usage Total Metrics in Prometheus format
+func (client *MetricsClient) BucketUsageTotalBytesMetrics(
+	ctx context.Context,
+) ([]*prom2json.Family, error) {
+	return client.fetchMetrics(ctx, "bucket", []string{"minio_bucket_usage_total_bytes"})
+}
+
 // BucketUsageAndTrafficBytesMetrics - returns Bucket Usage And Traffic Metrics in Prometheus format
 func (client *MetricsClient) BucketUsageAndTrafficBytesMetrics(
 	ctx context.Context,

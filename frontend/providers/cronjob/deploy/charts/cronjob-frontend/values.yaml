@@ -1,0 +1,72 @@
+image: ghcr.io/labring/sealos-cronjob-frontend:latest
+imagePullPolicy: Always
+imagePullSecrets: []
+fullnameOverride: "cronjob-frontend"
+
+replicaCount: 1
+podAnnotations: {}
+podLabels: {}
+podSecurityContext: {}
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - "ALL"
+
+service:
+  type: ClusterIP
+  port: 3000
+
+probes:
+  path: /api/platform/getEnv
+  startup:
+    failureThreshold: 30
+    periodSeconds: 2
+  readiness:
+    initialDelaySeconds: 2
+    periodSeconds: 5
+  liveness:
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+tests:
+  image: busybox:1.36.1
+  path: /
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 10m
+    memory: 128Mi
+
+ingress:
+  className: nginx
+  host: ""
+  annotations: {}
+
+cronjobConfig:
+  cloudDomain: "127.0.0.1.nip.io"
+  cloudPort: ""
+  httpPort: ""
+  disableHttps: false
+  certSecretName: "wildcard-cert"
+  successfulJobsHistoryLimit: "3"
+  failedJobsHistoryLimit: "3"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - cronjob-frontend
+          topologyKey: "kubernetes.io/hostname"

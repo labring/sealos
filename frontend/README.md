@@ -41,6 +41,7 @@ pnpm dev-db         # dbprovider
 pnpm dev-cost       # costcenter
 pnpm dev-terminal   # terminal
 pnpm dev-template   # template
+pnpm dev-cronjob    # cronjob
 
 # or run dev script in app's package directory
 cd desktop

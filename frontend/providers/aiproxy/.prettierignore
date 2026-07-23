@@ -1,0 +1,32 @@
+**/.DS_Store
+
+# dependencies
+node_modules
+
+# Next build
+.next
+out
+build
+dist
+
+# environment files
+.env
+.env.local
+.env.production
+.env.test
+
+# log files
+*.log
+
+# lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# other files
+*.md
+public/
+.git/
+.vscode/
+.idea/
+deploy/
