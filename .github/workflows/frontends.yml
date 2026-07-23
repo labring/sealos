@@ -98,8 +98,6 @@ jobs:
               - 'frontend/providers/dbprovider/**'
             costcenter:
               - 'frontend/providers/costcenter/**'
-            cloudserver:
-              - 'frontend/providers/cloudserver/**'
             invite:
               - 'frontend/providers/invite/**'
             objectstorage:
@@ -114,7 +112,6 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           FILTER_AIPROXY: ${{ steps.filter.outputs.aiproxy }}
           FILTER_APPLAUNCHPAD: ${{ steps.filter.outputs.applaunchpad }}
-          FILTER_CLOUDSERVER: ${{ steps.filter.outputs.cloudserver }}
           FILTER_COSTCENTER: ${{ steps.filter.outputs.costcenter }}
           FILTER_CRONJOB: ${{ steps.filter.outputs.cronjob }}
           FILTER_DBPROVIDER: ${{ steps.filter.outputs.dbprovider }}
@@ -145,7 +142,6 @@ jobs:
               "providers/terminal"
               "providers/dbprovider"
               "providers/costcenter"
-              "providers/cloudserver"
               "providers/invite"
               "providers/objectstorage"
               "providers/kubepanel"
@@ -161,7 +157,6 @@ jobs:
             [[ "${FILTER_TERMINAL}" == "true" ]] && modules+=("providers/terminal")
             [[ "${FILTER_DBPROVIDER}" == "true" ]] && modules+=("providers/dbprovider")
             [[ "${FILTER_COSTCENTER}" == "true" ]] && modules+=("providers/costcenter")
-            [[ "${FILTER_CLOUDSERVER}" == "true" ]] && modules+=("providers/cloudserver")
             [[ "${FILTER_INVITE}" == "true" ]] && modules+=("providers/invite")
             [[ "${FILTER_OBJECTSTORAGE}" == "true" ]] && modules+=("providers/objectstorage")
             [[ "${FILTER_KUBEPANEL}" == "true" ]] && modules+=("providers/kubepanel")

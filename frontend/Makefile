@@ -19,7 +19,6 @@ buildTargets := \
 	providers/costcenter \
 	providers/dbprovider \
 	providers/applaunchpad \
-	providers/cloudserver \
 	providers/invite \
 	providers/imagehub \
 	providers/template \

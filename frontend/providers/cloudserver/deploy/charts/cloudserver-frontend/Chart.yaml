@@ -1,6 +1,0 @@
-apiVersion: v2
-name: cloudserver-frontend
-description: Sealos CloudServer Frontend Helm Chart
-type: application
-version: 1.0.0
-appVersion: "latest"
