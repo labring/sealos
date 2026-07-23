@@ -1094,6 +1094,7 @@ func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 			if !mutex.TryLock() {
 				// r.Logger.V(1).Info("user debt processing skipped due to existing lock",
 				//	"userUID", u)
+				r.failedUserLocks.Store(u, 0)
 				return
 			}
 			defer mutex.Unlock()
