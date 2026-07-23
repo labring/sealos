@@ -21,7 +21,7 @@ sudo apt-get update && sudo apt-get install -y pkg-config libdevmapper-dev libbt
 ### Repository Structure
 - **`/lifecycle`**: Main sealos CLI and core binaries (sealos, sealctl, lvscare, image-cri-shim) 
 - **`/controllers`**: Multiple Kubernetes controllers with individual Go modules and Makefiles
-- **`/frontend`**: Next.js workspace with pnpm, 23 sub-projects (desktop, providers)
+- **`/frontend`**: Next.js workspace with pnpm, 17 workspace projects (desktop, packages, providers)
 - **`/service`**: Backend Go services with individual modules  
 - **`/webhooks`**: Kubernetes admission webhooks
 - **`/docs`**: Documentation and guides
