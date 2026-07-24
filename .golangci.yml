@@ -17,6 +17,7 @@ linters:
     - bidichk
     - bodyclose
     - canonicalheader
+    - containedctx
     - copyloopvar
     - durationcheck
     - errcheck
@@ -35,14 +36,17 @@ linters:
     - govet
     - iface
     - importas
+    - iotamixing
     - inamedparam
     - ineffassign
     - intrange
     - loggercheck
     - mirror
     - misspell
+    - modernize
     - musttag
     - nakedret
+    - noctx
     - nolintlint
     - nosprintfhostport
     - perfsprint
@@ -57,6 +61,7 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
+    - testpackage
     - thelper
     - tparallel
     - unconvert
@@ -100,6 +105,12 @@ linters:
     staticcheck:
       dot-import-whitelist: []
       http-status-code-whitelist: []
+    modernize:
+      disable:
+        - forvar
+        - omitzero
+    perfsprint:
+      concat-loop: false
     usestdlibvars:
       time-date-month: true
       time-month: true
@@ -111,17 +122,9 @@ linters:
       constant-kind: true
     usetesting:
       os-temp-dir: true
-    gocritic:
-      disabled-checks:
-        - exitAfterDefer
-    gocyclo:
-      min-complexity: 50
     gosec:
       excludes:
         - G404
-        - G306
-        - G101
-        - G402
 
 formatters:
   enable:
@@ -138,8 +141,6 @@ formatters:
   settings:
     gofmt:
       rewrite-rules:
-        - pattern: "interface{}"
-          replacement: "any"
         - pattern: "a[b:len(a)]"
           replacement: "a[b:]"
     gofumpt:
