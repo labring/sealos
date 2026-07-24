@@ -67,9 +67,10 @@ func adminFlushDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq) e
 	if owner == "" {
 		return nil
 	}
-	namespaces, err := getOwnNsListWithCltWithOutWorkspaceSubscription(
+	namespaces, err := getOwnNsListWithCltForDebtFlush(
 		dao.K8sManager.GetClient(),
 		owner,
+		isDebtRecoveryTransition(req.LastDebtStatus, req.CurrentDebtStatus),
 	)
 	if err != nil {
 		return fmt.Errorf("get own namespace list failed: %w", err)
@@ -78,6 +79,11 @@ func adminFlushDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq) e
 		return fmt.Errorf("failed to flush user resource status: %w", err)
 	}
 	return nil
+}
+
+func isDebtRecoveryTransition(lastStatus, currentStatus types.DebtStatusType) bool {
+	return types.ContainDebtStatus(types.DebtStates, lastStatus) &&
+		types.ContainDebtStatus(types.NonDebtStates, currentStatus)
 }
 
 func flushUserDebtResourceStatus(
