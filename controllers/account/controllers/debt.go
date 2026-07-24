@@ -47,6 +47,10 @@ import (
 const (
 	DebtDetectionCycleEnv = "DebtDetectionCycleSeconds"
 
+	finalDeletionDebtNamespaceSyncInterval = time.Hour
+	finalDeletionDebtNamespaceQueryTimeout = 30 * time.Second
+	flushDebtResourceStatusRequestTimeout  = 30 * time.Second
+
 	SMSAccessKeyIDEnv     = "SMS_AK"
 	SMSAccessKeySecretEnv = "SMS_SK"
 	VmsAccessKeyIDEnv     = "VMS_AK"
@@ -421,12 +425,12 @@ func (r *DebtReconciler) Start(ctx context.Context) error {
 		}
 	}()
 	log.Printf("debt reconciler lock acquired, process ID: %s", r.processID)
-	r.start()
+	r.start(ctx)
 	log.Printf("debt reconciler started")
 	return nil
 }
 
-func (r *DebtReconciler) start() {
+func (r *DebtReconciler) start(ctx context.Context) {
 	db := r.AccountV2.GetGlobalDB()
 	var wg sync.WaitGroup
 
@@ -523,6 +527,13 @@ func (r *DebtReconciler) start() {
 				)
 			}
 		}
+	}()
+
+	// 1.4 replay final deletion status for accounts that are already in the terminal debt state.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r.syncFinalDeletionDebtNamespacesLoop(ctx, db)
 	}()
 
 	// 2.1 recharge record processing
@@ -630,6 +641,67 @@ func (r *DebtReconciler) start() {
 	}()
 
 	wg.Wait()
+}
+
+func (r *DebtReconciler) syncFinalDeletionDebtNamespacesLoop(ctx context.Context, db *gorm.DB) {
+	run := func() {
+		if err := r.syncFinalDeletionDebtNamespaces(ctx, db); err != nil {
+			r.Error(err, "failed to sync final deletion debt namespaces")
+		}
+	}
+
+	run()
+	ticker := time.NewTicker(finalDeletionDebtNamespaceSyncInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			run()
+		}
+	}
+}
+
+func (r *DebtReconciler) syncFinalDeletionDebtNamespaces(ctx context.Context, db *gorm.DB) error {
+	var users []uuid.UUID
+	queryCtx, cancel := context.WithTimeout(ctx, finalDeletionDebtNamespaceQueryTimeout)
+	defer cancel()
+
+	if err := db.WithContext(queryCtx).Model(&types.Debt{}).
+		Where("account_debt_status = ?", types.FinalDeletionPeriod).
+		Distinct("user_uid").
+		Pluck("user_uid", &users).Error; err != nil {
+		return fmt.Errorf("failed to query final deletion debt users: %w", err)
+	}
+
+	var errs []error
+	for _, userUID := range users {
+		if err := r.syncFinalDeletionDebtNamespacesForUser(ctx, userUID); err != nil {
+			errMsg := "failed to sync final deletion debt namespaces " +
+				"for user %s: %w"
+			errs = append(errs, fmt.Errorf(errMsg, userUID, err))
+		}
+	}
+	if len(users) > 0 {
+		r.Info("synced final deletion debt namespaces", "users", len(users))
+	}
+	return errors.Join(errs...)
+}
+
+func (r *DebtReconciler) syncFinalDeletionDebtNamespacesForUser(ctx context.Context, userUID uuid.UUID) error {
+	return r.sendFlushDebtResourceStatusRequestWithContext(
+		ctx,
+		finalDeletionDebtNamespaceFlushReq(userUID),
+	)
+}
+
+func finalDeletionDebtNamespaceFlushReq(userUID uuid.UUID) AdminFlushResourceStatusReq {
+	return AdminFlushResourceStatusReq{
+		UserUID:           userUID,
+		LastDebtStatus:    types.DebtDeletionPeriod,
+		CurrentDebtStatus: types.FinalDeletionPeriod,
+	}
 }
 
 func (r *DebtReconciler) RefreshDebtStatus(userUID uuid.UUID) error {
@@ -943,6 +1015,17 @@ type AdminFlushResourceStatusReq struct {
 func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(
 	quotaReq AdminFlushResourceStatusReq,
 ) error {
+	return r.sendFlushDebtResourceStatusRequestWithContext(context.Background(), quotaReq)
+}
+
+func (r *DebtReconciler) sendFlushDebtResourceStatusRequestWithContext(
+	ctx context.Context,
+	quotaReq AdminFlushResourceStatusReq,
+) error {
+	client := http.Client{
+		Timeout: flushDebtResourceStatusRequestTimeout,
+	}
+
 	for _, domain := range r.allRegionDomain {
 		token, err := r.jwtManager.GenerateToken(utils.JwtUser{
 			Requester: AdminUserName,
@@ -970,14 +1053,18 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(
 
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(quotaReqBody))
+			req, err := http.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				url,
+				bytes.NewBuffer(quotaReqBody),
+			)
 			if err != nil {
 				return fmt.Errorf("failed to create request: %w", err)
 			}
 
 			req.Header.Set("Authorization", "Bearer "+token)
 			req.Header.Set("Content-Type", "application/json")
-			client := http.Client{}
 
 			resp, err := client.Do(req)
 			if err != nil {
