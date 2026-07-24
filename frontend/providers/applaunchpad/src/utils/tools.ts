@@ -161,6 +161,12 @@ export const ensureUniquePortNames = <T extends { name?: string; port?: any; con
   });
 };
 
+const patchTouchesPath = (patches: jsonpatch.Operation[], targetPath: string) =>
+  patches.some(
+    ({ path }) =>
+      path === targetPath || path.startsWith(`${targetPath}/`) || targetPath.startsWith(`${path}/`)
+  );
+
 /**
  * read a file text content
  */
@@ -509,14 +515,20 @@ export const patchYamlList = ({
             oldFormJson.kind === YamlKindEnum.Deployment ||
             oldFormJson.kind === YamlKindEnum.StatefulSet
           ) {
-            // @ts-ignore
-            crOldYamlJson.spec.template.spec.volumes = oldFormJson.spec.template.spec.volumes;
-            // @ts-ignore
-            crOldYamlJson.spec.template.spec.containers[0].volumeMounts =
+            if (patchTouchesPath(patchRes, '/spec/template/spec/volumes')) {
               // @ts-ignore
-              oldFormJson.spec.template.spec.containers[0].volumeMounts;
-            // @ts-ignore
-            crOldYamlJson.spec.volumeClaimTemplates = oldFormJson.spec.volumeClaimTemplates;
+              crOldYamlJson.spec.template.spec.volumes = oldFormJson.spec.template.spec.volumes;
+            }
+            if (patchTouchesPath(patchRes, '/spec/template/spec/containers/0/volumeMounts')) {
+              // @ts-ignore
+              crOldYamlJson.spec.template.spec.containers[0].volumeMounts =
+                // @ts-ignore
+                oldFormJson.spec.template.spec.containers[0].volumeMounts;
+            }
+            if (patchTouchesPath(patchRes, '/spec/volumeClaimTemplates')) {
+              // @ts-ignore
+              crOldYamlJson.spec.volumeClaimTemplates = oldFormJson.spec.volumeClaimTemplates;
+            }
           }
 
           /* generate new json */
@@ -579,14 +591,17 @@ export const patchYamlList = ({
       ) {
         const workloadJson = actionsJson as any;
         const ports = workloadJson?.spec.template.spec.containers[0].ports || [];
-        if (ports.length > 0) {
+        if (
+          ports.length > 0 &&
+          patchTouchesPath(patchRes, '/spec/template/spec/containers/0/ports')
+        ) {
           workloadJson.spec.template.spec.containers[0].ports = ensureUniquePortNames(ports);
         }
       }
       if (actionsJson.kind === YamlKindEnum.Service) {
         const serviceJson = actionsJson as any;
         const ports = serviceJson?.spec.ports || [];
-        if (ports.length > 0) {
+        if (ports.length > 0 && patchTouchesPath(patchRes, '/spec/ports')) {
           serviceJson.spec.ports = ensureUniquePortNames(ports);
         }
       }
