@@ -85,6 +85,14 @@ describe('resolveInitialAppTarget', () => {
     });
   });
 
+  it('prefers the tab-local restore candidate when both restore candidates are valid', () => {
+    expect(resolve({ restoreAppKeys: ['system-template', 'system-brain'] })).toEqual({
+      kind: 'app',
+      appKey: 'system-template',
+      source: 'restore'
+    });
+  });
+
   it('defaults to Brain only when there is no explicit or restorable target', () => {
     expect(resolve()).toEqual({
       kind: 'app',

@@ -248,8 +248,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           hasOpenAppQuery: initialOpenAppIntent?.hasOpenAppQuery || false,
           queryAppKey: parsedOpenApp.appkey,
           restoreAppKeys: [
-            state.currentAppKey,
-            sessionStorage.getItem(SESSION_RESTORE_APP_KEY) || undefined
+            sessionStorage.getItem(SESSION_RESTORE_APP_KEY) || undefined,
+            state.currentAppKey
           ],
           defaultAppKey: BRAIN_APP_KEY,
           allowedAppKeys: guestMode ? [BRAIN_APP_KEY] : undefined
