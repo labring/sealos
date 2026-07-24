@@ -852,46 +852,16 @@ func ( r * UserReconciler) handleLicenseLimit( ctx context. Context, user * user
 	}
 	* user = * latest. DeepCopy()
 
+	// Wipe away any structural restriction conditions from the status profile
 	user. Status. Conditions = helper. DeleteCondition(
 		user. Status. Conditions,
 		licenseLimitedCondition,
 	)
 
+	// Instruct the pipeline to immediately proceed with creation actions
 	return false, nil
 }
 
-func (r *UserReconciler) shouldRotateKubeConfig(user *userv1.User) bool {
-	if user.Spec.KubeConfigRotateAt == nil {
-		return true
-	}
-	if user.Status.ObservedKubeConfigRotateAt == nil {
-		return true
-	}
-	return !user.Spec.KubeConfigRotateAt.Equal(user.Status.ObservedKubeConfigRotateAt)
-}
-
-func (r *UserReconciler) updateStatus(
-	ctx context.Context,
-	nn types.NamespacedName,
-	status *userv1.UserStatus,
-) error {
-	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		original := &userv1.User{}
-		if err := r.Get(ctx, nn, original); err != nil {
-			return nil
-		}
-		original.Status = *status
-		return r.Client.Status().Update(ctx, original)
-	})
-}
-
-	if !r.isNewUser(user) {
-		user.Status.Conditions = helper.DeleteCondition(
-			user.Status.Conditions,
-			licenseLimitedCondition,
-		)
-		return false, nil
-	}
 	limitCondition := &userv1.Condition{
 		Type:               licenseLimitedCondition,
 		Status:             v1.ConditionFalse,
