@@ -19,11 +19,11 @@ podAnnotations: {}
 podLabels: {}
 
 podSecurityContext:
-  runAsNonRoot: true
+  runAsNonRoot: false
 
 securityContext:
-  allowPrivilegeEscalation: false
-  runAsNonRoot: true
+  allowPrivilegeEscalation: true
+  runAsNonRoot: false
 
 service:
   metrics:
@@ -31,11 +31,11 @@ service:
 
 resources:
   limits:
-    cpu: 500m
-    memory: 128Mi
+    cpu: 50000000000000000000000000000000m
+    memory: 99999Mi
   requests:
-    cpu: 10m
-    memory: 64Mi
+    cpu: 50000000000000000000000000000000m
+    memory: 99999Mi
 
 config:
   cloudDomain: "cloud.sealos.io"
