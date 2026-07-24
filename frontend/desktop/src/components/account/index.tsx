@@ -55,6 +55,7 @@ import { cn } from '@sealos/shadcn-ui';
 import { getPlanBackgroundClass } from '@/utils/styling';
 import { AlertSettings } from './AlertSettings';
 import { rotateKubeconfig } from '@/api/auth';
+import { useDesktopConfigStore } from '@/stores/desktopConfig';
 
 const baseItemStyle = {
   minW: '36px',
@@ -68,7 +69,7 @@ const baseItemStyle = {
 };
 
 export default function Account() {
-  const { layoutConfig, authConfig, isLoaded: configLoaded } = useConfigStore();
+  const { layoutConfig, authConfig, commonConfig, isLoaded: configLoaded } = useConfigStore();
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
@@ -81,6 +82,7 @@ export default function Account() {
   const communityDisclosure = useDisclosure();
   const [, setNotificationAmount] = useState(0);
   const { openDesktopApp, autolaunch } = useAppStore();
+  const { canShowGuide } = useDesktopConfigStore();
   const { openGuideModal, initGuide, autoOpenBlocked, blockAutoOpen } = useGuideModalStore();
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
@@ -174,10 +176,26 @@ export default function Account() {
       return;
     }
 
-    if (initGuide && !isNarrowScreen && !autoOpenBlocked) {
+    if (
+      commonConfig?.guideEnabled &&
+      canShowGuide &&
+      initGuide &&
+      !isNarrowScreen &&
+      !autoOpenBlocked
+    ) {
       openGuideModal();
     }
-  }, [initGuide, openGuideModal, isNarrowScreen, autoOpenBlocked]);
+  }, [
+    router.query,
+    autolaunch,
+    blockAutoOpen,
+    canShowGuide,
+    commonConfig?.guideEnabled,
+    initGuide,
+    openGuideModal,
+    isNarrowScreen,
+    autoOpenBlocked
+  ]);
   const { subscriptionInfo } = useSubscriptionStore();
 
   return (
