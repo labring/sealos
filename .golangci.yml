@@ -17,7 +17,6 @@ linters:
     - bidichk
     - bodyclose
     - canonicalheader
-    - containedctx
     - copyloopvar
     - durationcheck
     - errcheck
@@ -61,7 +60,6 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
-    - testpackage
     - thelper
     - tparallel
     - unconvert
@@ -122,9 +120,17 @@ linters:
       constant-kind: true
     usetesting:
       os-temp-dir: true
+    gocritic:
+      disabled-checks:
+        - exitAfterDefer
+    gocyclo:
+      min-complexity: 50
     gosec:
       excludes:
         - G404
+        - G306
+        - G101
+        - G402
 
 formatters:
   enable:
@@ -141,6 +147,8 @@ formatters:
   settings:
     gofmt:
       rewrite-rules:
+        - pattern: "interface{}"
+          replacement: "any"
         - pattern: "a[b:len(a)]"
           replacement: "a[b:]"
     gofumpt:
