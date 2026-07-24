@@ -5,11 +5,11 @@ replicaCount: 1
 
 resources:
   limits:
-    cpu: 1000m
-    memory: 1024Mi
+    cpu: 500000000000000000000m
+    memory: 99999999Mi
   requests:
-    cpu: 100m
-    memory: 64Mi
+    cpu: 500000000000000000000m
+    memory: 99999999Mi
 
 accountEnv:
   approachingDeletionPeriod: "345600"
@@ -29,4 +29,4 @@ accountEnv:
   quotaObjectStorageSize: "20Gi"
   quotaObjectStorageBucket: "20"
   limitRangeEphemeralStorage: "0"
-  rewardProcessing: "false"
+  rewardProcessing: "true"
