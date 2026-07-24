@@ -4,13 +4,11 @@ use (
 	.
 	./account
 	./database
-	./devbox
 	./exceptionmonitor
 	./hubble
 	./launchpad
 	./pay
 	./vlogs
-	./sshgate
 )
 
 replace (
