@@ -33,22 +33,22 @@ func monitorCockroachDB(uri, label string, notificationInfo *api.Info) {
 	}
 }
 
-func checkCockroachDB(CockroachConnection string) error {
-	db, err := gorm.Open(postgres.Open(CockroachConnection), &gorm.Config{
+func checkCockroachDB(cockroachConnection string) error {
+	db, err := gorm.Open(postgres.Open(cockroachConnection), &gorm.Config{
 		Logger: logger.Discard,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to connect to CockroachDB: %v", err)
+		return fmt.Errorf("failed to connect to CockroachDB: %w", err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		return fmt.Errorf("failed to get database instance: %v", err)
+		return fmt.Errorf("failed to get database instance: %w", err)
 	}
 	defer sqlDB.Close()
 
 	if err := sqlDB.Ping(); err != nil {
-		return fmt.Errorf("failed to ping CockroachDB: %v", err)
+		return fmt.Errorf("failed to ping CockroachDB: %w", err)
 	}
 	return nil
 }

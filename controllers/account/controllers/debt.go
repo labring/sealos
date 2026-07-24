@@ -689,7 +689,10 @@ func (r *DebtReconciler) syncFinalDeletionDebtNamespaces(ctx context.Context, db
 	return errors.Join(errs...)
 }
 
-func (r *DebtReconciler) syncFinalDeletionDebtNamespacesForUser(ctx context.Context, userUID uuid.UUID) error {
+func (r *DebtReconciler) syncFinalDeletionDebtNamespacesForUser(
+	ctx context.Context,
+	userUID uuid.UUID,
+) error {
 	return r.sendFlushDebtResourceStatusRequestWithContext(
 		ctx,
 		finalDeletionDebtNamespaceFlushReq(userUID),

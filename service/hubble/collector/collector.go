@@ -6,16 +6,15 @@ import (
 	"log"
 	"strings"
 
-	"google.golang.org/grpc/credentials"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-
 	pb "github.com/cilium/cilium/api/v1/flow"
 	observer "github.com/cilium/cilium/api/v1/observer"
 	"github.com/labring/sealos/service/hubble/datastore"
 	"github.com/labring/sealos/service/hubble/pkg/constants"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 // Collector handles the collection of network flow data from Hubble
@@ -26,17 +25,21 @@ type Collector struct {
 	tlsConfig  *TLSConfig
 }
 
-func NewCollector(hubbleAddr string, dataStore *datastore.DataStore, enableTLS bool) (*Collector, error) {
+func NewCollector(
+	hubbleAddr string,
+	dataStore *datastore.DataStore,
+	enableTLS bool,
+) (*Collector, error) {
 	var k8sClient kubernetes.Interface
 	var tlsConfig *TLSConfig
 	if enableTLS {
 		config, err := rest.InClusterConfig()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get in-cluster config: %v", err)
+			return nil, fmt.Errorf("failed to get in-cluster config: %w", err)
 		}
 		clientset, err := kubernetes.NewForConfig(config)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create kubernetes client: %v", err)
+			return nil, fmt.Errorf("failed to create kubernetes client: %w", err)
 		}
 		k8sClient = clientset
 		tlsConfig = NewDefaultTLSConfig()

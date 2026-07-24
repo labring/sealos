@@ -378,52 +378,6 @@ func (r *AccountReconciler) syncSubscriptionWorkspaceResourceQuotaAndLimitRange(
 	return nil
 }
 
-func (r *AccountReconciler) syncResourceQuotaAndLimitRangeBySubscription(
-	ctx context.Context,
-	owner, nsName string,
-) error {
-	userUID, err := r.AccountV2.GetUserUID(&pkgtypes.UserQueryOpts{Owner: owner})
-	if err != nil {
-		return fmt.Errorf("get userUID failed: %w", err)
-	}
-	userSub, err := r.AccountV2.GetSubscription(&pkgtypes.UserQueryOpts{UID: userUID})
-	if err != nil {
-		return fmt.Errorf("get user subscription failed: %w", err)
-	}
-	quota, ok := r.SubscriptionQuotaLimit[userSub.PlanName]
-	if !ok {
-		return fmt.Errorf("subscription plan %s not found", userSub.PlanName)
-	}
-	objs := []client.Object{
-		client.Object(resources.GetDefaultLimitRange(nsName, nsName)),
-		client.Object(getDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName, quota)),
-	}
-	for i := range objs {
-		err := retry.Retry(10, 1*time.Second, func() error {
-			_, err := controllerutil.CreateOrUpdate(ctx, r.Client, objs[i], func() error {
-				return nil
-			})
-			return err
-		})
-		if err != nil {
-			return fmt.Errorf("sync resource %T failed: %w", objs[i], err)
-		}
-	}
-	return nil
-}
-
-func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.ResourceQuota {
-	return &corev1.ResourceQuota{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-		Spec: corev1.ResourceQuotaSpec{
-			Hard: hard,
-		},
-	}
-}
-
 // func (r *AccountReconciler) adaptEphemeralStorageLimitRange(ctx context.Context, nsName string) error {
 //	limit := resources.GetDefaultLimitRange(nsName, nsName)
 //	return retry.Retry(10, 1*time.Second, func() error {

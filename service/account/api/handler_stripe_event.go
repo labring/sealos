@@ -148,7 +148,8 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 
 		// Check if this might be a downgrade (invoice metadata is empty or missing subscription_operator)
 		// For downgrade, DowngradePlan sets metadata on subscription, not invoice
-		mightBeDowngrade := !hasOperator || operator == string(types.SubscriptionTransactionTypeDowngraded)
+		mightBeDowngrade := !hasOperator ||
+			operator == string(types.SubscriptionTransactionTypeDowngraded)
 
 		if mightBeDowngrade && inv.Parent != nil && inv.Parent.SubscriptionDetails != nil &&
 			inv.Parent.SubscriptionDetails.Subscription != nil {
@@ -439,9 +440,12 @@ func handleSubscriptionUpdate(
 	if err != nil {
 		return err
 	}
-	sub.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).UTC()
+	sub.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).
+		UTC()
 	// Add 1 hour to account for invoice confirmation processing time
-	sub.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC().Add(1 * time.Hour)
+	sub.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).
+		UTC().
+		Add(1 * time.Hour)
 	sub.ExpireAt = stripe.Time(sub.CurrentPeriodEndAt)
 
 	if err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
@@ -589,7 +593,8 @@ func handleSubscriptionCreateOrRenew(
 		// Detect and record the old subscriptions that need to be closed (for the scenario of recreating subscriptions in debt status)
 		// In memory records, such as finalizeWorkspaceSubscriptionSuccess again after the completion of processing
 		var oldSubscriptionID string
-		if ws != nil && isInitial && ws.Stripe != nil && ws.Stripe.SubscriptionID != "" && ws.Stripe.SubscriptionID != subscription.ID {
+		if ws != nil && isInitial && ws.Stripe != nil && ws.Stripe.SubscriptionID != "" &&
+			ws.Stripe.SubscriptionID != subscription.ID {
 			oldSubscriptionID = ws.Stripe.SubscriptionID
 			logrus.Infof(
 				"Detected old subscription %s for workspace %s/%s, will cancel after new subscription is finalized",
@@ -617,9 +622,12 @@ func handleSubscriptionCreateOrRenew(
 				return nil
 			}
 
-			ws.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).UTC()
+			ws.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).
+				UTC()
 			// Add 1 hour to account for invoice confirmation processing time
-			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC().Add(1 * time.Hour)
+			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).
+				UTC().
+				Add(1 * time.Hour)
 			ws.ExpireAt = stripe.Time(ws.CurrentPeriodEndAt)
 		}
 
@@ -928,12 +936,16 @@ func handleWorkspaceSubscriptionInvoiceCreated(event *stripe.Event) error {
 
 	// 4. check if invoice is already confirmed/paid
 	if invoice.Status == "paid" || invoice.Status == "void" || invoice.Status == "uncollectible" {
-		logrus.Infof("Invoice %s already processed (status: %s), skipping", invoice.ID, invoice.Status)
+		logrus.Infof(
+			"Invoice %s already processed (status: %s), skipping",
+			invoice.ID,
+			invoice.Status,
+		)
 		return nil
 	}
 
 	// 5. check if invoice has auto_advance enabled (should be confirmed automatically)
-	if invoice.AutoAdvance != true {
+	if !invoice.AutoAdvance {
 		logrus.Infof("Invoice %s does not have auto_advance enabled, skipping", invoice.ID)
 		return nil
 	}

@@ -677,7 +677,7 @@ func (m *Account) ReloadConfig() error {
 	if err != nil {
 		return fmt.Errorf("failed to reload account config: %w", err)
 	}
-	err = m.MongoDB.ReloadPropertyTypeLS()
+	err = m.ReloadPropertyTypeLS()
 	if err != nil {
 		return fmt.Errorf("failed to reload property type ls: %w", err)
 	}

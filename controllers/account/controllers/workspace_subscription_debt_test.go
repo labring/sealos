@@ -85,7 +85,11 @@ func TestWorkspaceSubscriptionDebtStatusSyncsNamespaceAnnotations(t *testing.T) 
 				t.Fatalf("expected debt annotation %s, got %s", tt.expectedDebtStatus, got)
 			}
 			if got := updatedNS.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; got != tt.expectedDebtStatus {
-				t.Fatalf("expected workspace subscription annotation %s, got %s", tt.expectedDebtStatus, got)
+				t.Fatalf(
+					"expected workspace subscription annotation %s, got %s",
+					tt.expectedDebtStatus,
+					got,
+				)
 			}
 
 			var notice notificationv1.Notification
@@ -131,7 +135,10 @@ func TestWorkspaceDebtNoticeNameIsDNS1123Compatible(t *testing.T) {
 	}
 }
 
-func newWorkspaceSubscriptionDebtTestProcessor(t *testing.T, objects ...client.Object) *WorkspaceSubscriptionDebtProcessor {
+func newWorkspaceSubscriptionDebtTestProcessor(
+	t *testing.T,
+	objects ...client.Object,
+) *WorkspaceSubscriptionDebtProcessor {
 	t.Helper()
 
 	scheme := runtime.NewScheme()

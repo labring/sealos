@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	rtype "github.com/docker/docker/api/types/registry"
-
 	"github.com/labring/image-cri-shim/pkg/types"
 )
 
@@ -33,7 +32,7 @@ func BenchmarkRewriteImageNoCache(b *testing.B) {
 		image := "registry.example.com/app/nginx:latest"
 
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			service.rewriteImage(image, "pull")
 		}
 	})
@@ -52,7 +51,7 @@ func BenchmarkRewriteImageCached(b *testing.B) {
 		service.rewriteImage(image, "pull")
 
 		b.ResetTimer()
-		for i := 0; i < b.N; i++ {
+		for range b.N {
 			service.rewriteImage(image, "pull")
 		}
 	})

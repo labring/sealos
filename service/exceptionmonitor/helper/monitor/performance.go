@@ -10,10 +10,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/labring/sealos/service/exceptionmonitor/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/labring/sealos/service/exceptionmonitor/api"
 )
 
 func checkPerformance(notificationInfo *api.Info, checkType string) (float64, error) {
@@ -25,7 +24,7 @@ func checkPerformance(notificationInfo *api.Info, checkType string) (float64, er
 
 	urlStr := api.BaseURL + "?" + params.Encode()
 
-	req, err := http.NewRequest("GET", urlStr, nil)
+	req, err := http.NewRequest(http.MethodGet, urlStr, nil)
 	if err != nil {
 		return 0.0, err
 	}
@@ -51,10 +50,16 @@ func checkPerformance(notificationInfo *api.Info, checkType string) (float64, er
 	if err := json.Unmarshal(body, &result); err != nil {
 		return 0.0, err
 	}
-	usage, maxUsage := 0.0, 0.0
+	maxUsage := 0.0
 	for _, res := range result.Data.Result {
-		value := res.Value[1].(string)
-		usage, err = strconv.ParseFloat(value, 64)
+		if len(res.Value) < 2 {
+			return 0.0, fmt.Errorf("unexpected query result value length: %d", len(res.Value))
+		}
+		value, ok := res.Value[1].(string)
+		if !ok {
+			return 0.0, fmt.Errorf("unexpected query result value type: %T", res.Value[1])
+		}
+		usage, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			return 0.0, err
 		}
@@ -71,11 +76,17 @@ func getKubeConfig(namespace string) (string, error) {
 	}
 	userName := strings.Split(namespace, "-")[1]
 
-	user, err := api.DynamicClient.Resource(userGVR).Namespace("").Get(context.TODO(), userName, metav1.GetOptions{})
+	user, err := api.DynamicClient.Resource(userGVR).
+		Namespace("").
+		Get(context.TODO(), userName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
-	kubeConfig, found, err := unstructured.NestedString(user.UnstructuredContent(), "status", "kubeConfig")
+	kubeConfig, found, err := unstructured.NestedString(
+		user.UnstructuredContent(),
+		"status",
+		"kubeConfig",
+	)
 	if err != nil {
 		return "", err
 	}

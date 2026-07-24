@@ -20,32 +20,43 @@ import (
 	"testing"
 
 	rtype "github.com/docker/docker/api/types/registry"
-
 	"github.com/labring/image-cri-shim/pkg/types"
 )
 
 func TestAuthStore_GetSortedRegistries(t *testing.T) {
 	tests := []struct {
-		name              string
-		authConfig        *types.ShimAuthConfig
-		expectedCount     int
-		expectedFirst     string
-		expectedLast      string
+		name               string
+		authConfig         *types.ShimAuthConfig
+		expectedCount      int
+		expectedFirst      string
+		expectedLast       string
 		expectedPriorities map[string]int
 	}{
 		{
 			name: "mixed priorities with sealos.hub highest",
 			authConfig: &types.ShimAuthConfig{
 				CRIConfigs: map[string]rtype.AuthConfig{
-					"docker.io":        {ServerAddress: "docker.io", Username: "user1", Password: "pass1"},
-					"registry.example.com": {ServerAddress: "registry.example.com", Username: "user2", Password: "pass2"},
+					"docker.io": {
+						ServerAddress: "docker.io",
+						Username:      "user1",
+						Password:      "pass1",
+					},
+					"registry.example.com": {
+						ServerAddress: "registry.example.com",
+						Username:      "user2",
+						Password:      "pass2",
+					},
 				},
 				CRIPriorities: map[string]int{
-					"docker.io":              500, // default
-					"registry.example.com":   800, // higher than docker.io
+					"docker.io":            500, // default
+					"registry.example.com": 800, // higher than docker.io
 				},
 				OfflineCRIConfigs: map[string]rtype.AuthConfig{
-					"sealos.hub": {ServerAddress: "sealos.hub", Username: "admin", Password: "passw0rd"},
+					"sealos.hub": {
+						ServerAddress: "sealos.hub",
+						Username:      "admin",
+						Password:      "passw0rd",
+					},
 				},
 				OfflinePriority: types.SealosHubDefaultPriority, // 1000, highest
 			},
@@ -68,7 +79,11 @@ func TestAuthStore_GetSortedRegistries(t *testing.T) {
 					"docker.io": 1500, // exceeds MaxPriority (1000), but stored as-is in AuthStore
 				},
 				OfflineCRIConfigs: map[string]rtype.AuthConfig{
-					"sealos.hub": {ServerAddress: "sealos.hub", Username: "admin", Password: "passw0rd"},
+					"sealos.hub": {
+						ServerAddress: "sealos.hub",
+						Username:      "admin",
+						Password:      "passw0rd",
+					},
 				},
 				OfflinePriority: types.SealosHubDefaultPriority,
 			},
@@ -91,7 +106,11 @@ func TestAuthStore_GetSortedRegistries(t *testing.T) {
 					"docker.io": 1000, // same as sealos.hub
 				},
 				OfflineCRIConfigs: map[string]rtype.AuthConfig{
-					"sealos.hub": {ServerAddress: "sealos.hub", Username: "admin", Password: "passw0rd"},
+					"sealos.hub": {
+						ServerAddress: "sealos.hub",
+						Username:      "admin",
+						Password:      "passw0rd",
+					},
 				},
 				OfflinePriority: 1000, // same as docker.io
 			},
@@ -112,7 +131,11 @@ func TestAuthStore_GetSortedRegistries(t *testing.T) {
 					"docker.io": 0, // zero, should use default in GetSortedRegistries
 				},
 				OfflineCRIConfigs: map[string]rtype.AuthConfig{
-					"sealos.hub": {ServerAddress: "sealos.hub", Username: "admin", Password: "passw0rd"},
+					"sealos.hub": {
+						ServerAddress: "sealos.hub",
+						Username:      "admin",
+						Password:      "passw0rd",
+					},
 				},
 				OfflinePriority: types.SealosHubDefaultPriority,
 			},
@@ -136,10 +159,18 @@ func TestAuthStore_GetSortedRegistries(t *testing.T) {
 
 			if len(entries) > 0 {
 				if entries[0].Domain != tt.expectedFirst {
-					t.Errorf("expected first registry to be %s, got %s", tt.expectedFirst, entries[0].Domain)
+					t.Errorf(
+						"expected first registry to be %s, got %s",
+						tt.expectedFirst,
+						entries[0].Domain,
+					)
 				}
 				if tt.expectedLast != "" && entries[len(entries)-1].Domain != tt.expectedLast {
-					t.Errorf("expected last registry to be %s, got %s", tt.expectedLast, entries[len(entries)-1].Domain)
+					t.Errorf(
+						"expected last registry to be %s, got %s",
+						tt.expectedLast,
+						entries[len(entries)-1].Domain,
+					)
 				}
 			}
 
@@ -151,15 +182,26 @@ func TestAuthStore_GetSortedRegistries(t *testing.T) {
 					continue
 				}
 				if entry.Priority != expectedPriority {
-					t.Errorf("registry %s: expected priority %d, got %d", entry.Domain, expectedPriority, entry.Priority)
+					t.Errorf(
+						"registry %s: expected priority %d, got %d",
+						entry.Domain,
+						expectedPriority,
+						entry.Priority,
+					)
 				}
 			}
 
 			// Verify ordering (priorities should be non-increasing)
 			for i := 1; i < len(entries); i++ {
 				if entries[i-1].Priority < entries[i].Priority {
-					t.Errorf("priority order violation at index %d: %s (priority %d) should not come before %s (priority %d)",
-						i-1, entries[i-1].Domain, entries[i-1].Priority, entries[i].Domain, entries[i].Priority)
+					t.Errorf(
+						"priority order violation at index %d: %s (priority %d) should not come before %s (priority %d)",
+						i-1,
+						entries[i-1].Domain,
+						entries[i-1].Priority,
+						entries[i].Domain,
+						entries[i].Priority,
+					)
 				}
 			}
 		})
@@ -168,10 +210,10 @@ func TestAuthStore_GetSortedRegistries(t *testing.T) {
 
 func TestConfig_PriorityProcessing(t *testing.T) {
 	tests := []struct {
-		name              string
-		configYAML        string
+		name               string
+		configYAML         string
 		expectedPriorities map[string]int
-		expectError       bool
+		expectError        bool
 	}{
 		{
 			name: "valid priorities",
@@ -301,10 +343,10 @@ func TestRegistryWithPriority(t *testing.T) {
 
 func TestOfflinePriorityConfig(t *testing.T) {
 	tests := []struct {
-		name               string
-		configYAML         string
-		expectedPriority   int
-		expectWarn         bool
+		name             string
+		configYAML       string
+		expectedPriority int
+		expectWarn       bool
 	}{
 		{
 			name: "default offline priority when not specified",
@@ -313,7 +355,7 @@ address: https://sealos.hub
 auth: admin:passw0rd
 `,
 			expectedPriority: types.SealosHubDefaultPriority, // 1000
-			expectWarn: false,
+			expectWarn:       false,
 		},
 		{
 			name: "custom offline priority",
@@ -323,7 +365,7 @@ auth: admin:passw0rd
 offlinePriority: 800
 `,
 			expectedPriority: 800,
-			expectWarn: false,
+			expectWarn:       false,
 		},
 		{
 			name: "offline priority below minimum",
@@ -333,7 +375,7 @@ auth: admin:passw0rd
 offlinePriority: -100
 `,
 			expectedPriority: 0, // clamped to MinPriority
-			expectWarn: true,
+			expectWarn:       true,
 		},
 		{
 			name: "offline priority above maximum",
@@ -343,7 +385,7 @@ auth: admin:passw0rd
 offlinePriority: 15000
 `,
 			expectedPriority: 10000, // clamped to MaxPriority
-			expectWarn: true,
+			expectWarn:       true,
 		},
 		{
 			name: "offline priority zero uses default",
@@ -353,7 +395,7 @@ auth: admin:passw0rd
 offlinePriority: 0
 `,
 			expectedPriority: types.SealosHubDefaultPriority, // 0 means use default
-			expectWarn: false,
+			expectWarn:       false,
 		},
 	}
 
@@ -373,7 +415,11 @@ offlinePriority: 0
 			}
 
 			if authConfig.OfflinePriority != tt.expectedPriority {
-				t.Errorf("expected offline priority %d, got %d", tt.expectedPriority, authConfig.OfflinePriority)
+				t.Errorf(
+					"expected offline priority %d, got %d",
+					tt.expectedPriority,
+					authConfig.OfflinePriority,
+				)
 			}
 		})
 	}
@@ -422,8 +468,11 @@ registries:
 
 	// First should be registry.example.com (priority 950)
 	if entries[0].Domain != "registry.example.com" {
-		t.Errorf("expected first registry to be registry.example.com (priority 950), got %s (priority %d)",
-			entries[0].Domain, entries[0].Priority)
+		t.Errorf(
+			"expected first registry to be registry.example.com (priority 950), got %s (priority %d)",
+			entries[0].Domain,
+			entries[0].Priority,
+		)
 	}
 	if entries[0].Priority != 950 {
 		t.Errorf("expected registry.example.com priority 950, got %d", entries[0].Priority)
@@ -447,4 +496,3 @@ registries:
 		t.Errorf("expected docker.io priority 600, got %d", entries[2].Priority)
 	}
 }
-

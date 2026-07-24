@@ -35,14 +35,17 @@ linters:
     - govet
     - iface
     - importas
+    - iotamixing
     - inamedparam
     - ineffassign
     - intrange
     - loggercheck
     - mirror
     - misspell
+    - modernize
     - musttag
     - nakedret
+    - noctx
     - nolintlint
     - nosprintfhostport
     - perfsprint
@@ -100,6 +103,12 @@ linters:
     staticcheck:
       dot-import-whitelist: []
       http-status-code-whitelist: []
+    modernize:
+      disable:
+        - forvar
+        - omitzero
+    perfsprint:
+      concat-loop: false
     usestdlibvars:
       time-date-month: true
       time-month: true
