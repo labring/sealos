@@ -885,34 +885,7 @@ func (r *UserReconciler) updateStatus(
 	})
 }
 
-func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.User) (bool, error) {
-	reader := r.apiReader
-	if reader == nil {
-		reader = r.Client
-	}
-
-	latest := &userv1.User{}
-	if err := reader.Get(ctx, client.ObjectKeyFromObject(user), latest); err != nil {
-		return false, nil
-	}
-	*user = *latest.DeepCopy()
-
 	if !r.isNewUser(user) {
-		user.Status.Conditions = helper.DeleteCondition(
-			user.Status.Conditions,
-			licenseLimitedCondition,
-		)
-		return false, nil
-	}
-
-	if err := usercount.Init(ctx, reader); err != nil {
-		return false, nil
-	}
-	userCount, err := usercount.CountQuotaUsersExcluding(ctx, reader, user.Name)
-	if err != nil {
-		return false, nil
-	}
-	if licensegate.AllowNewUser(userCount) {
 		user.Status.Conditions = helper.DeleteCondition(
 			user.Status.Conditions,
 			licenseLimitedCondition,
