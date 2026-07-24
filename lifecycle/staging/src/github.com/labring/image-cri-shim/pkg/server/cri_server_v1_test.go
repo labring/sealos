@@ -16,15 +16,13 @@ package server
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"testing"
 	"time"
 
 	rtype "github.com/docker/docker/api/types/registry"
-
 	"github.com/labring/image-cri-shim/pkg/types"
-
 	"google.golang.org/grpc"
 	api "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
@@ -106,13 +104,16 @@ func TestFindMatchingRegistryExactMatchOnly(t *testing.T) {
 		"registry.example.com": {ServerAddress: "https://registry.example.com"},
 	}
 
-	if domain, cfg := service.findMatchingRegistry("registry.example.com", registries); cfg == nil || domain != "registry.example.com" {
+	if domain, cfg := service.findMatchingRegistry("registry.example.com", registries); cfg == nil ||
+		domain != "registry.example.com" {
 		t.Fatalf("expected exact match for registry.example.com, got domain=%q cfg=%v", domain, cfg)
 	}
-	if domain, cfg := service.findMatchingRegistry("REGISTRY.EXAMPLE.COM", registries); cfg == nil || domain != "registry.example.com" {
+	if domain, cfg := service.findMatchingRegistry("REGISTRY.EXAMPLE.COM", registries); cfg == nil ||
+		domain != "registry.example.com" {
 		t.Fatalf("expected case-insensitive exact match, got domain=%q cfg=%v", domain, cfg)
 	}
-	if domain, cfg := service.findMatchingRegistry("mirror.registry.example.com", registries); cfg != nil || domain != "" {
+	if domain, cfg := service.findMatchingRegistry("mirror.registry.example.com", registries); cfg != nil ||
+		domain != "" {
 		t.Fatalf("expected no match for subdomain lookup, got domain=%q cfg=%v", domain, cfg)
 	}
 }
@@ -182,14 +183,14 @@ func TestRewriteImageConcurrentAccess(t *testing.T) {
 		var wg sync.WaitGroup
 		results := make(chan string, goroutines*iterations)
 		errCh := make(chan error, goroutines)
-		for i := 0; i < goroutines; i++ {
+		for range goroutines {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				for j := 0; j < iterations; j++ {
+				for range iterations {
 					out, found, _ := service.rewriteImage(image, "pull")
 					if !found {
-						errCh <- fmt.Errorf("expected rewrite to succeed in concurrent workload")
+						errCh <- errors.New("expected rewrite to succeed in concurrent workload")
 						return
 					}
 					results <- out
@@ -232,12 +233,16 @@ func TestImageCacheEvictionOrder(t *testing.T) {
 			"registry.example.com/app/c:1",
 		}
 
-		for i := 0; i < 2; i++ {
+		for i := range 2 {
 			if _, found, _ := service.rewriteImage(images[i], "pull"); !found {
 				t.Fatalf("expected rewrite for %s to succeed", images[i])
 			}
 			if got := stub.callCount(images[i]); got != 1 {
-				t.Fatalf("expected manifest call for %s to be recorded once, got %d", images[i], got)
+				t.Fatalf(
+					"expected manifest call for %s to be recorded once, got %d",
+					images[i],
+					got,
+				)
 			}
 		}
 
@@ -257,7 +262,11 @@ func TestImageCacheEvictionOrder(t *testing.T) {
 			t.Fatalf("expected rewrite for %s to succeed", images[1])
 		}
 		if got := stub.callCount(images[1]); got != 2 {
-			t.Fatalf("expected LRU eviction to trigger second manifest call for %s, got %d", images[1], got)
+			t.Fatalf(
+				"expected LRU eviction to trigger second manifest call for %s, got %d",
+				images[1],
+				got,
+			)
 		}
 	})
 }
@@ -272,13 +281,15 @@ func TestDomainCacheExpiry(t *testing.T) {
 	}
 
 	service.cacheDomainMatch("mirror.registry.example.com", "registry.example.com")
-	if domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries); cfg == nil || domain != "registry.example.com" {
+	if domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries); cfg == nil ||
+		domain != "registry.example.com" {
 		t.Fatalf("expected domain cache hit, got domain=%s cfg=%v", domain, cfg)
 	}
 
 	time.Sleep(40 * time.Millisecond)
 
-	if domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries); cfg != nil || domain != "" {
+	if domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries); cfg != nil ||
+		domain != "" {
 		t.Fatalf("expected domain cache entry to expire, got domain=%s cfg=%v", domain, cfg)
 	}
 }
@@ -419,15 +430,27 @@ type fakeImageClient struct {
 	lastPull *api.PullImageRequest
 }
 
-func (f *fakeImageClient) ListImages(ctx context.Context, in *api.ListImagesRequest, opts ...grpc.CallOption) (*api.ListImagesResponse, error) {
+func (f *fakeImageClient) ListImages(
+	ctx context.Context,
+	in *api.ListImagesRequest,
+	opts ...grpc.CallOption,
+) (*api.ListImagesResponse, error) {
 	return &api.ListImagesResponse{}, nil
 }
 
-func (f *fakeImageClient) ImageStatus(ctx context.Context, in *api.ImageStatusRequest, opts ...grpc.CallOption) (*api.ImageStatusResponse, error) {
+func (f *fakeImageClient) ImageStatus(
+	ctx context.Context,
+	in *api.ImageStatusRequest,
+	opts ...grpc.CallOption,
+) (*api.ImageStatusResponse, error) {
 	return &api.ImageStatusResponse{}, nil
 }
 
-func (f *fakeImageClient) PullImage(ctx context.Context, in *api.PullImageRequest, opts ...grpc.CallOption) (*api.PullImageResponse, error) {
+func (f *fakeImageClient) PullImage(
+	ctx context.Context,
+	in *api.PullImageRequest,
+	opts ...grpc.CallOption,
+) (*api.PullImageResponse, error) {
 	f.lastPull = in
 	ref := ""
 	if in.GetImage() != nil {
@@ -436,10 +459,18 @@ func (f *fakeImageClient) PullImage(ctx context.Context, in *api.PullImageReques
 	return &api.PullImageResponse{ImageRef: ref}, nil
 }
 
-func (f *fakeImageClient) RemoveImage(ctx context.Context, in *api.RemoveImageRequest, opts ...grpc.CallOption) (*api.RemoveImageResponse, error) {
+func (f *fakeImageClient) RemoveImage(
+	ctx context.Context,
+	in *api.RemoveImageRequest,
+	opts ...grpc.CallOption,
+) (*api.RemoveImageResponse, error) {
 	return &api.RemoveImageResponse{}, nil
 }
 
-func (f *fakeImageClient) ImageFsInfo(ctx context.Context, in *api.ImageFsInfoRequest, opts ...grpc.CallOption) (*api.ImageFsInfoResponse, error) {
+func (f *fakeImageClient) ImageFsInfo(
+	ctx context.Context,
+	in *api.ImageFsInfoRequest,
+	opts ...grpc.CallOption,
+) (*api.ImageFsInfoResponse, error) {
 	return &api.ImageFsInfoResponse{}, nil
 }
