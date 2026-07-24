@@ -15,16 +15,14 @@
 package server
 
 import (
-	"fmt"
+	"errors"
 	"sort"
 	"sync"
 	"testing"
 	"time"
 
 	rtype "github.com/docker/docker/api/types/registry"
-
 	name "github.com/google/go-containerregistry/pkg/name"
-
 	"github.com/labring/image-cri-shim/pkg/types"
 )
 
@@ -33,7 +31,10 @@ type manifestStub struct {
 	calls map[string]int
 }
 
-func (m *manifestStub) handler(image string, auth map[string]rtype.AuthConfig) (string, []byte, *rtype.AuthConfig, error) {
+func (m *manifestStub) handler(
+	image string,
+	auth map[string]rtype.AuthConfig,
+) (string, []byte, *rtype.AuthConfig, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.calls == nil {
@@ -42,7 +43,7 @@ func (m *manifestStub) handler(image string, auth map[string]rtype.AuthConfig) (
 	m.calls[image]++
 
 	if len(auth) == 0 {
-		return image, nil, nil, fmt.Errorf("no auth config provided")
+		return image, nil, nil, errors.New("no auth config provided")
 	}
 
 	ref, err := name.ParseReference(image)

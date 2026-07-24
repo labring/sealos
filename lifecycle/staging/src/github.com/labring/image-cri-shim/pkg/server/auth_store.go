@@ -21,9 +21,7 @@ import (
 	"sync"
 
 	rtype "github.com/docker/docker/api/types/registry"
-
 	"github.com/labring/image-cri-shim/pkg/types"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -51,14 +49,14 @@ func (a *AuthStore) Update(auth *types.ShimAuthConfig) {
 		a.offlineCRIConfigs = map[string]rtype.AuthConfig{}
 		a.offlinePriority = types.SealosHubDefaultPriority
 		logger.Warn("received empty shim auth config, cleared cached registry credentials")
-    } else {
-        a.criConfigs = cloneAuthMap(auth.CRIConfigs)
-        a.criPriorities = clonePriorityMap(auth.CRIPriorities)
-        a.offlineCRIConfigs = cloneAuthMap(auth.OfflineCRIConfigs)
-        a.offlinePriority = auth.OfflinePriority
-        logger.Debug("updated shim auth config, registries: %d, offline: %d, priorities: %+v",
-            len(a.criConfigs), len(a.offlineCRIConfigs), a.criPriorities)
-    }
+	} else {
+		a.criConfigs = cloneAuthMap(auth.CRIConfigs)
+		a.criPriorities = clonePriorityMap(auth.CRIPriorities)
+		a.offlineCRIConfigs = cloneAuthMap(auth.OfflineCRIConfigs)
+		a.offlinePriority = auth.OfflinePriority
+		logger.Debug("updated shim auth config, registries: %d, offline: %d, priorities: %+v",
+			len(a.criConfigs), len(a.offlineCRIConfigs), a.criPriorities)
+	}
 
 	observers := append([]func(){}, a.observers...)
 	a.mu.Unlock()
@@ -117,9 +115,9 @@ func (a *AuthStore) GetSortedRegistries() []RegistryEntry {
 	// Add offline registry (sealos.hub)
 	for domain, cfg := range a.offlineCRIConfigs {
 		entries = append(entries, RegistryEntry{
-			Domain:   domain,
-			Config:   cfg,
-			Priority: a.offlinePriority,
+			Domain:    domain,
+			Config:    cfg,
+			Priority:  a.offlinePriority,
 			IsOffline: true,
 		})
 	}
@@ -166,17 +164,6 @@ func cloneAuthMap(src map[string]rtype.AuthConfig) map[string]rtype.AuthConfig {
 		return map[string]rtype.AuthConfig{}
 	}
 	dst := make(map[string]rtype.AuthConfig, len(src))
-	for k, v := range src {
-		dst[k] = v
-	}
-	return dst
-}
-
-func cloneSkipMap(src map[string]bool) map[string]bool {
-	if len(src) == 0 {
-		return map[string]bool{}
-	}
-	dst := make(map[string]bool, len(src))
 	for k, v := range src {
 		dst[k] = v
 	}

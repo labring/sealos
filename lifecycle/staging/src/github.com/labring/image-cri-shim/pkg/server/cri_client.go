@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:staticcheck
 package server
 
 import (
@@ -23,11 +22,10 @@ import (
 	"syscall"
 	"time"
 
+	netutil "github.com/labring/sealos/pkg/utils/net"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
-
-	netutil "github.com/labring/sealos/pkg/utils/net"
 )
 
 // DialNotifyFn is a function to call after a successful net.Dial[Timeout]().
@@ -54,11 +52,11 @@ type ConnectOptions struct {
 // Client is the interface we expose to our CRI client.
 type Client interface {
 	// Connect tries to connect the client to the specified image and runtime services.
-	Connect(ConnectOptions) (*grpc.ClientConn, error)
+	Connect(options ConnectOptions) (*grpc.ClientConn, error)
 	// Close closes any existing client connections.
 	Close()
 	// CheckConnection checks if we have (un-Close()'d as opposed to working) connections.
-	CheckConnection(ConnectOptions) error
+	CheckConnection(options ConnectOptions) error
 	// HasRuntimeService checks if the client is configured with runtime services.
 	HasRuntimeService() bool
 	// HasImageService checks if the client is configured with image services.
@@ -204,6 +202,6 @@ func (c *client) dialNotify(socket string) {
 }
 
 // Return a formatted client-specific error.
-func clientError(format string, args ...interface{}) error {
+func clientError(format string, args ...any) error {
 	return fmt.Errorf("cri/client: "+format, args...)
 }
