@@ -3,7 +3,6 @@ go 1.25.0
 use (
 	./account
 	./app
-	./devbox
 	./job/heartbeat
 	./job/init
 	./license
