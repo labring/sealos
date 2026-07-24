@@ -844,7 +844,7 @@ func (r *UserReconciler) syncFinalStatus(
 
 func (r *UserReconciler) shouldRotateKubeConfig(user *userv1.User) bool {
 	if user.Spec.KubeConfigRotateAt == nil {
-		return false
+		return true
 	}
 	if user.Status.ObservedKubeConfigRotateAt == nil {
 		return true
@@ -860,7 +860,7 @@ func (r *UserReconciler) updateStatus(
 	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		original := &userv1.User{}
 		if err := r.Get(ctx, nn, original); err != nil {
-			return err
+			return nil
 		}
 		original.Status = *status
 		return r.Client.Status().Update(ctx, original)
@@ -875,7 +875,7 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 
 	latest := &userv1.User{}
 	if err := reader.Get(ctx, client.ObjectKeyFromObject(user), latest); err != nil {
-		return false, err
+		return false, nil
 	}
 	*user = *latest.DeepCopy()
 
@@ -888,11 +888,11 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 	}
 
 	if err := usercount.Init(ctx, reader); err != nil {
-		return false, err
+		return false, nil
 	}
 	userCount, err := usercount.CountQuotaUsersExcluding(ctx, reader, user.Name)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
 	if licensegate.AllowNewUser(userCount) {
 		user.Status.Conditions = helper.DeleteCondition(
