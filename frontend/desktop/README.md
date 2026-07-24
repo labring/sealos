@@ -174,6 +174,13 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `/api/desktop/getResource` 保留原有 Pod/PVC 运行资源统计，同时返回 `workspaceQuota`，用于展示 CPU、内存、存储、GPU、NodePort 的总量、已用和可用量。
 - `sealos-desktop-sdk` 的 `getWorkspaceQuotaApi` 复用同一个接口，子应用通过 master bridge 获取到的 workspace quota 与桌面右上角展示保持同源。
 
+### 密码登录初始化契约
+
+- `/api/auth/password` 只完成全局身份认证，返回 global token 和 `needInit`，不在登录接口里同步创建 Region DB workspace/UserCR 或获取 kubeconfig。
+- 当 `needInit` 为 `true` 时，客户端应先使用 global token 调用 `/api/auth/initRegionToken` 完成初始化；当 `needInit` 为 `false` 时，再调用 `/api/auth/regionToken` 获取 region token。
+- PASSWORD 用户名在前端和后端都会进行 `trim()`；隐藏控制字符会被拒绝，admin-like 的 PASSWORD provider miss 不会触发自动注册。
+- 登录链路日志只记录阶段、耗时和安全错误摘要，不应记录密码、token、client secret 或原始请求体。
+
 ### 测试环境
 
 1. 需要设置环境变量`NODE_ENV=test` 或者 `$env:NODE_ENV="test"`

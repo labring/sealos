@@ -5,6 +5,7 @@ export class AuthError extends Error {
       | 'USER_NOT_FOUND'
       | 'INCORRECT_PASSWORD'
       | 'SIGNUP_FAILED'
+      | 'INVALID_USERNAME'
       | 'DATABASE_ERROR' = 'DATABASE_ERROR'
   ) {
     super(message);

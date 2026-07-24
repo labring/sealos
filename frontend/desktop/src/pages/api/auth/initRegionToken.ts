@@ -7,9 +7,16 @@ import { initRegionTokenParamsSchema } from '@/schema/auth';
 import { HttpStatusCode } from 'axios';
 import { getRegionUid } from '@/services/enable';
 import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
+import { canUseGlobalAuthToken } from '@/services/backend/authGuard';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
   await filterAuthenticationToken(req, res, async ({ userId, userUid }) => {
+    if (!(await canUseGlobalAuthToken({ userUid }))) {
+      return jsonRes(res, {
+        code: HttpStatusCode.Unauthorized,
+        message: 'Unauthorized'
+      });
+    }
     const parseResult = initRegionTokenParamsSchema.safeParse(req.body);
     if (!parseResult.success) {
       return jsonRes(res, {

@@ -5,9 +5,16 @@ import { ErrorHandler } from '@/services/backend/middleware/error';
 import { filterAuthenticationToken } from '@/services/backend/middleware/access';
 import { HttpStatusCode } from 'axios';
 import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
+import { canUseGlobalAuthToken } from '@/services/backend/authGuard';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
   await filterAuthenticationToken(req, res, async ({ userId, userUid }) => {
+    if (!(await canUseGlobalAuthToken({ userUid }))) {
+      return jsonRes(res, {
+        code: HttpStatusCode.Unauthorized,
+        message: 'Unauthorized'
+      });
+    }
     const regionData = await getRegionToken({
       userId,
       userUid,
