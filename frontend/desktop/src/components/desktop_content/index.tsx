@@ -65,7 +65,6 @@ export default function Desktop({ initialAppLaunch, onInitialAppLoaded }: Deskto
     useSessionStore();
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
-  const prevRestoreAppKeyRef = useRef<string>('');
   const [isClient, setIsClient] = useState(false);
   const guideModal = useGuideModalStore();
   const isInitialAppLoading = initialAppLaunch.status !== 'ready';
@@ -75,15 +74,12 @@ export default function Desktop({ initialAppLaunch, onInitialAppLoaded }: Deskto
   }, []);
 
   useEffect(() => {
-    if (!isClient) return;
-
-    const prevKey = prevRestoreAppKeyRef.current;
-    prevRestoreAppKeyRef.current = currentAppKey;
+    // Do not let rehydrated, cross-tab state overwrite this tab's restore
+    // intent before the initial target has been selected and loaded.
+    if (!isClient || isInitialAppLoading) return;
 
     if (!currentAppKey) {
-      if (!isInitialAppLoading && prevKey) {
-        sessionStorage.removeItem(SESSION_RESTORE_APP_KEY);
-      }
+      sessionStorage.removeItem(SESSION_RESTORE_APP_KEY);
       return;
     }
 
@@ -177,9 +173,10 @@ export default function Desktop({ initialAppLaunch, onInitialAppLoaded }: Deskto
 
   const quitGuide = useCallback(
     ({ appKey }: { appKey: string }) => {
-      if (!commonConfig?.guideEnabled) return;
       closeDesktopApp({ appKey });
-      guideModal.openGuideModal();
+      if (commonConfig?.guideEnabled) {
+        guideModal.openGuideModal();
+      }
     },
     [closeDesktopApp, commonConfig?.guideEnabled, guideModal]
   );
