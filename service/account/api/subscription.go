@@ -327,9 +327,27 @@ func getOwnNsListWithClt(clt client.Client, user string) ([]string, error) {
 	return nsListStr, nil
 }
 
-func getOwnNsListWithCltWithOutWorkspaceSubscription(
+var workspaceSubscriptionExists = func(workspace string) (bool, error) {
+	if dao.DBClient == nil {
+		return false, errors.New("db client is nil")
+	}
+	subscription, err := dao.DBClient.GetWorkspaceSubscription(
+		workspace,
+		dao.DBClient.GetLocalRegion().Domain,
+	)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("get workspace subscription: %w", err)
+	}
+	return subscription != nil, nil
+}
+
+func getOwnNsListWithCltForDebtFlush(
 	clt client.Client,
 	user string,
+	includeDebtSuspendedNamespaces bool,
 ) ([]string, error) {
 	if user == "" {
 		return nil, errors.New("user is empty")
@@ -344,13 +362,56 @@ func getOwnNsListWithCltWithOutWorkspaceSubscription(
 		if nsList.Items[i].Status.Phase == corev1.NamespaceTerminating {
 			continue
 		}
-		if nsList.Items[i].Annotations != nil &&
-			nsList.Items[i].Annotations[types.WorkspaceSubscriptionStatusAnnoKey] != "" {
+		skipWorkspaceSubscription, err := shouldSkipWorkspaceSubscriptionNamespace(
+			nsList.Items[i].Name,
+			nsList.Items[i].Annotations,
+			includeDebtSuspendedNamespaces,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"check workspace subscription namespace %s: %w",
+				nsList.Items[i].Name,
+				err,
+			)
+		}
+		if skipWorkspaceSubscription {
 			continue
 		}
 		nsListStr = append(nsListStr, nsList.Items[i].Name)
 	}
 	return nsListStr, nil
+}
+
+func shouldSkipWorkspaceSubscriptionNamespace(
+	namespace string,
+	annotations map[string]string,
+	includeDebtSuspendedNamespaces bool,
+) (bool, error) {
+	if annotations == nil || annotations[types.WorkspaceSubscriptionStatusAnnoKey] == "" {
+		return false, nil
+	}
+	if !includeDebtSuspendedNamespaces ||
+		!isDebtSuspendedNamespaceStatus(annotations[types.DebtNamespaceAnnoStatusKey]) {
+		return true, nil
+	}
+	exists, err := workspaceSubscriptionExists(namespace)
+	if err != nil {
+		return true, err
+	}
+	return exists, nil
+}
+
+func isDebtSuspendedNamespaceStatus(status string) bool {
+	switch status {
+	case types.SuspendDebtNamespaceAnnoStatus,
+		types.SuspendCompletedDebtNamespaceAnnoStatus,
+		types.TerminateSuspendDebtNamespaceAnnoStatus,
+		types.TerminateSuspendCompletedDebtNamespaceAnnoStatus,
+		types.FinalDeletionDebtNamespaceAnnoStatus:
+		return true
+	default:
+		return false
+	}
 }
 
 func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.ResourceQuota {

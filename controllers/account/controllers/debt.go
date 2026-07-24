@@ -682,16 +682,20 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil
 	}
-	isBasicUser := account.Balance <= 10*BaseUnit
-	oweamount := account.Balance - account.DeductionBalance + account.UsableCredits
-	// update interval seconds
-	updateIntervalSeconds := time.Now().UTC().Unix() - debt.UpdatedAt.UTC().Unix()
 	lastStatus := debt.AccountDebtStatus
 	update := false
 	if lastStatus == "" {
 		lastStatus = types.NormalPeriod
 		update = true
 	}
+	// A user can still need debt recovery after ResumeBalance has normalized deduction_balance.
+	if account.DeductionBalance == 0 && !types.ContainDebtStatus(types.DebtStates, lastStatus) {
+		return nil
+	}
+	isBasicUser := account.Balance <= 10*BaseUnit
+	oweamount := account.Balance - account.DeductionBalance + account.UsableCredits
+	// update interval seconds
+	updateIntervalSeconds := time.Now().UTC().Unix() - debt.UpdatedAt.UTC().Unix()
 	currentStatusRaw, err := r.DetermineCurrentStatus(
 		oweamount,
 		account.UserUID,
@@ -1116,6 +1120,7 @@ func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 			if !mutex.TryLock() {
 				// r.Logger.V(1).Info("user debt processing skipped due to existing lock",
 				//	"userUID", u)
+				r.failedUserLocks.Store(u, 0)
 				return
 			}
 			defer mutex.Unlock()
