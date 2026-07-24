@@ -45,15 +45,24 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_modules: ${{ steps.set-matrix.outputs.has_modules }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Resolve Modules
         id: set-matrix
-        run: bash ./scripts/resolve-modules.sh ./lifecycle
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            bash ./scripts/resolve-modules.sh ./lifecycle --changed "${{ github.event.pull_request.base.sha }}"
+          else
+            bash ./scripts/resolve-modules.sh ./lifecycle
+          fi
 
   golangci-lint:
+    if: ${{ needs.resolve-modules.outputs.has_modules == 'true' }}
     needs: [resolve-modules]
     runs-on: ubuntu-24.04
     strategy:
