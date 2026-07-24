@@ -15,11 +15,11 @@ podAnnotations: {}
 podLabels: {}
 
 podSecurityContext:
-  runAsNonRoot: true
+  runAsNonRoot: false
 
 securityContext:
-  runAsNonRoot: true
-  allowPrivilegeEscalation: false
+  runAsNonRoot: false
+  allowPrivilegeEscalation: true
   capabilities:
     drop:
       - "ALL"
