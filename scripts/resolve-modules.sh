@@ -85,7 +85,7 @@ if [[ $MODE == "--changed" ]]; then
       if [[ -n $best_module ]]; then
         SELECTED_MODULES["$best_module"]=1
       fi
-    done < <(git diff --name-only "${BASE_REF}...${HEAD_REF}")
+    done < <(git diff --name-only "${BASE_REF}...${HEAD_REF}" -- "$FIND_VAR")
 
     CHANGED_MODULES=()
     for module in "${MODULES[@]}"; do
