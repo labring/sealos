@@ -841,6 +841,24 @@ func (r *UserReconciler) syncFinalStatus(
 		user.Status.Phase = userv1.UserActive
 	}
 }
+func ( r * UserReconciler) handleLicenseLimit( ctx context. Context, user * userv1. User) ( bool, error) {
+	reader := r. apiReader
+	if reader == nil {
+		reader = r. Client
+	}
+	latest := & userv1. User{}
+	if err := reader. Get( ctx, client. ObjectKeyFromObject( user), latest); err != nil {
+		return false, nil
+	}
+	* user = * latest. DeepCopy()
+
+	user. Status. Conditions = helper. DeleteCondition(
+		user. Status. Conditions,
+		licenseLimitedCondition,
+	)
+
+	return false, nil
+}
 
 func (r *UserReconciler) shouldRotateKubeConfig(user *userv1.User) bool {
 	if user.Spec.KubeConfigRotateAt == nil {
