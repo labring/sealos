@@ -26,12 +26,12 @@ podAnnotations: {}
 podLabels: {}
 
 podSecurityContext:
-  runAsNonRoot: true
+  runAsNonRoot: false
   # fsGroup: 2000
 
 securityContext:
   readOnlyRootFilesystem: true
-  allowPrivilegeEscalation: false
+  allowPrivilegeEscalation: true
   capabilities:
     drop:
       - "ALL"
