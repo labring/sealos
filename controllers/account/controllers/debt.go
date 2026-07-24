@@ -47,7 +47,7 @@ import (
 const (
 	DebtDetectionCycleEnv = "DebtDetectionCycleSeconds"
 
-	finalDeletionDebtNamespaceSyncInterval = 5 * time.Minute
+	finalDeletionDebtNamespaceSyncInterval = time.Hour
 	finalDeletionDebtNamespaceQueryTimeout = 30 * time.Second
 	flushDebtResourceStatusRequestTimeout  = 30 * time.Second
 
