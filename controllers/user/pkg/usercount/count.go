@@ -16,6 +16,7 @@ package usercount
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
 
@@ -74,7 +75,11 @@ func CountQuotaUsers(ctx context.Context, reader client.Reader) (int, error) {
 	return count, nil
 }
 
-func CountQuotaUsersExcluding(ctx context.Context, reader client.Reader, excludeName string) (int, error) {
+func CountQuotaUsersExcluding(
+	ctx context.Context,
+	reader client.Reader,
+	excludeName string,
+) (int, error) {
 	count, err := countQuotaUsersUnstructured(ctx, reader, &client.ListOptions{}, excludeName)
 	if err != nil {
 		return 0, fmt.Errorf("unable to get quota user count excluding %s: %w", excludeName, err)
@@ -82,7 +87,11 @@ func CountQuotaUsersExcluding(ctx context.Context, reader client.Reader, exclude
 	return count, nil
 }
 
-func CountActiveUsersExcluding(ctx context.Context, reader client.Reader, excludeName string) (int, error) {
+func CountActiveUsersExcluding(
+	ctx context.Context,
+	reader client.Reader,
+	excludeName string,
+) (int, error) {
 	active, err := countActiveUsersUnstructured(ctx, reader, &client.ListOptions{}, excludeName)
 	if err != nil {
 		return 0, fmt.Errorf("unable to get active user count excluding %s: %w", excludeName, err)
@@ -97,7 +106,7 @@ func countActiveUsersUnstructured(
 	excludeName string,
 ) (int, error) {
 	if reader == nil {
-		return 0, fmt.Errorf("client reader is nil")
+		return 0, errors.New("client reader is nil")
 	}
 
 	list := &unstructured.UnstructuredList{}
@@ -132,7 +141,7 @@ func countQuotaUsersUnstructured(
 	excludeName string,
 ) (int, error) {
 	if reader == nil {
-		return 0, fmt.Errorf("client reader is nil")
+		return 0, errors.New("client reader is nil")
 	}
 
 	list := &unstructured.UnstructuredList{}
@@ -151,7 +160,8 @@ func countQuotaUsersUnstructured(
 		if excludeName != "" && item.GetName() == excludeName {
 			continue
 		}
-		if deletionTimestamp, found, _ := unstructured.NestedString(item.Object, "metadata", "deletionTimestamp"); found && deletionTimestamp != "" {
+		if deletionTimestamp, found, _ := unstructured.NestedString(item.Object, "metadata", "deletionTimestamp"); found &&
+			deletionTimestamp != "" {
 			continue
 		}
 		count++

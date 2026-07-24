@@ -6,17 +6,16 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/labring/sealos/controllers/pkg/pay"
-
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/controllers/pkg/pay"
 	"github.com/labring/sealos/service/pay/handler"
 	"github.com/labring/sealos/service/pay/helper"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var DefaultURL = fmt.Sprintf("https://%s", GetEnvWithDefault("DOMAIN", helper.DefaultDomain))
+var DefaultURL = "https://" + GetEnvWithDefault("DOMAIN", helper.DefaultDomain)
 
-func GetEnvWithDefault(s string, domain string) string {
+func GetEnvWithDefault(s, domain string) string {
 	if value, ok := os.LookupEnv(s); ok {
 		return value
 	}
@@ -27,22 +26,36 @@ func GetStripeSession(c *gin.Context, request *helper.Request, client *mongo.Cli
 	amountStr := request.Amount
 	amount, err := strconv.ParseInt(amountStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error amount : %d, %v", amount, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("error amount : %d, %v", amount, err)},
+		)
 		return
 	}
 
 	// check the database paymethod and report an error if there is no corresponding payment method
 	if _, err := handler.CheckPayMethodExistOrNot(client, request.Currency, request.PayMethod); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("paymethod is not exist: %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("paymethod is not exist: %v", err)},
+		)
 		return
 	}
 	// check the app collection to see if the cluster is allowed to use this payment method
 	if err := handler.CheckAppAllowOrNot(client, request.AppID, helper.Stripe); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error pay method or currency in this app : %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("error pay method or currency in this app : %v", err)},
+		)
 		return
 	}
 
-	session, err := pay.CreateCheckoutSession(amount, pay.CNY, DefaultURL+os.Getenv(helper.StripeSuccessPostfix), DefaultURL+os.Getenv(helper.StripeCancelPostfix))
+	session, err := pay.CreateCheckoutSession(
+		amount,
+		pay.CNY,
+		DefaultURL+os.Getenv(helper.StripeSuccessPostfix),
+		DefaultURL+os.Getenv(helper.StripeCancelPostfix),
+	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error session : %v", err)})
 		return
@@ -51,7 +64,7 @@ func GetStripeSession(c *gin.Context, request *helper.Request, client *mongo.Cli
 	appID := request.AppID
 	user := request.User
 	currency := request.Currency
-	stripeDetails := map[string]interface{}{
+	stripeDetails := map[string]any{
 		"sessionID": session.ID,
 	}
 	// Ensure that these operations are atomic, meaning that if the lower operation fails,
@@ -60,9 +73,26 @@ func GetStripeSession(c *gin.Context, request *helper.Request, client *mongo.Cli
 	// and if either fails, they are rolled back
 
 	// insert payment details into database
-	orderID, err := handler.InsertDetails(client, user, helper.Stripe, amountStr, currency, appID, stripeDetails)
+	orderID, err := handler.InsertDetails(
+		client,
+		user,
+		helper.Stripe,
+		amountStr,
+		currency,
+		appID,
+		stripeDetails,
+	)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("insert stripe payment details failed: %s, %v", session.ID, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": fmt.Sprintf(
+					"insert stripe payment details failed: %s, %v",
+					session.ID,
+					err,
+				),
+			},
+		)
 		return
 	}
 
@@ -85,7 +115,10 @@ func GetStripePaymentStatus(c *gin.Context, request *helper.Request, client *mon
 	// check the payment status in the database first
 	status, err := handler.GetPaymentStatus(client, request.OrderID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("get payment status failed from db: %s, %v", status, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("get payment status failed from db: %s, %v", status, err)},
+		)
 		return
 	}
 	// If the payment has been successful, return directly
@@ -100,12 +133,15 @@ func GetStripePaymentStatus(c *gin.Context, request *helper.Request, client *mon
 	// If it is not successful, then go to the payment provider server query
 	session, err := pay.GetSession(request.SessionID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("get stripe session failed: %v, %v", session, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("get stripe session failed: %v, %v", session, err)},
+		)
 		return
 	}
 
 	switch session.Status {
-	//case stripe.CheckoutSessionStatusComplete:
+	// case stripe.CheckoutSessionStatusComplete:
 	//	// change the status of the database to pay.Payment Success
 	//	paymentStatus, err := handler.UpdatePaymentStatus(client, request.OrderID, pay.PaymentSuccess)
 	//	if err != nil {
@@ -120,11 +156,11 @@ func GetStripePaymentStatus(c *gin.Context, request *helper.Request, client *mon
 	//		"orderID": request.OrderID,
 	//	})
 	//	return
-	//case stripe.CheckoutSessionStatusExpired:
+	// case stripe.CheckoutSessionStatusExpired:
 	//	handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentExpired)
-	//case stripe.CheckoutSessionStatusOpen:
+	// case stripe.CheckoutSessionStatusOpen:
 	//	handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentNotPaid)
-	//default:
+	// default:
 	//	handler.UpdateDBIfDiff(c, request.OrderID, client, status, pay.PaymentUnknown)
 	}
 }

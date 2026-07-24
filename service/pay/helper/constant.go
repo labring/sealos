@@ -29,6 +29,7 @@ const (
 	DefaultPort   string = "443"
 	DefaultDomain string = "cloud.sealos.io"
 )
+
 const (
 	StripeSuccessPostfix = "STRIPE_SUCCESS_POSTFIX"
 	StripeCancelPostfix  = "STRIPE_CANCEL_POSTFIX"

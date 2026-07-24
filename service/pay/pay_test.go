@@ -12,7 +12,7 @@ import (
 )
 
 func TestCreatePayMethod_Wechat(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID":         helper.TestAppID,
 		"sign":          helper.TestSign,
 		"payMethod":     "wechat",
@@ -25,7 +25,7 @@ func TestCreatePayMethod_Wechat(t *testing.T) {
 }
 
 func TestCreatePayMethod_Stripe(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID":         helper.TestAppID,
 		"sign":          helper.TestSign,
 		"payMethod":     "stripe",
@@ -38,7 +38,7 @@ func TestCreatePayMethod_Stripe(t *testing.T) {
 }
 
 func TestCreatePayApp(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"payAppName": "laf.io",
 		"appID":      helper.TestAppID,
 		"sign":       helper.TestSign,
@@ -47,7 +47,7 @@ func TestCreatePayApp(t *testing.T) {
 }
 
 func TestAuthentication(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"payAppName": "laf.io",
 		"appID":      helper.TestAppID + 123,
 		"sign":       helper.TestSign + "123",
@@ -56,7 +56,7 @@ func TestAuthentication(t *testing.T) {
 }
 
 func TestGetAppDetails(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID": helper.TestAppID,
 		"sign":  helper.TestSign,
 	}
@@ -64,7 +64,7 @@ func TestGetAppDetails(t *testing.T) {
 }
 
 func TestGetSession_Wechat(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID":     helper.TestAppID,
 		"sign":      helper.TestSign,
 		"amount":    "1288",
@@ -76,7 +76,7 @@ func TestGetSession_Wechat(t *testing.T) {
 }
 
 func TestGetSession_Stripe(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID":     helper.TestAppID,
 		"sign":      helper.TestSign,
 		"amount":    "1288",
@@ -88,20 +88,20 @@ func TestGetSession_Stripe(t *testing.T) {
 }
 
 func TestGetPayStatus(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID":     helper.TestAppID,
 		"sign":      helper.TestSign,
 		"orderID":   helper.TestOrderID,
 		"payMethod": helper.Stripe,
 		"user":      helper.TestUser,
 		"sessionID": helper.TestSessionID,
-		//"TradeNO": 	 helper.TestTradeNO,
+		// "TradeNO": 	 helper.TestTradeNO,
 	}
 	createPayTest(t, data, http.MethodGet, helper.GetPayStatus)
 }
 
 func TestGetPayStatus_seesionIDLXD(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID":     helper.TestAppID,
 		"sign":      helper.TestSign,
 		"orderID":   helper.TestOrderID,
@@ -111,11 +111,11 @@ func TestGetPayStatus_seesionIDLXD(t *testing.T) {
 		// "TradeNO": "db27af04c65bd27bb3c3708addbafc01",
 	}
 	createPayTest(t, data, http.MethodGet, helper.GetPayStatus)
-	//The response should be: {"error":"order does not exist: sessionID mismatch"}
+	// The response should be: {"error":"order does not exist: sessionID mismatch"}
 }
 
 func TestGetPayStatus_orderIDLXD(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID":     helper.TestAppID,
 		"sign":      helper.TestSign,
 		"orderID":   helper.TestOrderID + "abc",
@@ -125,11 +125,11 @@ func TestGetPayStatus_orderIDLXD(t *testing.T) {
 		// "TradeNO": "db27af04c65bd27bb3c3708addbafc01",
 	}
 	createPayTest(t, data, http.MethodGet, helper.GetPayStatus)
-	//The response should be: {"error":"order does not exist: order not found"}
+	// The response should be: {"error":"order does not exist: order not found"}
 }
 
 func TestGetPayStatus_payMethodLXD(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID":     helper.TestAppID,
 		"sign":      helper.TestSign,
 		"orderID":   helper.TestOrderID,
@@ -142,7 +142,7 @@ func TestGetPayStatus_payMethodLXD(t *testing.T) {
 }
 
 func TestGetPayStatus_userLXD(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID":     helper.TestAppID,
 		"sign":      helper.TestSign,
 		"orderID":   helper.TestOrderID,
@@ -155,7 +155,7 @@ func TestGetPayStatus_userLXD(t *testing.T) {
 }
 
 func TestGetBill(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"appID": helper.TestAppID,
 		"sign":  helper.TestSign,
 		"user":  helper.TestUser,
@@ -163,7 +163,9 @@ func TestGetBill(t *testing.T) {
 	createPayTest(t, data, http.MethodGet, helper.GetBill)
 }
 
-func createPayTest(t *testing.T, data map[string]interface{}, httpMethod string, url string) {
+func createPayTest(t *testing.T, data map[string]any, httpMethod, url string) {
+	t.Helper()
+
 	// Create request body data
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -171,7 +173,11 @@ func createPayTest(t *testing.T, data map[string]interface{}, httpMethod string,
 	}
 
 	// Create mock request and response objects
-	req, err := http.NewRequest(httpMethod, helper.LOCALHOST+helper.GROUP+url, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(
+		httpMethod,
+		helper.LOCALHOST+helper.GROUP+url,
+		bytes.NewBuffer(jsonData),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

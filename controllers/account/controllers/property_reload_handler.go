@@ -69,7 +69,7 @@ func (h *PropertyReloadHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 		propertyCount = len(resources.DefaultPropertyTypeLS.Types)
 	}
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":  "success",
 		"message": "Property types reloaded successfully",
 		"count":   propertyCount,

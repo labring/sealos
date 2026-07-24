@@ -721,11 +721,11 @@ type WorkspaceSubscriptionOperatorReq struct {
 	// @Summary Subscription period
 	// @Description Subscription period (1m for monthly, 1y for yearly)
 	// @JSONSchema required
-	Period types.SubscriptionPeriod `json:"period"        bson:"period"  example:"1m"`
+	Period types.SubscriptionPeriod `json:"period"        bson:"period"        example:"1m"`
 	// @Summary Promotion code
 	// @Description Promotion code for applying discount to the upgrade payment
 	// @JSONSchema optional
-	PromotionCode string `json:"promotionCode" bson:"promotionCode"                    example:"SAVE20"`
+	PromotionCode string `json:"promotionCode" bson:"promotionCode" example:"SAVE20"`
 
 	// @Summary Payment method
 	// @Description Payment method (STRIPE, BALANCE)

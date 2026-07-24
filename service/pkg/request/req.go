@@ -17,8 +17,8 @@ import (
 var namespaceMatcherPattern = regexp.MustCompile(`(^|,)\s*namespace\s*(=~|!~|=|!=)`)
 
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
+	//nolint:gosec // Prometheus host is configured by deployment and targets an internal endpoint.
 	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
-
 	if err != nil {
 		return nil, err
 	}
@@ -77,26 +77,27 @@ func addNamespaceMatcher(query, namespace string) string {
 			return result.String()
 		}
 
-		close := strings.Index(query[open:], "}")
-		if close == -1 {
+		closeIdx := strings.Index(query[open:], "}")
+		if closeIdx == -1 {
 			result.WriteString(query)
 			return result.String()
 		}
-		close += open
+		closeIdx += open
 
-		selector := query[open+1 : close]
+		selector := query[open+1 : closeIdx]
 		result.WriteString(query[:open+1])
-		if namespaceMatcherPattern.MatchString(selector) {
+		switch {
+		case namespaceMatcherPattern.MatchString(selector):
 			result.WriteString(selector)
-		} else if strings.TrimSpace(selector) == "" {
+		case strings.TrimSpace(selector) == "":
 			result.WriteString(matcher)
-		} else {
+		default:
 			result.WriteString(matcher)
 			result.WriteString(",")
 			result.WriteString(selector)
 		}
 		result.WriteString("}")
-		query = query[close+1:]
+		query = query[closeIdx+1:]
 	}
 }
 
