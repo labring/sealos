@@ -139,7 +139,7 @@ func defaultAliasForNvidiaGPUProduct(s string) string {
 	return s
 }
 
-func matchesNvidiaGPUType(val string, gpuType string) bool {
+func matchesNvidiaGPUType(val, gpuType string) bool {
 	v := normalizeNvidiaGPUProduct(val)
 	if v == "" {
 		return false
@@ -227,7 +227,7 @@ func parseHamiNvidiaRegisterVirtualCount(s string) int64 {
 	return 0
 }
 
-func parseHamiNvidiaRegister(s string) (prod string, mem string) {
+func parseHamiNvidiaRegister(s string) (prod, mem string) {
 	s = strings.TrimSpace(s)
 	if strings.HasPrefix(s, "[") {
 		type hamiDevice struct {
@@ -269,6 +269,7 @@ func parseHamiNvidiaRegister(s string) (prod string, mem string) {
 	return prod, mem
 }
 
+//nolint:gocyclo // GPU config reconciliation handles several node/alias formats in one pass.
 func (r *GpuReconciler) applyGPUInfoCM(
 	ctx context.Context,
 	reader client.Reader,
@@ -363,7 +364,9 @@ func (r *GpuReconciler) applyGPUInfoCM(
 		}
 		effectiveCount := gpuCount.Value()
 		if node.Annotations != nil {
-			virtualCount := parseHamiNvidiaRegisterVirtualCount(node.Annotations["hami.io/node-nvidia-register"])
+			virtualCount := parseHamiNvidiaRegisterVirtualCount(
+				node.Annotations["hami.io/node-nvidia-register"],
+			)
 			if virtualCount > 0 {
 				effectiveCount = virtualCount
 			}
@@ -433,12 +436,13 @@ func (r *GpuReconciler) applyGPUInfoCM(
 		return ctrl.Result{}, err
 	}
 	aliasMapStr := string(aliasMapBytes)
-	nodeLabelStr := ""
-	if existingNodeLabelStr != "" {
+	var nodeLabelStr string
+	switch {
+	case existingNodeLabelStr != "":
 		nodeLabelStr = existingNodeLabelStr
-	} else if legacyLabelMappingStr != "" {
+	case legacyLabelMappingStr != "":
 		nodeLabelStr = legacyLabelMappingStr
-	} else {
+	default:
 		nodeLabelMap := map[string]string{
 			"kunlunxin": "xpu=on",
 			"nvidia":    "gpu=on",
@@ -492,21 +496,24 @@ func (r *GpuReconciler) applyGPUInfoCM(
 	}
 	if configmap.Data[GPU] != nodeMapStr {
 		configmap.Data[GPU] = nodeMapStr
-		if updateErr := r.Update(ctx, configmap); updateErr != nil && !errors.IsConflict(updateErr) {
+		if updateErr := r.Update(ctx, configmap); updateErr != nil &&
+			!errors.IsConflict(updateErr) {
 			r.Logger.Error(updateErr, "failed to update gpu-info configmap")
 			return ctrl.Result{}, updateErr
 		}
 	}
 	if configmap.Data[GPUAlias] == "" && configmap.Data[GPUAlias] != aliasMapStr {
 		configmap.Data[GPUAlias] = aliasMapStr
-		if updateErr := r.Update(ctx, configmap); updateErr != nil && !errors.IsConflict(updateErr) {
+		if updateErr := r.Update(ctx, configmap); updateErr != nil &&
+			!errors.IsConflict(updateErr) {
 			r.Logger.Error(updateErr, "failed to update gpu-info configmap")
 			return ctrl.Result{}, updateErr
 		}
 	}
 	if configmap.Data[GPUNodeLabel] == "" && configmap.Data[GPUNodeLabel] != nodeLabelStr {
 		configmap.Data[GPUNodeLabel] = nodeLabelStr
-		if updateErr := r.Update(ctx, configmap); updateErr != nil && !errors.IsConflict(updateErr) {
+		if updateErr := r.Update(ctx, configmap); updateErr != nil &&
+			!errors.IsConflict(updateErr) {
 			r.Logger.Error(updateErr, "failed to update gpu-info configmap")
 			return ctrl.Result{}, updateErr
 		}

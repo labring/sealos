@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -28,6 +26,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	types2 "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -112,7 +111,6 @@ func GetWorkspaceSubscriptionInfo(c *gin.Context) {
 			subscription.PayMethod == types.PaymentMethodStripe &&
 			subscription.Stripe != nil &&
 			subscription.Stripe.SubscriptionID != "" {
-
 			// Query the most recent invoice from Stripe to check payment status
 			latestInvoice, invoiceErr := services.StripeServiceInstance.GetLatestInvoice(
 				subscription.Stripe.SubscriptionID,
@@ -1284,7 +1282,6 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 		// No additional validation needed for creation
 		if currentSubscription != nil &&
 			currentSubscription.PlanName != types.FreeSubscriptionPlanName {
-
 			// Allow re-creation for overdue subscriptions
 			if currentSubscription.Status == types.SubscriptionStatusDebt {
 				// Overdue status allowed, will cancel old subscription in payment flow
@@ -1800,11 +1797,11 @@ func cancelOldSubscriptionInTransaction(
 	}
 
 	// Update subscription status to deleted
-	//subscription.Status = types.SubscriptionStatusDeleted
-	//subscription.PayStatus = types.SubscriptionPayStatusCanceled
-	//subscription.CancelAt = time.Now().UTC()
+	// subscription.Status = types.SubscriptionStatusDeleted
+	// subscription.PayStatus = types.SubscriptionPayStatusCanceled
+	// subscription.CancelAt = time.Now().UTC()
 
-	//if err := tx.Save(&subscription).Error; err != nil {
+	// if err := tx.Save(&subscription).Error; err != nil {
 	//	return fmt.Errorf("failed to update subscription status: %w", err)
 	//}
 
@@ -1812,7 +1809,6 @@ func cancelOldSubscriptionInTransaction(
 	if subscription.PayMethod == types.PaymentMethodStripe &&
 		subscription.Stripe != nil &&
 		subscription.Stripe.SubscriptionID != "" {
-
 		_, err := services.StripeServiceInstance.CancelSubscription(
 			subscription.Stripe.SubscriptionID,
 		)
@@ -1874,7 +1870,6 @@ func processNewSubscription(
 	// Handle overdue subscription re-creation: cancel old subscription first
 	if transaction.OldPlanStatus == types.SubscriptionStatusDebt ||
 		(transaction.OldPlanName != "" && transaction.OldPlanName != types.FreeSubscriptionPlanName) {
-
 		if err := cancelOldSubscriptionInTransaction(tx, req.Workspace, req.RegionDomain); err != nil {
 			SetErrorResp(
 				c,
@@ -2763,7 +2758,8 @@ func finalizeWorkspaceSubscriptionSuccess(
 			}
 		}
 	}
-	if wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed || wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded {
+	if wsTransaction.Operator == types.SubscriptionTransactionTypeRenewed ||
+		wsTransaction.Operator == types.SubscriptionTransactionTypeUpgraded {
 		periodDuration, err := types.ParsePeriod(wsTransaction.Period)
 		if err != nil {
 			// Fallback to monthly if parsing fails
@@ -3486,7 +3482,8 @@ func handleWorkspaceSubscriptionDeleted(event *stripe.Event) error {
 		// Check whether the deleted Stripe subscription is a subscription recorded in the current database
 		// If not (for example: the old ID is cleared after the new subscription replaces the old one), skip the processing
 		// This prevents the webhook deletion event of the old subscription from affecting the service status of the new subscription
-		if workspaceSubscription.Stripe != nil && workspaceSubscription.Stripe.SubscriptionID != "" {
+		if workspaceSubscription.Stripe != nil &&
+			workspaceSubscription.Stripe.SubscriptionID != "" {
 			if workspaceSubscription.Stripe.SubscriptionID != subscription.ID {
 				logrus.Infof(
 					"Stripe subscription %s being deleted does not match current subscription %s for workspace %s/%s, skipping webhook processing",

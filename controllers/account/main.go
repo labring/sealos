@@ -312,7 +312,12 @@ func main() {
 		}
 		go func() {
 			setupLog.Info("starting property reload HTTP server", "port", 9444)
-			if err := http.ListenAndServe(":9444", reloadHandler); err != nil {
+			server := &http.Server{
+				Addr:              ":9444",
+				Handler:           reloadHandler,
+				ReadHeaderTimeout: 10 * time.Second,
+			}
+			if err := server.ListenAndServe(); err != nil {
 				setupLog.Error(err, "failed to start property reload HTTP server")
 			}
 		}()

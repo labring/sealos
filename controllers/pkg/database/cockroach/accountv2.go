@@ -70,7 +70,10 @@ func alterTableAddColumnSQL(tableName, columnDef string) string {
 func createEnumTypeSQL(typeName string, values []string) string {
 	quotedValues := make([]string, 0, len(values))
 	for i := range values {
-		quotedValues = append(quotedValues, fmt.Sprintf("'%s'", strings.ReplaceAll(values[i], `'`, `''`)))
+		quotedValues = append(
+			quotedValues,
+			fmt.Sprintf("'%s'", strings.ReplaceAll(values[i], `'`, `''`)),
+		)
 	}
 	return fmt.Sprintf(
 		`CREATE TYPE IF NOT EXISTS %s AS ENUM (%s)`,
@@ -90,7 +93,10 @@ func alterEnumAddValueSQL(typeName, value string) string {
 func createEnumTypeSQLForPostgres(typeName string, values []string) string {
 	quotedValues := make([]string, 0, len(values))
 	for i := range values {
-		quotedValues = append(quotedValues, fmt.Sprintf("'%s'", strings.ReplaceAll(values[i], `'`, `''`)))
+		quotedValues = append(
+			quotedValues,
+			fmt.Sprintf("'%s'", strings.ReplaceAll(values[i], `'`, `''`)),
+		)
 	}
 	return fmt.Sprintf(
 		`DO $$
@@ -139,7 +145,7 @@ func ensurePostgresExtensions(db *gorm.DB) error {
 	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS pgcrypto`).Error; err != nil {
 		if uuidErr := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; uuidErr != nil {
 			return fmt.Errorf(
-				"failed to enable pgcrypto extension: %w; failed to enable uuid-ossp extension: %v",
+				"failed to enable pgcrypto extension: %w; failed to enable uuid-ossp extension: %w",
 				err,
 				uuidErr,
 			)
@@ -2197,7 +2203,14 @@ func (c *Cockroach) InitTables() error {
 	enumTypes := []string{
 		createEnumSQL(
 			"subscription_status",
-			[]string{"NORMAL", "PAUSED", "DEBT", "DEBT_PRE_DELETION", "DEBT_FINAL_DELETION", "DELETED"},
+			[]string{
+				"NORMAL",
+				"PAUSED",
+				"DEBT",
+				"DEBT_PRE_DELETION",
+				"DEBT_FINAL_DELETION",
+				"DELETED",
+			},
 		),
 		createEnumSQL(
 			"subscription_operator",
@@ -2396,7 +2409,9 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.Payment{}, "workspace_subscription_id") {
 		fmt.Println("add column workspace_subscription_id")
 		tableName := types.Payment{}.TableName()
-		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"workspace_subscription_id" uuid`)).Error
+		err := c.DB.Exec(
+			alterTableAddColumnSQL(tableName, `"workspace_subscription_id" uuid`),
+		).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column workspace_subscription_id: %w", err)
 		}
@@ -2404,7 +2419,9 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.PaymentOrder{}, "workspace_subscription_id") {
 		fmt.Println("add column workspace_subscription_id to PaymentOrder")
 		tableName := types.PaymentOrder{}.TableName()
-		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"workspace_subscription_id" uuid`)).Error
+		err := c.DB.Exec(
+			alterTableAddColumnSQL(tableName, `"workspace_subscription_id" uuid`),
+		).Error
 		if err != nil {
 			return fmt.Errorf(
 				"failed to add column workspace_subscription_id to PaymentOrder: %w",
@@ -2431,7 +2448,9 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.DB.Migrator().HasColumn(&types.WorkspaceSubscriptionPlan{}, "ai_quota") {
 		fmt.Println("add column ai_quota to WorkspaceSubscriptionPlan")
 		tableName := types.WorkspaceSubscriptionPlan{}.TableName()
-		err := c.DB.Exec(alterTableAddColumnSQL(tableName, `"ai_quota" bigint NOT NULL DEFAULT 0`)).Error
+		err := c.DB.Exec(
+			alterTableAddColumnSQL(tableName, `"ai_quota" bigint NOT NULL DEFAULT 0`),
+		).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column ai_quota to WorkspaceSubscriptionPlan: %w", err)
 		}
@@ -2439,7 +2458,9 @@ func (c *Cockroach) migrateColumns() error {
 	if !c.Localdb.Migrator().HasColumn(&types.WorkspaceSubscriptionPlan{}, "ai_quota") {
 		fmt.Println("add column ai_quota to WorkspaceSubscriptionPlan")
 		tableName := types.WorkspaceSubscriptionPlan{}.TableName()
-		err := c.Localdb.Exec(alterTableAddColumnSQL(tableName, `"ai_quota" bigint NOT NULL DEFAULT 0`)).Error
+		err := c.Localdb.Exec(
+			alterTableAddColumnSQL(tableName, `"ai_quota" bigint NOT NULL DEFAULT 0`),
+		).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column ai_quota to WorkspaceSubscriptionPlan: %w", err)
 		}
@@ -2483,7 +2504,10 @@ func (c *Cockroach) migrateColumns() error {
 		fmt.Println("add table `Credits` column updated_at")
 		tableName := types.Credits{}.TableName()
 		err := c.DB.Exec(
-			alterTableAddColumnSQL(tableName, `"updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`),
+			alterTableAddColumnSQL(
+				tableName,
+				`"updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`,
+			),
 		).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column updated_at: %w", err)
@@ -2493,7 +2517,10 @@ func (c *Cockroach) migrateColumns() error {
 		fmt.Println("add table `Account` column updated_at")
 		tableName := types.Account{}.TableName()
 		err := c.DB.Exec(
-			alterTableAddColumnSQL(tableName, `"updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`),
+			alterTableAddColumnSQL(
+				tableName,
+				`"updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP`,
+			),
 		).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column updated_at: %w", err)

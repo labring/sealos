@@ -47,7 +47,7 @@ func (sac *ServiceAccountConfig) Apply(
 			return cfg, nil
 		}
 	}
-	return nil, fmt.Errorf("failed to fetch token: %v", err)
+	return nil, fmt.Errorf("failed to fetch token: %w", err)
 }
 
 func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client client.Client) error {
@@ -141,7 +141,10 @@ func (sac *ServiceAccountConfig) fetchToken(cli client.Client) (string, error) {
 			}
 		case <-ctx.Done():
 			// A negligible error: The first 10-second wait to obtain the token failed. Subsequent reconcile will continue to obtain
-			defaultLog.Error(ctx.Err(), "context get secrets time out, wait until next time reconcile to get it done")
+			defaultLog.Error(
+				ctx.Err(),
+				"context get secrets time out, wait until next time reconcile to get it done",
+			)
 			return "", ctx.Err()
 		}
 	}

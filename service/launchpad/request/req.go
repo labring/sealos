@@ -16,8 +16,12 @@ import (
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
 	log.Printf("[launchpad-monitor] request vm addr=%s body=%s", addr, params.String())
 
-	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
-
+	//nolint:gosec // VM_SERVICE_HOST is configured by deployment and targets the internal VictoriaMetrics endpoint.
+	resp, err := http.Post(
+		addr,
+		"application/x-www-form-urlencoded",
+		params,
+	)
 	if err != nil {
 		log.Printf("[launchpad-monitor] request vm failed addr=%s err=%v", addr, err)
 		return nil, err

@@ -11,12 +11,11 @@ import (
 	"sync"
 	"time"
 
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
-
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/minio/madmin-go/v3"
+	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
