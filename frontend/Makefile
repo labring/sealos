@@ -24,8 +24,7 @@ buildTargets := \
 	providers/cronjob \
 	providers/license \
 	providers/kubepanel \
-	providers/objectstorage \
-	providers/devbox
+	providers/objectstorage
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))
 pushTargets-all := $(addprefix image-push-,$(buildTargets))

@@ -42,7 +42,6 @@ pnpm dev-cost       # costcenter
 pnpm dev-terminal   # terminal
 pnpm dev-template   # template
 pnpm dev-cronjob    # cronjob
-pnpm dev-devbox     # devbox
 
 # or run dev script in app's package directory
 cd desktop

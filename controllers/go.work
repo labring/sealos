@@ -4,7 +4,6 @@ toolchain go1.24.3
 
 use (
 	./account
-	./devbox
 	./user
 	./app
 	./job/heartbeat
