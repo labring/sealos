@@ -39,6 +39,7 @@ platform.json
 .yalc/
 yalc.lock
 
-templates
+# /templates = root-level templates dir only (e.g. local clone); exclude API route src/pages/api/v2alpha/templates/
+/templates
 templates.json
 data/config.local.json

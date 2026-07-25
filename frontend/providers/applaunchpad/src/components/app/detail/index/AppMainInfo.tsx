@@ -3,8 +3,9 @@ import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
-import { DOMAIN_PORT } from '@/store/static';
+import { DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
+import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import { useCopyData } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
 import {
@@ -77,9 +78,15 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             inline: `${protocol?.inline}${
               network?.serviceName ? network.serviceName : app.appName
             }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
-            public: `${protocol?.label}${protocol?.value.toLowerCase()}.${network.domain}${
-              network?.nodePort ? `:${network.nodePort}` : ''
-            }`,
+            public: network.nodePort
+              ? buildExternalUrl({
+                  protocol: network.protocol,
+                  host: `${protocol?.value.toLowerCase()}.${network.domain}`,
+                  nodePort: network.nodePort
+                })
+              : `${getExternalProtocol(network.protocol)}://${protocol?.value.toLowerCase()}.${
+                  network.domain
+                }`,
             showReadyStatus: false
           };
         }
@@ -89,11 +96,17 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             network?.serviceName ? network.serviceName : app.appName
           }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
           public: network.openPublicDomain
-            ? `${appProtocol?.label}${
-                network.customDomain
+            ? buildExternalUrl({
+                protocol: network.appProtocol,
+                host: network.customDomain
                   ? network.customDomain
-                  : `${network.publicDomain}.${network.domain}${DOMAIN_PORT}`
-              }`
+                  : `${network.publicDomain}.${network.domain}`,
+                config: {
+                  disableHttps: DISABLE_HTTPS,
+                  cloudPort: DOMAIN_PORT,
+                  httpPort: HTTP_PORT
+                }
+              })
             : '',
           showReadyStatus: true
         };

@@ -18,15 +18,14 @@ sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set-string desktopConfig.realNameReward=0"
 ```
 
-### 方式 3: 结合环境变量使用
+### 方式 3: 结合自动配置使用
 
-环境变量优先级高于 `HELM_OPTIONS` 中的 `--set` 参数：
+`HELM_OPTIONS` 在自动配置之后追加，因此显式参数优先级更高：
 
 ```bash
-# 环境变量会覆盖 HELM_OPTIONS 中的值
+# HELM_OPTIONS 会覆盖 sealos-config 中的自动配置值
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com" \
-  -e CLOUD_DOMAIN=from-env.com  # 这个值会生效
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com"
 ```
 
 ## 配置项分类
@@ -45,9 +44,12 @@ desktopConfig:
 
 ```yaml
 desktopConfig:
-  databaseMongodbURI: "mongodb://user:pass@mongodb:27017"
   databaseGlobalCockroachdbURI: "postgres://user:pass@cockroachdb:26257"
   databaseLocalCockroachdbURI: "postgres://user:pass@cockroachdb-local:26257"
+
+# 正常安装默认执行 Prisma migration；仅前端 smoke 时关闭。
+databaseMigration:
+  enabled: true
 ```
 
 ### 3. 认证配置
@@ -111,12 +113,10 @@ desktopConfig:
 desktopConfig:
   realNameReward: 0
   realNameCallbackUrl: "https://cloud.example.org/api/account/callback"
-  templateUrl: "https://template.example.org"
-  applaunchpadUrl: "https://applaunchpad.example.org"
-  dbproviderUrl: "https://dbprovider.example.org"
-  objectstorageUrl: "https://objectstorage.example.org"
   cfSiteKey: ""
 ```
+
+`templateUrl`、`applaunchpadUrl`、`dbproviderUrl` 和 `objectstorageUrl` 会根据 `cloudDomain` 自动生成。
 
 ### 10. 桌面布局配置
 
@@ -127,6 +127,8 @@ desktopConfig:
   layoutBackgroundImage: "/images/bg-light.svg" # 背景图片
   customerServiceURL: ""                       # 客服 URL
   layoutDocsUrl: "https://sealos.run/docs/Intro/" # 文档 URL
+  protocol:
+    enabled: true                              # 是否显示登录页服务条款和隐私政策提示
 ```
 
 ### 11. Meta 标签配置
@@ -264,6 +266,7 @@ desktopConfig:
 desktopConfig:
   maxTeamCount: 10                             # 最大团队数
   maxTeamMemberCount: 100                      # 每个团队最大成员数
+  workspaceInviteExpiresInMinutes: [30, 1440, 10080] # 工作空间邀请链接有效期（分钟）
 ```
 
 ## 使用示例

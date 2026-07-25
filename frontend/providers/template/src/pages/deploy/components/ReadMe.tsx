@@ -1,5 +1,5 @@
 import MyIcon from '@/components/Icon';
-import { Box } from '@chakra-ui/react';
+import { Box, Center, Spinner, Text } from '@chakra-ui/react';
 import 'github-markdown-css/github-markdown-light.css';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
@@ -8,7 +8,15 @@ import remarkGfm from 'remark-gfm';
 import remarkUnwrapImages from 'remark-unwrap-images';
 import styles from './index.module.scss';
 
-const ReadMe = ({ readUrl, readmeContent }: { readUrl: string; readmeContent: string }) => {
+const ReadMe = ({
+  readUrl,
+  readmeContent,
+  isLoading
+}: {
+  readUrl: string;
+  readmeContent: string;
+  isLoading?: boolean;
+}) => {
   // @ts-ignore
   const myRewrite = (node, index, parent) => {
     if (node.tagName === 'img' && !node.properties.src.startsWith('http')) {
@@ -32,13 +40,22 @@ const ReadMe = ({ readUrl, readmeContent }: { readUrl: string; readmeContent: st
         README.md
       </Box>
       <Box borderRadius={'8px'} p={'24px'} className={`markdown-body ${styles.customMarkDownBody}`}>
-        <ReactMarkdown
-          linkTarget={'_blank'}
-          rehypePlugins={[rehypeRaw, [rehypeRewrite, { rewrite: myRewrite }]]}
-          remarkPlugins={[remarkGfm, remarkUnwrapImages]}
-        >
-          {readmeContent}
-        </ReactMarkdown>
+        {isLoading ? (
+          <Center minH={'160px'} flexDirection={'column'} color={'#7B838B'}>
+            <Spinner size={'sm'} />
+            <Text mt={'12px'} fontSize={'14px'}>
+              README loading...
+            </Text>
+          </Center>
+        ) : (
+          <ReactMarkdown
+            linkTarget={'_blank'}
+            rehypePlugins={[rehypeRaw, [rehypeRewrite, { rewrite: myRewrite }]]}
+            remarkPlugins={[remarkGfm, remarkUnwrapImages]}
+          >
+            {readmeContent}
+          </ReactMarkdown>
+        )}
       </Box>
     </Box>
   );

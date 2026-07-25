@@ -1,10 +1,12 @@
-import { UserInfo } from '@/api/auth';
+import { UserInfo, updateUserProfile } from '@/api/auth';
 import PasswordModify from '@/components/account/AccountCenter/PasswordModify';
+import { useCustomToast } from '@/hooks/useCustomToast';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
-import { ValueOf } from '@/types';
+import { ApiResp, ValueOf } from '@/types';
 import {
   Badge,
+  Button,
   Center,
   Flex,
   HStack,
@@ -22,15 +24,17 @@ import {
   useDisclosure,
   VStack
 } from '@chakra-ui/react';
-import { CloseIcon, LeftArrowIcon, SettingIcon } from '@sealos/ui';
-import { useQuery } from '@tanstack/react-query';
+import { LeftArrowIcon, SettingIcon } from '@sealos/ui';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useMemo, useState, ReactNode } from 'react';
+import { useEffect, useMemo, useState, ReactNode } from 'react';
 import { RealNameAuthForm } from '../RealNameModal';
 import { AuthModifyList } from './AuthModifyList';
 import { BINDING_STATE_MODIFY_BEHAVIOR, BindingModifyButton } from './BindingModifyButton';
 import { ConfigItem } from './ConfigItem';
 import DeleteAccount from './DeleteAccountModal';
+import { SettingInput } from './SettingInput';
+import { SettingInputGroup } from './SettingInputGroup';
 import { EmailBind, PhoneBind } from './SmsModify/SmsBind';
 import { EmailChange, PhoneChange } from './SmsModify/SmsChange';
 import { EmailUnBind, PhoneUnBind } from './SmsModify/SmsUnbind';
@@ -73,12 +77,15 @@ interface AccountCenterProps extends Omit<IconButtonProps, 'aria-label'> {
 export default function AccountCenter(props: AccountCenterProps) {
   const { children, ...restProps } = props;
   const { commonConfig } = useConfigStore();
-  const { session } = useSessionStore((s) => s);
+  const { session, setSessionProp } = useSessionStore((s) => s);
   const conf = useConfigStore();
   const { t } = useTranslation();
+  const { toast } = useCustomToast({ status: 'error' });
   const logo = '/images/default-user.svg';
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [pageState, setPageState] = useState<ValueOf<typeof PageState>>(PageState.INDEX);
+  const [isProfileEditing, setIsProfileEditing] = useState(false);
+  const [profileForm, setProfileForm] = useState({ nickname: '', avatarUri: '' });
 
   const resetPageState = () => {
     setPageState(PageState.INDEX);
@@ -92,6 +99,51 @@ export default function AccountCenter(props: AccountCenterProps) {
       return d.data?.info;
     }
   });
+  const profileInfo = infoData.data;
+
+  useEffect(() => {
+    if (profileInfo && !isProfileEditing) {
+      setProfileForm({
+        nickname: profileInfo.nickname || '',
+        avatarUri: profileInfo.avatarUri || ''
+      });
+    }
+  }, [isProfileEditing, profileInfo]);
+
+  const resetProfileForm = () => {
+    setProfileForm({
+      nickname: profileInfo?.nickname || '',
+      avatarUri: profileInfo?.avatarUri || ''
+    });
+    setIsProfileEditing(false);
+  };
+
+  const profileMutation = useMutation({
+    mutationFn: updateUserProfile,
+    onSuccess(data) {
+      const info = data.data?.info;
+      if (info && session) {
+        setSessionProp('user', {
+          ...session.user,
+          name: info.nickname,
+          avatar: info.avatarUri
+        });
+      }
+      toast({
+        status: 'success',
+        title: t('common:profile_update_success')
+      });
+      setIsProfileEditing(false);
+      infoData.refetch();
+    },
+    onError(error) {
+      toast({ title: (error as ApiResp).message });
+    }
+  });
+
+  const submitProfile = () => {
+    profileMutation.mutate(profileForm);
+  };
 
   const providerState = useMemo(() => {
     const providerList = ['PHONE', 'PASSWORD', 'GITHUB', 'WECHAT', 'GOOGLE', 'EMAIL'] as const;
@@ -133,7 +185,7 @@ export default function AccountCenter(props: AccountCenterProps) {
     );
     state.AVATAR_URL = infoData.data?.avatarUri || '';
     return state;
-  }, [infoData.data?.oauthProvider]);
+  }, [infoData.data?.avatarUri, infoData.data?.oauthProvider]);
 
   const modalTitle = useMemo(() => {
     if (pageState === PageState.INDEX) return t('common:account_settings');
@@ -224,24 +276,88 @@ export default function AccountCenter(props: AccountCenterProps) {
                   color={'grayModern.900'}
                 >
                   {/* <ConfigItem/> */}
-                  <HStack>
-                    <Text w={'120px'}>{t('common:avatar')}</Text>
-                    <Flex flex={1}>
-                      <Center boxSize={'48px'} bg={'grayModern.150'} borderRadius="full">
-                        <Image
-                          objectFit={'cover'}
-                          borderRadius="full"
-                          src={infoData.data.avatarUri}
-                          fallbackSrc={logo}
-                          alt="user avator"
-                          draggable={'false'}
-                        />
-                      </Center>
-                    </Flex>
-                  </HStack>
-                  <HStack>
-                    <Text w={'120px'}>{t('common:nickname')}</Text>
-                    <Flex flex={1}>{infoData.data.nickname}</Flex>
+                  <ConfigItem
+                    LeftElement={<Text>{t('common:avatar')}</Text>}
+                    RightElement={
+                      isProfileEditing ? (
+                        <SettingInputGroup>
+                          <SettingInput
+                            value={profileForm.avatarUri}
+                            placeholder={t('common:avatar_url') || ''}
+                            onChange={(e) =>
+                              setProfileForm((state) => ({
+                                ...state,
+                                avatarUri: e.target.value
+                              }))
+                            }
+                          />
+                        </SettingInputGroup>
+                      ) : (
+                        <Center boxSize={'48px'} bg={'grayModern.150'} borderRadius="full">
+                          <Image
+                            objectFit={'cover'}
+                            borderRadius="full"
+                            src={infoData.data.avatarUri}
+                            fallbackSrc={logo}
+                            alt="user avator"
+                            draggable={'false'}
+                          />
+                        </Center>
+                      )
+                    }
+                  />
+                  <ConfigItem
+                    LeftElement={<Text>{t('common:nickname')}</Text>}
+                    RightElement={
+                      isProfileEditing ? (
+                        <SettingInputGroup>
+                          <SettingInput
+                            value={profileForm.nickname}
+                            onChange={(e) =>
+                              setProfileForm((state) => ({
+                                ...state,
+                                nickname: e.target.value
+                              }))
+                            }
+                          />
+                        </SettingInputGroup>
+                      ) : (
+                        <Text>{infoData.data.nickname}</Text>
+                      )
+                    }
+                  />
+                  <HStack justifyContent={'flex-end'}>
+                    {isProfileEditing ? (
+                      <>
+                        <Button
+                          variant={'ghost'}
+                          bgColor={'grayModern.150'}
+                          p={'8px 14px'}
+                          onClick={resetProfileForm}
+                          isDisabled={profileMutation.isLoading}
+                        >
+                          {t('common:cancel')}
+                        </Button>
+                        <Button
+                          variant={'ghost'}
+                          bgColor={'grayModern.150'}
+                          p={'8px 14px'}
+                          onClick={submitProfile}
+                          isLoading={profileMutation.isLoading}
+                        >
+                          {t('common:confirm')}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant={'ghost'}
+                        bgColor={'grayModern.150'}
+                        p={'8px 14px'}
+                        onClick={() => setIsProfileEditing(true)}
+                      >
+                        {t('common:change')}
+                      </Button>
+                    )}
                   </HStack>
                   <HStack>
                     <Text w={'120px'}>{'ID'}</Text>

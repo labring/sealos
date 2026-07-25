@@ -18,12 +18,11 @@ import (
 	"fmt"
 	"os"
 
-	sreglog "github.com/labring/sreg/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/templates"
 
 	"github.com/labring/sealos/pkg/buildah"
+	sreglog "github.com/labring/sealos/pkg/sreg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 

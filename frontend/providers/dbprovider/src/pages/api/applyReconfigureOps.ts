@@ -76,7 +76,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const dbUid = clusterData.metadata.uid;
-    const reconfigureType = DBReconfigureMap[dbType].type;
+    const dbReconfigure = DBReconfigureMap[dbType];
+    if (!dbReconfigure) {
+      return jsonRes(res, {
+        code: 400,
+        error: `Reconfigure is not supported for database type: ${dbType}`
+      });
+    }
+
+    const reconfigureType = dbReconfigure.type;
 
     // Get field metadata to filter non-editable fields
     const dbVersion = clusterData?.metadata?.labels?.['clusterversion.kubeblocks.io/name'];

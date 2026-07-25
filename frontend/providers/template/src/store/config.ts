@@ -1,6 +1,7 @@
 import { getPlatformEnv, getSystemConfig, getTemplates } from '@/api/platform';
 import { EnvResponse } from '@/types';
 import { ApplicationType, SideBarMenuType, SystemConfigType } from '@/types/app';
+import { getCategoryLabel } from '@/utils/template';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -18,7 +19,7 @@ type State = {
 
 export const useSystemConfigStore = create<State>()(
   devtools(
-    immer((set, get) => ({
+    immer((set) => ({
       systemConfig: undefined,
       menuKeys: '',
       sideBarMenu: [
@@ -30,19 +31,31 @@ export const useSystemConfigStore = create<State>()(
       ],
       async initSystemConfig(language?: string) {
         const data = await getSystemConfig();
-        const { menuKeys } = await getTemplates(language);
+        const { menuKeys, categories } = await getTemplates(language);
 
-        if (get().menuKeys !== menuKeys) {
-          const menus = menuKeys.split(',').map((i) => ({
+        const menus =
+          categories?.map((category) => ({
+            id: category.slug,
+            type: category.slug as ApplicationType,
+            value: getCategoryLabel(category, language)
+          })) ??
+          menuKeys.split(',').map((i) => ({
             id: i,
             type: i as ApplicationType,
             value: `SideBar.${i}`
           }));
-          set((state) => {
-            state.menuKeys = menuKeys;
-            state.sideBarMenu = get().sideBarMenu.concat(menus);
-          });
-        }
+
+        set((state) => {
+          state.menuKeys = menuKeys;
+          state.sideBarMenu = [
+            {
+              id: 'applications',
+              type: ApplicationType.All,
+              value: 'SideBar.Applications'
+            },
+            ...menus
+          ];
+        });
         set((state) => {
           state.systemConfig = data;
         });

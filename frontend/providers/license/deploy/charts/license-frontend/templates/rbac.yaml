@@ -1,0 +1,83 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "license-frontend.fullname" . }}-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - users
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "license-frontend.fullname" . }}-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "license-frontend.fullname" . }}-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "license-frontend.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "license-frontend.fullname" . }}-notification-manager
+rules:
+  - apiGroups:
+      - notification.sealos.io
+    resources:
+      - notifications
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "license-frontend.fullname" . }}-notification-manager-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "license-frontend.fullname" . }}-notification-manager
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "license-frontend.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "license-frontend.fullname" . }}-node-reader-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: license-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "license-frontend.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}

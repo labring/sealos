@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
 import { MonitorDataResult } from '@/types/monitor';
 import dayjs from 'dayjs';
+
+type EChartsInstance = import('echarts').ECharts;
 
 const map = {
   blue: {
@@ -108,7 +109,7 @@ const PodLineChart = ({
   const yData = data?.yData || new Array(30).fill('');
 
   const Dom = useRef<HTMLDivElement>(null);
-  const myChart = useRef<echarts.ECharts>();
+  const myChart = useRef<EChartsInstance>();
 
   const optionStyle = useMemo(
     () => ({
@@ -192,25 +193,34 @@ const PodLineChart = ({
   // init chart
   useEffect(() => {
     if (!Dom.current || myChart?.current?.getOption()) return;
-    myChart.current = echarts.init(Dom.current);
-    myChart.current && myChart.current.setOption(option.current);
+    let ignore = false;
+
+    import('echarts').then((echarts) => {
+      if (ignore || !Dom.current || myChart?.current?.getOption()) return;
+      myChart.current = echarts.init(Dom.current);
+      myChart.current && myChart.current.setOption(option.current);
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, [Dom]);
 
   // data changed, update
   useEffect(() => {
-    if (!myChart.current || !myChart?.current?.getOption()) return;
     option.current.xAxis.data = xData;
     option.current.series[0].data = yData;
+    if (!myChart.current || !myChart?.current?.getOption()) return;
     myChart.current.setOption(option.current);
   }, [xData, yData]);
 
   // type changed, update
   useEffect(() => {
-    if (!myChart.current || !myChart?.current?.getOption()) return;
     option.current.series[0] = {
       ...option.current.series[0],
       ...optionStyle
     };
+    if (!myChart.current || !myChart?.current?.getOption()) return;
     myChart.current.setOption(option.current);
   }, [optionStyle]);
 

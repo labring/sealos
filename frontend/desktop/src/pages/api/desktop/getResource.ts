@@ -17,7 +17,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const kc = K8sApi(realKc);
     if (!kc) return jsonRes(res, { code: 404, message: 'The kubeconfig is not found' });
 
-    const result = await kc.makeApiClient(k8s.CoreV1Api).listNamespacedPod(namespace);
+    const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
+    const result = await coreV1Api.listNamespacedPod(namespace);
+    const workspaceQuota = await getWorkspaceQuota(coreV1Api, namespace);
 
     let totalCpuLimits = 0;
     let totalMemoryLimits = 0;
@@ -38,11 +40,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       for (const container of pod?.spec.containers) {
         if (!container?.resources) continue;
-        const limits = container?.resources.limits as {
-          cpu: string;
-          memory: string;
-          ['nvidia.com/gpu']?: string;
-        };
+        const limits = container?.resources.limits as
+          | {
+              cpu?: string;
+              memory?: string;
+              ['nvidia.com/gpu']?: string;
+            }
+          | undefined;
+        if (!limits) continue;
         totalCpuLimits += parseResourceValue(limits.cpu, 'cpu');
         totalMemoryLimits += parseResourceValue(limits.memory, 'memory');
 
@@ -54,9 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (!volume.persistentVolumeClaim?.claimName) continue;
         const pvcName = volume.persistentVolumeClaim.claimName;
         try {
-          const pvc = await kc
-            .makeApiClient(k8s.CoreV1Api)
-            .readNamespacedPersistentVolumeClaim(pvcName, namespace);
+          const pvc = await coreV1Api.readNamespacedPersistentVolumeClaim(pvcName, namespace);
           const storage = pvc?.body?.spec?.resources?.requests?.storage || '0';
           totalStorageRequests += parseResourceValue(storage, 'storage');
         } catch (error) {}
@@ -70,7 +73,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalStorage: totalStorageRequests.toFixed(2),
         runningPodCount,
         totalPodCount,
-        totalGpuCount
+        totalGpuCount,
+        workspaceQuota
         // result: result.body.items
       }
     });
@@ -79,11 +83,112 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-function parseResourceValue(value: string, resourceType: 'cpu' | 'memory' | 'storage') {
+type WorkspaceQuotaType = 'cpu' | 'memory' | 'storage' | 'gpu' | 'nodeport';
+type QuantityMap = Record<string, string | number | undefined>;
+
+type WorkspaceQuotaItem = {
+  type: WorkspaceQuotaType;
+  used: number;
+  limit: number;
+  available: number;
+  usagePercent: number;
+};
+
+const quotaResources: {
+  type: WorkspaceQuotaType;
+  hardKeys: string[];
+  usedKeys: string[];
+  resourceType: 'cpu' | 'memory' | 'storage' | 'count';
+}[] = [
+  {
+    type: 'cpu',
+    hardKeys: ['limits.cpu', 'requests.cpu', 'cpu'],
+    usedKeys: ['limits.cpu', 'requests.cpu', 'cpu'],
+    resourceType: 'cpu'
+  },
+  {
+    type: 'memory',
+    hardKeys: ['limits.memory', 'requests.memory', 'memory'],
+    usedKeys: ['limits.memory', 'requests.memory', 'memory'],
+    resourceType: 'memory'
+  },
+  {
+    type: 'storage',
+    hardKeys: ['requests.storage'],
+    usedKeys: ['requests.storage'],
+    resourceType: 'storage'
+  },
+  {
+    type: 'gpu',
+    hardKeys: ['requests.nvidia.com/gpu', 'limits.nvidia.com/gpu', 'nvidia.com/gpu'],
+    usedKeys: ['requests.nvidia.com/gpu', 'limits.nvidia.com/gpu', 'nvidia.com/gpu'],
+    resourceType: 'count'
+  },
+  {
+    type: 'nodeport',
+    hardKeys: ['services.nodeports'],
+    usedKeys: ['services.nodeports'],
+    resourceType: 'count'
+  }
+];
+
+async function getWorkspaceQuota(
+  coreV1Api: k8s.CoreV1Api,
+  namespace: string
+): Promise<WorkspaceQuotaItem[]> {
+  try {
+    const {
+      body: { status }
+    } = await coreV1Api.readNamespacedResourceQuota(`quota-${namespace}`, namespace);
+    const hard = (status?.hard || {}) as QuantityMap;
+    const used = (status?.used || {}) as QuantityMap;
+
+    return quotaResources
+      .map(({ type, hardKeys, usedKeys, resourceType }) => {
+        const limit = getQuotaValue(hard, hardKeys, resourceType);
+        const usedValue = getQuotaValue(used, usedKeys, resourceType);
+        const available = Math.max(limit - usedValue, 0);
+        return {
+          type,
+          used: roundResourceValue(usedValue, resourceType),
+          limit: roundResourceValue(limit, resourceType),
+          available: roundResourceValue(available, resourceType),
+          usagePercent: limit > 0 ? Math.min(Math.round((usedValue / limit) * 100), 100) : 0
+        };
+      })
+      .filter((item) => item.limit > 0 || item.used > 0);
+  } catch (error) {
+    return [];
+  }
+}
+
+function getQuotaValue(
+  values: QuantityMap,
+  keys: string[],
+  resourceType: 'cpu' | 'memory' | 'storage' | 'count'
+) {
+  const value = keys.map((key) => values[key]).find((item) => item !== undefined && item !== '');
+  if (value === undefined) return 0;
+  if (resourceType === 'count') return Number(value || 0);
+
+  return parseResourceValue(value, resourceType);
+}
+
+function roundResourceValue(value: number, resourceType: 'cpu' | 'memory' | 'storage' | 'count') {
+  if (resourceType === 'count') return Math.round(value);
+  return Number(value.toFixed(2));
+}
+
+function parseResourceValue(
+  value: string | number | undefined,
+  resourceType: 'cpu' | 'memory' | 'storage'
+) {
   if (!value) return 0;
 
-  const unit = value.match(/[a-zA-Z]+$/);
-  const number = parseFloat(value);
+  const resourceValue = String(value);
+  const unit = resourceValue.match(/[a-zA-Z]+$/);
+  const number = parseFloat(resourceValue);
+  if (Number.isNaN(number)) return 0;
 
   if (!unit) return number;
 

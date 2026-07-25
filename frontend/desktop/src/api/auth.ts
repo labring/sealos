@@ -17,10 +17,18 @@ import { ValueOf } from '@/types/tools';
 import { type AxiosInstance } from 'axios';
 import { ProviderType } from 'prisma/global/generated/client';
 
+type EncodedKubeconfigResponse = {
+  kubeconfig: string;
+  encodedKubeconfig: string;
+};
+
+type RegionTokenResponse = EncodedKubeconfigResponse & {
+  token: string;
+  appToken: string;
+};
+
 export const _getRegionToken = (request: AxiosInstance) => () =>
-  request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
-    '/api/auth/regionToken'
-  );
+  request.post<any, ApiResp<RegionTokenResponse>>('/api/auth/regionToken');
 
 export const getRegionToken = _getRegionToken(request);
 
@@ -65,6 +73,22 @@ export const _UserInfo = (request: AxiosInstance) => () =>
       };
     }>
   >('/api/auth/info');
+
+export const _updateUserProfile =
+  (request: AxiosInstance) => (data: { nickname: string; avatarUri: string }) =>
+    request.post<
+      typeof data,
+      ApiResp<{
+        info: {
+          uid: string;
+          updatedAt: Date;
+          avatarUri: string;
+          nickname: string;
+          id: string;
+          name: string;
+        };
+      }>
+    >('/api/auth/profile/update', data);
 export const _regionList = (request: AxiosInstance) => () =>
   request.get<
     any,
@@ -112,7 +136,13 @@ export const _getNewSmsCodeRequest =
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
   (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string; semData?: SemData; adClickData?: AdClickData }) =>
+  (data: {
+    code: string;
+    inviterId?: string;
+    semData?: SemData;
+    adClickData?: AdClickData;
+    code_verifier?: string;
+  }) =>
     request.post<
       typeof data,
       ApiResp<
@@ -224,10 +254,7 @@ export const _EmailSignUpCheck = (request: AxiosInstance) => (data: IEmailCheckP
   request.post<never, ApiResp<any>>('/api/auth/email/signUp/check', data);
 
 export const _initRegionToken = (request: AxiosInstance) => (data: InitRegionTokenParams) =>
-  request.post<typeof data, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
-    '/api/auth/initRegionToken',
-    data
-  );
+  request.post<typeof data, ApiResp<RegionTokenResponse>>('/api/auth/initRegionToken', data);
 
 export const EmailSignIn = _EmailSignIn(request);
 export const EmailSignUp = _EmailSignUp(request);
@@ -256,6 +283,7 @@ export const mergeUserRequest = _mergeUser(request);
 export const deleteUserRequest = _deleteUser(request);
 export const checkRemainResource = _checkRemainResource(request);
 export const forceDeleteUser = _forceDeleteUser(request);
+export const updateUserProfile = _updateUserProfile(request);
 export const enterpriseRealNameAuthPaymentRequest = _enterpriseRealNameAuthPaymentRequest(request);
 export const enterpriseRealNameAuthVerifyRequest = _enterpriseRealNameAuthVerifyRequest(request);
 export const enterpriseRealNameAuthInfoRequest = _enterpriseRealNameAuthInfoRequest(request);
@@ -268,6 +296,11 @@ export const getBanksListRequest = _getBanksListRequest(request);
 export const getAmount = _getAmount(request);
 
 export const _rotateKubeconfig = (request: AxiosInstance) => () =>
-  request.post<never, ApiResp<{ kubeconfig: string }>>('/api/auth/rotateKubeconfig');
+  request.post<never, ApiResp<EncodedKubeconfigResponse>>('/api/auth/rotateKubeconfig');
 
 export const rotateKubeconfig = _rotateKubeconfig(request);
+
+export const _validateKubeconfig = (request: AxiosInstance) => (data: { kubeconfig: string }) =>
+  request.post<typeof data, ApiResp<{ valid: boolean }>>('/api/auth/validateKubeconfig', data);
+
+export const validateKubeconfig = _validateKubeconfig(request);

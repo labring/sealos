@@ -18,7 +18,7 @@ import {
   Icon,
   Portal
 } from '@chakra-ui/react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { regionList as getRegionList, initRegionToken } from '@/api/auth';
 import { sessionConfig } from '@/utils/sessionConfig';
@@ -55,6 +55,11 @@ export default function Workspace() {
     () => regionListQuery.data?.data?.regionList || [],
     [regionListQuery.data?.data?.regionList]
   );
+  useEffect(() => {
+    if (!workspaceNameFieldDirty) {
+      setWorkspaceName(t('common:default_team'));
+    }
+  }, [setWorkspaceName, t, workspaceNameFieldDirty]);
   const selectedRegion = useMemo(() => {
     if (regionList.length === 0) return null;
     if (!selectedRegionUid) return regionList[0];

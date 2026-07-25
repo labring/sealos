@@ -80,6 +80,15 @@ export type ApplicationProtocolType = 'HTTP' | 'GRPC' | 'WS';
 
 export type TransportProtocolType = 'TCP' | 'UDP' | 'SCTP';
 
+export type NetworkRoutePathType = 'Prefix' | 'Exact' | 'ImplementationSpecific';
+
+export interface AppNetworkRouteType {
+  path: string;
+  pathType: NetworkRoutePathType;
+  serviceName?: string;
+  servicePort?: number;
+}
+
 export interface AppEditType {
   appName: string;
   imageName: string;
@@ -102,6 +111,15 @@ export interface AppEditType {
     domain: string; // Main promoted domain
     nodePort?: number; // nodePort
     openNodePort: boolean; // open nodePort
+    routes?: AppNetworkRouteType[];
+  }[];
+  serviceList?: {
+    name: string;
+    ports: {
+      name?: string;
+      port: number;
+      protocol?: TransportProtocolType;
+    }[];
   }[];
   envs: {
     key: string;
@@ -135,6 +153,12 @@ export interface AppEditType {
     storageType?: StorageType; // 'local' = managed by launchpad (PVC with LVM), 'remote' = external storage (e.g. NFS), display only. Default: 'local'
     storageClassName?: string; // Kubernetes StorageClass name (e.g. 'nfs-csi', 'local'). Used to determine storage type if provided.
   }[];
+  // Network storage: mounts existing PVCs (e.g. NFS). Does NOT trigger StatefulSet.
+  networkStoreList: {
+    name: string; // PVC name to mount
+    path: string; // mount path
+    storageClassName?: string;
+  }[];
   labels: { [key: string]: string };
   volumes: V1Volume[];
   volumeMounts: V1VolumeMount[];
@@ -160,6 +184,7 @@ export type AppEditSyncedFields = Pick<
   | 'gpu'
   | 'configMapList'
   | 'storeList'
+  | 'networkStoreList'
   | 'envs'
   | 'ephemeralStorage'
   | 'sharedMemory'

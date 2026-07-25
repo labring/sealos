@@ -1,4 +1,4 @@
-import { restartPodByName } from '@/api/app';
+import { checkPodExecPermission, restartPodByName } from '@/api/app';
 import MyIcon from '@/components/Icon';
 import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
@@ -30,6 +30,7 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
 import { track } from '@sealos/gtm';
+import { getErrText } from '@/utils/tools';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
@@ -68,6 +69,33 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       }
     },
     [t, toast]
+  );
+
+  const handleOpenTerminal = useCallback(
+    async (podName: string) => {
+      try {
+        await checkPodExecPermission(podName);
+        track('deployment_action', {
+          event_type: 'terminal_open',
+          module: 'applaunchpad'
+        });
+        const defaultCommand = `kubectl exec -it ${podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
+        sealosApp.runEvents('openDesktopApp', {
+          appKey: 'system-terminal',
+          query: {
+            defaultCommand
+          },
+          messageData: { type: 'new terminal', command: defaultCommand }
+        });
+      } catch (err) {
+        toast({
+          title: t(getErrText(err, 'Insufficient permissions')),
+          status: 'error'
+        });
+        console.log(err);
+      }
+    },
+    [appName, t, toast]
   );
 
   const columns: {
@@ -188,20 +216,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
           <MyTooltip offset={[0, 10]} label={t('Terminal')}>
             <Button
               variant={'square'}
-              onClick={() => {
-                track('deployment_action', {
-                  event_type: 'terminal_open',
-                  module: 'applaunchpad'
-                });
-                const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
-                sealosApp.runEvents('openDesktopApp', {
-                  appKey: 'system-terminal',
-                  query: {
-                    defaultCommand
-                  },
-                  messageData: { type: 'new terminal', command: defaultCommand }
-                });
-              }}
+              onClick={() => handleOpenTerminal(item.podName)}
             >
               <MyIcon
                 className="driver-detail-terminal"

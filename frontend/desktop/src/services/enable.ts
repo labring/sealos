@@ -21,6 +21,11 @@ export const getTeamLimit = () => global.AppConfig.desktop.teamManagement?.maxTe
 export const enableTracking = () => !!global.AppConfig.common.trackingEnabled;
 export const getTeamInviteLimit = () =>
   global.AppConfig.desktop.teamManagement?.maxTeamMemberCount || 50;
+export const getWorkspaceInviteExpiresInMinutes = () => {
+  const values = global.AppConfig.desktop.teamManagement?.workspaceInviteExpiresInMinutes;
+  const validValues = values?.filter((v) => Number.isInteger(v) && v > 0) ?? [];
+  return validValues.length ? validValues : [30];
+};
 
 export const getRegionUid = () => global.AppConfig.cloud.regionUID;
 

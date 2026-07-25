@@ -1,4 +1,4 @@
-import { getTemplateSource, postDeployApp } from '@/api/app';
+import { getTemplateReadme, getTemplateSource, postDeployApp } from '@/api/app';
 import { getPlatformEnv } from '@/api/platform';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -22,10 +22,10 @@ import ReadMe from './components/ReadMe';
 import { generateYamlData, getTemplateInputDefaultValues } from '@/utils/template';
 import { getResourceUsage } from '@/utils/usage';
 import Head from 'next/head';
-import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 import { useSystemConfigStore } from '@/store/config';
+import { useToast } from '@/hooks/useToast';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -46,13 +46,17 @@ export default function EditApp({
   initTemplateData: TemplateSourceType;
 }) {
   const { t, i18n } = useTranslation();
-  const { message: toast } = useMessage();
+  const { toast } = useToast();
   const router = useRouter();
   const { copyData } = useCopyData();
   const { templateName } = router.query as QueryType;
   const { Loading, setIsLoading } = useLoading();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(false);
   const [templateSource, setTemplateSource] = useState<TemplateSourceType>();
+  const [readmeSource, setReadmeSource] = useState<Pick<
+    TemplateSourceType,
+    'readUrl' | 'readmeContent'
+  > | null>(initTemplateData);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
@@ -166,6 +170,9 @@ export default function EditApp({
       } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
         setErrorMessage(t('forbidden_create_app'));
         setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+      } else if (error?.code === ResponseCode.QUOTA_EXCEEDED) {
+        setErrorMessage(t('quota_exceeded'));
+        setErrorCode(ResponseCode.QUOTA_EXCEEDED);
       } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
         setErrorMessage(t('app_already_exists'));
         setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
@@ -249,7 +256,12 @@ export default function EditApp({
 
   const { data, isLoading: isTemplateLoading } = useQuery(
     ['getTemplateSource', templateName],
-    () => getTemplateSource(templateName),
+    () =>
+      getTemplateSource(templateName, {
+        locale: i18n.language,
+        includeReadme: false,
+        includeRequirements: false
+      }),
     {
       initialData: initTemplateData,
       enabled: !!initTemplateData,
@@ -264,6 +276,21 @@ export default function EditApp({
           duration: 3000,
           isClosable: true
         });
+      }
+    }
+  );
+
+  const { isLoading: isReadmeLoading } = useQuery(
+    ['getTemplateReadme', templateName, i18n.language],
+    () => getTemplateReadme(templateName, i18n.language),
+    {
+      enabled: !!templateName,
+      onSuccess(data) {
+        setReadmeSource(data);
+      },
+      onError(err) {
+        console.log(err);
+        setReadmeSource({ readUrl: '', readmeContent: '' });
       }
     }
   );
@@ -292,7 +319,7 @@ export default function EditApp({
     return (
       !isTemplateLoading && !isPlatformEnvsLoading && !!templateSource && !!data && !!platformEnvs
     );
-  }, [isTemplateLoading, isPlatformEnvsLoading, templateSource, data, platformEnvs, yamlList]);
+  }, [isTemplateLoading, isPlatformEnvsLoading, templateSource, data, platformEnvs]);
 
   return (
     <Box
@@ -390,9 +417,10 @@ export default function EditApp({
             {/* <QuotaBox /> */}
             <Form formHook={formHook} formSource={templateSource!} platformEnvs={platformEnvs!} />
             <ReadMe
-              key={templateSource?.readUrl || 'readme_url'}
-              readUrl={templateSource?.readUrl || ''}
-              readmeContent={templateSource?.readmeContent || ''}
+              key={readmeSource?.readUrl || 'readme_url'}
+              readUrl={readmeSource?.readUrl || ''}
+              readmeContent={readmeSource?.readmeContent || ''}
+              isLoading={isReadmeLoading}
             />
           </Flex>
         </Flex>
@@ -402,7 +430,7 @@ export default function EditApp({
       <Loading />
       {!!errorMessage && (
         <ErrorModal
-          title={applyError}
+          title={t(applyError)}
           content={errorMessage}
           errorCode={errorCode}
           onClose={() => setErrorMessage('')}
@@ -427,7 +455,7 @@ export async function getServerSideProps(content: any) {
 
   try {
     const response = await fetch(
-      `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=true`
+      `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=false&includeRequirements=false`
     );
     if (!response.ok) {
       throw new Error(`API request failed with status`);

@@ -173,4 +173,7 @@ make build
 
 1. clone code slow, your can use ghproxy: `git clone https://ghproxy.com/https://github.com/labring/sealos`
 2. build download package slow, you can use goproxy: `go env -w GOPROXY=https://goproxy.cn,direct && make build`
-3. `cgo: C compiler "x86_64-linux-gnu-gcc" not found: exec: "x86_64-linux-gnu-gcc": executable file not found in $PATH` you need install gnu-gcc, like: `apt-get install build-essential` or `yum -y install gcc-c++-x86_64-linux-gnu`
+3. Build of `sealos` or `sealctl` fails with a C compiler error.
+   For native Linux builds, the make rules now auto-detect an available host compiler from `cc`, `gcc`, or `clang`.
+   For cross-compiling CGO-enabled binaries, install the target toolchain or override it explicitly, for example:
+   `make build.multiarch BINS="sealos" CC_linux_arm64=aarch64-linux-gnu-gcc`

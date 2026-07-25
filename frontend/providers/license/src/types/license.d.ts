@@ -60,6 +60,7 @@ export type LicenseCR = {
     type: string;
   };
   status: {
+    code?: number;
     activationTime: string;
     expirationTime: string;
     phase: 'Active' | 'Failed';

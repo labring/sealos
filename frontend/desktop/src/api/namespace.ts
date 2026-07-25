@@ -53,11 +53,9 @@ export const _verifyInviteCodeRequest = (request: AxiosInstance) => (data: verif
     data
   );
 export const _getInviteCodeRequest =
-  (request: AxiosInstance) => (data: { ns_uid: string; role: UserRole }) =>
-    request.post<verifyCodeParam, ApiResp<{ code: string }>>(
-      '/api/auth/namespace/getInviteCode',
-      data
-    );
+  (request: AxiosInstance) =>
+  (data: { ns_uid: string; role: UserRole; expiresInMinutes?: number }) =>
+    request.post<typeof data, ApiResp<{ code: string }>>('/api/auth/namespace/getInviteCode', data);
 export const _getInviteCodeInfoRequest = (request: AxiosInstance) => (data: { code: string }) =>
   request.post<
     typeof data,

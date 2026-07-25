@@ -39,8 +39,10 @@ func (r *TerminalReconciler) createNginxIngress(
 	host string,
 ) *networkingv1.Ingress {
 	cors := fmt.Sprintf(
-		"https://%s,https://*.%s",
+		"%s%s,%s*.%s",
+		r.getProtocol(),
 		r.CtrConfig.CloudDomain+r.getPort(),
+		r.getProtocol(),
 		r.CtrConfig.CloudDomain+r.getPort(),
 	)
 
@@ -82,17 +84,17 @@ func (r *TerminalReconciler) createNginxIngress(
 		},
 	}
 
-	tls := networkingv1.IngressTLS{
-		Hosts:      []string{host},
-		SecretName: r.CtrConfig.TerminalConfig.IngressTLSSecretName,
-	}
-
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: objectMeta,
 		Spec: networkingv1.IngressSpec{
 			Rules: []networkingv1.IngressRule{rule},
-			TLS:   []networkingv1.IngressTLS{tls},
 		},
+	}
+	if !r.CtrConfig.DisableHTTPS {
+		ingress.Spec.TLS = []networkingv1.IngressTLS{{
+			Hosts:      []string{host},
+			SecretName: r.CtrConfig.TerminalConfig.IngressTLSSecretName,
+		}}
 	}
 	return ingress
 }

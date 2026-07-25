@@ -12,5 +12,6 @@ export type RegionClient = {
     zh: string;
     en: string;
   };
+  domain?: string;
   uid: string;
 };

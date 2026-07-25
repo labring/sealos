@@ -30,6 +30,7 @@ export enum DBTypeEnum {
   postgresql = 'postgresql',
   mongodb = 'mongodb',
   mysql = 'apecloud-mysql',
+  polardbx = 'polardbx',
   redis = 'redis',
   kafka = 'kafka',
   qdrant = 'qdrant',
@@ -228,6 +229,7 @@ export const DBTypeList = [
   { id: DBTypeEnum.postgresql, label: 'PostgreSQL' },
   { id: DBTypeEnum.mongodb, label: 'MongoDB' },
   { id: DBTypeEnum.mysql, label: 'MySQL' },
+  { id: DBTypeEnum.polardbx, label: 'PolarDB-X' },
   { id: DBTypeEnum.redis, label: 'Redis' },
   { id: DBTypeEnum.kafka, label: 'Kafka' },
   { id: DBTypeEnum.milvus, label: 'Milvus' },
@@ -242,6 +244,7 @@ export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
   [DBTypeEnum.postgresql]: ['postgresql'],
   [DBTypeEnum.mongodb]: ['mongodb'],
   [DBTypeEnum.mysql]: ['mysql'],
+  [DBTypeEnum.polardbx]: ['gms', 'dn', 'cn', 'cdc'],
   [DBTypeEnum.redis]: ['redis', 'redis-sentinel'],
   [DBTypeEnum.kafka]: ['kafka-server', 'kafka-broker', 'controller', 'kafka-exporter'],
   [DBTypeEnum.qdrant]: ['qdrant'],
@@ -252,7 +255,7 @@ export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
   [DBTypeEnum.clickhouse]: ['ch-keeper', 'clickhouse', 'zookeeper']
 };
 
-export const DBBackupPolicyNameMap = {
+export const DBBackupPolicyNameMap: Partial<Record<DBTypeEnum, string>> = {
   [DBTypeEnum.postgresql]: 'postgresql',
   [DBTypeEnum.mongodb]: 'mongodb',
   [DBTypeEnum.mysql]: 'mysql',
@@ -266,7 +269,7 @@ export const DBBackupPolicyNameMap = {
   [DBTypeEnum.clickhouse]: 'clickhouse'
 };
 
-export const DBBackupMethodNameMap = {
+export const DBBackupMethodNameMap: Partial<Record<DBTypeEnum, string>> = {
   [DBTypeEnum.postgresql]: 'pg-basebackup',
   [DBTypeEnum.mongodb]: 'dump',
   [DBTypeEnum.mysql]: 'xtrabackup',
@@ -373,6 +376,9 @@ export const DBTypeSecretMap = {
   'apecloud-mysql': {
     connectKey: 'mysql'
   },
+  polardbx: {
+    connectKey: 'mysql'
+  },
   redis: {
     connectKey: 'redis'
   },
@@ -399,15 +405,18 @@ export const DBTypeSecretMap = {
   }
 };
 
-export const DBReconfigureMap: {
-  [key in DBType]: {
-    configMapKey: string;
-    configMapName: string;
-    type: 'yaml' | 'ini';
-    reconfigureName: string;
-    reconfigureKey: string;
-  };
-} = {
+export const DBReconfigureMap: Partial<
+  Record<
+    DBType,
+    {
+      configMapKey: string;
+      configMapName: string;
+      type: 'yaml' | 'ini';
+      reconfigureName: string;
+      reconfigureKey: string;
+    }
+  >
+> = {
   postgresql: {
     configMapName: '-postgresql-postgresql-configuration',
     configMapKey: 'postgresql.conf',

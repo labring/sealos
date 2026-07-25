@@ -20,11 +20,41 @@ import "fmt"
 
 // GenerateCert generate all cert.
 func GenerateCert(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) error {
-	certConfig, err := NewSealosCertMetaData(certPATH, certEtcdPATH, altNames, serviceCIRD, hostName, hostIP, DNSDomain)
+	return GenerateCertForKubeVersion(certPATH, certEtcdPATH, altNames, hostIP, hostName, serviceCIRD, DNSDomain, "")
+}
+
+func GenerateCertForKubeVersion(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain, kubeVersion string) error {
+	certConfig, err := NewSealosCertMetaDataForKubeVersion(certPATH, certEtcdPATH, altNames, serviceCIRD, hostName, hostIP, DNSDomain, kubeVersion)
 	if err != nil {
 		return fmt.Errorf("generator cert config failed %v", err)
 	}
 	return certConfig.GenerateAll()
+}
+
+// RenewCert regenerates all local PKI files, including root CAs and leaf certificates.
+func RenewCert(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) error {
+	return RenewCertForKubeVersion(certPATH, certEtcdPATH, altNames, hostIP, hostName, serviceCIRD, DNSDomain, "")
+}
+
+func RenewCertForKubeVersion(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain, kubeVersion string) error {
+	certConfig, err := NewSealosCertMetaDataForKubeVersion(certPATH, certEtcdPATH, altNames, serviceCIRD, hostName, hostIP, DNSDomain, kubeVersion)
+	if err != nil {
+		return fmt.Errorf("generator cert config failed %v", err)
+	}
+	return certConfig.RenewAll()
+}
+
+// RenewLeafCerts regenerates local leaf certificates while preserving the existing CAs.
+func RenewLeafCerts(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) error {
+	return RenewLeafCertsForKubeVersion(certPATH, certEtcdPATH, altNames, hostIP, hostName, serviceCIRD, DNSDomain, "")
+}
+
+func RenewLeafCertsForKubeVersion(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain, kubeVersion string) error {
+	certConfig, err := NewSealosCertMetaDataForKubeVersion(certPATH, certEtcdPATH, altNames, serviceCIRD, hostName, hostIP, DNSDomain, kubeVersion)
+	if err != nil {
+		return fmt.Errorf("generator cert config failed %v", err)
+	}
+	return certConfig.RenewLeafCerts()
 }
 
 func GenerateRegistryCert(registryCertPath string, BaseName string) error {

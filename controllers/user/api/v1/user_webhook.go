@@ -112,7 +112,11 @@ func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admissio
 	if err := usercount.Init(ctx, userWebhookReader); err != nil {
 		return admission.Warnings{}, err
 	}
-	if !licensegate.AllowNewUser(usercount.Get()) {
+	currentCount, err := usercount.CountQuotaUsers(ctx, userWebhookReader)
+	if err != nil {
+		return admission.Warnings{}, err
+	}
+	if !licensegate.AllowNewUser(currentCount) {
 		message := buildLicenseLimitErrorMessage()
 		if licensegate.HasActiveLicense() {
 			message = buildUserCountLimitErrorMessage()

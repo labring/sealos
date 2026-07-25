@@ -1,0 +1,125 @@
+export const K8S_RFC1035_NAME_MAX_LENGTH = 63;
+export const APP_NAME_BASE_MAX_LENGTH = 40;
+export const APP_GENERATED_NAME_MAX_LENGTH = APP_NAME_BASE_MAX_LENGTH;
+
+export const APP_NAME_BASE_PATTERN = /^[a-z]([-a-z0-9]*[a-z0-9])?$/;
+export const APP_GENERATED_NAME_PATTERN = /^[a-z]([-a-z0-9]*[a-z0-9])?$/;
+export const INVALID_APP_NAME_MESSAGE_KEY = 'invalid_app_name';
+export const INVALID_SERVICE_NAME_MESSAGE_KEY = 'invalid_service_name';
+
+export const isValidAppNameBase = (baseName: string) =>
+  baseName.length > 0 &&
+  baseName.length <= APP_NAME_BASE_MAX_LENGTH &&
+  APP_NAME_BASE_PATTERN.test(baseName);
+
+export const isValidGeneratedAppName = (appName: string) =>
+  appName.length > 0 &&
+  appName.length <= APP_GENERATED_NAME_MAX_LENGTH &&
+  APP_GENERATED_NAME_PATTERN.test(appName);
+
+export const generateAppName = (baseName: string) => baseName;
+
+export const isValidRfc1035Name = (name: string) =>
+  name.length > 0 &&
+  name.length <= K8S_RFC1035_NAME_MAX_LENGTH &&
+  APP_GENERATED_NAME_PATTERN.test(name);
+
+type NamedKubernetesResource = {
+  kind?: string;
+  metadata?: {
+    name?: unknown;
+  };
+  spec?: {
+    rules?: {
+      http?: {
+        paths?: {
+          backend?: {
+            service?: {
+              name?: unknown;
+            };
+          };
+        }[];
+      };
+    }[];
+  };
+};
+
+type InvalidServiceNameTarget = {
+  resourceKind: string;
+  resourceName: unknown;
+  serviceName: string;
+  source: 'metadata' | 'ingress-backend';
+};
+
+export const getInvalidGeneratedAppNameMessage = (name: unknown) => {
+  if (typeof name !== 'string' || isValidGeneratedAppName(name)) return;
+
+  return `Application name "${name}" is invalid. Use ${APP_GENERATED_NAME_MAX_LENGTH} characters or fewer, start with a lowercase letter, use only lowercase letters, numbers, or hyphens, and end with a lowercase letter or number.`;
+};
+
+export const getInvalidNameMessageI18nKey = (message: unknown) => {
+  if (typeof message !== 'string') return;
+
+  if (/^Application name ".+" is invalid\./.test(message)) {
+    return INVALID_APP_NAME_MESSAGE_KEY;
+  }
+
+  if (
+    /^Service ".+" has an invalid name\./.test(message) ||
+    /^Ingress ".+" references invalid backend service ".+"\./.test(message)
+  ) {
+    return INVALID_SERVICE_NAME_MESSAGE_KEY;
+  }
+};
+
+export const getInvalidRfc1035ServiceNameMessage = (resources: NamedKubernetesResource[]) => {
+  const invalidTarget = resources.reduce<InvalidServiceNameTarget | undefined>(
+    (result, resource) => {
+      if (result) return result;
+
+      const name = resource?.metadata?.name;
+      if (resource.kind === 'Service' && typeof name === 'string' && !isValidRfc1035Name(name)) {
+        return {
+          resourceKind: 'Service',
+          resourceName: name,
+          serviceName: name,
+          source: 'metadata'
+        };
+      }
+
+      if (resource.kind === 'Ingress') {
+        const invalidBackendServiceName = resource.spec?.rules
+          ?.flatMap((rule) => rule.http?.paths || [])
+          .map((path) => path.backend?.service?.name)
+          .find(
+            (serviceName) => typeof serviceName === 'string' && !isValidRfc1035Name(serviceName)
+          );
+
+        if (typeof invalidBackendServiceName === 'string') {
+          return {
+            resourceKind: 'Ingress',
+            resourceName: name,
+            serviceName: invalidBackendServiceName,
+            source: 'ingress-backend'
+          };
+        }
+      }
+
+      return undefined;
+    },
+    undefined
+  );
+
+  if (!invalidTarget) return;
+
+  const ruleText =
+    'Names must start with a lowercase letter, contain only lowercase letters, numbers, or hyphens, and end with a lowercase letter or number.';
+
+  if (invalidTarget.source === 'ingress-backend') {
+    return `Ingress "${invalidTarget.resourceName || ''}" references invalid backend service "${
+      invalidTarget.serviceName
+    }". ${ruleText}`;
+  }
+
+  return `${invalidTarget.resourceKind} "${invalidTarget.serviceName}" has an invalid name. ${ruleText}`;
+};

@@ -1,0 +1,109 @@
+import { describe, expect, it } from 'vitest';
+import {
+  APP_NAME_BASE_MAX_LENGTH,
+  K8S_RFC1035_NAME_MAX_LENGTH,
+  getInvalidGeneratedAppNameMessage,
+  getInvalidRfc1035ServiceNameMessage,
+  generateAppName,
+  isValidAppNameBase,
+  isValidGeneratedAppName,
+  isValidRfc1035Name
+} from '@/utils/appNameValidation';
+
+describe('app name validation', () => {
+  it('accepts valid user-entered base names up to the app name limit', () => {
+    const maxLengthBase = `a${'b'.repeat(APP_NAME_BASE_MAX_LENGTH - 1)}`;
+
+    expect(isValidAppNameBase('a')).toBe(true);
+    expect(isValidAppNameBase('app')).toBe(true);
+    expect(isValidAppNameBase('app-1')).toBe(true);
+    expect(isValidAppNameBase('hello-world')).toBe(true);
+    expect(maxLengthBase).toHaveLength(40);
+    expect(isValidAppNameBase(maxLengthBase)).toBe(true);
+  });
+
+  it('rejects base names that would break RFC 1035 or the app name limit', () => {
+    const tooLongBase = `a${'b'.repeat(APP_NAME_BASE_MAX_LENGTH)}`;
+
+    expect(isValidAppNameBase('')).toBe(false);
+    expect(isValidAppNameBase('1app')).toBe(false);
+    expect(isValidAppNameBase('App')).toBe(false);
+    expect(isValidAppNameBase('app_1')).toBe(false);
+    expect(isValidAppNameBase('-app')).toBe(false);
+    expect(isValidAppNameBase('app-')).toBe(false);
+    expect(isValidAppNameBase('app.name')).toBe(false);
+    expect(isValidAppNameBase('app name')).toBe(false);
+    expect(tooLongBase).toHaveLength(41);
+    expect(isValidAppNameBase(tooLongBase)).toBe(false);
+  });
+
+  it('uses the user-entered app name without appending a random suffix', () => {
+    const generatedName = generateAppName('demo');
+
+    expect(generatedName).toBe('demo');
+    expect(isValidGeneratedAppName(generatedName)).toBe(true);
+  });
+
+  it('keeps app names inside the configured app name limit', () => {
+    const maxLengthBase = `a${'b'.repeat(APP_NAME_BASE_MAX_LENGTH - 1)}`;
+    const generatedName = generateAppName(maxLengthBase);
+
+    expect(generatedName).toHaveLength(APP_NAME_BASE_MAX_LENGTH);
+    expect(isValidGeneratedAppName(generatedName)).toBe(true);
+    expect(generatedName.length).toBeLessThan(K8S_RFC1035_NAME_MAX_LENGTH);
+  });
+
+  it('reports app names that exceed the generated name budget before apply', () => {
+    const tooLongBase = `a${'b'.repeat(APP_NAME_BASE_MAX_LENGTH)}`;
+
+    expect(isValidRfc1035Name(tooLongBase)).toBe(true);
+    expect(getInvalidGeneratedAppNameMessage(tooLongBase)).toContain(
+      `Use ${APP_NAME_BASE_MAX_LENGTH} characters or fewer`
+    );
+  });
+
+  it('reports invalid service names before the Kubernetes apply step', () => {
+    expect(
+      getInvalidRfc1035ServiceNameMessage([
+        {
+          kind: 'Deployment',
+          metadata: { name: '111111hello-world' }
+        },
+        {
+          kind: 'Service',
+          metadata: { name: '111111hello-world-yanexremmrtr' }
+        }
+      ])
+    ).toContain('Service "111111hello-world-yanexremmrtr" has an invalid name');
+  });
+
+  it('reports invalid ingress backend service names before the Kubernetes apply step', () => {
+    expect(
+      getInvalidRfc1035ServiceNameMessage([
+        {
+          kind: 'Ingress',
+          metadata: { name: 'network-nhvjfewaavfu' },
+          spec: {
+            rules: [
+              {
+                http: {
+                  paths: [
+                    {
+                      backend: {
+                        service: {
+                          name: '1hello-world-hzcqkfmixkri'
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ])
+    ).toContain(
+      'Ingress "network-nhvjfewaavfu" references invalid backend service "1hello-world-hzcqkfmixkri"'
+    );
+  });
+});

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Shared Package",
+  "compilerOptions": {
+    // Enable latest features
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "allowJs": false,
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Module resolution
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+
+    // JSX
+    "jsx": "react-jsx",
+
+    // Some stricter flags
+    "strict": true,
+    "allowUnreachableCode": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+  "include": ["src/**/*", "src-server/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

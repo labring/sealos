@@ -1,9 +1,9 @@
-import { Avatar, Box, Flex, FlexProps, HStack, Text, VStack, Image } from '@chakra-ui/react';
+import { Box, Flex, FlexProps, HStack, Text } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckIcon } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
-import { useState, useEffect } from 'react';
 import BoringAvatar from 'boring-avatars';
+import { getPrivateWorkspaceDisplayName } from '@/utils/workspace';
 
 const NsListItem = ({
   isSelected,
@@ -25,6 +25,12 @@ const NsListItem = ({
 } & FlexProps) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const displayName = isPrivate
+    ? getPrivateWorkspaceDisplayName({
+        teamName,
+        defaultName: t('common:default_team')
+      })
+    : teamName;
 
   return (
     <Flex
@@ -58,10 +64,7 @@ const NsListItem = ({
             />
           </Box>
         )}
-        <Text textTransform={'capitalize'}>
-          {/* {isPrivate ? t('common:default_team') : teamName} */}
-          {teamName}
-        </Text>
+        <Text textTransform={'capitalize'}>{displayName}</Text>
         {isSelected && showCheck && (
           <CheckIcon style={{ marginLeft: 'auto' }} size={16} color={'#1C4EF5'} />
         )}

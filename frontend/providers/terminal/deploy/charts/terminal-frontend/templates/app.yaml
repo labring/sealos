@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: terminal
+  namespace: app-system
+spec:
+  data:
+    desc: sealos CLoud Terminal
+    url: {{ include "terminal-frontend.terminalUrl" . | quote }}
+  icon: {{ printf "%s/logo.svg" (include "terminal-frontend.terminalUrl" .) | quote }}
+  i18n:
+    zh:
+      name: 终端
+    zh-Hans:
+      name: 终端
+  menuData:
+  name: Terminal
+  type: iframe
+  displayType: normal

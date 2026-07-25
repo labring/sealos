@@ -6,6 +6,7 @@ import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { LogQueryPayload } from '@/pages/api/log/queryLogs';
 import { PodListQueryPayload } from '@/pages/api/log/queryPodList';
 import { track } from '@sealos/gtm';
+import type { BackendServiceItem } from '@/pages/api/listBackendServices';
 
 export const postDeployApp = (yamlList: string[], mode: 'create' | 'replace' = 'create') =>
   POST('/api/applyApp', { yamlList, mode });
@@ -35,6 +36,8 @@ export const delAppByName = (name: string) => {
 
 export const getAppByName = (name: string, mock = false) =>
   GET<AppDetailType>(`/api/getAppByAppName?appName=${name}&mock=${mock}`);
+
+export const getBackendServices = () => GET<BackendServiceItem[]>('/api/listBackendServices');
 
 export const getAppPodsByAppName = (name: string) =>
   GET<PodDetailType[]>('/api/getAppPodsByAppName', { name });
@@ -83,6 +86,9 @@ export const startAppByName = (appName: string) => {
 
 export const restartPodByName = (podName: string) => GET(`/api/restartPod?podName=${podName}`);
 
+export const checkPodExecPermission = (podName: string) =>
+  GET<{ allowed: boolean }>('/api/checkPodExecPermission', { podName });
+
 export const getAppMonitorData = (payload: {
   queryName: string;
   queryKey: keyof MonitorQueryKey;
@@ -102,3 +108,8 @@ export const setAppRemark = (payload: {
   remark: string;
   kind: 'deployment' | 'statefulset';
 }) => POST('/api/remark', payload);
+
+export const getSharePVCs = () =>
+  GET<{ name: string; storageClassName: string; capacity: string; phase: string }[]>(
+    '/api/listSharePVCs'
+  );

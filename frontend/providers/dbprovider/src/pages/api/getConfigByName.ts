@@ -85,6 +85,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     const dbConfig = DBReconfigureMap[dbType];
+    if (!dbConfig) {
+      return jsonRes(res, {
+        data: null
+      });
+    }
+
     const key = name + dbConfig.configMapName;
     if (!key || !dbConfig.configMapName) {
       return jsonRes(res, {

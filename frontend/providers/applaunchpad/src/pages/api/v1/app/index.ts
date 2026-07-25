@@ -1,4 +1,4 @@
-import { jsonRes } from '@/services/backend/response';
+import { getPublicDomainErrorResponse, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import {
@@ -11,6 +11,7 @@ import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
 import { LaunchpadApplicationSchema } from '@/types/schema';
+import { PublicDomainError } from '@/services/backend/publicDomain';
 
 async function processAppResponse(
   response: PromiseSettledResult<any>[]
@@ -67,6 +68,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
   } catch (err: any) {
+    if (err instanceof PublicDomainError) {
+      return jsonRes(res, {
+        code: err.status,
+        error: getPublicDomainErrorResponse(err)
+      });
+    }
     jsonRes(res, {
       code: 500,
       error: err

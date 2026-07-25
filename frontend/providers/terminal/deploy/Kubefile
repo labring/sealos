@@ -3,12 +3,7 @@ FROM scratch
 USER 65532:65532
 
 COPY registry registry
-COPY manifests manifests
+COPY charts charts
+COPY terminal-frontend-entrypoint.sh terminal-frontend-entrypoint.sh
 
-ENV certSecretName="wildcard-cert"
-ENV cloudDomain="127.0.0.1.nip.io"
-ENV cloudPort=""
-ENV ttydImage="docker.io/labring4docker/terminal:1.25.1-5"
-ENV keepalived="30m"
-
-CMD ["kubectl apply -f manifests"]
+CMD ["bash terminal-frontend-entrypoint.sh"]

@@ -104,6 +104,7 @@ type BuildOptions struct {
 	Label              []string
 	Manifest           string
 	MaxPullProcs       int
+	All                bool
 	Platform           string
 	Pull               string
 	Quiet              bool
@@ -186,6 +187,7 @@ func (bo *BuildOptions) Args() []string {
 		appendFlagsWithValues("--label", bo.Label).
 		appendFlagsWithValues("--manifest", bo.Manifest).
 		appendFlagsWithValues("--max-pull-procs", bo.MaxPullProcs).
+		appendFlagsWithValues("--all", bo.All).
 		appendFlagsWithValues("--platform", bo.Platform).
 		appendFlagsWithValues("--pull", bo.Pull).
 		appendFlagsWithValues("--quiet", bo.Quiet).

@@ -18,6 +18,7 @@ import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { getErrText } from '@/utils/tools';
 
 enum Page {
   REMINDER = 'REMINDER',
@@ -70,7 +71,7 @@ const DelModal = ({
       onClose();
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '删除出现了意外',
+        title: t(getErrText(error, 'Delete Failed')),
         status: 'error'
       });
       console.error(error);

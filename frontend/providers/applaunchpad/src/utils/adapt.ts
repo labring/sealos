@@ -24,6 +24,7 @@ import type {
   TransportProtocolType,
   DeployKindsType,
   AppEditType,
+  NetworkRoutePathType,
   StorageType
 } from '@/types/app';
 import {
@@ -34,6 +35,7 @@ import {
   minReplicasKey,
   PodStatusEnum,
   publicDomainKey,
+  publicDomainPortKey,
   AppSourceConfigs
 } from '@/constants/app';
 import {
@@ -260,6 +262,7 @@ export const adaptAppDetail = async (
       name: string;
       secretName: string;
     }[];
+    backendServices?: V1Service[];
   }
 ): Promise<AppDetailType> => {
   const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = options ?? (await getInitData());
@@ -267,6 +270,7 @@ export const adaptAppDetail = async (
   const allServices = configs
     .filter((item) => item.kind === YamlKindEnum.Service)
     .map((item) => item as V1Service);
+  const backendServices = options?.backendServices || allServices;
 
   const allServicePorts = allServices.flatMap((service) => service.spec?.ports || []);
 
@@ -395,6 +399,12 @@ export const adaptAppDetail = async (
     ? JSON.parse(remoteStoresJson).map((s: { name: string }) => s.name)
     : [];
 
+  // Get network store names from annotations to filter them out
+  const networkStoresJson = appDeploy?.metadata?.annotations?.networkStores;
+  const networkStoreNames: string[] = networkStoresJson
+    ? JSON.parse(networkStoresJson).map((s: { name: string }) => s.name)
+    : [];
+
   const getFilteredVolumeMounts = () => {
     const volumeMounts = appDeploy?.spec?.template?.spec?.containers?.[0]?.volumeMounts || [];
     const storeNames =
@@ -407,6 +417,7 @@ export const adaptAppDetail = async (
         !configMapVolumeNames.includes(mount.name) &&
         !storeNames.includes(mount.name) &&
         !remoteStoreNames.includes(mount.name) &&
+        !networkStoreNames.includes(mount.name) &&
         // Filter out shared-memory volume mount
         mount.name !== 'shared-memory'
     );
@@ -415,8 +426,9 @@ export const adaptAppDetail = async (
   const getFilteredVolumes = () => {
     return (
       appDeploy?.spec?.template?.spec?.volumes?.filter((volume) => {
-        // Filter out remote stores
+        // Filter out remote stores and network stores
         if (remoteStoreNames.includes(volume.name)) return false;
+        if (networkStoreNames.includes(volume.name)) return false;
         // Filter out shared-memory volume (emptyDir with Memory medium)
         if (volume.name === 'shared-memory' && volume.emptyDir?.medium === 'Memory') return false;
         // Filter out configMap volumes
@@ -441,6 +453,27 @@ export const adaptAppDetail = async (
     }
     return undefined;
   };
+
+  const ingresses = configs.filter((item) => item.kind === YamlKindEnum.Ingress) as V1Ingress[];
+  const getIngressPaths = (ingress?: V1Ingress) => ingress?.spec?.rules?.[0]?.http?.paths || [];
+  const getPathBackendPort = (path: any) => path?.backend?.service?.port?.number;
+  const getIngressOwnerPort = (ingress: V1Ingress) => {
+    const port = Number(ingress.metadata?.labels?.[publicDomainPortKey]);
+    if (port) return port;
+
+    return getIngressPaths(ingress)
+      .map(getPathBackendPort)
+      .find((port): port is number => typeof port === 'number');
+  };
+  const ingressByPrimaryPort = ingresses.reduce((map, ingress) => {
+    const primaryPort = getIngressOwnerPort(ingress);
+
+    if (primaryPort !== undefined && !map.has(primaryPort)) {
+      map.set(primaryPort, ingress);
+    }
+
+    return map;
+  }, new Map<number, V1Ingress>());
 
   return {
     labels: appDeploy?.metadata?.labels || {},
@@ -498,6 +531,15 @@ export const adaptAppDetail = async (
           valueFrom: env.valueFrom
         };
       }) || [],
+    serviceList: backendServices.map((service) => ({
+      name: service.metadata?.name || '',
+      ports:
+        service.spec?.ports?.map((port) => ({
+          name: port.name,
+          port: port.port,
+          protocol: port.protocol as TransportProtocolType
+        })) || []
+    })),
     networks:
       allServicePorts?.map((item) => {
         const service = allServices.find((svc) =>
@@ -505,13 +547,9 @@ export const adaptAppDetail = async (
             (port) => port.port === item.port && port.protocol === item.protocol
           )
         );
-        const ingress = configs.find(
-          (config: any) =>
-            item.protocol === 'TCP' &&
-            config.kind === YamlKindEnum.Ingress &&
-            config?.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number === item.port
-        ) as V1Ingress;
+        const ingress = item.protocol === 'TCP' ? ingressByPrimaryPort.get(item.port) : undefined;
         const domain = ingress?.spec?.rules?.[0].host || '';
+        const ingressPaths = getIngressPaths(ingress);
 
         const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
 
@@ -542,8 +580,23 @@ export const adaptAppDetail = async (
           domain: isCustomDomain
             ? SEALOS_DOMAIN
             : item?.nodePort
-              ? domain
-              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
+            ? domain
+            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
+          routes: ingressPaths.length
+            ? ingressPaths.map((path) => ({
+                path: path.path || '/',
+                pathType: (path.pathType || 'Prefix') as NetworkRoutePathType,
+                serviceName: path.backend?.service?.name || service?.metadata?.name || '',
+                servicePort: path.backend?.service?.port?.number || item.port
+              }))
+            : [
+                {
+                  path: '/',
+                  pathType: 'Prefix' as const,
+                  serviceName: service?.metadata?.name || '',
+                  servicePort: item.port
+                }
+              ]
         };
         return result;
       }) || [],
@@ -589,6 +642,11 @@ export const adaptAppDetail = async (
 
       return [...localStores, ...remoteStores];
     })(),
+    networkStoreList: (() => {
+      const networkStoresJson = appDeploy?.metadata?.annotations?.networkStores;
+      if (!networkStoresJson) return [];
+      return JSON.parse(networkStoresJson) as AppEditType['networkStoreList'];
+    })(),
     volumeMounts: getFilteredVolumeMounts(),
     volumes: getFilteredVolumes(),
     kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
@@ -615,11 +673,13 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'cpu',
     'memory',
     'networks',
+    'serviceList',
     'envs',
     'hpa',
     'configMapList',
     'secret',
     'storeList',
+    'networkStoreList',
     'gpu',
     'labels',
     'kind',
@@ -656,8 +716,8 @@ export const sliderNumber2MarkList = ({
           ? `${item / 1024} G`
           : `${item} M`
         : type === 'ephemeralStorage'
-          ? `${item}`
-          : `${item / 1000}`,
+        ? `${item}`
+        : `${item / 1000}`,
     value: item
   }));
 };

@@ -139,6 +139,41 @@ builds:
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
       - -extldflags '-static --static'
+  - id: sreg
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+    main: ./cmd/sreg
+    binary: sreg
+    goos:
+      - linux
+    goarch:
+      - arm64
+      - amd64
+    flags:
+      - -trimpath
+    tags:
+      - containers_image_openpgp
+      - netgo
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+      - -extldflags '-static --static'
+    overrides:
+      - goos: linux
+        goarch: amd64
+        goamd64: v1
+        goarm: ""
+        gomips: ""
+        env:
+          - CGO_ENABLED=1
+          - CC=x86_64-linux-gnu-gcc
 dockers:
   - use: buildx
     ids:
@@ -204,6 +239,74 @@ dockers:
       - --label=io.sealos.image.revision={{.ShortCommit}}
       - --label=io.sealos.image.version={{.Tag }}
       - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sreg
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sreg:{{ .Tag }}-amd64
+    dockerfile: docker/sreg/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/amd64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sreg
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sreg
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sreg:{{ .Tag }}-arm64
+    dockerfile: docker/sreg/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/arm64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sreg
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sreg
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sreg-storage:{{ .Tag }}-amd64
+    dockerfile: docker/sreg/Dockerfile.sreg-storage
+    extra_files:
+      - docker/sreg/scripts/sreg-storage.sh
+    build_flag_templates:
+      - --pull
+      - --platform=linux/amd64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sreg-storage
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sreg
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sreg-storage:{{ .Tag }}-arm64
+    dockerfile: docker/sreg/Dockerfile.sreg-storage
+    extra_files:
+      - docker/sreg/scripts/sreg-storage.sh
+    build_flag_templates:
+      - --pull
+      - --platform=linux/arm64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sreg-storage
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
 docker_manifests:
   - name_template: ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}
     image_templates:
@@ -213,6 +316,14 @@ docker_manifests:
     image_templates:
       - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-amd64
       - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-arm64
+  - name_template: ghcr.io/{{ .Env.USERNAME }}/sreg:{{ .Tag }}
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sreg:{{ .Tag }}-amd64
+      - ghcr.io/{{ .Env.USERNAME }}/sreg:{{ .Tag }}-arm64
+  - name_template: ghcr.io/{{ .Env.USERNAME }}/sreg-storage:{{ .Tag }}
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sreg-storage:{{ .Tag }}-amd64
+      - ghcr.io/{{ .Env.USERNAME }}/sreg-storage:{{ .Tag }}-arm64
 
 nfpms:
   - id: packages

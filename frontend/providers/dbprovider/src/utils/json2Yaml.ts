@@ -6,21 +6,14 @@ import {
   DBReconfigureMap,
   DBTypeEnum,
   MigrationRemark,
-  RedisHAConfig,
   crLabelKey,
   defaultDBEditValue,
   sealafDeployKey
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
-import type {
-  BackupItemType,
-  DBComponentsName,
-  DBDetailType,
-  DBEditType,
-  DBType
-} from '@/types/db';
+import type { DBDetailType, DBEditType, DBType } from '@/types/db';
 import { MigrateForm } from '@/types/migrate';
-import { encodeToHex, formatNumber, formatTime, str2Num } from '@/utils/tools';
+import { encodeToHex, str2Num } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
@@ -32,6 +25,18 @@ import z from 'zod';
 import { backupBaseSchema } from '@/types/schemas/backup';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
+
+const getOpsRequestLabels = (dbName: string) => ({
+  'app.kubernetes.io/instance': dbName,
+  [crLabelKey]: dbName
+});
+
+const polardbxComponentNameMap = {
+  gms: 'gms',
+  dn: 'dn-0',
+  cn: 'cn',
+  cdc: 'cdc'
+} as const;
 
 /**
  * Convert data for creating a database cluster to YAML configuration.
@@ -102,6 +107,59 @@ export const json2CreateCluster = (
     }
 
     // Branch structure for different database types and versions
+    if (dbType === DBTypeEnum.polardbx) {
+      return [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          metadata,
+          spec: {
+            affinity: {
+              nodeLabels: {},
+              podAntiAffinity: 'Preferred',
+              tenancy: 'SharedNode',
+              topologyKeys: ['kubernetes.io/hostname']
+            },
+            clusterDefinitionRef: DBTypeEnum.polardbx,
+            clusterVersionRef: data.dbVersion,
+            componentSpecs: Object.entries(resources).map(([key, resourceData]) => ({
+              componentDefRef: key,
+              monitor: true,
+              name: polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
+              noCreatePDB: false,
+              replicas: resourceData.other?.replicas ?? 1,
+              resources: resourceData.cpuMemory,
+              rsmTransformPolicy: 'ToSts',
+              serviceAccountName: data.dbName,
+              switchPolicy: {
+                type: 'Noop'
+              },
+              ...(resourceData.storage > 0
+                ? {
+                    volumeClaimTemplates: [
+                      {
+                        name: 'data',
+                        spec: {
+                          accessModes: ['ReadWriteOnce'],
+                          resources: {
+                            requests: {
+                              storage: `${resourceData.storage}Gi`
+                            }
+                          },
+                          ...storageClassName
+                        }
+                      }
+                    ]
+                  }
+                : {})
+            })),
+            terminationPolicy,
+            tolerations: []
+          }
+        }
+      ];
+    }
+
     if (dbType === 'apecloud-mysql' && data.dbVersion === 'mysql-5.7.42') {
       // MySQL 5.7.42 specific configuration
       return [
@@ -347,6 +405,7 @@ export const json2Account = (rawData: Partial<DBEditType> = {}, ownerId?: string
     [DBTypeEnum.postgresql]: pgAccountTemplate,
     [DBTypeEnum.mysql]: pgAccountTemplate,
     [DBTypeEnum.mongodb]: pgAccountTemplate,
+    [DBTypeEnum.polardbx]: pgAccountTemplate,
     [DBTypeEnum.redis]: pgAccountTemplate,
     [DBTypeEnum.kafka]: pgAccountTemplate,
     [DBTypeEnum.qdrant]: pgAccountTemplate,
@@ -509,7 +568,7 @@ export const json2MigrateCR = (data: MigrateForm) => {
   const userNS = getUserNamespace();
   const isMigrateAll = data.sourceDatabaseTable.includes('All');
 
-  const templateByDB: Record<DBType, string> = {
+  const templateByDB: Partial<Record<DBType, string>> = {
     'apecloud-mysql': 'apecloud-mysql2mysql',
     postgresql: 'apecloud-pg2pg',
     mongodb: 'apecloud-mongo2mongo',
@@ -522,6 +581,11 @@ export const json2MigrateCR = (data: MigrateForm) => {
     pulsar: '',
     clickhouse: ''
   };
+
+  const templateName = templateByDB[data.dbType];
+  if (templateName === undefined) {
+    throw new Error(`Migration is not supported for database type: ${data.dbType}`);
+  }
 
   const stepResources = {
     limits: {
@@ -614,7 +678,7 @@ export const json2MigrateCR = (data: MigrateForm) => {
         userName: data.sourceUsername
       },
       taskType: data.continued ? 'initialization-and-cdc' : 'initialization',
-      template: templateByDB[data.dbType]
+      template: templateName
     }
   };
 
@@ -628,10 +692,11 @@ export const json2NetworkService = ({
   dbDetail: DBDetailType;
   dbStatefulSet: V1StatefulSet;
 }) => {
-  const portMapping = {
+  const portMapping: Partial<Record<DBType, number | string>> = {
     postgresql: 5432,
     mongodb: 27017,
     'apecloud-mysql': 3306,
+    polardbx: 3306,
     redis: 6379,
     kafka: 9092,
     qdrant: '',
@@ -641,7 +706,7 @@ export const json2NetworkService = ({
     pulsar: 6650,
     clickhouse: 8123
   };
-  const labelMap = {
+  const labelMap: Partial<Record<DBType, Record<string, string>>> = {
     postgresql: {
       'kubeblocks.io/role': 'primary'
     },
@@ -650,6 +715,9 @@ export const json2NetworkService = ({
     },
     'apecloud-mysql': {
       'kubeblocks.io/role': 'leader'
+    },
+    polardbx: {
+      'apps.kubeblocks.io/component-name': 'cn'
     },
     redis: {
       'kubeblocks.io/role': 'primary'
@@ -666,6 +734,14 @@ export const json2NetworkService = ({
     pulsar: {},
     clickhouse: {}
   };
+  const targetPort = portMapping[dbDetail.dbType];
+  const selectorLabels = labelMap[dbDetail.dbType];
+
+  if (targetPort === undefined || !selectorLabels) {
+    throw new Error(
+      `External network service is not supported for database type: ${dbDetail.dbType}`
+    );
+  }
 
   const template = {
     apiVersion: 'v1',
@@ -676,7 +752,7 @@ export const json2NetworkService = ({
         'app.kubernetes.io/instance': dbDetail.dbName,
         'app.kubernetes.io/managed-by': 'kubeblocks',
         'apps.kubeblocks.io/component-name': dbDetail.dbType,
-        ...labelMap[dbDetail.dbType]
+        ...selectorLabels
       },
       ownerReferences: [
         {
@@ -694,14 +770,14 @@ export const json2NetworkService = ({
         {
           name: 'tcp',
           protocol: 'TCP',
-          port: portMapping[dbDetail.dbType],
-          targetPort: portMapping[dbDetail.dbType]
+          port: targetPort,
+          targetPort
         }
       ],
       selector: {
         'app.kubernetes.io/instance': dbDetail.dbName,
         'app.kubernetes.io/managed-by': 'kubeblocks',
-        ...labelMap[dbDetail.dbType]
+        ...selectorLabels
       },
       type: 'NodePort'
     }
@@ -716,6 +792,11 @@ export const json2Reconfigure = (
   dbUid: string,
   configParams: { path: string; newValue: string; oldValue: string }[]
 ) => {
+  const reconfigureConfig = DBReconfigureMap[dbType];
+  if (!reconfigureConfig) {
+    throw new Error(`Reconfigure is not supported for database type: ${dbType}`);
+  }
+
   const namespace = getUserNamespace();
   const template = {
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -755,11 +836,11 @@ export const json2Reconfigure = (
           {
             keys: [
               {
-                key: DBReconfigureMap[dbType].reconfigureKey,
+                key: reconfigureConfig.reconfigureKey,
                 parameters: configParams.map((item) => ({ key: item.path, value: item.newValue }))
               }
             ],
-            name: DBReconfigureMap[dbType].reconfigureName
+            name: reconfigureConfig.reconfigureName
           }
         ]
       },
@@ -775,8 +856,17 @@ export const json2ResourceOps = (
   data: DBEditType,
   type: 'VerticalScaling' | 'HorizontalScaling' | 'VolumeExpansion'
 ) => {
+  const polardbxResources = data.dbType === DBTypeEnum.polardbx ? distributeResources(data) : null;
   const componentName =
-    data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType === 'kafka' ? 'broker' : data.dbType;
+    data.dbType === DBTypeEnum.mysql
+      ? 'mysql'
+      : data.dbType === DBTypeEnum.kafka
+        ? 'broker'
+        : data.dbType === DBTypeEnum.polardbx
+          ? type === 'VolumeExpansion'
+            ? 'gms'
+            : 'cn'
+          : data.dbType;
 
   const getOpsName = () => {
     const timeStr = dayjs().format('YYYYMMDDHHmm');
@@ -789,9 +879,7 @@ export const json2ResourceOps = (
     kind: 'OpsRequest',
     metadata: {
       name: getOpsName(),
-      labels: {
-        [crLabelKey]: data.dbName
-      }
+      labels: getOpsRequestLabels(data.dbName)
     },
     spec: {
       clusterRef: data.dbName,
@@ -801,40 +889,69 @@ export const json2ResourceOps = (
 
   const opsConfig = {
     VerticalScaling: {
-      verticalScaling: [
-        {
-          componentName,
-          requests: {
-            cpu: `${Math.floor(str2Num(data.cpu) * 0.1)}m`,
-            memory: `${Math.floor(str2Num(data.memory) * 0.1)}Mi`
-          },
-          limits: {
-            cpu: `${str2Num(Math.floor(data.cpu))}m`,
-            memory: `${str2Num(data.memory)}Mi`
-          }
-        }
-      ]
+      verticalScaling:
+        data.dbType === DBTypeEnum.polardbx && polardbxResources
+          ? Object.entries(polardbxResources).map(([key, resourceData]) => ({
+              componentName:
+                polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
+              requests: resourceData.cpuMemory.requests,
+              limits: resourceData.cpuMemory.limits
+            }))
+          : [
+              {
+                componentName,
+                requests: {
+                  cpu: `${Math.floor(str2Num(data.cpu) * 0.1)}m`,
+                  memory: `${Math.floor(str2Num(data.memory) * 0.1)}Mi`
+                },
+                limits: {
+                  cpu: `${str2Num(Math.floor(data.cpu))}m`,
+                  memory: `${str2Num(data.memory)}Mi`
+                }
+              }
+            ]
     },
     HorizontalScaling: {
-      horizontalScaling: [
-        {
-          componentName,
-          replicas: data.replicas
-        }
-      ]
+      horizontalScaling:
+        data.dbType === DBTypeEnum.polardbx && polardbxResources
+          ? Object.entries(polardbxResources).map(([key, resourceData]) => ({
+              componentName:
+                polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
+              replicas: resourceData.other?.replicas ?? data.replicas
+            }))
+          : [
+              {
+                componentName,
+                replicas: data.replicas
+              }
+            ]
     },
     VolumeExpansion: {
-      volumeExpansion: [
-        {
-          componentName,
-          volumeClaimTemplates: [
-            {
-              name: 'data',
-              storage: `${data.storage}Gi`
-            }
-          ]
-        }
-      ]
+      volumeExpansion:
+        data.dbType === DBTypeEnum.polardbx && polardbxResources
+          ? Object.entries(polardbxResources)
+              .filter(([, resourceData]) => resourceData.storage > 0)
+              .map(([key, resourceData]) => ({
+                componentName:
+                  polardbxComponentNameMap[key as keyof typeof polardbxComponentNameMap] || key,
+                volumeClaimTemplates: [
+                  {
+                    name: 'data',
+                    storage: `${resourceData.storage}Gi`
+                  }
+                ]
+              }))
+          : [
+              {
+                componentName,
+                volumeClaimTemplates: [
+                  {
+                    name: 'data',
+                    storage: `${data.storage}Gi`
+                  }
+                ]
+              }
+            ]
     }
   };
 
@@ -855,24 +972,30 @@ export const json2BasicOps = (data: {
   type: 'Start' | 'Stop' | 'Restart';
 }) => {
   const componentName =
-    data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType === 'kafka' ? 'broker' : data.dbType;
+    data.dbType === DBTypeEnum.mysql
+      ? 'mysql'
+      : data.dbType === DBTypeEnum.kafka
+        ? 'broker'
+        : data.dbType === DBTypeEnum.polardbx
+          ? 'cn'
+          : data.dbType;
 
   const template = {
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
     kind: 'OpsRequest',
     metadata: {
       name: `ops-${data.type.toLowerCase()}-${dayjs().format('YYYYMMDDHHmmss')}`,
-      labels: {
-        [crLabelKey]: data.dbName
-      }
+      labels: getOpsRequestLabels(data.dbName)
     },
     spec: {
       clusterRef: data.dbName,
       type: data.type,
       ...(data.type === 'Restart'
-        ? {
-            restart: [{ componentName }]
-          }
+        ? data.dbType === DBTypeEnum.polardbx
+          ? {}
+          : {
+              restart: [{ componentName }]
+            }
         : {})
     }
   };

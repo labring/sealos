@@ -155,6 +155,25 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 3. src/layout/index.tsx
 4. src/components/desktop_content.tsx
 
+### 安装 App 数据流
+
+- `src/pages/api/desktop/getInstalledApps.ts` 负责组装桌面可见 App 列表。共享 App 来自 `app-system` namespace 的 `app.sealos.io/v1 App`，workspace App 来自当前 workspace namespace。
+- 共享 App 保持 `displayType` 分组顺序 `normal -> more -> hidden`，组内按 `spec.position` 从小到大排序；没有 `position` 的旧数据按 `0` 处理，再按创建时间倒序和 key 稳定排序。
+- `spec.position` 由管理端共享 App 图标管理写入，集群 App CRD 需要先包含 `spec.position` schema；workspace App 管理不写这个字段。
+
+### Workspace 命名规则
+
+- 默认个人空间创建时按当前请求语言写入默认名：优先使用 `NEXT_LOCALE` cookie，其次使用 `Accept-Language`；中文为 `个人空间`，其他语言为 `Personal Workspace`。
+- 默认个人空间允许 Owner 重命名，重命名后的自定义名称按用户输入展示；默认个人空间仍不可解散或移交。
+- 历史默认占位名 `private team`、`Private Team`、`My Workspace`、`Personal Workspace`、`个人空间` 在展示层按当前语言显示为默认个人空间名，避免旧数据继续暴露内部命名。
+
+### Workspace 资源展示
+
+- 桌面右上角摘要展示当前 workspace 的可用 CPU 以及账号积分；积分复用 `/api/account/getAmount` 的余额净额口径，即 `balance - deductionBalance` 后保留两位小数展示，点击摘要进入费用中心。
+- 桌面右上角的资源入口通过 `src/pages/api/desktop/getResource.ts` 读取当前登录 workspace namespace 的 Kubernetes `ResourceQuota`，默认 quota 名称为 `quota-${namespace}`。
+- `/api/desktop/getResource` 保留原有 Pod/PVC 运行资源统计，同时返回 `workspaceQuota`，用于展示 CPU、内存、存储、GPU、NodePort 的总量、已用和可用量。
+- `sealos-desktop-sdk` 的 `getWorkspaceQuotaApi` 复用同一个接口，子应用通过 master bridge 获取到的 workspace quota 与桌面右上角展示保持同源。
+
 ### 测试环境
 
 1. 需要设置环境变量`NODE_ENV=test` 或者 `$env:NODE_ENV="test"`

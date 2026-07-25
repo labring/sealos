@@ -93,6 +93,13 @@ export const getResource = () => {
       runningPodCount: string;
       totalGpuCount: string;
       totalPodCount: string;
+      workspaceQuota: {
+        type: 'cpu' | 'memory' | 'storage' | 'gpu' | 'traffic' | 'nodeport';
+        used: number;
+        limit: number;
+        available: number;
+        usagePercent: number;
+      }[];
     }>
   >('/api/desktop/getResource');
 };

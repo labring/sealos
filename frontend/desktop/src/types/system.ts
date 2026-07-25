@@ -36,7 +36,6 @@ export type CommonClientConfigType = DeepRequired<
   >
 >;
 export type DatabaseConfigType = {
-  mongodbURI: string;
   globalCockroachdbURI: string;
   regionalCockroachdbURI: string;
 };
@@ -55,6 +54,7 @@ export type MetaScriptType = {
 };
 
 export type ProtocolConfigType = {
+  enabled?: boolean;
   serviceProtocol: {
     zh: string;
     en: string;
@@ -146,6 +146,7 @@ export type AuthConfigType = {
     };
     oauth2?: {
       enabled: boolean;
+      pkce?: boolean;
       callbackURL: string;
       clientID: string;
       proxyAddress?: string;
@@ -246,6 +247,7 @@ export type DesktopConfigType<T = AuthConfigType> = {
   teamManagement?: {
     maxTeamCount: number;
     maxTeamMemberCount: number;
+    workspaceInviteExpiresInMinutes?: number[];
   };
 };
 
@@ -305,6 +307,7 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   logo: '/logo.svg',
   backgroundImage: '/images/bg-light.svg',
   protocol: {
+    enabled: true,
     serviceProtocol: {
       zh: '',
       en: ''
@@ -367,6 +370,7 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
     },
     oauth2: {
       enabled: false,
+      pkce: false,
       callbackURL: '',
       clientID: '',
       authURL: '',
@@ -398,6 +402,11 @@ export const DefaultAppClientConfig: AppClientConfigType = {
   },
   desktop: {
     layout: DefaultLayoutConfig,
-    auth: DefaultAuthClientConfig
+    auth: DefaultAuthClientConfig,
+    teamManagement: {
+      maxTeamCount: 50,
+      maxTeamMemberCount: 50,
+      workspaceInviteExpiresInMinutes: [30]
+    }
   }
 };

@@ -21,7 +21,6 @@ buildTargets := \
 	providers/applaunchpad \
 	providers/imagehub \
 	providers/template \
-	providers/cronjob \
 	providers/license \
 	providers/kubepanel \
 	providers/objectstorage

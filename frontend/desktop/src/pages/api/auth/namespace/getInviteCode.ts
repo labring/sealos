@@ -8,18 +8,24 @@ import { JoinStatus } from 'prisma/region/generated/client';
 import { verifyAccessToken } from '@/services/backend/auth';
 import { Role } from 'prisma/region/generated/client';
 import { addOrUpdateInviteCode } from '@/services/backend/db/workspaceInviteCode';
+import { getWorkspaceInviteExpiresInMinutes } from '@/services/enable';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token verify error' });
-    const { ns_uid, role } = req.body as {
+    const { ns_uid, role, expiresInMinutes } = req.body as {
       ns_uid?: string;
       role?: UserRole;
+      expiresInMinutes?: number;
     };
     if (!ns_uid || !validate(ns_uid))
       return jsonRes(res, { code: 400, message: 'ns_uid is invaild' });
     if (!isUserRole(role)) return jsonRes(res, { code: 400, message: 'role is required' });
     if (role === UserRole.Owner) return jsonRes(res, { code: 403, message: 'role must be others' });
+    const allowedExpiresInMinutes = getWorkspaceInviteExpiresInMinutes();
+    const finalExpiresInMinutes = expiresInMinutes ?? allowedExpiresInMinutes[0];
+    if (!allowedExpiresInMinutes.includes(finalExpiresInMinutes))
+      return jsonRes(res, { code: 400, message: 'expiresInMinutes is invalid' });
 
     const queryResults = await prisma.userWorkspace.findMany({
       where: {
@@ -46,7 +52,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const code = v4();
     const result = await addOrUpdateInviteCode({
       ...spec,
-      code
+      code,
+      expiresInMinutes: finalExpiresInMinutes
     });
     if (!result) throw Error('invite member error');
     return jsonRes(res, {

@@ -232,6 +232,7 @@
   "filename": "文件名",
   "first_charge": "首充优惠",
   "forbidden_create_app": "您在当前工作空间没有足够的权限来创建应用。请联系该工作空间的 owner (所有者) 为您授权。",
+  "quota_exceeded": "请求的资源超出了配额限制，请减少资源请求或联系管理员提升配额。",
   "gift": "赠",
   "go_to_recharge": "去充值",
   "gpu": "GPU",

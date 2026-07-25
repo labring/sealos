@@ -57,6 +57,8 @@ spec:
               activationTime:
                 format: date-time
                 type: string
+              code:
+                type: integer
               expirationTime:
                 format: date-time
                 type: string

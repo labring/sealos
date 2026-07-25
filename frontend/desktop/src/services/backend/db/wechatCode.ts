@@ -1,4 +1,5 @@
-import { connectToDatabase } from './mongodb';
+import { prisma } from './init';
+import { OAUTH_PROVIDERS, OAUTH_VERIFICATION_SCENARIOS } from '@/constants/verification';
 
 type TWechatVerifyCode = {
   openid: string;
@@ -7,41 +8,72 @@ type TWechatVerifyCode = {
   expireTime: Date;
 };
 
-async function connectToUserCollection() {
-  const client = await connectToDatabase();
-  const collection = client.db().collection<TWechatVerifyCode>('wechat-verify-code');
-  return collection;
-}
+const WECHAT_EXPIRE_MS = 5 * 60 * 1000;
 
 export async function addOrUpdateWechatCode({ openid, code }: { openid: string; code: string }) {
-  const codes = await connectToUserCollection();
-  const currentTime = new Date();
-  const expireTime = new Date(currentTime.getTime() + 5 * 60 * 1000);
-  const result = await codes.updateOne(
-    {
-      openid
-    },
-    {
-      $set: {
-        code,
-        createTime: currentTime,
-        expireTime: expireTime
+  const activeVerification = await prisma.oAuthVerifications.findFirst({
+    where: {
+      provider: OAUTH_PROVIDERS.WECHAT,
+      scenario: OAUTH_VERIFICATION_SCENARIOS.LOGIN_QR,
+      providerId: openid,
+      expiresAt: {
+        gt: new Date()
       }
     },
-    {
-      upsert: true
+    orderBy: {
+      updatedAt: 'desc'
     }
-  );
-  return result;
+  });
+
+  const expiresAt = new Date(Date.now() + WECHAT_EXPIRE_MS);
+
+  if (activeVerification) {
+    return prisma.oAuthVerifications.update({
+      where: {
+        uid: activeVerification.uid
+      },
+      data: {
+        code,
+        expiresAt
+      }
+    });
+  }
+
+  return prisma.oAuthVerifications.create({
+    data: {
+      provider: OAUTH_PROVIDERS.WECHAT,
+      scenario: OAUTH_VERIFICATION_SCENARIOS.LOGIN_QR,
+      providerId: openid,
+      code,
+      expiresAt
+    }
+  });
 }
 
-export async function verifyWechatCode({ code }: { code: string }) {
-  const codes = await connectToUserCollection();
-  const result = await codes.findOne({
-    code,
-    expireTime: { $gt: new Date() }
+export async function verifyWechatCode({
+  code
+}: {
+  code: string;
+}): Promise<TWechatVerifyCode | null> {
+  const result = await prisma.oAuthVerifications.findFirst({
+    where: {
+      provider: OAUTH_PROVIDERS.WECHAT,
+      scenario: OAUTH_VERIFICATION_SCENARIOS.LOGIN_QR,
+      code,
+      expiresAt: {
+        gt: new Date()
+      }
+    }
   });
-  return result;
+
+  if (!result?.providerId) return null;
+
+  return {
+    openid: result.providerId,
+    code: result.code,
+    createTime: result.createdAt,
+    expireTime: result.expiresAt
+  };
 }
 
 export async function hasWeChatAppSecret() {
@@ -70,17 +102,17 @@ export async function getWeChatAccessToken() {
     isAccessTokenValid(global.WechatExpiresIn)
   ) {
     return global.WechatAccessToken;
-  } else {
-    const response = await fetch(
-      `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APP_ID}&secret=${APP_SECRET}`,
-      { headers: { Accept: 'application/json' } }
-    );
-    const { access_token: newAccessToken, expires_in: newExpiresIn } = (await response.json()) as {
-      access_token: string;
-      expires_in: number;
-    };
-    global.WechatAccessToken = newAccessToken;
-    global.WechatExpiresIn = Date.now() + newExpiresIn * 1000 - 10 * 60 * 1000; //ms
-    return global.WechatAccessToken;
   }
+
+  const response = await fetch(
+    `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${APP_ID}&secret=${APP_SECRET}`,
+    { headers: { Accept: 'application/json' } }
+  );
+  const { access_token: newAccessToken, expires_in: newExpiresIn } = (await response.json()) as {
+    access_token: string;
+    expires_in: number;
+  };
+  global.WechatAccessToken = newAccessToken;
+  global.WechatExpiresIn = Date.now() + newExpiresIn * 1000 - 10 * 60 * 1000;
+  return global.WechatAccessToken;
 }

@@ -5,6 +5,7 @@ import { K8sApiDefault } from '@/services/backend/kubernetes/admin';
 import * as k8s from '@kubernetes/client-node';
 import { k8sRFC3339Time } from '@/utils/format';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
+import { withEncodedKubeconfig } from '@/services/backend/kubeconfigEncoding';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -84,9 +85,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return jsonRes(res, {
       code: 200,
       message: 'Kubeconfig rotated successfully',
-      data: {
+      data: withEncodedKubeconfig({
         kubeconfig
-      }
+      })
     });
   } catch (err: any) {
     console.error('Failed to rotate kubeconfig:', err);

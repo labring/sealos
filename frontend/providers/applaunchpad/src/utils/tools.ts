@@ -111,6 +111,56 @@ export const mountPathToConfigMapKey = (str: string) => {
   return result;
 };
 
+export const getFallbackPortName = ({
+  port,
+  protocol,
+  index
+}: {
+  port?: string | number;
+  protocol?: string;
+  index: number;
+}) =>
+  `p-${String(protocol || 'tcp').toLowerCase()[0] || 't'}-${str2Num(port) || 'unknown'}-${index}`;
+
+const getUniquePortName = (name: string, usedNames: Set<string>) => {
+  let index = 1;
+  let nextName = name;
+
+  while (usedNames.has(nextName)) {
+    const suffix = `-${index}`;
+    nextName = `${name.slice(0, Math.max(1, 15 - suffix.length)).replace(/-+$/, '')}${suffix}`;
+    index += 1;
+  }
+
+  return nextName;
+};
+
+export const ensureUniquePortNames = <T extends { name?: string; port?: any; containerPort?: any }>(
+  ports: T[] = []
+) => {
+  const usedNames = new Set<string>();
+
+  return ports.map((port, index) => {
+    const fallbackName = getFallbackPortName({
+      port: port?.port ?? port?.containerPort,
+      protocol: (port as T & { protocol?: string })?.protocol,
+      index
+    });
+    const currentName = typeof port?.name === 'string' ? port.name.trim() : '';
+    const uniqueName = getUniquePortName(
+      !currentName || usedNames.has(currentName) ? fallbackName : currentName,
+      usedNames
+    );
+
+    usedNames.add(uniqueName);
+
+    return {
+      ...port,
+      name: uniqueName
+    };
+  });
+};
+
 /**
  * read a file text content
  */
@@ -253,6 +303,66 @@ export const storageFormatToGi = (storage: string) => {
   return Number(value.toFixed(2));
 };
 
+const isWorkloadKind = (
+  kind?: string
+): kind is YamlKindEnum.Deployment | YamlKindEnum.StatefulSet =>
+  kind === YamlKindEnum.Deployment || kind === YamlKindEnum.StatefulSet;
+
+const createRestartTimePatch = (workload: DeployKindsType, restartTime: string) => ({
+  apiVersion: workload.apiVersion,
+  kind: workload.kind,
+  metadata: {
+    name: workload.metadata?.name,
+    namespace: workload.metadata?.namespace
+  },
+  spec: {
+    template: {
+      metadata: {
+        labels: {
+          restartTime
+        }
+      }
+    }
+  }
+});
+
+const ensureRestartTimePatch = ({
+  actions,
+  originalYamlList,
+  oldFormJsonList
+}: {
+  actions: AppPatchPropsType;
+  originalYamlList: DeployKindsType[];
+  oldFormJsonList: DeployKindsType[];
+}) => {
+  const workload =
+    originalYamlList.find((item) => isWorkloadKind(item.kind)) ||
+    oldFormJsonList.find((item) => isWorkloadKind(item.kind));
+
+  if (!workload || !isWorkloadKind(workload.kind)) return;
+
+  const restartTime = dayjs().format('YYYYMMDDHHmmss');
+  const workloadPatch = actions.find(
+    (item) => item.type === 'patch' && item.kind === workload.kind
+  ) as Extract<AppPatchPropsType[number], { type: 'patch' }> | undefined;
+
+  if (workloadPatch) {
+    workloadPatch.value.spec = workloadPatch.value.spec || {};
+    workloadPatch.value.spec.template = workloadPatch.value.spec.template || {};
+    workloadPatch.value.spec.template.metadata = workloadPatch.value.spec.template.metadata || {};
+    workloadPatch.value.spec.template.metadata.labels =
+      workloadPatch.value.spec.template.metadata.labels || {};
+    workloadPatch.value.spec.template.metadata.labels.restartTime = restartTime;
+    return;
+  }
+
+  actions.push({
+    type: 'patch',
+    kind: workload.kind,
+    value: createRestartTimePatch(workload, restartTime)
+  });
+};
+
 /**
  * format pod createTime
  */
@@ -328,6 +438,8 @@ export const patchYamlList = ({
     .flat() as DeployKindsType[];
 
   const actions: AppPatchPropsType = [];
+  let configMapDataChanged = false;
+  let workloadTemplateChanged = false;
 
   // find delete
   oldFormJsonList.forEach((oldYamlJson) => {
@@ -360,6 +472,22 @@ export const patchYamlList = ({
       const patchRes = jsonpatch.compare(oldFormJson, newYamlJson);
 
       if (patchRes.length === 0) return;
+
+      if (
+        oldFormJson.kind === YamlKindEnum.ConfigMap &&
+        patchRes.some((item) => item.path === '/data' || item.path.startsWith('/data/'))
+      ) {
+        configMapDataChanged = true;
+      }
+
+      if (
+        isWorkloadKind(oldFormJson.kind) &&
+        patchRes.some(
+          (item) => item.path === '/spec/template' || item.path.startsWith('/spec/template/')
+        )
+      ) {
+        workloadTemplateChanged = true;
+      }
 
       /* Generate a new json using the formPatchResult and the crJson */
       const actionsJson = (() => {
@@ -414,6 +542,17 @@ export const patchYamlList = ({
 
           const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument;
 
+          if (
+            (oldFormJson.kind === YamlKindEnum.Deployment ||
+              oldFormJson.kind === YamlKindEnum.StatefulSet) &&
+            patchRes.some(
+              (item) => item.op === 'remove' && item.path === '/spec/template/spec/imagePullSecrets'
+            )
+          ) {
+            // JSON Merge Patch requires null to delete a field; omission preserves the old value.
+            (patchResYamlJson as any).spec.template.spec.imagePullSecrets = null;
+          }
+
           // delete invalid field
           // @ts-ignore
           delete patchResYamlJson.status;
@@ -438,22 +577,17 @@ export const patchYamlList = ({
         actionsJson.kind === YamlKindEnum.Deployment ||
         actionsJson.kind === YamlKindEnum.StatefulSet
       ) {
-        // @ts-ignore
-        const ports = actionsJson?.spec.template.spec.containers[0].ports || [];
-        if (ports.length > 1 && !ports[0]?.name) {
-          // @ts-ignore
-          actionsJson.spec.template.spec.containers[0].ports[0].name = 'adaptport';
+        const workloadJson = actionsJson as any;
+        const ports = workloadJson?.spec.template.spec.containers[0].ports || [];
+        if (ports.length > 0) {
+          workloadJson.spec.template.spec.containers[0].ports = ensureUniquePortNames(ports);
         }
       }
       if (actionsJson.kind === YamlKindEnum.Service) {
-        // @ts-ignore
-        const ports = actionsJson?.spec.ports || [];
-        console.log(ports);
-
-        // @ts-ignore
-        if (ports.length > 1 && !ports[0]?.name) {
-          // @ts-ignore
-          actionsJson.spec.ports[0].name = 'adaptport';
+        const serviceJson = actionsJson as any;
+        const ports = serviceJson?.spec.ports || [];
+        if (ports.length > 0) {
+          serviceJson.spec.ports = ensureUniquePortNames(ports);
         }
       }
 
@@ -470,6 +604,10 @@ export const patchYamlList = ({
       });
     }
   });
+
+  if (configMapDataChanged && !workloadTemplateChanged) {
+    ensureRestartTimePatch({ actions, originalYamlList, oldFormJsonList });
+  }
 
   return actions;
 };

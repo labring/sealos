@@ -1,10 +1,12 @@
 import { API_NAME } from './constants';
 import type {
   AppSendMessageType,
+  MasterOptions,
   MasterReplyMessageType,
   MasterSendMessageType,
   Session,
-  SessionV1
+  SessionV1,
+  WorkspaceQuotaItem
 } from './types';
 import { isBrowser } from './utils';
 import { getCookie } from './utils/cookieUtils';
@@ -12,16 +14,33 @@ import { getCookie } from './utils/cookieUtils';
 class MasterSDK {
   private readonly eventBus = new Map<string, (e?: any) => any>();
   private readonly allowedOrigins: string[] = [];
+  private readonly getWorkspaceQuotaApi: () => Promise<WorkspaceQuotaItem[]>;
+  private readonly getHostConfigApi?: () => Promise<{
+    cloud: {
+      domain: string;
+      port: string;
+      regionUid: string;
+    };
+    features: {
+      subscription: boolean;
+    };
+  }>;
+
   private readonly apiFun: {
     [key: string]: (data: AppSendMessageType, source: MessageEventSource, origin: string) => void;
   } = {
     [API_NAME.USER_GET_INFO]: (data, source, origin) => this.getUserInfo(data, source, origin),
     [API_NAME.EVENT_BUS]: (data, source, origin) => this.runEventBus(data, source, origin),
-    [API_NAME.GET_LANGUAGE]: (data, source, origin) => this.getLanguage(data, source, origin)
+    [API_NAME.GET_LANGUAGE]: (data, source, origin) => this.getLanguage(data, source, origin),
+    [API_NAME.GET_WORKSPACE_QUOTA]: (data, source, origin) =>
+      this.getWorkspaceQuota(data, source, origin),
+    [API_NAME.GET_HOST_CONFIG]: (data, source, origin) => this.getHostConfig(data, source, origin)
   };
 
-  constructor(allowedOrigins: string[] = []) {
-    this.allowedOrigins = allowedOrigins;
+  constructor(options: MasterOptions) {
+    this.allowedOrigins = options.allowedOrigins;
+    this.getWorkspaceQuotaApi = options.getWorkspaceQuotaApi;
+    this.getHostConfigApi = options.getHostConfigApi;
   }
 
   /**
@@ -88,6 +107,7 @@ class MasterSDK {
         avatar: session.user.avatar,
         nsid: session.user.nsid
       },
+      subscription: session.subscription,
       token: session.token,
       kubeconfig: session.kubeconfig
     };
@@ -255,7 +275,7 @@ class MasterSDK {
         messageId: data.messageId,
         success: true,
         data: {
-          lng: getCookie('NEXT_LOCALE') || 'zh'
+          lng: getCookie('NEXT_LOCALE') || 'en'
         }
       });
     } else {
@@ -265,6 +285,93 @@ class MasterSDK {
         messageId: data.messageId,
         success: false,
         message: 'no login in'
+      });
+    }
+  }
+
+  private async getWorkspaceQuota(
+    data: AppSendMessageType,
+    source: MessageEventSource,
+    origin: string
+  ) {
+    // Verify origin is allowed
+    if (!this.isOriginAllowed(origin)) {
+      console.error('Unauthorized origin trying to access language:', origin);
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: false,
+        message: 'unauthorized origin'
+      });
+      return;
+    }
+
+    if (this.session) {
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: true,
+        data: {
+          quota: await this.getWorkspaceQuotaApi()
+        }
+      });
+    } else {
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: false,
+        message: 'no login in'
+      });
+    }
+  }
+
+  private async getHostConfig(
+    data: AppSendMessageType,
+    source: MessageEventSource,
+    origin: string
+  ) {
+    // Verify origin is allowed
+    if (!this.isOriginAllowed(origin)) {
+      console.error('Unauthorized origin trying to access host config:', origin);
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: false,
+        message: 'unauthorized origin'
+      });
+      return;
+    }
+
+    if (this.getHostConfigApi) {
+      try {
+        const config = await this.getHostConfigApi();
+        this.replyAppMessage({
+          source,
+          origin,
+          messageId: data.messageId,
+          success: true,
+          data: config
+        });
+      } catch (error) {
+        this.replyAppMessage({
+          source,
+          origin,
+          messageId: data.messageId,
+          success: false,
+          message: error instanceof Error ? error.message : 'failed to get host config'
+        });
+      }
+    } else {
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: false,
+        message: 'getHostConfigApi is not configured'
       });
     }
   }
@@ -292,12 +399,13 @@ class MasterSDK {
 
 export let masterApp: MasterSDK;
 
-export const createMasterAPP = (allowedOrigins: string[] = ['*']) => {
+export const createMasterAPP = (options: MasterOptions) => {
   if (!isBrowser()) {
     console.error('This method need run in the browser.');
     return;
   }
-  masterApp = new MasterSDK(allowedOrigins);
+
+  masterApp = new MasterSDK(options);
 
   return masterApp.init();
 };

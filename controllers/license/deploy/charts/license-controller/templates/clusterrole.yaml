@@ -6,7 +6,10 @@ rules:
 - apiGroups: [ "" ]
   resources: [ "namespaces" ]
   resourceNames: [ "kube-system" ]
-  verbs: [ "get" ]
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:

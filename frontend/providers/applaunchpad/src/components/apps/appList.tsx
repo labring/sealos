@@ -199,17 +199,6 @@ const AppList = ({
         title: t('Name'),
         key: 'name',
         render: (item: AppListItemType) => {
-          const tooltipContent = (
-            <Box>
-              <Text>{item.name}</Text>
-              {item.remark && (
-                <Text fontSize="sm" mt={1}>
-                  {item.remark}
-                </Text>
-              )}
-            </Box>
-          );
-
           return (
             <Flex
               cursor={'pointer'}
@@ -230,17 +219,19 @@ const AppList = ({
               gap={item?.remark ? '4px' : 0}
             >
               <Flex alignItems="center" width="100%">
-                <Text
-                  className="app-name"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
-                  whiteSpace="nowrap"
-                  title=""
-                  maxWidth="150px"
-                  transition="max-width 0.2s"
-                >
-                  {item.name}
-                </Text>
+                <MyTooltip label={item.name}>
+                  <Text
+                    className="app-name"
+                    overflow="hidden"
+                    textOverflow="ellipsis"
+                    whiteSpace="nowrap"
+                    title=""
+                    maxWidth="150px"
+                    transition="max-width 0.2s"
+                  >
+                    {item.name}
+                  </Text>
+                </MyTooltip>
 
                 {!item.remark && (
                   <Center

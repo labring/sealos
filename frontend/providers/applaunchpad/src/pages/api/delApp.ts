@@ -2,8 +2,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { appDeployKey, ownerReferencesKey, ownerReferencesReadyValue } from '@/constants/app';
+import { ResponseCode } from '@/types/response';
 
 export type DeleteAppParams = { name: string };
 
@@ -20,10 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       message: 'successfully deleted'
     });
   } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
+    jsonRes(res, handleK8sError(err, { forbiddenCode: ResponseCode.FORBIDDEN }));
   }
 }
 
@@ -60,13 +58,36 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
     }
   }
 
-  // If app has ownerReferences, only delete main workload (cascade delete handles rest)
+  // If app has ownerReferences, cascade delete handles owner-referenced resources.
+  // StatefulSet volumeClaimTemplates PVCs are retained by default, so clean PVCs explicitly.
   if (hasOwnerReferences && workloadKind) {
     if (workloadKind === 'Deployment') {
       await k8sApp.deleteNamespacedDeployment(name, namespace);
     } else {
       await k8sApp.deleteNamespacedStatefulSet(name, namespace);
     }
+
+    const delPvc = await Promise.allSettled([
+      k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
+        namespace,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `app=${name}`
+      )
+    ]);
+
+    delPvc.forEach((item) => {
+      console.log(item, 'delApp PVC err');
+      if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
+        throw new Error(
+          item?.reason?.body?.reason || item?.reason?.body?.message || '删除 App 异常'
+        );
+      }
+    });
+
     return;
   }
 

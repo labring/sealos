@@ -5,13 +5,20 @@ import {
   minReplicasKey,
   ownerReferencesKey,
   ownerReferencesReadyValue,
-  publicDomainKey
+  publicDomainKey,
+  publicDomainPortKey
 } from '@/constants/app';
-import { SEALOS_USER_DOMAINS } from '@/store/static';
+import {
+  CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME,
+  CUSTOM_DOMAIN_MODE,
+  DISABLE_HTTPS,
+  SEALOS_USER_DOMAINS
+} from '@/store/static';
+import type { CustomDomainMode } from '@/types';
 import type { AppEditType } from '@/types/app';
-import { str2Num, strToBase64 } from '@/utils/tools';
+import { syncDefaultRouteServicePort } from '@/utils/network-routes';
+import { ensureUniquePortNames, getFallbackPortName, str2Num, strToBase64 } from '@/utils/tools';
 import type { V1OwnerReference } from '@kubernetes/client-node';
-import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { customRandom } from 'nanoid';
 import crypto from 'crypto';
@@ -27,6 +34,21 @@ const createDeterministicNanoid = (seed: string): string => {
     return result;
   });
   return deterministicNanoid();
+};
+
+const normalizeServiceNameBase = (name: string) => {
+  const normalized = name
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return /^[a-z]/.test(normalized) ? normalized : `app-${normalized || 'service'}`;
+};
+
+const truncateServiceNameBase = (name: string, maxLength: number) => {
+  const truncated = name.slice(0, maxLength).replace(/-+$/g, '');
+
+  return truncated || 'app';
 };
 
 export const generateOwnerReference = (
@@ -75,8 +97,13 @@ const getServiceName = (data: AppEditType, forNodePort: boolean = false): string
   const seed = `${data.appName}-${forNodePort ? 'nodeport' : 'cluster'}-${portSlugs.join(',')}`;
   const deterministicId = createDeterministicNanoid(seed);
   const suffix = forNodePort ? '-nodeport' : '';
+  const maxBaseLength = 63 - suffix.length - deterministicId.length - 1;
+  const serviceNameBase = truncateServiceNameBase(
+    normalizeServiceNameBase(data.appName),
+    maxBaseLength
+  );
 
-  return `${data.appName}${suffix}-${deterministicId}`;
+  return `${serviceNameBase}${suffix}-${deterministicId}`;
 };
 
 export const yamlString2Objects = (yamlString: string): object[] => {
@@ -85,6 +112,8 @@ export const yamlString2Objects = (yamlString: string): object[] => {
   const documents = yamlString.split(/\n---\n/);
   return documents.filter((doc) => doc.trim()).map((doc) => yaml.load(doc.trim()) as object);
 };
+
+const normalizeIngressHost = (host: string) => host.trim().toLowerCase().replace(/\.+$/g, '');
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
@@ -116,7 +145,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
       [deployPVCResizeKey]: `${totalStorage}Gi`,
       [ownerReferencesKey]: ownerReferencesReadyValue,
-      ...(remoteStores.length > 0 ? { remoteStores: JSON.stringify(remoteStores) } : {})
+      ...(remoteStores.length > 0 ? { remoteStores: JSON.stringify(remoteStores) } : {}),
+      ...(data.networkStoreList && data.networkStoreList.length > 0
+        ? { networkStores: JSON.stringify(data.networkStoreList) }
+        : {})
     },
     labels: {
       ...(data.labels || {}),
@@ -135,8 +167,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   };
   const templateMetadata = {
     labels: {
-      app: data.appName,
-      restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
+      app: data.appName
     },
     annotations: gpuAnnotations
   };
@@ -191,10 +222,19 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
         return [data.cmdParam];
       }
     })(),
-    ports: data.networks.map((item) => ({
-      containerPort: item.port,
-      name: item.portName
-    })),
+    ports: ensureUniquePortNames(
+      data.networks.map((item, index) => ({
+        containerPort: item.port,
+        name:
+          item.portName ||
+          getFallbackPortName({
+            port: item.port,
+            protocol: item.protocol,
+            index
+          }),
+        protocol: item.protocol
+      }))
+    ).map(({ protocol, ...port }) => port),
     imagePullPolicy: 'Always'
   };
 
@@ -231,6 +271,19 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     mountPath: store.path
   }));
 
+  // Network stores: mount existing PVCs (does NOT trigger StatefulSet)
+  const networkStoreVolumes = (data.networkStoreList || []).map((store) => ({
+    name: store.name,
+    persistentVolumeClaim: {
+      claimName: store.name
+    }
+  }));
+
+  const networkStoreVolumeMounts = (data.networkStoreList || []).map((store) => ({
+    name: store.name,
+    mountPath: store.path
+  }));
+
   // Shared memory volume (emptyDir with Memory medium)
   const sharedMemoryVolume =
     data.sharedMemory?.enabled && data.sharedMemory.sizeLimit > 0
@@ -260,6 +313,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     ...(data.volumes || []),
     ...configMapVolumes,
     ...remoteStoreVolumes,
+    ...networkStoreVolumes,
     ...sharedMemoryVolume
   ];
 
@@ -267,6 +321,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     ...(data.volumeMounts || []),
     ...configMapVolumeMounts,
     ...remoteStoreVolumeMounts,
+    ...networkStoreVolumeMounts,
     ...sharedMemoryVolumeMount
   ];
 
@@ -379,12 +434,19 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   return yaml.dump(template[type]);
 };
 
-export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
+export const json2Service = (
+  data: AppEditType,
+  ownerReferences?: V1OwnerReference[],
+  options?: {
+    includeClusterIp?: boolean;
+    includeNodePort?: boolean;
+  }
+) => {
   const openPublicPorts: any[] = [];
   const closedPublicPorts: any[] = [];
 
-  data.networks.forEach((network) => {
-    const port = {
+  const namedPorts = ensureUniquePortNames(
+    data.networks.map((network, index) => ({
       port: str2Num(network.port),
       targetPort: str2Num(network.port),
       ...(network.openNodePort && network.nodePort
@@ -392,10 +454,19 @@ export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReferen
             nodePort: str2Num(network.nodePort)
           }
         : {}),
-      name: network.portName,
+      name:
+        network.portName ||
+        getFallbackPortName({
+          port: network.port,
+          protocol: network.protocol,
+          index
+        }),
       protocol: network.protocol
-    };
+    }))
+  );
 
+  data.networks.forEach((network, index) => {
+    const port = namedPorts[index];
     if (network.openNodePort) {
       openPublicPorts.push(port);
     } else {
@@ -444,19 +515,48 @@ export const json2Service = (data: AppEditType, ownerReferences?: V1OwnerReferen
     }
   };
 
-  const clusterIpYaml = closedPublicPorts.length > 0 ? yaml.dump(template) : '';
-  const nodePortYaml = openPublicPorts.length > 0 ? yaml.dump(templateNodePort) : '';
+  const includeClusterIp = options?.includeClusterIp ?? true;
+  const includeNodePort = options?.includeNodePort ?? true;
+  const clusterIpYaml = includeClusterIp && closedPublicPorts.length > 0 ? yaml.dump(template) : '';
+  const nodePortYaml =
+    includeNodePort && openPublicPorts.length > 0 ? yaml.dump(templateNodePort) : '';
 
   return clusterIpYaml && nodePortYaml
     ? `${clusterIpYaml}\n---\n${nodePortYaml}`
     : `${clusterIpYaml}${nodePortYaml}`;
 };
 
-export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
+export const json2Ingress = (
+  data: AppEditType,
+  ownerReferencesOrOptions?:
+    | V1OwnerReference[]
+    | {
+        disableHttps?: boolean;
+        customDomainMode?: CustomDomainMode;
+        customDomainCertificateSecretName?: string;
+      },
+  options: {
+    disableHttps?: boolean;
+    customDomainMode?: CustomDomainMode;
+    customDomainCertificateSecretName?: string;
+  } = {}
+) => {
+  const ownerReferences = Array.isArray(ownerReferencesOrOptions)
+    ? ownerReferencesOrOptions
+    : undefined;
+  const configOptions = Array.isArray(ownerReferencesOrOptions)
+    ? options
+    : ownerReferencesOrOptions || {};
+  const disableHttps = configOptions.disableHttps ?? DISABLE_HTTPS;
+  const customDomainMode = configOptions.customDomainMode ?? CUSTOM_DOMAIN_MODE;
+  const customDomainCertificateSecretName =
+    configOptions.customDomainCertificateSecretName ??
+    CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME ??
+    'wildcard-cert';
+  const isCertificateMode = customDomainMode === 'certificate';
   // different protocol annotations
   const map = {
     HTTP: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
       'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
       'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
@@ -466,7 +566,6 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
         'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n'
     },
     GRPC: {
-      'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'GRPC'
     },
     WS: {
@@ -476,33 +575,69 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
     }
   };
 
+  const clusterIpPorts = new Set(
+    data.networks
+      .filter((network) => !network.openNodePort)
+      .map((network) => Number(network.port))
+      .filter(Boolean)
+  );
+
   const result = data.networks
     .filter((item) => item.openPublicDomain && !item.openNodePort)
     .map((network) => {
-      const host = network.customDomain
-        ? network.customDomain
-        : `${network.publicDomain}.${network.domain}`;
+      const customDomain = normalizeIngressHost(network.customDomain || '');
+      const domain = normalizeIngressHost(network.domain || '');
+      const host = customDomain
+        ? customDomain
+        : normalizeIngressHost(`${network.publicDomain}.${domain}`);
 
-      const secretName = network.customDomain
-        ? network.networkName
-        : SEALOS_USER_DOMAINS.find((domain) => domain.name === network.domain)?.secretName ||
-          'wildcard-cert';
+      const secretName = customDomain
+        ? isCertificateMode
+          ? customDomainCertificateSecretName
+          : network.networkName
+        : SEALOS_USER_DOMAINS.find((item) => normalizeIngressHost(item.name) === domain)
+            ?.secretName || 'wildcard-cert';
       // Ingress only uses ClusterIP services, not NodePort
       const serviceName = getServiceName(data, false);
+      const routes = network.routes?.length
+        ? clusterIpPorts.has(80)
+          ? network.routes
+          : syncDefaultRouteServicePort({
+              routes: network.routes,
+              previousPort: network.port,
+              nextPort: network.port,
+              defaultServicePort: 80,
+              networkServiceName: serviceName
+            }) || network.routes
+        : [
+            {
+              path: '/',
+              pathType: 'Prefix' as const,
+              serviceName,
+              servicePort: network.port
+            }
+          ];
+      const hasImplementationSpecificRoute = routes.some(
+        (route) => route.pathType === 'ImplementationSpecific'
+      );
 
-      const ingress = {
+      const ingress: any = {
         apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
         metadata: {
           name: network.networkName,
           labels: {
             [appDeployKey]: data.appName,
-            [publicDomainKey]: network.publicDomain
+            [publicDomainKey]: network.publicDomain,
+            [publicDomainPortKey]: String(network.port)
           },
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            ...map[network.appProtocol ?? 'HTTP']
+            ...map[network.appProtocol ?? 'HTTP'],
+            ...(hasImplementationSpecificRoute
+              ? { 'nginx.ingress.kubernetes.io/use-regex': 'true' }
+              : {})
           },
           ...(ownerReferences ? { ownerReferences } : {})
         },
@@ -511,31 +646,31 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
             {
               host,
               http: {
-                paths: [
-                  {
-                    pathType: 'Prefix',
-                    path: '/',
-                    backend: {
-                      service: {
-                        name: serviceName,
-                        port: {
-                          number: network.port
-                        }
+                paths: routes.map((route) => ({
+                  pathType: route.pathType || 'Prefix',
+                  path: route.path || '/',
+                  backend: {
+                    service: {
+                      name: route.serviceName || serviceName,
+                      port: {
+                        number: route.servicePort || network.port
                       }
                     }
                   }
-                ]
+                }))
               }
-            }
-          ],
-          tls: [
-            {
-              hosts: [host],
-              secretName
             }
           ]
         }
       };
+      if (!disableHttps) {
+        ingress.spec.tls = [
+          {
+            hosts: [host],
+            secretName
+          }
+        ];
+      }
       const issuer = {
         apiVersion: 'cert-manager.io/v1',
         kind: 'Issuer',
@@ -578,7 +713,7 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
         },
         spec: {
           secretName,
-          dnsNames: [network.customDomain],
+          dnsNames: [customDomain],
           issuerRef: {
             name: network.networkName,
             kind: 'Issuer'
@@ -587,7 +722,7 @@ export const json2Ingress = (data: AppEditType, ownerReferences?: V1OwnerReferen
       };
 
       let resYaml = yaml.dump(ingress);
-      if (network.customDomain) {
+      if (customDomain && !disableHttps && !isCertificateMode) {
         resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
       }
       return resYaml;
@@ -625,7 +760,15 @@ export const json2ConfigMap = (data: AppEditType, ownerReferences?: V1OwnerRefer
   return yaml.dump(template);
 };
 
-export const json2Secret = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
+const maskedDockerConfigJson = '********';
+const quotedMaskedDockerConfigJson = `.dockerconfigjson: '${maskedDockerConfigJson}'`;
+const unquotedMaskedDockerConfigJson = `.dockerconfigjson: ${maskedDockerConfigJson}`;
+
+export const json2Secret = (
+  data: AppEditType,
+  ownerReferences?: V1OwnerReference[],
+  options?: { maskPassword?: boolean }
+) => {
   const auth = strToBase64(`${data.secret.username}:${data.secret.password}`);
   const dockerconfigjson = strToBase64(
     JSON.stringify({
@@ -647,11 +790,14 @@ export const json2Secret = (data: AppEditType, ownerReferences?: V1OwnerReferenc
       ...(ownerReferences ? { ownerReferences } : {})
     },
     data: {
-      '.dockerconfigjson': dockerconfigjson
+      '.dockerconfigjson': options?.maskPassword ? maskedDockerConfigJson : dockerconfigjson
     },
     type: 'kubernetes.io/dockerconfigjson'
   };
-  return yaml.dump(template);
+  const secretYaml = yaml.dump(template);
+  return options?.maskPassword
+    ? secretYaml.replace(quotedMaskedDockerConfigJson, unquotedMaskedDockerConfigJson)
+    : secretYaml;
 };
 export const json2HPA = (data: AppEditType, ownerReferences?: V1OwnerReference[]) => {
   const isDeployment = data.storeList?.length === 0;

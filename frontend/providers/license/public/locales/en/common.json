@@ -32,5 +32,9 @@
   "file.upload error description": "Failed to upload files",
   "Cancel": "Cancel",
   "file.Select a maximum of 10 files": "You can select no more than 10 files",
-  "Copy Failed": "Failed to copy"
+  "Copy Failed": "Failed to copy",
+  "LICENSE_VALIDATION_generic": "License validation failed. Check the license content and try again.",
+  "LICENSE_VALIDATION_expired": "The current license has expired. Renew it and try again.",
+  "LICENSE_VALIDATION_clusterIdMismatch": "This license does not match the current cluster. Verify the cluster ID and try again.",
+  "LICENSE_VALIDATION_clusterInfoMismatch": "The current cluster resources do not satisfy the license constraints. Check node, CPU, memory, and user limits."
 }

@@ -11,6 +11,7 @@ import MyIcon from '@/components/Icon';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'next-i18next';
 import UpdateModal from './UpdateModal';
+import { getErrText } from '@/utils/tools';
 
 const DelModal = dynamic(() => import('./DelModal'));
 
@@ -64,13 +65,13 @@ const Header = ({
       });
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '重启出现了意外',
+        title: t(getErrText(error), 'Restart Failed'),
         status: 'error'
       });
       console.error(error);
     }
     setLoading(false);
-  }, [appName, toast]);
+  }, [appName, t, toast]);
 
   const handlePauseApp = useCallback(async () => {
     try {
@@ -82,14 +83,14 @@ const Header = ({
       });
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '暂停应用出现了意外',
+        title: t(getErrText(error), 'Pause Failed'),
         status: 'error'
       });
       console.error(error);
     }
     setLoading(false);
     refetch();
-  }, [appName, refetch, toast]);
+  }, [appName, refetch, t, toast]);
 
   const handleStartApp = useCallback(async () => {
     try {
@@ -101,14 +102,14 @@ const Header = ({
       });
     } catch (error: any) {
       toast({
-        title: typeof error === 'string' ? error : error.message || '启动应用出现了意外',
+        title: t(getErrText(error), 'Start Failed'),
         status: 'error'
       });
       console.error(error);
     }
     setLoading(false);
     refetch();
-  }, [appName, refetch, toast]);
+  }, [appName, refetch, t, toast]);
 
   return (
     <Flex h={'32px'} my={'14px'} alignItems={'center'}>

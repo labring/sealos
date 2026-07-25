@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: license
+  namespace: {{ .Values.app.namespace }}
+spec:
+  data:
+    desc: license
+    url: {{ include "license-frontend.url" . | quote }}
+  displayType: normal
+  i18n:
+    zh:
+      name: 许可证
+    zh-Hans:
+      name: 许可证
+  icon: {{ printf "%s/logo.svg" (include "license-frontend.url" .) | quote }}
+  menuData:
+  name: License
+  type: iframe

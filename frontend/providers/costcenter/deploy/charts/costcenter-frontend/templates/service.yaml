@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "costcenter-frontend.labels" . | nindent 4 }}
+  name: {{ include "costcenter-frontend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      protocol: TCP
+      targetPort: {{ .Values.service.port }}
+  selector:
+    {{- include "costcenter-frontend.selectorLabels" . | nindent 4 }}

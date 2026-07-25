@@ -173,13 +173,14 @@ async function signUp({
   semData?: SemData;
 }) {
   const name = nanoid(10);
+  const displayName = nickname?.trim() ? nickname : nanoid(8);
   try {
     const result = await globalPrisma.$transaction(async (tx) => {
       const user: User = await tx.user.create({
         data: {
           name: name,
           id: name,
-          nickname: nickname,
+          nickname: displayName,
           avatarUri: avatar_url,
           oauthProvider: {
             create: {
@@ -233,13 +234,14 @@ async function signUpWithEmail({
   email: string;
 }) {
   const name = nanoid(10);
+  const displayName = nickname?.trim() ? nickname : nanoid(8);
   try {
     const user = await globalPrisma.$transaction(async (tx) => {
       const user: User = await tx.user.create({
         data: {
           name: name,
           id: name,
-          nickname: nickname,
+          nickname: displayName,
           avatarUri: avatar_url,
           oauthProvider: {
             create: {
@@ -297,12 +299,13 @@ export async function signUpByPassword({
   semData?: SemData;
 }) {
   const name = nanoid(10);
+  const displayName = nickname?.trim() ? nickname : nanoid(8);
 
   try {
     const result = await globalPrisma.$transaction(async (tx) => {
       const user: User = await tx.user.create({
         data: {
-          nickname,
+          nickname: displayName,
           avatarUri: avatar_url,
           id: name,
           name,
@@ -419,7 +422,37 @@ export const getGlobalToken = async ({
       return null;
     }
     if (!_user) {
-      throw new AuthError('User not found.', 'USER_NOT_FOUND');
+      // Auto sign up when user not found
+      if (!enableSignUp()) throw new AuthError('Failed to signUp user', 'SIGNUP_FAILED');
+      const signUpResult = await signUpByPassword({
+        id: providerId,
+        name: name,
+        avatar_url: avatar_url,
+        password: password,
+        semData
+      });
+      if (!signUpResult) {
+        throw new AuthError('Failed to sign up user', 'SIGNUP_FAILED');
+      }
+      user = signUpResult.user;
+      if (inviterId) {
+        inviteHandler({
+          inviterId: inviterId,
+          inviteeId: signUpResult.user.name,
+          signResult: signUpResult
+        });
+      }
+      if (adClickData) {
+        await uploadConvertData(adClickData).catch((e) => {
+          console.log('Failed to upload AD click data: ', e);
+        });
+      }
+      if (enableTracking()) {
+        await trackSignUp({
+          userId: signUpResult.user.id,
+          userUid: signUpResult.user.uid
+        });
+      }
     } else {
       const result = await signInByPassword({
         id: providerId,
@@ -507,6 +540,23 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new AuthError('Failed to edit db', 'DATABASE_ERROR');
 
+  // For existing users, always sync latest profile info (when provided).
+  // - If `name` is empty, do not overwrite existing nickname.
+  // - If `avatar_url` is empty, do not overwrite existing avatar.
+  if (_user) {
+    const nicknameToUpdate = name?.trim() ? name : null;
+    const avatarToUpdate = avatar_url?.trim() ? avatar_url : null;
+    if (nicknameToUpdate || avatarToUpdate) {
+      user = await globalPrisma.user.update({
+        where: { uid: user.uid },
+        data: {
+          ...(nicknameToUpdate ? { nickname: nicknameToUpdate } : {}),
+          ...(avatarToUpdate ? { avatarUri: avatarToUpdate } : {})
+        }
+      });
+    }
+  }
+
   if (!forceBindEmail(provider) && email) {
     try {
       const emailProvider = await globalPrisma.oauthProvider.findFirst({
@@ -547,7 +597,8 @@ export const getGlobalToken = async ({
     user: {
       name: user.nickname,
       avatar: user.avatarUri,
-      userUid: user.uid
+      userUid: user.uid,
+      userId: user.name
     },
     needInit
   };

@@ -8,6 +8,7 @@ import { adaptAppDetail } from '@/utils/adapt';
 import { getServerEnv } from './platform/getInitData';
 import { DeployKindsType } from '@/types/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
+import type { V1Service } from '@kubernetes/client-node';
 
 export const config = {
   api: {
@@ -28,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
 
-    const response = await GetAppByAppName({ appName, req });
+    const { response, backendServices } = await GetAppByAppName({ appName, req });
 
     // Check for errors other than 404
     const responseData = response
@@ -41,10 +42,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       .filter((item) => item)
       .flat();
 
-    const data = await adaptAppDetail(
-      responseData as DeployKindsType[],
-      getServerEnv(global.AppConfig)
-    );
+    const serverEnv = getServerEnv(global.AppConfig);
+    const data = await adaptAppDetail(responseData as DeployKindsType[], {
+      SEALOS_DOMAIN: serverEnv.SEALOS_DOMAIN,
+      SEALOS_USER_DOMAINS: serverEnv.SEALOS_USER_DOMAINS,
+      backendServices
+    });
 
     jsonRes(res, {
       data: data
@@ -109,5 +112,19 @@ export async function GetAppByAppName({
     k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(appName, namespace)
   ]);
 
-  return response;
+  const backendServices = await k8sCore
+    .listNamespacedService(namespace, undefined, undefined, undefined, undefined, appDeployKey)
+    .then((res) =>
+      res.body.items.map((item) => ({
+        ...item,
+        apiVersion: res.body.apiVersion,
+        kind: 'Service'
+      }))
+    )
+    .catch(() => [] as V1Service[]);
+
+  return {
+    response,
+    backendServices
+  };
 }

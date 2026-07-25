@@ -27,13 +27,10 @@ import { SemData } from '@/types/sem';
 import { AdClickData } from '@/types/adClick';
 import { getRegionToken } from '@/api/auth';
 
-// Form validation schema - simplified for login only
-const loginSchema = z.object({
-  username: z.string().min(1, { message: 'Username is required' }),
-  password: z.string().min(1, { message: 'Password is required' })
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = {
+  username: string;
+  password: string;
+};
 
 interface UsernamePasswordSigninProps {
   onBack?: () => void;
@@ -48,6 +45,11 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   const [showPassword, setShowPassword] = useState(false);
 
   const bg = useColorModeValue('white', 'gray.700');
+
+  const loginSchema = z.object({
+    username: z.string().min(1, { message: t('common:please_input_username') as string }),
+    password: z.string().min(1, { message: t('common:please_input_password') as string })
+  });
 
   const {
     register,

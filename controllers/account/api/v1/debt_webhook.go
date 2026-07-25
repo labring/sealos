@@ -54,7 +54,7 @@ const (
 
 var logger = logf.Log.WithName("debt-resource")
 
-//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=false,failurePolicy=ignore,groups="*",resources=*,verbs=create;update;delete,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None,timeoutSeconds=10
+//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=false,failurePolicy=ignore,groups="*",resources=*,verbs=create;update;delete,versions=*,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None,timeoutSeconds=10
 // +kubebuilder:object:generate=false
 
 type DebtValidate struct {
@@ -93,6 +93,10 @@ func (d *DebtValidate) Handle(ctx context.Context, req admission.Request) admiss
 		}
 		if strings.Contains(req.UserInfo.Username, "user-controller-manager") {
 			break
+		}
+		if strings.HasSuffix(req.UserInfo.Username, "user-system:admin") {
+			logger.V(1).Info("pass for ns-admin")
+			return admission.ValidationResponse(true, "")
 		}
 		if isWhiteList(req) {
 			return admission.ValidationResponse(true, "")
@@ -203,7 +207,7 @@ func (d *DebtValidate) checkOption(
 					code.MessageFormat,
 					code.InsufficientBalance,
 					fmt.Sprintf(
-						"account balance less than 0, now account is %.2f¥. Please recharge the user %s.",
+						"(cache) account balance less than 0, now account is %.2f¥. Please recharge the user %s.",
 						GetAccountDebtBalance(cachedAccount),
 						user,
 					),
@@ -235,7 +239,7 @@ func (d *DebtValidate) checkOption(
 		}
 	} else {
 		// Cache miss, query database
-		userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user})
+		userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user, WithOutCache: true})
 		if err != nil {
 			logger.Error(err, "get user error", "user", user)
 			return admission.ValidationResponse(true, err.Error())

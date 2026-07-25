@@ -1,9 +1,9 @@
 import { checkRemainResource, forceDeleteUser, getAmount } from '@/api/auth';
 import { RegionResourceType, ResourceType } from '@/services/backend/svc/checkResource';
-import useAppStore from '@/stores/app';
 import useSessionStore from '@/stores/session';
 import { ValueOf } from '@/types';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
+import { isProtectedAdminUser } from '@/utils/protectedUser';
 import {
   Button,
   ButtonProps,
@@ -35,6 +35,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import {
+  isDeleteAccountConfirmationMatched,
+  isForceDeleteConfirmationMatched
+} from './deleteAccountConfirm';
 import { SettingInput } from './SettingInput';
 import { SettingInputGroup } from './SettingInputGroup';
 enum PageStatus {
@@ -50,7 +54,7 @@ const appKeyList = [
   'system-cronjob',
   '',
   'system-objectstorage',
-  'system-cloudserver',
+  '',
   'system-template'
 ] as const;
 const generateURL = (resource: ResourceType, domain: string) => {
@@ -75,7 +79,24 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
   const [verifyValue, setVerifyValue] = useState('');
   const [forceDeleteValue, setForceDeleteValue] = useState('');
   const [code, setCode] = useState('');
-  const { openApp } = useAppStore();
+  const isAdminProtected = isProtectedAdminUser({
+    userId: session?.user.userId,
+    userCrName: session?.user.k8s_username
+  });
+  const isDeleteConfirmValid = isDeleteAccountConfirmationMatched({
+    accountName: nickname,
+    expectedAccountName: session?.user.name,
+    confirmationText: verifyValue,
+    expectedConfirmationText: verifyWords
+  });
+  const isForceDeleteConfirmValid = isForceDeleteConfirmationMatched(
+    forceDeleteValue,
+    forceDeleteKeywords
+  );
+  const isDeleteButtonDisabled =
+    isAdminProtected ||
+    (pagestatus === PageStatus.IDLE && !isDeleteConfirmValid) ||
+    (pagestatus === PageStatus.FORCE_DELETE && !isForceDeleteConfirmValid);
   const appType = [
     '', // 0
     appT('db'), // 1
@@ -109,7 +130,7 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
   const { data: amountData } = useQuery({
     queryKey: ['getAmount', { userId: session?.user?.userCrUid }],
     queryFn: getAmount,
-    enabled: !!session?.user,
+    enabled: !!session?.user && !isAdminProtected,
     staleTime: 60 * 1000
   });
   const isInsufficientBalance =
@@ -170,14 +191,16 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
               </Center>
             ) : (
               <VStack alignItems={'stretch'} gap={'0'} fontWeight={'400'} color={'grayModern.900'}>
-                {pagestatus === PageStatus.IDLE ? (
+                {isAdminProtected ? (
+                  <Text mb={'12px'}>{t('common:admin_delete_account_forbidden')}</Text>
+                ) : pagestatus === PageStatus.IDLE ? (
                   <Text mb={'12px'}>{t('common:deleteaccounttitle')}</Text>
                 ) : pagestatus === PageStatus.REMAIN_RESOURCES ? (
                   <Text mb={'12px'}>{t('common:delete_account_remain_resources')}</Text>
                 ) : (
                   <Text mb={'12px'}>{t('common:force_delete_tips')}</Text>
                 )}
-                {isInsufficientBalance && (
+                {!isAdminProtected && isInsufficientBalance && (
                   <HStack
                     color={'red.500'}
                     bgColor={'red.50'}
@@ -190,23 +213,25 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                     <Text fontSize={'11px'}>{t('common:insufficient_balance')}</Text>
                   </HStack>
                 )}
-                <HStack
-                  color={'red.500'}
-                  bgColor={'red.50'}
-                  p={'6px 12px'}
-                  fontWeight={'500'}
-                  mt={'12px'}
-                  borderRadius={'6px'}
-                  gap={'4px'}
-                >
-                  <InfoCircleIcon boxSize={'14px'}></InfoCircleIcon>
-                  <Text fontSize={'11px'}>{t('common:irreversibleactiontips')}</Text>
-                </HStack>
+                {!isAdminProtected && (
+                  <HStack
+                    color={'red.500'}
+                    bgColor={'red.50'}
+                    p={'6px 12px'}
+                    fontWeight={'500'}
+                    mt={'12px'}
+                    borderRadius={'6px'}
+                    gap={'4px'}
+                  >
+                    <InfoCircleIcon boxSize={'14px'}></InfoCircleIcon>
+                    <Text fontSize={'11px'}>{t('common:irreversibleactiontips')}</Text>
+                  </HStack>
+                )}
 
-                {pagestatus !== PageStatus.REMAIN_RESOURCES ? (
+                {!isAdminProtected && pagestatus !== PageStatus.REMAIN_RESOURCES ? (
                   <Divider borderColor={'grayModern.200'} my={'24px'} />
                 ) : null}
-                {pagestatus === PageStatus.IDLE ? (
+                {isAdminProtected ? null : pagestatus === PageStatus.IDLE ? (
                   <>
                     {' '}
                     <FormControl isInvalid={nickname !== session?.user.name} mb={'12px'}>
@@ -340,44 +365,51 @@ export default function DeleteAccount({ ...props }: ButtonProps) {
                   >
                     {t('common:cancel')}
                   </Button>
-                  <Button
-                    onClick={async () => {
-                      if (pagestatus === PageStatus.IDLE) {
-                        const res = await mutationCheck.mutateAsync();
-                        const code = res.data?.code || '';
-                        if (res.message === RESOURCE_STATUS.REMAIN_RESOURCE) {
-                          setPagestatus(PageStatus.REMAIN_RESOURCES);
-                          setCode(code);
-                        } else if (res.message === RESOURCE_STATUS.RESULT_SUCCESS) {
+                  {!isAdminProtected && (
+                    <Button
+                      onClick={async () => {
+                        if (pagestatus === PageStatus.IDLE) {
+                          if (!isDeleteConfirmValid) return;
+
+                          const res = await mutationCheck.mutateAsync();
+                          const code = res.data?.code || '';
+                          if (res.message === RESOURCE_STATUS.REMAIN_RESOURCE) {
+                            setPagestatus(PageStatus.REMAIN_RESOURCES);
+                            setCode(code);
+                          } else if (res.message === RESOURCE_STATUS.RESULT_SUCCESS) {
+                            mutationForce.mutate({ code });
+                          }
+                          setnickname('');
+                          setVerifyValue('');
+                        } else if (pagestatus === PageStatus.REMAIN_RESOURCES) {
+                          // direct to force delete page
+                          setPagestatus(PageStatus.FORCE_DELETE);
+                        } else {
+                          if (!isForceDeleteConfirmValid) return;
+
+                          // force delete
                           mutationForce.mutate({ code });
+                          setCode('');
+                          setForceDeleteValue('');
+                          setnickname('');
+                          setVerifyValue('');
+                          setPagestatus(PageStatus.IDLE);
                         }
-                        setnickname('');
-                        setVerifyValue('');
-                      } else if (pagestatus === PageStatus.REMAIN_RESOURCES) {
-                        // direct to force delete page
-                        setPagestatus(PageStatus.FORCE_DELETE);
-                      } else {
-                        // force delete
-                        mutationForce.mutate({ code });
-                        setCode('');
-                        setForceDeleteValue('');
-                        setnickname('');
-                        setVerifyValue('');
-                        setPagestatus(PageStatus.IDLE);
-                      }
-                    }}
-                    h="auto"
-                    variant={'outline'}
-                    py={'8px'}
-                    px={pagestatus === PageStatus.REMAIN_RESOURCES ? '14px' : '19px'}
-                    color={'red.600'}
-                    fontSize={'12px'}
-                    {...props}
-                  >
-                    {pagestatus === PageStatus.REMAIN_RESOURCES
-                      ? t('common:delete_account_force_button')
-                      : t('common:delete_account_button')}
-                  </Button>
+                      }}
+                      h="auto"
+                      variant={'outline'}
+                      py={'8px'}
+                      px={pagestatus === PageStatus.REMAIN_RESOURCES ? '14px' : '19px'}
+                      color={'red.600'}
+                      fontSize={'12px'}
+                      {...props}
+                      isDisabled={props.isDisabled || isDeleteButtonDisabled}
+                    >
+                      {pagestatus === PageStatus.REMAIN_RESOURCES
+                        ? t('common:delete_account_force_button')
+                        : t('common:delete_account_button')}
+                    </Button>
+                  )}
                 </HStack>
               </VStack>
             )}

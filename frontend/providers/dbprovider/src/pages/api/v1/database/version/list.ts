@@ -17,6 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [DBTypeEnum.postgresql]: [],
         [DBTypeEnum.mongodb]: [],
         [DBTypeEnum.mysql]: [],
+        [DBTypeEnum.polardbx]: [],
         [DBTypeEnum.redis]: [],
         [DBTypeEnum.kafka]: [],
         [DBTypeEnum.qdrant]: [],
@@ -37,7 +38,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       )) as any;
 
       body.items.forEach((item: any) => {
-        const db = item?.spec?.clusterDefinitionRef as `${DBTypeEnum}`;
+        const clusterDefinitionRef = item?.spec?.clusterDefinitionRef as string;
+        const db =
+          clusterDefinitionRef === 'mysql' || clusterDefinitionRef === 'apecloud-mysql'
+            ? DBTypeEnum.mysql
+            : (clusterDefinitionRef as `${DBTypeEnum}`);
         if (DBVersion[db] && item?.metadata?.name && !DBVersion[db].includes(item.metadata.name)) {
           DBVersion[db].unshift(item.metadata.name);
         }

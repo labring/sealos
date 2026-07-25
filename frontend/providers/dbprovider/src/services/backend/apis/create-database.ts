@@ -8,6 +8,7 @@ import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster, json2ParameterConfig } from '@/utils/json2Yaml';
 import { DBEditType, EditType } from '@/types/db';
 import { getScore } from '@/utils/tools';
+import { validatePolarDBXResources } from '@/utils/database';
 
 const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
   console.log('Original input resources:', dbForm.resource);
@@ -121,6 +122,7 @@ export async function createDatabase(
   console.log('Create database request body:', request.body);
 
   const rawDbForm = schema2Raw(request.body);
+  validatePolarDBXResources(rawDbForm);
 
   console.log('Converted rawDbForm for K8s:', {
     name: rawDbForm.dbName,

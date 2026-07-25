@@ -23,5 +23,9 @@ data:
       {{- if .Values.config.cloudPort }}
       cloudPort: {{ .Values.config.cloudPort | quote }}
       {{- end }}
+      {{- if .Values.config.httpPort }}
+      httpPort: {{ .Values.config.httpPort | quote }}
+      {{- end }}
+      disableHttps: {{ .Values.config.disableHttps }}
     terminalController:
       ingressTLSSecretName: {{ .Values.config.ingressTLSSecretName | quote }}

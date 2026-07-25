@@ -2,6 +2,31 @@
 
 ## Preparation, refer to the README.md in the frontend directory
 
+## Image port detection
+
+AppLaunchpad can read image manifests to infer exposed ports when
+`launchpad.imagePorts.enabled` is enabled in `data/config.yaml`.
+
+By default, registry hosts that resolve to private, loopback, link-local, or
+reserved IP ranges are blocked. Internal registries can be allowed with exact
+host entries in `launchpad.imagePorts.trustedRegistries`; the Helm chart exposes
+the same setting as `applaunchpadConfig.imagePortsTrustedRegistries`.
+
+Example:
+
+```yaml
+launchpad:
+  imagePorts:
+    enabled: true
+    trustedRegistries:
+      - registry.192.168.10.70.nip.io
+      - hub.192.168.10.70.nip.io
+```
+
+Trusted entries are hostnames only. IP literals and localhost are still denied,
+and redirects or auth realms must stay on the image registry host or another
+trusted host.
+
 ## project tree
 
 ```bash

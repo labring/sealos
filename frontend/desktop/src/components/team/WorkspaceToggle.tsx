@@ -29,6 +29,7 @@ import CreateTeam from './CreateTeam';
 import BoringAvatar from 'boring-avatars';
 import { useEffect, useRef } from 'react';
 import { track } from '@sealos/gtm';
+import { getPrivateWorkspaceDisplayName } from '@/utils/workspace';
 
 export default function WorkspaceToggle() {
   const modalDisclosure = useDisclosure();
@@ -96,6 +97,13 @@ export default function WorkspaceToggle() {
   });
   const namespaces = data?.data?.namespaces || [];
   const namespace = namespaces.find((x) => x.uid === ns_uid);
+  const workspaceName =
+    namespace?.nstype === NSType.Private
+      ? getPrivateWorkspaceDisplayName({
+          teamName: namespace?.teamName,
+          defaultName: t('common:default_team')
+        })
+      : namespace?.teamName;
 
   const WorkspaceList = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     // Prevent unwanted excess events
@@ -240,7 +248,7 @@ export default function WorkspaceToggle() {
                   textOverflow={'ellipsis'}
                   whiteSpace={'nowrap'}
                 >
-                  {namespace?.teamName}
+                  {workspaceName}
                 </Text>
                 <Center
                   transform={isOpen ? 'rotate(-90deg)' : 'rotate(0deg)'}

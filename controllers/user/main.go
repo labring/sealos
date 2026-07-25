@@ -214,7 +214,7 @@ func main() {
 		os.Exit(1)
 	}
 	if err := controllers.SetupUserCount(mgr); err != nil {
-		setupLog.Error(err, "unable to set up user count")
+		setupLog.Error(err, "unable to set up user count cache")
 		os.Exit(1)
 	}
 

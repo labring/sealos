@@ -22,104 +22,137 @@ sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.googleEnabled=true --set desktopConfig.googleClientId=xxx --set desktopConfig.googleClientSecret=yyy --set desktopConfig.gtmId=GTM-XXX"
 ```
 
+## Values 文件说明
+
+Helm Chart 使用两个 values 文件来管理配置：
+
+### 1. values.yaml
+
+包含 Helm Chart 的默认配置，不应修改。
+
+**内容**:
+
+- **基础设施配置**: 镜像、服务账号、探针、Ingress、调度等
+- **自动配置参考值**: cloudDomain、jwtInternal、databaseGlobalCockroachdbURI 等（从 ConfigMap 自动获取，此处的值仅作为参考）
+
+**是否修改**: ❌ 不建议修改
+
+### 2. desktop-frontend-values.yaml
+
+包含用户自定义配置模板。首次安装时会复制到 `/root/.sealos/cloud/values/core/desktop-values.yaml`，已有安装继续保留该持久化文件。
+
+**内容**:
+
+- 资源限制和请求
+- 功能开关
+- OAuth 提供商（GitHub、Google、微信等）
+- 短信和邮件配置
+- 计费设置
+- 自定义 URL
+- 布局定制
+
+**是否修改**: ✅ 根据需要修改
+
+**注意**: entrypoint 按以下顺序应用配置：`values.yaml`、持久化用户 values、可选 `global.yaml`、来自 `sealos-system/sealos-config` 的自动配置、显式 `HELM_OPTIONS` / `HELM_OPTS`。后面的配置优先。
+
+详细文档请参考 [HELM_VALUES_GUIDE_CN.md](./HELM_VALUES_GUIDE_CN.md)。
+
 ## 环境变量
 
 ### Google Tag Manager
 
-| 变量 | 默认值 | 描述 |
-|----------|---------|-------------|
-| `GTM_ID` | `""` | Google Tag Manager ID |
+| 变量     | 默认值 | 描述                  |
+| -------- | ------ | --------------------- |
+| `GTM_ID` | `""`   | Google Tag Manager ID |
 
 ### 功能开关
 
-| 变量 | 默认值 | 描述 |
-|----------|---------|-------------|
-| `GUIDE_ENABLED` | `false` | 启用用户引导 |
-| `API_ENABLED` | `false` | 启用 API 访问 |
-| `RECHARGE_ENABLED` | `false` | 启用充值功能 |
-| `ENTERPRISE_REAL_NAME_AUTH_ENABLED` | `false` | 启用企业实名认证 |
-| `TRACKING_ENABLED` | `false` | 启用追踪/统计 |
-| `REAL_NAME_AUTH_ENABLED` | `false` | 启用实名认证 |
-| `LICENSE_CHECK_ENABLED` | `false` | 启用 License 检查 |
+| 变量                                | 默认值  | 描述              |
+| ----------------------------------- | ------- | ----------------- |
+| `GUIDE_ENABLED`                     | `false` | 启用用户引导      |
+| `API_ENABLED`                       | `false` | 启用 API 访问     |
+| `RECHARGE_ENABLED`                  | `false` | 启用充值功能      |
+| `ENTERPRISE_REAL_NAME_AUTH_ENABLED` | `false` | 启用企业实名认证  |
+| `TRACKING_ENABLED`                  | `false` | 启用追踪/统计     |
+| `REAL_NAME_AUTH_ENABLED`            | `false` | 启用实名认证      |
+| `LICENSE_CHECK_ENABLED`             | `false` | 启用 License 检查 |
 
 ### OAuth 提供商
 
 #### GitHub OAuth
 
-| 变量 | 默认值 | 描述 |
-|----------|---------|-------------|
-| `GITHUB_ENABLED` | `false` | 启用 GitHub OAuth |
-| `GITHUB_CLIENT_ID` | `""` | GitHub OAuth 客户端 ID |
-| `GITHUB_CLIENT_SECRET` | `""` | GitHub OAuth 客户端密钥 |
+| 变量                   | 默认值  | 描述                    |
+| ---------------------- | ------- | ----------------------- |
+| `GITHUB_ENABLED`       | `false` | 启用 GitHub OAuth       |
+| `GITHUB_CLIENT_ID`     | `""`    | GitHub OAuth 客户端 ID  |
+| `GITHUB_CLIENT_SECRET` | `""`    | GitHub OAuth 客户端密钥 |
 
 #### 微信 OAuth
 
-| 变量 | 默认值 | 描述 |
-|----------|---------|-------------|
-| `WECHAT_ENABLED` | `false` | 启用微信 OAuth |
-| `WECHAT_CLIENT_ID` | `""` | 微信 OAuth 客户端 ID |
-| `WECHAT_CLIENT_SECRET` | `""` | 微信 OAuth 客户端密钥 |
+| 变量                   | 默认值  | 描述                  |
+| ---------------------- | ------- | --------------------- |
+| `WECHAT_ENABLED`       | `false` | 启用微信 OAuth        |
+| `WECHAT_CLIENT_ID`     | `""`    | 微信 OAuth 客户端 ID  |
+| `WECHAT_CLIENT_SECRET` | `""`    | 微信 OAuth 客户端密钥 |
 
 #### Google OAuth
 
-| 变量 | 默认值 | 描述 |
-|----------|---------|-------------|
-| `GOOGLE_ENABLED` | `false` | 启用 Google OAuth |
-| `GOOGLE_CLIENT_ID` | `""` | Google OAuth 客户端 ID |
-| `GOOGLE_CLIENT_SECRET` | `""` | Google OAuth 客户端密钥 |
+| 变量                   | 默认值  | 描述                    |
+| ---------------------- | ------- | ----------------------- |
+| `GOOGLE_ENABLED`       | `false` | 启用 Google OAuth       |
+| `GOOGLE_CLIENT_ID`     | `""`    | Google OAuth 客户端 ID  |
+| `GOOGLE_CLIENT_SECRET` | `""`    | Google OAuth 客户端密钥 |
 
 #### 通用 OAuth2
 
-| 变量 | 默认值 | 描述 |
-|----------|---------|-------------|
-| `OAUTH2_ENABLED` | `false` | 启用通用 OAuth2 |
-| `OAUTH2_CALLBACK_URL` | `""` | OAuth2 回调 URL |
-| `OAUTH2_CLIENT_ID` | `""` | OAuth2 客户端 ID |
-| `OAUTH2_CLIENT_SECRET` | `""` | OAuth2 客户端密钥 |
-| `OAUTH2_AUTH_URL` | `""` | OAuth2 授权 URL |
-| `OAUTH2_TOKEN_URL` | `""` | OAuth2 令牌 URL |
-| `OAUTH2_USER_INFO_URL` | `""` | OAuth2 用户信息 URL |
+| 变量                   | 默认值  | 描述                |
+| ---------------------- | ------- | ------------------- |
+| `OAUTH2_ENABLED`       | `false` | 启用通用 OAuth2     |
+| `OAUTH2_CALLBACK_URL`  | `""`    | OAuth2 回调 URL     |
+| `OAUTH2_CLIENT_ID`     | `""`    | OAuth2 客户端 ID    |
+| `OAUTH2_CLIENT_SECRET` | `""`    | OAuth2 客户端密钥   |
+| `OAUTH2_AUTH_URL`      | `""`    | OAuth2 授权 URL     |
+| `OAUTH2_TOKEN_URL`     | `""`    | OAuth2 令牌 URL     |
+| `OAUTH2_USER_INFO_URL` | `""`    | OAuth2 用户信息 URL |
 
 ### 验证码配置
 
-| 变量 | 默认值 | 描述 |
-|----------|---------|-------------|
-| `TURNSTILE_ENABLED` | `false` | 启用 Cloudflare Turnstile |
-| `TURNSTILE_SITE_KEY` | `""` | Turnstile 站点密钥 |
-| `TURNSTILE_SECRET_KEY` | `""` | Turnstile 密钥 |
+| 变量                   | 默认值  | 描述                      |
+| ---------------------- | ------- | ------------------------- |
+| `TURNSTILE_ENABLED`    | `false` | 启用 Cloudflare Turnstile |
+| `TURNSTILE_SITE_KEY`   | `""`    | Turnstile 站点密钥        |
+| `TURNSTILE_SECRET_KEY` | `""`    | Turnstile 密钥            |
 
 ### 自定义覆盖变量
 
-| 变量 | 默认值 | 描述 |
-|----------|---------|-------------|
-| `CLOUD_DOMAIN` | `""` | 覆盖云域名（自动从 sealos-config 获取） |
-| `CLOUD_PORT` | `""` | 覆盖云端口（自动从 sealos-config 获取） |
-| `CERT_SECRET_NAME` | `wildcard-cert` | TLS 证书 Secret 名称 |
-| `REGION_UID` | `""` | 覆盖区域 UID（自动从 sealos-config 获取） |
-| `DATABASE_MONGODB_URI` | `""` | 覆盖 MongoDB URI（自动从 sealos-config 获取） |
-| `DATABASE_GLOBAL_COCKROACHDB_URI` | `""` | 覆盖全局数据库 URI（自动从 sealos-config 获取） |
-| `DATABASE_LOCAL_COCKROACHDB_URI` | `""` | 覆盖本地数据库 URI（自动从 sealos-config 获取） |
-| `PASSWORD_SALT` | `""` | 覆盖密码盐（自动从 sealos-config 获取） |
-| `JWT_INTERNAL` | `""` | 覆盖内部 JWT（自动从 sealos-config 获取） |
-| `JWT_REGIONAL` | `""` | 覆盖区域 JWT（自动从 sealos-config 获取） |
-| `JWT_GLOBAL` | `""` | 覆盖全局 JWT（自动从 sealos-config 获取） |
+| 变量                              | 默认值          | 描述                                            |
+| --------------------------------- | --------------- | ----------------------------------------------- |
+| `CLOUD_DOMAIN`                    | `""`            | 覆盖云域名（自动从 sealos-config 获取）         |
+| `CLOUD_PORT`                      | `""`            | 覆盖云端口（自动从 sealos-config 获取）         |
+| `CERT_SECRET_NAME`                | `wildcard-cert` | TLS 证书 Secret 名称                            |
+| `REGION_UID`                      | `""`            | 覆盖区域 UID（自动从 sealos-config 获取）       |
+| `DATABASE_GLOBAL_COCKROACHDB_URI` | `""`            | 覆盖全局数据库 URI（自动从 sealos-config 获取） |
+| `DATABASE_LOCAL_COCKROACHDB_URI`  | `""`            | 覆盖本地数据库 URI（自动从 sealos-config 获取） |
+| `PASSWORD_SALT`                   | `""`            | 覆盖密码盐（自动从 sealos-config 获取）         |
+| `JWT_INTERNAL`                    | `""`            | 覆盖内部 JWT（自动从 sealos-config 获取）       |
+| `JWT_REGIONAL`                    | `""`            | 覆盖区域 JWT（自动从 sealos-config 获取）       |
+| `JWT_GLOBAL`                      | `""`            | 覆盖全局 JWT（自动从 sealos-config 获取）       |
 
 ## 自动配置的值
 
 以下值会**自动从 `sealos-system/sealos-config` ConfigMap 获取**，**无需手动配置**（除非需要覆盖）：
 
-| ConfigMap 键 | 目标值 | 描述 |
-|---------------|--------------|-------------|
-| `cloudDomain` | `desktopConfig.cloudDomain` | 云域名 |
-| `cloudPort` | `desktopConfig.cloudPort` | 云端口 |
-| `jwtInternal` | `desktopConfig.jwtInternal` | 内部 JWT 密钥 |
-| `jwtRegional` | `desktopConfig.jwtRegional` | 区域 JWT 密钥 |
-| `jwtGlobal` | `desktopConfig.jwtGlobal` | 全局 JWT 密钥 |
-| `regionUID` | `desktopConfig.regionUID` | 区域 UID |
-| `databaseMongodbURI` | `desktopConfig.databaseMongodbURI` | MongoDB 连接 URI |
+| ConfigMap 键                   | 目标值                                       | 描述                 |
+| ------------------------------ | -------------------------------------------- | -------------------- |
+| `cloudDomain`                  | `desktopConfig.cloudDomain`                  | 云域名               |
+| `cloudPort`                    | `desktopConfig.cloudPort`                    | 云端口               |
+| `jwtInternal`                  | `desktopConfig.jwtInternal`                  | 内部 JWT 密钥        |
+| `jwtRegional`                  | `desktopConfig.jwtRegional`                  | 区域 JWT 密钥        |
+| `jwtGlobal`                    | `desktopConfig.jwtGlobal`                    | 全局 JWT 密钥        |
+| `regionUID`                    | `desktopConfig.regionUID`                    | 区域 UID             |
 | `databaseGlobalCockroachdbURI` | `desktopConfig.databaseGlobalCockroachdbURI` | 全局 CockroachDB URI |
-| `databaseLocalCockroachdbURI` | `desktopConfig.databaseLocalCockroachdbURI` | 本地 CockroachDB URI |
-| `passwordSalt` | `desktopConfig.passwordSalt` | 密码哈希盐 |
+| `databaseLocalCockroachdbURI`  | `desktopConfig.databaseLocalCockroachdbURI`  | 本地 CockroachDB URI |
+| `passwordSalt`                 | `desktopConfig.passwordSalt`                 | 密码哈希盐           |
 
 ## ConfigMap 结构
 
@@ -127,26 +160,26 @@ sealos run desktop-frontend:latest \
 
 ```yaml
 cloud:
-  domain: "cloud.example.com"
-  port: ""
-  regionUID: "randomRegionUID"
-  certSecretName: "wildcard-cert"
-  proxyDomain: "cloud.example.com"
+  domain: 'cloud.example.com'
+  port: ''
+  regionUID: 'randomRegionUID'
+  certSecretName: 'wildcard-cert'
+  proxyDomain: 'cloud.example.com'
   allowedOrigins:
-    - "https://applaunchpad.cloud.example.com"
-    - "https://dbprovider.cloud.example.com"
-    - "https://costcenter.cloud.example.com"
-    - "https://cronjob.cloud.example.com"
-    - "https://objectstorage.cloud.example.com"
-    - "https://template.cloud.example.com"
-    - "https://terminal.cloud.example.com"
-    - "https://kubepanel.cloud.example.com"
-    - "https://license.cloud.example.com"
-    - "https://devbox.cloud.example.com"
-    - "https://aiproxy-web.cloud.example.com"
-    - "https://aiproxy.cloud.example.com"
-    - "https://sealaf-api.cloud.example.com"
-    - "https://sealaf.cloud.example.com"
+    - 'https://applaunchpad.cloud.example.com'
+    - 'https://dbprovider.cloud.example.com'
+    - 'https://costcenter.cloud.example.com'
+    - 'https://cronjob.cloud.example.com'
+    - 'https://objectstorage.cloud.example.com'
+    - 'https://template.cloud.example.com'
+    - 'https://terminal.cloud.example.com'
+    - 'https://kubepanel.cloud.example.com'
+    - 'https://license.cloud.example.com'
+    - 'https://devbox.cloud.example.com'
+    - 'https://aiproxy-web.cloud.example.com'
+    - 'https://aiproxy.cloud.example.com'
+    - 'https://sealaf-api.cloud.example.com'
+    - 'https://sealaf.cloud.example.com'
 
 common:
   guideEnabled: false
@@ -155,41 +188,48 @@ common:
   enterpriseRealNameAuthEnabled: false
   trackingEnabled: false
   realNameAuthEnabled: false
-  licenseCheckEnabled: false
+  passwordEnabled: true
   realNameReward: 0
-  realNameCallbackUrl: "https://cloud.example.org/api/account/faceIdRealNameAuthCallback"
-  templateUrl: "https://template.example.org"
-  applaunchpadUrl: "https://applaunchpad.example.org"
-  dbproviderUrl: "https://dbprovider.example.org"
-  objectstorageUrl: "https://objectstorage.example.org"
-  cfSiteKey: ""
+  realNameCallbackUrl: 'https://cloud.example.org/api/account/faceIdRealNameAuthCallback'
+  templateUrl: 'https://template.example.org'
+  applaunchpadUrl: 'https://applaunchpad.example.org'
+  dbproviderUrl: 'https://dbprovider.example.org'
+  objectstorageUrl: 'https://objectstorage.example.org'
+  cfSiteKey: ''
 
 database:
-  mongodbURI: "mongodb://..."
-  globalCockroachdbURI: "postgres://..."
-  regionalCockroachdbURI: "postgres://..."
+  globalCockroachdbURI: 'postgres://...'
+  regionalCockroachdbURI: 'postgres://...'
 
 desktop:
   layout:
-    version: "en"
-    title: "Sealos Cloud"
-    logo: "/logo.svg"
-    backgroundImage: "/images/bg-light.svg"
-    forcedLanguage: "en"  # 自动根据 version 配置: "cn"→"zh", "en"→"en"
-    customerServiceURL: ""
-    discordInviteLink: ""  # 自动根据 version 配置: "en"时显示, "cn"时为空
+    version: 'en'
+    title: 'Sealos Cloud'
+    logo: '/logo.svg'
+    backgroundImage: '/images/bg-light.svg'
+    forcedLanguage: 'en' # 自动根据 version 配置: "cn"→"zh", "en"→"en"
+    customerServiceURL: ''
+    discordInviteLink: '' # 自动根据 version 配置: "en"时显示, "cn"时为空
     gtmId: null
-    currencySymbol: "usd"  # 自动根据 version 配置: "cn"→"shellCoin", "en"→"usd"
+    currencySymbol: 'usd' # 自动根据 version 配置: "cn"→"shellCoin", "en"→"usd"
+    protocol:
+      enabled: true
+      serviceProtocol:
+        zh: 'https://sealos.io/zh-Hans/docs/msa/terms-of-service'
+        en: 'https://sealos.io/docs/msa/terms-of-service'
+      privateProtocol:
+        zh: 'https://sealos.io/zh-Hans/docs/msa/privacy-policy'
+        en: 'https://sealos.io/docs/msa/privacy-policy'
     meta:
-      title: "Sealos Cloud"
-      description: "Sealos Cloud"
-      keywords: "Sealos Cloud"
+      title: 'Sealos Cloud'
+      description: 'Sealos Cloud'
+      keywords: 'Sealos Cloud'
       scripts: []
       noscripts: []
     common:
       githubStarEnabled: true
       accountSettingEnabled: true
-      docsUrl: "https://sealos.run/docs/Intro/"
+      docsUrl: 'https://sealos.run/docs/Intro/'
       aiAssistantEnabled: false
       bannerEnabled: false
       subscriptionEnabled: false
@@ -198,43 +238,43 @@ desktop:
       phoneAlertEnabled: false
       announcementEnabled: false
   auth:
-    proxyAddress: ""
-    callbackURL: "https://cloud.example.com/callback"
+    proxyAddress: ''
+    callbackURL: 'https://cloud.example.com/callback'
     signUpEnabled: true
-    baiduToken: ""
+    baiduToken: ''
     hasBaiduToken: false
     jwt:
-      internal: "..."
-      regional: "..."
-      global: "..."
+      internal: '...'
+      regional: '...'
+      global: '...'
     idp:
       password:
         enabled: true
-        salt: "..."
+        salt: '...'
       github:
         enabled: false
-        proxyAddress: ""
-        clientID: ""
-        clientSecret: ""
+        proxyAddress: ''
+        clientID: ''
+        clientSecret: ''
       wechat:
         enabled: false
-        proxyAddress: ""
-        clientID: ""
-        clientSecret: ""
+        proxyAddress: ''
+        clientID: ''
+        clientSecret: ''
       google:
         enabled: false
-        proxyAddress: ""
-        clientID: ""
-        clientSecret: ""
+        proxyAddress: ''
+        clientID: ''
+        clientSecret: ''
       oauth2:
         enabled: false
-        callbackURL: ""
-        clientID: ""
-        proxyAddress: ""
-        clientSecret: ""
-        authURL: ""
-        tokenURL: ""
-        userInfoURL: ""
+        callbackURL: ''
+        clientID: ''
+        proxyAddress: ''
+        clientSecret: ''
+        authURL: ''
+        tokenURL: ''
+        userInfoURL: ''
       sms:
         enabled: false
       email:
@@ -242,47 +282,108 @@ desktop:
     captcha:
       turnstile:
         enabled: false
-        siteKey: ""
-        secretKey: ""
-    billingUrl: "http://account-service.account-system.svc:2333"
-    billingToken: ""
+        siteKey: ''
+        secretKey: ''
+    billingUrl: 'http://account-service.account-system.svc:2333'
+    billingToken: ''
   teamManagement:
     maxTeamCount: 0
     maxTeamMemberCount: 0
+    workspaceInviteExpiresInMinutes: [30, 1440, 10080]
 
 tracking:
-  websiteId: ""
-  hostUrl: ""
-  scriptUrl: ""
+  websiteId: ''
+  hostUrl: ''
+  scriptUrl: ''
 
 realNameOSS:
-  accessKey: ""
-  accessKeySecret: ""
-  endpoint: ""
+  accessKey: ''
+  accessKeySecret: ''
+  endpoint: ''
   ssl: false
   port: 0
-  realNameBucket: ""
-  enterpriseRealNameBucket: ""
+  realNameBucket: ''
+  enterpriseRealNameBucket: ''
 ```
+
+## AllowedOrigins 扩展配置
+
+Desktop Frontend 支持在 `allowedOrigins` 列表中添加自定义的子域名。系统会自动将子域名格式化为 `https://{子域名}.{cloudDomain}` 并添加到现有的 `allowedOrigins` 中。
+
+### 配置方式
+
+在持久化用户 values 文件 `desktop-values.yaml` 中添加 `additionalAllowedOriginsPrefixes`：
+
+```yaml
+desktopConfig:
+  cloudDomain: 'cloud.example.com'
+
+  # 添加额外的 allowedOrigins 子域名
+  # 只需传入子域名部分，系统会自动添加 https:// 和 .{cloudDomain}
+  additionalAllowedOriginsPrefixes:
+    - 'my-custom-app'
+    - 'another-service'
+```
+
+### 生成的结果
+
+生成的 `allowedOrigins` 将包含：
+
+```yaml
+allowedOrigins:
+  # 默认的 origins...
+  - 'https://sealaf.cloud.example.com'
+  # 额外的自定义 origins
+  - 'https://my-custom-app.cloud.example.com'
+  - 'https://another-service.cloud.example.com'
+```
+
+### 使用示例
+
+**通过 values 文件：**
+
+```yaml
+additionalAllowedOriginsPrefixes:
+  - 'custom-app'
+  - 'analytics-service'
+```
+
+**通过 Helm --set 参数：**
+
+```bash
+helm upgrade -i desktop-frontend ./charts/desktop-frontend \
+  --set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app" \
+  --set desktopConfig.additionalAllowedOriginsPrefixes[1]="another-app"
+```
+
+**通过环境变量：**
+
+```bash
+export HELM_OPTIONS='--set desktopConfig.additionalAllowedOriginsPrefixes[0]="my-app"'
+./desktop-frontend-entrypoint.sh
+```
+
+更多详情请参考 [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md)。
 
 ## Helm Chart 参数
 
-| 参数 | 描述 | 默认值 |
-|-----------|-------------|---------|
-| `replicaCount` | 副本数 | `1` |
-| `image` | 容器镜像 | `ghcr.io/labring/sealos-desktop-frontend:latest` |
-| `imagePullPolicy` | 镜像拉取策略 | `IfNotPresent` |
-| `fullnameOverride` | 覆盖完整资源名称 | `sealos-desktop` |
-| `serviceAccount.create` | 创建服务账号 | `true` |
-| `serviceAccount.name` | 服务账号名称 | `desktop-frontend` |
-| `service.port` | 服务端口 | `3000` |
-| `resources.requests.cpu` | CPU 请求 | `100m` |
-| `resources.requests.memory` | 内存请求 | `128Mi` |
-| `resources.limits.cpu` | CPU 限制 | `2000m` |
-| `resources.limits.memory` | 内存限制 | `2048Mi` |
-| `ingress.enabled` | 启用 Ingress | `true` |
-| `ingress.className` | Ingress 类 | `nginx` |
-| `autoConfigEnabled` | 从 sealos-config 自动配置 | `true` |
+| 参数                        | 描述                      | 默认值                                           |
+| --------------------------- | ------------------------- | ------------------------------------------------ |
+| `replicaCount`              | 副本数                    | `1`                                              |
+| `image`                     | 容器镜像                  | `ghcr.io/labring/sealos-desktop-frontend:latest` |
+| `imagePullPolicy`           | 镜像拉取策略              | `IfNotPresent`                                   |
+| `fullnameOverride`          | 覆盖完整资源名称          | `sealos-desktop`                                 |
+| `serviceAccount.create`     | 创建服务账号              | `true`                                           |
+| `serviceAccount.name`       | 服务账号名称              | `desktop-frontend`                               |
+| `service.port`              | 服务端口                  | `3000`                                           |
+| `databaseMigration.enabled` | 启动时执行 Prisma migration | `true`                                         |
+| `resources.requests.cpu`    | CPU 请求                  | `100m`                                           |
+| `resources.requests.memory` | 内存请求                  | `128Mi`                                          |
+| `resources.limits.cpu`      | CPU 限制                  | `2000m`                                          |
+| `resources.limits.memory`   | 内存限制                  | `2048Mi`                                         |
+| `ingress.enabled`           | 启用 Ingress              | `true`                                           |
+| `ingress.className`         | Ingress 类                | `nginx`                                          |
+| `autoConfigEnabled`         | 从 sealos-config 自动配置 | `true`                                           |
 
 ## 故障排查
 
@@ -308,16 +409,24 @@ kubectl logs -n sealos -l app.kubernetes.io/name=desktop-frontend --tail=100 -f
 ### 常见问题
 
 **问题**: Ingress 返回 404 或 502
+
 - **解决**: 检查 service 是否存在且端口正确：`kubectl get svc sealos-desktop -n sealos`
 
 **问题**: Pod 处于 CrashLoopBackOff 状态
+
 - **解决**: 查看日志，检查数据库连接错误或缺失的环境变量
 
 **问题**: OAuth 回调失败
+
 - **解决**: 验证配置中的 `callbackURL` 是否与 OAuth 应用设置匹配
 
 **问题**: 现有资源阻止安装
+
 - **解决**: 脚本会自动通过添加 Helm 标签来接纳现有资源
+
+**问题**: 只验证前端部署，不允许写数据库
+
+- **解决**: 设置 `HELM_OPTIONS="--set databaseMigration.enabled=false"`。正常安装保持默认值 `true`；关闭后只会移除 `init-database` init container。
 
 ## 高级用法
 
@@ -331,6 +440,10 @@ kubectl logs -n sealos -l app.kubernetes.io/name=desktop-frontend --tail=100 -f
 # UI 自定义通过 HELM_OPTIONS
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.layoutTitle=\"我的云平台\" --set desktopConfig.metaTitle=\"我的云平台\""
+
+# 隐藏登录页服务条款和隐私政策提示
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.protocol.enabled=false"
 
 # OAuth 提供商
 sealos run desktop-frontend:latest \
@@ -349,12 +462,12 @@ sealos run desktop-frontend:latest \
 
 **常用自定义选项：**
 
-- **UI 自定义**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`
+- **UI 自定义**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`, `protocol.enabled`
 - **OAuth 提供商**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` 及其对应的 `*ClientId`, `*ClientSecret`
 - **功能开关**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **通讯配置**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
-- **URL 配置**: `templateUrl`, `applaunchpadUrl`, `dbproviderUrl`, `objectstorageUrl`, `workorderUrl`
-- **数据库配置**: `databaseMongodbURI`, `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
+- **URL 配置**: `workorderUrl`，以及基于 `cloudDomain` 自动生成的服务地址（`template`、`applaunchpad`、`dbprovider`、`objectstorage`）
+- **数据库配置**: `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
 - **团队管理**: `maxTeamCount`, `maxTeamMemberCount`
 
 查看 23 个分类共 60+ 可配置参数，请参阅 [HELM_VALUES_GUIDE_CN.md](HELM_VALUES_GUIDE_CN.md)。
@@ -365,7 +478,7 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest \
   -e AUTO_CONFIG_ENABLED=false \
   -e CLOUD_DOMAIN=cloud.example.com \
-  -e DATABASE_MONGODB_URI=mongodb://...
+  -e DATABASE_LOCAL_COCKROACHDB_URI=postgres://...
 ```
 
 ### 自定义 Helm 选项
@@ -373,6 +486,8 @@ sealos run desktop-frontend:latest \
 ```bash
 sealos run desktop-frontend:latest -e HELM_OPTIONS="--timeout 10m --install"
 ```
+
+显式 `HELM_OPTIONS` 和 `HELM_OPTS` 会追加在自动配置之后，因此优先级最高。
 
 ### 覆盖命名空间
 
@@ -391,12 +506,14 @@ sealos build -t docker.io/labring/sealos-cloud-desktop:latest -f Kubefile .
 ### 1. 如何配置中文/英文版本？
 
 **中文版本：**
+
 ```bash
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.version=cn"
 ```
 
 **英文版本：**
+
 ```bash
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.version=en"
@@ -405,6 +522,7 @@ sealos run desktop-frontend:latest \
 ### 2. 如何启用第三方登录？
 
 **方式 1: 使用环境变量（推荐）**
+
 ```bash
 sealos run desktop-frontend:latest \
   -e GITHUB_ENABLED=true \
@@ -413,6 +531,7 @@ sealos run desktop-frontend:latest \
 ```
 
 **方式 2: 使用 HELM_OPTIONS（推荐用于复杂配置）**
+
 ```bash
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=your-client-id --set desktopConfig.githubClientSecret=your-client-secret"
@@ -421,17 +540,20 @@ sealos run desktop-frontend:latest \
 ### 3. 如何更新配置？
 
 **方式 1: 使用环境变量（推荐用于少量配置）**
+
 ```bash
 sealos run desktop-frontend:latest -e CLOUD_DOMAIN=new.example.com
 ```
 
 **方式 2: 使用 HELM_OPTIONS（推荐用于多个配置）**
+
 ```bash
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.cloudDomain=new.example.com --set desktopConfig.layoutTitle=\"New Title\" --set desktopConfig.guideEnabled=true"
 ```
 
 **方式 3: 直接编辑 ConfigMap**
+
 ```bash
 kubectl edit configmap sealos-desktop-config -n sealos
 kubectl rollout restart deployment sealos-desktop -n sealos
@@ -442,28 +564,33 @@ kubectl rollout restart deployment sealos-desktop -n sealos
 配置存储在 `sealos-desktop-config` ConfigMap 中，挂载到 Pod 的 `/app/data/config.yaml`。
 
 查看配置：
+
 ```bash
 kubectl get configmap sealos-desktop-config -n sealos -o yaml
 kubectl exec -n sealos deployment/sealos-desktop -- cat /app/data/config.yaml
 ```
 
-### 5. 环境变量和 HELM_OPTIONS 的区别和优先级？
+### 5. 配置来源和 HELM_OPTIONS 的优先级？
 
 **使用场景：**
+
 - **环境变量**: 少量配置、快速测试、常用配置项
 - **HELM_OPTIONS**: 多个配置、生产部署、访问所有 60+ 参数
 
 **优先级从高到低：**
-1. 环境变量（如 `CLOUD_DOMAIN`）
-2. HELM_OPTIONS 中的 `--set` 参数
-3. values.yaml 默认值
+
+1. `HELM_OPTIONS` / `HELM_OPTS` 中的显式参数
+2. 从 `sealos-system/sealos-config` 读取的自动配置
+3. 可选 `global.yaml`
+4. 持久化用户 values
+5. `values.yaml` 默认值
 
 **示例：**
+
 ```bash
-# 环境变量会覆盖 HELM_OPTIONS 的值
+# HELM_OPTIONS 会覆盖自动配置值，最终使用 from-helm.com
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com" \
-  -e CLOUD_DOMAIN=from-env.com  # 这个值会生效
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com"
 ```
 
 ## 技术支持

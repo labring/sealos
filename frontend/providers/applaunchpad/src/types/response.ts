@@ -8,6 +8,7 @@ export enum ResponseCode {
 
   BALANCE_NOT_ENOUGH = 40001,
   FORBIDDEN_CREATE_APP = 40003,
+  QUOTA_EXCEEDED = 40004,
   APP_ALREADY_EXISTS = 40009
 }
 
@@ -22,6 +23,8 @@ export const ResponseMessages: Record<ResponseCode | number, string> = {
     'Almost there! You need additional credits for this deployment.',
   [ResponseCode.FORBIDDEN_CREATE_APP]:
     'You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.',
+  [ResponseCode.QUOTA_EXCEEDED]:
+    'The requested resource exceeds your quota limit. Please reduce the resource request or contact the administrator to increase the quota.',
   [ResponseCode.APP_ALREADY_EXISTS]: 'The application already exists'
 };
 

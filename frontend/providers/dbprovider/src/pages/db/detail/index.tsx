@@ -35,8 +35,7 @@ enum TabEnum {
   DataImport = 'dataImport',
   ErrorLog = 'errorLog',
   Overview = 'overview',
-  OperationLog = 'operationLog',
-  chat2db = 'chat2db'
+  OperationLog = 'operationLog'
 }
 
 const AppDetail = ({
@@ -60,6 +59,7 @@ const AppDetail = ({
     const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb'].includes(dbType);
     const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
     const BackupSupported = BackupSupportedDBTypeList.includes(dbType) && SystemEnv.BACKUP_ENABLED;
+    const MonitorSupported = dbType !== 'polardbx';
 
     const listNavValue = [
       {
@@ -67,11 +67,15 @@ const AppDetail = ({
         value: TabEnum.Overview,
         icon: <MyIcon name="overview" w={'16px'} h={'16px'} />
       },
-      {
-        label: 'monitor_list',
-        value: TabEnum.monitor,
-        icon: <MyIcon name="monitor" w={'16px'} h={'16px'} />
-      },
+      ...(MonitorSupported
+        ? [
+            {
+              label: 'monitor_list',
+              value: TabEnum.monitor,
+              icon: <MyIcon name="monitor" w={'16px'} h={'16px'} />
+            }
+          ]
+        : []),
       {
         label: 'change_log',
         value: TabEnum.OperationLog,

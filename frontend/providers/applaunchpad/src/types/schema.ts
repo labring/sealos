@@ -266,7 +266,7 @@ export const PortConfigSchema = z.object({
   }),
   networkName: z.string().default(() => `network-${nanoid()}`),
   portName: z.string().default(() => nanoid()),
-  publicDomain: z.string().default(() => nanoid()),
+  publicDomain: z.string().optional(),
   domain: z.string().default(''),
   customDomain: z.string().optional().openapi({
     description: 'Custom domain'

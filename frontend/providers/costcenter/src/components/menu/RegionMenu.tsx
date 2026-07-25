@@ -29,13 +29,13 @@ export default function RegionMenu({
     // setRegion(0);
   }, [data?.data]);
   const itemList = useMemo(
-    () => regionList.map((v) => (i18n?.language === 'zh' ? v.name.zh : v.name.en)),
+    () => regionList.map((v) => v.domain || (i18n?.language === 'zh' ? v.name.zh : v.name.en)),
     [regionList, i18n?.language]
   );
   return (
     <BaseMenu
       itemIdx={regionIdx}
-      isDisabled={isDisabled || isFetching}
+      isDisabled={isDisabled || isFetching || regionList.length <= 1}
       setItem={function (idx: number) {
         setRegion(idx);
       }}

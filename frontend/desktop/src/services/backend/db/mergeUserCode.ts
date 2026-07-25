@@ -1,6 +1,11 @@
 import { v4 } from 'uuid';
-import { connectToDatabase } from './mongodb';
 import { ProviderType } from 'prisma/global/generated/client';
+import { prisma } from './init';
+import {
+  VERIFICATION_CODE_SCENARIOS,
+  VERIFICATION_PROVIDER_TYPES,
+  type VerificationProviderType
+} from '@/constants/verification';
 
 export type TMergeUserCode = {
   code: string;
@@ -10,17 +15,43 @@ export type TMergeUserCode = {
   createdAt: Date;
 };
 
-async function connectToCollection() {
-  const client = await connectToDatabase();
-  const collection = client.db().collection<TMergeUserCode>('mergeUserCode');
-  await collection.createIndex({ createdAt: 1 }, { expireAfterSeconds: 60 * 1 });
-  await collection.createIndex({ uid: 1 }, { unique: true });
-  await collection.createIndex({ code: 1 }, { unique: true });
-  await collection.createIndex({ providerId: 1, providerType: 1 }, { unique: true });
-  return collection;
+const MERGE_USER_EXPIRE_MS = 60 * 1000;
+
+function getVerificationProviderType(providerType: ProviderType): VerificationProviderType {
+  switch (providerType) {
+    case 'PHONE':
+      return VERIFICATION_PROVIDER_TYPES.PHONE;
+    case 'GITHUB':
+      return VERIFICATION_PROVIDER_TYPES.GITHUB;
+    case 'WECHAT':
+      return VERIFICATION_PROVIDER_TYPES.WECHAT;
+    case 'GOOGLE':
+      return VERIFICATION_PROVIDER_TYPES.GOOGLE;
+    case 'PASSWORD':
+      return VERIFICATION_PROVIDER_TYPES.PASSWORD;
+    case 'OAUTH2':
+      return VERIFICATION_PROVIDER_TYPES.OAUTH2;
+    case 'EMAIL':
+      return VERIFICATION_PROVIDER_TYPES.EMAIL;
+  }
 }
 
-// addOrUpdateCode
+function toMergeUserCode(record: {
+  providerId: string;
+  providerType: string;
+  code: string;
+  flowToken: string | null;
+  createdAt: Date;
+}): TMergeUserCode {
+  return {
+    code: record.code,
+    providerId: record.providerId,
+    providerType: record.providerType as ProviderType,
+    uid: record.flowToken || '',
+    createdAt: record.createdAt
+  };
+}
+
 export async function addOrUpdateCode({
   providerId,
   providerType,
@@ -30,25 +61,36 @@ export async function addOrUpdateCode({
   providerType: ProviderType;
   code: string;
 }) {
-  const codes = await connectToCollection();
-  const result = await codes.updateOne(
-    {
-      providerId,
-      providerType
-    },
-    {
-      $set: {
-        code,
-        createdAt: new Date(),
-        uid: v4()
+  const verificationProviderType = getVerificationProviderType(providerType);
+  const flowToken = v4();
+
+  return prisma.verificationCodes.upsert({
+    where: {
+      scenario_providerType_providerId: {
+        scenario: VERIFICATION_CODE_SCENARIOS.MERGE_USER,
+        providerType: verificationProviderType,
+        providerId
       }
     },
-    {
-      upsert: true
+    create: {
+      userUid: null,
+      scenario: VERIFICATION_CODE_SCENARIOS.MERGE_USER,
+      providerType: verificationProviderType,
+      providerId,
+      code,
+      flowToken,
+      expiresAt: new Date(Date.now() + MERGE_USER_EXPIRE_MS),
+      metadata: {}
+    },
+    update: {
+      code,
+      flowToken,
+      expiresAt: new Date(Date.now() + MERGE_USER_EXPIRE_MS),
+      metadata: {}
     }
-  );
-  return result;
+  });
 }
+
 export async function checkCode({
   providerType,
   code
@@ -56,20 +98,41 @@ export async function checkCode({
   providerType: ProviderType;
   code: string;
 }) {
-  const codes = await connectToCollection();
-  const result = await codes.findOne({
-    providerType,
-    code,
-    createdAt: {
-      $gt: new Date(new Date().getTime() - 1 * 60 * 1000)
+  const verificationProviderType = getVerificationProviderType(providerType);
+
+  const result = await prisma.verificationCodes.findFirst({
+    where: {
+      scenario: VERIFICATION_CODE_SCENARIOS.MERGE_USER,
+      providerType: verificationProviderType,
+      code,
+      expiresAt: {
+        gt: new Date()
+      }
     }
   });
-  return result;
+
+  return result
+    ? toMergeUserCode({
+        providerId: result.providerId,
+        providerType: result.providerType,
+        code: result.code,
+        flowToken: result.flowToken,
+        createdAt: result.createdAt
+      })
+    : null;
 }
+
 export async function deleteByUid({ uid }: { uid: string }) {
-  const codes = await connectToCollection();
-  const result = await codes.deleteOne({
-    uid
+  return prisma.verificationCodes.updateMany({
+    where: {
+      scenario: VERIFICATION_CODE_SCENARIOS.MERGE_USER,
+      flowToken: uid,
+      expiresAt: {
+        gt: new Date()
+      }
+    },
+    data: {
+      expiresAt: new Date()
+    }
   });
-  return result;
 }

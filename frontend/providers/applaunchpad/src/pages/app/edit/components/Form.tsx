@@ -1,11 +1,18 @@
 import { obj2Query } from '@/api/tools';
+import { getSharePVCs } from '@/api/app';
+import { getImagePorts } from '@/api/platform';
 import MyIcon from '@/components/Icon';
 import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
 import { defaultSliderKey, defaultGpuSliderKey } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { PVC_STORAGE_MAX } from '@/store/static';
+import {
+  PVC_STORAGE_MAX,
+  NETWORK_STORAGE_ENABLED,
+  SEALOS_DOMAIN,
+  IMAGE_PORTS_ENABLED
+} from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
@@ -27,6 +34,7 @@ import {
   IconButton,
   Image,
   Input,
+  Spinner,
   Switch,
   useDisclosure,
   useTheme
@@ -35,8 +43,9 @@ import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFieldArray, UseFormReturn } from 'react-hook-form';
+import { customAlphabet } from 'nanoid';
 import type { ConfigMapType } from './ConfigmapModal';
 import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
@@ -45,12 +54,52 @@ import styles from './index.module.scss';
 import { NetworkSection } from './NetworkSection';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import { useQuery } from '@tanstack/react-query';
+import {
+  APP_NAME_BASE_MAX_LENGTH,
+  APP_NAME_BASE_PATTERN,
+  isValidAppNameBase
+} from '@/utils/appNameValidation';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
+const NetworkStoreModal = dynamic(() => import('./NetworkStoreModal'));
 const EditEnvs = dynamic(() => import('./EditEnvs'));
 
 const labelWidth = 120;
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+
+type ImagePortDetectionState = {
+  status: 'idle' | 'loading' | 'success' | 'empty' | 'error';
+  count?: number;
+};
+
+function getNetworkSignature(networks: AppEditType['networks']) {
+  return networks
+    .map((network) =>
+      [
+        network.port,
+        network.protocol,
+        network.appProtocol || '',
+        network.openPublicDomain ? 'public' : 'private',
+        network.openNodePort ? 'nodeport' : 'cluster'
+      ].join(':')
+    )
+    .join('|');
+}
+
+function canAutoReplaceNetworks(networks: AppEditType['networks'], lastAutoSignature: string) {
+  const networkSignature = getNetworkSignature(networks);
+  return (
+    networks.length === 0 ||
+    networkSignature === lastAutoSignature ||
+    (networks.length === 1 &&
+      Number(networks[0].port) === 80 &&
+      networks[0].protocol === 'TCP' &&
+      networks[0].appProtocol === 'HTTP' &&
+      !networks[0].openPublicDomain &&
+      !networks[0].openNodePort)
+  );
+}
 
 const Form = ({
   formHook,
@@ -110,6 +159,14 @@ const Form = ({
     control,
     name: 'storeList'
   });
+  const {
+    fields: networkStoreList,
+    append: appendNetworkStore,
+    remove: removeNetworkStore
+  } = useFieldArray({
+    control,
+    name: 'networkStoreList'
+  });
 
   const navList = useMemo(
     () => [
@@ -141,7 +198,8 @@ const Form = ({
           getValues('cmdParam') ||
           getValues('envs').length > 0 ||
           getValues('configMapList').length > 0 ||
-          getValues('storeList').length > 0
+          getValues('storeList').length > 0 ||
+          getValues('networkStoreList').length > 0
       }
     ],
     [getValues, refresh]
@@ -150,11 +208,31 @@ const Form = ({
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
   const [storeEdit, setStoreEdit] = useState<StoreType>();
+  const [networkStoreEdit, setNetworkStoreEdit] = useState(false);
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
+  const imagePortRequestId = useRef(0);
+  const secretPasswordVersion = useRef(0);
+  const lastAutoPortKey = useRef('');
+  const lastAutoNetworkSignature = useRef('');
+  const [imagePortDetection, setImagePortDetection] = useState<ImagePortDetectionState>({
+    status: 'idle'
+  });
+  const watchedImageName = watch('imageName');
+  const watchedSecretUse = watch('secret.use');
+  const watchedSecretUsername = watch('secret.username');
+  const watchedSecretPassword = watch('secret.password');
+  const watchedSecretServerAddress = watch('secret.serverAddress');
+
+  useEffect(() => {
+    secretPasswordVersion.current += 1;
+  }, [watchedSecretPassword]);
 
   // For quota calculation in fields
   const { userQuota, loadUserQuota } = useUserStore();
   useQuery(['getUserQuota'], loadUserQuota);
+
+  // Fetch share storage PVC list
+  const { data: sharePVCList = [] } = useQuery(['getSharePVCs'], getSharePVCs);
 
   const storageQuotaLeft = useMemo(() => {
     const storageQuota = userQuota?.find((item) => item.type === 'storage');
@@ -167,7 +245,7 @@ const Form = ({
     return storageQuota.limit - storageQuota.used - newlyUsedStorage;
   }, [userQuota, existingStores, storeList]);
 
-  // Separate local and remote stores
+  // Separate local and remote stores (storeList original logic unchanged)
   const { localStores, remoteStores } = useMemo(() => {
     const local = storeList.filter((item) => item.storageType !== 'remote');
     const remote = storeList.filter((item) => item.storageType === 'remote');
@@ -211,9 +289,147 @@ const Form = ({
           setValue('sharedMemory.sizeLimit', Math.max(memoryInGi, 1));
         }
       }
+
+      if (!isEdit && name === 'appName' && value.appName && value.configMapList?.length) {
+        const volumeName = `${value.appName}-cm`;
+        const configMapList = value.configMapList as AppEditType['configMapList'];
+        if (configMapList.some((item) => item.volumeName !== volumeName)) {
+          setValue(
+            'configMapList',
+            configMapList.map((item) => ({
+              ...item,
+              volumeName
+            })),
+            { shouldDirty: true }
+          );
+        }
+      }
     });
     return () => subscription.unsubscribe();
-  }, [watch, setValue]);
+  }, [watch, setValue, isEdit]);
+
+  useEffect(() => {
+    if (!IMAGE_PORTS_ENABLED || isEdit || !already) {
+      setImagePortDetection({ status: 'idle' });
+      return;
+    }
+
+    const imageName = getValues('imageName');
+    if (!imageName) {
+      setImagePortDetection({ status: 'idle' });
+      return;
+    }
+    const secret = getValues('secret');
+    const autoPortKey = [
+      imageName,
+      secret.use ? secret.username : '',
+      secret.use ? secret.serverAddress : '',
+      secret.use && secret.password ? `password-v${secretPasswordVersion.current}` : ''
+    ].join('|');
+    if (lastAutoPortKey.current === autoPortKey) return;
+
+    if (!canAutoReplaceNetworks(getValues('networks'), lastAutoNetworkSignature.current)) {
+      setImagePortDetection({ status: 'idle' });
+      return;
+    }
+
+    const requestId = ++imagePortRequestId.current;
+    setImagePortDetection({ status: 'loading' });
+    const timer = setTimeout(async () => {
+      try {
+        const res = await getImagePorts({
+          imageName,
+          imageRegistry: secret.use
+            ? {
+                username: secret.username,
+                password: secret.password,
+                serverAddress: secret.serverAddress
+              }
+            : undefined
+        });
+
+        if (requestId !== imagePortRequestId.current) {
+          return;
+        }
+
+        if (!res.ports.length) {
+          setImagePortDetection({ status: 'empty' });
+          return;
+        }
+
+        if (!canAutoReplaceNetworks(getValues('networks'), lastAutoNetworkSignature.current)) {
+          setImagePortDetection({ status: 'idle' });
+          return;
+        }
+        lastAutoPortKey.current = autoPortKey;
+        const nextNetworks: AppEditType['networks'] = res.ports.slice(0, 15).map((item, index) => ({
+          networkName: '',
+          portName: nanoid(),
+          port: item.port,
+          protocol: item.protocol,
+          appProtocol: item.protocol === 'TCP' && index === 0 ? 'HTTP' : undefined,
+          openPublicDomain: false,
+          publicDomain: '',
+          customDomain: '',
+          domain: SEALOS_DOMAIN,
+          openNodePort: false,
+          nodePort: undefined
+        }));
+        lastAutoNetworkSignature.current = getNetworkSignature(nextNetworks);
+
+        setValue('networks', nextNetworks);
+        setImagePortDetection({ status: 'success', count: nextNetworks.length });
+      } catch (error) {
+        if (requestId === imagePortRequestId.current) {
+          setImagePortDetection({ status: 'error' });
+        }
+      }
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [
+    already,
+    getValues,
+    isEdit,
+    refresh,
+    setValue,
+    watchedImageName,
+    watchedSecretPassword,
+    watchedSecretServerAddress,
+    watchedSecretUse,
+    watchedSecretUsername
+  ]);
+
+  const imagePortDetectionView = useMemo(() => {
+    switch (imagePortDetection.status) {
+      case 'loading':
+        return {
+          color: 'brightBlue.600',
+          text: t('recognizing_image_ports'),
+          showSpinner: true
+        };
+      case 'success':
+        return {
+          color: 'green.600',
+          text: t('recognized_image_ports', { count: imagePortDetection.count || 0 }),
+          showSpinner: false
+        };
+      case 'empty':
+        return {
+          color: 'grayModern.600',
+          text: t('no_image_ports_detected'),
+          showSpinner: false
+        };
+      case 'error':
+        return {
+          color: 'grayModern.600',
+          text: t('image_ports_detection_failed'),
+          showSpinner: false
+        };
+      default:
+        return null;
+    }
+  }, [imagePortDetection, t]);
 
   // common form label
   const Label = ({
@@ -342,14 +558,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-        : cpuList;
+      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+      : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-        : memoryList;
+      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+      : memoryList;
 
     const sortedEphemeralStorageList =
       ephemeralStorage !== undefined
@@ -521,24 +737,46 @@ const Form = ({
                     disabled={isEdit}
                     title={isEdit ? t('Not allowed to change app name') || '' : ''}
                     autoFocus={true}
-                    maxLength={60}
+                    maxLength={isEdit ? undefined : APP_NAME_BASE_MAX_LENGTH}
                     placeholder={
                       t(
                         'Starts with a letter and can contain only lowercase letters, digits, and hyphens (-)'
                       ) || ''
                     }
-                    {...register('appName', {
-                      required: t('Not allowed to change app name') || '',
-                      maxLength: 60,
-                      pattern: {
-                        value: /[a-z]([-a-z0-9]*[a-z0-9])?/g,
-                        message: t(
-                          'The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter'
-                        )
-                      }
-                    })}
+                    {...register(
+                      'appName',
+                      isEdit
+                        ? {}
+                        : {
+                            required: t('App Name is required') || '',
+                            maxLength: {
+                              value: APP_NAME_BASE_MAX_LENGTH,
+                              message: t('App name base length limit', {
+                                length: APP_NAME_BASE_MAX_LENGTH
+                              })
+                            },
+                            pattern: {
+                              value: APP_NAME_BASE_PATTERN,
+                              message:
+                                t(
+                                  'The application name can contain only lowercase letters, digits, and hyphens (-) and must start with a letter'
+                                ) || ''
+                            },
+                            validate: (value) =>
+                              isValidAppNameBase(value) ||
+                              t('App name base length limit', {
+                                length: APP_NAME_BASE_MAX_LENGTH
+                              }) ||
+                              ''
+                          }
+                    )}
                   />
                 </Flex>
+                {errors.appName?.message && (
+                  <Box mt={1} pl={`${labelWidth}px`} fontSize={'sm'} color={'red.500'}>
+                    {errors.appName.message}
+                  </Box>
+                )}
               </FormControl>
               {/* image */}
               <Box mb={7} className="driver-deploy-image">
@@ -568,22 +806,42 @@ const Form = ({
                   />
                 </Flex>
                 <Box mt={4} pl={`${labelWidth}px`}>
-                  <FormControl isInvalid={!!errors.imageName} w={'420px'}>
+                  <FormControl isInvalid={!!errors.imageName} w={'620px'} maxW={'100%'}>
                     <Box mb={1} fontSize={'sm'}>
                       {t('Image Name')}
                     </Box>
-                    <Input
-                      width={'350px'}
-                      value={getValues('imageName')}
-                      backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
-                      placeholder={`${t('Image Name')}`}
-                      {...register('imageName', {
-                        required: 'Image name cannot be empty',
-                        setValueAs(e) {
-                          return e.replace(/\s*/g, '');
-                        }
-                      })}
-                    />
+                    <Flex alignItems={'center'} gap={3}>
+                      <Input
+                        width={'350px'}
+                        flexShrink={0}
+                        value={getValues('imageName')}
+                        backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
+                        placeholder={`${t('Image Name')}`}
+                        {...register('imageName', {
+                          required: 'Image name cannot be empty',
+                          setValueAs(e) {
+                            return e.replace(/\s*/g, '');
+                          }
+                        })}
+                      />
+                      <Flex
+                        alignItems={'center'}
+                        gap={2}
+                        minW={'160px'}
+                        maxW={'220px'}
+                        h={'22px'}
+                        fontSize={'12px'}
+                        color={imagePortDetectionView?.color}
+                        visibility={imagePortDetectionView ? 'visible' : 'hidden'}
+                      >
+                        {imagePortDetectionView?.showSpinner ? (
+                          <Spinner size={'xs'} thickness={'2px'} speed={'0.8s'} />
+                        ) : null}
+                        <Box as={'span'} whiteSpace={'nowrap'} className="textEllipsis">
+                          {imagePortDetectionView?.text}
+                        </Box>
+                      </Flex>
+                    </Flex>
                   </FormControl>
                   {getValues('secret.use') ? (
                     <>
@@ -1050,8 +1308,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                                ? 'value from | ***'
-                                : '';
+                              ? 'value from | ***'
+                              : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>
@@ -1250,7 +1508,7 @@ const Form = ({
                     </Box>
                   </Box>
 
-                  {/* Remote Storage Section */}
+                  {/* Remote Storage Section (from storeList, read-only) */}
                   {remoteStores.length > 0 && (
                     <>
                       <Divider my={'30px'} borderColor={'#EFF0F1'} />
@@ -1292,6 +1550,77 @@ const Form = ({
                           ))}
                         </Box>
                       </Flex>
+                    </>
+                  )}
+
+                  {NETWORK_STORAGE_ENABLED && (
+                    <>
+                      <Divider my={'30px'} borderColor={'#EFF0F1'} />
+
+                      {/* Network Storage Section */}
+                      <Box>
+                        <Flex alignItems={'center'} mb={'10px'}>
+                          <Label className={styles.formSecondTitle} m={0}>
+                            {t('network_storage')}
+                          </Label>
+
+                          <Button
+                            w={'320px'}
+                            height={'32px'}
+                            variant={'outline'}
+                            onClick={() => setNetworkStoreEdit(true)}
+                            leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
+                          >
+                            {t('network_store_add_volume')}
+                          </Button>
+                        </Flex>
+                        {networkStoreList.length > 0 && (
+                          <Box mt={4} pl={`${labelWidth}px`}>
+                            {networkStoreList.map((item, index) => (
+                              <Flex key={item.id} _notLast={{ mb: 5 }} alignItems={'center'}>
+                                <Flex
+                                  alignItems={'center'}
+                                  px={4}
+                                  py={1}
+                                  border={theme.borders.base}
+                                  flex={'0 0 320px'}
+                                  w={0}
+                                  borderRadius={'md'}
+                                  bg={'grayModern.25'}
+                                >
+                                  <MyIcon name={'store'} w={'20px'} />
+                                  <Box ml={4} flex={'1 0 0'} w={'0px'}>
+                                    <Box color={'myGray.900'} fontWeight={'bold'}>
+                                      {item.path}
+                                    </Box>
+                                    <Box
+                                      className={styles.textEllipsis}
+                                      color={'grayModern.900'}
+                                      fontSize={'sm'}
+                                    >
+                                      {item.name}
+                                    </Box>
+                                  </Box>
+                                </Flex>
+                                <IconButton
+                                  height={'32px'}
+                                  width={'32px'}
+                                  aria-label={'delete'}
+                                  variant={'outline'}
+                                  bg={'#FFF'}
+                                  ml={3}
+                                  icon={<MyIcon name={'delete'} w={'16px'} fill={'#485264'} />}
+                                  _hover={{
+                                    color: 'red.600',
+                                    bg: 'rgba(17, 24, 36, 0.05)'
+                                  }}
+                                  onClick={() => removeNetworkStore(index)}
+                                />
+                              </Flex>
+                            ))}
+                          </Box>
+                        )}
+                      </Box>
                     </>
                   )}
                 </AccordionPanel>
@@ -1339,11 +1668,13 @@ const Form = ({
           defaultValue={storeEdit}
           isEditStore={!!existingStores.find((item) => storeEdit.path === item.path)}
           minValue={existingStores.find((item) => storeEdit.path === item.path)?.value ?? 1}
-          maxValue={Math.min(
-            // left quota - this one
-            storageQuotaLeft + (storeList.find((item) => item.id === storeEdit.id)?.value ?? 0),
-            // But not exceed the size cap
-            PVC_STORAGE_MAX
+          maxValue={Math.floor(
+            Math.min(
+              // left quota - this one
+              storageQuotaLeft + (storeList.find((item) => item.id === storeEdit.id)?.value ?? 0),
+              // But not exceed the size cap
+              PVC_STORAGE_MAX
+            )
           )}
           listNames={storeList
             .filter((item) => item.id !== storeEdit.id)
@@ -1366,6 +1697,20 @@ const Form = ({
             setStoreEdit(undefined);
           }}
           closeCb={() => setStoreEdit(undefined)}
+        />
+      )}
+      {networkStoreEdit && (
+        <NetworkStoreModal
+          pvcList={sharePVCList}
+          listNames={[
+            ...storeList.map((item) => item.path.toLocaleLowerCase()),
+            ...networkStoreList.map((item) => item.path.toLocaleLowerCase())
+          ]}
+          successCb={(e) => {
+            appendNetworkStore(e);
+            setNetworkStoreEdit(false);
+          }}
+          closeCb={() => setNetworkStoreEdit(false)}
         />
       )}
     </>

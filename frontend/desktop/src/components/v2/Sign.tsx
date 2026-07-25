@@ -27,6 +27,7 @@ export default function SigninComponent() {
 
   // State to control password login mode
   const [isPasswordMode, setIsPasswordMode] = useState(false);
+  const showProtocol = conf.isLoaded && conf.layoutConfig?.protocol?.enabled !== false;
 
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
@@ -144,6 +145,24 @@ export default function SigninComponent() {
           if (!oauth2Conf) {
             throw new Error('OAuth2 configuration not found');
           }
+
+          let pkceParams = '';
+          if (oauth2Conf.pkce) {
+            const array = crypto.getRandomValues(new Uint8Array(32));
+            const codeVerifier = btoa(String.fromCharCode(...array))
+              .replace(/\+/g, '-')
+              .replace(/\//g, '_')
+              .replace(/=+$/, '');
+            const encoder = new TextEncoder();
+            const digest = await crypto.subtle.digest('SHA-256', encoder.encode(codeVerifier));
+            const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(digest)))
+              .replace(/\+/g, '-')
+              .replace(/\//g, '_')
+              .replace(/=+$/, '');
+            sessionStorage.setItem('oauth2_code_verifier', codeVerifier);
+            pkceParams = `&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+          }
+
           if (oauth2Conf.proxyAddress) {
             await oauthProxyLogin({
               state,
@@ -153,7 +172,7 @@ export default function SigninComponent() {
             });
           } else {
             await oauthLogin({
-              url: `${oauth2Conf.authURL}?client_id=${oauth2Conf.clientID}&redirect_uri=${oauth2Conf.callbackURL}&response_type=code&state=${state}`
+              url: `${oauth2Conf.authURL}?client_id=${oauth2Conf.clientID}&redirect_uri=${oauth2Conf.callbackURL}&response_type=code&state=${state}${pkceParams}`
             });
           }
           break;
@@ -290,33 +309,35 @@ export default function SigninComponent() {
           )}
         </Stack>
 
-        <Box
-          mt={'8px'}
-          fontSize="14px"
-          color="gray.500"
-          width={'full'}
-          textAlign={'center'}
-          mr="2px"
-        >
-          {t('v2:terms_and_privacy_policy_text')}{' '}
+        {showProtocol && (
           <Box
-            as={Link}
-            href={protocol_data.service_protocol || ''}
-            target="_blank"
-            textDecoration="underline"
+            mt={'8px'}
+            fontSize="14px"
+            color="gray.500"
+            width={'full'}
+            textAlign={'center'}
+            mr="2px"
           >
-            {t('v2:terms_and_conditions')}
+            {`${t('v2:terms_and_privacy_policy_text')} `}
+            <Box
+              as={Link}
+              href={protocol_data.service_protocol || ''}
+              target="_blank"
+              textDecoration="underline"
+            >
+              {t('v2:terms_and_conditions')}
+            </Box>
+            ,
+            <Box
+              as={Link}
+              href={protocol_data.private_protocol || ''}
+              target="_blank"
+              textDecoration="underline"
+            >
+              {t('v2:privacy_policy')}
+            </Box>
           </Box>
-          ,
-          <Box
-            as={Link}
-            href={protocol_data.private_protocol || ''}
-            target="_blank"
-            textDecoration="underline"
-          >
-            {t('v2:privacy_policy')}
-          </Box>
-        </Box>
+        )}
 
         {/* Username/Password Login Button */}
         {passwordSigninEnabled && (

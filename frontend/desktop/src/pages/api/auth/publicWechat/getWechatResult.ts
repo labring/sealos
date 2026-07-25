@@ -6,6 +6,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getGlobalToken } from '@/services/backend/globalAuth';
 import { ProviderType } from 'prisma/global/generated/client';
 import { getRegionToken } from '@/services/backend/regionAuth';
+import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -60,7 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const data = await getRegionToken({
       userUid: _data.user!.userUid,
-      userId: _data.user!.name
+      userId: _data.user!.name,
+      defaultWorkspaceName: getRequestDefaultPrivateWorkspaceName(req)
     });
     return jsonRes(res, {
       code: 200,

@@ -24,10 +24,14 @@ export type FileMangerType = {
   downloadLimit: number;
 };
 
+export type CustomDomainMode = 'cname' | 'certificate';
+
 export type AppConfigType = {
   cloud: {
     domain: string; // Main promoted domain
     port?: string;
+    httpPort?: string;
+    disableHttps?: boolean;
     // List of domains available for users
     userDomains: {
       name: string;
@@ -39,6 +43,7 @@ export type AppConfigType = {
     guideEnabled: boolean;
     apiEnabled: boolean;
     gpuEnabled: boolean;
+    networkStorageEnabled: boolean;
   };
   launchpad: {
     infrastructure: {
@@ -59,6 +64,20 @@ export type AppConfigType = {
     gtmId: string | null;
     currencySymbol: Coin;
     pvcStorageMax: number;
+    imagePorts?: {
+      enabled?: boolean;
+      trustedRegistries?: string[];
+    };
+    publicDomain?: {
+      customPrefixEnabled?: boolean;
+      reservedPrefixes?: string[];
+    };
+    customDomain?: {
+      mode?: CustomDomainMode;
+      certificate?: {
+        tlsSecretName?: string;
+      };
+    };
     eventAnalyze: {
       enabled: boolean;
       fastGPTKey?: string;
@@ -92,6 +111,8 @@ declare global {
 export type EnvResponse = {
   SEALOS_DOMAIN: string;
   DOMAIN_PORT: string;
+  HTTP_PORT: string;
+  DISABLE_HTTPS: boolean;
   INFRASTRUCTURE_PROVIDER: string;
   REQUIRES_DOMAIN_REG: boolean;
   DOMAIN_REG_QUERY_LINK: string;
@@ -106,4 +127,10 @@ export type EnvResponse = {
   PVC_STORAGE_MAX: number;
   GPU_ENABLED: boolean;
   LOG_ENABLED: boolean;
+  NETWORK_STORAGE_ENABLED: boolean;
+  IMAGE_PORTS_ENABLED: boolean;
+  CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED: boolean;
+  PUBLIC_DOMAIN_RESERVED_PREFIXES: string[];
+  CUSTOM_DOMAIN_MODE: CustomDomainMode;
+  CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME: string;
 };

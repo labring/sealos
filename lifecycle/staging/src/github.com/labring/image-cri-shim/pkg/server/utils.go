@@ -21,7 +21,7 @@ import (
 
 	"github.com/docker/docker/api/types/registry"
 
-	"github.com/labring/sreg/pkg/registry/crane"
+	"github.com/labring/sealos/pkg/sreg/registry/crane"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 

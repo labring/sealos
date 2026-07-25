@@ -1,0 +1,73 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "applaunchpad-frontend.fullname" . }}-custom-domain-reader
+  namespace: sealos-system
+  labels:
+    {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - cert-manager.io
+    resources:
+      - certificates
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "applaunchpad-frontend.fullname" . }}-custom-domain-reader
+  namespace: sealos-system
+  labels:
+    {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "applaunchpad-frontend.fullname" . }}-custom-domain-reader
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "applaunchpad-frontend.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "applaunchpad-frontend.fullname" . }}-higress-config-reader
+  namespace: higress-system
+  labels:
+    {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "applaunchpad-frontend.fullname" . }}-higress-config-reader
+  namespace: higress-system
+  labels:
+    {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "applaunchpad-frontend.fullname" . }}-higress-config-reader
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "applaunchpad-frontend.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}

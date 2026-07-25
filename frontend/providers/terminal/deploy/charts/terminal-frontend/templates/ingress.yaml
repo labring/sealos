@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "terminal-frontend.ingressName" . }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "{{ include "terminal-frontend.cloudOrigin" . }}, {{ include "terminal-frontend.wildcardCloudOrigin" . }}"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-max-age: "600"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }}; img-src * data: blob: resource: *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }}; connect-src * ws: wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' {{ include "terminal-frontend.cloudOrigin" . }} {{ include "terminal-frontend.wildcardCloudOrigin" . }}";
+      more_set_headers "X-Xss-Protection: 1; mode=block";
+    higress.io/response-header-control-remove: X-Frame-Options
+    higress.io/response-header-control-update: |
+      Content-Security-Policy "default-src * blob: data: *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }}; img-src * data: blob: resource: *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }}; connect-src * ws: wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} {{ .Values.terminalConfig.cloudDomain }}{{ include "terminal-frontend.portSuffix" . }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' {{ include "terminal-frontend.cloudOrigin" . }} {{ include "terminal-frontend.wildcardCloudOrigin" . }}"
+      X-Xss-Protection "1; mode=block"
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  rules:
+    - host: {{ include "terminal-frontend.host" . | quote }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: {{ include "terminal-frontend.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+  {{- if not (eq (toString .Values.terminalConfig.disableHttps) "true") }}
+  tls:
+    - hosts:
+        - {{ include "terminal-frontend.host" . | quote }}
+      secretName: {{ .Values.terminalConfig.certSecretName | quote }}
+  {{- end }}

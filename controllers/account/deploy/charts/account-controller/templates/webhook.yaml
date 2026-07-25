@@ -23,7 +23,7 @@ webhooks:
       - apiGroups:
           - '*'
         apiVersions:
-          - v1
+          - '*'
         operations:
           - CREATE
           - UPDATE

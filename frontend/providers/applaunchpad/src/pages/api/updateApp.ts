@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
-import { jsonRes } from '@/services/backend/response';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { YamlKindEnum } from '@/utils/adapt';
 import yaml from 'js-yaml';
 import type { CustomObjectsApi, V1StatefulSet } from '@kubernetes/client-node';
@@ -10,12 +10,57 @@ import { initK8s } from 'sealos-desktop-sdk/service';
 import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
 import type { V1Service } from '@kubernetes/client-node';
 import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deployYaml2Json';
+import { buildExternalUrl } from '@/utils/network-url';
+import { ResponseCode } from '@/types/response';
 
 export type Props = {
   patch: AppPatchPropsType;
   stateFulSetYaml?: string;
   appName: string;
 };
+
+const normalizeDnsName = (name: string) => name.trim().toLowerCase().replace(/\.+$/g, '');
+
+const normalizeIngressResource = <T extends Record<string, any>>(resource: T): T => {
+  if (resource.kind !== YamlKindEnum.Ingress) {
+    return resource;
+  }
+
+  resource.spec?.rules?.forEach((rule: any) => {
+    if (typeof rule.host === 'string') {
+      rule.host = normalizeDnsName(rule.host);
+    }
+  });
+  resource.spec?.tls?.forEach((tls: any) => {
+    if (Array.isArray(tls.hosts)) {
+      tls.hosts = tls.hosts.map((host: string) =>
+        typeof host === 'string' ? normalizeDnsName(host) : host
+      );
+    }
+  });
+
+  return resource;
+};
+
+const normalizeCertificateResource = <T extends Record<string, any>>(resource: T): T => {
+  if (resource.kind !== YamlKindEnum.Certificate) {
+    return resource;
+  }
+
+  if (Array.isArray(resource.spec?.dnsNames)) {
+    resource.spec.dnsNames = resource.spec.dnsNames.map((name: string) =>
+      typeof name === 'string' ? normalizeDnsName(name) : name
+    );
+  }
+
+  return resource;
+};
+
+const normalizeNetworkResource = <T extends Record<string, any>>(resource: T): T =>
+  normalizeCertificateResource(normalizeIngressResource(resource));
+
+const isWorkloadKind = (kind?: string) =>
+  kind === YamlKindEnum.Deployment || kind === YamlKindEnum.StatefulSet;
 
 async function updateAppCRUrl(
   k8sCustomObjects: CustomObjectsApi,
@@ -62,10 +107,19 @@ async function updateAppCRUrl(
       return;
     }
 
+    const newUrl = buildExternalUrl({
+      protocol: 'HTTP',
+      host,
+      config: {
+        disableHttps: !!global.AppConfig?.cloud?.disableHttps,
+        cloudPort: global.AppConfig?.cloud?.port,
+        httpPort: global.AppConfig?.cloud?.httpPort
+      }
+    });
     const appCrUrlPatch = {
       op: 'replace',
       path: '/spec/data/url',
-      value: `https://${host}`
+      value: newUrl
     };
 
     await k8sCustomObjects.patchNamespacedCustomObject(
@@ -81,7 +135,7 @@ async function updateAppCRUrl(
       { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
     );
 
-    infoLog('Successfully updated AppCR URL', { newUrl: `https://${host}` });
+    infoLog('Successfully updated AppCR URL', { newUrl });
   } catch (error) {
     errLog('Failed to update AppCR URL', error);
   }
@@ -343,17 +397,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
     );
 
-    // patch
-    await Promise.all(
-      patch.map((item) => {
+    const patchItems = patch.filter(
+      (item): item is Extract<AppPatchPropsType[number], { type: 'patch' }> => {
         const cr = crMap[item.kind];
-        if (!cr || item.type !== 'patch' || !item.value?.metadata) {
-          return;
-        }
-        infoLog('patch cr', { kind: item.kind, name: item.value?.metadata?.name });
-        return cr.patch(item.value);
-      })
+        return !!cr && item.type === 'patch' && !!item.value?.metadata;
+      }
     );
+    const workloadPatches = patchItems.filter((item) => isWorkloadKind(item.kind));
+    const regularPatches = patchItems.filter((item) => !isWorkloadKind(item.kind));
+    const applyPatchItem = (
+      item: Extract<AppPatchPropsType[number], { type: 'patch' }>
+    ): Promise<any> | undefined => {
+      const cr = crMap[item.kind];
+      if (!cr) return;
+      normalizeNetworkResource(item.value);
+      infoLog('patch cr', { kind: item.kind, name: item.value?.metadata?.name });
+      return cr.patch(item.value);
+    };
+
+    // Patch ConfigMap/Service/etc. first. Workload patches can create fresh Pods, so run them
+    // after referenced resources are patched or created.
+    await Promise.all(regularPatches.map(applyPatchItem));
 
     // create
     const createYamlList = patch
@@ -395,6 +459,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const ownerReferences = generateOwnerReference(appName, workloadKind, workloadUid);
         const updatedCreateYamlList = createYamlList.map((yamlStr) => {
           const resource = yaml.load(yamlStr as string) as any;
+          normalizeNetworkResource(resource);
           if (shouldHaveOwnerReference(resource.kind)) {
             if (!resource.metadata) {
               resource.metadata = {};
@@ -409,9 +474,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         });
         await applyYamlList(updatedCreateYamlList, 'create');
       } else {
-        await applyYamlList(createYamlList as string[], 'create');
+        await applyYamlList(
+          createYamlList.map((yamlStr) =>
+            yaml.dump(normalizeNetworkResource(yaml.load(yamlStr as string) as any))
+          ),
+          'create'
+        );
       }
     }
+
+    await Promise.all(workloadPatches.map(applyPatchItem));
 
     // delete
     await Promise.all(
@@ -432,9 +504,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     return jsonRes(res);
   } catch (err: any) {
-    return jsonRes(res, {
-      code: 500,
-      error: err?.body
-    });
+    return jsonRes(res, handleK8sError(err, { forbiddenCode: ResponseCode.FORBIDDEN }));
   }
 }

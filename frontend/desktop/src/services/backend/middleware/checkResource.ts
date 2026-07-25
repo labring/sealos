@@ -41,7 +41,6 @@ export const resourceGuard =
         code: 409
       });
 
-    // const cvmUrl = `https://cloudserver.${global.AppConfig.cloud.domain}`
     const baseTemplateUrl = global.AppConfig.common.templateUrl;
     const baseObjectStorageUrl = global.AppConfig.common.objectstorageUrl;
     const baseApplaunchPadUrl = global.AppConfig.common.applaunchpadUrl;

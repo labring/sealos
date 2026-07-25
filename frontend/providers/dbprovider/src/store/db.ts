@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type { DBDetailType, DBListItemType, PodDetailType } from '@/types/db';
 import {
   getMyDBList,
@@ -21,9 +20,6 @@ type State = {
   loadDBDetail: (name: string, isFetchConfigMap?: boolean) => Promise<DBDetailType>;
   dbPods: PodDetailType[];
   intervalLoadPods: (dbName: string) => Promise<null>;
-  dataSourceIds: Record<string, number>;
-  setDataSourceId: (dbName: string, dataSourceId: number) => void;
-  getDataSourceId: (dbName: string) => number | undefined;
   alerts: Record<string, DatabaseAlertItem>;
   loadAlerts: () => Promise<Record<string, DatabaseAlertItem>>;
 };
@@ -48,91 +44,75 @@ const getDiskOverflowStatus = async (dbName: string, dbType: string): Promise<bo
 
 export const useDBStore = create<State>()(
   devtools(
-    persist(
-      immer<State>((set, get) => ({
-        dbList: [],
-        setDBList: async () => {
-          const res = await getMyDBList();
+    immer<State>((set, get) => ({
+      dbList: [],
+      setDBList: async () => {
+        const res = await getMyDBList();
 
-          for (const db of res) {
-            if (db.status.value === 'Updating') {
-              const isDiskOverflow = await getDiskOverflowStatus(db.name, db.dbType);
-              db.isDiskSpaceOverflow = isDiskOverflow;
-            }
-          }
-
-          set((state) => {
-            state.dbList = res;
-          });
-          return res;
-        },
-        dbDetail: defaultDBDetail,
-        async loadDBDetail(name: string, mock?: boolean) {
-          try {
-            const res = await getDBByName({ name, mock });
-
-            if (res.status.value === 'Updating') {
-              const isDiskOverflow = await getDiskOverflowStatus(res.dbName, res.dbType);
-              res.isDiskSpaceOverflow = isDiskOverflow;
-            }
-
-            set((state) => {
-              state.dbDetail = res;
-            });
-            return res;
-          } catch (error) {
-            return Promise.reject(error);
-          }
-        },
-        dbPods: [],
-        intervalLoadPods: async (dbName: string) => {
-          if (!dbName) return Promise.reject('db name is empty');
-
-          return getPodsByDBName(dbName).then((pods) => {
-            set((state) => {
-              state.dbPods = pods;
-            });
-            return null;
-          });
-        },
-        dataSourceIds: {},
-        setDataSourceId: (dbName: string, dataSourceId: number) =>
-          set((state) => {
-            state.dataSourceIds[dbName] = dataSourceId;
-          }),
-        getDataSourceId: (dbName: string) => get().dataSourceIds[dbName],
-        alerts: {},
-        loadAlerts: async () => {
-          try {
-            const namespace = getUserNamespace();
-            const alertsList = await getDatabaseAlerts(namespace);
-            const alertsMap = (alertsList || []).reduce(
-              (acc, cur) => {
-                acc[cur.name] = cur;
-                return acc;
-              },
-              {} as Record<string, DatabaseAlertItem>
-            );
-
-            set((state) => {
-              state.alerts = alertsMap;
-            });
-            return alertsMap;
-          } catch (error) {
-            console.error('Failed to load database alerts:', error);
-            const emptyAlerts = {} as Record<string, DatabaseAlertItem>;
-            set((state) => {
-              state.alerts = emptyAlerts;
-            });
-            return emptyAlerts;
+        for (const db of res) {
+          if (db.status.value === 'Updating') {
+            const isDiskOverflow = await getDiskOverflowStatus(db.name, db.dbType);
+            db.isDiskSpaceOverflow = isDiskOverflow;
           }
         }
-      })),
-      {
-        name: 'db-store',
-        storage: createJSONStorage(() => sessionStorage),
-        partialize: (state) => ({ dataSourceIds: state.dataSourceIds })
+
+        set((state) => {
+          state.dbList = res;
+        });
+        return res;
+      },
+      dbDetail: defaultDBDetail,
+      async loadDBDetail(name: string, mock?: boolean) {
+        try {
+          const res = await getDBByName({ name, mock });
+
+          if (res.status.value === 'Updating') {
+            const isDiskOverflow = await getDiskOverflowStatus(res.dbName, res.dbType);
+            res.isDiskSpaceOverflow = isDiskOverflow;
+          }
+
+          set((state) => {
+            state.dbDetail = res;
+          });
+          return res;
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      },
+      dbPods: [],
+      intervalLoadPods: async (dbName: string) => {
+        if (!dbName) return Promise.reject('db name is empty');
+
+        return getPodsByDBName(dbName).then((pods) => {
+          set((state) => {
+            state.dbPods = pods;
+          });
+          return null;
+        });
+      },
+      alerts: {},
+      loadAlerts: async () => {
+        try {
+          const namespace = getUserNamespace();
+          const alertsList = await getDatabaseAlerts(namespace);
+          const alertsMap = (alertsList || []).reduce((acc, cur) => {
+            acc[cur.name] = cur;
+            return acc;
+          }, {} as Record<string, DatabaseAlertItem>);
+
+          set((state) => {
+            state.alerts = alertsMap;
+          });
+          return alertsMap;
+        } catch (error) {
+          console.error('Failed to load database alerts:', error);
+          const emptyAlerts = {} as Record<string, DatabaseAlertItem>;
+          set((state) => {
+            state.alerts = emptyAlerts;
+          });
+          return emptyAlerts;
+        }
       }
-    )
+    }))
   )
 );

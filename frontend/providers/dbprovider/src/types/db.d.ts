@@ -23,7 +23,10 @@ export type ReplicasResourceEnum = 1 | 2 | 3;
 
 export type SupportMigrationDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
 
-export type SupportConnectDBType = Extract<DBType, 'postgresql' | 'mongodb' | 'apecloud-mysql'>;
+export type SupportConnectDBType = Extract<
+  DBType,
+  'postgresql' | 'mongodb' | 'apecloud-mysql' | 'polardbx'
+>;
 
 export type SupportReconfigureDBType = Extract<
   DBType,
@@ -73,6 +76,10 @@ export type DBComponentsName =
   | 'postgresql'
   | 'mongodb'
   | 'mysql'
+  | 'gms'
+  | 'dn'
+  | 'cn'
+  | 'cdc'
   | 'redis'
   | 'redis-sentinel'
   | 'kafka'
@@ -198,7 +205,12 @@ export interface OpsRequestItemType {
   status: ReconfigStatusMapType;
   startTime: Date;
   namespace: string;
-  configurations?: { parameterName: string; newValue: string; oldValue?: string }[];
+  configurations?: {
+    parameterName: string;
+    newValue: string;
+    oldValue?: string;
+    componentName?: string;
+  }[];
   switchover?: {
     componentName: string;
     instanceName: string;

@@ -6,12 +6,16 @@ export async function register() {
     const yaml = (await import('js-yaml')).default;
     const fs = (await import('node:fs')).default;
     const getGpuNode = (await import('./services/backend/gpu')).getGpuNode;
+    const setPublicDomainReservedPrefixes = (await import('./utils/public-domain'))
+      .setPublicDomainReservedPrefixes;
 
     async function loadConfig() {
       const defaultAppConfig: AppConfigType = {
         cloud: {
           domain: 'cloud.sealos.io',
           port: '',
+          httpPort: '',
+          disableHttps: false,
           userDomains: [
             {
               name: 'cloud.sealos.io',
@@ -23,7 +27,8 @@ export async function register() {
         common: {
           guideEnabled: false,
           apiEnabled: false,
-          gpuEnabled: false
+          gpuEnabled: false,
+          networkStorageEnabled: false
         },
         launchpad: {
           infrastructure: {
@@ -41,6 +46,14 @@ export async function register() {
           gtmId: null,
           currencySymbol: Coin.shellCoin,
           pvcStorageMax: 20,
+          imagePorts: {
+            enabled: false,
+            trustedRegistries: []
+          },
+          publicDomain: {
+            customPrefixEnabled: false,
+            reservedPrefixes: []
+          },
           eventAnalyze: {
             enabled: false,
             fastGPTKey: ''
@@ -81,6 +94,7 @@ export async function register() {
         ...res
       };
       global.AppConfig = config;
+      setPublicDomainReservedPrefixes(global.AppConfig.launchpad.publicDomain?.reservedPrefixes);
       const gpuNodes = await getGpuNode();
       console.log(gpuNodes, 'gpuNodes');
       global.AppConfig.common.gpuEnabled = gpuNodes.length > 0;

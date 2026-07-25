@@ -23,6 +23,8 @@ pkg/registry/save/testdata/registry
 deploy/cloud/tars
 .vscode/
 /lifecycle/tools/
+.workflow/
+**/.impeccable/
 
 **.env*
 !scripts/cloud/sealos.env

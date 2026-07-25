@@ -2,9 +2,16 @@ import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
-import { DESKTOP_DOMAIN, loadInitData } from '@/store/static';
+import {
+  DESKTOP_DOMAIN,
+  DISABLE_HTTPS,
+  DOMAIN_PORT,
+  HTTP_PORT,
+  loadInitData
+} from '@/store/static';
 import { useUserStore } from '@/store/user';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
+import { buildExternalUrl } from '@/utils/network-url';
 import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
@@ -60,7 +67,17 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
   useEffect(() => {
     const response = createSealosApp();
     (async () => {
-      const { FORM_SLIDER_LIST_CONFIG, DESKTOP_DOMAIN } = await (() => loadInitData())();
+      const { FORM_SLIDER_LIST_CONFIG, DESKTOP_DOMAIN, DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT } =
+        await (() => loadInitData())();
+      const desktopUrl = buildExternalUrl({
+        protocol: 'HTTP',
+        host: DESKTOP_DOMAIN || '',
+        config: {
+          disableHttps: DISABLE_HTTPS,
+          cloudPort: DOMAIN_PORT,
+          httpPort: HTTP_PORT
+        }
+      });
       initFormSliderList(FORM_SLIDER_LIST_CONFIG);
       loadUserSourcePrice();
 
@@ -77,7 +94,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
         if (!process.env.NEXT_PUBLIC_MOCK_USER) {
           localStorage.removeItem('session');
           openConfirm(() => {
-            window.open(`https://${DESKTOP_DOMAIN}`, '_self');
+            window.open(desktopUrl, '_self');
           })();
         }
       }
@@ -152,7 +169,16 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
             action?: string;
           }>
         ) => {
-          const whitelist = [`https://${DESKTOP_DOMAIN}`];
+          const desktopUrl = buildExternalUrl({
+            protocol: 'HTTP',
+            host: DESKTOP_DOMAIN,
+            config: {
+              disableHttps: DISABLE_HTTPS,
+              cloudPort: DOMAIN_PORT,
+              httpPort: HTTP_PORT
+            }
+          });
+          const whitelist = [desktopUrl];
           if (!whitelist.includes(e.origin)) {
             return;
           }

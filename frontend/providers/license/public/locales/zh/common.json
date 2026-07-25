@@ -32,5 +32,9 @@
   "file.upload error description": "文件上传失败",
   "Cancel": "取消",
   "file.Select a maximum of 10 files": "至多选择 10 个文件",
-  "Copy Failed": "复制失败"
+  "Copy Failed": "复制失败",
+  "LICENSE_VALIDATION_generic": "License 校验失败，请检查许可证内容后重试",
+  "LICENSE_VALIDATION_expired": "当前 License 已过期，请续期后重试",
+  "LICENSE_VALIDATION_clusterIdMismatch": "当前 License 与本集群不匹配，请确认集群 ID 后重试",
+  "LICENSE_VALIDATION_clusterInfoMismatch": "当前集群资源不满足 License 约束，请核对节点、CPU、内存和用户数限制"
 }

@@ -36,10 +36,12 @@ request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { status, data } = response;
     if (data.code === 401) {
+      if (window.location.pathname === '/signin') return;
       console.log('鉴权失败');
       console.log(data.message);
       useSessionStore.getState().delSession();
       useSessionStore.getState().setToken('');
+      localStorage.removeItem('session');
       return window.location.replace('/signin');
     }
     if (status < 200 || status >= 300) {

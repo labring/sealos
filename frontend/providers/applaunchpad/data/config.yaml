@@ -2,6 +2,8 @@ cloud:
   domain: 127.0.0.1.nip.io
   desktopDomain: 127.0.0.1.nip.io
   port: ''
+  httpPort: ''
+  disableHttps: false
   userDomains:
     - name: 127.0.0.1.nip.io
       secretName: wildcard-cert
@@ -9,6 +11,7 @@ common:
   guideEnabled: false
   apiEnabled: false
   gpuEnabled: false
+  networkStorageEnabled: false
 launchpad:
   infrastructure:
     provider: alibaba
@@ -22,6 +25,16 @@ launchpad:
     scripts: []
   gtmId: null
   pvcStorageMax: 100
+  imagePorts:
+    enabled: false
+    trustedRegistries: []
+  publicDomain:
+    customPrefixEnabled: false
+    reservedPrefixes: []
+  customDomain:
+    mode: cname
+    certificate:
+      tlsSecretName: wildcard-cert
   eventAnalyze:
     enabled: false
     fastGPTKey: ''

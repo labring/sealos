@@ -54,6 +54,8 @@ const AppItem = ({
 
   const { i18n } = useTranslation();
   const fallbackIcon = useConfigStore().layoutConfig?.logo || '/logo.svg';
+  const forcedIconStyle = app.representativeMeta.forcedIconStyle;
+  const iconSize = forcedIconStyle === 'contain' ? '60px' : '100%';
 
   return (
     <Flex
@@ -91,10 +93,11 @@ const AppItem = ({
         draggable
       >
         <Image
-          w={app.key.startsWith('user-') ? '60px' : '100%'}
-          h={app.key.startsWith('user-') ? '60px' : '100%'}
+          w={iconSize}
+          h={iconSize}
           src={app?.icon}
           fallbackSrc={fallbackIcon}
+          objectFit={forcedIconStyle}
           draggable={false}
           pointerEvents={'none'}
           alt="app logo"
@@ -512,7 +515,7 @@ export default function Apps() {
   const { message } = useMessage();
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { appDisplayConfigs, updateAppDisplayType } = useAppDisplayConfigStore();
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, commonConfig } = useConfigStore();
   const [draggedFromFolder, setDraggedFromFolder] = useState(false);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
 
@@ -786,6 +789,10 @@ export default function Apps() {
     });
   };
 
+  const showAnnouncement =
+    layoutConfig?.common.announcementEnabled &&
+    (layoutConfig.version === 'cn' || commonConfig?.guideEnabled);
+
   return (
     <Flex
       flexDirection={'column'}
@@ -808,7 +815,7 @@ export default function Apps() {
         </defs>
       </svg>
       <Flex width={'full'} height={'full'} overflow={'hidden'} flexDirection={'column'}>
-        {layoutConfig?.common.announcementEnabled && (
+        {showAnnouncement ? (
           <Center mx={'12px'}>
             <Center
               width={'fit-content'}
@@ -858,7 +865,7 @@ export default function Apps() {
               </Box>
             </Center>
           </Center>
-        )}
+        ) : null}
 
         <Box p={'12px'} pt={{ base: '56px', sm: '48px' }} w={'full'} h={'full'}>
           <AppGridPagingContainer

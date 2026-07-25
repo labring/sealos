@@ -91,6 +91,8 @@ HELM_SET_ARGS=()
 # Auto configure from sealos-config
 SEALOS_CLOUD_DOMAIN=${SEALOS_CLOUD_DOMAIN:-"$(get_cm_value sealos-system sealos-config cloudDomain)"}
 SEALOS_CLOUD_PORT=${SEALOS_CLOUD_PORT:-"$(get_cm_value sealos-system sealos-config cloudPort)"}
+SEALOS_HTTP_PORT=${SEALOS_HTTP_PORT:-"$(get_cm_value sealos-system sealos-config httpPort)"}
+SEALOS_DISABLE_HTTPS=${SEALOS_DISABLE_HTTPS:-"$(get_cm_value sealos-system sealos-config disableHttps)"}
 
 if [ -n "${SEALOS_CLOUD_DOMAIN}" ]; then
   add_set_string config.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
@@ -98,6 +100,14 @@ fi
 
 if [ -n "${SEALOS_CLOUD_PORT}" ]; then
   add_set_string config.cloudPort "${SEALOS_CLOUD_PORT}"
+fi
+
+if [ -n "${SEALOS_HTTP_PORT}" ]; then
+  add_set_string config.httpPort "${SEALOS_HTTP_PORT}"
+fi
+
+if [ -n "${SEALOS_DISABLE_HTTPS}" ]; then
+  add_set_string config.disableHttps "${SEALOS_DISABLE_HTTPS}"
 fi
 
 if ! helm status "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" >/dev/null 2>&1; then

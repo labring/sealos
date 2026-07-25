@@ -1,0 +1,23 @@
+FROM ubuntu:24.04
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      bash \
+      python3 \
+      python3-yaml \
+      tar \
+      gzip \
+      ca-certificates \
+      tzdata \
+      libgpgme11 \
+      lvm2 \
+      rclone && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY sreg /usr/local/bin/sreg
+COPY docker/sreg/scripts/sreg-storage.sh /usr/local/bin/sreg-storage.sh
+RUN chmod +x /usr/local/bin/sreg /usr/local/bin/sreg-storage.sh
+
+WORKDIR /tmp/sreg-storage
+ENTRYPOINT ["/usr/local/bin/sreg-storage.sh"]
+CMD ["--help"]

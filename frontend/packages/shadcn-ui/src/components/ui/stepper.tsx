@@ -82,8 +82,8 @@ function Step({ className, children, index = 0, isLastStep = false, ...props }: 
           className={cn(
             'absolute bg-neutral-200',
             orientation === 'vertical'
-              ? 'top-8 left-3 h-[calc(100%-32px)] w-0.25'
-              : 'top-3 left-8 h-0.25 w-[calc(100%-32px)]'
+              ? 'top-8 left-3 h-[calc(100%-32px)] w-px'
+              : 'top-3 left-8 h-px w-[calc(100%-32px)]'
           )}
         />
       )}

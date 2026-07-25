@@ -44,7 +44,8 @@ import (
 const TerminalPartOf = "terminal"
 
 const (
-	Protocol            = "https://"
+	HTTPSProtocol       = "https://"
+	HTTPProtocol        = "http://"
 	FinalizerName       = "terminal.sealos.io/finalizer"
 	HostnameLength      = 8
 	KeepaliveAnnotation = "lastUpdateTime"
@@ -213,7 +214,7 @@ func (r *TerminalReconciler) syncNginxIngress(
 		return err
 	}
 
-	domain := Protocol + host + r.getPort()
+	domain := r.getProtocol() + host + r.getPort()
 	if terminal.Status.Domain != domain {
 		terminal.Status.Domain = domain
 		return r.Status().Update(ctx, terminal)
@@ -419,11 +420,28 @@ func isExpired(terminal *terminalv1.Terminal) bool {
 }
 
 func (r *TerminalReconciler) getPort() string {
-	if r.CtrConfig.CloudPort == "" || r.CtrConfig.CloudPort == "80" ||
-		r.CtrConfig.CloudPort == "443" {
+	port := r.CtrConfig.CloudPort
+	if r.CtrConfig.DisableHTTPS {
+		port = r.CtrConfig.HTTPPort
+	}
+
+	if port == "" {
 		return ""
 	}
-	return ":" + r.CtrConfig.CloudPort
+	if r.CtrConfig.DisableHTTPS && port == "80" {
+		return ""
+	}
+	if !r.CtrConfig.DisableHTTPS && (port == "80" || port == "443") {
+		return ""
+	}
+	return ":" + port
+}
+
+func (r *TerminalReconciler) getProtocol() string {
+	if r.CtrConfig.DisableHTTPS {
+		return HTTPProtocol
+	}
+	return HTTPSProtocol
 }
 
 func (r *TerminalReconciler) generateSecretHeader() string {

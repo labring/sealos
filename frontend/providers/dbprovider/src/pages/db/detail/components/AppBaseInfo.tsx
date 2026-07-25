@@ -157,7 +157,12 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   }, [applistCompleted, detailCompleted, router?.query?.guide, t]);
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
+    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'polardbx', 'redis', 'milvus'].find(
+      (item) => item === db?.dbType
+    );
+  }, [db?.dbType]);
+  const supportExternalNetwork = useMemo(() => {
+    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'polardbx', 'redis', 'milvus'].find(
       (item) => item === db?.dbType
     );
   }, [db?.dbType]);
@@ -167,7 +172,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     () => getDBStatefulSetByName(db.dbName, db.dbType),
     {
       retry: 2,
-      enabled: !!db.dbName && !!db.dbType
+      enabled: !!db.dbName && !!db.dbType && supportExternalNetwork
     }
   );
 
@@ -271,6 +276,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       [DBTypeEnum.postgresql]: `psql '${secret.connection}'`,
       [DBTypeEnum.mongodb]: `mongosh '${secret.connection}'`,
       [DBTypeEnum.mysql]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
+      [DBTypeEnum.polardbx]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
       [DBTypeEnum.redis]: `redis-cli -u redis://${secret.username}:${secret.password}@${secret.host}:${secret.port}`,
       [DBTypeEnum.kafka]: ``,
       [DBTypeEnum.qdrant]: ``,
@@ -616,7 +622,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
               </Center>
 
-              {!['milvus', 'kafka'].includes(db.dbType) && (
+              {supportConnectDB && (
                 <Center
                   className="driver-detail-terminal-button"
                   gap={'6px'}
@@ -667,7 +673,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             </HStack>
           </Flex>
 
-          {!['milvus', 'kafka'].includes(db.dbType) && (
+          {supportConnectDB && (
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
               {Object.entries(baseSecret).map(([name, value]) => (
                 <Box key={name} flex={1}>
@@ -705,7 +711,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 ml="12px"
                 size="md"
                 isChecked={isChecked}
-                isDisabled={!supportConnectDB}
+                isDisabled={!supportExternalNetwork}
                 onChange={(e) => {
                   if (isChecked) {
                     closeNetWorkService();

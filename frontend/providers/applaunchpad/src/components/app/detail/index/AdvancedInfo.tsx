@@ -55,8 +55,11 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               fontSize={'12px'}
               fontWeight={400}
               color={'grayModern.600'}
+              flex={'1 1 0'}
+              minW={0}
+              overflow={'hidden'}
             >
-              <Text>
+              <Text noOfLines={1} flex={'0 1 auto'} minW={0}>
                 {t('Command')}: {app.runCMD || 'Not Configured'}
               </Text>
               <Divider
@@ -64,8 +67,9 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 h={'12px'}
                 mx={'16px'}
                 borderColor={'grayModern.300'}
+                flexShrink={0}
               />
-              <Text>
+              <Text flexShrink={0} whiteSpace={'nowrap'}>
                 {t('Environment Variables')}: {app.envs?.length}
               </Text>
               <Divider
@@ -73,16 +77,20 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 h={'12px'}
                 mx={'16px'}
                 borderColor={'grayModern.300'}
+                flexShrink={0}
               />
-              <Text>ConfigMaps: {app.configMapList?.length}</Text>
+              <Text flexShrink={0} whiteSpace={'nowrap'}>
+                ConfigMaps: {app.configMapList?.length}
+              </Text>
               <Divider
                 orientation="vertical"
                 h={'12px'}
                 mx={'16px'}
                 borderColor={'grayModern.300'}
+                flexShrink={0}
               />
-              <Text>
-                {t('Storage')}: {app.storeList?.length}
+              <Text flexShrink={0} whiteSpace={'nowrap'}>
+                {t('Storage')}: {(app.storeList?.length || 0) + (app.networkStoreList?.length || 0)}
               </Text>
             </Flex>
 
@@ -115,7 +123,9 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                         <Box flex={'0 0 80px'} w={0}>
                           {t(item.label)}
                         </Box>
-                        <Box color={'grayModern.900'}>{item.value}</Box>
+                        <Box color={'grayModern.900'} wordBreak={'break-all'}>
+                          {item.value}
+                        </Box>
                       </Flex>
                     ))}
                   </Box>
@@ -140,8 +150,8 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                           const valText = env.value
                             ? env.value
                             : env.valueFrom
-                            ? 'value from | ***'
-                            : '';
+                              ? 'value from | ***'
+                              : '';
                           return (
                             <Flex
                               key={env.key}
@@ -253,7 +263,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                     p={'12px'}
                     mt={'8px'}
                   >
-                    {app.storeList?.length > 0 ? (
+                    {app.storeList?.length > 0 || app.networkStoreList?.length > 0 ? (
                       <Box
                         borderRadius={'md'}
                         overflow={'hidden'}
@@ -281,6 +291,31 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                                 fontSize={'sm'}
                               >
                                 {item.value} Gi
+                              </Box>
+                            </Box>
+                          </Flex>
+                        ))}
+                        {app.networkStoreList?.map((item) => (
+                          <Flex
+                            key={item.path}
+                            alignItems={'center'}
+                            px={'14px'}
+                            py={'8px'}
+                            _notLast={{
+                              borderBottom: theme.borders.base
+                            }}
+                          >
+                            <MyIcon name={'store'} width={'24px'} height={'24px'} />
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
+                              <Box color={'grayModern.900'} fontWeight={'bold'}>
+                                {item.path}
+                              </Box>
+                              <Box
+                                className={styles.textEllipsis}
+                                color={'grayModern.600'}
+                                fontSize={'sm'}
+                              >
+                                {t('network_storage')} - {item.name}
                               </Box>
                             </Box>
                           </Flex>

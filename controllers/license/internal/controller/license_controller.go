@@ -139,9 +139,11 @@ func (r *LicenseReconciler) reconcile(
 		var reason string
 
 		var validationErr licenseutil.ValidationError
+		validationCode := licensev1.ValidationError
 		var phase licensev1.LicenseStatusPhase
 		if errors.As(err, &validationErr) {
 			reason = validationErr.Message
+			validationCode = validationErr.Code
 			switch validationErr.Code {
 			case licensev1.ValidationExpired:
 				phase = licensev1.LicenseStatusPhaseExpired
@@ -159,6 +161,7 @@ func (r *LicenseReconciler) reconcile(
 		}
 		updateStatus := &license.Status
 		updateStatus.Phase = phase
+		updateStatus.Code = validationCode
 		updateStatus.Reason = reason
 		updateStatus.ActivationTime = license.Status.ActivationTime
 		updateStatus.ExpirationTime = license.Status.ExpirationTime
@@ -182,6 +185,7 @@ func (r *LicenseReconciler) reconcile(
 	if err := r.activator.Active(ctx, license); err != nil {
 		failStatus := &license.Status
 		failStatus.Phase = licensev1.LicenseStatusPhaseFailed
+		failStatus.Code = licensev1.ValidationError
 		failStatus.Reason = fmt.Sprintf("license activation failed: %v", err)
 		failStatus.ActivationTime = license.Status.ActivationTime
 		failStatus.ExpirationTime = license.Status.ExpirationTime

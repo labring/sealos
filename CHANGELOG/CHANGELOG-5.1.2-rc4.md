@@ -2,10 +2,11 @@
 # Welcome to the v5.1.2-rc4 release of Sealos!🎉🎉!
 
 <a name="v5.1.2-rc4"></a>
-## [v5.1.2-rc4](https://github.com/labring/sealos/compare/v5.1.2-rc3...v5.1.2-rc4) (2026-03-08)
+## [v5.1.2-rc4](https://github.com/labring/sealos/compare/v5.1.2-rc3...v5.1.2-rc4) (2026-03-09)
 
 ### Bug Fixes
 
+* **desktop:** close correct window by using component pid ([#6782](https://github.com/labring/sealos/issues/6782))
 * **devbox:** nfs max value bug ([#6778](https://github.com/labring/sealos/issues/6778))
 * **devbox:** upload file bug ([#6776](https://github.com/labring/sealos/issues/6776))
 * **dependencies:** replace gcc-aarch64-linux-gnu with binutils-aarch6… ([#6772](https://github.com/labring/sealos/issues/6772))
