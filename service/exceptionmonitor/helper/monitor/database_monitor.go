@@ -174,7 +174,7 @@ func handleClusterException(notificationInfo *api.Info) {
 		//api.DatabaseNamespaceMap[notificationInfo.DatabaseClusterUID] = notificationInfo.Namespace + "-" + notificationInfo.DatabaseClusterName
 		//api.ExceptionDatabaseMap[notificationInfo.DatabaseClusterUID] = true
 		//notificationInfo.DatabaseClusterUID, databaseClusterName, namespace, databaseType, status
-		if err := processClusterException(notificationInfo); err != nil {
+		if err := ProcessClusterException(notificationInfo); err != nil {
 			log.Printf("Failed to process cluster %s exception in ns %s: %v", notificationInfo.DatabaseClusterName, notificationInfo.Namespace, err)
 		}
 	} else if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
@@ -183,7 +183,7 @@ func handleClusterException(notificationInfo *api.Info) {
 	}
 }
 
-func processClusterException(notificationInfo *api.Info) error {
+func ProcessClusterException(notificationInfo *api.Info) error {
 	debt, debtLevel, _ := checkDebt(notificationInfo.Namespace)
 	notificationInfo.DebtLevel = debtLevel
 	if debt {
@@ -191,7 +191,7 @@ func processClusterException(notificationInfo *api.Info) error {
 		databaseEvents, send := getDatabaseClusterEvents(notificationInfo)
 		if send {
 			//namespace, databaseClusterName, databaseType
-			maxUsage, err := checkPerformance(notificationInfo, "disk")
+			maxUsage, err := CheckPerformance(notificationInfo, "disk")
 			if err != nil {
 				return err
 			}

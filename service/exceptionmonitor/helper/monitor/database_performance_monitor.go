@@ -97,7 +97,7 @@ func handleCPUMemMonitor(notificationInfo *api.Info) {
 }
 
 func handleDiskMonitor(notificationInfo *api.Info) {
-	if maxUsage, err := checkPerformance(notificationInfo, "disk"); err == nil {
+	if maxUsage, err := CheckPerformance(notificationInfo, "disk"); err == nil {
 		processUsage(maxUsage, api.DatabaseDiskMonitorThreshold, api.DiskChinese, notificationInfo)
 	} else {
 		log.Printf("Failed to monitor Disk: %v", err)
@@ -182,7 +182,7 @@ func processRecovery(notificationInfo *api.Info) {
 }
 
 func CPUMemMonitor(notificationInfo *api.Info, checkType string) (float64, error) {
-	return checkPerformance(notificationInfo, checkType)
+	return CheckPerformance(notificationInfo, checkType)
 }
 
 func NumberToChinese(num int) string {
