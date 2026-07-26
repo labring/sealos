@@ -29,7 +29,7 @@ spec:
     spec:
       {{- $globalPrismaSchema := "/app/desktop/prisma/global/schema.prisma" }}
       {{- $regionPrismaSchema := "/app/desktop/prisma/region/schema.prisma" }}
-      {{- if eq .Values.global.featureConfigs.database.type "postgresql" }}
+      {{- if eq .Values.desktopConfig.databaseType "postgresql" }}
       {{- $globalPrismaSchema = "/app/desktop/prisma/providers/postgresql/global/schema.prisma" }}
       {{- $regionPrismaSchema = "/app/desktop/prisma/providers/postgresql/region/schema.prisma" }}
       {{- end }}
@@ -48,7 +48,7 @@ spec:
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: {{ .Values.desktopConfig.tlsRejectUnauthorized | quote }}
             - name: PRISMA_DB_PROVIDER
-              value: "{{ .Values.global.featureConfigs.database.type }}"
+              value: "{{ .Values.desktopConfig.databaseType }}"
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -69,7 +69,7 @@ spec:
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: {{ .Values.desktopConfig.tlsRejectUnauthorized | quote }}
             - name: PRISMA_DB_PROVIDER
-              value: "{{ .Values.global.featureConfigs.database.type }}"
+              value: "{{ .Values.desktopConfig.databaseType }}"
           command: ["/bin/sh", "-c"]
           args:
             - |

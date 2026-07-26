@@ -78,6 +78,7 @@ applaunchpadConfig:
   certSecretName: "wildcard-cert"
   monitorUrl: "http://launchpad-monitor.sealos.svc.cluster.local:8428"
   billingUrl: "http://account-service.account-system.svc:2333"
+  jwtInternal: ""
   logUrl: ""
   tlsRejectUnauthorized: "1"
   imagePortsEnabled: false
@@ -86,6 +87,24 @@ applaunchpadConfig:
   publicDomainReservedPrefixes: []
   customDomainMode: "cname"
   customDomainCertificateSecretName: "wildcard-cert"
+  guideEnabled: false
+  apiEnabled: false
+  gpuEnabled: false
+  networkStorageEnabled: false
+  pvcStorageMax: 100
+  currencySymbol: "shellCoin"
+  appResourceFormSliderConfig:
+    default:
+      cpu: [ 100, 200, 500, 1000, 2000, 3000, 4000, 8000 ]
+      memory: [ 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384 ]
+      ephemeralStorage: [ 10, 20, 30, 40, 50 ]
+    defaultGPU:
+      cpu: [ 8000, 16000, 32000, 48000, 64000, 80000, 108000 ]
+      memory: [ 16384, 32768, 65536, 131072, 262144, 524288, 614400 ]
+      ephemeralStorage: [ 10, 20, 30, 40, 50 ]
+  fileManger:
+    uploadLimit: 50 # MB
+    downloadLimit: 100 # MB
 
 affinity:
   podAntiAffinity:

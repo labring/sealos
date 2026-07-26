@@ -167,6 +167,7 @@ if [ "${AUTO_CONFIG_ENABLED}" = "true" ]; then
   SEALOS_JWT_REGIONAL=$(get_cm_value sealos-system sealos-config jwtRegional)
   SEALOS_JWT_GLOBAL=$(get_cm_value sealos-system sealos-config jwtGlobal)
   SEALOS_REGION_UID=$(get_cm_value sealos-system sealos-config regionUID)
+  SEALOS_DATABASE_TYPE=$(get_cm_value sealos-system sealos-config databaseType)
   SEALOS_DATABASE_GLOBAL_COCKROACHDB_URI=$(get_cm_value sealos-system sealos-config databaseGlobalCockroachdbURI)
   SEALOS_DATABASE_LOCAL_COCKROACHDB_URI=$(get_cm_value sealos-system sealos-config databaseLocalCockroachdbURI)
   SEALOS_PASSWORD_SALT=$(get_cm_value sealos-system sealos-config passwordSalt)
@@ -189,6 +190,7 @@ if [ "${AUTO_CONFIG_ENABLED}" = "true" ]; then
   add_set_string desktopConfig.regionUID "${SEALOS_REGION_UID}"
   add_set_string desktopConfig.databaseGlobalCockroachdbURI "${SEALOS_DATABASE_GLOBAL_COCKROACHDB_URI}"
   add_set_string desktopConfig.databaseLocalCockroachdbURI "${SEALOS_DATABASE_LOCAL_COCKROACHDB_URI}"
+  add_set_string desktopConfig.databaseType "${SEALOS_DATABASE_TYPE}"
   add_set_string desktopConfig.passwordSalt "${SEALOS_PASSWORD_SALT}"
 fi
 

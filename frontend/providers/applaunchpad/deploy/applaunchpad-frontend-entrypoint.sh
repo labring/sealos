@@ -126,12 +126,7 @@ add_set_string applaunchpadConfig.cloudPort "${SEALOS_CLOUD_PORT}"
 add_set_string applaunchpadConfig.httpPort "${SEALOS_HTTP_PORT}"
 add_set_string applaunchpadConfig.disableHttps "${SEALOS_DISABLE_HTTPS}"
 add_set_string applaunchpadConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
-add_set_string applaunchpadConfig.monitorUrl "${monitorUrl:-}"
-add_set_string applaunchpadConfig.billingUrl "${billingUrl:-}"
-add_set_string applaunchpadConfig.logUrl "${logUrl:-}"
-add_set_string applaunchpadConfig.customDomainMode "${customDomainMode:-}"
-add_set_string applaunchpadConfig.customDomainCertificateSecretName "${customDomainCertificateSecretName:-}"
-
+add_set_string applaunchpadConfig.jwtInternal "${SEALOS_JWT_INTERNAL:-$(read_jwt_internal)}"
 adopt_namespaced_resource() {
   local namespace="$1"
   local kind="$2"
