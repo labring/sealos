@@ -111,8 +111,6 @@ add_set_string terminalConfig.cloudPort "${SEALOS_CLOUD_PORT}"
 add_set_string terminalConfig.httpPort "${SEALOS_HTTP_PORT}"
 add_set_string terminalConfig.disableHttps "${SEALOS_DISABLE_HTTPS}"
 add_set_string terminalConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
-add_set_string terminalConfig.ttydImage "${ttydImage:-}"
-add_set_string terminalConfig.keepalived "${keepalived:-}"
 
 adopt_namespaced_resource() {
   local namespace="$1"
@@ -148,8 +146,7 @@ fi
 adopt_namespaced_resource app-system apps.app.sealos.io terminal
 
 SERVICE_NAME="terminal-frontend"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
-
+USER_VALUES_PATH="/root/.sealos/cloud/values/apps/terminal/terminal-values.yaml"
 if [ ! -f "${USER_VALUES_PATH}" ]; then
   mkdir -p "$(dirname "${USER_VALUES_PATH}")"
   cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-values.yaml" "${USER_VALUES_PATH}"

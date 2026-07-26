@@ -1,10 +1,3 @@
-# Default values for desktop frontend helm chart.
-global:
-  featureConfigs:
-    database:
-      # Database backend for Prisma migrations.
-      # Supported values: cockroachdb, postgresql
-      type: cockroachdb
 image: ghcr.io/labring/sealos-desktop-frontend:latest
 imagePullPolicy: IfNotPresent
 
@@ -67,6 +60,8 @@ desktopConfig:
     - "costcenter"
     - "license"
 
+  # Supported values: cockroachdb, postgresql
+  databaseType: cockroachdb
   # Database connections (auto-configured from sealos-config)
   databaseGlobalCockroachdbURI: ""     # Auto-fetched from sealos-config.databaseGlobalCockroachdbURI
   databaseLocalCockroachdbURI: ""      # Auto-fetched from sealos-config.databaseLocalCockroachdbURI

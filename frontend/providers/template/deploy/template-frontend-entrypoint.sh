@@ -107,17 +107,19 @@ CONFIG_CERT_SECRET_NAME=$(get_cm_value sealos-system sealos-config certSecretNam
 SEALOS_CLOUD_DOMAIN=${CONFIG_CLOUD_DOMAIN:-${SEALOS_CLOUD_DOMAIN:-${cloudDomain:-}}}
 SEALOS_CLOUD_PORT=${CONFIG_CLOUD_PORT:-${SEALOS_CLOUD_PORT:-${cloudPort:-}}}
 SEALOS_CERT_SECRET_NAME=${CONFIG_CERT_SECRET_NAME:-${SEALOS_CERT_SECRET_NAME:-${certSecretName:-}}}
+#https and acme using default template url. else use gogs.<domain>
+SEALOS_CERT_MODE=$(get_cm_value sealos-system cert-config CERT_MODE)
+
 
 add_set_string templateConfig.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
 add_set_string templateConfig.cloudPort "${SEALOS_CLOUD_PORT}"
-add_set_string templateConfig.userDomain "${userDomain:-}"
 add_set_string templateConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
-add_set_string templateConfig.templateRepoUrl "${templateRepoUrl:-}"
-add_set_string templateConfig.templateRepoBranch "${templateRepoBranch:-}"
-add_set_string templateConfig.templateRepoPath "${templateRepoPath:-}"
-add_set_string templateConfig.guideEnabled "${guideEnabled:-}"
-add_set_string templateConfig.billingUrl "${billingUrl:-}"
-add_set_string templateConfig.enableReadmeFetch "${enableReadmeFetch:-}"
+
+if [ "${SEALOS_CERT_MODE}" = "https" ] || [ "${SEALOS_CERT_MODE}" = "acme" ]; then
+  add_set_string templateConfig.templateUrl "https://github.com/labring-actions/templates"
+else
+  add_set_string templateConfig.templateUrl "https://gogs.${SEALOS_CLOUD_DOMAIN}/sealos-admin/templates"
+fi
 
 adopt_namespaced_resource() {
   local namespace="$1"
@@ -178,8 +180,7 @@ adopt_cluster_resource clusterrole template-frontend-static-role
 adopt_cluster_resource clusterrolebinding template-frontend-static-role-binding
 
 SERVICE_NAME="template-frontend"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
-
+USER_VALUES_PATH="/root/.sealos/cloud/values/apps/template/template-values.yaml"
 if [ ! -f "${USER_VALUES_PATH}" ]; then
   mkdir -p "$(dirname "${USER_VALUES_PATH}")"
   cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-values.yaml" "${USER_VALUES_PATH}"

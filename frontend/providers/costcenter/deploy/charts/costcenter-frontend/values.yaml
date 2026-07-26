@@ -87,9 +87,8 @@ costcenterConfig:
       feiShuBotURL: ""
       chatId: ""
       token: ""
-      template:
-        id: ""
-        version: ""
+      templateId: ""
+      templateVersion: ""
     serviceToken: ""
     aliSms:
       endpoint: ""

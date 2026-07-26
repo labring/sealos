@@ -174,11 +174,13 @@ adopt_namespaced_resource "${APP_NAMESPACE}" apps.app.sealos.io license
 
 # Prepare values files
 SERVICE_NAME="license-frontend"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+USER_VALUES_OLD_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+USER_VALUES_PATH="/root/.sealos/cloud/values/core/license-values.yaml"
 
 # Copy user values template if not exists
 if [ ! -f "${USER_VALUES_PATH}" ]; then
   mkdir -p "$(dirname "${USER_VALUES_PATH}")"
+  rm -rf ${USER_VALUES_OLD_PATH}
   cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-values.yaml" "${USER_VALUES_PATH}"
 fi
 

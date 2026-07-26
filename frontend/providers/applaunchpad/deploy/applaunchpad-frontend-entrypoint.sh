@@ -120,17 +120,20 @@ SEALOS_CLOUD_PORT=${CONFIG_CLOUD_PORT:-${SEALOS_CLOUD_PORT:-${cloudPort:-}}}
 SEALOS_HTTP_PORT=${CONFIG_HTTP_PORT:-${SEALOS_HTTP_PORT:-${httpPort:-}}}
 SEALOS_DISABLE_HTTPS=${CONFIG_DISABLE_HTTPS:-${SEALOS_DISABLE_HTTPS:-${disableHttps:-}}}
 SEALOS_CERT_SECRET_NAME=${CONFIG_CERT_SECRET_NAME:-${SEALOS_CERT_SECRET_NAME:-${certSecretName:-}}}
+currency="$(read_yaml_file_path '.global.billing.currency')"
+if [[ "${currency}" == "cny" ]]; then
+  CURRENCY_SYMBOL="shellCoin"
+else
+  CURRENCY_SYMBOL="usd"
+fi
 
 add_set_string applaunchpadConfig.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
 add_set_string applaunchpadConfig.cloudPort "${SEALOS_CLOUD_PORT}"
 add_set_string applaunchpadConfig.httpPort "${SEALOS_HTTP_PORT}"
 add_set_string applaunchpadConfig.disableHttps "${SEALOS_DISABLE_HTTPS}"
 add_set_string applaunchpadConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
-add_set_string applaunchpadConfig.monitorUrl "${monitorUrl:-}"
-add_set_string applaunchpadConfig.billingUrl "${billingUrl:-}"
-add_set_string applaunchpadConfig.logUrl "${logUrl:-}"
-add_set_string applaunchpadConfig.customDomainMode "${customDomainMode:-}"
-add_set_string applaunchpadConfig.customDomainCertificateSecretName "${customDomainCertificateSecretName:-}"
+add_set_string applaunchpadConfig.jwtInternal "${SEALOS_JWT_INTERNAL:-$(read_jwt_internal)}"
+add_set_string applaunchpadConfig.currencySymbol "${CURRENCY_SYMBOL}"
 
 adopt_namespaced_resource() {
   local namespace="$1"
@@ -172,7 +175,7 @@ adopt_namespaced_resource higress-system role applaunchpad-frontend-higress-conf
 adopt_namespaced_resource higress-system rolebinding applaunchpad-frontend-higress-config-reader
 
 SERVICE_NAME="applaunchpad-frontend"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+USER_VALUES_PATH="/root/.sealos/cloud/values/apps/applaunchpad/${SERVICE_NAME}-values.yaml"
 
 if [ ! -f "${USER_VALUES_PATH}" ]; then
   mkdir -p "$(dirname "${USER_VALUES_PATH}")"
