@@ -102,13 +102,19 @@ add_enforced_set_string() {
 load_cloud_tools_or_exit
 tls_reject_unauthorized="$(read_cert_tls_reject_unauthorized)"
 add_enforced_set_string costcenterConfig.tlsRejectUnauthorized "${tls_reject_unauthorized}"
-
+currency="$(read_yaml_file_path '.global.billing.currency')"
+if [[ "${currency}" == "cny" ]]; then
+  CURRENCY_SYMBOL="shellCoin"
+else
+  CURRENCY_SYMBOL="usd"
+fi
 add_set_string costcenterConfig.cloudDomain "$(get_cm_value sealos-system sealos-config cloudDomain)"
 add_set_string costcenterConfig.cloudPort "$(get_cm_value sealos-system sealos-config cloudPort)"
 add_set_string costcenterConfig.httpPort "$(get_cm_value sealos-system sealos-config httpPort)"
 add_set_string costcenterConfig.disableHttps "$(get_cm_value sealos-system sealos-config disableHttps)"
 add_set_string costcenterConfig.certSecretName "$(get_cm_value sealos-system sealos-config certSecretName)"
 add_set_string costcenterConfig.jwtInternal "$(get_cm_value sealos-system sealos-config jwtInternal)"
+add_set_string costcenterConfig.currencyType "${CURRENCY_SYMBOL}"
 
 # Check if Deployment selector exactly matches the immutable Helm selector.
 check_deployment_selector() {

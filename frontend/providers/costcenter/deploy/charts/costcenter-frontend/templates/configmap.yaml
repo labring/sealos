@@ -21,8 +21,8 @@ data:
           chatId: {{ .Values.costcenterConfig.invoice.feishApp.chatId | quote }}
           token: {{ .Values.costcenterConfig.invoice.feishApp.token | quote }}
           template:
-            id: {{ .Values.costcenterConfig.invoice.feishApp.template.id | quote }}
-            version: {{ .Values.costcenterConfig.invoice.feishApp.template.version | quote }}
+            id: {{ .Values.costcenterConfig.invoice.feishApp.templateId | quote }}
+            version: {{ .Values.costcenterConfig.invoice.feishApp.templateVersion | quote }}
         serviceToken: {{ .Values.costcenterConfig.invoice.serviceToken | quote }}
         aliSms:
           endpoint: {{ .Values.costcenterConfig.invoice.aliSms.endpoint | quote }}
