@@ -1,0 +1,14 @@
+# Custom values for service-vlogs.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 5m
+    memory: 64Mi
+
+service:
+  port: 8428

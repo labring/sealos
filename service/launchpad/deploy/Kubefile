@@ -1,5 +1,10 @@
 FROM scratch
+COPY charts charts
 COPY registry registry
 COPY manifests manifests
+COPY launchpad-monitor-entrypoint.sh launchpad-monitor-entrypoint.sh
 
-CMD ["kubectl apply -f manifests/deploy.yaml"]
+ENV RELEASE_NAMESPACE=sealos
+ENV RELEASE_NAME=launchpad-monitor
+
+CMD ["bash", "launchpad-monitor-entrypoint.sh"]

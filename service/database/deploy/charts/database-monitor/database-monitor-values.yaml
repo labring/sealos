@@ -1,0 +1,14 @@
+# Custom values for database-monitor.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1024Mi
+  requests:
+    cpu: 5m
+    memory: 64Mi
+
+service:
+  port: 9090
