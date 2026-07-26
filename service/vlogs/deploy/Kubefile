@@ -1,10 +1,7 @@
 FROM scratch
 COPY charts charts
 COPY registry registry
-COPY manifests manifests
-COPY service-vlogs-entrypoint.sh service-vlogs-entrypoint.sh
+COPY remove remove
+COPY entrypoint.sh entrypoint.sh
 
-ENV RELEASE_NAMESPACE=sealos
-ENV RELEASE_NAME=service-vlogs
-
-CMD ["bash", "service-vlogs-entrypoint.sh"]
+CMD ["bash entrypoint.sh"]

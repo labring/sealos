@@ -12,3 +12,7 @@ resources:
 
 service:
   port: 8428
+
+
+serviceVlogsConfig:
+  path: "http://usr-vlc-victoria-logs-cluster-vmauth.vlc.svc:8427"

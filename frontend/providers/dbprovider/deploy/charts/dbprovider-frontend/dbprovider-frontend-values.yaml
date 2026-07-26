@@ -43,7 +43,7 @@ dbproviderConfig:
   guideEnabled: "true"
   billingUrl: "http://account-service.account-system.svc:2333"
   managedDbEnabled: "false"
-  vlogsBaseUrl: "http://service-vlogs.sealos.svc.cluster.local:8428"
+  vlogsBaseUrl: "http://vlogs.sealos.svc.cluster.local:8428"
 
 affinity:
   podAntiAffinity:

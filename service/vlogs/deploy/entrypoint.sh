@@ -7,8 +7,8 @@ RELEASE_NAME=${RELEASE_NAME:-"service-vlogs"}
 RELEASE_NAMESPACE=${RELEASE_NAMESPACE:-"sealos"}
 CHART_PATH=${CHART_PATH:-"./charts/service-vlogs"}
 LEGACY_MANIFEST=${LEGACY_MANIFEST:-"./manifests/deploy.yaml"}
-SERVICE_NAME="service-vlogs"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-monitor-values.yaml"
+SERVICE_NAME="vlogs"
+USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
 TOOLS_FILE=${TOOLS_FILE:-"/root/.sealos/cloud/scripts/tools.sh"}
 
 get_cm_value() {
