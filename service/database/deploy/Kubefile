@@ -1,10 +1,7 @@
 FROM scratch
 COPY charts charts
 COPY registry registry
-COPY manifests manifests
-COPY database-monitor-entrypoint.sh database-monitor-entrypoint.sh
+COPY remove remove
+COPY entrypoint.sh entrypoint.sh
 
-ENV RELEASE_NAMESPACE=sealos
-ENV RELEASE_NAME=database-monitor
-
-CMD ["bash", "database-monitor-entrypoint.sh"]
+CMD ["bash entrypoint.sh"]

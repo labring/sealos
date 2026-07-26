@@ -15,4 +15,4 @@ service:
   port: 9090
 
 databaseMonitorConfig:
-  prometheusServiceHost: "http://vmsingle-victoria-metrics-k8s-stack.vm.svc.cluster.local:8429"
+  prometheusServiceHost: "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc:8481/select/0/prometheus/"
