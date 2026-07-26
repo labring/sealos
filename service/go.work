@@ -4,8 +4,6 @@ use (
 	.
 	./account
 	./database
-	./exceptionmonitor
-	./hubble
 	./launchpad
 	./pay
 	./vlogs
