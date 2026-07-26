@@ -20,6 +20,7 @@ data:
     DESKTOP_DOMAIN={{ .Values.templateConfig.cloudDomain }}
     ENABLE_README_FETCH={{ .Values.templateConfig.enableReadmeFetch }}
     TEMPLATE_CATEGORIES={{ .Values.templateConfig.templateCategories }}
+    GIT_SSL_NO_VERIFY={{ .Values.templateConfig.gitSslNoVerify }}
   config.yaml: |-
     addr: :3000
   config.json: |-
