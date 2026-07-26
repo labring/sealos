@@ -73,6 +73,7 @@ costcenterConfig:
   httpPort: ""
   disableHttps: false
   certSecretName: "wildcard-cert"
+  tlsRejectUnauthorized: "1"
   jwtInternal: ""
   transferEnabled: true
   currencyType: "shellCoin"

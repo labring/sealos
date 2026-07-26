@@ -69,6 +69,7 @@ dbproviderConfig:
   cloudDomain: "127.0.0.1.nip.io"
   cloudPort: ""
   certSecretName: "wildcard-cert"
+  tlsRejectUnauthorized: "1"
   monitorUrl: "http://database-monitor.sealos.svc.cluster.local:9090"
   minioUrl: ""
   minioAccessKey: ""

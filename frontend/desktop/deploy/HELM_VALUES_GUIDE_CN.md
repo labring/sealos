@@ -20,7 +20,7 @@ sealos run desktop-frontend:latest \
 
 ### 方式 3: 结合自动配置使用
 
-`HELM_OPTIONS` 在自动配置之后追加，因此显式参数优先级更高：
+`HELM_OPTIONS` 在自动配置之后追加，因此显式参数对用户可配置值优先级更高。`desktopConfig.tlsRejectUnauthorized` 由同步后的 cloud tools 自动管理，并会在 `HELM_OPTIONS` / `HELM_OPTS` 之后强制注入：
 
 ```bash
 # HELM_OPTIONS 会覆盖 sealos-config 中的自动配置值
@@ -320,7 +320,7 @@ sealos run desktop-frontend:latest \
 ```
 
 **提示**:
-- 所有配置统一通过 `HELM_OPTIONS` 传递
+- 用户可配置项统一通过 `HELM_OPTIONS` 传递；不要手动设置 `desktopConfig.tlsRejectUnauthorized`，该值由同步后的 cloud tools 强制注入
 - 对于超长配置，建议创建部署脚本
 
 ## 注意事项

@@ -53,7 +53,7 @@ Contains the template for user-customizable configurations. On the first install
 
 **Modification**: ✅ Modify as needed
 
-**Note**: The entrypoint applies values in this order: `values.yaml`, persisted user values, optional `global.yaml`, auto-configuration from `sealos-system/sealos-config`, then explicit `HELM_OPTIONS` / `HELM_OPTS`. Later sources win.
+**Note**: The entrypoint applies values in this order: `values.yaml`, persisted user values, optional `global.yaml`, auto-configuration from `sealos-system/sealos-config`, explicit `HELM_OPTIONS` / `HELM_OPTS`, then enforced TLS trust config from synced cloud tools. Later sources win.
 
 For detailed documentation, see [HELM_VALUES_GUIDE.md](./HELM_VALUES_GUIDE.md).
 
@@ -486,7 +486,7 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest -e HELM_OPTIONS="--timeout 10m"
 ```
 
-Explicit `HELM_OPTIONS` and `HELM_OPTS` are appended after auto-configuration, so they have the highest precedence.
+Explicit `HELM_OPTIONS` and `HELM_OPTS` are appended after auto-configuration, so they have the highest precedence for user-configurable values. The auto-managed `desktopConfig.tlsRejectUnauthorized` value is appended after them from synced cloud tools.
 
 ### Override Namespace
 

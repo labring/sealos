@@ -53,7 +53,7 @@ Helm Chart 使用两个 values 文件来管理配置：
 
 **是否修改**: ✅ 根据需要修改
 
-**注意**: entrypoint 按以下顺序应用配置：`values.yaml`、持久化用户 values、可选 `global.yaml`、来自 `sealos-system/sealos-config` 的自动配置、显式 `HELM_OPTIONS` / `HELM_OPTS`。后面的配置优先。
+**注意**: entrypoint 按以下顺序应用配置：`values.yaml`、持久化用户 values、可选 `global.yaml`、来自 `sealos-system/sealos-config` 的自动配置、显式 `HELM_OPTIONS` / `HELM_OPTS`、由同步后的 cloud tools 强制注入的 TLS trust 配置。后面的配置优先。
 
 详细文档请参考 [HELM_VALUES_GUIDE_CN.md](./HELM_VALUES_GUIDE_CN.md)。
 
@@ -487,7 +487,7 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest -e HELM_OPTIONS="--timeout 10m --install"
 ```
 
-显式 `HELM_OPTIONS` 和 `HELM_OPTS` 会追加在自动配置之后，因此优先级最高。
+显式 `HELM_OPTIONS` 和 `HELM_OPTS` 会追加在自动配置之后，因此对用户可配置值优先级最高。自动管理的 `desktopConfig.tlsRejectUnauthorized` 会在其后由同步后的 cloud tools 强制注入。
 
 ### 覆盖命名空间
 
@@ -579,11 +579,12 @@ kubectl exec -n sealos deployment/sealos-desktop -- cat /app/data/config.yaml
 
 **优先级从高到低：**
 
-1. `HELM_OPTIONS` / `HELM_OPTS` 中的显式参数
-2. 从 `sealos-system/sealos-config` 读取的自动配置
-3. 可选 `global.yaml`
-4. 持久化用户 values
-5. `values.yaml` 默认值
+1. 自动管理的 `desktopConfig.tlsRejectUnauthorized`（来自同步后的 cloud tools）
+2. `HELM_OPTIONS` / `HELM_OPTS` 中的显式参数
+3. 从 `sealos-system/sealos-config` 读取的自动配置
+4. 可选 `global.yaml`
+5. 持久化用户 values
+6. `values.yaml` 默认值
 
 **示例：**
 

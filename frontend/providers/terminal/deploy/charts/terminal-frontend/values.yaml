@@ -75,6 +75,7 @@ terminalConfig:
   httpPort: ""
   disableHttps: false
   certSecretName: "wildcard-cert"
+  tlsRejectUnauthorized: "1"
   ttydImage: "docker.io/labring4docker/terminal:1.25.1-5"
   keepalived: "30m"
 

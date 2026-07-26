@@ -70,6 +70,7 @@ templateConfig:
   cloudPort: ""
   userDomain: ""
   certSecretName: "wildcard-cert"
+  tlsRejectUnauthorized: "1"
   templateRepoUrl: "https://github.com/labring-actions/templates"
   templateRepoBranch: "main"
   templateRepoPath: "templates"

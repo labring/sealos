@@ -59,6 +59,7 @@ desktopConfig:
   cloudPort: ""                     # Auto-fetched from sealos-config.cloudPort
   regionUID: "randomRegionUID"      # Auto-fetched from sealos-config.regionUID
   certSecretName: "wildcard-cert"   # Fixed value
+  tlsRejectUnauthorized: "1"
   proxyDomain: ""                   # Auto-fetched from sealos-config.proxyDomain
 
   allowedAllOrigins: false
