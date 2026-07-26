@@ -111,16 +111,13 @@ SEALOS_CERT_SECRET_NAME=${CONFIG_CERT_SECRET_NAME:-${SEALOS_CERT_SECRET_NAME:-${
 add_set_string dbproviderConfig.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
 add_set_string dbproviderConfig.cloudPort "${SEALOS_CLOUD_PORT}"
 add_set_string dbproviderConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
-add_set_string dbproviderConfig.monitorUrl "${monitorUrl:-}"
-add_set_string dbproviderConfig.minioUrl "${minioUrl:-}"
-add_set_string dbproviderConfig.minioAccessKey "${minioAccessKey:-}"
-add_set_string dbproviderConfig.minioSecretKey "${minioSecretKey:-}"
-add_set_string dbproviderConfig.minioPort "${minioPort:-}"
-add_set_string dbproviderConfig.migrateFileImage "${migrateFileImage:-}"
-add_set_string dbproviderConfig.minioBucketName "${minioBucketName:-}"
-add_set_string dbproviderConfig.guideEnabled "${guideEnabled:-}"
-add_set_string dbproviderConfig.billingUrl "${billingUrl:-}"
-add_set_string dbproviderConfig.vlogsBaseUrl "${vlogsBaseUrl:-}"
+
+#
+#add_set_string dbproviderConfig.cloudDomain "$(get_cm_value sealos-system sealos-config cloudDomain)"
+#add_set_string dbproviderConfig.cloudPort "$(get_cm_value sealos-system sealos-config cloudPort)"
+#add_set_string dbproviderConfig.httpPort "$(get_cm_value sealos-system sealos-config httpPort)"
+#add_set_string dbproviderConfig.disableHttps "$(get_cm_value sealos-system sealos-config disableHttps)"
+#add_set_string dbproviderConfig.certSecretName "$(get_cm_value sealos-system sealos-config certSecretName)"
 
 adopt_namespaced_resource() {
   local namespace="$1"

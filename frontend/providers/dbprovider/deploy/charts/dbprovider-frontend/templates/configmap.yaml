@@ -11,12 +11,7 @@ data:
     DESKTOP_DOMAIN={{ .Values.dbproviderConfig.cloudDomain }}
     SEALOS_PORT={{ include "dbprovider-frontend.portSuffix" . }}
     MONITOR_URL={{ .Values.dbproviderConfig.monitorUrl }}
-    MINIO_URL={{ .Values.dbproviderConfig.minioUrl }}
-    MINIO_ACCESS_KEY={{ .Values.dbproviderConfig.minioAccessKey }}
-    MINIO_SECRET_KEY={{ .Values.dbproviderConfig.minioSecretKey }}
     MIGRATE_FILE_IMAGE={{ .Values.dbproviderConfig.migrateFileImage }}
-    MINIO_PORT={{ .Values.dbproviderConfig.minioPort }}
-    MINIO_BUCKET_NAME={{ .Values.dbproviderConfig.minioBucketName }}
     BACKUP_ENABLED={{ .Values.dbproviderConfig.backupEnabled }}
     SHOW_DOCUMENT={{ .Values.dbproviderConfig.showDocument }}
     GUIDE_ENABLED={{ .Values.dbproviderConfig.guideEnabled }}

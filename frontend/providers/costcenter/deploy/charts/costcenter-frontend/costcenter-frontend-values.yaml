@@ -8,7 +8,27 @@ resources:
   requests:
     cpu: 10m
     memory: 128Mi
-
+startupProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
 # Costcenter frontend configuration
 # Note: jwtInternal is auto-configured by entrypoint.sh from sealos-config ConfigMap
 # For business configurations (transfer, invoice, recharge, etc.), see costcenter-frontend-values.yaml

@@ -9,7 +9,27 @@ resources:
   requests:
     cpu: 10m
     memory: 128Mi
-
+startupProbe:
+  httpGet:
+    path: /api/platform/getInitData
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /api/platform/getInitData
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /api/platform/getInitData
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
 # cloudDomain, cloudPort, httpPort, disableHttps and certSecretName are auto-configured by entrypoint.sh from sealos-config.
 applaunchpadConfig:
   monitorUrl: "http://launchpad-monitor.sealos.svc.cluster.local:8428"
