@@ -111,8 +111,6 @@ add_set_string terminalConfig.cloudPort "${SEALOS_CLOUD_PORT}"
 add_set_string terminalConfig.httpPort "${SEALOS_HTTP_PORT}"
 add_set_string terminalConfig.disableHttps "${SEALOS_DISABLE_HTTPS}"
 add_set_string terminalConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
-add_set_string terminalConfig.ttydImage "${ttydImage:-}"
-add_set_string terminalConfig.keepalived "${keepalived:-}"
 
 adopt_namespaced_resource() {
   local namespace="$1"
