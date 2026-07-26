@@ -28,6 +28,8 @@ spec:
               containerPort: 3000
               protocol: TCP
           env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: {{ .Values.licenseConfig.tlsRejectUnauthorized | quote }}
             - name: SEALOS_DOMAIN
               value: {{ .Values.licenseConfig.cloudDomain | quote }}
             - name: LICENSE_DOMAIN

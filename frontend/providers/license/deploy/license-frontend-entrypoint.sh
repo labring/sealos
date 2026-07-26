@@ -6,6 +6,7 @@ RELEASE_NAME=${RELEASE_NAME:-"license-frontend"}
 RELEASE_NAMESPACE=${RELEASE_NAMESPACE:-"license-frontend"}
 CHART_PATH=${CHART_PATH:-"./charts/license-frontend"}
 APP_NAMESPACE=${APP_NAMESPACE:-"ns-admin"}
+TOOLS_FILE=${TOOLS_FILE:-"/root/.sealos/cloud/scripts/tools.sh"}
 
 # Get ConfigMap value
 get_cm_value() {
@@ -15,8 +16,65 @@ get_cm_value() {
   kubectl get configmap "${name}" -n "${namespace}" -o "jsonpath={.data.${key}}" 2>/dev/null || true
 }
 
+load_cloud_tools_or_exit() {
+  local required_functions=(
+    ensure_global_values_ready_for_component
+    fetch_configmap_data_key
+    global_http_disable_https
+    global_http_external_url
+    info
+    read_cert_tls_reject_unauthorized
+    read_jwt_internal
+    read_yaml_file_path
+    warn
+  )
+  local missing_functions=()
+  local function_name
+
+  if [ ! -f "${TOOLS_FILE}" ]; then
+    cat >&2 <<EOF
+错误：未找到 ${TOOLS_FILE}，当前组件镜像无法继续执行。
+
+请先回到当前安装包目录，执行对应命令同步 values + tools：
+  Pro 安装包：./sealos-pro.sh sync-config
+  OSS 安装包：./sealos-oss.sh sync-config
+EOF
+    exit 1
+  fi
+
+  if [ "${TOOLS_FILE}" = "/root/.sealos/cloud/scripts/tools.sh" ]; then
+    # shellcheck source=/root/.sealos/cloud/scripts/tools.sh
+    source /root/.sealos/cloud/scripts/tools.sh
+  else
+    # shellcheck source=/dev/null
+    source "${TOOLS_FILE}"
+  fi
+
+  for function_name in "${required_functions[@]}"; do
+    if ! declare -f "${function_name}" >/dev/null 2>&1; then
+      missing_functions+=("${function_name}")
+    fi
+  done
+
+  if [ "${#missing_functions[@]}" -gt 0 ]; then
+    cat >&2 <<EOF
+错误：${TOOLS_FILE} 版本过旧，缺少配置检测函数，当前组件镜像无法继续执行。
+
+缺少函数：${missing_functions[*]}
+
+请先回到当前安装包目录，执行对应命令同步 values + tools：
+  Pro 安装包：./sealos-pro.sh sync-config
+  OSS 安装包：./sealos-oss.sh sync-config
+EOF
+    exit 1
+  fi
+
+  ensure_global_values_ready_for_component
+}
+
 # Auto configuration from sealos-system ConfigMap
 declare -a auto_config_args=()
+declare -a enforced_config_args=()
 
 add_set_string() {
   local key="$1"
@@ -27,6 +85,20 @@ add_set_string() {
     auto_config_args+=(--set-string "${key}=${value}")
   fi
 }
+
+add_enforced_set_string() {
+  local key="$1"
+  local value="$2"
+  if [ -n "${value}" ]; then
+    value=${value//\\/\\\\}
+    value=${value//,/\\,}
+    enforced_config_args+=(--set-string "${key}=${value}")
+  fi
+}
+
+load_cloud_tools_or_exit
+tls_reject_unauthorized="$(read_cert_tls_reject_unauthorized)"
+add_enforced_set_string licenseConfig.tlsRejectUnauthorized "${tls_reject_unauthorized}"
 
 MONGODB_URI=$(get_cm_value sealos-system sealos-config databaseMongodbURI)
 CLOUD_DOMAIN=$(get_cm_value sealos-system sealos-config cloudDomain)
@@ -130,4 +202,4 @@ if [ -n "${HELM_OPTS:-}" ]; then
   extra_args+=("${parsed_opts[@]}")
 fi
 
-helm "${helm_args[@]}" "${auto_config_args[@]}" "${extra_args[@]}"
+helm "${helm_args[@]}" "${auto_config_args[@]}" "${extra_args[@]}" "${enforced_config_args[@]}"

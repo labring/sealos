@@ -76,6 +76,7 @@ ingress:
 licenseConfig:
   cloudDomain: "127.0.0.1.nip.io"  # Auto-injected by entrypoint script
   mongodbURI: ""   # Auto-injected by entrypoint script
+  tlsRejectUnauthorized: "1"
 
 # Affinity for pod anti-affinity
 affinity:

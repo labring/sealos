@@ -40,6 +40,9 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           image: {{ .Values.image | quote }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
+          env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: {{ .Values.templateConfig.tlsRejectUnauthorized | quote }}
           startupProbe:
             {{- toYaml .Values.startupProbe | nindent 12 }}
           readinessProbe:

@@ -45,6 +45,8 @@ spec:
         - name: init-database
           image: "{{ .Values.image }}"
           env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: {{ .Values.desktopConfig.tlsRejectUnauthorized | quote }}
             - name: PRISMA_DB_PROVIDER
               value: "{{ .Values.global.featureConfigs.database.type }}"
           command: ["/bin/sh", "-c"]
@@ -64,6 +66,8 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: {{ .Values.desktopConfig.tlsRejectUnauthorized | quote }}
             - name: PRISMA_DB_PROVIDER
               value: "{{ .Values.global.featureConfigs.database.type }}"
           command: ["/bin/sh", "-c"]
