@@ -6,14 +6,11 @@ HELM_OPTIONS=${HELM_OPTIONS:-""}
 RELEASE_NAME=${RELEASE_NAME:-"launchpad-monitor"}
 RELEASE_NAMESPACE=${RELEASE_NAMESPACE:-"sealos"}
 CHART_PATH=${CHART_PATH:-"./charts/launchpad-monitor"}
-LEGACY_MANIFEST=${LEGACY_MANIFEST:-"./manifests/deploy.yaml"}
+LEGACY_MANIFEST=${LEGACY_MANIFEST:-"./remove/deploy.yaml"}
 SERVICE_NAME="launchpad-monitor"
-USER_VALUES_PATH="/root/.sealos/cloud/values/apps/launchpad/${SERVICE_NAME}-values.yaml"
+USER_VALUES_PATH="/root/.sealos/cloud/values/apps/applaunchpad/${SERVICE_NAME}-values.yaml"
 PROMETHEUS_URL=${PROMETHEUS_URL:-"http://vmsingle-victoria-metrics-k8s-stack.vm.svc:8429"}
 
-AUTO_CONFIG_HELM_OPTS=(
-  --set-string "launchpadMonitorConfig.vmServiceHost=${PROMETHEUS_URL}"
-)
 HELM_EXTRA_ARGS=()
 
 if [ -n "${HELM_OPTIONS}" ]; then
