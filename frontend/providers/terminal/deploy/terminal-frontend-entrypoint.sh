@@ -148,8 +148,7 @@ fi
 adopt_namespaced_resource app-system apps.app.sealos.io terminal
 
 SERVICE_NAME="terminal-frontend"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
-
+USER_VALUES_PATH="/root/.sealos/cloud/values/apps/terminal/terminal-values.yaml"
 if [ ! -f "${USER_VALUES_PATH}" ]; then
   mkdir -p "$(dirname "${USER_VALUES_PATH}")"
   cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-values.yaml" "${USER_VALUES_PATH}"

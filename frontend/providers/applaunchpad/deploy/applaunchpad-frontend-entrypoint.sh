@@ -175,7 +175,7 @@ adopt_namespaced_resource higress-system role applaunchpad-frontend-higress-conf
 adopt_namespaced_resource higress-system rolebinding applaunchpad-frontend-higress-config-reader
 
 SERVICE_NAME="applaunchpad-frontend"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+USER_VALUES_PATH="/root/.sealos/cloud/values/apps/applaunchpad/${SERVICE_NAME}-values.yaml"
 
 if [ ! -f "${USER_VALUES_PATH}" ]; then
   mkdir -p "$(dirname "${USER_VALUES_PATH}")"

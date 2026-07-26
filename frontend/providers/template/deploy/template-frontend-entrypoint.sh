@@ -178,8 +178,7 @@ adopt_cluster_resource clusterrole template-frontend-static-role
 adopt_cluster_resource clusterrolebinding template-frontend-static-role-binding
 
 SERVICE_NAME="template-frontend"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
-
+USER_VALUES_PATH="/root/.sealos/cloud/values/apps/template/template-values.yaml"
 if [ ! -f "${USER_VALUES_PATH}" ]; then
   mkdir -p "$(dirname "${USER_VALUES_PATH}")"
   cp "./charts/${SERVICE_NAME}/${SERVICE_NAME}-values.yaml" "${USER_VALUES_PATH}"

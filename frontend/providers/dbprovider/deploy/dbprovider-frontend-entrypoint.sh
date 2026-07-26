@@ -178,7 +178,7 @@ adopt_cluster_resource clusterrole cluster-version-reader
 adopt_cluster_resource clusterrolebinding cluster-version-reader-rolebinding
 
 SERVICE_NAME="dbprovider-frontend"
-USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
+USER_VALUES_PATH="/root/.sealos/cloud/values/apps/dataflow/dbprovider-values.yaml"
 
 if [ ! -f "${USER_VALUES_PATH}" ]; then
   mkdir -p "$(dirname "${USER_VALUES_PATH}")"
