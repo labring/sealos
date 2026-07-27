@@ -22,7 +22,6 @@ buildTargets := \
 	providers/imagehub \
 	providers/template \
 	providers/license \
-	providers/kubepanel \
 	providers/objectstorage
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))

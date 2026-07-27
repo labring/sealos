@@ -96,8 +96,6 @@ jobs:
               - 'frontend/providers/costcenter/**'
             objectstorage:
               - 'frontend/providers/objectstorage/**'
-            kubepanel:
-              - 'frontend/providers/kubepanel/**'
             desktop:
               - 'frontend/desktop/**'
       - name: Generate build matrix
@@ -108,7 +106,6 @@ jobs:
           FILTER_COSTCENTER: ${{ steps.filter.outputs.costcenter }}
           FILTER_DBPROVIDER: ${{ steps.filter.outputs.dbprovider }}
           FILTER_DESKTOP: ${{ steps.filter.outputs.desktop }}
-          FILTER_KUBEPANEL: ${{ steps.filter.outputs.kubepanel }}
           FILTER_LICENSE: ${{ steps.filter.outputs.license }}
           FILTER_OBJECTSTORAGE: ${{ steps.filter.outputs.objectstorage }}
           FILTER_PACKAGES: ${{ steps.filter.outputs.packages }}
@@ -132,7 +129,6 @@ jobs:
               "providers/dbprovider"
               "providers/costcenter"
               "providers/objectstorage"
-              "providers/kubepanel"
               "desktop"
             )
           else
@@ -144,7 +140,6 @@ jobs:
             [[ "${FILTER_DBPROVIDER}" == "true" ]] && modules+=("providers/dbprovider")
             [[ "${FILTER_COSTCENTER}" == "true" ]] && modules+=("providers/costcenter")
             [[ "${FILTER_OBJECTSTORAGE}" == "true" ]] && modules+=("providers/objectstorage")
-            [[ "${FILTER_KUBEPANEL}" == "true" ]] && modules+=("providers/kubepanel")
             [[ "${FILTER_DESKTOP}" == "true" ]] && modules+=("desktop")
           fi
 
