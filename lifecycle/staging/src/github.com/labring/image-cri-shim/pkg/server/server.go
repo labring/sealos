@@ -16,6 +16,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -113,14 +114,15 @@ func (s *server) createGrpcServer() error {
 			s.options.Socket, err)
 	}
 
-	l, err := net.Listen("unix", s.options.Socket)
+	listenerConfig := net.ListenConfig{}
+	l, err := listenerConfig.Listen(context.Background(), "unix", s.options.Socket)
 	if err != nil {
 		if netutil.ServerActiveAt(s.options.Socket) {
 			return serverError("failed to create server: socket %s already in use",
 				s.options.Socket)
 		}
 		os.Remove(s.options.Socket)
-		l, err = net.Listen("unix", s.options.Socket)
+		l, err = listenerConfig.Listen(context.Background(), "unix", s.options.Socket)
 		if err != nil {
 			return serverError("failed to create server on socket %s: %v",
 				s.options.Socket, err)

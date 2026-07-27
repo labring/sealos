@@ -30,21 +30,21 @@ const (
 )
 
 var (
-	userCount       int64
-	initializedFlag uint32
+	userCount       atomic.Int64
+	initializedFlag atomic.Uint32
 )
 
 func Initialized() bool {
-	return atomic.LoadUint32(&initializedFlag) == 1
+	return initializedFlag.Load() == 1
 }
 
 func Get() int {
-	return int(atomic.LoadInt64(&userCount))
+	return int(userCount.Load())
 }
 
 func Set(count int) {
-	atomic.StoreInt64(&userCount, int64(count))
-	atomic.StoreUint32(&initializedFlag, 1)
+	userCount.Store(int64(count))
+	initializedFlag.Store(1)
 }
 
 func Init(ctx context.Context, reader client.Reader) error {
@@ -160,7 +160,11 @@ func countQuotaUsersUnstructured(
 		if excludeName != "" && item.GetName() == excludeName {
 			continue
 		}
-		if deletionTimestamp, found, _ := unstructured.NestedString(item.Object, "metadata", "deletionTimestamp"); found &&
+		if deletionTimestamp, found, _ := unstructured.NestedString(
+			item.Object,
+			"metadata",
+			"deletionTimestamp",
+		); found &&
 			deletionTimestamp != "" {
 			continue
 		}

@@ -595,7 +595,12 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 		if err != nil {
 			logger.Error(err, "failed to get backup config", "cluster", clusterName)
 		} else if hasBackup && backup != nil {
-			enabled, found, _ := unstructured.NestedBool(cluster.Object, "spec", "backup", "enabled")
+			enabled, found, _ := unstructured.NestedBool(
+				cluster.Object,
+				"spec",
+				"backup",
+				"enabled",
+			)
 			if found {
 				backupEnabled = enabled
 			}
@@ -632,12 +637,19 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 				backupEnabled,
 			)
 		} else {
-			logger.V(1).Info("Cluster already has original state, skipping state save", "Cluster", clusterName)
+			logger.V(1).
+				Info("Cluster already has original state, skipping state save", "Cluster", clusterName)
 		}
 
 		// Disable backup if it exists and is enabled
 		if hasBackup && backup != nil && backupEnabled {
-			if err := unstructured.SetNestedField(cluster.Object, false, "spec", "backup", "enabled"); err != nil {
+			if err := unstructured.SetNestedField(
+				cluster.Object,
+				false,
+				"spec",
+				"backup",
+				"enabled",
+			); err != nil {
 				logger.Error(err, "failed to set backup.enabled=false", "cluster", clusterName)
 			} else {
 				logger.Info("Disabled backup for cluster", "cluster", clusterName)
@@ -656,7 +668,8 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 				return fmt.Errorf("failed to update cluster %s: %w", clusterName, err)
 			}
 		} else {
-			logger.V(1).Info("No changes needed for cluster, skipping update", "Cluster", clusterName)
+			logger.V(1).
+				Info("No changes needed for cluster, skipping update", "Cluster", clusterName)
 		}
 
 		// Skip OpsRequest creation if cluster is already stopped or stopping
@@ -1116,10 +1129,22 @@ func (r *NamespaceReconciler) resumeKBCluster(ctx context.Context, namespace str
 			if err != nil {
 				logger.Error(err, "failed to get backup config", "cluster", clusterName)
 			} else if hasBackup && backup != nil {
-				if err := unstructured.SetNestedField(cluster.Object, true, "spec", "backup", "enabled"); err != nil {
+				if err := unstructured.SetNestedField(
+					cluster.Object,
+					true,
+					"spec",
+					"backup",
+					"enabled",
+				); err != nil {
 					logger.Error(err, "failed to restore backup.enabled", "cluster", clusterName)
 				} else {
-					logger.Info("Restored backup enabled state", "cluster", clusterName, "enabled", true)
+					logger.Info(
+						"Restored backup enabled state",
+						"cluster",
+						clusterName,
+						"enabled",
+						true,
+					)
 					needsUpdate = true
 				}
 			}
@@ -1190,7 +1215,13 @@ func (r *NamespaceReconciler) resumeKBCluster(ctx context.Context, namespace str
 				logger.V(1).
 					Info("OpsRequest already exists, skipping creation", "OpsRequest", opsName)
 			} else {
-				logger.Info("Created start OpsRequest for cluster", "cluster", clusterName, "opsRequest", opsName)
+				logger.Info(
+					"Created start OpsRequest for cluster",
+					"cluster",
+					clusterName,
+					"opsRequest",
+					opsName,
+				)
 			}
 		}
 	}
@@ -1226,7 +1257,11 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user, status 
 	}
 	if r.OSAdminClient == nil {
 		secret := &corev1.Secret{}
-		if err := r.Client.Get(ctx, client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace}, secret); err != nil {
+		if err := r.Client.Get(
+			ctx,
+			client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace},
+			secret,
+		); err != nil {
 			r.Log.Error(
 				err,
 				"failed to get secret",
@@ -1418,7 +1453,8 @@ func (r *NamespaceReconciler) suspendOrphanCronJob(ctx context.Context, namespac
 				currentlySuspended,
 			)
 		} else {
-			logger.V(1).Info("CronJob already has original state, skipping state save", "CronJob", cronJob.Name)
+			logger.V(1).
+				Info("CronJob already has original state, skipping state save", "CronJob", cronJob.Name)
 		}
 
 		// Set suspend to true if not already suspended
@@ -1620,7 +1656,8 @@ func (r *NamespaceReconciler) suspendOrphanDeployments(
 				replicas,
 			)
 		} else {
-			logger.V(1).Info("Deployment already has original state, skipping state save", "Deployment", deploy.Name)
+			logger.V(1).
+				Info("Deployment already has original state, skipping state save", "Deployment", deploy.Name)
 		}
 
 		// Set replicas to 0 if not already 0
@@ -1846,7 +1883,8 @@ func (r *NamespaceReconciler) suspendOrphanStatefulSets(
 				replicas,
 			)
 		} else {
-			logger.V(1).Info("StatefulSet already has original state, skipping state save", "StatefulSet", sts.Name)
+			logger.V(1).
+				Info("StatefulSet already has original state, skipping state save", "StatefulSet", sts.Name)
 		}
 
 		// Set replicas to 0 if not already 0
@@ -2051,7 +2089,8 @@ func (r *NamespaceReconciler) suspendOrphanReplicaSets(
 				replicas,
 			)
 		} else {
-			logger.V(1).Info("ReplicaSet already has original state, skipping state save", "ReplicaSet", rs.Name)
+			logger.V(1).
+				Info("ReplicaSet already has original state, skipping state save", "ReplicaSet", rs.Name)
 		}
 
 		// Set replicas to 0 if not already 0
@@ -2216,7 +2255,8 @@ func (r *NamespaceReconciler) suspendCertificates(ctx context.Context, namespace
 				wasDisabled,
 			)
 		} else {
-			logger.V(1).Info("Certificate already has original state, skipping state save", "Certificate", certName)
+			logger.V(1).
+				Info("Certificate already has original state, skipping state save", "Certificate", certName)
 		}
 
 		// Disable certificate reissue if not already set to true
@@ -2499,7 +2539,8 @@ func (r *NamespaceReconciler) suspendIngresses(ctx context.Context, namespace st
 				originalIngressClass,
 			)
 		} else {
-			logger.V(1).Info("Ingress already has original state, skipping state save", "Ingress", ingressName)
+			logger.V(1).
+				Info("Ingress already has original state, skipping state save", "Ingress", ingressName)
 		}
 
 		// Change ingress class to "pause" if not already set
@@ -2787,7 +2828,13 @@ func deleteResourceListAndWait(
 			select {
 			case semaphore <- struct{}{}:
 				defer func() { <-semaphore }() // Release semaphore when done
-				if deleteErr := deleteResourceAndWait(ctx, dynamicClient, gvr, namespace, resName); deleteErr != nil {
+				if deleteErr := deleteResourceAndWait(
+					ctx,
+					dynamicClient,
+					gvr,
+					namespace,
+					resName,
+				); deleteErr != nil {
 					errCh <- fmt.Errorf("failed to delete %s/%s: %w", gvr, resName, deleteErr)
 				}
 			case <-ctx.Done():
@@ -2974,12 +3021,18 @@ func (r *NamespaceReconciler) suspendDevboxes(ctx context.Context, namespace str
 				wasRunning,
 			)
 		} else {
-			logger.V(1).Info("Devbox already has original state, skipping state save", "Devbox", devboxName)
+			logger.V(1).
+				Info("Devbox already has original state, skipping state save", "Devbox", devboxName)
 		}
 
 		// Set state to Shutdown if currently running
 		if currentState == "Running" {
-			if err := unstructured.SetNestedField(devbox.Object, "Shutdown", "spec", "state"); err != nil {
+			if err := unstructured.SetNestedField(
+				devbox.Object,
+				"Shutdown",
+				"spec",
+				"state",
+			); err != nil {
 				logger.Error(err, "failed to set devbox state", "devbox", devboxName)
 				errs = append(
 					errs,
@@ -3072,7 +3125,12 @@ func (r *NamespaceReconciler) resumeDevboxes(ctx context.Context, namespace stri
 
 		// Restore devbox to Running state only if it was running before suspension
 		if originalState.WasRunning {
-			if err := unstructured.SetNestedField(devbox.Object, "Running", "spec", "state"); err != nil {
+			if err := unstructured.SetNestedField(
+				devbox.Object,
+				"Running",
+				"spec",
+				"state",
+			); err != nil {
 				logger.Error(err, "failed to set devbox state", "devbox", devboxName)
 				errs = append(
 					errs,

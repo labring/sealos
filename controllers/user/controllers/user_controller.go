@@ -101,12 +101,16 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if ok, err := r.finalizer.RemoveFinalizer(ctx, user, func(ctx context.Context, obj client.Object) error {
-		ns := &v1.Namespace{}
-		ns.Name = config.GetUsersNamespace(user.Name)
-		_ = r.Delete(ctx, ns)
-		return nil
-	}); ok {
+	if ok, err := r.finalizer.RemoveFinalizer(
+		ctx,
+		user,
+		func(ctx context.Context, obj client.Object) error {
+			ns := &v1.Namespace{}
+			ns.Name = config.GetUsersNamespace(user.Name)
+			_ = r.Delete(ctx, ns)
+			return nil
+		},
+	); ok {
 		return ctrl.Result{}, err
 	}
 
@@ -294,7 +298,8 @@ func (r *UserReconciler) syncNamespace(
 		var isCreated bool
 		if !ns.CreationTimestamp.IsZero() {
 			isCreated = true
-			r.Logger.V(1).Info("define namespace User namespace is created", "isCreated", isCreated, "namespace", ns.Name)
+			r.Logger.V(1).
+				Info("define namespace User namespace is created", "isCreated", isCreated, "namespace", ns.Name)
 		}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
 			if ns.Annotations == nil {
@@ -319,7 +324,11 @@ func (r *UserReconciler) syncNamespace(
 			return fmt.Errorf("unable to create namespace by User: %w", err)
 		}
 		r.Logger.V(1).Info("create or update namespace by User", "OperationResult", change)
-		nsCondition.Message = fmt.Sprintf("sync namespace %s/%s successfully", ns.Name, ns.ResourceVersion)
+		nsCondition.Message = fmt.Sprintf(
+			"sync namespace %s/%s successfully",
+			ns.Name,
+			ns.ResourceVersion,
+		)
 		return nil
 	}); err != nil {
 		helper.SetConditionError(nsCondition, "SyncUserError", err)
@@ -380,7 +389,11 @@ func (r *UserReconciler) createRole(
 			return fmt.Errorf("unable to create namespace role by User: %w", err)
 		}
 		r.Logger.V(1).Info("create or update namespace role  by User", "OperationResult", change)
-		condition.Message = fmt.Sprintf("sync namespace role %s/%s successfully", role.Name, role.ResourceVersion)
+		condition.Message = fmt.Sprintf(
+			"sync namespace role %s/%s successfully",
+			role.Name,
+			role.ResourceVersion,
+		)
 		return nil
 	}); err != nil {
 		helper.SetConditionError(condition, "SyncUserError", err)
@@ -437,8 +450,13 @@ func (r *UserReconciler) syncRoleBinding(
 		}); err != nil {
 			return fmt.Errorf("unable to create namespace role binding by User: %w", err)
 		}
-		r.Logger.V(1).Info("create or update namespace role binding by User", "OperationResult", change)
-		rbCondition.Message = fmt.Sprintf("sync namespace role binding %s/%s successfully", roleBinding.Name, roleBinding.ResourceVersion)
+		r.Logger.V(1).
+			Info("create or update namespace role binding by User", "OperationResult", change)
+		rbCondition.Message = fmt.Sprintf(
+			"sync namespace role binding %s/%s successfully",
+			roleBinding.Name,
+			roleBinding.ResourceVersion,
+		)
 		return nil
 	}); err != nil {
 		helper.SetConditionError(rbCondition, "SyncUserError", err)
@@ -482,23 +500,36 @@ func (r *UserReconciler) syncClusterRoleBinding(
 		clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 		clusterRoleBinding.Name = "sealos-cloud" + user.Name
 		clusterRoleBinding.Labels = map[string]string{}
-		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, clusterRoleBinding, func() error {
-			clusterRoleBinding.Annotations = map[string]string{
-				userAnnotationCreatorKey: user.Name,
-				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
-			}
-			clusterRoleBinding.RoleRef = rbacv1.RoleRef{
-				APIGroup: rbacv1.GroupName,
-				Kind:     "ClusterRole",
-				Name:     "cluster-admin",
-			}
-			clusterRoleBinding.Subjects = config.GetUsersSubject(user.Name)
-			return controllerutil.SetControllerReference(user, clusterRoleBinding, r.Scheme)
-		}); err != nil {
-			return fmt.Errorf("unable to create namespace admin cluster role binding by User: %w", err)
+		if change, err = controllerutil.CreateOrUpdate(
+			ctx,
+			r.Client,
+			clusterRoleBinding,
+			func() error {
+				clusterRoleBinding.Annotations = map[string]string{
+					userAnnotationCreatorKey: user.Name,
+					userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
+				}
+				clusterRoleBinding.RoleRef = rbacv1.RoleRef{
+					APIGroup: rbacv1.GroupName,
+					Kind:     "ClusterRole",
+					Name:     "cluster-admin",
+				}
+				clusterRoleBinding.Subjects = config.GetUsersSubject(user.Name)
+				return controllerutil.SetControllerReference(user, clusterRoleBinding, r.Scheme)
+			},
+		); err != nil {
+			return fmt.Errorf(
+				"unable to create namespace admin cluster role binding by User: %w",
+				err,
+			)
 		}
-		r.Logger.V(1).Info("create or update namespace admin cluster role binding by User", "OperationResult", change)
-		rbCondition.Message = fmt.Sprintf("sync namespace admin cluster role binding %s/%s successfully", clusterRoleBinding.Name, clusterRoleBinding.ResourceVersion)
+		r.Logger.V(1).
+			Info("create or update namespace admin cluster role binding by User", "OperationResult", change)
+		rbCondition.Message = fmt.Sprintf(
+			"sync namespace admin cluster role binding %s/%s successfully",
+			clusterRoleBinding.Name,
+			clusterRoleBinding.ResourceVersion,
+		)
 		return nil
 	}); err != nil {
 		helper.SetConditionError(rbCondition, "SyncUserError", err)
@@ -561,7 +592,13 @@ func (r *UserReconciler) syncServiceAccount(
 				sa.Name = user.Name
 				sa.Namespace = config.GetUserSystemNamespace()
 				sa.Labels = map[string]string{}
-				r.Recorder.Eventf(user, v1.EventTypeNormal, "ServiceAccountRotated", "ServiceAccount %s deleted for kubeconfig rotation", user.Name)
+				r.Recorder.Eventf(
+					user,
+					v1.EventTypeNormal,
+					"ServiceAccountRotated",
+					"ServiceAccount %s deleted for kubeconfig rotation",
+					user.Name,
+				)
 			}
 		} else if !apierrors.IsNotFound(err) {
 			// Error other than not found
@@ -586,7 +623,11 @@ func (r *UserReconciler) syncServiceAccount(
 			return fmt.Errorf("unable to create namespace sa by User: %w", err)
 		}
 		r.Logger.V(1).Info("create or update namespace sa by User", "OperationResult", change)
-		saCondition.Message = fmt.Sprintf("sync namespace sa %s/%s successfully", sa.Name, sa.ResourceVersion)
+		saCondition.Message = fmt.Sprintf(
+			"sync namespace sa %s/%s successfully",
+			sa.Name,
+			sa.ResourceVersion,
+		)
 		state.serviceAccount = sa
 		return nil
 	}); err != nil {
@@ -654,19 +695,31 @@ func (r *UserReconciler) syncServiceAccountSecrets(
 			return nil
 		}
 		var change controllerutil.OperationResult
-		if change, err = controllerutil.CreateOrUpdate(context.TODO(), r.Client, secrets, func() error {
-			if secrets.Annotations == nil {
-				secrets.Annotations = make(map[string]string, 0)
-			}
-			secrets.Type = v1.SecretTypeServiceAccountToken
-			secrets.Annotations[v1.ServiceAccountNameKey] = sa.Name
-			secrets.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(int(user.Spec.CSRExpirationSeconds))
-			return controllerutil.SetControllerReference(user, secrets, r.Scheme)
-		}); err != nil {
+		if change, err = controllerutil.CreateOrUpdate(
+			context.TODO(),
+			r.Client,
+			secrets,
+			func() error {
+				if secrets.Annotations == nil {
+					secrets.Annotations = make(map[string]string, 0)
+				}
+				secrets.Type = v1.SecretTypeServiceAccountToken
+				secrets.Annotations[v1.ServiceAccountNameKey] = sa.Name
+				secrets.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(
+					int(user.Spec.CSRExpirationSeconds),
+				)
+				return controllerutil.SetControllerReference(user, secrets, r.Scheme)
+			},
+		); err != nil {
 			return fmt.Errorf("unable to create namespace sa secrets by User: %w", err)
 		}
-		r.Logger.V(1).Info("create or update namespace sa secrets by User", "OperationResult", change)
-		secretsCondition.Message = fmt.Sprintf("sync namespace sa sercrets %s/%s successfully", secrets.Name, secrets.ResourceVersion)
+		r.Logger.V(1).
+			Info("create or update namespace sa secrets by User", "OperationResult", change)
+		secretsCondition.Message = fmt.Sprintf(
+			"sync namespace sa sercrets %s/%s successfully",
+			secrets.Name,
+			secrets.ResourceVersion,
+		)
 		return nil
 	}); err != nil {
 		helper.SetConditionError(secretsCondition, "SyncUserError", err)
@@ -911,7 +964,11 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 	}
 	user.Status.Phase = userv1.UserPending
 	user.Status.Conditions = helper.UpdateCondition(user.Status.Conditions, *limitCondition)
-	if err := r.updateStatus(ctx, client.ObjectKeyFromObject(user), user.Status.DeepCopy()); err != nil {
+	if err := r.updateStatus(
+		ctx,
+		client.ObjectKeyFromObject(user),
+		user.Status.DeepCopy(),
+	); err != nil {
 		return false, err
 	}
 	r.Recorder.Eventf(

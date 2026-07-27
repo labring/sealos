@@ -72,12 +72,22 @@ func TestWorkspaceSubscriptionDebtStatusSyncsNamespaceAnnotations(t *testing.T) 
 				t.Fatalf("expected current status %s, got %s", tt.expectedStatus, currentStatus)
 			}
 
-			if err := processor.syncWorkspaceDebtStatus(ctx, subscription, subscription.Status, currentStatus, []string{namespace}); err != nil {
+			if err := processor.syncWorkspaceDebtStatus(
+				ctx,
+				subscription,
+				subscription.Status,
+				currentStatus,
+				[]string{namespace},
+			); err != nil {
 				t.Fatalf("sync workspace debt status failed: %v", err)
 			}
 
 			var updatedNS corev1.Namespace
-			if err := processor.Get(ctx, client.ObjectKey{Name: namespace}, &updatedNS); err != nil {
+			if err := processor.Get(
+				ctx,
+				client.ObjectKey{Name: namespace},
+				&updatedNS,
+			); err != nil {
 				t.Fatalf("failed to get updated namespace: %v", err)
 			}
 

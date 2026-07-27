@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -30,7 +31,8 @@ func (rs *RestartableServer) Serve(c *launchpadServer.Config) {
 	}
 
 	var listener net.Listener
-	listener, err = net.Listen("tcp", c.Server.ListenAddress)
+	listenerConfig := net.ListenConfig{}
+	listener, err = listenerConfig.Listen(context.Background(), "tcp", c.Server.ListenAddress)
 	if err != nil {
 		fmt.Println(err)
 		return

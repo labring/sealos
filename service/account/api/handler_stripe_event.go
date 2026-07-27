@@ -192,10 +192,7 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 					)
 					// Continue waiting for subscription metadata
 					time.Sleep(delay)
-					delay = time.Duration(float64(delay) * 1.5)
-					if delay > maxDelay {
-						delay = maxDelay
-					}
+					delay = min(time.Duration(float64(delay)*1.5), maxDelay)
 					continue
 				}
 			}
@@ -230,10 +227,7 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 		time.Sleep(delay)
 
 		// Increase delay for next attempt (exponential backoff)
-		delay = time.Duration(float64(delay) * 1.5)
-		if delay > maxDelay {
-			delay = maxDelay
-		}
+		delay = min(time.Duration(float64(delay)*1.5), maxDelay)
 	}
 
 	return nil, fmt.Errorf(
@@ -370,9 +364,12 @@ func ensureCustomerMetadata(
 	}
 	if custormer == nil || custormer.Metadata == nil || custormer.Metadata["user_uid"] == "" {
 		if subscription.Customer != nil && subscription.Customer.ID != "" {
-			if err := services.StripeServiceInstance.SetCustomerMetadata(subscription.Customer.ID, map[string]string{
-				"user_uid": userUID,
-			}); err != nil {
+			if err := services.StripeServiceInstance.SetCustomerMetadata(
+				subscription.Customer.ID,
+				map[string]string{
+					"user_uid": userUID,
+				},
+			); err != nil {
 				return nil, fmt.Errorf(
 					"failed to set customer metadata for user UID %s: %w",
 					userUID,
@@ -382,7 +379,10 @@ func ensureCustomerMetadata(
 			// 重新获取更新后的客户
 			custormer, _ = services.StripeServiceInstance.GetCustomerByUID(userUID) // 忽略 err，已处理
 		} else {
-			return nil, fmt.Errorf("customer ID mismatch or customer not found for user UID %s", userUID)
+			return nil, fmt.Errorf(
+				"customer ID mismatch or customer not found for user UID %s",
+				userUID,
+			)
 		}
 	}
 	return custormer, nil
@@ -463,7 +463,12 @@ func handleSubscriptionUpdate(
 			}
 		}
 
-		if err := finalizeWorkspaceSubscriptionSuccess(tx, sub, wsTransaction, &payment); err != nil {
+		if err := finalizeWorkspaceSubscriptionSuccess(
+			tx,
+			sub,
+			wsTransaction,
+			&payment,
+		); err != nil {
 			return err
 		}
 		return applyStripePaymentToWorkspaceSubscription(tx, sub, &payment)
@@ -516,13 +521,20 @@ func prepareUpdateTransaction(
 		}
 
 		// First try to find the transaction
-		if err := dao.DBClient.GetGlobalDB().Model(&types.WorkspaceSubscriptionTransaction{}).Where("pay_id = ?", paymentID).First(&wsTransaction).Error; err != nil {
+		if err := dao.DBClient.GetGlobalDB().
+			Model(&types.WorkspaceSubscriptionTransaction{}).
+			Where("pay_id = ?", paymentID).
+			First(&wsTransaction).
+			Error; err != nil {
 			return nil, "", fmt.Errorf("failed to get upgrade transaction: %w", err)
 		}
 
 		// Check if there's a PaymentOrder for this upgrade
 		var paymentOrder types.PaymentOrder
-		if err := dao.DBClient.GetGlobalDB().Where("id = ?", paymentID).First(&paymentOrder).Error; err == nil {
+		if err := dao.DBClient.GetGlobalDB().
+			Where("id = ?", paymentID).
+			First(&paymentOrder).
+			Error; err == nil {
 			// PaymentOrder exists, this is the new invoice-based upgrade flow
 			if paymentOrder.Stripe != nil && paymentOrder.Stripe.InvoiceID != "" {
 				// Update PaymentOrder with the subscription ID if not already set
@@ -538,7 +550,10 @@ func prepareUpdateTransaction(
 		if meta.TransactionID == "" {
 			return nil, "", errors.New("missing transaction_id for downgrade subscription")
 		}
-		if err := dao.DBClient.GetGlobalDB().Where("id = ?", meta.TransactionID).First(&wsTransaction).Error; err != nil {
+		if err := dao.DBClient.GetGlobalDB().
+			Where("id = ?", meta.TransactionID).
+			First(&wsTransaction).
+			Error; err != nil {
 			return nil, "", fmt.Errorf("failed to get downgrade transaction: %w", err)
 		}
 	default:
@@ -607,7 +622,9 @@ func handleSubscriptionCreateOrRenew(
 		if ws != nil {
 			payment.WorkspaceSubscriptionID = &ws.ID
 			if isInitial && ws.Status == types.SubscriptionStatusDeleted {
-				if _, err := services.StripeServiceInstance.CancelSubscription(subscription.ID); err != nil {
+				if _, err := services.StripeServiceInstance.CancelSubscription(
+					subscription.ID,
+				); err != nil {
 					return fmt.Errorf(
 						"failed to cancel subscription for deleted workspace: %w",
 						err,
@@ -631,14 +648,26 @@ func handleSubscriptionCreateOrRenew(
 			ws.ExpireAt = stripe.Time(ws.CurrentPeriodEndAt)
 		}
 
-		if err := finalizeWorkspaceSubscriptionSuccess(tx, ws, wsTransaction, &payment); err != nil {
+		if err := finalizeWorkspaceSubscriptionSuccess(
+			tx,
+			ws,
+			wsTransaction,
+			&payment,
+		); err != nil {
 			return err
 		}
 		if err := applyStripePaymentToWorkspaceSubscription(tx, ws, &payment); err != nil {
 			return err
 		}
 
-		if err := sendNotification(nr, userUID, wsTransaction, ws, meta.Operator, invoice); err != nil {
+		if err := sendNotification(
+			nr,
+			userUID,
+			wsTransaction,
+			ws,
+			meta.Operator,
+			invoice,
+		); err != nil {
 			dao.Logger.Errorf(
 				"failed to send subscription success notification for user %s: %v",
 				userUID,

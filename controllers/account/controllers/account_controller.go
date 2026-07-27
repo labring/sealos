@@ -143,7 +143,11 @@ type AccountReconciler struct {
 
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	user := &userv1.User{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, user); err == nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Namespace: req.Namespace, Name: req.Name},
+		user,
+	); err == nil {
 		if owner := user.Annotations[userv1.UserAnnotationOwnerKey]; owner == "" {
 			return ctrl.Result{}, errors.New("user owner is empty")
 		}
@@ -163,7 +167,9 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, r.Update(ctx, user)
 		}
 		return ctrl.Result{}, err
-	} else if client.IgnoreNotFound(err) != nil {
+	} else if client.IgnoreNotFound(
+		err,
+	) != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -197,7 +203,11 @@ func (r *AccountReconciler) syncAccount(
 	}
 	if userCr.Annotations != nil &&
 		userCr.Annotations[WorkspaceStatusAnnotation] == WorkspaceStatusSubscription {
-		if err := r.syncSubscriptionWorkspaceResourceQuotaAndLimitRange(ctx, user.UID, userNamespace); err != nil {
+		if err := r.syncSubscriptionWorkspaceResourceQuotaAndLimitRange(
+			ctx,
+			user.UID,
+			userNamespace,
+		); err != nil {
 			return nil, fmt.Errorf(
 				"sync subscription workspace resource quota and limit range failed: %w",
 				err,
@@ -205,7 +215,10 @@ func (r *AccountReconciler) syncAccount(
 		}
 	} else {
 		if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
-			return nil, fmt.Errorf("sync user namespace resource quota and limit range failed: %w", err)
+			return nil, fmt.Errorf(
+				"sync user namespace resource quota and limit range failed: %w",
+				err,
+			)
 		}
 	}
 	return account, err
@@ -487,11 +500,19 @@ func RawParseRechargeConfig() (activities pkgtypes.Activities, discountsteps []i
 		returnErr = fmt.Errorf("get configmap failed: %w", err)
 		return activities, discountsteps, discountratios, returnErr
 	}
-	if returnErr = parseConfigList(configMap.Data["steps"], &discountsteps, "steps"); returnErr != nil {
+	if returnErr = parseConfigList(
+		configMap.Data["steps"],
+		&discountsteps,
+		"steps",
+	); returnErr != nil {
 		return activities, discountsteps, discountratios, returnErr
 	}
 
-	if returnErr = parseConfigList(configMap.Data["ratios"], &discountratios, "ratios"); returnErr != nil {
+	if returnErr = parseConfigList(
+		configMap.Data["ratios"],
+		&discountratios,
+		"ratios",
+	); returnErr != nil {
 		return activities, discountsteps, discountratios, returnErr
 	}
 
@@ -502,7 +523,7 @@ func RawParseRechargeConfig() (activities pkgtypes.Activities, discountsteps []i
 }
 
 func parseConfigList(s string, list any, configName string) error {
-	for _, v := range strings.Split(s, ",") {
+	for v := range strings.SplitSeq(s, ",") {
 		switch list := list.(type) {
 		case *[]int64:
 			i, err := strconv.ParseInt(v, 10, 64)

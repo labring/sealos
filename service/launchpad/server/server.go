@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"text/template"
 
 	"github.com/labring/sealos/service/launchpad/request"
 	"github.com/labring/sealos/service/pkg/api"
@@ -145,14 +144,7 @@ func (vs *VMServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 
 	rw.Header().Set("Content-Type", "application/json")
 
-	tmpl := template.New("responseTemplate").Delims("{{", "}}")
-	tmpl, err = tmpl.Parse(`{{.}}`)
-	if err != nil {
-		log.Printf("template failed: %s\n", err)
-		http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	if err = tmpl.Execute(rw, string(result)); err != nil {
+	if _, err = rw.Write(result); err != nil {
 		log.Printf("Reulst failed: %s\n", err)
 		http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
 		return

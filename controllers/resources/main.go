@@ -182,12 +182,24 @@ func main() {
 		MinioMetricsAddr       = "MINIO_METRICS_ADDR"
 		MinioMetricsAddrSecure = "MINIO_METRICS_SECURE"
 	)
-	if endpoint, ak, sk, mAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" &&
+	if endpoint, ak, sk, mAddr := os.Getenv(
+		MinioEndpoint,
+	), os.Getenv(
+		MinioAk,
+	), os.Getenv(
+		MinioSk,
+	), os.Getenv(
+		MinioMetricsAddr,
+	); endpoint != "" &&
 		ak != "" &&
 		sk != "" &&
 		mAddr != "" {
 		reconciler.Info("init minio client")
-		if reconciler.ObjStorageClient, err = objectstoragev1.NewOSClient(endpoint, ak, sk); err != nil {
+		if reconciler.ObjStorageClient, err = objectstoragev1.NewOSClient(
+			endpoint,
+			ak,
+			sk,
+		); err != nil {
 			reconciler.Error(err, "failed to new minio client")
 			os.Exit(1)
 		}
@@ -219,7 +231,9 @@ func main() {
 			),
 		)
 	} else {
-		reconciler.Info("minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK, MINIO_METRICS_ADDR")
+		reconciler.Info(
+			"minio info not found, please check env: MINIO_ENDPOINT, MINIO_AK, MINIO_SK, MINIO_METRICS_ADDR",
+		)
 	}
 	err = reconciler.DBClient.CreateTTLTrafficTimeSeries()
 	if err != nil {

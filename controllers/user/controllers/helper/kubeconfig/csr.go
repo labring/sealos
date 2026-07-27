@@ -211,8 +211,8 @@ func (csr *CsrConfig) generateCSR(key crypto.Signer) (*x509.CertificateRequest, 
 		return nil, nil, errors.NewBadRequest("must specify a CommonName")
 	}
 
-	var dnsNames []string
-	var ips []net.IP
+	dnsNames := make([]string, 0, len(csr.dnsNames))
+	ips := make([]net.IP, 0, len(csr.ipAddresses))
 
 	dnsNames = append(dnsNames, csr.dnsNames...)
 	ips = append(ips, csr.ipAddresses...)

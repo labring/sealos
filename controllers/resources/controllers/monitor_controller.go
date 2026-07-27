@@ -163,22 +163,24 @@ func NewMonitorReconciler(mgr ctrl.Manager) (*MonitorReconciler, error) {
 }
 
 func InitIndexField(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, "status.phase", func(rawObj client.Object) []string {
-		pvc, ok := rawObj.(*corev1.PersistentVolumeClaim)
-		if !ok {
-			return nil
-		}
-		return []string{string(pvc.Status.Phase)}
-	}); err != nil {
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &corev1.PersistentVolumeClaim{}, "status.phase", func(rawObj client.Object) []string {
+			pvc, ok := rawObj.(*corev1.PersistentVolumeClaim)
+			if !ok {
+				return nil
+			}
+			return []string{string(pvc.Status.Phase)}
+		}); err != nil {
 		return err
 	}
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kbv1alpha1.Backup{}, "status.phase", func(rawObj client.Object) []string {
-		backup, ok := rawObj.(*kbv1alpha1.Backup)
-		if !ok {
-			return nil
-		}
-		return []string{string(backup.Status.Phase)}
-	}); err != nil {
+	if err := mgr.GetFieldIndexer().
+		IndexField(context.Background(), &kbv1alpha1.Backup{}, "status.phase", func(rawObj client.Object) []string {
+			backup, ok := rawObj.(*kbv1alpha1.Backup)
+			if !ok {
+				return nil
+			}
+			return []string{string(backup.Status.Phase)}
+		}); err != nil {
 		return err
 	}
 	return mgr.GetFieldIndexer().
@@ -430,7 +432,12 @@ func (r *MonitorReconciler) monitorResourceUsage(namespace *corev1.Namespace) er
 		return fmt.Errorf("failed to monitor backup resource usage: %w", err)
 	}
 
-	if err := r.monitorServiceResourceUsage(namespace.Name, resUsed, resNamed, instances); err != nil {
+	if err := r.monitorServiceResourceUsage(
+		namespace.Name,
+		resUsed,
+		resNamed,
+		instances,
+	); err != nil {
 		return fmt.Errorf("failed to monitor service resource usage: %w", err)
 	}
 
@@ -527,7 +534,12 @@ func (r *MonitorReconciler) monitorPodResourceUsage(
 			// gpu only use limit and not ignore pod pending status
 			if usesGPU && cardResource != "" {
 				if gpuRequest, ok := container.Resources.Limits[cardResource]; ok {
-					if err := r.getGPUResourceUsage(pod, aliasKey, gpuRequest, resUsed[podResNamed.String()]); err != nil {
+					if err := r.getGPUResourceUsage(
+						pod,
+						aliasKey,
+						gpuRequest,
+						resUsed[podResNamed.String()],
+					); err != nil {
 						r.Error(err, "get gpu resource usage failed", "pod", pod.Name)
 					}
 				}
@@ -538,17 +550,23 @@ func (r *MonitorReconciler) monitorPodResourceUsage(
 			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
 				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(cpuRequest)
 			} else {
-				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(container.Resources.Requests[corev1.ResourceCPU])
+				resUsed[podResNamed.String()][corev1.ResourceCPU].Add(
+					container.Resources.Requests[corev1.ResourceCPU],
+				)
 			}
 			if memoryRequest, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
 				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(memoryRequest)
 			} else {
-				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
+				resUsed[podResNamed.String()][corev1.ResourceMemory].Add(
+					container.Resources.Requests[corev1.ResourceMemory],
+				)
 			}
 			if ephemeralRequest, ok := container.Resources.Limits[corev1.ResourceEphemeralStorage]; ok {
 				podEphemeralStorage.Add(ephemeralRequest)
 			} else {
-				podEphemeralStorage.Add(container.Resources.Requests[corev1.ResourceEphemeralStorage])
+				podEphemeralStorage.Add(
+					container.Resources.Requests[corev1.ResourceEphemeralStorage],
+				)
 			}
 		}
 		if !skip && podEphemeralStorage.Cmp(ephemeralStorageChargeThreshold) == 1 {
@@ -597,8 +615,11 @@ func (r *MonitorReconciler) monitorDatabaseBackupUsage(
 ) error {
 	backupList := &kbv1alpha1.BackupList{}
 	if err := r.List(context.Background(), backupList, &client.ListOptions{
-		Namespace:     namespace,
-		FieldSelector: fields.OneTermEqualSelector("status.phase", string(kbv1alpha1.BackupPhaseCompleted)),
+		Namespace: namespace,
+		FieldSelector: fields.OneTermEqualSelector(
+			"status.phase",
+			string(kbv1alpha1.BackupPhaseCompleted),
+		),
 	}); err != nil {
 		return fmt.Errorf("failed to list backup: %w", err)
 	}

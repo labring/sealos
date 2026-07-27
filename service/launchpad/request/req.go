@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -16,12 +17,19 @@ import (
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
 	log.Printf("[launchpad-monitor] request vm addr=%s body=%s", addr, params.String())
 
-	//nolint:gosec // VM_SERVICE_HOST is configured by deployment and targets the internal VictoriaMetrics endpoint.
-	resp, err := http.Post(
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
 		addr,
-		"application/x-www-form-urlencoded",
 		params,
 	)
+	if err != nil {
+		log.Printf("[launchpad-monitor] create request failed addr=%s err=%v", addr, err)
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("[launchpad-monitor] request vm failed addr=%s err=%v", addr, err)
 		return nil, err

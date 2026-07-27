@@ -88,8 +88,12 @@ func CreateCardPay(c *gin.Context) {
 				if err != nil {
 					return fmt.Errorf("failed to create payment: %w", err)
 				}
-				if paySvcResp.Result.ResultCode != PaymentInProcess || paySvcResp.Result.ResultStatus != "U" {
-					return fmt.Errorf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)
+				if paySvcResp.Result.ResultCode != PaymentInProcess ||
+					paySvcResp.Result.ResultStatus != "U" {
+					return fmt.Errorf(
+						"payment result is not PAYMENT_IN_PROCESS: %#+v",
+						paySvcResp.Result,
+					)
 				}
 				return nil
 			}
@@ -316,7 +320,13 @@ func NewPayNotifyHandler(c *gin.Context) {
 
 	logNotification(notification)
 
-	if err := processPaymentResult(c, notifyType, notifyResult, paymentRequestID, paymentID); err != nil {
+	if err := processPaymentResult(
+		c,
+		notifyType,
+		notifyResult,
+		paymentRequestID,
+		paymentID,
+	); err != nil {
 		logrus.Errorf("Failed to process payment result: %v", err)
 		return // 错误已在 processPaymentResult 中处理
 	}
@@ -364,7 +374,11 @@ func newCardPaymentHandler(paymentID string, card types.CardInfo) error {
 		return err
 	}
 	if userUID != uuid.Nil {
-		if err = sendCardPaymentPayEmail(userUID, paymentID, utils.EnvPaySuccessEmailTmpl); err != nil {
+		if err = sendCardPaymentPayEmail(
+			userUID,
+			paymentID,
+			utils.EnvPaySuccessEmailTmpl,
+		); err != nil {
 			logrus.Errorf("Failed to send PAY_SUCCESS_EMAIL_TMPL email to %s: %v", userUID, err)
 		}
 	}
@@ -373,7 +387,11 @@ func newCardPaymentHandler(paymentID string, card types.CardInfo) error {
 
 func sendCardPaymentPayEmail(userUID uuid.UUID, paymentID, payType string) error {
 	var order types.PaymentOrder
-	if err := dao.DBClient.GetGlobalDB().Model(&types.PaymentOrder{}).Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: paymentID, UserUID: userUID}}).Find(&order).Error; err != nil {
+	if err := dao.DBClient.GetGlobalDB().
+		Model(&types.PaymentOrder{}).
+		Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: paymentID, UserUID: userUID}}).
+		Find(&order).
+		Error; err != nil {
 		return fmt.Errorf("failed to get payment order: %w", err)
 	}
 	account, err := dao.DBClient.GetAccount(types.UserQueryOpts{UID: userUID})

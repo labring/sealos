@@ -58,7 +58,11 @@ func GetClusterID() (string, error) {
 		return "", err
 	}
 	kubeSystemNamespace := &corev1.Namespace{}
-	if err := c.Get(context.Background(), client.ObjectKey{Namespace: "kube-system", Name: "kube-system"}, kubeSystemNamespace); err != nil {
+	if err := c.Get(
+		context.Background(),
+		client.ObjectKey{Namespace: "kube-system", Name: "kube-system"},
+		kubeSystemNamespace,
+	); err != nil {
 		return "", err
 	}
 	res := string(kubeSystemNamespace.UID)

@@ -17,6 +17,7 @@ limitations under the License.
 package server
 
 import (
+	"maps"
 	"sort"
 	"sync"
 
@@ -164,9 +165,7 @@ func cloneAuthMap(src map[string]rtype.AuthConfig) map[string]rtype.AuthConfig {
 		return map[string]rtype.AuthConfig{}
 	}
 	dst := make(map[string]rtype.AuthConfig, len(src))
-	for k, v := range src {
-		dst[k] = v
-	}
+	maps.Copy(dst, src)
 	return dst
 }
 
@@ -175,9 +174,7 @@ func clonePriorityMap(src map[string]int) map[string]int {
 		return map[string]int{}
 	}
 	dst := make(map[string]int, len(src))
-	for k, v := range src {
-		dst[k] = v
-	}
+	maps.Copy(dst, src)
 	return dst
 }
 

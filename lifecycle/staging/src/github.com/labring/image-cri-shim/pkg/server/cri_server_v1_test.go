@@ -104,16 +104,16 @@ func TestFindMatchingRegistryExactMatchOnly(t *testing.T) {
 		"registry.example.com": {ServerAddress: "https://registry.example.com"},
 	}
 
-	if domain, cfg := service.findMatchingRegistry("registry.example.com", registries); cfg == nil ||
-		domain != "registry.example.com" {
+	domain, cfg := service.findMatchingRegistry("registry.example.com", registries)
+	if cfg == nil || domain != "registry.example.com" {
 		t.Fatalf("expected exact match for registry.example.com, got domain=%q cfg=%v", domain, cfg)
 	}
-	if domain, cfg := service.findMatchingRegistry("REGISTRY.EXAMPLE.COM", registries); cfg == nil ||
-		domain != "registry.example.com" {
+	domain, cfg = service.findMatchingRegistry("REGISTRY.EXAMPLE.COM", registries)
+	if cfg == nil || domain != "registry.example.com" {
 		t.Fatalf("expected case-insensitive exact match, got domain=%q cfg=%v", domain, cfg)
 	}
-	if domain, cfg := service.findMatchingRegistry("mirror.registry.example.com", registries); cfg != nil ||
-		domain != "" {
+	domain, cfg = service.findMatchingRegistry("mirror.registry.example.com", registries)
+	if cfg != nil || domain != "" {
 		t.Fatalf("expected no match for subdomain lookup, got domain=%q cfg=%v", domain, cfg)
 	}
 }
@@ -281,15 +281,15 @@ func TestDomainCacheExpiry(t *testing.T) {
 	}
 
 	service.cacheDomainMatch("mirror.registry.example.com", "registry.example.com")
-	if domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries); cfg == nil ||
-		domain != "registry.example.com" {
+	domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries)
+	if cfg == nil || domain != "registry.example.com" {
 		t.Fatalf("expected domain cache hit, got domain=%s cfg=%v", domain, cfg)
 	}
 
 	time.Sleep(40 * time.Millisecond)
 
-	if domain, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries); cfg != nil ||
-		domain != "" {
+	domain, cfg = service.getCachedDomainMatch("mirror.registry.example.com", registries)
+	if cfg != nil || domain != "" {
 		t.Fatalf("expected domain cache entry to expire, got domain=%s cfg=%v", domain, cfg)
 	}
 }
@@ -327,9 +327,11 @@ func TestCacheStatsAccounting(t *testing.T) {
 
 		// simulate domain cache hit by looking up cached mapping directly
 		service.cacheDomainMatch("mirror.registry.example.com", "registry.example.com")
-		if _, cfg := service.getCachedDomainMatch("mirror.registry.example.com", map[string]rtype.AuthConfig{
+		registries := map[string]rtype.AuthConfig{
 			"registry.example.com": {ServerAddress: "https://registry.example.com"},
-		}); cfg == nil {
+		}
+		_, cfg := service.getCachedDomainMatch("mirror.registry.example.com", registries)
+		if cfg == nil {
 			t.Fatalf("expected domain cache hit")
 		}
 		stats = service.CacheStats()

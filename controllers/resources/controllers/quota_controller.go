@@ -299,7 +299,8 @@ func (r *NamespaceQuotaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 		// Fetch the namespace object to check annotations
 		var ns corev1.Namespace
-		if err := mgr.GetClient().Get(context.Background(), client.ObjectKey{Name: nsName}, &ns); err != nil {
+		if err := mgr.GetClient().
+			Get(context.Background(), client.ObjectKey{Name: nsName}, &ns); err != nil {
 			r.Logger.Error(err, "Failed to fetch namespace", "namespace", nsName)
 			return false
 		}

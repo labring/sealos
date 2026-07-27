@@ -88,7 +88,11 @@ func (r *GpuReconciler) fetchPodsByNode(
 	nodeName string,
 ) []corev1.Pod {
 	var pods corev1.PodList
-	if err := reader.List(ctx, &pods, client.MatchingFields{podNodeNameField: nodeName}); err != nil {
+	if err := reader.List(
+		ctx,
+		&pods,
+		client.MatchingFields{podNodeNameField: nodeName},
+	); err != nil {
 		r.Logger.Error(err, "list pods error from cache", podNodeNameField, nodeName)
 	}
 
@@ -250,8 +254,8 @@ func parseHamiNvidiaRegister(s string) (prod, mem string) {
 		}
 	}
 
-	devs := strings.Split(s, ":")
-	for _, d := range devs {
+	devs := strings.SplitSeq(s, ":")
+	for d := range devs {
 		fields := strings.Split(d, ",")
 		if len(fields) < 5 {
 			continue
@@ -304,7 +308,10 @@ func (r *GpuReconciler) applyGPUInfoCM(
 					Default string `json:"default"`
 				}
 				structured := map[string]aliasRecord{}
-				if unmarshalErr := json.Unmarshal([]byte(aliasStr), &structured); unmarshalErr == nil {
+				if unmarshalErr := json.Unmarshal(
+					[]byte(aliasStr),
+					&structured,
+				); unmarshalErr == nil {
 					for ref, rec := range structured {
 						def := strings.TrimSpace(rec.Default)
 						if def == "" {
@@ -317,7 +324,10 @@ func (r *GpuReconciler) applyGPUInfoCM(
 					}
 				} else {
 					flat := map[string]string{}
-					if unmarshalErr2 := json.Unmarshal([]byte(aliasStr), &flat); unmarshalErr2 == nil {
+					if unmarshalErr2 := json.Unmarshal(
+						[]byte(aliasStr),
+						&flat,
+					); unmarshalErr2 == nil {
 						for def, ref := range flat {
 							def = strings.TrimSpace(def)
 							ref = strings.TrimSpace(ref)
@@ -390,10 +400,7 @@ func (r *GpuReconciler) applyGPUInfoCM(
 			nodeMap[nodeName][GPUDevbox] = "true"
 		}
 		nodeMap[nodeName][GPUUse] = strconv.FormatInt(used, 10)
-		available := effectiveCount - used
-		if available < 0 {
-			available = 0
-		}
+		available := max(effectiveCount-used, 0)
 		nodeMap[nodeName][GPUAvailable] = strconv.FormatInt(available, 10)
 	}
 
@@ -554,7 +561,8 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			return []string{nodeName}
 		}
 
-		if err := mgr.GetFieldIndexer().IndexField(context.Background(), pod, podNodeNameField, podsFunc); err != nil {
+		if err := mgr.GetFieldIndexer().
+			IndexField(context.Background(), pod, podNodeNameField, podsFunc); err != nil {
 			return err
 		}
 	}

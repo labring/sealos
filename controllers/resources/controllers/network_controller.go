@@ -283,7 +283,11 @@ func (e *SuspendedNamespaceHandler) Create(
 	}
 
 	ns := corev1.Namespace{}
-	if err := e.Client.Get(ctx, types.NamespacedName{Name: evt.Object.GetNamespace()}, &ns); err != nil {
+	if err := e.Client.Get(
+		ctx,
+		types.NamespacedName{Name: evt.Object.GetNamespace()},
+		&ns,
+	); err != nil {
 		e.Logger.Error(err, "failed to get namespace", "namespace", evt.Object.GetNamespace())
 		return
 	}
@@ -308,7 +312,11 @@ func (e *SuspendedNamespaceHandler) Update(
 	switch {
 	case !isNil(evt.ObjectNew):
 		ns := corev1.Namespace{}
-		if err := e.Client.Get(ctx, types.NamespacedName{Name: evt.ObjectNew.GetNamespace()}, &ns); err != nil {
+		if err := e.Client.Get(
+			ctx,
+			types.NamespacedName{Name: evt.ObjectNew.GetNamespace()},
+			&ns,
+		); err != nil {
 			e.Logger.Error(
 				err,
 				"failed to get namespace",
@@ -330,7 +338,11 @@ func (e *SuspendedNamespaceHandler) Update(
 		q.Add(item)
 	case !isNil(evt.ObjectOld):
 		ns := corev1.Namespace{}
-		if err := e.Client.Get(ctx, types.NamespacedName{Name: evt.ObjectOld.GetNamespace()}, &ns); err != nil {
+		if err := e.Client.Get(
+			ctx,
+			types.NamespacedName{Name: evt.ObjectOld.GetNamespace()},
+			&ns,
+		); err != nil {
 			e.Logger.Error(
 				err,
 				"failed to get namespace",
@@ -372,7 +384,7 @@ func (e *SuspendedNamespaceHandler) Generic(
 }
 
 func isNil(arg any) bool {
-	if v := reflect.ValueOf(arg); !v.IsValid() || ((v.Kind() == reflect.Ptr ||
+	if v := reflect.ValueOf(arg); !v.IsValid() || ((v.Kind() == reflect.Pointer ||
 		v.Kind() == reflect.Interface ||
 		v.Kind() == reflect.Slice ||
 		v.Kind() == reflect.Map ||

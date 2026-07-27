@@ -140,7 +140,11 @@ func (impl *iptablesImpl) Setup() error {
 		logger.Error("Failed to ensure sysctl %s: %v", sysctlVSConnTrack, err)
 		return err
 	}
-	if err := ensureDummyDeviceAndAddresses(impl.nl, impl.ifaceName, impl.bindAddresses...); err != nil {
+	if err := ensureDummyDeviceAndAddresses(
+		impl.nl,
+		impl.ifaceName,
+		impl.bindAddresses...,
+	); err != nil {
 		logger.Error("Failed to ensure dummy device: %v", err)
 		return err
 	}
@@ -224,7 +228,13 @@ func (impl *iptablesImpl) ensureIpset() error {
 		if set.name == virtualIPSet {
 			entries = append(entries, impl.virtualEntries...)
 		}
-		if err := ensureIPSetWithEntries(impl.ipset, set.name, set.comment, set.setType, entries...); err != nil {
+		if err := ensureIPSetWithEntries(
+			impl.ipset,
+			set.name,
+			set.comment,
+			set.setType,
+			entries...,
+		); err != nil {
 			return err
 		}
 	}
@@ -239,7 +249,7 @@ type iptablesRule struct {
 }
 
 func (impl *iptablesImpl) extraChainRules() []iptablesRule {
-	rules := make([]iptablesRule, 0)
+	rules := make([]iptablesRule, 0, 1)
 	rules = append(rules, iptablesRule{
 		// use `-I`, ACCEPT for packets those marked in filter table at the very first
 		// CNI rules MUST always behind it, for example,
@@ -272,7 +282,12 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 	// jump chain
 	for _, jc := range iptablesJumpChain {
 		args := []string{"-m", "comment", "--comment", jc.comment, "-j", string(jc.to)}
-		if _, err := impl.iptables.EnsureRule(utiliptables.Append, jc.table, jc.from, args...); err != nil {
+		if _, err := impl.iptables.EnsureRule(
+			utiliptables.Append,
+			jc.table,
+			jc.from,
+			args...,
+		); err != nil {
 			logger.Error(
 				"Failed to ensure chain jumps, table: %s, src: %s, dst: %s, %v",
 				jc.table,
@@ -283,9 +298,11 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 		}
 	}
 
-	rules := []iptablesRule{
+	extraRules := impl.extraChainRules()
+	rules := make([]iptablesRule, 0, 3+len(extraRules)+1)
+	rules = append(rules,
 		// match ipset
-		{
+		iptablesRule{
 			utiliptables.Append, utiliptables.TableNAT, virtualServicesChain, []string{
 				"-m", "comment", "--comment", virtualIPSetComment,
 				"-m", "set", "--match-set", virtualIPSet,
@@ -293,19 +310,19 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 			},
 		},
 		// do masq for marked
-		{
+		iptablesRule{
 			utiliptables.Append, utiliptables.TableNAT, virtualMarkMasqChain, []string{
 				"-j", "MARK", "--or-mark", impl.masqueradeMark,
 			},
 		},
 		// RETURN directly for packets those didn't marked
-		{
+		iptablesRule{
 			utiliptables.Append, utiliptables.TableNAT, virtualPostroutingChain, []string{
 				"-m", "mark", "!", "--mark", impl.masqueradeMark, "-j", "RETURN",
 			},
 		},
-	}
-	rules = append(rules, impl.extraChainRules()...)
+	)
+	rules = append(rules, extraRules...)
 	masqArgs := []string{
 		"-m", "comment", "--comment", `virtual service traffic requiring SNAT`,
 		"-j", "MASQUERADE",
@@ -318,7 +335,12 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 		iptablesRule{utiliptables.Append, utiliptables.TableNAT, virtualPostroutingChain, masqArgs},
 	)
 	for i := range rules {
-		if _, err := impl.iptables.EnsureRule(rules[i].position, rules[i].table, rules[i].chain, rules[i].args...); err != nil {
+		if _, err := impl.iptables.EnsureRule(
+			rules[i].position,
+			rules[i].table,
+			rules[i].chain,
+			rules[i].args...,
+		); err != nil {
 			return err
 		}
 	}

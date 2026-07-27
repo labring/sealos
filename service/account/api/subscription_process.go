@@ -515,7 +515,10 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 						Update("status", types.UserKYCStatusFailed).
 						Error
 				} else {
-					return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusCompleted).Error
+					return tx.Model(&types.UserKYC{}).
+						Where("user_uid = ?", user.UserUID).
+						Update("status", types.UserKYCStatusCompleted).
+						Error
 				}
 			}
 			// Obtain the integral records that are in the active state within normal time. If yes, change the status to failed and create a new one

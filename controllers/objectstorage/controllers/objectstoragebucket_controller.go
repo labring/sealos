@@ -76,7 +76,11 @@ func (r *ObjectStorageBucketReconciler) Reconcile(
 	// new OSClient
 	if r.OSAdminClient == nil || r.OSClient == nil {
 		secret := &corev1.Secret{}
-		if err := r.Get(ctx, client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace}, secret); err != nil {
+		if err := r.Get(
+			ctx,
+			client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace},
+			secret,
+		); err != nil {
 			r.Logger.Error(
 				err,
 				"failed to get secret",
@@ -94,14 +98,22 @@ func (r *ObjectStorageBucketReconciler) Reconcile(
 
 		var err error
 		if r.OSAdminClient == nil {
-			if r.OSAdminClient, err = objectstoragev1.NewOSAdminClient(endpoint, accessKey, secretKey); err != nil {
+			if r.OSAdminClient, err = objectstoragev1.NewOSAdminClient(
+				endpoint,
+				accessKey,
+				secretKey,
+			); err != nil {
 				r.Logger.Error(err, "failed to new object storage admin client")
 				return ctrl.Result{}, err
 			}
 		}
 
 		if r.OSClient == nil {
-			if r.OSClient, err = objectstoragev1.NewOSClient(endpoint, accessKey, secretKey); err != nil {
+			if r.OSClient, err = objectstoragev1.NewOSClient(
+				endpoint,
+				accessKey,
+				secretKey,
+			); err != nil {
 				r.Logger.Error(err, "failed to new object storage client")
 				return ctrl.Result{}, err
 			}
@@ -114,7 +126,11 @@ func (r *ObjectStorageBucketReconciler) Reconcile(
 	username := strings.Split(namespace, "-")[1]
 
 	bucket := &objectstoragev1.ObjectStorageBucket{}
-	if err := r.Get(ctx, client.ObjectKey{Name: req.Name, Namespace: namespace}, bucket); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Name: req.Name, Namespace: namespace},
+		bucket,
+	); err != nil {
 		if !errors.IsNotFound(err) {
 			r.Logger.Error(
 				err,
@@ -166,7 +182,12 @@ func (r *ObjectStorageBucketReconciler) Reconcile(
 			Recursive: true,
 		})
 		for object := range objects {
-			if err := r.OSClient.RemoveObject(ctx, bucketName, object.Key, minio.RemoveObjectOptions{}); err != nil {
+			if err := r.OSClient.RemoveObject(
+				ctx,
+				bucketName,
+				object.Key,
+				minio.RemoveObjectOptions{},
+			); err != nil {
 				r.Logger.Error(
 					err,
 					"failed to remove object from bucket",
@@ -227,14 +248,22 @@ func (r *ObjectStorageBucketReconciler) Reconcile(
 
 	// new bucket when bucket is not exist
 	if !exists {
-		if err := r.OSClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{Region: DefaultRegion, ObjectLocking: DefaultObjectLocking}); err != nil {
+		if err := r.OSClient.MakeBucket(
+			ctx,
+			bucketName,
+			minio.MakeBucketOptions{Region: DefaultRegion, ObjectLocking: DefaultObjectLocking},
+		); err != nil {
 			r.Logger.Error(err, "failed to make bucket", "name", bucketName)
 			return ctrl.Result{}, err
 		}
 	}
 
 	// set bucket policy
-	if err := r.OSClient.SetBucketPolicy(ctx, bucketName, buildPolicy(bucket.Spec.Policy, bucketName)); err != nil {
+	if err := r.OSClient.SetBucketPolicy(
+		ctx,
+		bucketName,
+		buildPolicy(bucket.Spec.Policy, bucketName),
+	); err != nil {
 		r.Logger.Error(
 			err,
 			"failed to set policy for bucket",
@@ -336,7 +365,11 @@ func (r *ObjectStorageBucketReconciler) Reconcile(
 	secret := &corev1.Secret{}
 	secret.Name = secretName
 	secret.Namespace = namespace
-	if err := r.Get(ctx, client.ObjectKey{Name: secretName, Namespace: namespace}, secret); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Name: secretName, Namespace: namespace},
+		secret,
+	); err != nil {
 		if !errors.IsNotFound(err) {
 			r.Logger.Error(
 				err,
@@ -349,7 +382,13 @@ func (r *ObjectStorageBucketReconciler) Reconcile(
 			return ctrl.Result{}, err
 		}
 
-		if err := r.newObjectStorageKeySecret(ctx, secret, bucket, accessKey, secretKey); err != nil {
+		if err := r.newObjectStorageKeySecret(
+			ctx,
+			secret,
+			bucket,
+			accessKey,
+			secretKey,
+		); err != nil {
 			r.Logger.Error(
 				err,
 				"failed to new object storage key secret",
@@ -453,7 +492,7 @@ func (r *ObjectStorageBucketReconciler) newObjectStorageKeySecret(
 		Controller:         nil,
 		BlockOwnerDeletion: nil,
 	}
-	refList := make([]metav1.OwnerReference, 0)
+	refList := make([]metav1.OwnerReference, 0, 1)
 	refList = append(refList, reference)
 	secret.SetOwnerReferences(refList)
 

@@ -128,7 +128,13 @@ func NewContainerRuntime(
 // IsRunning checks if runtime is running
 func (runtime *ContainerdRuntime) IsRunning() error {
 	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
-	if out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "info").CombinedOutput(); err != nil {
+	cmd := runtime.exec.Command(
+		"crictl",
+		"-r",
+		runtime.criSocket,
+		"info",
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf(
 			"container runtime is not running: output: %s, error: %w",
 			string(out),
@@ -158,7 +164,13 @@ func (runtime *DockerRuntime) CGroupDriver() (string, error) {
 	var err error
 	var out []byte
 	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
-	if out, err = runtime.exec.Command("docker", "info", "--format", "{{.CgroupDriver}}").CombinedOutput(); err != nil {
+	cmd := runtime.exec.Command(
+		"docker",
+		"info",
+		"--format",
+		"{{.CgroupDriver}}",
+	)
+	if out, err = cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf(
 			"container runtime is not running: output: %s, error: %w",
 			string(out),

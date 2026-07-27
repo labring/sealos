@@ -235,10 +235,7 @@ func (g *Cockroach) ChargeWorkspaceAIQuota(usage int64, workspace string) error 
 			if available <= 0 {
 				continue
 			}
-			toDeduct := usage
-			if available < usage {
-				toDeduct = available
-			}
+			toDeduct := min(available, usage)
 			err = db.Model(&types.WorkspaceAIQuotaPackage{}).
 				Where("id = ?", pkg.ID).
 				UpdateColumn("usage", gorm.Expr("usage + ?", toDeduct)).
@@ -544,10 +541,16 @@ func (g *Cockroach) NewCardSubscriptionPaymentHandler(
 		}).Error; err != nil {
 			return fmt.Errorf("failed to save payment: %w", err)
 		}
-		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayID: order.ID}).Update("pay_status", types.SubscriptionPayStatusPaid).Error; err != nil {
+		if err = tx.Model(&types.SubscriptionTransaction{}).
+			Where(&types.SubscriptionTransaction{PayID: order.ID}).
+			Update("pay_status", types.SubscriptionPayStatusPaid).
+			Error; err != nil {
 			return fmt.Errorf("failed to update subscription transaction pay status: %w", err)
 		}
-		if err = tx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: order.UserUID}).Update("card_id", card.ID).Error; err != nil {
+		if err = tx.Model(&types.Subscription{}).
+			Where(&types.Subscription{UserUID: order.UserUID}).
+			Update("card_id", card.ID).
+			Error; err != nil {
 			return fmt.Errorf("failed to update subscription card id: %w", err)
 		}
 		return nil
@@ -581,7 +584,10 @@ func (g *Cockroach) NewCardSubscriptionPaymentFailureHandler(
 		if err != nil {
 			return fmt.Errorf("failed to set payment order status: %w", err)
 		}
-		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayID: order.ID}).Update("pay_status", types.SubscriptionPayStatusFailed).Update("status", types.SubscriptionTransactionStatusFailed).
+		if err = tx.Model(&types.SubscriptionTransaction{}).
+			Where(&types.SubscriptionTransaction{PayID: order.ID}).
+			Update("pay_status", types.SubscriptionPayStatusFailed).
+			Update("status", types.SubscriptionTransactionStatusFailed).
 			Error; err != nil {
 			return fmt.Errorf("failed to update subscription transaction pay status: %w", err)
 		}
@@ -905,7 +911,10 @@ func (m *MongoDB) GetAppResourceCosts(
 		}
 	} else {
 		if req.AppType != "" {
-			matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[appType]})
+			matchConditions = append(
+				matchConditions,
+				bson.E{Key: "app_type", Value: resources.AppType[appType]},
+			)
 		}
 
 		pipeline := mongo.Pipeline{
@@ -914,7 +923,10 @@ func (m *MongoDB) GetAppResourceCosts(
 		}
 
 		if req.AppName != "" {
-			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}})
+			pipeline = append(
+				pipeline,
+				bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}},
+			)
 		}
 
 		cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
@@ -983,7 +995,10 @@ func (m *MongoDB) GetWorkspaceAPPCosts(
 				bson.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(req.AppType)]},
 			)
 		} else {
-			matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[resources.AppStore]})
+			matchConditions = append(
+				matchConditions,
+				bson.E{Key: "app_type", Value: resources.AppType[resources.AppStore]},
+			)
 		}
 	}
 
@@ -999,14 +1014,14 @@ func (m *MongoDB) GetWorkspaceAPPCosts(
 	}
 
 	// 构建聚合管道
-	var pipeline mongo.Pipeline
+	pipeline := make(mongo.Pipeline, 0, 5)
 
 	if req.AppType == "" || strings.ToUpper(req.AppType) != resources.AppStore {
 		// 处理非AppStore类型的应用
-		pipeline = mongo.Pipeline{
-			{{Key: "$match", Value: matchConditions}},
-			{{Key: "$unwind", Value: "$app_costs"}},
-		}
+		pipeline = append(pipeline,
+			bson.D{{Key: "$match", Value: matchConditions}},
+			bson.D{{Key: "$unwind", Value: "$app_costs"}},
+		)
 		if req.AppName != "" {
 			// matchConditions = append(matchConditions, bson.E{Key: "app_costs.name", Value: req.AppName})
 			pipeline = append(
@@ -1036,9 +1051,9 @@ func (m *MongoDB) GetWorkspaceAPPCosts(
 		//}
 	} else {
 		// 处理AppStore类型的应用，需要累加app_costs中的used和used_amount
-		pipeline = mongo.Pipeline{
-			{{Key: "$match", Value: matchConditions}},
-			{{Key: "$project", Value: bson.D{
+		pipeline = append(pipeline,
+			bson.D{{Key: "$match", Value: matchConditions}},
+			bson.D{{Key: "$project", Value: bson.D{
 				{Key: "app_name", Value: 1},
 				{Key: "app_type", Value: 1},
 				{Key: "time", Value: 1},
@@ -1047,11 +1062,11 @@ func (m *MongoDB) GetWorkspaceAPPCosts(
 				{Key: "amount", Value: 1},
 				{Key: "app_costs", Value: 1}, // 保留app_costs用于后续处理
 			}}},
-			{{Key: "$sort", Value: bson.D{
+			bson.D{{Key: "$sort", Value: bson.D{
 				{Key: "time", Value: -1},
 				{Key: "app_name", Value: 1},
 			}}},
-		}
+		)
 	}
 
 	// 分页处理
@@ -1242,7 +1257,13 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 				bson.E{Key: "app_type", Value: resources.AppType[strings.ToUpper(req.AppType)]},
 			)
 		} else {
-			match = append(match, bson.E{Key: "app_type", Value: bson.M{"$ne": resources.AppType[resources.AppStore]}})
+			match = append(
+				match,
+				bson.E{
+					Key:   "app_type",
+					Value: bson.M{"$ne": resources.AppType[resources.AppStore]},
+				},
+			)
 		}
 		if req.OrderID != "" {
 			match = bson.D{
@@ -1381,11 +1402,12 @@ func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts
 				results.Costs = append(results.Costs, appStoreCost.Costs...)
 			}
 		} else if req.Page > maxAppPageSize {
-			skipPageSize := (req.Page - maxAppPageSize - 1) * pageSize
-			if skipPageSize < 0 {
-				skipPageSize = 0
-			}
-			appStoreCost, err := m.getAppStoreCosts(matchConditions, completedNum+skipPageSize, req.PageSize)
+			skipPageSize := max((req.Page-maxAppPageSize-1)*pageSize, 0)
+			appStoreCost, err := m.getAppStoreCosts(
+				matchConditions,
+				completedNum+skipPageSize,
+				req.PageSize,
+			)
 			if err != nil {
 				rErr = fmt.Errorf("failed to get app store costs: %w", err)
 				return results, rErr
@@ -1462,7 +1484,15 @@ func (m *MongoDB) GetAppCostsByOrderIDAndAppName(
 		}
 	} else {
 		pipeline = mongo.Pipeline{
-			{{Key: "$match", Value: bson.D{{Key: "order_id", Value: req.OrderID}, {Key: "owner", Value: req.Owner}}}},
+			{
+				{
+					Key: "$match",
+					Value: bson.D{
+						{Key: "order_id", Value: req.OrderID},
+						{Key: "owner", Value: req.Owner},
+					},
+				},
+			},
 			{{Key: "$unwind", Value: "$app_costs"}},
 			{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}},
 			{{Key: "$project", Value: bson.D{
@@ -1742,8 +1772,7 @@ func (m *MongoDB) GetCostAppList(
 			{Key: "amount", Value: 1},
 		}}})
 
-		var countPipeline mongo.Pipeline
-		// Fix: Manual copy to avoid copy() issues with complex types
+		countPipeline := make(mongo.Pipeline, 0, len(pipeline)+1)
 		countPipeline = append(countPipeline, pipeline...)
 		countPipeline = append(countPipeline, bson.D{{Key: "$count", Value: "total"}})
 		countCursor, err := m.getBillingCollection().Aggregate(context.Background(), countPipeline)
@@ -1798,10 +1827,7 @@ func (m *MongoDB) GetCostAppList(
 				resp.Apps = append(resp.Apps, appStoreResp.Apps...)
 			}
 		} else if req.Page > int(maxAppPageSize) {
-			skipPageSize := (req.Page - int(appPageSize) - 1) * req.PageSize
-			if skipPageSize < 0 {
-				skipPageSize = 0
-			}
+			skipPageSize := max((req.Page-int(appPageSize)-1)*req.PageSize, 0)
 			appStoreResp, err := m.getAppStoreList(req, completedNum+skipPageSize, req.PageSize)
 			if err != nil {
 				return resp, fmt.Errorf("failed to get app store list: %w", err)
@@ -1853,7 +1879,14 @@ func (m *MongoDB) GetBasicCostDistribution(req helper.GetCostAppListReq) (map[st
 	projectStage := buildProjectStage()
 
 	if req.AppType == "" || strings.ToUpper(req.AppType) != resources.AppStore {
-		if err := aggregateAndUpdateCost(m, match, groupStage, projectStage, req.AppName, cost); err != nil {
+		if err := aggregateAndUpdateCost(
+			m,
+			match,
+			groupStage,
+			projectStage,
+			req.AppName,
+			cost,
+		); err != nil {
 			return nil, err
 		}
 	}
@@ -1984,7 +2017,7 @@ func buildMatchCriteria(req helper.GetCostAppListReq) bson.M {
 }
 
 func buildGroupStage() bson.D {
-	groupFields := bson.D{}
+	groupFields := make(bson.D, 0, len(resources.DefaultPropertyTypeLS.EnumMap))
 	for i := range resources.DefaultPropertyTypeLS.EnumMap {
 		key := fmt.Sprintf("used_amount_%d", i)
 		field := fmt.Sprintf("$app_costs.used_amount.%d", i)
@@ -2000,7 +2033,7 @@ func buildGroupStage() bson.D {
 }
 
 func buildProjectStage() bson.D {
-	projectFields := bson.D{}
+	projectFields := make(bson.D, 0, len(resources.DefaultPropertyTypeLS.EnumMap))
 	for i := range resources.DefaultPropertyTypeLS.EnumMap {
 		key := fmt.Sprintf("used_amount.%d", i)
 		field := fmt.Sprintf("$used_amount_%d", i)
@@ -2105,9 +2138,8 @@ func (m *MongoDB) getAppStoreList(
 	pipeline := m.getAppPipeLine(req)
 	skipStage := bson.M{"$skip": skip}
 	limitStage := bson.M{"$limit": pageSize}
-	// Fix: Manual copy to avoid copy() issues
-	limitPipeline := make([]bson.M, len(pipeline))
-	copy(limitPipeline, pipeline)
+	limitPipeline := make([]bson.M, 0, len(pipeline)+2)
+	limitPipeline = append(limitPipeline, pipeline...)
 	limitPipeline = append(limitPipeline, skipStage, limitStage)
 
 	resp.Total, rErr = m.executeCountQuery(
@@ -2189,7 +2221,10 @@ func (m *MongoDB) GetConsumptionAmount(req helper.ConsumptionRecordReq) (int64, 
 				primitive.E{Key: "app_costs.name", Value: appName},
 			)
 		} else {
-			unwindMatchValue = append(unwindMatchValue, primitive.E{Key: "app_name", Value: appName})
+			unwindMatchValue = append(
+				unwindMatchValue,
+				primitive.E{Key: "app_name", Value: appName},
+			)
 		}
 	}
 
@@ -2312,7 +2347,10 @@ func (m *MongoDB) GetWorkspaceConsumptionAmount(
 				primitive.E{Key: "app_costs.name", Value: appName},
 			)
 		} else {
-			unwindMatchValue = append(unwindMatchValue, primitive.E{Key: "app_name", Value: appName})
+			unwindMatchValue = append(
+				unwindMatchValue,
+				primitive.E{Key: "app_name", Value: appName},
+			)
 		}
 	}
 
@@ -2560,7 +2598,9 @@ func newAccountForTest(mongoURI, globalCockRoachURI, localCockRoachURI string) (
 		}
 		account.Cockroach = &Cockroach{ck: ck}
 	} else {
-		fmt.Printf("globalCockRoachURI or localCockRoachURI is empty, skip connecting to cockroach\n")
+		fmt.Printf(
+			"globalCockRoachURI or localCockRoachURI is empty, skip connecting to cockroach\n",
+		)
 	}
 	return account, nil
 }
@@ -2595,7 +2635,9 @@ func NewAccountForTest(mongoURI, globalCockRoachURI, localCockRoachURI string) (
 		//}
 		account.Cockroach = &Cockroach{ck: ck}
 	} else {
-		fmt.Printf("globalCockRoachURI or localCockRoachURI is empty, skip connecting to cockroach\n")
+		fmt.Printf(
+			"globalCockRoachURI or localCockRoachURI is empty, skip connecting to cockroach\n",
+		)
 	}
 	return account, nil
 }
@@ -2738,7 +2780,11 @@ func (m *Account) ApplyInvoice(
 	// save invoice with transaction
 	if err = m.ck.DB.Transaction(
 		func(tx *gorm.DB) error {
-			if err = m.ck.SetPaymentInvoiceWithDB(&types.UserQueryOpts{ID: req.UserID}, paymentIDs, tx); err != nil {
+			if err = m.ck.SetPaymentInvoiceWithDB(
+				&types.UserQueryOpts{ID: req.UserID},
+				paymentIDs,
+				tx,
+			); err != nil {
 				return fmt.Errorf("failed to set payment invoice: %w", err)
 			}
 			if err = m.ck.CreateInvoiceWithDB(&invoice, tx); err != nil {
@@ -2937,7 +2983,11 @@ func (m *Account) reconcileUserBilling(
 ) error {
 	return m.ck.DB.Transaction(func(tx *gorm.DB) error {
 		// Deduct balance
-		if err := m.ck.AddDeductionBalanceWithDB(&types.UserQueryOpts{UID: uid}, batch.Amount, tx); err != nil {
+		if err := m.ck.AddDeductionBalanceWithDB(
+			&types.UserQueryOpts{UID: uid},
+			batch.Amount,
+			tx,
+		); err != nil {
 			return fmt.Errorf("failed to deduct balance: %w", err)
 		}
 
@@ -2975,7 +3025,11 @@ func (m *Account) ChargeBilling(req *helper.AdminChargeBillingReq) error {
 
 func (m *Account) ActiveBilling(req resources.ActiveBilling) error {
 	return m.ck.DB.Transaction(func(tx *gorm.DB) error {
-		if err := m.ck.AddDeductionBalanceWithDB(&types.UserQueryOpts{UID: req.UserUID}, req.Amount, tx); err != nil {
+		if err := m.ck.AddDeductionBalanceWithDB(
+			&types.UserQueryOpts{UID: req.UserUID},
+			req.Amount,
+			tx,
+		); err != nil {
 			helper.ErrorCounter.WithLabelValues("ActiveBilling", "AddDeductionBalanceWithDB", req.UserUID.String()).
 				Inc()
 			return fmt.Errorf("failed to deduct balance: %w", err)
@@ -3013,7 +3067,11 @@ func (m *Account) ReconcileUnsettledLLMBilling(startTime, endTime time.Time) err
 	for userUID, amount := range unsettledAmounts {
 		err = m.ck.DB.Transaction(func(tx *gorm.DB) error {
 			// 1. deduct balance
-			if err := m.ck.AddDeductionBalanceWithDB(&types.UserQueryOpts{UID: userUID}, amount, tx); err != nil {
+			if err := m.ck.AddDeductionBalanceWithDB(
+				&types.UserQueryOpts{UID: userUID},
+				amount,
+				tx,
+			); err != nil {
 				return fmt.Errorf("failed to deduct balance: %w", err)
 			}
 			// 2. update billing status
@@ -3260,7 +3318,14 @@ func (g *Cockroach) RefundAmount(
 
 		// 用公开方法调用
 		if ref.DeductAmount > 0 {
-			if err := g.ck.UpdateWithAccount(payment.UserUID, false, false, false, ref.DeductAmount, tx); err != nil {
+			if err := g.ck.UpdateWithAccount(
+				payment.UserUID,
+				false,
+				false,
+				false,
+				ref.DeductAmount,
+				tx,
+			); err != nil {
 				return fmt.Errorf("扣款失败：%w", err)
 			}
 		}
@@ -3313,7 +3378,9 @@ func (g *Cockroach) DeleteUserAlertNotificationAccounts(
 	err := g.ck.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
 		// Get the IDs that will be deleted before actually deleting them
 		var accountsToDelete []types.UserAlertNotificationAccount
-		if err := tx.Where("id IN ? AND user_uid = ?", ids, userUID).Find(&accountsToDelete).Error; err != nil {
+		if err := tx.Where("id IN ? AND user_uid = ?", ids, userUID).
+			Find(&accountsToDelete).
+			Error; err != nil {
 			return fmt.Errorf("failed to find accounts to delete: %w", err)
 		}
 

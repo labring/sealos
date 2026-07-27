@@ -38,7 +38,12 @@ func (f *Finalizer) AddFinalizer(ctx context.Context, obj client.Object) (bool, 
 		// registering our finalizer.
 		notDelete = true
 		controllerutil.AddFinalizer(obj, f.finalizerName)
-		if err := f.updateFinalizers(ctx, client.ObjectKeyFromObject(obj), obj, obj.GetFinalizers()); err != nil {
+		if err := f.updateFinalizers(
+			ctx,
+			client.ObjectKeyFromObject(obj),
+			obj,
+			obj.GetFinalizers(),
+		); err != nil {
 			return notDelete, err
 		}
 	}
@@ -71,7 +76,12 @@ func (f *Finalizer) RemoveFinalizer(
 			}
 
 			controllerutil.RemoveFinalizer(obj, f.finalizerName)
-			if err := f.updateFinalizers(ctx, client.ObjectKeyFromObject(obj), obj, obj.GetFinalizers()); err != nil {
+			if err := f.updateFinalizers(
+				ctx,
+				client.ObjectKeyFromObject(obj),
+				obj,
+				obj.GetFinalizers(),
+			); err != nil {
 				return deleteBool, err
 			}
 		}
