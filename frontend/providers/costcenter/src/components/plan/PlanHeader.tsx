@@ -141,8 +141,8 @@ export function PlanHeader({ children, onRenewSuccess }: PlanHeaderProps) {
         .replace(/\//g, '/')
         .replace(',', '')
     : '-';
-  const expTime = subscription?.CurrentPeriodEndAt
-    ? new Date(subscription.CurrentPeriodEndAt)
+  const expTime = subscription?.ExpireAt
+    ? new Date(subscription.ExpireAt)
         .toLocaleString('zh-CN', {
           year: 'numeric',
           month: '2-digit',
