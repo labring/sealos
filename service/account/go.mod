@@ -16,9 +16,10 @@ replace (
 
 require (
 	github.com/dustin/go-humanize v1.0.1
-	github.com/gin-gonic/gin v1.9.1
+	github.com/gin-gonic/gin v1.10.1
 	github.com/goccy/go-json v0.10.2
 	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/labring/sealos/controllers/account v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/controllers/pkg v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/service v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/controllers/license v0.0.0-00010101000000-000000000000
