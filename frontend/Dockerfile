@@ -99,7 +99,7 @@ COPY --from=builder /app/$path/next.config.js ./$path/next.config.js
 RUN if ["$name" = "objectstorage" ]; then \
   COPY --from=builder /app/$path/next-i18next.config.js ./$path/next-i18next.config.js; \
   fi
-COPY --from=builder /app/$path/public ./$path/public
+COPY --from=builder --chown=nextjs:nodejs /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static
 
