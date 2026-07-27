@@ -36,9 +36,7 @@ declare -A SERVICE_MODULES=(
     ["account"]="account"
     ["minio"]="minio"
     ["launchpad"]="launchpad"
-    ["exceptionmonitor"]="exceptionmonitor"
     ["vlogs"]="vlogs"
-    ["hubble"]="hubble"
 )
 
 # Function to get all modules for a type
