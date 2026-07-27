@@ -47,6 +47,13 @@ type CVM interface {
 type Account interface {
 	GetBillingLastUpdateTime(owner string, _type common.Type) (bool, time.Time, error)
 	GetOwnersRecentUpdates(ownerList []string, checkTime time.Time) ([]string, error)
+	GetOwnerBillingsAt(
+		ownerList []string,
+		billingTime time.Time,
+	) (map[string][]*resources.Billing, error)
+	GetUnsettledBillingsAt(billingTime time.Time) (map[string][]*resources.Billing, error)
+	GetBillingCheckpoint() (time.Time, bool, error)
+	SaveBillingCheckpoint(billingTime time.Time) error
 	GetTimeUsedNamespaceList(startTime, endTime time.Time) ([]string, error)
 	SaveBillings(billing ...*resources.Billing) error
 	SaveObjTraffic(obs ...*types.ObjectStorageTraffic) error
@@ -141,6 +148,7 @@ type AccountV2 interface {
 	) error
 	AddBalance(user *types.UserQueryOpts, balance int64) error
 	AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, amount int64, orderIDs []string) error
+	AddDeductionBalanceForBilling(ops *types.UserQueryOpts, amount int64, orderIDs []string) error
 	ReduceBalance(ops *types.UserQueryOpts, amount int64) error
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)

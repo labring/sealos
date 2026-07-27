@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -1066,18 +1067,33 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(
 	orderIDs []string,
 ) error {
 	err := RetryTransaction(3, 2*time.Second, c.DB, func(tx *gorm.DB) error {
+		remainingAmount := deductionAmount
+		transactionID := billingTransactionID(c.LocalRegion.UID, orderIDs)
+		var existing int64
+		if dErr := tx.Model(&types.AccountTransaction{}).
+			Where("id = ?", transactionID).
+			Count(&existing).Error; dErr != nil {
+			return fmt.Errorf("failed to check account transaction: %w", dErr)
+		}
+		if existing > 0 {
+			return nil
+		}
 		userUID, dErr := c.GetUserUID(ops)
 		if dErr != nil {
 			return fmt.Errorf("failed to get user uid: %w", dErr)
 		}
 		var credits []types.Credits
-		if dErr = c.DB.Where("user_uid = ? AND expire_at > ? AND status = ?", userUID, time.Now().UTC(), types.CreditsStatusActive).Order("expire_at ASC").Find(&credits).Error; dErr != nil {
+		if dErr = tx.Where(
+			"user_uid = ? AND expire_at > ? AND status = ?",
+			userUID,
+			time.Now().UTC(),
+			types.CreditsStatusActive,
+		).Order("expire_at ASC").Find(&credits).Error; dErr != nil {
 			return fmt.Errorf("failed to get credits: %w", dErr)
 		}
 		now := time.Now().UTC()
-		accountTransactionID := uuid.New()
 		accountTransaction := types.AccountTransaction{
-			ID:            accountTransactionID,
+			ID:            transactionID,
 			RegionUID:     c.LocalRegion.UID,
 			Type:          "RESOURCE_BILLING",
 			UserUID:       userUID,
@@ -1091,18 +1107,18 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(
 		var creditUsedAmountAll int64
 		for i := range credits {
 			creditAmt := credits[i].Amount - credits[i].UsedAmount
-			if creditAmt > 0 && deductionAmount > 0 {
+			if creditAmt > 0 && remainingAmount > 0 {
 				var usedAmount int64
-				if creditAmt > deductionAmount {
-					credits[i].UsedAmount += deductionAmount
-					usedAmount = deductionAmount
+				if creditAmt > remainingAmount {
+					credits[i].UsedAmount += remainingAmount
+					usedAmount = remainingAmount
 				} else {
 					credits[i].UsedAmount = credits[i].Amount
 					credits[i].Status = types.CreditsStatusUsedUp
 					usedAmount = creditAmt
 				}
 				creditUsedAmountAll += usedAmount
-				deductionAmount -= usedAmount
+				remainingAmount -= usedAmount
 				// creditTransactions = append(creditTransactions, types.CreditsTransaction{
 				//	ID:                   uuid.New(),
 				//	UserUID:              userUID,
@@ -1127,17 +1143,17 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(
 			accountTransaction.DeductionCredit = creditUsedAmountAll
 			accountTransaction.CreditIDList = updateCreditsIDs
 		}
-		if deductionAmount > 0 {
-			if dErr = c.updateBalance(tx, ops, deductionAmount, true, true); dErr != nil {
+		if remainingAmount > 0 {
+			if dErr = c.updateBalance(tx, ops, remainingAmount, true, true); dErr != nil {
 				return fmt.Errorf("failed to update balance: %w", dErr)
 			}
-			accountTransaction.DeductionBalance = deductionAmount
+			accountTransaction.DeductionBalance = remainingAmount
 		} else {
 			accountTransaction.DeductionBalance = 0
 		}
-		// if dErr = tx.Create(&accountTransaction).Error; dErr != nil {
-		//	return fmt.Errorf("failed to create account transaction: %v", dErr)
-		//}
+		if dErr = tx.Create(&accountTransaction).Error; dErr != nil {
+			return fmt.Errorf("failed to create account transaction: %w", dErr)
+		}
 		// if len(creditTransactions) > 0 {
 		//	if dErr = tx.Create(&creditTransactions).Error; dErr != nil {
 		//		return fmt.Errorf("failed to create credit transactions: %v", dErr)
@@ -1146,6 +1162,63 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(
 		return nil
 	})
 	return err
+}
+
+func billingTransactionID(regionUID uuid.UUID, orderIDs []string) uuid.UUID {
+	ids := append([]string(nil), orderIDs...)
+	sort.Strings(ids)
+	key := "resource-billing\x00" + regionUID.String() + "\x00" + strings.Join(ids, "\x00")
+	return uuid.NewSHA1(uuid.NameSpaceOID, []byte(key))
+}
+
+func (c *Cockroach) AddDeductionBalanceForBilling(
+	ops *types.UserQueryOpts,
+	amount int64,
+	orderIDs []string,
+) error {
+	if amount == 0 {
+		return nil
+	}
+	return c.DB.Transaction(func(tx *gorm.DB) error {
+		transactionID := billingTransactionID(c.LocalRegion.UID, orderIDs)
+		var existing int64
+		if err := tx.Model(&types.AccountTransaction{}).
+			Where("id = ?", transactionID).
+			Count(&existing).Error; err != nil {
+			return fmt.Errorf("failed to check account transaction: %w", err)
+		}
+		if existing > 0 {
+			return nil
+		}
+		userUID, err := c.GetUserUID(ops)
+		if err != nil {
+			return fmt.Errorf("failed to get user uid: %w", err)
+		}
+		if err := c.updateBalance(
+			tx,
+			&types.UserQueryOpts{UID: userUID},
+			amount,
+			true,
+			true,
+		); err != nil {
+			return fmt.Errorf("failed to update balance: %w", err)
+		}
+		now := time.Now().UTC()
+		transaction := types.AccountTransaction{
+			ID:               transactionID,
+			RegionUID:        c.LocalRegion.UID,
+			Type:             "RESOURCE_BILLING",
+			UserUID:          userUID,
+			DeductionBalance: amount,
+			BillingIDList:    orderIDs,
+			CreatedAt:        now,
+			UpdatedAt:        now,
+		}
+		if err := tx.Create(&transaction).Error; err != nil {
+			return fmt.Errorf("failed to create account transaction: %w", err)
+		}
+		return nil
+	})
 }
 
 func RetryTransaction(
@@ -2256,6 +2329,11 @@ func (c *Cockroach) InitTables() error {
 		CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);`).Error
 	if err != nil {
 		return fmt.Errorf("failed to create index on WorkspaceSubscriptionTransaction: %w", err)
+	}
+	err = c.DB.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_debt_record_time_user ON "DebtStatusRecord" (create_at, user_uid);`).Error
+	if err != nil {
+		return fmt.Errorf("failed to create index on DebtStatusRecord: %w", err)
 	}
 
 	// TODO: remove this after migration

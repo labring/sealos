@@ -33,10 +33,8 @@ import (
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/controllers/pkg/utils/maps"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -44,6 +42,13 @@ import (
 type BillingTaskRunner struct {
 	*BillingReconciler
 }
+
+func (r *BillingTaskRunner) NeedLeaderElection() bool { return true }
+
+const (
+	billingMonitorDelay = 5 * time.Minute
+	billingRetryDelay   = time.Minute
+)
 
 var (
 	DebtUserMap              *maps.ConcurrentNullValueMap
@@ -56,34 +61,53 @@ func (r *BillingTaskRunner) Start(ctx context.Context) error {
 	}()
 
 	for {
-		select {
-		case <-ctx.Done():
+		if err := ctx.Err(); err != nil {
 			return nil
-		default:
-			now := time.Now()
-			minutesLeft := 60 - now.Minute()
-
-			// Execute if 30 or more minutes remain, else wait for next hour
-			if minutesLeft >= 30 {
-				if err := r.ExecuteBillingTask(); err != nil {
-					r.Error(err, "failed to execute billing task")
-				}
-			}
-
-			// Calculate sleep duration to next hour + 5 minutes
-			nextHour := now.Truncate(time.Hour).Add(time.Hour).Add(5 * time.Minute)
-			sleepDuration := nextHour.Sub(now)
-
-			r.Info("next billing reconcile time", "time", nextHour.Format(time.RFC3339))
-
-			// Sleep until next scheduled time or context cancellation
-			select {
-			case <-time.After(sleepDuration):
-				continue
-			case <-ctx.Done():
+		}
+		target := latestReadyBillingHour(time.Now())
+		if err := r.ExecuteBillingTasksUntil(target); err != nil {
+			r.Error(err, "failed to execute billing tasks", "target", target)
+			if !waitForBillingRun(ctx, billingRetryDelay) {
 				return nil
 			}
+			continue
 		}
+
+		// A long catch-up may make another hour ready while the task is running.
+		if latestReadyBillingHour(time.Now()).After(target) {
+			continue
+		}
+		nextRun := target.Add(time.Hour).Add(billingMonitorDelay)
+		r.Info("next billing reconcile time", "time", nextRun.Format(time.RFC3339))
+		if !waitForBillingRun(ctx, time.Until(nextRun)) {
+			return nil
+		}
+	}
+}
+
+func latestReadyBillingHour(now time.Time) time.Time {
+	return now.Add(-billingMonitorDelay).Truncate(time.Hour).UTC()
+}
+
+func billingHoursAfter(checkpoint, target time.Time) []time.Time {
+	var hours []time.Time
+	for hour := checkpoint.UTC().Truncate(time.Hour).Add(time.Hour); !hour.After(target); hour = hour.Add(time.Hour) {
+		hours = append(hours, hour)
+	}
+	return hours
+}
+
+func waitForBillingRun(ctx context.Context, delay time.Duration) bool {
+	if delay < 0 {
+		delay = 0
+	}
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return true
+	case <-ctx.Done():
+		return false
 	}
 }
 
@@ -99,82 +123,365 @@ type BillingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	logr.Logger
-	DBClient             database.Account
-	AccountV2            database.AccountV2
-	Properties           *resources.PropertyTypeLS
-	reconcileBillingFunc func(owner string, billings []*resources.Billing) error
-	concurrentLimit      int64
-	DebtUserMap          *maps.ConcurrentMap
+	DBClient               database.Account
+	AccountV2              database.AccountV2
+	Properties             *resources.PropertyTypeLS
+	reconcileBillingFunc   func(owner string, billings []*resources.Billing) error
+	executeBillingHourFunc func(time.Time) error
+	concurrentLimit        int64
+	DebtUserMap            *maps.ConcurrentMap
 }
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
-	r.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
+	return r.ExecuteBillingTasksUntil(latestReadyBillingHour(time.Now()))
+}
+
+func (r *BillingReconciler) ExecuteBillingTasksUntil(target time.Time) error {
+	target = target.UTC().Truncate(time.Hour)
+	checkpoint, exists, err := r.DBClient.GetBillingCheckpoint()
+	if err != nil {
+		return fmt.Errorf("get billing checkpoint: %w", err)
+	}
+	if !exists {
+		checkpoint = target.Add(-time.Hour)
+	}
+	for _, billingTime := range billingHoursAfter(checkpoint, target) {
+		execute := r.ExecuteBillingTaskAt
+		if r.executeBillingHourFunc != nil {
+			execute = r.executeBillingHourFunc
+		}
+		if err := execute(billingTime); err != nil {
+			return fmt.Errorf(
+				"reconcile billing hour %s: %w",
+				billingTime.Format(time.RFC3339),
+				err,
+			)
+		}
+		if err := r.DBClient.SaveBillingCheckpoint(billingTime); err != nil {
+			return fmt.Errorf(
+				"save billing checkpoint for %s: %w",
+				billingTime.Format(time.RFC3339),
+				err,
+			)
+		}
+	}
+	return nil
+}
+
+func (r *BillingReconciler) ExecuteBillingTaskAt(endHourTime time.Time) error {
+	endHourTime = endHourTime.UTC().Truncate(time.Hour)
+	taskStartedAt := time.Now()
+	r.Info("start billing reconcile", "billingTime", endHourTime.Format(time.RFC3339))
 	DebtUserMap = maps.NewConcurrentNullValueMap()
 	SubscriptionWorkspaceMap = maps.NewConcurrentNullValueMap()
-	var users []string
-	if err := r.AccountV2.GetGlobalDB().
-		Model(&types.Debt{}).
-		Where("account_debt_status IN (?, ?, ?) ", types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod).
-		Distinct("user_uid").
-		Pluck("user_uid", &users).
-		Error; err != nil {
-		return fmt.Errorf("failed to query unique users: %w", err)
+	if err := r.loadDebtUsersAt(endHourTime); err != nil {
+		return err
 	}
-	DebtUserMap.Set(users...)
-	var subscriptionWorkspaces []string
-	if err := r.AccountV2.GetGlobalDB().
-		Model(&types.WorkspaceSubscription{}).
-		Where("region_domain = ?", r.AccountV2.GetLocalRegion().Domain).
-		Pluck("workspace", &subscriptionWorkspaces).
-		Error; err != nil {
-		return fmt.Errorf("failed to query workspace subscriptions: %w", err)
-	}
-	SubscriptionWorkspaceMap.Set(subscriptionWorkspaces...)
-	ownerListMap, err := r.getRecentUsedOwners()
+	ownerListMap, err := r.getRecentUsedOwnersAt(endHourTime)
 	if err != nil {
 		return fmt.Errorf("failed to get the owner list of the recently used resource: %w", err)
+	}
+	unsettledBillings, err := r.DBClient.GetUnsettledBillingsAt(endHourTime)
+	if err != nil {
+		return fmt.Errorf("failed to get unsettled billings: %w", err)
+	}
+	addUnsettledBillingOwners(ownerListMap, unsettledBillings)
+	if err := r.loadSubscriptionWorkspacesAt(endHourTime, ownerListMap); err != nil {
+		return err
+	}
+	if len(ownerListMap) == 0 {
+		r.Info(
+			"billing hour has no monitor-backed owners",
+			"billingTime",
+			endHourTime.Format(time.RFC3339),
+		)
 	}
 	err = r.reconcileOwnerListBatch(
 		ownerListMap,
 		env.GetIntEnvWithDefault("BILLING_RECONCILE_BATCH_COUNT", 200),
-		time.Now(),
+		endHourTime,
 		r.reconcileOwnerList,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to reconcile owner list batch: %w", err)
 	}
-	r.Info("finish billing reconcile", "time", time.Now().Format(time.RFC3339))
+	r.Info(
+		"finish billing reconcile",
+		"billingTime", endHourTime.Format(time.RFC3339),
+		"duration", time.Since(taskStartedAt),
+	)
 	return nil
+}
+
+func (r *BillingReconciler) loadDebtUsersAt(endHourTime time.Time) error {
+	effectiveTime := endHourTime.Add(-time.Nanosecond)
+	db := r.AccountV2.GetGlobalDB()
+	var debts []types.Debt
+	if err := db.Model(&types.Debt{}).
+		Where("created_at <= ?", effectiveTime).
+		Find(&debts).Error; err != nil {
+		return fmt.Errorf("query billing-period debts: %w", err)
+	}
+
+	var recordsAfter []types.DebtStatusRecord
+	if err := db.Model(&types.DebtStatusRecord{}).
+		Where("create_at > ?", effectiveTime).
+		Order("create_at ASC").
+		Find(&recordsAfter).Error; err != nil {
+		return fmt.Errorf("query debt status after billing period: %w", err)
+	}
+
+	afterByUser := make(map[uuid.UUID]types.DebtStatusRecord, len(recordsAfter))
+	for _, record := range recordsAfter {
+		if _, exists := afterByUser[record.UserUID]; !exists {
+			afterByUser[record.UserUID] = record
+		}
+	}
+	var users []string
+	for i := range debts {
+		status := debtStatusAt(debts[i], afterByUser[debts[i].UserUID])
+		if types.ContainDebtStatus(types.DebtStates, status) {
+			users = append(users, debts[i].UserUID.String())
+		}
+	}
+	DebtUserMap.Set(users...)
+	return nil
+}
+
+func debtStatusAt(debt types.Debt, recordAfter types.DebtStatusRecord) types.DebtStatusType {
+	if recordAfter.UserUID != uuid.Nil {
+		return recordAfter.LastStatus
+	}
+	return debt.AccountDebtStatus
+}
+
+func (r *BillingReconciler) loadSubscriptionWorkspacesAt(
+	endHourTime time.Time,
+	ownerListMap map[string][]string,
+) error {
+	effectiveTime := endHourTime.Add(-time.Nanosecond)
+	db := r.AccountV2.GetGlobalDB()
+	regionDomain := r.AccountV2.GetLocalRegion().Domain
+	workspaceSet := make(map[string]struct{})
+	for _, workspaces := range ownerListMap {
+		for _, workspace := range workspaces {
+			workspaceSet[workspace] = struct{}{}
+		}
+	}
+	workspaces := make([]string, 0, len(workspaceSet))
+	for workspace := range workspaceSet {
+		workspaces = append(workspaces, workspace)
+	}
+	if len(workspaces) == 0 {
+		return nil
+	}
+
+	var subscriptions []types.WorkspaceSubscription
+	if err := db.Model(&types.WorkspaceSubscription{}).
+		Where(
+			"region_domain = ? AND workspace IN ? AND create_at <= ?",
+			regionDomain,
+			workspaces,
+			effectiveTime,
+		).
+		Find(&subscriptions).Error; err != nil {
+		return fmt.Errorf("query billing-period workspace subscriptions: %w", err)
+	}
+	var periodTransactions []types.WorkspaceSubscriptionTransaction
+	if err := db.Model(&types.WorkspaceSubscriptionTransaction{}).
+		Where(
+			"region_domain = ? AND workspace IN ? AND status = ? AND pay_status IN (?, ?) AND updated_at <= ?",
+			regionDomain,
+			workspaces,
+			types.SubscriptionTransactionStatusCompleted,
+			types.SubscriptionPayStatusPaid,
+			types.SubscriptionPayStatusNoNeed,
+			effectiveTime,
+		).
+		Find(&periodTransactions).Error; err != nil {
+		return fmt.Errorf("query billing-period workspace subscription transactions: %w", err)
+	}
+	var terminalTransactions []types.WorkspaceSubscriptionTransaction
+	if err := db.Model(&types.WorkspaceSubscriptionTransaction{}).
+		Where(
+			"region_domain = ? AND workspace IN ? AND status = ? AND operator IN (?, ?) AND updated_at <= ?",
+			regionDomain,
+			workspaces,
+			types.SubscriptionTransactionStatusCompleted,
+			types.SubscriptionTransactionTypeCanceled,
+			types.SubscriptionTransactionTypeDeleted,
+			effectiveTime,
+		).
+		Find(&terminalTransactions).Error; err != nil {
+		return fmt.Errorf("query billing-period terminal subscription transactions: %w", err)
+	}
+	transactions := make(
+		[]types.WorkspaceSubscriptionTransaction,
+		0,
+		len(periodTransactions)+len(terminalTransactions),
+	)
+	transactions = append(transactions, periodTransactions...)
+	transactions = append(transactions, terminalTransactions...)
+
+	workspaces, err := activeWorkspaceSubscriptionsAt(effectiveTime, subscriptions, transactions)
+	if err != nil {
+		return fmt.Errorf("resolve billing-period workspace subscriptions: %w", err)
+	}
+	SubscriptionWorkspaceMap.Set(workspaces...)
+	return nil
+}
+
+func activeWorkspaceSubscriptionsAt(
+	effectiveTime time.Time,
+	subscriptions []types.WorkspaceSubscription,
+	transactions []types.WorkspaceSubscriptionTransaction,
+) ([]string, error) {
+	active := make(map[string]struct{})
+	terminalAt := make(map[string]time.Time)
+	for i := range transactions {
+		if !isWorkspaceSubscriptionTerminalTransaction(transactions[i], effectiveTime) {
+			continue
+		}
+		previous, exists := terminalAt[transactions[i].Workspace]
+		if !exists || transactions[i].UpdatedAt.After(previous) {
+			terminalAt[transactions[i].Workspace] = transactions[i].UpdatedAt
+		}
+	}
+	for i := range subscriptions {
+		terminatedAt, terminated := terminalAt[subscriptions[i].Workspace]
+		if workspaceSubscriptionCovers(subscriptions[i], effectiveTime) &&
+			(!terminated || subscriptions[i].UpdateAt.After(terminatedAt)) {
+			active[subscriptions[i].Workspace] = struct{}{}
+		}
+	}
+	for i := range transactions {
+		covers, err := workspaceSubscriptionTransactionCovers(transactions[i], effectiveTime)
+		if err != nil {
+			return nil, err
+		}
+		if !covers {
+			continue
+		}
+		terminatedAt, terminated := terminalAt[transactions[i].Workspace]
+		if !terminated || transactions[i].UpdatedAt.After(terminatedAt) {
+			active[transactions[i].Workspace] = struct{}{}
+		}
+	}
+	workspaces := make([]string, 0, len(active))
+	for workspace := range active {
+		workspaces = append(workspaces, workspace)
+	}
+	return workspaces, nil
+}
+
+func isWorkspaceSubscriptionTerminalTransaction(
+	transaction types.WorkspaceSubscriptionTransaction,
+	effectiveTime time.Time,
+) bool {
+	if transaction.Status != types.SubscriptionTransactionStatusCompleted ||
+		transaction.UpdatedAt.After(effectiveTime) {
+		return false
+	}
+	switch transaction.Operator {
+	case types.SubscriptionTransactionTypeCanceled,
+		types.SubscriptionTransactionTypeDeleted:
+		return true
+	default:
+		return false
+	}
+}
+
+func workspaceSubscriptionCovers(
+	subscription types.WorkspaceSubscription,
+	effectiveTime time.Time,
+) bool {
+	if subscription.CreateAt.After(effectiveTime) || subscription.UpdateAt.After(effectiveTime) {
+		return false
+	}
+	endAt := subscription.CurrentPeriodEndAt
+	if subscription.ExpireAt != nil && subscription.ExpireAt.Before(endAt) {
+		endAt = *subscription.ExpireAt
+	}
+	if !subscription.CancelAtPeriodEnd && !subscription.CancelAt.IsZero() &&
+		subscription.CancelAt.Before(endAt) {
+		endAt = subscription.CancelAt
+	}
+	return !subscription.CurrentPeriodStartAt.After(effectiveTime) && endAt.After(effectiveTime)
+}
+
+func workspaceSubscriptionTransactionCovers(
+	transaction types.WorkspaceSubscriptionTransaction,
+	effectiveTime time.Time,
+) (bool, error) {
+	if transaction.Status != types.SubscriptionTransactionStatusCompleted ||
+		(transaction.PayStatus != types.SubscriptionPayStatusPaid &&
+			transaction.PayStatus != types.SubscriptionPayStatusNoNeed) ||
+		transaction.UpdatedAt.After(effectiveTime) {
+		return false, nil
+	}
+	switch transaction.Operator {
+	case types.SubscriptionTransactionTypeCreated,
+		types.SubscriptionTransactionTypeUpgraded,
+		types.SubscriptionTransactionTypeDowngraded,
+		types.SubscriptionTransactionTypeRenewed:
+	default:
+		return false, nil
+	}
+	period, err := types.ParsePeriod(transaction.Period)
+	if err != nil {
+		return false, fmt.Errorf(
+			"parse subscription transaction %s period: %w", transaction.ID, err,
+		)
+	}
+	return !transaction.UpdatedAt.After(effectiveTime) &&
+		transaction.UpdatedAt.Add(period).After(effectiveTime), nil
+}
+
+func addUnsettledBillingOwners(
+	ownerListMap map[string][]string,
+	unsettled map[string][]*resources.Billing,
+) {
+	for owner, billings := range unsettled {
+		namespaces := make(map[string]struct{}, len(ownerListMap[owner]))
+		for _, namespace := range ownerListMap[owner] {
+			namespaces[namespace] = struct{}{}
+		}
+		for _, billing := range billings {
+			if _, exists := namespaces[billing.Namespace]; exists {
+				continue
+			}
+			ownerListMap[owner] = append(ownerListMap[owner], billing.Namespace)
+			namespaces[billing.Namespace] = struct{}{}
+		}
+	}
 }
 
 func (r *BillingReconciler) reconcileOwnerList(
 	ownerListMap map[string][]string,
 	now time.Time,
 ) error {
-	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).
-		UTC()
+	endHourTime := now.UTC().Truncate(time.Hour)
 	startHourTime := endHourTime.Add(-1 * time.Hour)
 	ownerList := make([]string, 0, len(ownerListMap))
 	for owner := range ownerListMap {
 		ownerList = append(ownerList, owner)
 	}
-	ownersRecentUpdates, err := r.DBClient.GetOwnersRecentUpdates(ownerList, endHourTime)
+	existingStartedAt := time.Now()
+	existingBillings, err := r.DBClient.GetOwnerBillingsAt(ownerList, endHourTime)
 	if err != nil {
-		return fmt.Errorf("get owners without recent updates failed: %w", err)
-	}
-
-	// remove the owner that does not need to be updated; final State The user deletes the service at any time and does not perform billing processing
-	for _, owner := range append(ownersRecentUpdates, DebtUserMap.GetAllKey()...) {
-		delete(ownerListMap, owner)
+		return fmt.Errorf("get existing owner billings failed: %w", err)
 	}
 	r.Info(
-		"get owners recent updates",
-		"already update owner count",
-		len(ownersRecentUpdates),
-		"remaining owner count",
-		len(ownerListMap),
+		"get existing owner billings",
+		"owner count", len(existingBillings),
+		"duration", time.Since(existingStartedAt),
 	)
 
+	for _, owner := range DebtUserMap.GetAllKey() {
+		delete(ownerListMap, owner)
+	}
+
+	generateStartedAt := time.Now()
 	ownerBillings, err := r.DBClient.GenerateBillingData(
 		startHourTime,
 		endHourTime,
@@ -184,7 +491,13 @@ func (r *BillingReconciler) reconcileOwnerList(
 	if err != nil {
 		return fmt.Errorf("generate billing data failed: %w", err)
 	}
-	r.Info("generate billing data", "count", len(ownerBillings))
+	r.Info(
+		"generate billing data",
+		"count", len(ownerBillings),
+		"duration", time.Since(generateStartedAt),
+	)
+	classifyGeneratedBillings(ownerBillings)
+	ownerBillings = pendingOwnerBillings(ownerBillings, existingBillings)
 
 	type result struct {
 		owner string
@@ -227,39 +540,75 @@ func (r *BillingReconciler) reconcileOwnerList(
 		}
 	}
 	if len(failedList) > 0 {
-		r.Error(
-			fmt.Errorf("failed to reconcile owner list: %v", failedList),
-			"failed to reconcile owner list",
-		)
+		return fmt.Errorf("failed to reconcile owners: %s", strings.Join(failedList, ","))
 	}
 	return nil
 }
 
-func (r *BillingReconciler) reconcileBilling(owner string, billings []*resources.Billing) error {
-	amount := int64(0)
-	orderIDs := make([]string, 0, len(billings))
-	for _, billing := range billings {
-		// TODO skip the billing of the subscription workspace: if billing.namespace is the subscription space, billing.Status= subscription, && skip amount ++
-		// Only the traffic charges for the subscription space are processed, and no billing is required. The traffic charges are handled separately within the subscription
-		if _, ok := SubscriptionWorkspaceMap.Get(billing.Namespace); ok {
-			billing.Status = resources.Subscription
-			continue
+func billingBusinessKey(billing *resources.Billing) string {
+	return fmt.Sprintf("%s\x00%d\x00%s", billing.Namespace, billing.AppType, billing.AppName)
+}
+
+func classifyGeneratedBillings(ownerBillings map[string][]*resources.Billing) {
+	for _, billings := range ownerBillings {
+		for _, billing := range billings {
+			billing.Status = resources.Unsettled
+			if _, ok := SubscriptionWorkspaceMap.Get(billing.Namespace); ok {
+				billing.Status = resources.Subscription
+			}
 		}
-		amount += billing.Amount
-		orderIDs = append(orderIDs, billing.OrderID)
 	}
+}
+
+func pendingOwnerBillings(
+	generated, existing map[string][]*resources.Billing,
+) map[string][]*resources.Billing {
+	pending := make(map[string][]*resources.Billing)
+	for owner, billings := range existing {
+		for _, billing := range billings {
+			if billing.Status == resources.Unsettled &&
+				strings.HasPrefix(billing.OrderID, "bh_") {
+				pending[owner] = append(pending[owner], billing)
+			}
+		}
+	}
+	for owner, billings := range generated {
+		existingByKey := make(map[string]*resources.Billing, len(existing[owner]))
+		for _, billing := range existing[owner] {
+			existingByKey[billingBusinessKey(billing)] = billing
+		}
+		for _, billing := range billings {
+			if _, ok := existingByKey[billingBusinessKey(billing)]; ok {
+				continue
+			}
+			pending[owner] = append(pending[owner], billing)
+		}
+	}
+	return pending
+}
+
+func (r *BillingReconciler) reconcileBilling(owner string, billings []*resources.Billing) error {
 	if err := r.DBClient.SaveBillings(billings...); err != nil {
 		return fmt.Errorf("save billings failed: %w", err)
 	}
-	if err := r.rechargeBalance(owner, amount); err != nil {
-		r.Error(err, "recharge balance failed", "owner", owner, "amount", amount)
-		if updateErr := r.DBClient.UpdateBillingStatus(
-			orderIDs,
-			resources.Unsettled,
-		); updateErr != nil {
-			r.Error(updateErr, "update billing unsettled status failed", "orderIDs", orderIDs)
+	for _, billing := range billings {
+		if billing.Status == resources.Subscription {
+			if err := r.DBClient.UpdateBillingStatus(
+				[]string{billing.OrderID}, resources.Subscription,
+			); err != nil {
+				return fmt.Errorf("mark billing %s subscription: %w", billing.OrderID, err)
+			}
+			continue
 		}
-		return fmt.Errorf("recharge balance failed: %w", err)
+		orderIDs := []string{billing.OrderID}
+		if err := r.AccountV2.AddDeductionBalanceForBilling(
+			&types.UserQueryOpts{Owner: owner}, billing.Amount, orderIDs,
+		); err != nil {
+			return fmt.Errorf("deduct billing %s balance: %w", billing.OrderID, err)
+		}
+		if err := r.DBClient.UpdateBillingStatus(orderIDs, resources.Settled); err != nil {
+			return fmt.Errorf("mark billing %s settled: %w", billing.OrderID, err)
+		}
 	}
 	return nil
 }
@@ -268,40 +617,27 @@ func (r *BillingReconciler) reconcileBillingWithCredits(
 	owner string,
 	billings []*resources.Billing,
 ) error {
-	amount := int64(0)
-	orderIDs := make([]string, 0, len(billings))
-	for _, billing := range billings {
-		amount += billing.Amount
-		orderIDs = append(orderIDs, billing.OrderID)
-	}
-	if amount <= 0 {
-		return nil
-	}
 	if err := r.DBClient.SaveBillings(billings...); err != nil {
 		return fmt.Errorf("save billings failed: %w", err)
 	}
-	if err := r.AccountV2.AddDeductionBalanceWithCredits(
-		&types.UserQueryOpts{Owner: owner},
-		amount,
-		orderIDs,
-	); err != nil {
-		r.Error(err, "AddDeductionBalanceWithCredits failed", "owner", owner, "amount", amount)
-		if updateErr := r.DBClient.UpdateBillingStatus(
-			orderIDs,
-			resources.Unsettled,
-		); updateErr != nil {
-			r.Error(
-				updateErr,
-				"update billing unsettled status failed",
-				"owner",
-				owner,
-				"amount",
-				amount,
-				"orderIDs",
-				orderIDs,
-			)
+	for _, billing := range billings {
+		if billing.Status == resources.Subscription {
+			if err := r.DBClient.UpdateBillingStatus(
+				[]string{billing.OrderID}, resources.Subscription,
+			); err != nil {
+				return fmt.Errorf("mark billing %s subscription: %w", billing.OrderID, err)
+			}
+			continue
 		}
-		return fmt.Errorf("recharge balance failed: %w", err)
+		orderIDs := []string{billing.OrderID}
+		if err := r.AccountV2.AddDeductionBalanceWithCredits(
+			&types.UserQueryOpts{Owner: owner}, billing.Amount, orderIDs,
+		); err != nil {
+			return fmt.Errorf("deduct billing %s with credits: %w", billing.OrderID, err)
+		}
+		if err := r.DBClient.UpdateBillingStatus(orderIDs, resources.Settled); err != nil {
+			return fmt.Errorf("mark billing %s settled: %w", billing.OrderID, err)
+		}
 	}
 	return nil
 }
@@ -340,38 +676,41 @@ func (r *BillingReconciler) reconcileOwnerListBatch(
 	return nil
 }
 
-func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err error) {
-	if amount == 0 {
-		return nil
-	}
-	if err := r.AccountV2.AddDeductionBalance(
-		&types.UserQueryOpts{Owner: owner},
-		amount,
-	); err != nil {
-		return fmt.Errorf("add balance failed: %w", err)
-	}
-	return nil
-}
-
-func (r *BillingReconciler) getRecentUsedOwners() (map[string][]string, error) {
-	now := time.Now()
-	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).
-		UTC()
+func (r *BillingReconciler) getRecentUsedOwnersAt(
+	endHourTime time.Time,
+) (map[string][]string, error) {
+	endHourTime = endHourTime.UTC().Truncate(time.Hour)
 	startHourTime := endHourTime.Add(-1 * time.Hour)
+	monitorStartedAt := time.Now()
 	namespaceList, err := r.DBClient.GetTimeUsedNamespaceList(startHourTime, endHourTime)
 	if err != nil {
 		return nil, fmt.Errorf("get recent owners failed: %w", err)
 	}
-	nsToOwnerMap, err := GetAllUser()
+	r.Info(
+		"get monitored namespaces",
+		"namespace count", len(namespaceList),
+		"duration", time.Since(monitorStartedAt),
+	)
+	if len(namespaceList) == 0 {
+		r.Info(
+			"billing source monitor window is empty",
+			"billingTime",
+			endHourTime.Format(time.RFC3339),
+		)
+	}
+	lookupStartedAt := time.Now()
+	nsToOwnerMap, err := r.getUsersForNamespaces(namespaceList)
 	if err != nil {
-		return nil, fmt.Errorf("get all user failed: %w", err)
+		return nil, fmt.Errorf("get users for monitored namespaces failed: %w", err)
 	}
 	r.Info(
 		"get owner and namespace",
-		"owner count",
+		"matched user count",
 		len(nsToOwnerMap),
 		"namespace count",
 		len(namespaceList),
+		"duration",
+		time.Since(lookupStartedAt),
 	)
 	usedOwnerList := make(map[string][]string)
 	for _, ns := range namespaceList {
@@ -397,8 +736,32 @@ func (r *BillingReconciler) getRecentUsedOwners() (map[string][]string, error) {
 			usedOwnerList[owner] = append(usedOwnerList[owner], ns)
 		}
 	}
-	r.Info("get all user", "count", len(usedOwnerList))
+	r.Info("get monitored users", "count", len(usedOwnerList))
 	return usedOwnerList, nil
+}
+
+func (r *BillingReconciler) getUsersForNamespaces(namespaces []string) (map[string]string, error) {
+	nsToOwnerMap := make(map[string]string, len(namespaces))
+	for _, namespace := range namespaces {
+		if !strings.HasPrefix(namespace, UserNamespacePrefix) {
+			continue
+		}
+		user := &userv1.User{}
+		if err := r.Get(
+			context.Background(),
+			client.ObjectKey{Name: strings.TrimPrefix(namespace, UserNamespacePrefix)},
+			user,
+		); err != nil {
+			if apierrors.IsNotFound(err) {
+				continue
+			}
+			return nil, fmt.Errorf("get user for namespace %s: %w", namespace, err)
+		}
+		if owner := user.Annotations[userv1.UserLabelOwnerKey]; owner != "" {
+			nsToOwnerMap[namespace] = owner
+		}
+	}
+	return nsToOwnerMap, nil
 }
 
 func getUsername(namespace string) string {
@@ -417,53 +780,4 @@ func (r *BillingReconciler) Init() error {
 		r.reconcileBillingFunc = r.reconcileBillingWithCredits
 	}
 	return nil
-}
-
-// map[namespace]owner
-func GetAllUser() (map[string]string, error) {
-	err := userv1.AddToScheme(scheme.Scheme)
-	if err != nil {
-		return nil, fmt.Errorf("unable to add scheme: %w", err)
-	}
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, fmt.Errorf("unable to build config: %w", err)
-	}
-	// TODO from cluster config
-	// config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
-	// if err != nil {
-	//	return nil, fmt.Errorf("unable to build config: %v", err)
-	//}
-	k8sClt, err := client.New(config, client.Options{Scheme: scheme.Scheme})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create client: %w", err)
-	}
-	nsToOwnerMap := make(map[string]string)
-
-	listOpts := &client.ListOptions{
-		Limit: 5000,
-	}
-	for {
-		userMetaList := &metav1.PartialObjectMetadataList{}
-		userMetaList.SetGroupVersionKind(userv1.GroupVersion.WithKind("UserList"))
-
-		if err := k8sClt.List(context.Background(), userMetaList, listOpts); err != nil {
-			return nil, fmt.Errorf("failed to list instances: %w", err)
-		}
-
-		for _, user := range userMetaList.Items {
-			owner := user.Annotations[userv1.UserLabelOwnerKey]
-			if owner == "" {
-				continue
-			}
-			nsToOwnerMap["ns-"+user.Name] = owner
-		}
-
-		token := userMetaList.GetContinue()
-		if token == "" {
-			break
-		}
-		listOpts.Continue = token
-	}
-	return nsToOwnerMap, nil
 }
