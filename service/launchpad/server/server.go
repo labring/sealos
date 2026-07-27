@@ -135,17 +135,9 @@ func (vs *VMServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(rw, "Result failed (invalid query expression)", http.StatusInternalServerError)
-		log.Printf("Reulst failed (%s)\n", err)
-		return
-	}
-
 	rw.Header().Set("Content-Type", "application/json")
-
-	if _, err = rw.Write(result); err != nil {
-		log.Printf("Reulst failed: %s\n", err)
+	if err = json.NewEncoder(rw).Encode(res); err != nil {
+		log.Printf("Result failed: %s\n", err)
 		http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

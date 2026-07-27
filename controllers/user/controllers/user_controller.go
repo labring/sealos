@@ -289,7 +289,6 @@ func (r *UserReconciler) syncNamespace(
 		var err error
 		ns := &v1.Namespace{}
 		ns.Name = config.GetUsersNamespace(user.Name)
-		ns.Labels = map[string]string{}
 		if err = r.Get(ctx, client.ObjectKeyFromObject(ns), ns); err != nil {
 			if !apierrors.IsNotFound(err) {
 				return err
@@ -304,6 +303,9 @@ func (r *UserReconciler) syncNamespace(
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
 			if ns.Annotations == nil {
 				ns.Annotations = make(map[string]string)
+			}
+			if ns.Labels == nil {
+				ns.Labels = make(map[string]string)
 			}
 			ns.Annotations[userAnnotationCreatorKey] = user.Name
 			ns.Annotations[userAnnotationOwnerKey] = user.Annotations[userAnnotationOwnerKey]
