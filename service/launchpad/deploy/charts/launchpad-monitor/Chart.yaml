@@ -1,0 +1,6 @@
+apiVersion: v2
+name: launchpad-monitor
+description: Helm chart for the sealos launchpad monitor
+type: application
+version: 0.1.0
+appVersion: "latest"

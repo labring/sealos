@@ -1,0 +1,21 @@
+replicaCount: 1
+
+image: ghcr.io/labring/sealos-vlogs-service:latest
+imagePullPolicy: Always
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 5m
+    memory: 64Mi
+
+service:
+  port: 8428
+
+serviceVlogsConfig:
+  path: "http://usr-vlc-victoria-logs-cluster-vmauth.vlc.svc:8427"
+  username: ""
+  password: ""
+  whitelistKubernetesHosts: ""

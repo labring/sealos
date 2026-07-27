@@ -19,8 +19,9 @@ spec:
     metadata:
       labels:
         {{- include "template-frontend.labels" . | nindent 8 }}
-      {{- with .Values.podAnnotations }}
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:

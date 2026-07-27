@@ -16,6 +16,7 @@ spec:
     metadata:
       annotations:
         originImageName: {{ .Values.image }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
         app: {{ include "account-service.name" . }}
         {{- include "account-service.labels" . | nindent 8 }}
