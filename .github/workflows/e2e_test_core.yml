@@ -23,14 +23,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  resolve-changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      run_e2e: ${{ steps.set.outputs.run_e2e }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Detect non-test lifecycle changes
+        id: set
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+          fi
+
+          if bash ./scripts/has-non-test-changes.sh ./lifecycle "${BASE_REF}" "${{ github.sha }}"; then
+            echo "run_e2e=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_e2e=false" >> "$GITHUB_OUTPUT"
+          fi
+
   call_ci_workflow:
+    needs: [resolve-changes]
+    if: ${{ needs.resolve-changes.outputs.run_e2e == 'true' }}
     uses: ./.github/workflows/import-patch-image.yml
     with:
       arch: amd64
       e2e: true
       image: false
   e2e-core-test:
-    needs: [call_ci_workflow]
+    needs: [resolve-changes, call_ci_workflow]
+    if: ${{ needs.resolve-changes.outputs.run_e2e == 'true' }}
     strategy:
       fail-fast: false
       matrix:

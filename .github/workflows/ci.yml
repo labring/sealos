@@ -56,7 +56,15 @@ jobs:
         id: set-matrix
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            bash ./scripts/resolve-modules.sh ./lifecycle --changed "${{ github.event.pull_request.base.sha }}"
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+            HEAD_REF="${{ github.sha }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+            HEAD_REF="${{ github.sha }}"
+          fi
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            bash ./scripts/resolve-modules.sh ./lifecycle --changed "${BASE_REF}" "${HEAD_REF}"
           else
             bash ./scripts/resolve-modules.sh ./lifecycle
           fi
@@ -71,6 +79,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@v5
@@ -80,10 +90,19 @@ jobs:
       - name: Install Dependencies
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
+      - name: Resolve Linter Args
+        id: lint-args
+        run: |
+          args="--color=always --config=${{ github.workspace }}/.golangci.yml"
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            args="${args} --new-from-rev=${{ github.event.pull_request.base.sha }}"
+          fi
+          echo "args=${args}" >> "$GITHUB_OUTPUT"
+
       - name: Run Linter
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.12.2
           working-directory: ${{ matrix.workdir }}
           # args between =, not space
-          args: --color=always --config=${{ github.workspace }}/.golangci.yml
+          args: ${{ steps.lint-args.outputs.args }}
