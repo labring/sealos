@@ -137,7 +137,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
 
   const [showMoreApps, setShowMoreApps] = useState(false);
   const queryClient = useQueryClient();
-  const swtichWorksapceMutation = useMutation({
+  const { mutateAsync: switchWorkspace, isLoading: isSwitchingWorkspace } = useMutation({
     mutationFn: switchRequest,
     async onSuccess(data) {
       if (data.code === 200 && !!data.data && session) {
@@ -298,7 +298,9 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           // check if user has logged in before
           const hasLoggedInBefore = checkIfEverLoggedIn();
           console.log('hasLoggedInBefore', hasLoggedInBefore);
-          setFirstUse(null);
+          if (useSessionStore.getState().firstUse !== null) {
+            setFirstUse(null);
+          }
 
           // save autolaunch info (for guest and logged in user)
           let workspaceUid: string | undefined;
@@ -373,7 +375,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           }
 
           try {
-            await swtichWorksapceMutation.mutateAsync(workspaceUid);
+            await switchWorkspace(workspaceUid);
           } catch (error) {
             console.error(error);
             completeWithDesktop();
@@ -400,7 +402,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         // Handle normal workspace switch
         if (workspaceUid) {
           try {
-            await swtichWorksapceMutation.mutateAsync(workspaceUid);
+            await switchWorkspace(workspaceUid);
           } catch (error) {
             // workspace not found or other error
             console.error(error);
@@ -431,14 +433,14 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     setCanShowGuide,
     setFirstUse,
     setGuestSession,
-    swtichWorksapceMutation,
+    switchWorkspace,
     workspaceQuery.isLoading,
     workspaces
   ]);
 
   // check workspace
   useEffect(() => {
-    if (swtichWorksapceMutation.isLoading) return;
+    if (isSwitchingWorkspace) return;
     let workspaceUid: string | undefined;
     // Check if there's no autolaunch workspace UID
     const currentWorkspaceUid = session?.user?.ns_uid;
@@ -460,8 +462,8 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     workspaceUid = defaultWorkspace?.uid;
 
     if (!workspaceUid) return;
-    swtichWorksapceMutation.mutate(workspaceUid);
-  }, [session?.user?.ns_uid, workspaces]);
+    void switchWorkspace(workspaceUid);
+  }, [isSwitchingWorkspace, session?.user?.ns_uid, switchWorkspace, workspaces]);
 
   // Grab params from ad clicks and store in local storage
   const { adClickData, semData } = useSemParams();
