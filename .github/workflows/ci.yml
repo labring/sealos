@@ -56,7 +56,21 @@ jobs:
         id: set-matrix
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            bash ./scripts/resolve-modules.sh ./lifecycle --changed "${{ github.event.pull_request.base.sha }}"
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+            HEAD_REF="${{ github.sha }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+            HEAD_REF="${{ github.sha }}"
+          fi
+
+          if ! bash ./scripts/has-non-test-changes.sh ./lifecycle "${BASE_REF}" "${HEAD_REF}"; then
+            echo 'matrix={"include":[]}' >> "$GITHUB_OUTPUT"
+            echo 'has_modules=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            bash ./scripts/resolve-modules.sh ./lifecycle --changed "${BASE_REF}" "${HEAD_REF}"
           else
             bash ./scripts/resolve-modules.sh ./lifecycle
           fi
