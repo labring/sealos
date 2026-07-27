@@ -1,6 +1,0 @@
-apiVersion: v2
-name: kubepanel-frontend
-description: Sealos Kube Panel Frontend Helm Chart
-type: application
-version: 1.0.0
-appVersion: "latest"
