@@ -1,10 +1,56 @@
 import { subHours, subDays, subMinutes, subMonths } from 'date-fns';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(customParseFormat);
+dayjs.extend(utc);
 
 type TimeUnit = 'h' | 'm' | 'd' | 'M';
 
 interface TimeRange {
   startTime: Date;
   endTime: Date;
+}
+
+const UTC_DATE_FORMAT = 'YYYY-MM-DD';
+const UTC_TIME_FORMAT = 'HH:mm:ss';
+
+export function formatUtcDate(date: Date): string {
+  return dayjs(date).utc().format(UTC_DATE_FORMAT);
+}
+
+export function formatUtcTime(date: Date): string {
+  return dayjs(date).utc().format(UTC_TIME_FORMAT);
+}
+
+export function formatUtcDateTime(date: Date | string | number, format = 'YYYY-MM-DD HH:mm:ss') {
+  return dayjs(date).utc().format(format);
+}
+
+export function normalizeTimeInput(value: string): string {
+  return /^\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
+}
+
+export function parseUtcDateTime(date: string, time: string): Date | null {
+  const parsed = dayjs.utc(
+    `${date} ${normalizeTimeInput(time)}`,
+    `${UTC_DATE_FORMAT} ${UTC_TIME_FORMAT}`,
+    true
+  );
+
+  return parsed.isValid() ? parsed.toDate() : null;
+}
+
+export function getUtcDayBounds(date: Date): { start: Date; end: Date } {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+
+  return {
+    start: new Date(Date.UTC(year, month, day, 0, 0, 0)),
+    end: new Date(Date.UTC(year, month, day, 23, 59, 59, 999))
+  };
 }
 
 /**

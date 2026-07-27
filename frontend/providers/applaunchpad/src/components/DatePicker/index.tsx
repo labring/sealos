@@ -1,22 +1,20 @@
 'use client';
 
-import {
-  endOfDay,
-  format,
-  isAfter,
-  isBefore,
-  isMatch,
-  isValid,
-  parse,
-  startOfDay,
-  subDays
-} from 'date-fns';
+import { format, isAfter, isBefore, subDays } from 'date-fns';
 import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
 import { ChangeEventHandler, useMemo, useState } from 'react';
 import { DateRange, DayPicker } from 'react-day-picker';
 import useDateTimeStore from '@/store/date';
-import { parseTimeRange } from '@/utils/timeRange';
+import {
+  formatUtcDate,
+  formatUtcDateTime,
+  formatUtcTime,
+  getUtcDayBounds,
+  normalizeTimeInput,
+  parseTimeRange,
+  parseUtcDateTime
+} from '@/utils/timeRange';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Calendar, RefreshCw } from 'lucide-react';
 import { Input } from '@sealos/shadcn-ui/input';
@@ -148,10 +146,10 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   const [inputState, setInputState] = useState<0 | 1>(0);
   const [recentDate, setRecentDate] = useState<RecentDate | null>(defaultRecentDate);
 
-  const [fromDateString, setFromDateString] = useState<string>(format(initState.from, 'y-MM-dd'));
-  const [toDateString, setToDateString] = useState<string>(format(initState.to, 'y-MM-dd'));
-  const [fromTimeString, setFromTimeString] = useState<string>(format(initState.from, 'HH:mm:ss'));
-  const [toTimeString, setToTimeString] = useState<string>(format(initState.to, 'HH:mm:ss'));
+  const [fromDateString, setFromDateString] = useState<string>(formatUtcDate(initState.from));
+  const [toDateString, setToDateString] = useState<string>(formatUtcDate(initState.to));
+  const [fromTimeString, setFromTimeString] = useState<string>(formatUtcTime(initState.from));
+  const [toTimeString, setToTimeString] = useState<string>(formatUtcTime(initState.to));
 
   const [fromDateError, setFromDateError] = useState<string | null>(null);
   const [toDateError, setToDateError] = useState<string | null>(null);
@@ -179,34 +177,56 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
 
       return;
     }
-    selectedRange?.from && setStartDateTime(selectedRange.from);
-    selectedRange?.to && setEndDateTime(selectedRange.to);
+    const start = parseUtcDateTime(fromDateString, fromTimeString);
+    const end = parseUtcDateTime(toDateString, toTimeString);
+
+    if (!start || !end) {
+      if (!start) setFromTimeError('Invalid start time range');
+      if (!end) setToTimeError('Invalid end time range');
+      return;
+    }
+
+    if (start > end) {
+      setFromTimeError('Start time must be before end time');
+      setToTimeError('End time must be after start time');
+      return;
+    }
+
+    if (isAfter(end, new Date())) {
+      setToTimeError('end time cannot be after current time');
+      return;
+    }
+
+    setFromDateError(null);
+    setFromTimeError(null);
+    setToDateError(null);
+    setToTimeError(null);
+    setStartDateTime(start);
+    setEndDateTime(end);
     setIsOpen(false);
   };
 
   const handleFromChange = (value: string, type: 'date' | 'time') => {
     setManualRange();
-    let newDateTimeString;
+    const normalizedValue = type === 'time' ? normalizeTimeInput(value) : value;
 
     if (type === 'date') {
       setFromDateString(value);
-      if (!isMatch(value, 'y-MM-dd')) {
-        setFromDateError('Invalid date format');
-        return;
-      }
-      newDateTimeString = `${value} ${fromTimeString}`;
     } else {
-      setFromTimeString(value);
-      if (!isMatch(value, 'HH:mm:ss')) {
-        setFromTimeError('Invalid time format');
-        return;
-      }
-      newDateTimeString = `${fromDateString} ${value}`;
+      setFromTimeString(normalizedValue);
     }
 
-    const date = parse(newDateTimeString, 'y-MM-dd HH:mm:ss', new Date());
+    const date = parseUtcDateTime(
+      type === 'date' ? value : fromDateString,
+      type === 'time' ? normalizedValue : fromTimeString
+    );
 
-    if (!isValid(date)) {
+    if (!date) {
+      if (type === 'date') {
+        setFromDateError('Invalid date format');
+      } else {
+        setFromTimeError('Invalid time format');
+      }
       return setSelectedRange({ from: undefined, to: selectedRange?.to });
     }
 
@@ -237,27 +257,25 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
 
   const handleToChange = (value: string, type: 'date' | 'time') => {
     setManualRange();
-    let newDateTimeString;
+    const normalizedValue = type === 'time' ? normalizeTimeInput(value) : value;
 
     if (type === 'date') {
       setToDateString(value);
-      if (!isMatch(value, 'y-MM-dd')) {
-        setToDateError('Invalid date format');
-        return;
-      }
-      newDateTimeString = `${value} ${toTimeString}`;
     } else {
-      setToTimeString(value);
-      if (!isMatch(value, 'HH:mm:ss')) {
-        setToTimeError('Invalid time format');
-        return;
-      }
-      newDateTimeString = `${toDateString} ${value}`;
+      setToTimeString(normalizedValue);
     }
 
-    const date = parse(newDateTimeString, 'y-MM-dd HH:mm:ss', new Date());
+    const date = parseUtcDateTime(
+      type === 'date' ? value : toDateString,
+      type === 'time' ? normalizedValue : toTimeString
+    );
 
-    if (!isValid(date)) {
+    if (!date) {
+      if (type === 'date') {
+        setToDateError('Invalid date format');
+      } else {
+        setToTimeError('Invalid time format');
+      }
       return setSelectedRange({ from: selectedRange?.from, to: undefined });
     }
 
@@ -310,23 +328,28 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       } else {
         setInputState(0);
       }
+      const utcFrom = from ? getUtcDayBounds(from).start : undefined;
+      const utcTo = to ? getUtcDayBounds(to).end : undefined;
+      const boundedUtcTo = utcTo && isAfter(utcTo, now) ? now : utcTo;
+
       setSelectedRange({
-        from,
-        to
+        from: utcFrom,
+        to: boundedUtcTo
       });
-      if (from) {
-        setFromDateString(format(startOfDay(from), 'y-MM-dd'));
-        setFromTimeString(format(startOfDay(from), 'HH:mm:ss'));
+      if (utcFrom) {
+        setFromDateString(formatUtcDate(utcFrom));
+        setFromTimeString(formatUtcTime(utcFrom));
       } else {
-        setFromDateString(format(new Date(), 'y-MM-dd'));
-        setFromTimeString(format(new Date(), 'HH:mm:ss'));
+        setFromDateString(formatUtcDate(now));
+        setFromTimeString(formatUtcTime(now));
       }
-      if (to) {
-        setToDateString(format(endOfDay(to), 'y-MM-dd'));
-        setToTimeString(format(endOfDay(to), 'HH:mm:ss'));
+      if (boundedUtcTo) {
+        setToDateString(formatUtcDate(boundedUtcTo));
+        setToTimeString(formatUtcTime(boundedUtcTo));
       } else {
-        setToDateString(format(from ? from : new Date(), 'y-MM-dd'));
-        setToTimeString(format(from ? from : new Date(), 'HH:mm:ss'));
+        const fallback = utcFrom || now;
+        setToDateString(formatUtcDate(fallback));
+        setToTimeString(formatUtcTime(fallback));
       }
 
       setRecentDate(null);
@@ -355,24 +378,21 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
     setRecentDate({ ...item, value: nextRange });
     setSelectedRange(nextRange);
     if (nextRange.from) {
-      setFromDateString(format(nextRange.from, 'y-MM-dd'));
-      setFromTimeString(format(nextRange.from, 'HH:mm:ss'));
+      setFromDateString(formatUtcDate(nextRange.from));
+      setFromTimeString(formatUtcTime(nextRange.from));
     }
     if (nextRange.to) {
-      setToDateString(format(nextRange.to, 'y-MM-dd'));
-      setToTimeString(format(nextRange.to, 'HH:mm:ss'));
+      setToDateString(formatUtcDate(nextRange.to));
+      setToTimeString(formatUtcTime(nextRange.to));
     }
   };
 
   // format date time display
   const formatDateTimeDisplay = () => {
-    const startDate = format(startDateTime, 'MMM dd');
-    const endDate = format(endDateTime, 'MMM dd');
-    const startTime = format(startDateTime, 'HH:mm');
-    const endTime = format(endDateTime, 'HH:mm');
-
-    // format: 10:15, Jan 20 - 10:45, Jan 21
-    return `${startTime}, ${startDate} - ${endTime}, ${endDate}`;
+    return `${formatUtcDateTime(startDateTime, 'HH:mm, MMM DD')} - ${formatUtcDateTime(
+      endDateTime,
+      'HH:mm, MMM DD'
+    )}`;
   };
 
   return (
@@ -400,6 +420,7 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
           <div className="w-[242px] h-fit flex flex-col">
             <DayPicker
               mode="range"
+              timeZone="UTC"
               navLayout="around"
               selected={selectedRange}
               onSelect={handleRangeSelect}
@@ -532,7 +553,7 @@ const DatePickerInput = ({ value, onChange, error, showError }: DatePickerInputP
   return (
     <Input
       className={cn(
-        'bg-white w-full h-8 !text-xs text-zinc-900 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-none hover:bg-zinc-900',
+        'bg-white w-full h-8 !text-xs text-zinc-900 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 shadow-none hover:bg-zinc-50',
         error && 'border-red-500 hover:border-red-500 focus:border-red-500 focus:ring-red-500',
         showError && 'border-red-500 hover:border-red-500 animate-shake'
       )}
