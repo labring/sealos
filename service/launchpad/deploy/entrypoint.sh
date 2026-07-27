@@ -9,7 +9,6 @@ CHART_PATH=${CHART_PATH:-"./charts/launchpad-monitor"}
 LEGACY_MANIFEST=${LEGACY_MANIFEST:-"./remove/deploy.yaml"}
 SERVICE_NAME="launchpad-monitor"
 USER_VALUES_PATH="/root/.sealos/cloud/values/apps/applaunchpad/${SERVICE_NAME}-values.yaml"
-PROMETHEUS_URL=${PROMETHEUS_URL:-"http://vmsingle-victoria-metrics-k8s-stack.vm.svc:8429"}
 
 HELM_EXTRA_ARGS=()
 
