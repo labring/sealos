@@ -15,6 +15,7 @@
 package v1
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -35,7 +36,7 @@ func TestIcpValidator_Query(t *testing.T) {
 		rule := &v1.IngressRule{
 			Host: "sealos.cn",
 		}
-		icpResponse, err := icpValidator.Query(rule)
+		icpResponse, err := icpValidator.Query(context.Background(), rule)
 		if err != nil {
 			t.Fatalf("Error querying ICP: %v", err)
 		}
