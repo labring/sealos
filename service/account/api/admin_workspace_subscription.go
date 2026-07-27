@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
@@ -232,13 +233,7 @@ func AdminSubscriptionPlans(c *gin.Context) {
 	for _, plan := range plans {
 		// Filter by plan type if specified (check tags for type classification)
 		if req.PlanType != "" {
-			hasType := false
-			for _, tag := range plan.Tags {
-				if tag == req.PlanType {
-					hasType = true
-					break
-				}
-			}
+			hasType := slices.Contains(plan.Tags, req.PlanType)
 			if !hasType {
 				continue
 			}
@@ -507,13 +502,7 @@ func AdminSubscriptionPlansGET(c *gin.Context) {
 	for _, plan := range plans {
 		// Filter by plan type if specified (check tags for type classification)
 		if req.PlanType != "" {
-			hasType := false
-			for _, tag := range plan.Tags {
-				if tag == req.PlanType {
-					hasType = true
-					break
-				}
-			}
+			hasType := slices.Contains(plan.Tags, req.PlanType)
 			if !hasType {
 				continue
 			}

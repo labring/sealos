@@ -17,7 +17,7 @@ package care
 import "github.com/spf13/pflag"
 
 type flagRegisterer interface {
-	RegisterFlags(*pflag.FlagSet)
+	RegisterFlags(flags *pflag.FlagSet)
 }
 
 type flagValidator interface {

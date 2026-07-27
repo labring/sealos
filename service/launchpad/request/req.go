@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -16,8 +17,19 @@ import (
 func Request(addr string, params *bytes.Buffer) ([]byte, error) {
 	log.Printf("[launchpad-monitor] request vm addr=%s body=%s", addr, params.String())
 
-	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
+		addr,
+		params,
+	)
+	if err != nil {
+		log.Printf("[launchpad-monitor] create request failed addr=%s err=%v", addr, err)
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("[launchpad-monitor] request vm failed addr=%s err=%v", addr, err)
 		return nil, err

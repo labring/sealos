@@ -22,16 +22,13 @@ import (
 	"strings"
 	"time"
 
-	registry2 "github.com/labring/sealos/pkg/sreg/registry/crane"
-
 	types2 "github.com/docker/docker/api/types/registry"
-
 	"github.com/labring/image-cri-shim/pkg/cri"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
-
+	registry2 "github.com/labring/sealos/pkg/sreg/registry/crane"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -52,8 +49,8 @@ const (
 )
 
 type Registry struct {
-	Address  string `json:"address" yaml:"address"`
-	Auth     string `json:"auth" yaml:"auth,omitempty"`
+	Address  string `json:"address"            yaml:"address"`
+	Auth     string `json:"auth"               yaml:"auth,omitempty"`
 	Priority int    `json:"priority,omitempty" yaml:"priority,omitempty"` // Registry priority (0-1000), higher is preferred
 }
 
@@ -66,17 +63,17 @@ type Config struct {
 	Timeout         metav1.Duration `json:"timeout"`
 	ReloadInterval  metav1.Duration `json:"reloadInterval"`
 	Auth            string          `json:"auth"`
-	Cache           CacheConfig     `json:"cache" yaml:"cache"`
-	Registries      []Registry      `json:"registries" yaml:"registries,omitempty"`
+	Cache           CacheConfig     `json:"cache"                     yaml:"cache"`
+	Registries      []Registry      `json:"registries"                yaml:"registries,omitempty"`
 	OfflinePriority int             `json:"offlinePriority,omitempty" yaml:"offlinePriority,omitempty"` // Custom priority for sealos.hub (default: 1000)
 }
 
 type CacheConfig struct {
-	ImageCacheSize   int             `json:"imageCacheSize" yaml:"imageCacheSize"`
-	ImageCacheTTL    metav1.Duration `json:"imageCacheTTL" yaml:"imageCacheTTL"`
-	DomainCacheTTL   metav1.Duration `json:"domainCacheTTL" yaml:"domainCacheTTL"`
+	ImageCacheSize   int             `json:"imageCacheSize"   yaml:"imageCacheSize"`
+	ImageCacheTTL    metav1.Duration `json:"imageCacheTTL"    yaml:"imageCacheTTL"`
+	DomainCacheTTL   metav1.Duration `json:"domainCacheTTL"   yaml:"domainCacheTTL"`
 	StatsLogInterval metav1.Duration `json:"statsLogInterval" yaml:"statsLogInterval"`
-	DisableStats     bool            `json:"disableStats" yaml:"disableStats"`
+	DisableStats     bool            `json:"disableStats"     yaml:"disableStats"`
 }
 
 type ShimAuthConfig struct {
@@ -101,7 +98,7 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 		logger.Warn("url parse error: %+v", err)
 	}
 	domain := rawURL.Host
-	if c.Timeout.Duration.Milliseconds() == 0 {
+	if c.Timeout.Milliseconds() == 0 {
 		c.Timeout = metav1.Duration{}
 		c.Timeout.Duration, _ = time.ParseDuration("15m")
 	}
@@ -151,13 +148,24 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 
 			// Handle priority: use configured value or default
 			priority := registry.Priority
-			if priority == 0 {
+			switch {
+			case priority == 0:
 				priority = RegistryDefaultPriority
-			} else if priority < MinPriority {
-				logger.Warn("registry %q priority %d is below minimum, using %d", registry.Address, priority, MinPriority)
+			case priority < MinPriority:
+				logger.Warn(
+					"registry %q priority %d is below minimum, using %d",
+					registry.Address,
+					priority,
+					MinPriority,
+				)
 				priority = MinPriority
-			} else if priority > MaxPriority {
-				logger.Warn("registry %q priority %d exceeds maximum, using %d", registry.Address, priority, MaxPriority)
+			case priority > MaxPriority:
+				logger.Warn(
+					"registry %q priority %d exceeds maximum, using %d",
+					registry.Address,
+					priority,
+					MaxPriority,
+				)
 				priority = MaxPriority
 			}
 
@@ -167,12 +175,16 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 		shimAuth.CRIConfigs = criAuth
 		shimAuth.CRIPriorities = criPriorities
 		shimAuth.SkipLoginRegistries = skipLogin
-		logger.Debug("criRegistryAuth: %+v, priorities: %+v", shimAuth.CRIConfigs, shimAuth.CRIPriorities)
+		logger.Debug(
+			"criRegistryAuth: %+v, priorities: %+v",
+			shimAuth.CRIConfigs,
+			shimAuth.CRIPriorities,
+		)
 	}
 
 	{
 		offlineName, offlinePasswd := splitNameAndPasswd(c.Auth)
-		//offline registry auth
+		// offline registry auth
 		shimAuth.OfflineCRIConfigs = map[string]types2.AuthConfig{domain: {
 			Username:      offlineName,
 			Password:      offlinePasswd,
@@ -181,18 +193,31 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 
 		// Handle offline priority: use configured value or default
 		offlinePriority := c.OfflinePriority
-		if offlinePriority == 0 {
+		switch {
+		case offlinePriority == 0:
 			offlinePriority = SealosHubDefaultPriority
-		} else if offlinePriority < MinPriority {
-			logger.Warn("offline registry priority %d is below minimum, using %d", offlinePriority, MinPriority)
+		case offlinePriority < MinPriority:
+			logger.Warn(
+				"offline registry priority %d is below minimum, using %d",
+				offlinePriority,
+				MinPriority,
+			)
 			offlinePriority = MinPriority
-		} else if offlinePriority > MaxPriority {
-			logger.Warn("offline registry priority %d exceeds maximum, using %d", offlinePriority, MaxPriority)
+		case offlinePriority > MaxPriority:
+			logger.Warn(
+				"offline registry priority %d exceeds maximum, using %d",
+				offlinePriority,
+				MaxPriority,
+			)
 			offlinePriority = MaxPriority
 		}
 
 		shimAuth.OfflinePriority = offlinePriority
-		logger.Debug("criOfflineAuth: %+v, priority: %d", shimAuth.OfflineCRIConfigs, shimAuth.OfflinePriority)
+		logger.Debug(
+			"criOfflineAuth: %+v, priority: %d",
+			shimAuth.OfflineCRIConfigs,
+			shimAuth.OfflinePriority,
+		)
 	}
 
 	if c.Address == "" {

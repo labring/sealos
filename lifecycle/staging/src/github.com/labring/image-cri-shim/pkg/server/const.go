@@ -16,7 +16,7 @@ package server
 
 const (
 	// DirPermissions is the permissions to create the directory for sockets with.
-	DirPermissions = 0711
+	DirPermissions = 0o711
 )
 
 // maxMsgSize use 16MB as the default message size limit.

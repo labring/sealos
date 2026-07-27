@@ -148,7 +148,8 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 
 		// Check if this might be a downgrade (invoice metadata is empty or missing subscription_operator)
 		// For downgrade, DowngradePlan sets metadata on subscription, not invoice
-		mightBeDowngrade := !hasOperator || operator == string(types.SubscriptionTransactionTypeDowngraded)
+		mightBeDowngrade := !hasOperator ||
+			operator == string(types.SubscriptionTransactionTypeDowngraded)
 
 		if mightBeDowngrade && inv.Parent != nil && inv.Parent.SubscriptionDetails != nil &&
 			inv.Parent.SubscriptionDetails.Subscription != nil {
@@ -191,10 +192,7 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 					)
 					// Continue waiting for subscription metadata
 					time.Sleep(delay)
-					delay = time.Duration(float64(delay) * 1.5)
-					if delay > maxDelay {
-						delay = maxDelay
-					}
+					delay = min(time.Duration(float64(delay)*1.5), maxDelay)
 					continue
 				}
 			}
@@ -229,10 +227,7 @@ func waitForInvoiceMetadata(invoiceID string) (*stripe.Invoice, error) {
 		time.Sleep(delay)
 
 		// Increase delay for next attempt (exponential backoff)
-		delay = time.Duration(float64(delay) * 1.5)
-		if delay > maxDelay {
-			delay = maxDelay
-		}
+		delay = min(time.Duration(float64(delay)*1.5), maxDelay)
 	}
 
 	return nil, fmt.Errorf(
@@ -369,9 +364,12 @@ func ensureCustomerMetadata(
 	}
 	if custormer == nil || custormer.Metadata == nil || custormer.Metadata["user_uid"] == "" {
 		if subscription.Customer != nil && subscription.Customer.ID != "" {
-			if err := services.StripeServiceInstance.SetCustomerMetadata(subscription.Customer.ID, map[string]string{
-				"user_uid": userUID,
-			}); err != nil {
+			if err := services.StripeServiceInstance.SetCustomerMetadata(
+				subscription.Customer.ID,
+				map[string]string{
+					"user_uid": userUID,
+				},
+			); err != nil {
 				return nil, fmt.Errorf(
 					"failed to set customer metadata for user UID %s: %w",
 					userUID,
@@ -381,7 +379,10 @@ func ensureCustomerMetadata(
 			// 重新获取更新后的客户
 			custormer, _ = services.StripeServiceInstance.GetCustomerByUID(userUID) // 忽略 err，已处理
 		} else {
-			return nil, fmt.Errorf("customer ID mismatch or customer not found for user UID %s", userUID)
+			return nil, fmt.Errorf(
+				"customer ID mismatch or customer not found for user UID %s",
+				userUID,
+			)
 		}
 	}
 	return custormer, nil
@@ -439,9 +440,12 @@ func handleSubscriptionUpdate(
 	if err != nil {
 		return err
 	}
-	sub.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).UTC()
+	sub.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).
+		UTC()
 	// Add 1 hour to account for invoice confirmation processing time
-	sub.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC().Add(1 * time.Hour)
+	sub.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).
+		UTC().
+		Add(1 * time.Hour)
 	sub.ExpireAt = stripe.Time(sub.CurrentPeriodEndAt)
 
 	if err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
@@ -459,7 +463,12 @@ func handleSubscriptionUpdate(
 			}
 		}
 
-		if err := finalizeWorkspaceSubscriptionSuccess(tx, sub, wsTransaction, &payment); err != nil {
+		if err := finalizeWorkspaceSubscriptionSuccess(
+			tx,
+			sub,
+			wsTransaction,
+			&payment,
+		); err != nil {
 			return err
 		}
 		return applyStripePaymentToWorkspaceSubscription(tx, sub, &payment)
@@ -512,13 +521,20 @@ func prepareUpdateTransaction(
 		}
 
 		// First try to find the transaction
-		if err := dao.DBClient.GetGlobalDB().Model(&types.WorkspaceSubscriptionTransaction{}).Where("pay_id = ?", paymentID).First(&wsTransaction).Error; err != nil {
+		if err := dao.DBClient.GetGlobalDB().
+			Model(&types.WorkspaceSubscriptionTransaction{}).
+			Where("pay_id = ?", paymentID).
+			First(&wsTransaction).
+			Error; err != nil {
 			return nil, "", fmt.Errorf("failed to get upgrade transaction: %w", err)
 		}
 
 		// Check if there's a PaymentOrder for this upgrade
 		var paymentOrder types.PaymentOrder
-		if err := dao.DBClient.GetGlobalDB().Where("id = ?", paymentID).First(&paymentOrder).Error; err == nil {
+		if err := dao.DBClient.GetGlobalDB().
+			Where("id = ?", paymentID).
+			First(&paymentOrder).
+			Error; err == nil {
 			// PaymentOrder exists, this is the new invoice-based upgrade flow
 			if paymentOrder.Stripe != nil && paymentOrder.Stripe.InvoiceID != "" {
 				// Update PaymentOrder with the subscription ID if not already set
@@ -534,7 +550,10 @@ func prepareUpdateTransaction(
 		if meta.TransactionID == "" {
 			return nil, "", errors.New("missing transaction_id for downgrade subscription")
 		}
-		if err := dao.DBClient.GetGlobalDB().Where("id = ?", meta.TransactionID).First(&wsTransaction).Error; err != nil {
+		if err := dao.DBClient.GetGlobalDB().
+			Where("id = ?", meta.TransactionID).
+			First(&wsTransaction).
+			Error; err != nil {
 			return nil, "", fmt.Errorf("failed to get downgrade transaction: %w", err)
 		}
 	default:
@@ -589,7 +608,8 @@ func handleSubscriptionCreateOrRenew(
 		// Detect and record the old subscriptions that need to be closed (for the scenario of recreating subscriptions in debt status)
 		// In memory records, such as finalizeWorkspaceSubscriptionSuccess again after the completion of processing
 		var oldSubscriptionID string
-		if ws != nil && isInitial && ws.Stripe != nil && ws.Stripe.SubscriptionID != "" && ws.Stripe.SubscriptionID != subscription.ID {
+		if ws != nil && isInitial && ws.Stripe != nil && ws.Stripe.SubscriptionID != "" &&
+			ws.Stripe.SubscriptionID != subscription.ID {
 			oldSubscriptionID = ws.Stripe.SubscriptionID
 			logrus.Infof(
 				"Detected old subscription %s for workspace %s/%s, will cancel after new subscription is finalized",
@@ -602,7 +622,9 @@ func handleSubscriptionCreateOrRenew(
 		if ws != nil {
 			payment.WorkspaceSubscriptionID = &ws.ID
 			if isInitial && ws.Status == types.SubscriptionStatusDeleted {
-				if _, err := services.StripeServiceInstance.CancelSubscription(subscription.ID); err != nil {
+				if _, err := services.StripeServiceInstance.CancelSubscription(
+					subscription.ID,
+				); err != nil {
 					return fmt.Errorf(
 						"failed to cancel subscription for deleted workspace: %w",
 						err,
@@ -617,20 +639,35 @@ func handleSubscriptionCreateOrRenew(
 				return nil
 			}
 
-			ws.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).UTC()
+			ws.CurrentPeriodStartAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodStart, 0).
+				UTC()
 			// Add 1 hour to account for invoice confirmation processing time
-			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).UTC().Add(1 * time.Hour)
+			ws.CurrentPeriodEndAt = time.Unix(subscription.Items.Data[len(subscription.Items.Data)-1].CurrentPeriodEnd, 0).
+				UTC().
+				Add(1 * time.Hour)
 			ws.ExpireAt = stripe.Time(ws.CurrentPeriodEndAt)
 		}
 
-		if err := finalizeWorkspaceSubscriptionSuccess(tx, ws, wsTransaction, &payment); err != nil {
+		if err := finalizeWorkspaceSubscriptionSuccess(
+			tx,
+			ws,
+			wsTransaction,
+			&payment,
+		); err != nil {
 			return err
 		}
 		if err := applyStripePaymentToWorkspaceSubscription(tx, ws, &payment); err != nil {
 			return err
 		}
 
-		if err := sendNotification(nr, userUID, wsTransaction, ws, meta.Operator, invoice); err != nil {
+		if err := sendNotification(
+			nr,
+			userUID,
+			wsTransaction,
+			ws,
+			meta.Operator,
+			invoice,
+		); err != nil {
 			dao.Logger.Errorf(
 				"failed to send subscription success notification for user %s: %v",
 				userUID,
@@ -928,12 +965,16 @@ func handleWorkspaceSubscriptionInvoiceCreated(event *stripe.Event) error {
 
 	// 4. check if invoice is already confirmed/paid
 	if invoice.Status == "paid" || invoice.Status == "void" || invoice.Status == "uncollectible" {
-		logrus.Infof("Invoice %s already processed (status: %s), skipping", invoice.ID, invoice.Status)
+		logrus.Infof(
+			"Invoice %s already processed (status: %s), skipping",
+			invoice.ID,
+			invoice.Status,
+		)
 		return nil
 	}
 
 	// 5. check if invoice has auto_advance enabled (should be confirmed automatically)
-	if invoice.AutoAdvance != true {
+	if !invoice.AutoAdvance {
 		logrus.Infof("Invoice %s does not have auto_advance enabled, skipping", invoice.ID)
 		return nil
 	}

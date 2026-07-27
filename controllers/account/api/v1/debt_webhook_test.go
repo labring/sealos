@@ -2,7 +2,6 @@ package v1
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	pkgtype "github.com/labring/sealos/controllers/pkg/types"
@@ -10,8 +9,8 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -22,13 +21,22 @@ import (
 // to be compatible with the production code's {Name: ns, Namespace: ns} key pattern.
 type stubClient struct {
 	client.WithWatch
-	nsMap map[string]*corev1.Namespace
+	nsMap  map[string]*corev1.Namespace
 	scheme *runtime.Scheme
 }
 
-func (s *stubClient) Get(_ context.Context, key client.ObjectKey, obj client.Object, _ ...client.GetOption) error {
+func (s *stubClient) Get(
+	_ context.Context,
+	key client.ObjectKey,
+	obj client.Object,
+	_ ...client.GetOption,
+) error {
 	if ns, ok := s.nsMap[key.Name]; ok {
-		ns.DeepCopyInto(obj.(*corev1.Namespace))
+		namespace, ok := obj.(*corev1.Namespace)
+		if !ok {
+			return apierrors.NewBadRequest("stubClient only supports Namespace objects")
+		}
+		ns.DeepCopyInto(namespace)
 		return nil
 	}
 	return apierrors.NewNotFound(corev1.Resource("namespaces"), key.Name)
@@ -60,7 +68,11 @@ func makeReq(op admissionv1.Operation, kind, group, version, resource string) ad
 		AdmissionRequest: admissionv1.AdmissionRequest{
 			Operation: op,
 			Kind:      metav1.GroupVersionKind{Kind: kind, Group: group, Version: version},
-			Resource:  metav1.GroupVersionResource{Resource: resource, Group: group, Version: version},
+			Resource: metav1.GroupVersionResource{
+				Resource: resource,
+				Group:    group,
+				Version:  version,
+			},
 			UserInfo: authenticationv1.UserInfo{
 				Username: "test-user",
 				Groups:   []string{"system:serviceaccounts:user-system"},
@@ -84,7 +96,10 @@ func makeReqWithGroups(op admissionv1.Operation, groups []string) admission.Requ
 
 func TestHandle_SystemMastersBypass(t *testing.T) {
 	d := &DebtValidate{}
-	resp := d.Handle(context.Background(), makeReqWithGroups(admissionv1.Create, []string{"system:masters"}))
+	resp := d.Handle(
+		context.Background(),
+		makeReqWithGroups(admissionv1.Create, []string{"system:masters"}),
+	)
 	if !resp.Allowed {
 		t.Fatalf("system:masters should be allowed, got: %s", resp.Result.Message)
 	}
@@ -92,7 +107,10 @@ func TestHandle_SystemMastersBypass(t *testing.T) {
 
 func TestHandle_KubeSystemBypass(t *testing.T) {
 	d := &DebtValidate{}
-	resp := d.Handle(context.Background(), makeReqWithGroups(admissionv1.Create, []string{"system:serviceaccounts:kube-system"}))
+	resp := d.Handle(
+		context.Background(),
+		makeReqWithGroups(admissionv1.Create, []string{"system:serviceaccounts:kube-system"}),
+	)
 	if !resp.Allowed {
 		t.Fatalf("kube-system SA should be allowed, got: %s", resp.Result.Message)
 	}
@@ -100,7 +118,10 @@ func TestHandle_KubeSystemBypass(t *testing.T) {
 
 func TestHandle_NonUserSASkipped(t *testing.T) {
 	d := &DebtValidate{}
-	resp := d.Handle(context.Background(), makeReqWithGroups(admissionv1.Create, []string{"system:serviceaccounts:account-system"}))
+	resp := d.Handle(
+		context.Background(),
+		makeReqWithGroups(admissionv1.Create, []string{"system:serviceaccounts:account-system"}),
+	)
 	if !resp.Allowed {
 		t.Fatalf("non-user-system SA should be allowed, got: %s", resp.Result.Message)
 	}
@@ -127,8 +148,7 @@ func TestHandle_UserSA_AdminBypass(t *testing.T) {
 }
 
 func TestHandle_WhitelistBypass(t *testing.T) {
-	os.Setenv("WHITELIST", "terminals.Terminal.terminal.sealos.io/v1")
-	defer os.Unsetenv("WHITELIST")
+	t.Setenv("WHITELIST", "terminals.Terminal.terminal.sealos.io/v1")
 
 	d := &DebtValidate{}
 	req := makeReq(admissionv1.Create, "Terminal", "terminal.sealos.io", "v1", "terminals")
@@ -143,8 +163,7 @@ func TestHandle_WhitelistBypass(t *testing.T) {
 }
 
 func TestHandle_WhitelistNoMatch_EntersCheck(t *testing.T) {
-	os.Setenv("WHITELIST", "terminals.Terminal.terminal.sealos.io/v1")
-	defer os.Unsetenv("WHITELIST")
+	t.Setenv("WHITELIST", "terminals.Terminal.terminal.sealos.io/v1")
 
 	d := newDebtWithNS(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-test"}})
 	req := makeReq(admissionv1.Create, "Pod", "", "v1", "pods")
@@ -191,7 +210,11 @@ func TestHandle_PaymentUpdateDenied(t *testing.T) {
 	d := &DebtValidate{}
 	req := makeReqWithGroups(admissionv1.Update, []string{"system:serviceaccounts:user-system"})
 	req.Kind = metav1.GroupVersionKind{Kind: "Payment", Group: "account.sealos.io", Version: "v1"}
-	req.Resource = metav1.GroupVersionResource{Resource: "payments", Group: "account.sealos.io", Version: "v1"}
+	req.Resource = metav1.GroupVersionResource{
+		Resource: "payments",
+		Group:    "account.sealos.io",
+		Version:  "v1",
+	}
 	if resp := d.Handle(context.Background(), req); resp.Allowed {
 		t.Fatal("Payment Update should be denied for user SA")
 	}
@@ -223,7 +246,13 @@ func TestHandle_DebtLimit0Quota_Denied(t *testing.T) {
 
 func TestHandle_V1Alpha1OpsRequest_EntersDebtCheck(t *testing.T) {
 	d := newDebtWithNS(&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "ns-test"}})
-	req := makeReq(admissionv1.Create, "OpsRequest", "apps.kubeblocks.io", "v1alpha1", "opsrequests")
+	req := makeReq(
+		admissionv1.Create,
+		"OpsRequest",
+		"apps.kubeblocks.io",
+		"v1alpha1",
+		"opsrequests",
+	)
 	if resp := d.Handle(context.Background(), req); resp.Allowed {
 		t.Fatal("v1alpha1 OpsRequest from user SA without owner label namespace should be denied")
 	}
@@ -269,8 +298,8 @@ func TestCheckOption_CacheHit_InsufficientBalance(t *testing.T) {
 		},
 	})
 	d.TTLUserMap.Put("account:user-1", &pkgtype.UsableBalanceWithCredits{
-		Balance:         0,
-		UsableCredits:   0,
+		Balance:          0,
+		UsableCredits:    0,
 		DeductionBalance: 100,
 	})
 	if resp := d.checkOption(context.Background(), logger, d.Client, "ns-test"); resp.Allowed {
@@ -286,8 +315,8 @@ func TestCheckOption_CacheHit_SufficientBalance(t *testing.T) {
 		},
 	})
 	d.TTLUserMap.Put("account:user-1", &pkgtype.UsableBalanceWithCredits{
-		Balance:         100,
-		UsableCredits:   0,
+		Balance:          100,
+		UsableCredits:    0,
 		DeductionBalance: 0,
 	})
 	if resp := d.checkOption(context.Background(), logger, d.Client, "ns-test"); !resp.Allowed {

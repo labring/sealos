@@ -3,6 +3,7 @@ package helper
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -157,7 +158,7 @@ type AppCostsReq struct {
 	Namespace string `json:"namespace,omitempty" bson:"namespace" example:"ns-admin"`
 	// @Summary App type
 	// @Description App type
-	AppType string `json:"appType,omitempty"   bson:"appType"   example:"app"`
+	AppType string `json:"appType,omitempty" bson:"appType" example:"app"`
 
 	// @Summary App Name
 	// @Description App Name
@@ -721,11 +722,11 @@ type WorkspaceSubscriptionOperatorReq struct {
 	// @Summary Subscription period
 	// @Description Subscription period (1m for monthly, 1y for yearly)
 	// @JSONSchema required
-	Period types.SubscriptionPeriod `json:"period"        bson:"period"  example:"1m"`
+	Period types.SubscriptionPeriod `json:"period" bson:"period" example:"1m"`
 	// @Summary Promotion code
 	// @Description Promotion code for applying discount to the upgrade payment
 	// @JSONSchema optional
-	PromotionCode string `json:"promotionCode" bson:"promotionCode"                    example:"SAVE20"`
+	PromotionCode string `json:"promotionCode" bson:"promotionCode" example:"SAVE20"`
 
 	// @Summary Payment method
 	// @Description Payment method (STRIPE, BALANCE)
@@ -1041,10 +1042,8 @@ func ParseWorkspaceSubscriptionPlansReq(c *gin.Context) (*WorkspaceSubscriptionP
 	}
 
 	// Validate each namespace is not empty
-	for _, ns := range req.Namespaces {
-		if ns == "" {
-			return nil, errors.New("namespace cannot be empty")
-		}
+	if slices.Contains(req.Namespaces, "") {
+		return nil, errors.New("namespace cannot be empty")
 	}
 
 	return req, nil

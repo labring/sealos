@@ -91,7 +91,11 @@ func (vl *VLogsServer) verifyParams(req *http.Request) (*api.VlogsLaunchpadReque
 	if vlogsReq.Namespace == "" {
 		return nil, "", errors.New("failed to get namespace")
 	}
-	if err := vl.validateTimeParams(vlogsReq.StartTime, vlogsReq.EndTime, vlogsReq.Time); err != nil {
+	if err := vl.validateTimeParams(
+		vlogsReq.StartTime,
+		vlogsReq.EndTime,
+		vlogsReq.Time,
+	); err != nil {
 		return nil, "", err
 	}
 	return vlogsReq, kubeConfig, nil
@@ -157,7 +161,11 @@ func (vl *VLogsServer) verifyDBParams(
 	if vlogsReq.Namespace == "" {
 		return nil, "", errors.New("failed to get namespace")
 	}
-	if err := vl.validateTimeParams(vlogsReq.StartTime, vlogsReq.EndTime, vlogsReq.Time); err != nil {
+	if err := vl.validateTimeParams(
+		vlogsReq.StartTime,
+		vlogsReq.EndTime,
+		vlogsReq.Time,
+	); err != nil {
 		return nil, "", err
 	}
 	return vlogsReq, kubeConfig, nil

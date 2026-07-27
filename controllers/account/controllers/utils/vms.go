@@ -24,7 +24,7 @@ import (
 )
 
 func SendVms(phone, template, numberPollNo string, sendTime time.Time, forbidTimes []string) error {
-	var paramList []*vms.SingleParam
+	paramList := make([]*vms.SingleParam, 0, 1)
 	paramList = append(paramList, &vms.SingleParam{
 		Phone: phone,
 		Type:  1,

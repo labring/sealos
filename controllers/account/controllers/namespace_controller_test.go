@@ -131,7 +131,11 @@ func TestSuspendResumeOrphanDeployments(t *testing.T) {
 			} else {
 				// Otherwise, replicas should be restored
 				if *resumedDeploy.Spec.Replicas != tt.expectResumed {
-					t.Errorf("expected replicas to be %d, got %d", tt.expectResumed, *resumedDeploy.Spec.Replicas)
+					t.Errorf(
+						"expected replicas to be %d, got %d",
+						tt.expectResumed,
+						*resumedDeploy.Spec.Replicas,
+					)
 				}
 			}
 

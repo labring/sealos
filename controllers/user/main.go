@@ -218,7 +218,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr, rateLimiterOptions, minRequeueDuration, maxRequeueDuration, restartPredicateDuration); err != nil {
+	if err = (&controllers.UserReconciler{}).SetupWithManager(
+		mgr,
+		rateLimiterOptions,
+		minRequeueDuration,
+		maxRequeueDuration,
+		restartPredicateDuration,
+	); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
 	}
@@ -232,7 +238,12 @@ func main() {
 		}
 	}
 
-	if err = (&controllers.OperationReqReconciler{}).SetupWithManager(mgr, rateLimiterOptions, operationReqExpirationTime, operationReqRetentionTime); err != nil {
+	if err = (&controllers.OperationReqReconciler{}).SetupWithManager(
+		mgr,
+		rateLimiterOptions,
+		operationReqExpirationTime,
+		operationReqRetentionTime,
+	); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Operationrequest")
 		os.Exit(1)
 	}

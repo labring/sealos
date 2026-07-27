@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"time"
 
 	launchpadServer "github.com/labring/sealos/service/launchpad/server"
 )
@@ -16,19 +18,21 @@ type RestartableServer struct {
 }
 
 func (rs *RestartableServer) Serve(c *launchpadServer.Config) {
-	var vs, err = launchpadServer.NewVMServer(c)
+	vs, err := launchpadServer.NewVMServer(c)
 	if err != nil {
 		fmt.Printf("Failed to create auth server: %s\n", err)
 		return
 	}
 
 	hs := &http.Server{
-		Addr:    c.Server.ListenAddress,
-		Handler: vs,
+		Addr:              c.Server.ListenAddress,
+		Handler:           vs,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	var listener net.Listener
-	listener, err = net.Listen("tcp", c.Server.ListenAddress)
+	listenerConfig := net.ListenConfig{}
+	listener, err = listenerConfig.Listen(context.Background(), "tcp", c.Server.ListenAddress)
 	if err != nil {
 		fmt.Println(err)
 		return

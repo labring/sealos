@@ -89,8 +89,7 @@ type TemplateSpec struct {
 }
 
 // TemplateStatus defines the observed state of Template
-type TemplateStatus struct {
-}
+type TemplateStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

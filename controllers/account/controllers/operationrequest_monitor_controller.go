@@ -118,7 +118,11 @@ func (r *OperationRequestMonitorReconciler) Reconcile(
 	}
 
 	// Handle namespace status synchronization based on owner's namespace status
-	if err := r.syncNamespaceStatus(ctx, operationRequest.Spec.User, operationRequest.Spec.Namespace); err != nil {
+	if err := r.syncNamespaceStatus(
+		ctx,
+		operationRequest.Spec.User,
+		operationRequest.Spec.Namespace,
+	); err != nil {
 		r.Logger.Error(err, "Failed to sync namespace status",
 			"newOwner", operationRequest.Spec.User,
 			"targetNamespace", operationRequest.Spec.Namespace,
