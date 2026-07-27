@@ -3,6 +3,28 @@
 
 replicaCount: 1
 
+startupProbe:
+  httpGet:
+    path: /api/env
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /api/env
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /api/env
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+
 resources:
   limits:
     cpu: 2000m
@@ -14,3 +36,16 @@ resources:
 terminalConfig:
   ttydImage: "docker.io/labring4docker/terminal:1.25.1-5"
   keepalived: "30m"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - terminal-frontend
+          topologyKey: "kubernetes.io/hostname"

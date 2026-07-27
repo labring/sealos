@@ -4,4 +4,3 @@
 controllers/account=controllers/user
 controllers/job-init=controllers/account,controllers/user
 controllers/resources=controllers/app,controllers/user
-service/exceptionmonitor=controllers/account

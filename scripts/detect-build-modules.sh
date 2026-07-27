@@ -27,7 +27,6 @@ declare -A CONTROLLER_MODULES=(
     ["job-heartbeat"]="job/heartbeat"
     ["resources"]="resources"
     ["node"]="node"
-    ["devbox"]="devbox"
     ["objectstorage"]="objectstorage"
 )
 
@@ -37,10 +36,7 @@ declare -A SERVICE_MODULES=(
     ["account"]="account"
     ["minio"]="minio"
     ["launchpad"]="launchpad"
-    ["exceptionmonitor"]="exceptionmonitor"
-    ["devbox"]="devbox"
     ["vlogs"]="vlogs"
-    ["hubble"]="hubble"
 )
 
 # Function to get all modules for a type

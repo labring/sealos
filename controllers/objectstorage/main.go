@@ -20,19 +20,17 @@ import (
 	"flag"
 	"os"
 
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
+	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
+	objectstoragecontrollers "github/labring/sealos/controllers/objectstorage/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
-	"github/labring/sealos/controllers/objectstorage/controllers"
 	//+kubebuilder:scaffold:imports
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var (
@@ -51,8 +49,20 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(
+		&metricsAddr,
+		"metrics-bind-address",
+		":8080",
+		"The address the metric endpoint binds to.",
+	)
+	// Accept the legacy monitor flag passed by existing deployments.
+	flag.String("monitor-bind-address", ":9090", "The address the monitor endpoint binds to.")
+	flag.StringVar(
+		&probeAddr,
+		"health-probe-bind-address",
+		":8081",
+		"The address the probe endpoint binds to.",
+	)
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -89,14 +99,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ObjectStorageUserReconciler{
+	if err = (&objectstoragecontrollers.ObjectStorageUserReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ObjectStorageUser")
 		os.Exit(1)
 	}
-	if err = (&controllers.ObjectStorageBucketReconciler{
+	if err = (&objectstoragecontrollers.ObjectStorageBucketReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

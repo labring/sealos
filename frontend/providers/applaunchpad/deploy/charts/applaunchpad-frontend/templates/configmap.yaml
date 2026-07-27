@@ -19,13 +19,16 @@ data:
         - name: {{ .Values.applaunchpadConfig.cloudDomain }}
           secretName: {{ .Values.applaunchpadConfig.certSecretName }}
     common:
-      guideEnabled: false
-      apiEnabled: false
-      networkStorageEnabled: false
+      guideEnabled: {{ .Values.applaunchpadConfig.guideEnabled }}
+      apiEnabled:  {{ .Values.applaunchpadConfig.apiEnabled }}
+      gpuEnabled: {{ .Values.applaunchpadConfig.gpuEnabled }}
+      networkStorageEnabled: {{ .Values.applaunchpadConfig.networkStorageEnabled }}
     launchpad:
+      pvcStorageMax: {{ .Values.applaunchpadConfig.pvcStorageMax }}
+      currencySymbol:  {{ .Values.applaunchpadConfig.currencySymbol | quote }}
       infrastructure:
         provider: alibaba
-        requiresDomainReg: false
+        requiresDomainReg:  {{ eq .Values.applaunchpadConfig.currencySymbol "shellCoin"  }}
         domainRegQueryLink: https://beian.miit.gov.cn/#/Integrated/index
         domainBindingDocumentationLink: null
       eventAnalyze:
@@ -46,17 +49,18 @@ data:
           url: {{ .Values.applaunchpadConfig.monitorUrl }}
         billing:
           url: {{ .Values.applaunchpadConfig.billingUrl }}
+          secret: {{ .Values.applaunchpadConfig.jwtInternal }}
         log:
           url: {{ .Values.applaunchpadConfig.logUrl }}
       appResourceFormSliderConfig:
         default:
-          cpu: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
-          memory: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
-          ephemeralStorage: [10, 20, 30, 40, 50]
+          cpu: {{ toJson .Values.applaunchpadConfig.appResourceFormSliderConfig.default.cpu }}
+          memory: {{ toJson .Values.applaunchpadConfig.appResourceFormSliderConfig.default.memory }}
+          ephemeralStorage: {{ toJson .Values.applaunchpadConfig.appResourceFormSliderConfig.default.ephemeralStorage }}
         default-gpu:
-          cpu: [8000, 16000, 32000, 48000, 64000, 80000, 108000]
-          memory: [16384, 32768, 65536, 131072, 262144, 524288, 614400]
-          ephemeralStorage: [10, 20, 30, 40, 50]
+          cpu: {{ toJson .Values.applaunchpadConfig.appResourceFormSliderConfig.defaultGPU.cpu }}
+          memory: {{ toJson .Values.applaunchpadConfig.appResourceFormSliderConfig.defaultGPU.memory }}
+          ephemeralStorage:  {{ toJson .Values.applaunchpadConfig.appResourceFormSliderConfig.defaultGPU.ephemeralStorage }}
       fileManger:
-        uploadLimit: 50 # MB
-        downloadLimit: 100 # MB
+        uploadLimit: {{.Values.applaunchpadConfig.fileManger.uploadLimit}}
+        downloadLimit: {{.Values.applaunchpadConfig.fileManger.downloadLimit}}

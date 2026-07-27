@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { compare } from 'fast-json-patch';
 import {
   json2DeployCr,
   json2Ingress,
@@ -417,6 +418,22 @@ describe('json2DeployCr', () => {
 
     expect(portNames).toEqual(['p-t-80-0', 'p-t-80-1', 'p-t-80-2']);
     expect(new Set(portNames).size).toBe(portNames.length);
+  });
+
+  it('does not change the pod template when only StatefulSet replicas change', () => {
+    const app = createApp();
+    app.kind = 'statefulset';
+
+    const oldStatefulSet = yamlString2Objects(json2DeployCr(app, 'statefulset'))[0] as any;
+    const newStatefulSet = yamlString2Objects(
+      json2DeployCr({ ...app, replicas: 2 }, 'statefulset')
+    )[0] as any;
+
+    const paths = compare(oldStatefulSet, newStatefulSet).map((operation) => operation.path);
+
+    expect(paths).toContain('/spec/replicas');
+    expect(paths).not.toContain('/spec/template/metadata/labels/restartTime');
+    expect(paths.some((path) => path.startsWith('/spec/template'))).toBe(false);
   });
 });
 

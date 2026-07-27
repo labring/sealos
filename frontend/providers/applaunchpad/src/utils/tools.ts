@@ -303,6 +303,66 @@ export const storageFormatToGi = (storage: string) => {
   return Number(value.toFixed(2));
 };
 
+const isWorkloadKind = (
+  kind?: string
+): kind is YamlKindEnum.Deployment | YamlKindEnum.StatefulSet =>
+  kind === YamlKindEnum.Deployment || kind === YamlKindEnum.StatefulSet;
+
+const createRestartTimePatch = (workload: DeployKindsType, restartTime: string) => ({
+  apiVersion: workload.apiVersion,
+  kind: workload.kind,
+  metadata: {
+    name: workload.metadata?.name,
+    namespace: workload.metadata?.namespace
+  },
+  spec: {
+    template: {
+      metadata: {
+        labels: {
+          restartTime
+        }
+      }
+    }
+  }
+});
+
+const ensureRestartTimePatch = ({
+  actions,
+  originalYamlList,
+  oldFormJsonList
+}: {
+  actions: AppPatchPropsType;
+  originalYamlList: DeployKindsType[];
+  oldFormJsonList: DeployKindsType[];
+}) => {
+  const workload =
+    originalYamlList.find((item) => isWorkloadKind(item.kind)) ||
+    oldFormJsonList.find((item) => isWorkloadKind(item.kind));
+
+  if (!workload || !isWorkloadKind(workload.kind)) return;
+
+  const restartTime = dayjs().format('YYYYMMDDHHmmss');
+  const workloadPatch = actions.find(
+    (item) => item.type === 'patch' && item.kind === workload.kind
+  ) as Extract<AppPatchPropsType[number], { type: 'patch' }> | undefined;
+
+  if (workloadPatch) {
+    workloadPatch.value.spec = workloadPatch.value.spec || {};
+    workloadPatch.value.spec.template = workloadPatch.value.spec.template || {};
+    workloadPatch.value.spec.template.metadata = workloadPatch.value.spec.template.metadata || {};
+    workloadPatch.value.spec.template.metadata.labels =
+      workloadPatch.value.spec.template.metadata.labels || {};
+    workloadPatch.value.spec.template.metadata.labels.restartTime = restartTime;
+    return;
+  }
+
+  actions.push({
+    type: 'patch',
+    kind: workload.kind,
+    value: createRestartTimePatch(workload, restartTime)
+  });
+};
+
 /**
  * format pod createTime
  */
@@ -378,6 +438,8 @@ export const patchYamlList = ({
     .flat() as DeployKindsType[];
 
   const actions: AppPatchPropsType = [];
+  let configMapDataChanged = false;
+  let workloadTemplateChanged = false;
 
   // find delete
   oldFormJsonList.forEach((oldYamlJson) => {
@@ -410,6 +472,22 @@ export const patchYamlList = ({
       const patchRes = jsonpatch.compare(oldFormJson, newYamlJson);
 
       if (patchRes.length === 0) return;
+
+      if (
+        oldFormJson.kind === YamlKindEnum.ConfigMap &&
+        patchRes.some((item) => item.path === '/data' || item.path.startsWith('/data/'))
+      ) {
+        configMapDataChanged = true;
+      }
+
+      if (
+        isWorkloadKind(oldFormJson.kind) &&
+        patchRes.some(
+          (item) => item.path === '/spec/template' || item.path.startsWith('/spec/template/')
+        )
+      ) {
+        workloadTemplateChanged = true;
+      }
 
       /* Generate a new json using the formPatchResult and the crJson */
       const actionsJson = (() => {
@@ -526,6 +604,10 @@ export const patchYamlList = ({
       });
     }
   });
+
+  if (configMapDataChanged && !workloadTemplateChanged) {
+    ensureRestartTimePatch({ actions, originalYamlList, oldFormJsonList });
+  }
 
   return actions;
 };

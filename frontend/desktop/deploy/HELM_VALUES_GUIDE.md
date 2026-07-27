@@ -18,15 +18,14 @@ sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set-string desktopConfig.realNameReward=0"
 ```
 
-### 方式 3: 结合环境变量使用
+### 方式 3: 结合自动配置使用
 
-环境变量优先级高于 `HELM_OPTIONS` 中的 `--set` 参数：
+`HELM_OPTIONS` 在自动配置之后追加，因此显式参数对用户可配置值优先级更高。`desktopConfig.tlsRejectUnauthorized` 由同步后的 cloud tools 自动管理，并会在 `HELM_OPTIONS` / `HELM_OPTS` 之后强制注入：
 
 ```bash
-# 环境变量会覆盖 HELM_OPTIONS 中的值
+# HELM_OPTIONS 会覆盖 sealos-config 中的自动配置值
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com" \
-  -e CLOUD_DOMAIN=from-env.com  # 这个值会生效
+  -e HELM_OPTIONS="--set desktopConfig.cloudDomain=from-helm.com"
 ```
 
 ## 配置项分类
@@ -47,6 +46,10 @@ desktopConfig:
 desktopConfig:
   databaseGlobalCockroachdbURI: 'postgres://user:pass@cockroachdb:26257'
   databaseLocalCockroachdbURI: 'postgres://user:pass@cockroachdb-local:26257'
+
+# 正常安装默认执行 Prisma migration；仅前端 smoke 时关闭。
+databaseMigration:
+  enabled: true
 ```
 
 ### 3. 认证配置
@@ -319,7 +322,7 @@ sealos run desktop-frontend:latest \
 
 **提示**:
 
-- 所有配置统一通过 `HELM_OPTIONS` 传递
+- 用户可配置项统一通过 `HELM_OPTIONS` 传递；不要手动设置 `desktopConfig.tlsRejectUnauthorized`，该值由同步后的 cloud tools 强制注入
 - 对于超长配置，建议创建部署脚本
 
 ## 注意事项

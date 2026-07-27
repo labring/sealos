@@ -67,7 +67,7 @@ const formatQuotaValue = (value: number, type: WorkspaceQuotaItem['type']) => {
 };
 
 export default function SecondaryLinks() {
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, commonConfig } = useConfigStore();
   const { t } = useTranslation();
   const { openGuideModal, setInitGuide } = useGuideModalStore();
   const { openDesktopApp } = useAppStore();
@@ -277,16 +277,18 @@ export default function SecondaryLinks() {
           </Portal>
         </Popover>
 
-        <Center
-          className="guide-button"
-          cursor={'pointer'}
-          {...baseItemStyle}
-          px={'8px'}
-          borderRadius={'8px'}
-          onClick={handleGuideClick}
-        >
-          {t('common:guide')}
-        </Center>
+        {commonConfig?.guideEnabled ? (
+          <Center
+            className="guide-button"
+            cursor={'pointer'}
+            {...baseItemStyle}
+            px={'8px'}
+            borderRadius={'8px'}
+            onClick={handleGuideClick}
+          >
+            {t('common:guide')}
+          </Center>
+        ) : null}
 
         {layoutConfig?.common.docsUrl && (
           <Center

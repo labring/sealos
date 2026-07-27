@@ -421,6 +421,10 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(
 	return nil
 }
 
+func workspaceDebtNoticeName(status types.SubscriptionStatus) string {
+	return workspaceDebtNoticePrefix + strings.ReplaceAll(strings.ToLower(string(status)), "_", "-")
+}
+
 // sendWorkspaceDesktopNotice 发送工作空间桌面通知
 func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDesktopNotice(
 	ctx context.Context,
@@ -430,7 +434,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) sendWorkspaceDesktopNotice(
 	now := time.Now().UTC().Unix()
 	ntfTmp := &notificationv1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: workspaceDebtNoticePrefix + strings.ToLower(string(debtStatus)),
+			Name: workspaceDebtNoticeName(debtStatus),
 		},
 	}
 
@@ -478,7 +482,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) readWorkspaceNotices(
 	for _, nsName := range namespaces {
 		for _, noticeStatus := range noticeTypes {
 			ntf := &notificationv1.Notification{}
-			notificationName := workspaceDebtNoticePrefix + strings.ToLower(string(noticeStatus))
+			notificationName := workspaceDebtNoticeName(noticeStatus)
 
 			if err := wdp.Get(ctx, types2.NamespacedName{
 				Name:      notificationName,

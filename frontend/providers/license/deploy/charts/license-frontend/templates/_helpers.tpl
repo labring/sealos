@@ -66,3 +66,15 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Public URL exposed by the dedicated License subdomain.
+*/}}
+{{- define "license-frontend.url" -}}
+{{- $host := .Values.ingress.host | default (printf "license.%s" .Values.licenseConfig.cloudDomain) -}}
+{{- if and .Values.ingress.cloudPort (ne (toString .Values.ingress.cloudPort) "") (ne (toString .Values.ingress.cloudPort) "443") -}}
+{{- printf "https://%s:%v" $host .Values.ingress.cloudPort -}}
+{{- else -}}
+{{- printf "https://%s" $host -}}
+{{- end -}}
+{{- end }}
