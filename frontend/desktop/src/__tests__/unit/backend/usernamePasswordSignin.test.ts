@@ -69,22 +69,26 @@ jest.mock('@chakra-ui/react', () => {
           /^on[A-Z]/.test(key)
       )
     );
-  const passthrough =
-    (element: keyof JSX.IntrinsicElements) =>
-    ({ children, ...props }: any) =>
+  const passthrough = (element: keyof JSX.IntrinsicElements) => {
+    const Component = ({ children, ...props }: any) =>
       React.createElement(element, toDomProps(props), children);
+    Component.displayName = `MockChakra${element}`;
+    return Component;
+  };
+  const Button = ({ children, isLoading, loadingText, leftIcon, rightIcon, ...props }: any) =>
+    React.createElement(
+      'button',
+      { ...toDomProps(props), disabled: isLoading },
+      isLoading ? loadingText : children
+    );
+  Button.displayName = 'MockChakraButton';
   const Input = React.forwardRef((props: any, ref: React.Ref<HTMLInputElement>) =>
     React.createElement('input', { ...toDomProps(props), ref })
   );
   Input.displayName = 'MockChakraInput';
 
   return {
-    Button: ({ children, isLoading, loadingText, leftIcon, rightIcon, ...props }: any) =>
-      React.createElement(
-        'button',
-        { ...toDomProps(props), disabled: isLoading },
-        isLoading ? loadingText : children
-      ),
+    Button,
     Flex: passthrough('div'),
     FormControl: passthrough('div'),
     FormErrorMessage: passthrough('div'),
@@ -98,12 +102,18 @@ jest.mock('@chakra-ui/react', () => {
   };
 });
 
-jest.mock('lucide-react', () => ({
-  Eye: () => require('react').createElement('span'),
-  EyeOff: () => require('react').createElement('span'),
-  OctagonAlertIcon: () => require('react').createElement('span'),
-  ArrowRight: () => require('react').createElement('span')
-}));
+jest.mock('lucide-react', () => {
+  const React = require('react');
+  const Icon = () => React.createElement('span');
+  Icon.displayName = 'MockLucideIcon';
+
+  return {
+    Eye: Icon,
+    EyeOff: Icon,
+    OctagonAlertIcon: Icon,
+    ArrowRight: Icon
+  };
+});
 
 const submitLogin = async () => {
   const { default: UsernamePasswordSignin } =
