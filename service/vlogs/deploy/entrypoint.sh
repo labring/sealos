@@ -3,9 +3,9 @@ set -euo pipefail
 
 HELM_OPTS=${HELM_OPTS:-""}
 HELM_OPTIONS=${HELM_OPTIONS:-""}
-RELEASE_NAME=${RELEASE_NAME:-"service-vlogs"}
+RELEASE_NAME=${RELEASE_NAME:-"vlogs"}
 RELEASE_NAMESPACE=${RELEASE_NAMESPACE:-"sealos"}
-CHART_PATH=${CHART_PATH:-"./charts/service-vlogs"}
+CHART_PATH=${CHART_PATH:-"./charts/vlogs"}
 LEGACY_MANIFEST=${LEGACY_MANIFEST:-"./remove/deploy.yaml"}
 SERVICE_NAME="vlogs"
 USER_VALUES_PATH="/root/.sealos/cloud/values/core/${SERVICE_NAME}-values.yaml"
