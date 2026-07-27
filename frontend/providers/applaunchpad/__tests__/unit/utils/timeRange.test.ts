@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatUtcDateTime, normalizeTimeInput, parseUtcDateTime } from '@/utils/timeRange';
+import {
+  formatUtcDateTime,
+  getUtcDayBounds,
+  normalizeTimeInput,
+  parseUtcDateTime
+} from '@/utils/timeRange';
 
 describe('UTC date time helpers', () => {
   it('parses HH:mm input as a UTC instant', () => {
@@ -26,5 +31,12 @@ describe('UTC date time helpers', () => {
 
   it('rejects invalid exact times', () => {
     expect(parseUtcDateTime('2026-07-27', '25:00')).toBeNull();
+  });
+
+  it('derives calendar day bounds from the UTC date, not the browser timezone', () => {
+    const bounds = getUtcDayBounds(new Date('2026-07-27T01:00:00.000Z'));
+
+    expect(bounds.start.toISOString()).toBe('2026-07-27T00:00:00.000Z');
+    expect(bounds.end.toISOString()).toBe('2026-07-27T23:59:59.999Z');
   });
 });

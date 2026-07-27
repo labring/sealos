@@ -80,6 +80,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const initialOpenAppIntentRef = useRef<InitialOpenAppIntent | null>(null);
   const initialLaunchResolvedRef = useRef(false);
   const initialLaunchInFlightRef = useRef(false);
+  const attemptedFallbackWorkspaceRef = useRef<string | null>(null);
 
   const handleInitialAppLoaded = useCallback((appKey: string) => {
     setInitialAppLaunch((current) =>
@@ -455,6 +456,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     const needDefault =
       workspaces.findIndex((w) => w.uid === workspaceUid) === -1 && workspaces.length > 0;
     if (!needDefault) {
+      attemptedFallbackWorkspaceRef.current = null;
       return;
     }
     const defaultWorkspace = workspaces.find((w) => w.nstype === NSType.Private);
@@ -462,7 +464,12 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     workspaceUid = defaultWorkspace?.uid;
 
     if (!workspaceUid) return;
-    void switchWorkspace(workspaceUid);
+    if (attemptedFallbackWorkspaceRef.current === workspaceUid) return;
+
+    attemptedFallbackWorkspaceRef.current = workspaceUid;
+    void switchWorkspace(workspaceUid).catch((error) => {
+      console.error('Failed to switch to fallback workspace', error);
+    });
   }, [isSwitchingWorkspace, session?.user?.ns_uid, switchWorkspace, workspaces]);
 
   // Grab params from ad clicks and store in local storage

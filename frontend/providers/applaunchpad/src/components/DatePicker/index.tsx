@@ -1,6 +1,6 @@
 'use client';
 
-import { endOfDay, format, isAfter, isBefore, startOfDay, subDays } from 'date-fns';
+import { format, isAfter, isBefore, subDays } from 'date-fns';
 import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
 import { ChangeEventHandler, useMemo, useState } from 'react';
@@ -10,6 +10,7 @@ import {
   formatUtcDate,
   formatUtcDateTime,
   formatUtcTime,
+  getUtcDayBounds,
   normalizeTimeInput,
   parseTimeRange,
   parseUtcDateTime
@@ -191,6 +192,11 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       return;
     }
 
+    if (isAfter(end, new Date())) {
+      setToTimeError('end time cannot be after current time');
+      return;
+    }
+
     setFromDateError(null);
     setFromTimeError(null);
     setToDateError(null);
@@ -322,23 +328,28 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       } else {
         setInputState(0);
       }
+      const utcFrom = from ? getUtcDayBounds(from).start : undefined;
+      const utcTo = to ? getUtcDayBounds(to).end : undefined;
+      const boundedUtcTo = utcTo && isAfter(utcTo, now) ? now : utcTo;
+
       setSelectedRange({
-        from,
-        to
+        from: utcFrom,
+        to: boundedUtcTo
       });
-      if (from) {
-        setFromDateString(format(startOfDay(from), 'y-MM-dd'));
-        setFromTimeString(format(startOfDay(from), 'HH:mm:ss'));
+      if (utcFrom) {
+        setFromDateString(formatUtcDate(utcFrom));
+        setFromTimeString(formatUtcTime(utcFrom));
       } else {
-        setFromDateString(format(new Date(), 'y-MM-dd'));
-        setFromTimeString(format(new Date(), 'HH:mm:ss'));
+        setFromDateString(formatUtcDate(now));
+        setFromTimeString(formatUtcTime(now));
       }
-      if (to) {
-        setToDateString(format(endOfDay(to), 'y-MM-dd'));
-        setToTimeString(format(endOfDay(to), 'HH:mm:ss'));
+      if (boundedUtcTo) {
+        setToDateString(formatUtcDate(boundedUtcTo));
+        setToTimeString(formatUtcTime(boundedUtcTo));
       } else {
-        setToDateString(format(from ? from : new Date(), 'y-MM-dd'));
-        setToTimeString(format(from ? from : new Date(), 'HH:mm:ss'));
+        const fallback = utcFrom || now;
+        setToDateString(formatUtcDate(fallback));
+        setToTimeString(formatUtcTime(fallback));
       }
 
       setRecentDate(null);
@@ -409,6 +420,7 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
           <div className="w-[242px] h-fit flex flex-col">
             <DayPicker
               mode="range"
+              timeZone="UTC"
               navLayout="around"
               selected={selectedRange}
               onSelect={handleRangeSelect}

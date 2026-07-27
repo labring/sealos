@@ -42,6 +42,17 @@ export function parseUtcDateTime(date: string, time: string): Date | null {
   return parsed.isValid() ? parsed.toDate() : null;
 }
 
+export function getUtcDayBounds(date: Date): { start: Date; end: Date } {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+
+  return {
+    start: new Date(Date.UTC(year, month, day, 0, 0, 0)),
+    end: new Date(Date.UTC(year, month, day, 23, 59, 59, 999))
+  };
+}
+
 /**
  * Parse time range string
  * @param range Time range string, e.g. "1h", "7d", "30m", "1M"
