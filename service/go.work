@@ -5,7 +5,6 @@ use (
 	./account
 	./database
 	./launchpad
-	./pay
 	./vlogs
 )
 
