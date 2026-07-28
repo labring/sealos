@@ -27,28 +27,57 @@ type RegionTokenResponse = EncodedKubeconfigResponse & {
   appToken: string;
 };
 
+type PasswordLoginRequestData =
+  | {
+      user: string;
+      password: string;
+      inviterId: string | null | undefined;
+      semData: SemData | null | undefined;
+      adClickData: AdClickData | null | undefined;
+    }
+  | {
+      user: string;
+      password: string;
+    };
+
+type PasswordLoginResponse = {
+  token: string;
+  needInit: boolean;
+};
+
 export const _getRegionToken = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<RegionTokenResponse>>('/api/auth/regionToken');
 
 export const getRegionToken = _getRegionToken(request);
 
 export const _passwordLoginRequest =
-  (request: AxiosInstance) =>
-  (
-    data:
-      | {
-          user: string;
-          password: string;
-          inviterId: string | null | undefined;
-          semData: SemData | null | undefined;
-          adClickData: AdClickData | null | undefined;
-        }
-      | {
-          user: string;
-          password: string;
-        }
-  ) =>
-    request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/password', data);
+  (request: AxiosInstance, setAuth?: (token?: string) => void) =>
+  async (data: PasswordLoginRequestData): Promise<ApiResp<PasswordLoginResponse>> => {
+    const loginResult = await request.post<any, ApiResp<PasswordLoginResponse>>(
+      '/api/auth/password',
+      data
+    );
+    if (!setAuth || loginResult.code !== 200 || !loginResult.data?.token) {
+      return loginResult;
+    }
+
+    setAuth(loginResult.data.token);
+    const regionTokenResult = loginResult.data.needInit
+      ? await _initRegionToken(request)({ workspaceName: '' })
+      : await _getRegionToken(request)();
+    if (regionTokenResult.code !== 200 || !regionTokenResult.data?.token) {
+      return loginResult;
+    }
+
+    setAuth(regionTokenResult.data.token);
+    return {
+      ...loginResult,
+      data: {
+        token: regionTokenResult.data.token,
+        needInit: false
+      }
+    };
+  };
 
 export const _passwordModifyRequest =
   (request: AxiosInstance) => (data: { oldPassword: string; newPassword: string }) =>
