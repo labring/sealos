@@ -48,8 +48,10 @@ type BillingTaskRunner struct {
 func (r *BillingTaskRunner) NeedLeaderElection() bool { return true }
 
 const (
-	billingMonitorDelay = 5 * time.Minute
-	billingRetryDelay   = time.Minute
+	billingMonitorDelay              = 5 * time.Minute
+	billingRetryDelay                = time.Minute
+	defaultBillingMaxCatchupDuration = 24 * time.Hour
+	billingMaxCatchupDurationEnv     = "BILLING_MAX_CATCHUP_DURATION"
 )
 
 var (
@@ -142,7 +144,7 @@ type BillingReconciler struct {
 	DBClient               database.Account
 	AccountV2              database.AccountV2
 	Properties             *resources.PropertyTypeLS
-	reconcileBillingFunc   func(owner string, billings []*resources.Billing) error
+	reconcileBillingFunc   func(owner string, billings []*resources.Billing, endHourTime time.Time) error
 	executeBillingHourFunc func(time.Time) error
 	concurrentLimit        int64
 	DebtUserMap            *maps.ConcurrentMap
@@ -153,16 +155,48 @@ func (r *BillingReconciler) ExecuteBillingTask() error {
 	return r.ExecuteBillingTasksUntil(latestReadyBillingHour(time.Now()))
 }
 
-func (r *BillingReconciler) ExecuteBillingTasksUntil(target time.Time) error {
+func (r *BillingReconciler) ExecuteBillingTasksUntil(target time.Time) (err error) {
 	target = target.UTC().Truncate(time.Hour)
+	setBillingTargetMetrics(target)
+	defer func() {
+		setBillingProcessingMetrics(time.Time{}, false)
+		if err != nil {
+			billingReconcileFailures.Inc()
+		}
+	}()
 	checkpoint, exists, err := r.DBClient.GetBillingCheckpoint()
 	if err != nil {
 		return fmt.Errorf("get billing checkpoint: %w", err)
 	}
+	maxCatchup := env.GetDurationEnvWithDefault(
+		billingMaxCatchupDurationEnv,
+		defaultBillingMaxCatchupDuration,
+	)
+	if err := validateBillingMaxCatchupDuration(maxCatchup); err != nil {
+		return err
+	}
+	persistedCheckpoint := checkpoint.UTC().Truncate(time.Hour)
 	if !exists {
 		checkpoint = target.Add(-time.Hour)
+		persistedCheckpoint = checkpoint
+	} else {
+		checkpoint, err = limitBillingCheckpoint(persistedCheckpoint, target, maxCatchup)
+		if err != nil {
+			return err
+		}
+		if checkpoint.After(persistedCheckpoint) {
+			r.Info(
+				"billing catch-up window truncated",
+				"persistedCheckpoint", persistedCheckpoint.Format(time.RFC3339),
+				"replayFrom", checkpoint.Format(time.RFC3339),
+				"skippedHours", int64(checkpoint.Sub(persistedCheckpoint)/time.Hour),
+			)
+		}
 	}
+	setBillingCheckpointMetrics(persistedCheckpoint, target)
+	setBillingPendingCheckpointMetrics(checkpoint, target)
 	for _, billingTime := range billingHoursAfter(checkpoint, target) {
+		setBillingProcessingMetrics(billingTime, true)
 		execute := r.ExecuteBillingTaskAt
 		if r.executeBillingHourFunc != nil {
 			execute = r.executeBillingHourFunc
@@ -181,8 +215,38 @@ func (r *BillingReconciler) ExecuteBillingTasksUntil(target time.Time) error {
 				err,
 			)
 		}
+		checkpoint = billingTime
+		setBillingCheckpointMetrics(checkpoint, target)
+		billingLastSuccessTimestamp.Set(float64(time.Now().UTC().Unix()))
 	}
 	return nil
+}
+
+func validateBillingMaxCatchupDuration(maxCatchup time.Duration) error {
+	if maxCatchup < time.Hour || maxCatchup%time.Hour != 0 {
+		return fmt.Errorf(
+			"%s must be a positive whole number of hours: %s",
+			billingMaxCatchupDurationEnv,
+			maxCatchup,
+		)
+	}
+	return nil
+}
+
+func limitBillingCheckpoint(
+	checkpoint, target time.Time,
+	maxCatchup time.Duration,
+) (time.Time, error) {
+	if err := validateBillingMaxCatchupDuration(maxCatchup); err != nil {
+		return time.Time{}, err
+	}
+	checkpoint = checkpoint.UTC().Truncate(time.Hour)
+	target = target.UTC().Truncate(time.Hour)
+	earliest := target.Add(-maxCatchup)
+	if checkpoint.Before(earliest) {
+		return earliest, nil
+	}
+	return checkpoint, nil
 }
 
 func (r *BillingReconciler) ExecuteBillingTaskAt(endHourTime time.Time) error {
@@ -248,11 +312,13 @@ func (r *BillingReconciler) loadDebtUsersAt(endHourTime time.Time) error {
 	if err := db.Transaction(
 		func(tx *gorm.DB) error {
 			if err := tx.Model(&types.Debt{}).
+				Select("user_uid, account_debt_status").
 				Where("created_at <= ?", effectiveTime).
 				Find(&debts).Error; err != nil {
 				return fmt.Errorf("query billing-period debts: %w", err)
 			}
 			if err := tx.Model(&types.DebtStatusRecord{}).
+				Select("user_uid, last_status, create_at").
 				Where("create_at > ?", effectiveTime).
 				Order("create_at ASC").
 				Find(&recordsAfter).Error; err != nil {
@@ -501,6 +567,11 @@ func (r *BillingReconciler) reconcileOwnerList(
 	ownerListMap map[string][]string,
 	now time.Time,
 ) error {
+	if r.concurrentLimit <= 0 {
+		return fmt.Errorf(
+			"billing concurrent limit must be greater than zero: %d", r.concurrentLimit,
+		)
+	}
 	endHourTime := now.UTC().Truncate(time.Hour)
 	startHourTime := endHourTime.Add(-1 * time.Hour)
 	ownerList := make([]string, 0, len(ownerListMap))
@@ -575,7 +646,7 @@ func (r *BillingReconciler) reconcileOwnerList(
 			defer func() {
 				<-workers
 			}()
-			reconcileErr := r.reconcileBillingFunc(owner, billings)
+			reconcileErr := r.reconcileBillingFunc(owner, billings, endHourTime)
 			if reconcileErr != nil {
 				r.Error(
 					reconcileErr,
@@ -598,8 +669,10 @@ func (r *BillingReconciler) reconcileOwnerList(
 		}
 	}
 	if len(failedList) > 0 {
+		billingFailedOwners.Set(float64(len(failedList)))
 		return fmt.Errorf("failed to reconcile owners: %s", strings.Join(failedList, ","))
 	}
+	billingFailedOwners.Set(0)
 	return nil
 }
 
@@ -616,6 +689,14 @@ func classifyGeneratedBillings(ownerBillings map[string][]*resources.Billing) {
 			}
 		}
 	}
+}
+
+func (r *BillingReconciler) isSubscriptionBilling(billing *resources.Billing) bool {
+	if SubscriptionWorkspaceMap == nil {
+		return false
+	}
+	_, ok := SubscriptionWorkspaceMap.Get(billing.Namespace)
+	return ok
 }
 
 func pendingOwnerBillings(
@@ -637,11 +718,16 @@ func pendingOwnerBillings(
 	return pending
 }
 
-func (r *BillingReconciler) reconcileBilling(owner string, billings []*resources.Billing) error {
+func (r *BillingReconciler) reconcileBilling(
+	owner string,
+	billings []*resources.Billing,
+	_ time.Time,
+) error {
 	amount := int64(0)
 	orderIDs := make([]string, 0, len(billings))
 	for _, billing := range billings {
-		if billing.Status == resources.Subscription {
+		if billing.Status == resources.Subscription || r.isSubscriptionBilling(billing) {
+			billing.Status = resources.Subscription
 			continue
 		}
 		amount += billing.Amount
@@ -669,11 +755,13 @@ func (r *BillingReconciler) reconcileBilling(owner string, billings []*resources
 func (r *BillingReconciler) reconcileBillingWithCredits(
 	owner string,
 	billings []*resources.Billing,
+	endHourTime time.Time,
 ) error {
 	amount := int64(0)
 	orderIDs := make([]string, 0, len(billings))
 	for _, billing := range billings {
-		if billing.Status == resources.Subscription {
+		if billing.Status == resources.Subscription || r.isSubscriptionBilling(billing) {
+			billing.Status = resources.Subscription
 			continue
 		}
 		amount += billing.Amount
@@ -685,8 +773,8 @@ func (r *BillingReconciler) reconcileBillingWithCredits(
 	if amount == 0 {
 		return nil
 	}
-	if err := r.AccountV2.AddDeductionBalanceWithCredits(
-		&types.UserQueryOpts{Owner: owner}, amount, orderIDs,
+	if err := r.AccountV2.AddDeductionBalanceWithCreditsAt(
+		&types.UserQueryOpts{Owner: owner}, amount, orderIDs, endHourTime,
 	); err != nil {
 		if updateErr := r.DBClient.UpdateBillingStatus(
 			orderIDs, resources.Unsettled,
@@ -806,14 +894,11 @@ func (r *BillingReconciler) removeDebtOwners(
 }
 
 func (r *BillingReconciler) ownerInDebt(owner string) bool {
-	if _, inDebt := DebtUserMap.Get(owner); inDebt {
-		return true
+	if r.debtOwnerMap == nil {
+		return false
 	}
-	if r.debtOwnerMap != nil {
-		_, inDebt := r.debtOwnerMap.Get(owner)
-		return inDebt
-	}
-	return false
+	_, inDebt := r.debtOwnerMap.Get(owner)
+	return inDebt
 }
 
 func (r *BillingReconciler) getUsersForNamespaces(namespaces []string) (map[string]string, error) {

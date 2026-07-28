@@ -234,13 +234,15 @@ func (m *mongoDB) GetOwnerBillingsAt(
 			int(resources.AppType[resources.LLMToken]),
 		}},
 	}
-	cursor, err := m.getBillingCollection().Find(context.Background(), filter)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cursor, err := m.getBillingCollection().Find(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf("find owner billings: %w", err)
 	}
-	defer cursor.Close(context.Background())
+	defer cursor.Close(ctx)
 	var billings []*resources.Billing
-	if err := cursor.All(context.Background(), &billings); err != nil {
+	if err := cursor.All(ctx, &billings); err != nil {
 		return nil, fmt.Errorf("decode owner billings: %w", err)
 	}
 	for _, billing := range billings {

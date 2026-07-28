@@ -1063,8 +1063,22 @@ func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.Oaut
 func (c *Cockroach) AddDeductionBalanceWithCredits(
 	ops *types.UserQueryOpts,
 	deductionAmount int64,
-	_ []string,
+	orderIDs []string,
 ) error {
+	return c.AddDeductionBalanceWithCreditsAt(
+		ops, deductionAmount, orderIDs, time.Now().UTC(),
+	)
+}
+
+func (c *Cockroach) AddDeductionBalanceWithCreditsAt(
+	ops *types.UserQueryOpts,
+	deductionAmount int64,
+	_ []string,
+	at time.Time,
+) error {
+	if at.IsZero() {
+		at = time.Now().UTC()
+	}
 	err := RetryTransaction(3, 2*time.Second, c.DB, func(tx *gorm.DB) error {
 		remainingAmount := deductionAmount
 		userUID, dErr := c.GetUserUID(ops)
@@ -1073,9 +1087,10 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(
 		}
 		var credits []types.Credits
 		if dErr = tx.Where(
-			"user_uid = ? AND expire_at > ? AND status = ?",
+			"user_uid = ? AND start_at <= ? AND expire_at > ? AND status = ?",
 			userUID,
-			time.Now().UTC(),
+			at,
+			at,
 			types.CreditsStatusActive,
 		).Order("expire_at ASC").Find(&credits).Error; dErr != nil {
 			return fmt.Errorf("failed to get credits: %w", dErr)

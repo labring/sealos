@@ -79,7 +79,7 @@ func TestBillingDeductionWithPostgresRuntimeDoesNotCreateTransaction(t *testing.
 	}
 }
 
-func TestBillingDeductionWithCreditsWithPostgresRuntime(t *testing.T) {
+func TestHistoricalBillingDeductionUsesCreditsActiveAtBillingTime(t *testing.T) {
 	testcontainers.SkipIfProviderIsNotHealthy(t)
 	ctx := context.Background()
 	container, err := postgrescontainer.Run(ctx, "postgres:16-alpine",
@@ -118,9 +118,10 @@ func TestBillingDeductionWithCreditsWithPostgresRuntime(t *testing.T) {
 		t.Fatal(err)
 	}
 	creditID := uuid.New()
+	billingTime := time.Now().UTC().Add(-2 * time.Hour)
 	if err := db.Create(&types.Credits{
 		ID: creditID, UserUID: userUID, Amount: 100, Status: types.CreditsStatusActive,
-		StartAt: time.Now().Add(-time.Hour), ExpireAt: time.Now().Add(time.Hour),
+		StartAt: billingTime.Add(-time.Hour), ExpireAt: billingTime.Add(time.Hour),
 	}).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -129,8 +130,11 @@ func TestBillingDeductionWithCreditsWithPostgresRuntime(t *testing.T) {
 		DB: db, Localdb: db, LocalRegion: &types.Region{UID: regionUID, Domain: "test"},
 		ownerUsrUIDMap: &sync.Map{}, ownerUsrIDMap: &sync.Map{},
 	}
-	if err := account.AddDeductionBalanceWithCredits(
-		&types.UserQueryOpts{UID: userUID}, 125, []string{"credit-retry-order"},
+	if err := account.AddDeductionBalanceWithCreditsAt(
+		&types.UserQueryOpts{UID: userUID},
+		125,
+		[]string{"historical-credit-order"},
+		billingTime,
 	); err != nil {
 		t.Fatal(err)
 	}

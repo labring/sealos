@@ -13,6 +13,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/controllers/pkg/utils/maps"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -125,6 +126,19 @@ func (f *billingTestAccountV2) AddDeductionBalance(
 	return nil
 }
 
+func (f *billingTestAccountV2) AddDeductionBalanceWithCreditsAt(
+	_ *types.UserQueryOpts, amount int64, _ []string, _ time.Time,
+) error {
+	if f.err != nil {
+		return f.err
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.deductions++
+	f.amounts = append(f.amounts, amount)
+	return nil
+}
+
 func initBillingTestGlobals() {
 	DebtUserMap = maps.NewConcurrentNullValueMap()
 	SubscriptionWorkspaceMap = maps.NewConcurrentNullValueMap()
@@ -158,6 +172,38 @@ func TestRunBillingReadsRunsIndependentTasksConcurrently(t *testing.T) {
 	close(release)
 	if err := <-result; !errors.Is(err, wantErr) {
 		t.Fatalf("error = %v, want %v", err, wantErr)
+	}
+}
+
+func TestBillingMetricsTrackCheckpointLag(t *testing.T) {
+	checkpoint := time.Date(2026, time.July, 7, 9, 0, 0, 0, time.UTC)
+	target := checkpoint.Add(3 * time.Hour)
+	setBillingTargetMetrics(target)
+	setBillingCheckpointMetrics(checkpoint, target)
+
+	wantLag := 3 * float64(time.Hour/time.Second)
+	if got := testutil.ToFloat64(billingCheckpointLagSeconds); got != wantLag {
+		t.Fatalf("checkpoint lag seconds = %v, want %v", got, wantLag)
+	}
+	if got := testutil.ToFloat64(billingPendingCheckpoints); got != 3 {
+		t.Fatalf("pending checkpoints = %v, want 3", got)
+	}
+	if got := testutil.ToFloat64(billingTargetTimestamp); got != float64(target.Unix()) {
+		t.Fatalf("target timestamp = %v, want %v", got, target.Unix())
+	}
+	setBillingProcessingMetrics(target, true)
+	if got := testutil.ToFloat64(billingProcessing); got != 1 {
+		t.Fatalf("processing = %v, want 1", got)
+	}
+	if got := testutil.ToFloat64(billingProcessingStartedTimestamp); got <= 0 {
+		t.Fatalf("processing started timestamp = %v, want positive timestamp", got)
+	}
+	setBillingProcessingMetrics(time.Time{}, false)
+	if got := testutil.ToFloat64(billingProcessing); got != 0 {
+		t.Fatalf("processing = %v, want 0", got)
+	}
+	if got := testutil.ToFloat64(billingProcessingStartedTimestamp); got != 0 {
+		t.Fatalf("processing started timestamp = %v, want 0", got)
 	}
 }
 
@@ -196,6 +242,21 @@ func TestBillingHourScheduling(t *testing.T) {
 	})
 }
 
+func TestOwnerInDebtUsesOwnerMapping(t *testing.T) {
+	initBillingTestGlobals()
+	DebtUserMap.Set("owner-uid")
+	reconciler := &BillingReconciler{
+		debtOwnerMap: maps.NewConcurrentNullValueMap(),
+	}
+	if reconciler.ownerInDebt("owner-uid") {
+		t.Fatal("user UID was treated as an owner")
+	}
+	reconciler.debtOwnerMap.Set("owner")
+	if !reconciler.ownerInDebt("owner") {
+		t.Fatal("debt owner was not detected")
+	}
+}
+
 func TestExecuteBillingTasksUntilPersistsEachSuccessfulHour(t *testing.T) {
 	start := time.Date(2026, time.July, 7, 7, 0, 0, 0, time.UTC)
 	db := &billingTestAccount{checkpoint: start, hasCheckpoint: true}
@@ -216,6 +277,7 @@ func TestExecuteBillingTasksUntilPersistsEachSuccessfulHour(t *testing.T) {
 }
 
 func TestExecuteBillingTasksUntilFirstStartProcessesLatestHour(t *testing.T) {
+	t.Setenv(billingMaxCatchupDurationEnv, "72h")
 	target := time.Date(2026, time.July, 7, 10, 0, 0, 0, time.UTC)
 	db := &billingTestAccount{}
 	var executed []time.Time
@@ -231,6 +293,58 @@ func TestExecuteBillingTasksUntilFirstStartProcessesLatestHour(t *testing.T) {
 	}
 	if len(executed) != 1 || !executed[0].Equal(target) {
 		t.Fatalf("executed = %v", executed)
+	}
+}
+
+func TestExecuteBillingTasksUntilLimitsHistoricalCatchup(t *testing.T) {
+	t.Setenv(billingMaxCatchupDurationEnv, "48h")
+	target := time.Date(2026, time.July, 7, 10, 0, 0, 0, time.UTC)
+	db := &billingTestAccount{checkpoint: target.Add(-72 * time.Hour), hasCheckpoint: true}
+	var executed []time.Time
+	var pendingAtStart, checkpointAtStart float64
+	reconciler := &BillingReconciler{
+		DBClient: db,
+		executeBillingHourFunc: func(hour time.Time) error {
+			if len(executed) == 0 {
+				pendingAtStart = testutil.ToFloat64(billingPendingCheckpoints)
+				checkpointAtStart = testutil.ToFloat64(billingCheckpointTimestamp)
+			}
+			executed = append(executed, hour)
+			return nil
+		},
+	}
+	if err := reconciler.ExecuteBillingTasksUntil(target); err != nil {
+		t.Fatal(err)
+	}
+	if len(executed) != 48 {
+		t.Fatalf("executed %d hours, want 48", len(executed))
+	}
+	if pendingAtStart != 48 {
+		t.Fatalf("pending checkpoints at start = %v, want 48", pendingAtStart)
+	}
+	if want := float64(target.Add(-72 * time.Hour).Unix()); checkpointAtStart != want {
+		t.Fatalf("checkpoint metric at start = %v, want %v", checkpointAtStart, want)
+	}
+	if !executed[0].Equal(target.Add(-47 * time.Hour)) {
+		t.Fatalf("first executed hour = %v, want %v", executed[0], target.Add(-47*time.Hour))
+	}
+	if !db.checkpoint.Equal(target) {
+		t.Fatalf("checkpoint = %v, want %v", db.checkpoint, target)
+	}
+}
+
+func TestLimitBillingCheckpointValidatesDuration(t *testing.T) {
+	checkpoint := time.Date(2026, time.July, 4, 10, 0, 0, 0, time.UTC)
+	target := time.Date(2026, time.July, 7, 10, 0, 0, 0, time.UTC)
+	limited, err := limitBillingCheckpoint(checkpoint, target, 48*time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := target.Add(-48 * time.Hour); !limited.Equal(want) {
+		t.Fatalf("limited checkpoint = %v, want %v", limited, want)
+	}
+	if _, err := limitBillingCheckpoint(checkpoint, target, 90*time.Minute); err == nil {
+		t.Fatal("expected non-whole-hour duration error")
 	}
 }
 
@@ -451,7 +565,7 @@ func TestReconcileOwnerListReturnsPartialOwnerFailure(t *testing.T) {
 		DBClient:        db,
 		Logger:          logr.Discard(),
 		concurrentLimit: 2,
-		reconcileBillingFunc: func(owner string, _ []*resources.Billing) error {
+		reconcileBillingFunc: func(owner string, _ []*resources.Billing, _ time.Time) error {
 			db.mu.Lock()
 			if db.statuses == nil {
 				db.statuses = make(map[string]resources.BillingStatus)
@@ -475,11 +589,20 @@ func TestReconcileOwnerListReturnsPartialOwnerFailure(t *testing.T) {
 	}
 }
 
+func TestReconcileOwnerListRejectsNonPositiveConcurrency(t *testing.T) {
+	reconciler := &BillingReconciler{concurrentLimit: 0}
+	if err := reconciler.reconcileOwnerList(nil, time.Now()); err == nil {
+		t.Fatal("expected invalid concurrency error")
+	}
+}
+
 func TestReconcileBillingSaveFailure(t *testing.T) {
 	initBillingTestGlobals()
 	db := &billingTestAccount{saveErr: errors.New("insert failed")}
 	reconciler := &BillingReconciler{DBClient: db, AccountV2: &billingTestAccountV2{}}
-	err := reconciler.reconcileBilling("owner", []*resources.Billing{{OrderID: "id", Amount: 10}})
+	err := reconciler.reconcileBilling(
+		"owner", []*resources.Billing{{OrderID: "id", Amount: 10}}, time.Now(),
+	)
 	if err == nil {
 		t.Fatal("expected save failure")
 	}
@@ -491,7 +614,9 @@ func TestReconcileBillingDeductionFailureMayLeaveSettled(t *testing.T) {
 	account := &billingTestAccountV2{err: errors.New("deduction failed")}
 	billing := &resources.Billing{OrderID: "id", Amount: 10, Status: resources.Settled}
 	reconciler := &BillingReconciler{DBClient: db, AccountV2: account}
-	if err := reconciler.reconcileBilling("owner", []*resources.Billing{billing}); err == nil {
+	if err := reconciler.reconcileBilling(
+		"owner", []*resources.Billing{billing}, time.Now(),
+	); err == nil {
 		t.Fatal("expected deduction failure")
 	}
 	if len(db.saved) != 1 {
@@ -502,6 +627,31 @@ func TestReconcileBillingDeductionFailureMayLeaveSettled(t *testing.T) {
 	}
 	if status := db.statuses[billing.OrderID]; status != resources.Unsettled {
 		t.Fatalf("failed deduction status = %v", status)
+	}
+}
+
+func TestReconcileBillingReclassifiesSubscriptionBeforeDeduction(t *testing.T) {
+	initBillingTestGlobals()
+	SubscriptionWorkspaceMap.Set("ns-subscription")
+	db := &billingTestAccount{}
+	account := &billingTestAccountV2{}
+	billing := &resources.Billing{
+		OrderID:   "subscription-order",
+		Namespace: "ns-subscription",
+		Amount:    10,
+		Status:    resources.Unsettled,
+	}
+	reconciler := &BillingReconciler{DBClient: db, AccountV2: account}
+	if err := reconciler.reconcileBilling(
+		"owner", []*resources.Billing{billing}, time.Now(),
+	); err != nil {
+		t.Fatal(err)
+	}
+	if account.deductions != 0 {
+		t.Fatalf("subscription deductions = %d", account.deductions)
+	}
+	if billing.Status != resources.Subscription {
+		t.Fatalf("billing status = %v", billing.Status)
 	}
 }
 
@@ -547,7 +697,7 @@ func TestReconcileBillingRetryCanDeductAgain(t *testing.T) {
 	}
 	reconciler := &BillingReconciler{DBClient: db, AccountV2: account}
 	for range 2 {
-		if err := reconciler.reconcileBilling("owner", billings); err != nil {
+		if err := reconciler.reconcileBilling("owner", billings, time.Now()); err != nil {
 			t.Fatal(err)
 		}
 	}
