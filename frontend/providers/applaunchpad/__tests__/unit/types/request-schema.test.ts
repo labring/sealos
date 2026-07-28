@@ -1,11 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  CreateLaunchpadRequestSchema as V1CreateLaunchpadRequestSchema,
   UpdateAppResourcesSchema as V1UpdateAppResourcesSchema,
-  transformFromLegacySchema as transformFromLegacySchemaV1
+  transformFromLegacySchema as transformFromLegacySchemaV1,
+  transformToLegacySchema as transformToLegacySchemaV1
 } from '@/types/request_schema';
 import {
+  CreateLaunchpadRequestSchema as V2CreateLaunchpadRequestSchema,
   UpdateAppResourcesSchema as V2UpdateAppResourcesSchema,
-  transformFromLegacySchema as transformFromLegacySchemaV2
+  transformFromLegacySchema as transformFromLegacySchemaV2,
+  transformToLegacySchema as transformToLegacySchemaV2
 } from '@/types/v2alpha/request_schema';
 import {
   PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
@@ -126,10 +130,9 @@ describe('request schema publicDomain feature gate', () => {
       'publicDomain',
       'demo-prefix'
     );
-    expect(transformFromLegacySchemaV2(createLegacyApp(), 'demo', 'ns-demo').ports?.[0]).toHaveProperty(
-      'publicDomain',
-      'demo-prefix'
-    );
+    expect(
+      transformFromLegacySchemaV2(createLegacyApp(), 'demo', 'ns-demo').ports?.[0]
+    ).toHaveProperty('publicDomain', 'demo-prefix');
   });
 
   it('returns the DNS label length range for invalid explicit prefixes', () => {
@@ -157,5 +160,181 @@ describe('request schema publicDomain feature gate', () => {
         expectedRange
       );
     }
+  });
+
+  it('creates v1 HTTP ports with IP:port access mode as NodePort networks', () => {
+    setCustomPublicDomainPrefixEnabled(false);
+
+    const parsed = V1CreateLaunchpadRequestSchema.parse({
+      name: 'demo',
+      image: { imageName: 'nginx:latest' },
+      resource: { replicas: 1, cpu: 0.2, memory: 0.5 },
+      ports: [
+        {
+          number: 80,
+          protocol: 'HTTP',
+          accessMode: 'nodePort',
+          exposesPublicDomain: true
+        }
+      ]
+    });
+    const legacy = transformToLegacySchemaV1(parsed);
+
+    expect(legacy.networks[0]).toMatchObject({
+      port: 80,
+      protocol: 'TCP',
+      appProtocol: 'HTTP',
+      openPublicDomain: false,
+      publicDomain: '',
+      openNodePort: true
+    });
+  });
+
+  it('creates v2alpha HTTP ports with IP:port access mode as NodePort networks', () => {
+    setCustomPublicDomainPrefixEnabled(false);
+
+    const parsed = V2CreateLaunchpadRequestSchema.parse({
+      name: 'demo',
+      image: { imageName: 'nginx:latest' },
+      quota: { replicas: 1, cpu: 0.2, memory: 0.5 },
+      ports: [
+        {
+          number: 80,
+          protocol: 'http',
+          accessMode: 'nodePort',
+          isPublic: true
+        }
+      ]
+    });
+    const legacy = transformToLegacySchemaV2(parsed);
+
+    expect(legacy.networks[0]).toMatchObject({
+      port: 80,
+      protocol: 'TCP',
+      appProtocol: 'HTTP',
+      openPublicDomain: false,
+      publicDomain: '',
+      openNodePort: true
+    });
+  });
+
+  it('rejects publicDomain prefixes for IP:port access mode', () => {
+    setCustomPublicDomainPrefixEnabled(true);
+
+    expect(
+      V1UpdateAppResourcesSchema.safeParse({
+        ports: [
+          {
+            portName: 'port-demo',
+            protocol: 'HTTP',
+            accessMode: 'nodePort',
+            publicDomain: 'demo-prefix'
+          }
+        ]
+      }).success
+    ).toBe(false);
+    expect(
+      V2UpdateAppResourcesSchema.safeParse({
+        ports: [
+          {
+            portName: 'port-demo',
+            protocol: 'http',
+            accessMode: 'nodePort',
+            publicDomain: 'demo-prefix'
+          }
+        ]
+      }).success
+    ).toBe(false);
+  });
+
+  it('rejects domain access mode for transport protocol ports', () => {
+    setCustomPublicDomainPrefixEnabled(false);
+
+    expect(
+      V1CreateLaunchpadRequestSchema.safeParse({
+        name: 'demo',
+        image: { imageName: 'nginx:latest' },
+        resource: { replicas: 1, cpu: 0.2, memory: 0.5 },
+        ports: [
+          {
+            number: 80,
+            protocol: 'TCP',
+            accessMode: 'domain',
+            exposesPublicDomain: true
+          }
+        ]
+      }).success
+    ).toBe(false);
+    expect(
+      V2CreateLaunchpadRequestSchema.safeParse({
+        name: 'demo',
+        image: { imageName: 'nginx:latest' },
+        quota: { replicas: 1, cpu: 0.2, memory: 0.5 },
+        ports: [
+          {
+            number: 80,
+            protocol: 'tcp',
+            accessMode: 'domain',
+            isPublic: true
+          }
+        ]
+      }).success
+    ).toBe(false);
+    expect(
+      V1UpdateAppResourcesSchema.safeParse({
+        ports: [{ portName: 'port-demo', protocol: 'TCP', accessMode: 'domain' }]
+      }).success
+    ).toBe(false);
+    expect(
+      V2UpdateAppResourcesSchema.safeParse({
+        ports: [{ portName: 'port-demo', protocol: 'tcp', accessMode: 'domain' }]
+      }).success
+    ).toBe(false);
+  });
+
+  it('creates transport protocol ports without a synthetic HTTP appProtocol', () => {
+    setCustomPublicDomainPrefixEnabled(false);
+
+    const v1Legacy = transformToLegacySchemaV1(
+      V1CreateLaunchpadRequestSchema.parse({
+        name: 'demo',
+        image: { imageName: 'nginx:latest' },
+        resource: { replicas: 1, cpu: 0.2, memory: 0.5 },
+        ports: [
+          {
+            number: 6379,
+            protocol: 'TCP',
+            accessMode: 'nodePort',
+            exposesPublicDomain: false
+          }
+        ]
+      })
+    );
+    const v2Legacy = transformToLegacySchemaV2(
+      V2CreateLaunchpadRequestSchema.parse({
+        name: 'demo',
+        image: { imageName: 'nginx:latest' },
+        quota: { replicas: 1, cpu: 0.2, memory: 0.5 },
+        ports: [
+          {
+            number: 6379,
+            protocol: 'tcp',
+            accessMode: 'nodePort',
+            isPublic: false
+          }
+        ]
+      })
+    );
+
+    expect(v1Legacy.networks[0]).toMatchObject({
+      protocol: 'TCP',
+      appProtocol: undefined,
+      openNodePort: true
+    });
+    expect(v2Legacy.networks[0]).toMatchObject({
+      protocol: 'TCP',
+      appProtocol: undefined,
+      openNodePort: true
+    });
   });
 });

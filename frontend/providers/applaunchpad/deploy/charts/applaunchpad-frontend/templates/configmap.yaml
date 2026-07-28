@@ -11,6 +11,7 @@ data:
   config.yaml: |-
     cloud:
       domain: {{ .Values.applaunchpadConfig.cloudDomain }}
+      nodePortHost: {{ .Values.applaunchpadConfig.nodePortHost | quote }}
       port: {{ include "applaunchpad-frontend.releaseConfigPort" . | quote }}
       httpPort: {{ include "applaunchpad-frontend.releaseConfigHTTPPort" . | quote }}
       disableHttps: {{ .Values.applaunchpadConfig.disableHttps }}

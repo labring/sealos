@@ -451,6 +451,11 @@ export const json2Service = (
     data.networks.map((network, index) => ({
       port: str2Num(network.port),
       targetPort: str2Num(network.port),
+      ...(network.appProtocol
+        ? {
+            appProtocol: network.appProtocol.toLowerCase()
+          }
+        : {}),
       ...(network.openNodePort && network.nodePort
         ? {
             nodePort: str2Num(network.nodePort)

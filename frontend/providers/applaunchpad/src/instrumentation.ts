@@ -13,6 +13,7 @@ export async function register() {
       const defaultAppConfig: AppConfigType = {
         cloud: {
           domain: 'cloud.sealos.io',
+          nodePortHost: '',
           port: '',
           httpPort: '',
           disableHttps: false,

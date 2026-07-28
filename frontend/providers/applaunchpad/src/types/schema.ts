@@ -264,6 +264,9 @@ export const PortConfigSchema = z.object({
   exposesPublicDomain: z.boolean().default(true).openapi({
     description: 'Enable public domain access (only effective for HTTP/GRPC/WS protocols)'
   }),
+  accessMode: z.enum(['domain', 'nodePort']).optional().openapi({
+    description: 'Public access mode. domain uses Ingress, nodePort exposes IP:port.'
+  }),
   networkName: z.string().default(() => `network-${nanoid()}`),
   portName: z.string().default(() => nanoid()),
   publicDomain: z.string().optional(),

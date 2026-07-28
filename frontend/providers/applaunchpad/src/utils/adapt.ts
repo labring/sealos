@@ -36,7 +36,8 @@ import {
   PodStatusEnum,
   publicDomainKey,
   publicDomainPortKey,
-  AppSourceConfigs
+  AppSourceConfigs,
+  APPLICATION_PROTOCOLS
 } from '@/constants/app';
 import {
   cpuFormatToM,
@@ -553,11 +554,15 @@ export const adaptAppDetail = async (
 
         const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
 
-        // Fallback appProtocol to HTTP for ingress when using TCP services
-        const appProtocol =
-          (ingress?.metadata?.annotations?.[
-            'nginx.ingress.kubernetes.io/backend-protocol'
-          ] as ApplicationProtocolType) ?? (protocol === 'TCP' ? 'HTTP' : undefined);
+        const serviceAppProtocol = (item as any)?.appProtocol?.toUpperCase();
+        const ingressAppProtocol = ingress?.metadata?.annotations?.[
+          'nginx.ingress.kubernetes.io/backend-protocol'
+        ] as ApplicationProtocolType | undefined;
+        // K8s Service protocol stays TCP for HTTP/GRPC/WS. Preserve appProtocol from ServicePort
+        // and only fall back to HTTP when an Ingress proves this TCP port is application traffic.
+        const appProtocol = APPLICATION_PROTOCOLS.includes(serviceAppProtocol)
+          ? (serviceAppProtocol as ApplicationProtocolType)
+          : (ingressAppProtocol ?? (ingress && protocol === 'TCP' ? 'HTTP' : undefined));
 
         const isCustomDomain =
           !domain.endsWith(SEALOS_DOMAIN) &&
@@ -580,8 +585,8 @@ export const adaptAppDetail = async (
           domain: isCustomDomain
             ? SEALOS_DOMAIN
             : item?.nodePort
-            ? domain
-            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
+              ? domain
+              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
           routes: ingressPaths.length
             ? ingressPaths.map((path) => ({
                 path: path.path || '/',
@@ -716,8 +721,8 @@ export const sliderNumber2MarkList = ({
           ? `${item / 1024} G`
           : `${item} M`
         : type === 'ephemeralStorage'
-        ? `${item}`
-        : `${item / 1000}`,
+          ? `${item}`
+          : `${item / 1000}`,
     value: item
   }));
 };

@@ -322,6 +322,27 @@ describe('json2Ingress', () => {
     expect(objects[0].spec.rules[0].host).toBe('demo.cloud.example.com');
   });
 
+  it('does not create ingress for HTTP ports exposed through NodePort', () => {
+    const app = createApp();
+    app.networks[0] = {
+      ...app.networks[0],
+      appProtocol: 'HTTP',
+      openPublicDomain: false,
+      openNodePort: true,
+      nodePort: 30080,
+      publicDomain: '',
+      customDomain: ''
+    };
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: false
+      })
+    ) as any[];
+
+    expect(objects).toHaveLength(0);
+  });
+
   it('uses an RFC 1035-safe generated backend service name for legacy numeric app names', () => {
     const app = createApp('custom.example.com');
     app.appName = '1hello-world';
@@ -372,6 +393,31 @@ describe('json2Service', () => {
     const objects = yamlString2Objects(json2Service(app)) as any[];
 
     expect(objects[0].metadata.name).toMatch(/^app-111111hello-world-nodeport-[a-z]{12}$/);
+  });
+
+  it('renders application-protocol IP:port access as a NodePort service', () => {
+    const app = createApp();
+    app.networks[0] = {
+      ...app.networks[0],
+      appProtocol: 'HTTP',
+      openPublicDomain: false,
+      openNodePort: true,
+      nodePort: 30080,
+      publicDomain: '',
+      customDomain: ''
+    };
+
+    const objects = yamlString2Objects(json2Service(app)) as any[];
+
+    expect(objects).toHaveLength(1);
+    expect(objects[0].spec.type).toBe('NodePort');
+    expect(objects[0].spec.ports[0]).toMatchObject({
+      port: 80,
+      targetPort: 80,
+      protocol: 'TCP',
+      appProtocol: 'http',
+      nodePort: 30080
+    });
   });
 
   it('can render only the ClusterIP service when repairing ingress backends', () => {

@@ -29,6 +29,7 @@ export type CustomDomainMode = 'cname' | 'certificate';
 export type AppConfigType = {
   cloud: {
     domain: string; // Main promoted domain
+    nodePortHost?: string; // Host or IP used for NodePort public addresses
     port?: string;
     httpPort?: string;
     disableHttps?: boolean;
@@ -110,6 +111,7 @@ declare global {
 
 export type EnvResponse = {
   SEALOS_DOMAIN: string;
+  NODE_PORT_HOST: string;
   DOMAIN_PORT: string;
   HTTP_PORT: string;
   DISABLE_HTTPS: boolean;

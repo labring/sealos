@@ -2,9 +2,11 @@ import { getInitData } from '@/api/platform';
 import { Coin } from '@/constants/app';
 import type { CustomDomainMode } from '@/types';
 import { normalizeCustomDomainMode } from '@/utils/custom-domain';
+import { resolveNodePortHost } from '@/utils/nodeport-host';
 import { setPublicDomainReservedPrefixes } from '@/utils/public-domain';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
+export let NODE_PORT_HOST = 'cloud.sealos.io';
 export let SEALOS_USER_DOMAINS = [{ name: 'cloud.sealos.io', secretName: 'wildcard-cert' }];
 export let DESKTOP_DOMAIN = 'cloud.sealos.io';
 export let INFRASTRUCTURE_PROVIDER = 'alibaba';
@@ -33,6 +35,7 @@ export const loadInitData = async () => {
     const res = await getInitData();
 
     SEALOS_DOMAIN = res.SEALOS_DOMAIN;
+    NODE_PORT_HOST = res.NODE_PORT_HOST || resolveNodePortHost({ cloudDomain: res.SEALOS_DOMAIN });
     SEALOS_USER_DOMAINS = res.SEALOS_USER_DOMAINS;
     INFRASTRUCTURE_PROVIDER = res.INFRASTRUCTURE_PROVIDER;
     REQUIRES_DOMAIN_REG = res.REQUIRES_DOMAIN_REG;
@@ -60,6 +63,7 @@ export const loadInitData = async () => {
 
     return {
       SEALOS_DOMAIN,
+      NODE_PORT_HOST,
       DOMAIN_PORT,
       HTTP_PORT,
       DISABLE_HTTPS,
@@ -76,7 +80,8 @@ export const loadInitData = async () => {
   } catch (error) {}
 
   return {
-    SEALOS_DOMAIN
+    SEALOS_DOMAIN,
+    NODE_PORT_HOST
   };
 };
 
@@ -84,6 +89,10 @@ export const loadInitData = async () => {
 export const serverLoadInitData = () => {
   try {
     SEALOS_DOMAIN = global.AppConfig.cloud.domain || 'cloud.sealos.io';
+    NODE_PORT_HOST = resolveNodePortHost({
+      configuredHost: global.AppConfig.cloud.nodePortHost,
+      cloudDomain: SEALOS_DOMAIN
+    });
     DOMAIN_PORT = global.AppConfig.cloud.port || '';
     HTTP_PORT = global.AppConfig.cloud.httpPort || '';
     DISABLE_HTTPS = !!global.AppConfig.cloud.disableHttps;
