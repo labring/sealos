@@ -79,6 +79,10 @@ make -j
 - you can use `make all DOCKER_USERNAME=<your_account>` to build all apps for your account.
 - you can user `make all IMAGE_TAG=<tag>` to build all apps and customize tag (default:dev)
 
+Production frontend images set `UV_USE_IO_URING=0` so libuv uses its thread pool
+for file system operations instead of io_uring SQPOLL. This avoids process-exit
+hangs on affected Linux kernels while leaving network I/O on the normal event loop.
+
 ## how to publish image
 
 ```bash

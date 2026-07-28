@@ -73,6 +73,8 @@ FROM base AS runner
 ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
+# Avoid io_uring SQPOLL hangs on affected Linux kernels.
+ENV UV_USE_IO_URING=0
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
