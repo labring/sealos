@@ -106,28 +106,22 @@ func (f *billingTestAccount) UpdateBillingStatus(
 
 type billingTestAccountV2 struct {
 	database.AccountV2
-	mu            sync.Mutex
-	err           error
-	deductionSeen map[string]struct{}
-	deductions    int
+	mu         sync.Mutex
+	err        error
+	deductions int
+	amounts    []int64
 }
 
-func (f *billingTestAccountV2) AddDeductionBalanceForBilling(
-	_ *types.UserQueryOpts, _ int64, orderIDs []string,
+func (f *billingTestAccountV2) AddDeductionBalance(
+	_ *types.UserQueryOpts, amount int64,
 ) error {
 	if f.err != nil {
 		return f.err
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if f.deductionSeen == nil {
-		f.deductionSeen = make(map[string]struct{})
-	}
-	if _, exists := f.deductionSeen[orderIDs[0]]; exists {
-		return nil
-	}
-	f.deductionSeen[orderIDs[0]] = struct{}{}
 	f.deductions++
+	f.amounts = append(f.amounts, amount)
 	return nil
 }
 
@@ -491,47 +485,11 @@ func TestReconcileBillingSaveFailure(t *testing.T) {
 	}
 }
 
-func TestReconcileOwnerListRecoversUnsettledWithoutRegeneratedBilling(t *testing.T) {
-	initBillingTestGlobals()
-	end := time.Date(2026, time.July, 7, 10, 0, 0, 0, time.UTC)
-	existing := &resources.Billing{
-		OrderID:   "bh_recover",
-		Owner:     "owner",
-		Namespace: "ns-owner",
-		Time:      end,
-		Amount:    10,
-		Status:    resources.Unsettled,
-	}
-	db := &billingTestAccount{
-		existing:  map[string][]*resources.Billing{"owner": {existing}},
-		generated: map[string][]*resources.Billing{},
-	}
-	var reconciled []*resources.Billing
-	reconciler := &BillingReconciler{
-		DBClient:        db,
-		Logger:          logr.Discard(),
-		concurrentLimit: 1,
-		reconcileBillingFunc: func(_ string, billings []*resources.Billing) error {
-			reconciled = append(reconciled, billings...)
-			return nil
-		},
-	}
-	if err := reconciler.reconcileOwnerList(
-		map[string][]string{"owner": {"ns-owner"}},
-		end,
-	); err != nil {
-		t.Fatal(err)
-	}
-	if len(reconciled) != 1 || reconciled[0].OrderID != existing.OrderID {
-		t.Fatalf("reconciled = %#v", reconciled)
-	}
-}
-
-func TestReconcileBillingDeductionFailureLeavesUnsettled(t *testing.T) {
+func TestReconcileBillingDeductionFailureMayLeaveSettled(t *testing.T) {
 	initBillingTestGlobals()
 	db := &billingTestAccount{}
 	account := &billingTestAccountV2{err: errors.New("deduction failed")}
-	billing := &resources.Billing{OrderID: "id", Amount: 10, Status: resources.Unsettled}
+	billing := &resources.Billing{OrderID: "id", Amount: 10, Status: resources.Settled}
 	reconciler := &BillingReconciler{DBClient: db, AccountV2: account}
 	if err := reconciler.reconcileBilling("owner", []*resources.Billing{billing}); err == nil {
 		t.Fatal("expected deduction failure")
@@ -539,12 +497,15 @@ func TestReconcileBillingDeductionFailureLeavesUnsettled(t *testing.T) {
 	if len(db.saved) != 1 {
 		t.Fatalf("saved billing count = %d", len(db.saved))
 	}
-	if _, settled := db.statuses[billing.OrderID]; settled {
-		t.Fatal("failed deduction was marked settled")
+	if db.saved[0].Status != resources.Settled {
+		t.Fatalf("saved billing status = %v", db.saved[0].Status)
+	}
+	if status := db.statuses[billing.OrderID]; status != resources.Unsettled {
+		t.Fatalf("failed deduction status = %v", status)
 	}
 }
 
-func TestClassifyGeneratedBillingsDoesNotReclassifyExistingUnsettled(t *testing.T) {
+func TestClassifyGeneratedBillingsDefaultsToSettled(t *testing.T) {
 	initBillingTestGlobals()
 	SubscriptionWorkspaceMap.Set("ns-subscription")
 	generated := map[string][]*resources.Billing{"owner": {
@@ -568,31 +529,37 @@ func TestClassifyGeneratedBillingsDoesNotReclassifyExistingUnsettled(t *testing.
 	if statuses["new-subscription"] != resources.Subscription {
 		t.Fatalf("new subscription status = %v", statuses["new-subscription"])
 	}
-	if statuses["new-usage"] != resources.Unsettled {
+	if statuses["new-usage"] != resources.Settled {
 		t.Fatalf("new usage status = %v", statuses["new-usage"])
 	}
-	if statuses[existing.OrderID] != resources.Unsettled {
-		t.Fatalf("existing unsettled status = %v", statuses[existing.OrderID])
+	if _, exists := statuses[existing.OrderID]; exists {
+		t.Fatalf("existing billing was unexpectedly requeued: %v", existing.OrderID)
 	}
 }
 
-func TestReconcileBillingIsIdempotentPerBillingID(t *testing.T) {
+func TestReconcileBillingRetryCanDeductAgain(t *testing.T) {
 	initBillingTestGlobals()
 	db := &billingTestAccount{}
 	account := &billingTestAccountV2{}
-	billing := &resources.Billing{OrderID: "stable-id", Amount: 10, Status: resources.Unsettled}
+	billings := []*resources.Billing{
+		{OrderID: "stable-a", Amount: 10, Status: resources.Settled},
+		{OrderID: "stable-b", Amount: 15, Status: resources.Settled},
+	}
 	reconciler := &BillingReconciler{DBClient: db, AccountV2: account}
 	for range 2 {
-		if err := reconciler.reconcileBilling("owner", []*resources.Billing{billing}); err != nil {
+		if err := reconciler.reconcileBilling("owner", billings); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if account.deductions != 1 {
+	if account.deductions != 2 {
 		t.Fatalf("deductions = %d", account.deductions)
+	}
+	if len(account.amounts) != 2 || account.amounts[0] != 25 || account.amounts[1] != 25 {
+		t.Fatalf("deduction amounts = %#v", account.amounts)
 	}
 }
 
-func TestPendingOwnerBillingsRecoversOnlyMissingAndUnsettled(t *testing.T) {
+func TestPendingOwnerBillingsSkipsExistingBusinessKeys(t *testing.T) {
 	generated := map[string][]*resources.Billing{"owner": {
 		{OrderID: "new-a", Namespace: "ns", AppType: 1, AppName: "a"},
 		{OrderID: "new-b", Namespace: "ns", AppType: 1, AppName: "b"},
@@ -620,75 +587,12 @@ func TestPendingOwnerBillingsRecoversOnlyMissingAndUnsettled(t *testing.T) {
 	for _, billing := range pending {
 		got[billing.OrderID] = struct{}{}
 	}
-	if len(got) != 3 {
+	if len(got) != 1 {
 		t.Fatalf("pending = %#v", pending)
 	}
-	for _, orderID := range []string{"bh_existing-b", "bh_orphan-d", "new-c"} {
+	for _, orderID := range []string{"new-c"} {
 		if _, exists := got[orderID]; !exists {
 			t.Fatalf("pending billing %s is missing: %#v", orderID, pending)
 		}
-	}
-}
-
-func TestAddUnsettledBillingOwnersRestoresOwnersWithoutMonitorData(t *testing.T) {
-	owners := map[string][]string{}
-	addUnsettledBillingOwners(owners, map[string][]*resources.Billing{
-		"owner": {
-			{Namespace: "ns-a"},
-			{Namespace: "ns-a"},
-			{Namespace: "ns-b"},
-		},
-	})
-	if len(owners["owner"]) != 2 || owners["owner"][0] != "ns-a" || owners["owner"][1] != "ns-b" {
-		t.Fatalf("owners = %#v", owners)
-	}
-}
-
-func TestDebtOwnersOnlyGenerateRecoveredUnsettledBillings(t *testing.T) {
-	initBillingTestGlobals()
-	debtUserUID := uuid.New()
-	DebtUserMap.Set(debtUserUID.String())
-	db := &billingTestAccount{existing: map[string][]*resources.Billing{
-		"debt-owner": {{
-			OrderID: "bh_debt-recovery", Owner: "debt-owner", Namespace: "ns-debt",
-			Status: resources.Unsettled,
-		}},
-	}}
-	var reconciled []*resources.Billing
-	reconciler := &BillingReconciler{
-		DBClient:        db,
-		Logger:          logr.Discard(),
-		concurrentLimit: 1,
-		debtOwnerMap:    maps.NewConcurrentNullValueMap(),
-		reconcileBillingFunc: func(_ string, billings []*resources.Billing) error {
-			reconciled = append(reconciled, billings...)
-			return nil
-		},
-	}
-	owners := map[string][]string{
-		"debt-owner":   {"ns-debt"},
-		"normal-owner": {"ns-normal"},
-	}
-	reconciler.removeDebtOwners(owners, map[string]uuid.UUID{
-		"debt-owner": debtUserUID,
-	})
-	if _, exists := owners["debt-owner"]; exists {
-		t.Fatal("monitor-backed debt owner remained in generation input")
-	}
-
-	addUnsettledBillingOwners(owners, map[string][]*resources.Billing{
-		"debt-owner": {{Namespace: "ns-debt"}},
-	})
-	if err := reconciler.reconcileOwnerList(owners, time.Now()); err != nil {
-		t.Fatal(err)
-	}
-	if _, exists := db.generateInput["debt-owner"]; exists {
-		t.Fatal("recovered debt owner was included in new billing generation")
-	}
-	if _, exists := db.generateInput["normal-owner"]; !exists {
-		t.Fatal("normal owner was excluded from new billing generation")
-	}
-	if len(reconciled) != 1 || reconciled[0].OrderID != "bh_debt-recovery" {
-		t.Fatalf("reconciled = %#v", reconciled)
 	}
 }

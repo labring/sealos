@@ -194,7 +194,6 @@ func (r *BillingReconciler) ExecuteBillingTaskAt(endHourTime time.Time) error {
 	r.debtOwnerMap = maps.NewConcurrentNullValueMap()
 	var ownerListMap map[string][]string
 	var ownerUserUIDs map[string]uuid.UUID
-	var unsettledBillings map[string][]*resources.Billing
 	inputStartedAt := time.Now()
 	if err := runBillingReads(
 		func() error {
@@ -208,20 +207,11 @@ func (r *BillingReconciler) ExecuteBillingTaskAt(endHourTime time.Time) error {
 			}
 			return nil
 		},
-		func() error {
-			var err error
-			unsettledBillings, err = r.DBClient.GetUnsettledBillingsAt(endHourTime)
-			if err != nil {
-				return fmt.Errorf("get unsettled billings: %w", err)
-			}
-			return nil
-		},
 	); err != nil {
 		return fmt.Errorf("load billing inputs: %w", err)
 	}
 	r.Info("load billing inputs", "duration", time.Since(inputStartedAt))
 	r.removeDebtOwners(ownerListMap, ownerUserUIDs)
-	addUnsettledBillingOwners(ownerListMap, unsettledBillings)
 	if err := r.loadSubscriptionWorkspacesAt(endHourTime, ownerListMap); err != nil {
 		return err
 	}
@@ -507,25 +497,6 @@ func workspaceSubscriptionTransactionCovers(
 		transaction.UpdatedAt.Add(period).After(effectiveTime), nil
 }
 
-func addUnsettledBillingOwners(
-	ownerListMap map[string][]string,
-	unsettled map[string][]*resources.Billing,
-) {
-	for owner, billings := range unsettled {
-		namespaces := make(map[string]struct{}, len(ownerListMap[owner]))
-		for _, namespace := range ownerListMap[owner] {
-			namespaces[namespace] = struct{}{}
-		}
-		for _, billing := range billings {
-			if _, exists := namespaces[billing.Namespace]; exists {
-				continue
-			}
-			ownerListMap[owner] = append(ownerListMap[owner], billing.Namespace)
-			namespaces[billing.Namespace] = struct{}{}
-		}
-	}
-}
-
 func (r *BillingReconciler) reconcileOwnerList(
 	ownerListMap map[string][]string,
 	now time.Time,
@@ -639,7 +610,7 @@ func billingBusinessKey(billing *resources.Billing) string {
 func classifyGeneratedBillings(ownerBillings map[string][]*resources.Billing) {
 	for _, billings := range ownerBillings {
 		for _, billing := range billings {
-			billing.Status = resources.Unsettled
+			billing.Status = resources.Settled
 			if _, ok := SubscriptionWorkspaceMap.Get(billing.Namespace); ok {
 				billing.Status = resources.Subscription
 			}
@@ -651,14 +622,6 @@ func pendingOwnerBillings(
 	generated, existing map[string][]*resources.Billing,
 ) map[string][]*resources.Billing {
 	pending := make(map[string][]*resources.Billing)
-	for owner, billings := range existing {
-		for _, billing := range billings {
-			if billing.Status == resources.Unsettled &&
-				strings.HasPrefix(billing.OrderID, "bh_") {
-				pending[owner] = append(pending[owner], billing)
-			}
-		}
-	}
 	for owner, billings := range generated {
 		existingByKey := make(map[string]*resources.Billing, len(existing[owner]))
 		for _, billing := range existing[owner] {
@@ -675,27 +638,30 @@ func pendingOwnerBillings(
 }
 
 func (r *BillingReconciler) reconcileBilling(owner string, billings []*resources.Billing) error {
+	amount := int64(0)
+	orderIDs := make([]string, 0, len(billings))
+	for _, billing := range billings {
+		if billing.Status == resources.Subscription {
+			continue
+		}
+		amount += billing.Amount
+		orderIDs = append(orderIDs, billing.OrderID)
+	}
 	if err := r.DBClient.SaveBillings(billings...); err != nil {
 		return fmt.Errorf("save billings failed: %w", err)
 	}
-	for _, billing := range billings {
-		if billing.Status == resources.Subscription {
-			if err := r.DBClient.UpdateBillingStatus(
-				[]string{billing.OrderID}, resources.Subscription,
-			); err != nil {
-				return fmt.Errorf("mark billing %s subscription: %w", billing.OrderID, err)
-			}
-			continue
+	if amount == 0 {
+		return nil
+	}
+	if err := r.AccountV2.AddDeductionBalance(
+		&types.UserQueryOpts{Owner: owner}, amount,
+	); err != nil {
+		if updateErr := r.DBClient.UpdateBillingStatus(
+			orderIDs, resources.Unsettled,
+		); updateErr != nil {
+			r.Error(updateErr, "update billing unsettled status failed", "orderIDs", orderIDs)
 		}
-		orderIDs := []string{billing.OrderID}
-		if err := r.AccountV2.AddDeductionBalanceForBilling(
-			&types.UserQueryOpts{Owner: owner}, billing.Amount, orderIDs,
-		); err != nil {
-			return fmt.Errorf("deduct billing %s balance: %w", billing.OrderID, err)
-		}
-		if err := r.DBClient.UpdateBillingStatus(orderIDs, resources.Settled); err != nil {
-			return fmt.Errorf("mark billing %s settled: %w", billing.OrderID, err)
-		}
+		return fmt.Errorf("deduct owner %s balance: %w", owner, err)
 	}
 	return nil
 }
@@ -704,27 +670,30 @@ func (r *BillingReconciler) reconcileBillingWithCredits(
 	owner string,
 	billings []*resources.Billing,
 ) error {
+	amount := int64(0)
+	orderIDs := make([]string, 0, len(billings))
+	for _, billing := range billings {
+		if billing.Status == resources.Subscription {
+			continue
+		}
+		amount += billing.Amount
+		orderIDs = append(orderIDs, billing.OrderID)
+	}
 	if err := r.DBClient.SaveBillings(billings...); err != nil {
 		return fmt.Errorf("save billings failed: %w", err)
 	}
-	for _, billing := range billings {
-		if billing.Status == resources.Subscription {
-			if err := r.DBClient.UpdateBillingStatus(
-				[]string{billing.OrderID}, resources.Subscription,
-			); err != nil {
-				return fmt.Errorf("mark billing %s subscription: %w", billing.OrderID, err)
-			}
-			continue
+	if amount == 0 {
+		return nil
+	}
+	if err := r.AccountV2.AddDeductionBalanceWithCredits(
+		&types.UserQueryOpts{Owner: owner}, amount, orderIDs,
+	); err != nil {
+		if updateErr := r.DBClient.UpdateBillingStatus(
+			orderIDs, resources.Unsettled,
+		); updateErr != nil {
+			r.Error(updateErr, "update billing unsettled status failed", "orderIDs", orderIDs)
 		}
-		orderIDs := []string{billing.OrderID}
-		if err := r.AccountV2.AddDeductionBalanceWithCredits(
-			&types.UserQueryOpts{Owner: owner}, billing.Amount, orderIDs,
-		); err != nil {
-			return fmt.Errorf("deduct billing %s with credits: %w", billing.OrderID, err)
-		}
-		if err := r.DBClient.UpdateBillingStatus(orderIDs, resources.Settled); err != nil {
-			return fmt.Errorf("mark billing %s settled: %w", billing.OrderID, err)
-		}
+		return fmt.Errorf("deduct owner %s with credits: %w", owner, err)
 	}
 	return nil
 }

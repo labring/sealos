@@ -148,7 +148,6 @@ type AccountV2 interface {
 	) error
 	AddBalance(user *types.UserQueryOpts, balance int64) error
 	AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, amount int64, orderIDs []string) error
-	AddDeductionBalanceForBilling(ops *types.UserQueryOpts, amount int64, orderIDs []string) error
 	ReduceBalance(ops *types.UserQueryOpts, amount int64) error
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)

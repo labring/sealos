@@ -2,9 +2,7 @@ package cockroach
 
 import (
 	"context"
-	"errors"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -17,7 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestBillingDeductionIdempotencyWithPostgresRuntime(t *testing.T) {
+func TestBillingDeductionWithPostgresRuntimeDoesNotCreateTransaction(t *testing.T) {
 	testcontainers.SkipIfProviderIsNotHealthy(t)
 	ctx := context.Background()
 	container, err := postgrescontainer.Run(ctx, "postgres:16-alpine",
@@ -59,8 +57,8 @@ func TestBillingDeductionIdempotencyWithPostgresRuntime(t *testing.T) {
 		ownerUsrUIDMap: &sync.Map{}, ownerUsrIDMap: &sync.Map{},
 	}
 	for range 2 {
-		if err := account.AddDeductionBalanceForBilling(
-			&types.UserQueryOpts{UID: userUID}, 125, []string{"stable-order"},
+		if err := account.AddDeductionBalance(
+			&types.UserQueryOpts{UID: userUID}, 125,
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -69,21 +67,19 @@ func TestBillingDeductionIdempotencyWithPostgresRuntime(t *testing.T) {
 	if err := db.First(&stored, `"userUid" = ?`, userUID).Error; err != nil {
 		t.Fatal(err)
 	}
-	if stored.DeductionBalance != 125 {
+	if stored.DeductionBalance != 250 {
 		t.Fatalf("deduction balance = %d", stored.DeductionBalance)
 	}
 	var transactionCount int64
-	if err := db.Model(&types.AccountTransaction{}).
-		Where("id = ?", billingTransactionID(regionUID, []string{"stable-order"})).
-		Count(&transactionCount).Error; err != nil {
+	if err := db.Model(&types.AccountTransaction{}).Count(&transactionCount).Error; err != nil {
 		t.Fatal(err)
 	}
-	if transactionCount != 1 {
+	if transactionCount != 0 {
 		t.Fatalf("transaction count = %d", transactionCount)
 	}
 }
 
-func TestBillingDeductionWithCreditsRetriesFullAmountWithPostgresRuntime(t *testing.T) {
+func TestBillingDeductionWithCreditsWithPostgresRuntime(t *testing.T) {
 	testcontainers.SkipIfProviderIsNotHealthy(t)
 	ctx := context.Background()
 	container, err := postgrescontainer.Run(ctx, "postgres:16-alpine",
@@ -128,18 +124,6 @@ func TestBillingDeductionWithCreditsRetriesFullAmountWithPostgresRuntime(t *test
 	}).Error; err != nil {
 		t.Fatal(err)
 	}
-	var createAttempts atomic.Int32
-	if err := db.Callback().Create().Before("gorm:create").Register(
-		"test:fail_first_account_transaction",
-		func(tx *gorm.DB) {
-			if _, ok := tx.Statement.Dest.(*types.AccountTransaction); ok &&
-				createAttempts.Add(1) == 1 {
-				_ = tx.AddError(errors.New("injected account transaction failure"))
-			}
-		},
-	); err != nil {
-		t.Fatal(err)
-	}
 	regionUID := uuid.New()
 	account := &Cockroach{
 		DB: db, Localdb: db, LocalRegion: &types.Region{UID: regionUID, Domain: "test"},
@@ -164,19 +148,11 @@ func TestBillingDeductionWithCreditsRetriesFullAmountWithPostgresRuntime(t *test
 	if storedAccount.DeductionBalance != 25 {
 		t.Fatalf("deduction balance = %d", storedAccount.DeductionBalance)
 	}
-	var transaction types.AccountTransaction
-	if err := db.First(
-		&transaction,
-		"id = ?",
-		billingTransactionID(regionUID, []string{"credit-retry-order"}),
-	).Error; err != nil {
+	var transactionCount int64
+	if err := db.Model(&types.AccountTransaction{}).Count(&transactionCount).Error; err != nil {
 		t.Fatal(err)
 	}
-	if transaction.DeductionCredit != 100 || transaction.DeductionBalance != 25 {
-		t.Fatalf(
-			"transaction credit=%d balance=%d",
-			transaction.DeductionCredit,
-			transaction.DeductionBalance,
-		)
+	if transactionCount != 0 {
+		t.Fatalf("transaction count = %d", transactionCount)
 	}
 }
