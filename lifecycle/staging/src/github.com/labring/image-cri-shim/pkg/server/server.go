@@ -16,6 +16,8 @@
 package server
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -24,27 +26,26 @@ import (
 	"strconv"
 	"time"
 
-	"google.golang.org/grpc"
-	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 	netutil "github.com/labring/sealos/pkg/utils/net"
+	"google.golang.org/grpc"
+	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 type Options struct {
-    Timeout time.Duration
-    // Socket is the socket where shim listens on
-    Socket string
-    // User is the user ID for our gRPC socket.
-    User int
-    // Group is the group ID for our gRPC socket.
-    Group int
-    // Mode is the permission mode bits for our gRPC socket.
-    Mode os.FileMode
-    // AuthStore keeps registry credentials shared with the CRI handlers.
-    AuthStore *AuthStore
-    // Cache keeps cache tuning knobs.
-    Cache CacheOptions
+	Timeout time.Duration
+	// Socket is the socket where shim listens on
+	Socket string
+	// User is the user ID for our gRPC socket.
+	User int
+	// Group is the group ID for our gRPC socket.
+	Group int
+	// Mode is the permission mode bits for our gRPC socket.
+	Mode os.FileMode
+	// AuthStore keeps registry credentials shared with the CRI handlers.
+	AuthStore *AuthStore
+	// Cache keeps cache tuning knobs.
+	Cache CacheOptions
 }
 
 type Server interface {
@@ -58,7 +59,7 @@ type Server interface {
 
 	Stop()
 
-	UpdateCacheOptions(CacheOptions)
+	UpdateCacheOptions(options CacheOptions)
 
 	CacheStats() CacheStats
 }
@@ -83,7 +84,7 @@ func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
 		return err
 	}
 
-    imageService := newV1ImageService(s.imageV1Client, s.options.AuthStore, s.options.Cache)
+	imageService := newV1ImageService(s.imageV1Client, s.options.AuthStore, s.options.Cache)
 	k8sv1api.RegisterImageServiceServer(s.server, imageService)
 	s.imageService = imageService
 
@@ -113,14 +114,15 @@ func (s *server) createGrpcServer() error {
 			s.options.Socket, err)
 	}
 
-	l, err := net.Listen("unix", s.options.Socket)
+	listenerConfig := net.ListenConfig{}
+	l, err := listenerConfig.Listen(context.Background(), "unix", s.options.Socket)
 	if err != nil {
 		if netutil.ServerActiveAt(s.options.Socket) {
 			return serverError("failed to create server: socket %s already in use",
 				s.options.Socket)
 		}
 		os.Remove(s.options.Socket)
-		l, err = net.Listen("unix", s.options.Socket)
+		l, err = listenerConfig.Listen(context.Background(), "unix", s.options.Socket)
 		if err != nil {
 			return serverError("failed to create server on socket %s: %v",
 				s.options.Socket, err)
@@ -181,7 +183,12 @@ func (s *server) Chown(uid, gid int) error {
 			return serverError("failed to change ownership of socket %q to %s/%s: %v",
 				s.options.Socket, userName, groupName, err)
 		}
-		logger.Info("changed ownership of socket %q to %s/%s", s.options.Socket, userName, groupName)
+		logger.Info(
+			"changed ownership of socket %q to %s/%s",
+			s.options.Socket,
+			userName,
+			groupName,
+		)
 	}
 
 	s.options.User = uid
@@ -212,7 +219,7 @@ func (s *server) CacheStats() CacheStats {
 
 func NewServer(options Options) (Server, error) {
 	if !filepath.IsAbs(options.Socket) {
-		return nil, fmt.Errorf("invalid socked")
+		return nil, errors.New("invalid socked")
 	}
 
 	s := &server{
@@ -222,7 +229,7 @@ func NewServer(options Options) (Server, error) {
 }
 
 // Return a formatter server error.
-func serverError(format string, args ...interface{}) error {
+func serverError(format string, args ...any) error {
 	return fmt.Errorf("cri/server: "+format, args...)
 }
 

@@ -27,17 +27,17 @@ import (
 const DefaultUserLimit = 1
 
 var (
-	activeFlag      uint32
-	initializedFlag uint32
-	userLimit       int64
+	activeFlag      atomic.Uint32
+	initializedFlag atomic.Uint32
+	userLimit       atomic.Int64
 )
 
 func Initialized() bool {
-	return atomic.LoadUint32(&initializedFlag) == 1
+	return initializedFlag.Load() == 1
 }
 
 func HasActiveLicense() bool {
-	return atomic.LoadUint32(&activeFlag) == 1
+	return activeFlag.Load() == 1
 }
 
 func AllowNewUser(currentCount int) bool {
@@ -52,7 +52,7 @@ func AllowNewUser(currentCount int) bool {
 }
 
 func UserLimit() int {
-	return int(atomic.LoadInt64(&userLimit))
+	return int(userLimit.Load())
 }
 
 func LimitMessage() string {
@@ -64,16 +64,16 @@ func LimitMessage() string {
 
 func SetActive(active bool) {
 	if active {
-		atomic.StoreUint32(&activeFlag, 1)
+		activeFlag.Store(1)
 	} else {
-		atomic.StoreUint32(&activeFlag, 0)
+		activeFlag.Store(0)
 	}
-	atomic.StoreUint32(&initializedFlag, 1)
+	initializedFlag.Store(1)
 }
 
 func SetUserLimit(limit int) {
-	atomic.StoreInt64(&userLimit, int64(limit))
-	atomic.StoreUint32(&initializedFlag, 1)
+	userLimit.Store(int64(limit))
+	initializedFlag.Store(1)
 }
 
 func SetState(active bool, limit int) {

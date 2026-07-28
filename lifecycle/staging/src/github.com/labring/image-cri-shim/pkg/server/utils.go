@@ -20,12 +20,9 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/registry"
-
-	"github.com/labring/sealos/pkg/sreg/registry/crane"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	name "github.com/google/go-containerregistry/pkg/name"
+	"github.com/labring/sealos/pkg/sreg/registry/crane"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // craneGetImageManifest is declared as a var so tests can replace it with a stub implementation.
@@ -33,7 +30,8 @@ var craneGetImageManifest = crane.GetImageManifestFromAuth
 
 // replaceImage replaces the image name to a new valid image name with the private registry.
 func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string,
-	isReplace bool, cfg *registry.AuthConfig) {
+	isReplace bool, cfg *registry.AuthConfig,
+) {
 	if len(authConfig) == 0 {
 		return image, false, nil
 	}
@@ -55,7 +53,12 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 		if strings.Contains(image, "@") {
 			return replaceImage(strings.Split(image, "@")[0], action, authConfig)
 		}
-		logger.Warn("rewrite skipped: failed to fetch manifest for %s (action=%s): %v", image, action, err)
+		logger.Warn(
+			"rewrite skipped: failed to fetch manifest for %s (action=%s): %v",
+			image,
+			action,
+			err,
+		)
 		return image, false, cfg
 	}
 	return newImage, true, cfg
@@ -67,16 +70,6 @@ func registryFromImage(image string) string {
 		return ""
 	}
 	return parts[0]
-}
-
-func shouldSkipAuth(domain string, cfg *registry.AuthConfig, skip map[string]bool) bool {
-	if skip != nil && skip[domain] {
-		return true
-	}
-	if cfg == nil {
-		return true
-	}
-	return cfg.Username == "" && cfg.Password == "" && cfg.Auth == "" && cfg.IdentityToken == "" && cfg.RegistryToken == ""
 }
 
 func referenceSuffix(ref name.Reference) string {
@@ -119,7 +112,10 @@ type RegistryWithPriority struct {
 
 // ReplaceImageWithPriority tries to replace an image using registries in priority order
 // Returns the first successfully replaced image, or the original if all fail
-func ReplaceImageWithPriority(image, action string, registries []RegistryWithPriority) (newImage string, isReplace bool, cfg *registry.AuthConfig) {
+func ReplaceImageWithPriority(
+	image, action string,
+	registries []RegistryWithPriority,
+) (newImage string, isReplace bool, cfg *registry.AuthConfig) {
 	if len(registries) == 0 {
 		return image, false, nil
 	}
@@ -132,8 +128,14 @@ func ReplaceImageWithPriority(image, action string, registries []RegistryWithPri
 		authMap := map[string]registry.AuthConfig{reg.Domain: reg.Config}
 		result, replaced, authConfig := replaceImage(image, action, authMap)
 		if replaced {
-			logger.Info("priority match: image=%s action=%s matched_registry=%s priority=%d result=%s",
-				image, action, reg.Domain, reg.Priority, result)
+			logger.Info(
+				"priority match: image=%s action=%s matched_registry=%s priority=%d result=%s",
+				image,
+				action,
+				reg.Domain,
+				reg.Priority,
+				result,
+			)
 			if authConfig != nil {
 				return result, true, authConfig
 			}
@@ -144,7 +146,12 @@ func ReplaceImageWithPriority(image, action string, registries []RegistryWithPri
 	}
 
 	// If we get here, no registry matched - this is a domain miss for tracking purposes
-	logger.Debug("priority match: image=%s action=%s no registry found, using original (domain=%s)", image, action, imageDomain)
+	logger.Debug(
+		"priority match: image=%s action=%s no registry found, using original (domain=%s)",
+		image,
+		action,
+		imageDomain,
+	)
 	return image, false, nil
 }
 

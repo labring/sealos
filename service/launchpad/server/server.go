@@ -6,12 +6,10 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"text/template"
-
-	"github.com/labring/sealos/service/pkg/auth"
 
 	"github.com/labring/sealos/service/launchpad/request"
 	"github.com/labring/sealos/service/pkg/api"
+	"github.com/labring/sealos/service/pkg/auth"
 )
 
 type VMServer struct {
@@ -55,7 +53,7 @@ func (vs *VMServer) ParseRequest(req *http.Request) (*api.VMRequest, error) {
 	if vr.Pwd == "" {
 		return nil, api.ErrEmptyKubeconfig
 	}
-	//fmt.Printf("VR Password: %q\n", vr.Pwd)
+	// fmt.Printf("VR Password: %q\n", vr.Pwd)
 	if err := req.ParseForm(); err != nil {
 		return nil, err
 	}
@@ -76,6 +74,10 @@ func (vs *VMServer) ParseRequest(req *http.Request) (*api.VMRequest, error) {
 			vr.Type = val[0]
 		case "launchPadName":
 			vr.LaunchPadName = val[0]
+		case "service":
+			vr.Service = val[0]
+		case "port":
+			vr.Port = val[0]
 		case "pvcName":
 			vr.PvcName = val[0]
 		}
@@ -84,15 +86,23 @@ func (vs *VMServer) ParseRequest(req *http.Request) (*api.VMRequest, error) {
 	if vr.NS == "" {
 		return nil, api.ErrUncompleteParam
 	}
+	if isNetworkServiceRequest(vr.Type) && (vr.Service == "" || vr.Port == "") {
+		return nil, fmt.Errorf("service and port are required for %s queries", vr.Type)
+	}
 
 	return vr, nil
+}
+
+func isNetworkServiceRequest(queryType string) bool {
+	return queryType == "network_service_request_count" ||
+		queryType == "network_service_request_percent"
 }
 
 // 获取客户端请求的信息
 func (vs *VMServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	pathPrefix := ""
-	switch {
-	case req.URL.Path == pathPrefix+"/query":
+	switch req.URL.Path {
+	case pathPrefix + "/query":
 		vs.doReqNew(rw, req)
 	default:
 		http.Error(rw, "Not found", http.StatusNotFound)
@@ -109,7 +119,11 @@ func (vs *VMServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := vs.Authenticate(vr); err != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("Authentication failed (%s)", err),
+			http.StatusInternalServerError,
+		)
 		log.Printf("Authentication failed (%s)\n", err)
 		return
 	}
@@ -121,24 +135,9 @@ func (vs *VMServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(rw, "Result failed (invalid query expression)", http.StatusInternalServerError)
-		log.Printf("Reulst failed (%s)\n", err)
-		return
-	}
-
 	rw.Header().Set("Content-Type", "application/json")
-
-	tmpl := template.New("responseTemplate").Delims("{{", "}}")
-	tmpl, err = tmpl.Parse(`{{.}}`)
-	if err != nil {
-		log.Printf("template failed: %s\n", err)
-		http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	if err = tmpl.Execute(rw, string(result)); err != nil {
-		log.Printf("Reulst failed: %s\n", err)
+	if err = json.NewEncoder(rw).Encode(res); err != nil {
+		log.Printf("Result failed: %s\n", err)
 		http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}

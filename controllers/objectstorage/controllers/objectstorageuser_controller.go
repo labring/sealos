@@ -21,6 +21,7 @@ import (
 	"context"
 	stderrors "errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -105,7 +106,11 @@ func (r *ObjectStorageUserReconciler) Reconcile(
 	// new OSAdminClient and OSClient
 	if r.OSAdminClient == nil || r.OSClient == nil {
 		secret := &corev1.Secret{}
-		if err := r.Get(ctx, client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace}, secret); err != nil {
+		if err := r.Get(
+			ctx,
+			client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace},
+			secret,
+		); err != nil {
 			r.Logger.Error(
 				err,
 				"failed to get secret",
@@ -123,14 +128,22 @@ func (r *ObjectStorageUserReconciler) Reconcile(
 
 		var err error
 		if r.OSAdminClient == nil {
-			if r.OSAdminClient, err = objectstoragev1.NewOSAdminClient(endpoint, accessKey, secretKey); err != nil {
+			if r.OSAdminClient, err = objectstoragev1.NewOSAdminClient(
+				endpoint,
+				accessKey,
+				secretKey,
+			); err != nil {
 				r.Logger.Error(err, "failed to new object storage admin client")
 				return ctrl.Result{}, err
 			}
 		}
 
 		if r.OSClient == nil {
-			if r.OSClient, err = objectstoragev1.NewOSClient(endpoint, accessKey, secretKey); err != nil {
+			if r.OSClient, err = objectstoragev1.NewOSClient(
+				endpoint,
+				accessKey,
+				secretKey,
+			); err != nil {
 				r.Logger.Error(err, "failed to new object storage client")
 				return ctrl.Result{}, err
 			}
@@ -138,7 +151,11 @@ func (r *ObjectStorageUserReconciler) Reconcile(
 	}
 
 	user := &objectstoragev1.ObjectStorageUser{}
-	if err := r.Get(ctx, client.ObjectKey{Name: username, Namespace: userNamespace}, user); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Name: username, Namespace: userNamespace},
+		user,
+	); err != nil {
 		if !errors.IsNotFound(err) {
 			r.Logger.Error(
 				err,
@@ -167,7 +184,11 @@ func (r *ObjectStorageUserReconciler) Reconcile(
 	}
 
 	resourceQuota := &corev1.ResourceQuota{}
-	if err := r.Get(ctx, client.ObjectKey{Name: ResourceQuotaPrefix + userNamespace, Namespace: userNamespace}, resourceQuota); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Name: ResourceQuotaPrefix + userNamespace, Namespace: userNamespace},
+		resourceQuota,
+	); err != nil {
 		r.Logger.Error(
 			err,
 			"failed to get resource quota",
@@ -211,7 +232,12 @@ func (r *ObjectStorageUserReconciler) Reconcile(
 	}
 
 	if pwdUpdated {
-		if err := r.OSAdminClient.SetUser(ctx, accessKey, secretKey, madmin.AccountEnabled); err != nil {
+		if err := r.OSAdminClient.SetUser(
+			ctx,
+			accessKey,
+			secretKey,
+			madmin.AccountEnabled,
+		); err != nil {
 			r.Logger.Error(err, "failed to set user secret key", "name", accessKey)
 		}
 		r.Logger.V(1).
@@ -219,7 +245,11 @@ func (r *ObjectStorageUserReconciler) Reconcile(
 	}
 
 	secret := &corev1.Secret{}
-	if err := r.Get(ctx, client.ObjectKey{Name: OSKeySecret, Namespace: userNamespace}, secret); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Name: OSKeySecret, Namespace: userNamespace},
+		secret,
+	); err != nil {
 		if !errors.IsNotFound(err) {
 			r.Logger.Error(
 				err,
@@ -373,7 +403,7 @@ func (r *ObjectStorageUserReconciler) newObjectStorageKeySecret(
 		Controller:         nil,
 		BlockOwnerDeletion: nil,
 	}
-	refList := make([]metav1.OwnerReference, 0)
+	refList := make([]metav1.OwnerReference, 0, 1)
 	refList = append(refList, reference)
 	secret.SetOwnerReferences(refList)
 
@@ -396,13 +426,7 @@ func (r *ObjectStorageUserReconciler) addUserToGroup(
 	newGroupDesc.Members = member
 	newGroupDesc.Status = madmin.GroupStatus(groupDesc.Status)
 
-	isExist := false
-	for _, member := range groupDesc.Members {
-		if user == member {
-			isExist = true
-			break
-		}
-	}
+	isExist := slices.Contains(groupDesc.Members, user)
 
 	if !isExist {
 		if err := r.OSAdminClient.UpdateGroupMembers(ctx, newGroupDesc); err != nil {
@@ -445,7 +469,11 @@ func (r *ObjectStorageUserReconciler) deleteObjectStorageUser(
 	username, userNamespace string,
 ) error {
 	// delete all bucket cr of user
-	if err := r.DeleteAllOf(ctx, &objectstoragev1.ObjectStorageBucket{}, client.InNamespace(userNamespace)); client.IgnoreNotFound(
+	if err := r.DeleteAllOf(
+		ctx,
+		&objectstoragev1.ObjectStorageBucket{},
+		client.InNamespace(userNamespace),
+	); client.IgnoreNotFound(
 		err,
 	) != nil {
 		r.Logger.Error(

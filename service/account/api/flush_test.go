@@ -55,7 +55,11 @@ func TestGetOwnNsListWithCltForDebtFlush_IncludesDebtSuspendedNamespacesOnRecove
 	assertStringSet(t, recoveryNamespaces, []string{"payg", "payg-suspended-with-sub-annotation"})
 
 	var ns corev1.Namespace
-	if err := clt.Get(context.Background(), client.ObjectKey{Name: "payg-suspended-with-sub-annotation"}, &ns); err != nil {
+	if err := clt.Get(
+		context.Background(),
+		client.ObjectKey{Name: "payg-suspended-with-sub-annotation"},
+		&ns,
+	); err != nil {
 		t.Fatalf("get suspended namespace: %v", err)
 	}
 	skip, err := shouldSkipWorkspaceSubscriptionNamespace(ns.Name, ns.Annotations, true)

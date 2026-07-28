@@ -8,14 +8,17 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/labring/sealos/service/pkg/api"
 )
 
-func Request(addr string, params *bytes.Buffer) ([]byte, error) {
-	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
+var namespaceMatcherPattern = regexp.MustCompile(`(^|,)\s*namespace\s*(=~|!~|=|!=)`)
 
+func Request(addr string, params *bytes.Buffer) ([]byte, error) {
+	//nolint:gosec // Prometheus host is configured by deployment and targets an internal endpoint.
+	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +39,7 @@ func Request(addr string, params *bytes.Buffer) ([]byte, error) {
 
 func PrometheusPre(query *api.PromRequest) ([]byte, error) {
 	result := strings.ReplaceAll(query.Query, "$", "namespace=~\""+query.NS+"\"")
-	result = strings.ReplaceAll(result, "{", "{namespace=~\""+query.NS+"\",")
+	result = addNamespaceMatcher(result, query.NS)
 	log.Println(result)
 
 	formData := url.Values{}
@@ -62,6 +65,40 @@ func PrometheusPre(query *api.PromRequest) ([]byte, error) {
 		return Request(prometheusHost+"/api/v1/query", bf)
 	}
 	return Request(prometheusHost+"/api/v1/query_range", bf)
+}
+
+func addNamespaceMatcher(query, namespace string) string {
+	matcher := "namespace=~\"" + namespace + "\""
+	var result strings.Builder
+	for {
+		open := strings.Index(query, "{")
+		if open == -1 {
+			result.WriteString(query)
+			return result.String()
+		}
+
+		closeIdx := strings.Index(query[open:], "}")
+		if closeIdx == -1 {
+			result.WriteString(query)
+			return result.String()
+		}
+		closeIdx += open
+
+		selector := query[open+1 : closeIdx]
+		result.WriteString(query[:open+1])
+		switch {
+		case namespaceMatcherPattern.MatchString(selector):
+			result.WriteString(selector)
+		case strings.TrimSpace(selector) == "":
+			result.WriteString(matcher)
+		default:
+			result.WriteString(matcher)
+			result.WriteString(",")
+			result.WriteString(selector)
+		}
+		result.WriteString("}")
+		query = query[closeIdx+1:]
+	}
 }
 
 func GetQuery(query *api.PromRequest) (string, error) {
@@ -92,6 +129,7 @@ func GetQuery(query *api.PromRequest) (string, error) {
 	}
 	result = strings.ReplaceAll(result, "#", query.NS)
 	result = strings.ReplaceAll(result, "@", query.Cluster)
+	fmt.Println("query result", result)
 	return result, nil
 }
 

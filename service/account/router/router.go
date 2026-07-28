@@ -26,7 +26,11 @@ import (
 func RegisterPayRouter() {
 	router := gin.New()
 	router.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		SkipPaths: []string{"/health", "/health/"}, // 包含可能的路径变体
+		SkipPaths: []string{
+			"/health",
+			"/health/",
+			helper.AdminGroup + helper.AdminFlushDebtResourceStatus,
+		},
 	}))
 	ctx := context.Background()
 	if err := dao.Init(ctx); err != nil {
@@ -74,6 +78,11 @@ func RegisterPayRouter() {
 		POST(helper.GetRechargeDiscount, api.GetRechargeDiscount).
 		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo).
 		POST(helper.WorkspaceGetResourceQuota, api.GetWorkspaceResourceQuota).
+		// UserAlertNotificationAccount routes
+		POST(helper.UserAlertNotificationAccountCreate, api.CreateUserAlertNotificationAccount).
+		POST(helper.UserAlertNotificationAccountList, api.ListUserAlertNotificationAccounts).
+		POST(helper.UserAlertNotificationAccountDelete, api.DeleteUserAlertNotificationAccount).
+		POST(helper.UserAlertNotificationAccountToggle, api.ToggleUserAlertNotificationAccounts).
 		// WorkspaceSubscription routes
 		POST(helper.WorkspaceSubscriptionInfo, api.GetWorkspaceSubscriptionInfo).
 		POST(helper.WorkspaceSubscriptionList, api.GetWorkspaceSubscriptionList).
@@ -85,7 +94,10 @@ func RegisterPayRouter() {
 		POST(helper.WorkspaceSubscriptionPay, api.CreateWorkspaceSubscriptionPay).
 		POST(helper.WorkspaceSubscriptionNotify, api.NewWorkspaceSubscriptionNotifyHandler).
 		POST(helper.WorkspaceSubscriptionPortalSession, api.CreateWorkspaceSubscriptionPortalSession).
-		POST(helper.WorkspaceSubscriptionPlans, api.GetWorkspaceSubscriptionPlans)
+		POST(helper.WorkspaceSubscriptionPlans, api.GetWorkspaceSubscriptionPlans).
+		POST(helper.WorkspaceSubscriptionCardManage, api.CreateWorkspaceSubscriptionSetupIntent).
+		POST(helper.WorkspaceSubscriptionCardInfo, api.GetWorkspaceSubscriptionCardInfo).
+		POST(helper.WorkspaceSubscriptionInvoiceCancel, api.CancelWorkspaceSubscriptionInvoice)
 	adminGroup := router.Group(helper.AdminGroup).
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
 		GET(helper.AdminGetUserRealNameInfo, api.AdminGetUserRealNameInfo).
@@ -101,6 +113,8 @@ func RegisterPayRouter() {
 		POST(helper.AdminWorkspaceSubscriptionAdd, api.AdminAddWorkspaceSubscription).
 		POST(helper.AdminWorkspaceSubscriptionList, api.AdminWorkspaceSubscriptionList).
 		POST(helper.AdminSubscriptionPlans, api.AdminSubscriptionPlans).
+		POST(helper.AdminSubscriptionPlanManage, api.AdminManageSubscriptionPlan).
+		POST(helper.AdminSubscriptionPlanDelete, api.AdminDeleteSubscriptionPlan).
 		POST(helper.AdminReloadPropertyTypes, api.ReloadPropertyTypes)
 	paymentGroup := router.Group(helper.PaymentGroup).
 		POST(helper.CreatePay, api.CreateCardPay).
