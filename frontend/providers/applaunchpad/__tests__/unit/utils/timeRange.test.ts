@@ -1,37 +1,51 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  formatShanghaiDateTime,
+  formatDateTimeInTimeZone,
+  getBrowserTimeZone,
   getBoundedRangeStart,
-  getBoundedShanghaiDayRange,
-  getShanghaiDayBounds,
+  getBoundedDayRangeInTimeZone,
+  getDayBoundsInTimeZone,
   getUtcTimestamp,
   normalizeTimeInput,
   orderDateRange,
-  parseShanghaiDateTime
+  parseDateTimeInTimeZone
 } from '@/utils/timeRange';
 
-describe('Asia/Shanghai date time helpers', () => {
-  it('parses Beijing HH:mm input as the matching UTC instant', () => {
-    expect(parseShanghaiDateTime('2026-07-28', '00:00')?.toISOString()).toBe(
+describe('time zone date time helpers', () => {
+  const shanghaiTimeZone = 'Asia/Shanghai';
+
+  it('uses UTC as the server-rendering fallback', () => {
+    expect(getBrowserTimeZone()).toBe('UTC');
+  });
+
+  it('parses local HH:mm input in the selected time zone', () => {
+    expect(parseDateTimeInTimeZone('2026-07-28', '00:00', shanghaiTimeZone)?.toISOString()).toBe(
       '2026-07-27T16:00:00.000Z'
     );
   });
 
-  it('keeps an exact 10:00 to 12:00 range in Beijing time', () => {
-    const start = parseShanghaiDateTime('2026-07-28', '10:00');
-    const end = parseShanghaiDateTime('2026-07-28', '12:00');
+  it('converts the same wall-clock time differently for each user time zone', () => {
+    const start = parseDateTimeInTimeZone('2026-07-28', '10:00', shanghaiTimeZone);
+    const end = parseDateTimeInTimeZone('2026-07-28', '10:00', 'America/Los_Angeles');
 
     expect(start?.toISOString()).toBe('2026-07-28T02:00:00.000Z');
-    expect(end?.toISOString()).toBe('2026-07-28T04:00:00.000Z');
+    expect(end?.toISOString()).toBe('2026-07-28T17:00:00.000Z');
   });
 
-  it('formats instants in Beijing time regardless of the browser timezone', () => {
-    expect(formatShanghaiDateTime('2026-07-27T12:00:00.000Z')).toBe('2026-07-27 20:00:00');
+  it('formats instants in the selected user time zone', () => {
+    expect(formatDateTimeInTimeZone('2026-07-27T12:00:00.000Z', shanghaiTimeZone)).toBe(
+      '2026-07-27 20:00:00'
+    );
+    expect(formatDateTimeInTimeZone('2026-07-27T12:00:00.000Z', 'America/Los_Angeles')).toBe(
+      '2026-07-27 05:00:00'
+    );
   });
 
   it('treats backend timestamps without a timezone suffix as UTC', () => {
-    expect(formatShanghaiDateTime('2026-07-27 12:00:00')).toBe('2026-07-27 20:00:00');
+    expect(formatDateTimeInTimeZone('2026-07-27 12:00:00', shanghaiTimeZone)).toBe(
+      '2026-07-27 20:00:00'
+    );
     expect(getUtcTimestamp('2026-07-27 12:00:00')).toBe(
       new Date('2026-07-27T12:00:00.000Z').getTime()
     );
@@ -43,11 +57,11 @@ describe('Asia/Shanghai date time helpers', () => {
   });
 
   it('rejects invalid exact times', () => {
-    expect(parseShanghaiDateTime('2026-07-27', '25:00')).toBeNull();
+    expect(parseDateTimeInTimeZone('2026-07-27', '25:00', shanghaiTimeZone)).toBeNull();
   });
 
-  it('derives calendar day bounds in Asia/Shanghai', () => {
-    const bounds = getShanghaiDayBounds(new Date('2026-07-27T17:00:00.000Z'));
+  it('derives calendar day bounds in the selected time zone', () => {
+    const bounds = getDayBoundsInTimeZone(new Date('2026-07-27T17:00:00.000Z'), shanghaiTimeZone);
 
     expect(bounds.start.toISOString()).toBe('2026-07-27T16:00:00.000Z');
     expect(bounds.end.toISOString()).toBe('2026-07-28T15:59:59.999Z');
@@ -56,11 +70,12 @@ describe('Asia/Shanghai date time helpers', () => {
   it('clamps calendar days to the exact seven-day and current-time boundaries', () => {
     const min = new Date('2026-07-21T04:00:00.000Z');
     const max = new Date('2026-07-28T04:00:00.000Z');
-    const range = getBoundedShanghaiDayRange(
+    const range = getBoundedDayRangeInTimeZone(
       new Date('2026-07-20T16:00:00.000Z'),
       new Date('2026-07-27T16:00:00.000Z'),
       min,
-      max
+      max,
+      shanghaiTimeZone
     );
 
     expect(range.from?.toISOString()).toBe(min.toISOString());
@@ -72,7 +87,7 @@ describe('Asia/Shanghai date time helpers', () => {
     const start = new Date('2026-07-21T04:00:00.000Z');
     const end = new Date('2026-07-21T05:00:00.000Z');
 
-    expect(getBoundedRangeStart(start, end, min)).toEqual(min);
+    expect(getBoundedRangeStart(start, end, min, shanghaiTimeZone)).toEqual(min);
   });
 
   it('rejects ranges that are entirely before the seven-day boundary', () => {
@@ -80,7 +95,7 @@ describe('Asia/Shanghai date time helpers', () => {
     const start = new Date('2026-07-21T02:00:00.000Z');
     const end = new Date('2026-07-21T03:00:00.000Z');
 
-    expect(getBoundedRangeStart(start, end, min)).toBeNull();
+    expect(getBoundedRangeStart(start, end, min, shanghaiTimeZone)).toBeNull();
   });
 
   it('orders reversed manual range endpoints', () => {

@@ -18,7 +18,15 @@ interface TimeRange {
 const DATE_FORMAT = 'YYYY-MM-DD';
 const TIME_FORMAT = 'HH:mm:ss';
 
-export const SHANGHAI_TIME_ZONE = 'Asia/Shanghai';
+const FALLBACK_TIME_ZONE = 'UTC';
+
+export function getBrowserTimeZone(): string {
+  if (typeof window === 'undefined') {
+    return FALLBACK_TIME_ZONE;
+  }
+
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || FALLBACK_TIME_ZONE;
+}
 
 function parseInstant(date: Date | string | number) {
   if (typeof date !== 'string') {
@@ -29,19 +37,20 @@ function parseInstant(date: Date | string | number) {
   return hasTimeZone ? dayjs(date) : dayjs.utc(date);
 }
 
-export function formatShanghaiDate(date: Date): string {
-  return dayjs(date).tz(SHANGHAI_TIME_ZONE).format(DATE_FORMAT);
+export function formatDateInTimeZone(date: Date, timeZone: string): string {
+  return dayjs(date).tz(timeZone).format(DATE_FORMAT);
 }
 
-export function formatShanghaiTime(date: Date): string {
-  return dayjs(date).tz(SHANGHAI_TIME_ZONE).format(TIME_FORMAT);
+export function formatTimeInTimeZone(date: Date, timeZone: string): string {
+  return dayjs(date).tz(timeZone).format(TIME_FORMAT);
 }
 
-export function formatShanghaiDateTime(
+export function formatDateTimeInTimeZone(
   date: Date | string | number,
+  timeZone: string,
   format = 'YYYY-MM-DD HH:mm:ss'
 ) {
-  return parseInstant(date).tz(SHANGHAI_TIME_ZONE).format(format);
+  return parseInstant(date).tz(timeZone).format(format);
 }
 
 export function getUtcTimestamp(date: Date | string | number): number {
@@ -52,18 +61,18 @@ export function normalizeTimeInput(value: string): string {
   return /^\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
 }
 
-export function parseShanghaiDateTime(date: string, time: string): Date | null {
+export function parseDateTimeInTimeZone(date: string, time: string, timeZone: string): Date | null {
   const input = `${date} ${normalizeTimeInput(time)}`;
   const format = `${DATE_FORMAT} ${TIME_FORMAT}`;
   if (!dayjs(input, format, true).isValid()) {
     return null;
   }
 
-  return dayjs.tz(input, format, SHANGHAI_TIME_ZONE).toDate();
+  return dayjs.tz(input, format, timeZone).toDate();
 }
 
-export function getShanghaiDayBounds(date: Date): { start: Date; end: Date } {
-  const zonedDate = dayjs(date).tz(SHANGHAI_TIME_ZONE);
+export function getDayBoundsInTimeZone(date: Date, timeZone: string): { start: Date; end: Date } {
+  const zonedDate = dayjs(date).tz(timeZone);
 
   return {
     start: zonedDate.startOf('day').toDate(),
@@ -77,14 +86,15 @@ export function orderDateRange(first: Date, second: Date): { from: Date; to: Dat
     : { from: second, to: first };
 }
 
-export function getBoundedShanghaiDayRange(
+export function getBoundedDayRangeInTimeZone(
   from: Date | undefined,
   to: Date | undefined,
   min: Date,
-  max: Date
+  max: Date,
+  timeZone: string
 ): { from: Date | undefined; to: Date | undefined } {
-  const dayStart = from ? getShanghaiDayBounds(from).start : undefined;
-  const dayEnd = to ? getShanghaiDayBounds(to).end : undefined;
+  const dayStart = from ? getDayBoundsInTimeZone(from, timeZone).start : undefined;
+  const dayEnd = to ? getDayBoundsInTimeZone(to, timeZone).end : undefined;
 
   return {
     from: dayStart && dayStart < min ? min : dayStart && dayStart > max ? max : dayStart,
@@ -92,12 +102,17 @@ export function getBoundedShanghaiDayRange(
   };
 }
 
-export function getBoundedRangeStart(start: Date, end: Date, min: Date): Date | null {
+export function getBoundedRangeStart(
+  start: Date,
+  end: Date,
+  min: Date,
+  timeZone: string
+): Date | null {
   if (start >= min) {
     return start;
   }
 
-  const earliestDayStart = getShanghaiDayBounds(min).start;
+  const earliestDayStart = getDayBoundsInTimeZone(min, timeZone).start;
   return start >= earliestDayStart && end >= min ? min : null;
 }
 

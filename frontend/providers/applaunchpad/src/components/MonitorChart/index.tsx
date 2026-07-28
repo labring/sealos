@@ -7,7 +7,7 @@ import { Button } from '@sealos/shadcn-ui/button';
 import { cn } from '@sealos/shadcn-ui';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { useTranslation } from 'next-i18next';
-import { formatShanghaiDateTime } from '@/utils/timeRange';
+import { formatDateTimeInTimeZone, getBrowserTimeZone } from '@/utils/timeRange';
 
 type MonitorChartProps = React.HTMLAttributes<HTMLDivElement> & {
   data: {
@@ -70,6 +70,7 @@ const MonitorChart = ({
 }: MonitorChartProps) => {
   const { t } = useTranslation();
   const { screenWidth } = useGlobalStore();
+  const timeZone = useMemo(() => getBrowserTimeZone(), []);
   const chartDom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
   const seriesNames = useMemo(() => data?.yData?.map((item) => item.name) || [], [data?.yData]);
@@ -181,7 +182,7 @@ const MonitorChart = ({
           const axisValue = rawTime
             ? xAxisTooltipFormatter
               ? xAxisTooltipFormatter(rawTime)
-              : formatShanghaiDateTime(parseFloat(rawTime) * 1000, 'YYYY-MM-DD HH:mm')
+              : formatDateTimeInTimeZone(parseFloat(rawTime) * 1000, timeZone, 'YYYY-MM-DD HH:mm')
             : params[0]?.axisValue;
           const isCpuOrMemory = type === 'cpu' || type === 'memory';
           const isNetwork = type === 'network';
@@ -313,7 +314,7 @@ const MonitorChart = ({
           formatter: (value: string) =>
             xAxisLabelFormatter
               ? xAxisLabelFormatter(value)
-              : formatShanghaiDateTime(parseFloat(value) * 1000, 'MM-DD HH:mm'),
+              : formatDateTimeInTimeZone(parseFloat(value) * 1000, timeZone, 'MM-DD HH:mm'),
           textStyle: {
             fontSize: 14,
             fontWeight: 400,
@@ -415,6 +416,7 @@ const MonitorChart = ({
       selectedSeries,
       seriesIndexMap,
       type,
+      timeZone,
       unit,
       xAxisLabelFormatter,
       xAxisTooltipFormatter,

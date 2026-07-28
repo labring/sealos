@@ -10,7 +10,7 @@ import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, ScrollText, Filter as FilterIcon } from 'lucide-react';
 
-import { formatShanghaiDateTime } from '@/utils/timeRange';
+import { formatDateTimeInTimeZone, getBrowserTimeZone } from '@/utils/timeRange';
 import { LogsFormData } from '@/pages/app/detail/logs';
 import { UseFormReturn } from 'react-hook-form';
 import { useLogStore } from '@/store/logStore';
@@ -42,6 +42,7 @@ export const LogTable = ({
 }) => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
+  const timeZone = useMemo(() => getBrowserTimeZone(), []);
 
   const [onOpenField, setOnOpenField] = useState(false);
   const [hiddenFieldCount, setHiddenFieldCount] = useState(0);
@@ -104,7 +105,7 @@ export const LogTable = ({
           let value = get(row.original, field.accessorKey, '');
 
           if (field.accessorKey === '_time') {
-            value = formatShanghaiDateTime(value);
+            value = formatDateTimeInTimeZone(value, timeZone);
           }
 
           return (
@@ -127,7 +128,7 @@ export const LogTable = ({
           isError: (row: any) => row.stream === 'stderr'
         }
       }));
-  }, [fieldList, isOnlyStderr, t]);
+  }, [fieldList, isOnlyStderr, t, timeZone]);
 
   const table = useReactTable({
     data: data,

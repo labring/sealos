@@ -7,17 +7,17 @@ import { ChangeEventHandler, useMemo, useState } from 'react';
 import { DateRange, DayPicker } from 'react-day-picker';
 import useDateTimeStore from '@/store/date';
 import {
-  formatShanghaiDate,
-  formatShanghaiDateTime,
-  formatShanghaiTime,
+  formatDateInTimeZone,
+  formatDateTimeInTimeZone,
+  formatTimeInTimeZone,
+  getBrowserTimeZone,
   getBoundedRangeStart,
-  getBoundedShanghaiDayRange,
-  getShanghaiDayBounds,
+  getBoundedDayRangeInTimeZone,
+  getDayBoundsInTimeZone,
   normalizeTimeInput,
   orderDateRange,
   parseTimeRange,
-  parseShanghaiDateTime,
-  SHANGHAI_TIME_ZONE
+  parseDateTimeInTimeZone
 } from '@/utils/timeRange';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Calendar, RefreshCw } from 'lucide-react';
@@ -41,6 +41,7 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
   const [isOpen, setIsOpen] = useState(false);
+  const timeZone = useMemo(() => getBrowserTimeZone(), []);
 
   const {
     startDateTime,
@@ -53,8 +54,8 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
 
   const now = new Date();
   const sevenDaysAgo = subDays(now, 7);
-  const earliestCalendarDay = getShanghaiDayBounds(sevenDaysAgo).start;
-  const latestCalendarDay = getShanghaiDayBounds(now).start;
+  const earliestCalendarDay = getDayBoundsInTimeZone(sevenDaysAgo, timeZone).start;
+  const latestCalendarDay = getDayBoundsInTimeZone(now, timeZone).start;
 
   const initState = {
     from: startDateTime,
@@ -142,10 +143,18 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   const [inputState, setInputState] = useState<0 | 1>(0);
   const [recentDate, setRecentDate] = useState<RecentDate | null>(defaultRecentDate);
 
-  const [fromDateString, setFromDateString] = useState<string>(formatShanghaiDate(initState.from));
-  const [toDateString, setToDateString] = useState<string>(formatShanghaiDate(initState.to));
-  const [fromTimeString, setFromTimeString] = useState<string>(formatShanghaiTime(initState.from));
-  const [toTimeString, setToTimeString] = useState<string>(formatShanghaiTime(initState.to));
+  const [fromDateString, setFromDateString] = useState<string>(
+    formatDateInTimeZone(initState.from, timeZone)
+  );
+  const [toDateString, setToDateString] = useState<string>(
+    formatDateInTimeZone(initState.to, timeZone)
+  );
+  const [fromTimeString, setFromTimeString] = useState<string>(
+    formatTimeInTimeZone(initState.from, timeZone)
+  );
+  const [toTimeString, setToTimeString] = useState<string>(
+    formatTimeInTimeZone(initState.to, timeZone)
+  );
 
   const [fromDateError, setFromDateError] = useState<string | null>(null);
   const [toDateError, setToDateError] = useState<string | null>(null);
@@ -160,10 +169,10 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
 
   const syncRange = ({ from, to }: { from: Date; to: Date }) => {
     setSelectedRange({ from, to });
-    setFromDateString(formatShanghaiDate(from));
-    setFromTimeString(formatShanghaiTime(from));
-    setToDateString(formatShanghaiDate(to));
-    setToTimeString(formatShanghaiTime(to));
+    setFromDateString(formatDateInTimeZone(from, timeZone));
+    setFromTimeString(formatTimeInTimeZone(from, timeZone));
+    setToDateString(formatDateInTimeZone(to, timeZone));
+    setToTimeString(formatTimeInTimeZone(to, timeZone));
   };
 
   const onSubmit = () => {
@@ -181,8 +190,8 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
 
       return;
     }
-    const start = parseShanghaiDateTime(fromDateString, fromTimeString);
-    const end = parseShanghaiDateTime(toDateString, toTimeString);
+    const start = parseDateTimeInTimeZone(fromDateString, fromTimeString, timeZone);
+    const end = parseDateTimeInTimeZone(toDateString, toTimeString, timeZone);
 
     if (!start || !end) {
       if (!start) setFromTimeError('Invalid start time range');
@@ -198,7 +207,7 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
 
     const submitNow = new Date();
     const earliestStart = subDays(submitNow, 7);
-    const boundedStart = getBoundedRangeStart(start, end, earliestStart);
+    const boundedStart = getBoundedRangeStart(start, end, earliestStart, timeZone);
 
     if (!boundedStart) {
       setFromTimeError('start time cannot be before 7 days ago');
@@ -230,9 +239,10 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       setFromTimeString(normalizedValue);
     }
 
-    const date = parseShanghaiDateTime(
+    const date = parseDateTimeInTimeZone(
       type === 'date' ? value : fromDateString,
-      type === 'time' ? normalizedValue : fromTimeString
+      type === 'time' ? normalizedValue : fromTimeString,
+      timeZone
     );
 
     if (!date) {
@@ -275,9 +285,10 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       setToTimeString(normalizedValue);
     }
 
-    const date = parseShanghaiDateTime(
+    const date = parseDateTimeInTimeZone(
       type === 'date' ? value : toDateString,
-      type === 'time' ? normalizedValue : toTimeString
+      type === 'time' ? normalizedValue : toTimeString,
+      timeZone
     );
 
     if (!date) {
@@ -327,23 +338,23 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       } else {
         setInputState(0);
       }
-      const boundedRange = getBoundedShanghaiDayRange(from, to, sevenDaysAgo, now);
+      const boundedRange = getBoundedDayRangeInTimeZone(from, to, sevenDaysAgo, now, timeZone);
 
       setSelectedRange(boundedRange);
       if (boundedRange.from) {
-        setFromDateString(formatShanghaiDate(boundedRange.from));
-        setFromTimeString(formatShanghaiTime(boundedRange.from));
+        setFromDateString(formatDateInTimeZone(boundedRange.from, timeZone));
+        setFromTimeString(formatTimeInTimeZone(boundedRange.from, timeZone));
       } else {
-        setFromDateString(formatShanghaiDate(now));
-        setFromTimeString(formatShanghaiTime(now));
+        setFromDateString(formatDateInTimeZone(now, timeZone));
+        setFromTimeString(formatTimeInTimeZone(now, timeZone));
       }
       if (boundedRange.to) {
-        setToDateString(formatShanghaiDate(boundedRange.to));
-        setToTimeString(formatShanghaiTime(boundedRange.to));
+        setToDateString(formatDateInTimeZone(boundedRange.to, timeZone));
+        setToTimeString(formatTimeInTimeZone(boundedRange.to, timeZone));
       } else {
         const fallback = boundedRange.from || now;
-        setToDateString(formatShanghaiDate(fallback));
-        setToTimeString(formatShanghaiTime(fallback));
+        setToDateString(formatDateInTimeZone(fallback, timeZone));
+        setToTimeString(formatTimeInTimeZone(fallback, timeZone));
       }
 
       setRecentDate(null);
@@ -372,21 +383,22 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
     setRecentDate({ ...item, value: nextRange });
     setSelectedRange(nextRange);
     if (nextRange.from) {
-      setFromDateString(formatShanghaiDate(nextRange.from));
-      setFromTimeString(formatShanghaiTime(nextRange.from));
+      setFromDateString(formatDateInTimeZone(nextRange.from, timeZone));
+      setFromTimeString(formatTimeInTimeZone(nextRange.from, timeZone));
     }
     if (nextRange.to) {
-      setToDateString(formatShanghaiDate(nextRange.to));
-      setToTimeString(formatShanghaiTime(nextRange.to));
+      setToDateString(formatDateInTimeZone(nextRange.to, timeZone));
+      setToTimeString(formatTimeInTimeZone(nextRange.to, timeZone));
     }
   };
 
   // format date time display
   const formatDateTimeDisplay = () => {
-    return `${formatShanghaiDateTime(startDateTime, 'HH:mm, MMM DD')} - ${formatShanghaiDateTime(
-      endDateTime,
+    return `${formatDateTimeInTimeZone(
+      startDateTime,
+      timeZone,
       'HH:mm, MMM DD'
-    )}`;
+    )} - ${formatDateTimeInTimeZone(endDateTime, timeZone, 'HH:mm, MMM DD')}`;
   };
 
   return (
@@ -414,14 +426,14 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
           <div className="w-[242px] h-fit flex flex-col">
             <DayPicker
               mode="range"
-              timeZone={SHANGHAI_TIME_ZONE}
+              timeZone={timeZone}
               navLayout="around"
               selected={selectedRange}
               onSelect={handleRangeSelect}
               locale={currentLang === 'zh' ? zhCN : enUS}
               weekStartsOn={0}
               disabled={(date) => {
-                const dayStart = getShanghaiDayBounds(date).start;
+                const dayStart = getDayBoundsInTimeZone(date, timeZone).start;
                 return (
                   isAfter(dayStart, latestCalendarDay) || isBefore(dayStart, earliestCalendarDay)
                 );
@@ -490,7 +502,8 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
           </div>
         </div>
 
-        <div className="flex justify-end items-center py-2 border-t border-zinc-100">
+        <div className="flex justify-between items-center px-3 py-2 border-t border-zinc-100">
+          <span className="text-xs text-zinc-500">{timeZone}</span>
           <div className="flex gap-2 px-2.5">
             <Button
               variant="outline"
