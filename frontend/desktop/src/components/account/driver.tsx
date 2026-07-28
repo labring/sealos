@@ -3,6 +3,7 @@ import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
 import { X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
+import { useConfigStore } from '@/stores/config';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { track } from '@sealos/gtm';
 
@@ -25,6 +26,14 @@ export function startDriver(config: Config) {
   useGuideModalStore.getState().setIsDriverActive(true);
   driverObj.drive();
   return driverObj;
+}
+
+export function startQuitGuideDriver(t: TFunction) {
+  if (useConfigStore.getState().commonConfig?.guideButtonEnabled === false) {
+    useGuideModalStore.getState().setIsDriverActive(false);
+    return null;
+  }
+  return startDriver(quitGuideDriverObj(t));
 }
 
 export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
@@ -69,7 +78,7 @@ export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
 
                   currentDriver.destroy();
                   currentDriver = null;
-                  startDriver(quitGuideDriverObj(t));
+                  startQuitGuideDriver(t);
                 }}
               >
                 <X width={'16px'} height={'16px'} />
@@ -179,7 +188,7 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
 
                   currentDriver.destroy();
                   currentDriver = null;
-                  startDriver(quitGuideDriverObj(t));
+                  startQuitGuideDriver(t);
                 }}
               >
                 <X width={'16px'} height={'16px'} />
@@ -288,7 +297,7 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
 
                   currentDriver.destroy();
                   currentDriver = null;
-                  startDriver(quitGuideDriverObj(t));
+                  startQuitGuideDriver(t);
                 }}
               >
                 <X width={'16px'} height={'16px'} />
@@ -397,7 +406,7 @@ export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => 
 
                   currentDriver.destroy();
                   currentDriver = null;
-                  startDriver(quitGuideDriverObj(t));
+                  startQuitGuideDriver(t);
                 }}
               >
                 <X width={'16px'} height={'16px'} />

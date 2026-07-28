@@ -16,6 +16,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     code: 200
   });
 }
+
+export function getGuideButtonEnabled(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() !== 'false';
+}
+
 function genResCommonClientConfig(common: CommonConfigType): CommonClientConfigType {
   return {
     trackingEnabled: !!common.trackingEnabled,
@@ -23,6 +28,7 @@ function genResCommonClientConfig(common: CommonConfigType): CommonClientConfigT
     realNameAuthEnabled: !!common.realNameAuthEnabled,
     realNameReward: common.realNameReward || 0,
     guideEnabled: !!common.guideEnabled,
+    guideButtonEnabled: getGuideButtonEnabled(process.env.GUIDE_BUTTON_ENABLED),
     rechargeEnabled: !!common.rechargeEnabled,
     cfSiteKey: common.cfSiteKey || ''
   };

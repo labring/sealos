@@ -277,7 +277,7 @@ export default function SecondaryLinks() {
           </Portal>
         </Popover>
 
-        {commonConfig?.guideEnabled ? (
+        {commonConfig?.guideEnabled && commonConfig.guideButtonEnabled !== false ? (
           <Center
             className="guide-button"
             cursor={'pointer'}

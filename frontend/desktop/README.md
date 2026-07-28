@@ -214,6 +214,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 5. 环境变量说明
 
+- 引导按钮默认显示。部署时显式设置 `GUIDE_BUTTON_ENABLED=false` 可隐藏按钮；不设置或设置为 `true` 时保持显示。`GUIDE_ENABLED` 仍用于控制完整的用户引导功能。
+
 - 登录功能的开关, 部署时要用`true`配置想要使用的登录方式。
 
   ```

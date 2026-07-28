@@ -48,13 +48,20 @@ const mockedUseBreakpointValue = useBreakpointValue as jest.MockedFunction<
   typeof useBreakpointValue
 >;
 
-function renderSecondaryLinks(guideEnabled: boolean) {
+function renderSecondaryLinks({
+  guideEnabled,
+  guideButtonEnabled
+}: {
+  guideEnabled: boolean;
+  guideButtonEnabled?: boolean;
+}) {
   mockedUseConfigStore.mockReturnValue({
     layoutConfig: {
       common: {}
     },
     commonConfig: {
-      guideEnabled
+      guideEnabled,
+      guideButtonEnabled
     }
   } as ReturnType<typeof useConfigStore>);
 
@@ -84,13 +91,19 @@ describe('guide feature flag', () => {
   });
 
   it('hides the guide entry when the feature is disabled', () => {
-    renderSecondaryLinks(false);
+    renderSecondaryLinks({ guideEnabled: false });
 
     expect(screen.queryByText('common:guide')).toBeNull();
   });
 
-  it('shows the guide entry and opens the guide when enabled', () => {
-    renderSecondaryLinks(true);
+  it('hides the guide entry when the button is disabled', () => {
+    renderSecondaryLinks({ guideEnabled: true, guideButtonEnabled: false });
+
+    expect(screen.queryByText('common:guide')).toBeNull();
+  });
+
+  it('shows the guide entry by default and opens the guide when enabled', () => {
+    renderSecondaryLinks({ guideEnabled: true });
 
     fireEvent.click(screen.getByText('common:guide'));
 

@@ -10,6 +10,7 @@ USER_VALUES_PATH="/root/.sealos/cloud/values/core/desktop-values.yaml"
 TOOLS_FILE=${TOOLS_FILE:-"/root/.sealos/cloud/scripts/tools.sh"}
 
 AUTO_CONFIG_HELM_ARGS=()
+ENV_CONFIG_HELM_ARGS=()
 ENFORCED_CONFIG_HELM_ARGS=()
 HELM_EXTRA_ARGS=()
 if [ -n "${HELM_OPTIONS:-}" ]; then
@@ -19,6 +20,18 @@ fi
 if [ -n "${HELM_OPTS:-}" ]; then
   read -r -a PARSED_HELM_OPTS <<< "${HELM_OPTS}"
   HELM_EXTRA_ARGS+=("${PARSED_HELM_OPTS[@]}")
+fi
+
+if [ "${GUIDE_BUTTON_ENABLED+x}" = "x" ]; then
+  case "${GUIDE_BUTTON_ENABLED}" in
+    true|false)
+      ENV_CONFIG_HELM_ARGS+=(--set-string "desktopConfig.guideButtonEnabled=${GUIDE_BUTTON_ENABLED}")
+      ;;
+    *)
+      echo "GUIDE_BUTTON_ENABLED must be either true or false" >&2
+      exit 1
+      ;;
+  esac
 fi
 
 get_cm_value() {
@@ -234,4 +247,5 @@ helm upgrade -i "${RELEASE_NAME}" -n "${RELEASE_NAMESPACE}" --create-namespace "
   "${VALUES_ARGS[@]}" \
   "${AUTO_CONFIG_HELM_ARGS[@]}" \
   "${HELM_EXTRA_ARGS[@]}" \
+  "${ENV_CONFIG_HELM_ARGS[@]}" \
   "${ENFORCED_CONFIG_HELM_ARGS[@]}"

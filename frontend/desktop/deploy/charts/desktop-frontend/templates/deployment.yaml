@@ -70,6 +70,8 @@ spec:
               value: {{ .Values.desktopConfig.tlsRejectUnauthorized | quote }}
             - name: PRISMA_DB_PROVIDER
               value: "{{ .Values.desktopConfig.databaseType }}"
+            - name: GUIDE_BUTTON_ENABLED
+              value: {{ .Values.desktopConfig.guideButtonEnabled | quote }}
           command: ["/bin/sh", "-c"]
           args:
             - |

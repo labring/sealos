@@ -34,7 +34,9 @@ export type CommonClientConfigType = DeepRequired<
     | 'templateUrl'
     | 'realNameCallbackUrl'
   >
->;
+> & {
+  guideButtonEnabled: boolean;
+};
 export type DatabaseConfigType = {
   globalCockroachdbURI: string;
   regionalCockroachdbURI: string;
@@ -288,6 +290,7 @@ export const DefaultCommonClientConfig: CommonClientConfigType = {
   realNameAuthEnabled: false,
   realNameReward: 0,
   guideEnabled: false,
+  guideButtonEnabled: true,
   rechargeEnabled: false,
   cfSiteKey: ''
 };

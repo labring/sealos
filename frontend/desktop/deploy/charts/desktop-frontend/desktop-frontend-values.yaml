@@ -55,6 +55,7 @@ desktopConfig:
 
   # Feature flags
   guideEnabled: false
+  guideButtonEnabled: true
   apiEnabled: false
   rechargeEnabled: false
   enterpriseRealNameAuthEnabled: false

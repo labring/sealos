@@ -99,6 +99,7 @@ desktopConfig:
 ```yaml
 desktopConfig:
   guideEnabled: false                         # 启用用户引导
+  guideButtonEnabled: true                    # 显示引导按钮；GUIDE_BUTTON_ENABLED=false 时隐藏
   apiEnabled: false                           # 启用 API 访问
   rechargeEnabled: false                      # 启用充值功能
   enterpriseRealNameAuthEnabled: false        # 启用企业实名认证

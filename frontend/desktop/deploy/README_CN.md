@@ -53,7 +53,7 @@ Helm Chart 使用两个 values 文件来管理配置：
 
 **是否修改**: ✅ 根据需要修改
 
-**注意**: entrypoint 按以下顺序应用配置：`values.yaml`、持久化用户 values、可选 `global.yaml`、来自 `sealos-system/sealos-config` 的自动配置、显式 `HELM_OPTIONS` / `HELM_OPTS`、由同步后的 cloud tools 强制注入的 TLS trust 配置。后面的配置优先。
+**注意**: entrypoint 按以下顺序应用配置：`values.yaml`、持久化用户 values、可选 `global.yaml`、来自 `sealos-system/sealos-config` 的自动配置、显式 `HELM_OPTIONS` / `HELM_OPTS`、`GUIDE_BUTTON_ENABLED` 等直接环境变量覆盖、由同步后的 cloud tools 强制注入的 TLS trust 配置。后面的配置优先。
 
 详细文档请参考 [HELM_VALUES_GUIDE_CN.md](./HELM_VALUES_GUIDE_CN.md)。
 
@@ -67,15 +67,16 @@ Helm Chart 使用两个 values 文件来管理配置：
 
 ### 功能开关
 
-| 变量                                | 默认值  | 描述              |
-| ----------------------------------- | ------- | ----------------- |
-| `GUIDE_ENABLED`                     | `false` | 启用用户引导      |
-| `API_ENABLED`                       | `false` | 启用 API 访问     |
-| `RECHARGE_ENABLED`                  | `false` | 启用充值功能      |
-| `ENTERPRISE_REAL_NAME_AUTH_ENABLED` | `false` | 启用企业实名认证  |
-| `TRACKING_ENABLED`                  | `false` | 启用追踪/统计     |
-| `REAL_NAME_AUTH_ENABLED`            | `false` | 启用实名认证      |
-| `LICENSE_CHECK_ENABLED`             | `false` | 启用 License 检查 |
+| 变量                                | 默认值  | 描述                              |
+| ----------------------------------- | ------- | --------------------------------- |
+| `GUIDE_ENABLED`                     | `false` | 启用用户引导                      |
+| `GUIDE_BUTTON_ENABLED`              | `true`  | 显示引导按钮；设为 `false` 时隐藏 |
+| `API_ENABLED`                       | `false` | 启用 API 访问                     |
+| `RECHARGE_ENABLED`                  | `false` | 启用充值功能                      |
+| `ENTERPRISE_REAL_NAME_AUTH_ENABLED` | `false` | 启用企业实名认证                  |
+| `TRACKING_ENABLED`                  | `false` | 启用追踪/统计                     |
+| `REAL_NAME_AUTH_ENABLED`            | `false` | 启用实名认证                      |
+| `LICENSE_CHECK_ENABLED`             | `false` | 启用 License 检查                 |
 
 ### OAuth 提供商
 
@@ -464,7 +465,7 @@ sealos run desktop-frontend:latest \
 
 - **UI 自定义**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`, `protocol.enabled`
 - **OAuth 提供商**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` 及其对应的 `*ClientId`, `*ClientSecret`
-- **功能开关**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
+- **功能开关**: `guideEnabled`, `guideButtonEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **通讯配置**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
 - **URL 配置**: `workorderUrl`，以及基于 `cloudDomain` 自动生成的服务地址（`template`、`applaunchpad`、`dbprovider`、`objectstorage`）
 - **数据库配置**: `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`

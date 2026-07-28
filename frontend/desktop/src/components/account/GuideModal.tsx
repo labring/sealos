@@ -20,8 +20,8 @@ import { useCallback, useEffect } from 'react';
 import useAppStore from '@/stores/app';
 import {
   devboxDriverObj,
-  quitGuideDriverObj,
   startDriver,
+  startQuitGuideDriver,
   appLaunchpadDriverObj,
   templateDriverObj,
   databaseDriverObj
@@ -291,7 +291,7 @@ const GuideModal = () => {
   const handleCloseGuideModal = () => {
     setInitGuide(false);
     closeGuideModal();
-    startDriver(quitGuideDriverObj(t));
+    startQuitGuideDriver(t);
 
     track('guide_exit', {
       module: 'guide',

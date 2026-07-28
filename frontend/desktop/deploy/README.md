@@ -53,7 +53,7 @@ Contains the template for user-customizable configurations. On the first install
 
 **Modification**: ✅ Modify as needed
 
-**Note**: The entrypoint applies values in this order: `values.yaml`, persisted user values, optional `global.yaml`, auto-configuration from `sealos-system/sealos-config`, explicit `HELM_OPTIONS` / `HELM_OPTS`, then enforced TLS trust config from synced cloud tools. Later sources win.
+**Note**: The entrypoint applies values in this order: `values.yaml`, persisted user values, optional `global.yaml`, auto-configuration from `sealos-system/sealos-config`, explicit `HELM_OPTIONS` / `HELM_OPTS`, direct environment overrides such as `GUIDE_BUTTON_ENABLED`, then enforced TLS trust config from synced cloud tools. Later sources win.
 
 For detailed documentation, see [HELM_VALUES_GUIDE.md](./HELM_VALUES_GUIDE.md).
 
@@ -70,6 +70,7 @@ For detailed documentation, see [HELM_VALUES_GUIDE.md](./HELM_VALUES_GUIDE.md).
 | Variable                            | Default | Description                                |
 | ----------------------------------- | ------- | ------------------------------------------ |
 | `GUIDE_ENABLED`                     | `false` | Enable user guide                          |
+| `GUIDE_BUTTON_ENABLED`              | `true`  | Show the guide button; set `false` to hide |
 | `API_ENABLED`                       | `false` | Enable API access                          |
 | `RECHARGE_ENABLED`                  | `false` | Enable recharge feature                    |
 | `ENTERPRISE_REAL_NAME_AUTH_ENABLED` | `false` | Enable enterprise real-name authentication |
@@ -464,7 +465,7 @@ sealos run desktop-frontend:latest \
 
 - **UI customization**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`, `protocol.enabled`
 - **OAuth providers**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` and their `*ClientId`, `*ClientSecret`
-- **Features**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
+- **Features**: `guideEnabled`, `guideButtonEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **Communication**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
 - **URLs**: `workorderUrl` and service URLs auto-generated from `cloudDomain` (`template`, `applaunchpad`, `dbprovider`, `objectstorage`)
 - **Database**: `databaseGlobalCockroachdbURI`, `databaseLocalCockroachdbURI`
