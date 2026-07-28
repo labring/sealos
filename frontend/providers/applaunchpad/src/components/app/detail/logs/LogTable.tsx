@@ -10,7 +10,7 @@ import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, ScrollText, Filter as FilterIcon } from 'lucide-react';
 
-import { formatUtcDateTime } from '@/utils/timeRange';
+import { formatShanghaiDateTime } from '@/utils/timeRange';
 import { LogsFormData } from '@/pages/app/detail/logs';
 import { UseFormReturn } from 'react-hook-form';
 import { useLogStore } from '@/store/logStore';
@@ -104,7 +104,7 @@ export const LogTable = ({
           let value = get(row.original, field.accessorKey, '');
 
           if (field.accessorKey === '_time') {
-            value = formatUtcDateTime(value);
+            value = formatShanghaiDateTime(value);
           }
 
           return (

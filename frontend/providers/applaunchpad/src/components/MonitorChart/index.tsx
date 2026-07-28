@@ -2,12 +2,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Check } from 'lucide-react';
 import * as echarts from 'echarts';
 import { useGlobalStore } from '@/store/global';
-import dayjs from 'dayjs';
 import { LineStyleMap, NetworkLineStyleMap } from '@/constants/monitor';
 import { Button } from '@sealos/shadcn-ui/button';
 import { cn } from '@sealos/shadcn-ui';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import { useTranslation } from 'next-i18next';
+import { formatShanghaiDateTime } from '@/utils/timeRange';
 
 type MonitorChartProps = React.HTMLAttributes<HTMLDivElement> & {
   data: {
@@ -181,7 +181,7 @@ const MonitorChart = ({
           const axisValue = rawTime
             ? xAxisTooltipFormatter
               ? xAxisTooltipFormatter(rawTime)
-              : dayjs(parseFloat(rawTime) * 1000).format('YYYY-MM-DD HH:mm')
+              : formatShanghaiDateTime(parseFloat(rawTime) * 1000, 'YYYY-MM-DD HH:mm')
             : params[0]?.axisValue;
           const isCpuOrMemory = type === 'cpu' || type === 'memory';
           const isNetwork = type === 'network';
@@ -313,7 +313,7 @@ const MonitorChart = ({
           formatter: (value: string) =>
             xAxisLabelFormatter
               ? xAxisLabelFormatter(value)
-              : dayjs(parseFloat(value) * 1000).format('MM-DD HH:mm'),
+              : formatShanghaiDateTime(parseFloat(value) * 1000, 'MM-DD HH:mm'),
           textStyle: {
             fontSize: 14,
             fontWeight: 400,

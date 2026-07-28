@@ -1,9 +1,9 @@
-import dayjs from 'dayjs';
 import * as echarts from 'echarts';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { useGlobalStore } from '@/store/global';
 import { MonitorDataResult } from '@/types/monitor';
+import { formatShanghaiDateTime } from '@/utils/timeRange';
 
 const map = {
   blue: {
@@ -107,7 +107,8 @@ const LogBarChart = ({
   const { screenWidth } = useGlobalStore();
   const xData = useMemo(
     () =>
-      data?.xData?.map((time) => dayjs(time * 1000).format('MM-DD HH:mm')) || new Array(30).fill(0),
+      data?.xData?.map((time) => formatShanghaiDateTime(time * 1000, 'MM-DD HH:mm')) ||
+      new Array(30).fill(0),
     [data?.xData]
   );
   const yData = data?.yData || new Array(30).fill(null);

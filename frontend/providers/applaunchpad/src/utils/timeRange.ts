@@ -1,10 +1,12 @@
 import { subHours, subDays, subMinutes, subMonths } from 'date-fns';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(customParseFormat);
 dayjs.extend(utc);
+dayjs.extend(timezone);
 
 type TimeUnit = 'h' | 'm' | 'd' | 'M';
 
@@ -13,44 +15,90 @@ interface TimeRange {
   endTime: Date;
 }
 
-const UTC_DATE_FORMAT = 'YYYY-MM-DD';
-const UTC_TIME_FORMAT = 'HH:mm:ss';
+const DATE_FORMAT = 'YYYY-MM-DD';
+const TIME_FORMAT = 'HH:mm:ss';
 
-export function formatUtcDate(date: Date): string {
-  return dayjs(date).utc().format(UTC_DATE_FORMAT);
+export const SHANGHAI_TIME_ZONE = 'Asia/Shanghai';
+
+function parseInstant(date: Date | string | number) {
+  if (typeof date !== 'string') {
+    return dayjs(date);
+  }
+
+  const hasTimeZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(date);
+  return hasTimeZone ? dayjs(date) : dayjs.utc(date);
 }
 
-export function formatUtcTime(date: Date): string {
-  return dayjs(date).utc().format(UTC_TIME_FORMAT);
+export function formatShanghaiDate(date: Date): string {
+  return dayjs(date).tz(SHANGHAI_TIME_ZONE).format(DATE_FORMAT);
 }
 
-export function formatUtcDateTime(date: Date | string | number, format = 'YYYY-MM-DD HH:mm:ss') {
-  return dayjs(date).utc().format(format);
+export function formatShanghaiTime(date: Date): string {
+  return dayjs(date).tz(SHANGHAI_TIME_ZONE).format(TIME_FORMAT);
+}
+
+export function formatShanghaiDateTime(
+  date: Date | string | number,
+  format = 'YYYY-MM-DD HH:mm:ss'
+) {
+  return parseInstant(date).tz(SHANGHAI_TIME_ZONE).format(format);
+}
+
+export function getUtcTimestamp(date: Date | string | number): number {
+  return parseInstant(date).valueOf();
 }
 
 export function normalizeTimeInput(value: string): string {
   return /^\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
 }
 
-export function parseUtcDateTime(date: string, time: string): Date | null {
-  const parsed = dayjs.utc(
-    `${date} ${normalizeTimeInput(time)}`,
-    `${UTC_DATE_FORMAT} ${UTC_TIME_FORMAT}`,
-    true
-  );
+export function parseShanghaiDateTime(date: string, time: string): Date | null {
+  const input = `${date} ${normalizeTimeInput(time)}`;
+  const format = `${DATE_FORMAT} ${TIME_FORMAT}`;
+  if (!dayjs(input, format, true).isValid()) {
+    return null;
+  }
 
-  return parsed.isValid() ? parsed.toDate() : null;
+  return dayjs.tz(input, format, SHANGHAI_TIME_ZONE).toDate();
 }
 
-export function getUtcDayBounds(date: Date): { start: Date; end: Date } {
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth();
-  const day = date.getUTCDate();
+export function getShanghaiDayBounds(date: Date): { start: Date; end: Date } {
+  const zonedDate = dayjs(date).tz(SHANGHAI_TIME_ZONE);
 
   return {
-    start: new Date(Date.UTC(year, month, day, 0, 0, 0)),
-    end: new Date(Date.UTC(year, month, day, 23, 59, 59, 999))
+    start: zonedDate.startOf('day').toDate(),
+    end: zonedDate.endOf('day').toDate()
   };
+}
+
+export function orderDateRange(first: Date, second: Date): { from: Date; to: Date } {
+  return first.getTime() <= second.getTime()
+    ? { from: first, to: second }
+    : { from: second, to: first };
+}
+
+export function getBoundedShanghaiDayRange(
+  from: Date | undefined,
+  to: Date | undefined,
+  min: Date,
+  max: Date
+): { from: Date | undefined; to: Date | undefined } {
+  const dayStart = from ? getShanghaiDayBounds(from).start : undefined;
+  const dayEnd = to ? getShanghaiDayBounds(to).end : undefined;
+
+  return {
+    from: dayStart && dayStart < min ? min : dayStart && dayStart > max ? max : dayStart,
+    to: dayEnd && dayEnd > max ? max : dayEnd && dayEnd < min ? min : dayEnd
+  };
+}
+
+export function getBoundedRangeStart(start: Date, end: Date, min: Date): Date | null {
+  if (start >= min) {
+    return start;
+  }
+
+  const earliestDayStart = getShanghaiDayBounds(min).start;
+  return start >= earliestDayStart && end >= min ? min : null;
 }
 
 /**

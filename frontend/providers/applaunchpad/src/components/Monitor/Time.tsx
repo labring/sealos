@@ -1,9 +1,9 @@
-import dayjs from 'dayjs';
+import { formatShanghaiDateTime } from '@/utils/timeRange';
 
 export default function DynamicTime({ lastRefreshTime }: { lastRefreshTime?: number }) {
   if (!lastRefreshTime) {
     return <span>--:--:--</span>;
   }
 
-  return <span>{dayjs(lastRefreshTime).format('HH:mm:ss')}</span>;
+  return <span>{formatShanghaiDateTime(lastRefreshTime, 'HH:mm:ss')}</span>;
 }
