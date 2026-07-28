@@ -1100,16 +1100,28 @@ export function NetworkSection({
 
                       {isExternalAccess && (
                         <>
-                          <Flex alignItems={'center'} flex={'1 1 0'} mr={'8px'} h={'32px'} minW={0}>
+                          <Flex
+                            alignItems={'center'}
+                            flex={'1 1 0'}
+                            mr={'8px'}
+                            h={'32px'}
+                            minW={0}
+                            gap={'8px'}
+                          >
                             <MySelect
-                              width={'96px'}
+                              width={'88px'}
                               height={'32px'}
-                              borderTopRightRadius={0}
-                              borderBottomRightRadius={0}
+                              borderRadius={'md'}
                               fontSize={'12px'}
-                              fontWeight={400}
+                              fontWeight={500}
                               lineHeight={'16px'}
                               letterSpacing={'0.048px'}
+                              color={'grayModern.600'}
+                              bg={'white'}
+                              borderColor={'grayModern.250'}
+                              boxShadow={
+                                '0px 1px 2px 0px rgba(19, 51, 107, 0.04), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
+                              }
                               value={getAccessModeValue(network)}
                               list={getAccessModeOptions(network)}
                               onchange={(val: any) => {
@@ -1122,50 +1134,73 @@ export function NetworkSection({
                                 });
                               }}
                             />
-                            <MySelect
-                              width={'90px'}
-                              height={'32px'}
-                              borderRadius={0}
-                              fontSize={'12px'}
-                              fontWeight={400}
-                              lineHeight={'16px'}
-                              letterSpacing={'0.048px'}
-                              value={
-                                network.appProtocol ||
-                                (network.openNodePort ? network.protocol : 'HTTP')
-                              }
-                              list={ProtocolList}
-                              onchange={(val: any) => {
-                                dispatch({
-                                  type: 'UPDATE_PROTOCOL',
-                                  payload: {
-                                    index: i,
-                                    protocol: val
-                                  }
-                                });
-                              }}
-                            />
-                            <Flex
-                              alignItems={'center'}
-                              h={'32px'}
-                              flex={'1 1 0'}
-                              minW={0}
-                              bg={'grayModern.50'}
-                              border={theme.borders.base}
-                              borderLeft={0}
-                              borderTopRightRadius={'md'}
-                              borderBottomRightRadius={'md'}
-                              overflow={'hidden'}
-                            >
-                              {isPublicDomainPrefixVisible ? (
-                                <>
-                                  <PublicDomainPrefixInput
-                                    value={network.publicDomain}
-                                    errorMessage={publicDomainErrorMessage}
-                                    onDraftChange={(value) => updatePublicDomainDraft(i, value)}
-                                    onStartEdit={() => clearPublicDomainValidationError(i)}
-                                    onCommit={(value) => commitPublicDomainDraft(i, value)}
-                                  />
+                            <Flex alignItems={'center'} h={'32px'} flex={'1 1 0'} minW={0}>
+                              <MySelect
+                                width={'90px'}
+                                height={'32px'}
+                                borderTopRightRadius={0}
+                                borderBottomRightRadius={0}
+                                fontSize={'12px'}
+                                fontWeight={400}
+                                lineHeight={'16px'}
+                                letterSpacing={'0.048px'}
+                                value={
+                                  network.appProtocol ||
+                                  (network.openNodePort ? network.protocol : 'HTTP')
+                                }
+                                list={ProtocolList}
+                                onchange={(val: any) => {
+                                  dispatch({
+                                    type: 'UPDATE_PROTOCOL',
+                                    payload: {
+                                      index: i,
+                                      protocol: val
+                                    }
+                                  });
+                                }}
+                              />
+                              <Flex
+                                alignItems={'center'}
+                                h={'32px'}
+                                flex={'1 1 0'}
+                                minW={0}
+                                bg={'grayModern.50'}
+                                border={theme.borders.base}
+                                borderLeft={0}
+                                borderTopRightRadius={'md'}
+                                borderBottomRightRadius={'md'}
+                                overflow={'hidden'}
+                              >
+                                {isPublicDomainPrefixVisible ? (
+                                  <>
+                                    <PublicDomainPrefixInput
+                                      value={network.publicDomain}
+                                      errorMessage={publicDomainErrorMessage}
+                                      onDraftChange={(value) => updatePublicDomainDraft(i, value)}
+                                      onStartEdit={() => clearPublicDomainValidationError(i)}
+                                      onCommit={(value) => commitPublicDomainDraft(i, value)}
+                                    />
+                                    <Tooltip label={t('click_to_copy_tooltip')}>
+                                      <Box
+                                        h={'30px'}
+                                        display={'flex'}
+                                        alignItems={'center'}
+                                        flex={'1 1 auto'}
+                                        minW={0}
+                                        px={'8px'}
+                                        userSelect={'all'}
+                                        className="textEllipsis"
+                                        cursor={'pointer'}
+                                        {...fieldInputStyles}
+                                        onClick={() => {
+                                          copyData(getDomainDisplay(network));
+                                        }}
+                                      >
+                                        .{network.domain}
+                                      </Box>
+                                    </Tooltip>
+                                  </>
+                                ) : (
                                   <Tooltip label={t('click_to_copy_tooltip')}>
                                     <Box
                                       h={'30px'}
@@ -1173,7 +1208,7 @@ export function NetworkSection({
                                       alignItems={'center'}
                                       flex={'1 1 auto'}
                                       minW={0}
-                                      px={'8px'}
+                                      px={'12px'}
                                       userSelect={'all'}
                                       className="textEllipsis"
                                       cursor={'pointer'}
@@ -1182,79 +1217,59 @@ export function NetworkSection({
                                         copyData(getDomainDisplay(network));
                                       }}
                                     >
-                                      .{network.domain}
+                                      {getDomainHostDisplay(network)}
                                     </Box>
                                   </Tooltip>
-                                </>
-                              ) : (
-                                <Tooltip label={t('click_to_copy_tooltip')}>
+                                )}
+
+                                {network.openPublicDomain && !network.openNodePort && (
                                   <Box
-                                    h={'30px'}
-                                    display={'flex'}
-                                    alignItems={'center'}
-                                    flex={'1 1 auto'}
-                                    minW={0}
-                                    px={'12px'}
-                                    userSelect={'all'}
-                                    className="textEllipsis"
+                                    flex={'0 0 auto'}
+                                    px={'8px'}
+                                    py={'4px'}
+                                    fontSize={'11px'}
+                                    lineHeight={'16px'}
+                                    fontWeight={500}
+                                    letterSpacing={'0.5px'}
+                                    color={'brightBlue.600'}
                                     cursor={'pointer'}
-                                    {...fieldInputStyles}
-                                    onClick={() => {
-                                      copyData(getDomainDisplay(network));
+                                    onClick={async () => {
+                                      if (CUSTOM_DOMAIN_MODE === 'certificate') {
+                                        const publicDomain = network.publicDomain || nanoid();
+                                        dispatch({
+                                          type: 'ENSURE_PUBLIC_DOMAIN',
+                                          payload: { index: i, publicDomain }
+                                        });
+                                        clearPublicDomainValidationError(i);
+                                        setCertificateAccessModalData({
+                                          networkIndex: i,
+                                          currentCustomDomain: network.customDomain
+                                        });
+                                        return;
+                                      }
+
+                                      const publicDomain = network.customDomain
+                                        ? network.publicDomain
+                                        : await commitPublicDomainDraft(i, network.publicDomain);
+                                      if (!publicDomain) return;
+                                      setCustomAccessModalData({
+                                        publicDomain,
+                                        currentCustomDomain: network.customDomain,
+                                        domain: network.domain
+                                      });
                                     }}
                                   >
-                                    {getDomainHostDisplay(network)}
+                                    {t('bind_custom_domain')}
                                   </Box>
-                                </Tooltip>
-                              )}
-
-                              {network.openPublicDomain && !network.openNodePort && (
-                                <Box
-                                  flex={'0 0 auto'}
-                                  px={'8px'}
-                                  py={'4px'}
-                                  fontSize={'11px'}
-                                  lineHeight={'16px'}
-                                  fontWeight={500}
-                                  letterSpacing={'0.5px'}
-                                  color={'brightBlue.600'}
-                                  cursor={'pointer'}
-                                  onClick={async () => {
-                                    if (CUSTOM_DOMAIN_MODE === 'certificate') {
-                                      const publicDomain = network.publicDomain || nanoid();
-                                      dispatch({
-                                        type: 'ENSURE_PUBLIC_DOMAIN',
-                                        payload: { index: i, publicDomain }
-                                      });
-                                      clearPublicDomainValidationError(i);
-                                      setCertificateAccessModalData({
-                                        networkIndex: i,
-                                        currentCustomDomain: network.customDomain
-                                      });
-                                      return;
-                                    }
-
-                                    const publicDomain = network.customDomain
-                                      ? network.publicDomain
-                                      : await commitPublicDomainDraft(i, network.publicDomain);
-                                    if (!publicDomain) return;
-                                    setCustomAccessModalData({
-                                      publicDomain,
-                                      currentCustomDomain: network.customDomain,
-                                      domain: network.domain
-                                    });
-                                  }}
-                                >
-                                  {t('bind_custom_domain')}
-                                </Box>
-                              )}
-                              {/* keep a hidden field registered so customDomain remains part of form state */}
-                              <Input
-                                display={'none'}
-                                flex={'1 1 auto'}
-                                minW={0}
-                                {...register(`networks.${i}.customDomain`)}
-                              />
+                                )}
+                                {/* keep a hidden field registered so customDomain remains part of form state */}
+                                <Input
+                                  display={'none'}
+                                  flex={'1 1 auto'}
+                                  minW={0}
+                                  {...register(`networks.${i}.customDomain`)}
+                                />
+                              </Flex>
                             </Flex>
                           </Flex>
                           {canConfigureRouteRules && (
