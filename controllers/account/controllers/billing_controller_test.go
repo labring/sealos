@@ -27,6 +27,7 @@ type billingTestAccount struct {
 	existing         map[string][]*resources.Billing
 	unsettled        map[string][]*resources.Billing
 	generated        map[string][]*resources.Billing
+	generateInput    map[string][]string
 	saveErr          error
 	saved            []*resources.Billing
 	statuses         map[string]resources.BillingStatus
@@ -64,8 +65,17 @@ func (f *billingTestAccount) GetUnsettledBillingsAt(
 }
 
 func (f *billingTestAccount) GenerateBillingData(
-	time.Time, time.Time, *resources.PropertyTypeLS, map[string][]string,
+	_ time.Time,
+	_ time.Time,
+	_ *resources.PropertyTypeLS,
+	ownerListMap map[string][]string,
 ) (map[string][]*resources.Billing, error) {
+	f.mu.Lock()
+	f.generateInput = make(map[string][]string, len(ownerListMap))
+	for owner, namespaces := range ownerListMap {
+		f.generateInput[owner] = append([]string(nil), namespaces...)
+	}
+	f.mu.Unlock()
 	return f.generated, nil
 }
 
@@ -124,6 +134,37 @@ func (f *billingTestAccountV2) AddDeductionBalanceForBilling(
 func initBillingTestGlobals() {
 	DebtUserMap = maps.NewConcurrentNullValueMap()
 	SubscriptionWorkspaceMap = maps.NewConcurrentNullValueMap()
+}
+
+func TestRunBillingReadsRunsIndependentTasksConcurrently(t *testing.T) {
+	started := make(chan struct{}, 2)
+	release := make(chan struct{})
+	result := make(chan error, 1)
+	wantErr := errors.New("read failed")
+
+	read := func(err error) func() error {
+		return func() error {
+			started <- struct{}{}
+			<-release
+			return err
+		}
+	}
+	go func() {
+		result <- runBillingReads(read(nil), read(wantErr))
+	}()
+
+	for range 2 {
+		select {
+		case <-started:
+		case <-time.After(time.Second):
+			close(release)
+			t.Fatal("independent read did not start concurrently")
+		}
+	}
+	close(release)
+	if err := <-result; !errors.Is(err, wantErr) {
+		t.Fatalf("error = %v, want %v", err, wantErr)
+	}
 }
 
 func TestBillingHourScheduling(t *testing.T) {
@@ -224,7 +265,7 @@ func TestExecuteBillingTasksUntilAdvancesCheckpointWhenMonitorDataIsEmpty(t *tes
 	db := &billingTestAccount{checkpoint: start, hasCheckpoint: true}
 	reconciler := &BillingReconciler{DBClient: db, Logger: logr.Discard()}
 	reconciler.executeBillingHourFunc = func(hour time.Time) error {
-		owners, err := reconciler.getRecentUsedOwnersAt(hour)
+		owners, _, err := reconciler.getRecentUsedOwnersAt(hour)
 		if len(owners) != 0 {
 			t.Fatalf("owners=%v", owners)
 		}
@@ -242,7 +283,7 @@ func TestExecuteBillingTasksUntilAdvancesCheckpointWhenMonitorDataIsEmpty(t *tes
 func TestGetRecentUsedOwnersReturnsMonitorError(t *testing.T) {
 	db := &billingTestAccount{monitorErr: errors.New("query failed")}
 	reconciler := &BillingReconciler{DBClient: db}
-	_, err := reconciler.getRecentUsedOwnersAt(time.Now())
+	_, _, err := reconciler.getRecentUsedOwnersAt(time.Now())
 	if err == nil {
 		t.Fatal("expected monitor query error")
 	}
@@ -600,5 +641,54 @@ func TestAddUnsettledBillingOwnersRestoresOwnersWithoutMonitorData(t *testing.T)
 	})
 	if len(owners["owner"]) != 2 || owners["owner"][0] != "ns-a" || owners["owner"][1] != "ns-b" {
 		t.Fatalf("owners = %#v", owners)
+	}
+}
+
+func TestDebtOwnersOnlyGenerateRecoveredUnsettledBillings(t *testing.T) {
+	initBillingTestGlobals()
+	debtUserUID := uuid.New()
+	DebtUserMap.Set(debtUserUID.String())
+	db := &billingTestAccount{existing: map[string][]*resources.Billing{
+		"debt-owner": {{
+			OrderID: "bh_debt-recovery", Owner: "debt-owner", Namespace: "ns-debt",
+			Status: resources.Unsettled,
+		}},
+	}}
+	var reconciled []*resources.Billing
+	reconciler := &BillingReconciler{
+		DBClient:        db,
+		Logger:          logr.Discard(),
+		concurrentLimit: 1,
+		debtOwnerMap:    maps.NewConcurrentNullValueMap(),
+		reconcileBillingFunc: func(_ string, billings []*resources.Billing) error {
+			reconciled = append(reconciled, billings...)
+			return nil
+		},
+	}
+	owners := map[string][]string{
+		"debt-owner":   {"ns-debt"},
+		"normal-owner": {"ns-normal"},
+	}
+	reconciler.removeDebtOwners(owners, map[string]uuid.UUID{
+		"debt-owner": debtUserUID,
+	})
+	if _, exists := owners["debt-owner"]; exists {
+		t.Fatal("monitor-backed debt owner remained in generation input")
+	}
+
+	addUnsettledBillingOwners(owners, map[string][]*resources.Billing{
+		"debt-owner": {{Namespace: "ns-debt"}},
+	})
+	if err := reconciler.reconcileOwnerList(owners, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := db.generateInput["debt-owner"]; exists {
+		t.Fatal("recovered debt owner was included in new billing generation")
+	}
+	if _, exists := db.generateInput["normal-owner"]; !exists {
+		t.Fatal("normal owner was excluded from new billing generation")
+	}
+	if len(reconciled) != 1 || reconciled[0].OrderID != "bh_debt-recovery" {
+		t.Fatalf("reconciled = %#v", reconciled)
 	}
 }

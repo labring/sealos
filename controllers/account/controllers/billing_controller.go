@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -33,6 +34,7 @@ import (
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/controllers/pkg/utils/maps"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"gorm.io/gorm"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -111,6 +113,20 @@ func waitForBillingRun(ctx context.Context, delay time.Duration) bool {
 	}
 }
 
+func runBillingReads(tasks ...func() error) error {
+	errs := make([]error, len(tasks))
+	var wg sync.WaitGroup
+	for i, task := range tasks {
+		wg.Add(1)
+		go func(index int, read func() error) {
+			defer wg.Done()
+			errs[index] = read()
+		}(i, task)
+	}
+	wg.Wait()
+	return errors.Join(errs...)
+}
+
 const (
 	UserNamespacePrefix = "ns-"
 	ResourceQuotaPrefix = "quota-"
@@ -130,6 +146,7 @@ type BillingReconciler struct {
 	executeBillingHourFunc func(time.Time) error
 	concurrentLimit        int64
 	DebtUserMap            *maps.ConcurrentMap
+	debtOwnerMap           *maps.ConcurrentNullValueMap
 }
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
@@ -174,17 +191,36 @@ func (r *BillingReconciler) ExecuteBillingTaskAt(endHourTime time.Time) error {
 	r.Info("start billing reconcile", "billingTime", endHourTime.Format(time.RFC3339))
 	DebtUserMap = maps.NewConcurrentNullValueMap()
 	SubscriptionWorkspaceMap = maps.NewConcurrentNullValueMap()
-	if err := r.loadDebtUsersAt(endHourTime); err != nil {
-		return err
+	r.debtOwnerMap = maps.NewConcurrentNullValueMap()
+	var ownerListMap map[string][]string
+	var ownerUserUIDs map[string]uuid.UUID
+	var unsettledBillings map[string][]*resources.Billing
+	inputStartedAt := time.Now()
+	if err := runBillingReads(
+		func() error {
+			return r.loadDebtUsersAt(endHourTime)
+		},
+		func() error {
+			var err error
+			ownerListMap, ownerUserUIDs, err = r.getRecentUsedOwnersAt(endHourTime)
+			if err != nil {
+				return fmt.Errorf("get recently used owners: %w", err)
+			}
+			return nil
+		},
+		func() error {
+			var err error
+			unsettledBillings, err = r.DBClient.GetUnsettledBillingsAt(endHourTime)
+			if err != nil {
+				return fmt.Errorf("get unsettled billings: %w", err)
+			}
+			return nil
+		},
+	); err != nil {
+		return fmt.Errorf("load billing inputs: %w", err)
 	}
-	ownerListMap, err := r.getRecentUsedOwnersAt(endHourTime)
-	if err != nil {
-		return fmt.Errorf("failed to get the owner list of the recently used resource: %w", err)
-	}
-	unsettledBillings, err := r.DBClient.GetUnsettledBillingsAt(endHourTime)
-	if err != nil {
-		return fmt.Errorf("failed to get unsettled billings: %w", err)
-	}
+	r.Info("load billing inputs", "duration", time.Since(inputStartedAt))
+	r.removeDebtOwners(ownerListMap, ownerUserUIDs)
 	addUnsettledBillingOwners(ownerListMap, unsettledBillings)
 	if err := r.loadSubscriptionWorkspacesAt(endHourTime, ownerListMap); err != nil {
 		return err
@@ -196,13 +232,12 @@ func (r *BillingReconciler) ExecuteBillingTaskAt(endHourTime time.Time) error {
 			endHourTime.Format(time.RFC3339),
 		)
 	}
-	err = r.reconcileOwnerListBatch(
+	if err := r.reconcileOwnerListBatch(
 		ownerListMap,
 		env.GetIntEnvWithDefault("BILLING_RECONCILE_BATCH_COUNT", 200),
 		endHourTime,
 		r.reconcileOwnerList,
-	)
-	if err != nil {
+	); err != nil {
 		return fmt.Errorf("failed to reconcile owner list batch: %w", err)
 	}
 	r.Info(
@@ -214,21 +249,30 @@ func (r *BillingReconciler) ExecuteBillingTaskAt(endHourTime time.Time) error {
 }
 
 func (r *BillingReconciler) loadDebtUsersAt(endHourTime time.Time) error {
+	startedAt := time.Now()
 	effectiveTime := endHourTime.Add(-time.Nanosecond)
 	db := r.AccountV2.GetGlobalDB()
 	var debts []types.Debt
-	if err := db.Model(&types.Debt{}).
-		Where("created_at <= ?", effectiveTime).
-		Find(&debts).Error; err != nil {
-		return fmt.Errorf("query billing-period debts: %w", err)
-	}
-
 	var recordsAfter []types.DebtStatusRecord
-	if err := db.Model(&types.DebtStatusRecord{}).
-		Where("create_at > ?", effectiveTime).
-		Order("create_at ASC").
-		Find(&recordsAfter).Error; err != nil {
-		return fmt.Errorf("query debt status after billing period: %w", err)
+	// Debt and its status record are committed together, so both reads share one snapshot.
+	if err := db.Transaction(
+		func(tx *gorm.DB) error {
+			if err := tx.Model(&types.Debt{}).
+				Where("created_at <= ?", effectiveTime).
+				Find(&debts).Error; err != nil {
+				return fmt.Errorf("query billing-period debts: %w", err)
+			}
+			if err := tx.Model(&types.DebtStatusRecord{}).
+				Where("create_at > ?", effectiveTime).
+				Order("create_at ASC").
+				Find(&recordsAfter).Error; err != nil {
+				return fmt.Errorf("query debt status after billing period: %w", err)
+			}
+			return nil
+		},
+		&sql.TxOptions{Isolation: sql.LevelSerializable, ReadOnly: true},
+	); err != nil {
+		return fmt.Errorf("query consistent billing-period debt state: %w", err)
 	}
 
 	afterByUser := make(map[uuid.UUID]types.DebtStatusRecord, len(recordsAfter))
@@ -245,6 +289,11 @@ func (r *BillingReconciler) loadDebtUsersAt(endHourTime time.Time) error {
 		}
 	}
 	DebtUserMap.Set(users...)
+	r.Info(
+		"load billing-period debt users",
+		"count", len(users),
+		"duration", time.Since(startedAt),
+	)
 	return nil
 }
 
@@ -259,6 +308,7 @@ func (r *BillingReconciler) loadSubscriptionWorkspacesAt(
 	endHourTime time.Time,
 	ownerListMap map[string][]string,
 ) error {
+	startedAt := time.Now()
 	effectiveTime := endHourTime.Add(-time.Nanosecond)
 	db := r.AccountV2.GetGlobalDB()
 	regionDomain := r.AccountV2.GetLocalRegion().Domain
@@ -277,43 +327,58 @@ func (r *BillingReconciler) loadSubscriptionWorkspacesAt(
 	}
 
 	var subscriptions []types.WorkspaceSubscription
-	if err := db.Model(&types.WorkspaceSubscription{}).
-		Where(
-			"region_domain = ? AND workspace IN ? AND create_at <= ?",
-			regionDomain,
-			workspaces,
-			effectiveTime,
-		).
-		Find(&subscriptions).Error; err != nil {
-		return fmt.Errorf("query billing-period workspace subscriptions: %w", err)
-	}
 	var periodTransactions []types.WorkspaceSubscriptionTransaction
-	if err := db.Model(&types.WorkspaceSubscriptionTransaction{}).
-		Where(
-			"region_domain = ? AND workspace IN ? AND status = ? AND pay_status IN (?, ?) AND updated_at <= ?",
-			regionDomain,
-			workspaces,
-			types.SubscriptionTransactionStatusCompleted,
-			types.SubscriptionPayStatusPaid,
-			types.SubscriptionPayStatusNoNeed,
-			effectiveTime,
-		).
-		Find(&periodTransactions).Error; err != nil {
-		return fmt.Errorf("query billing-period workspace subscription transactions: %w", err)
-	}
 	var terminalTransactions []types.WorkspaceSubscriptionTransaction
-	if err := db.Model(&types.WorkspaceSubscriptionTransaction{}).
-		Where(
-			"region_domain = ? AND workspace IN ? AND status = ? AND operator IN (?, ?) AND updated_at <= ?",
-			regionDomain,
-			workspaces,
-			types.SubscriptionTransactionStatusCompleted,
-			types.SubscriptionTransactionTypeCanceled,
-			types.SubscriptionTransactionTypeDeleted,
-			effectiveTime,
-		).
-		Find(&terminalTransactions).Error; err != nil {
-		return fmt.Errorf("query billing-period terminal subscription transactions: %w", err)
+	// The subscription snapshot and completed transactions describe one entitlement state.
+	if err := db.Transaction(
+		func(tx *gorm.DB) error {
+			if err := tx.Model(&types.WorkspaceSubscription{}).
+				Where(
+					"region_domain = ? AND workspace IN ? AND create_at <= ?",
+					regionDomain,
+					workspaces,
+					effectiveTime,
+				).
+				Find(&subscriptions).Error; err != nil {
+				return fmt.Errorf("query billing-period workspace subscriptions: %w", err)
+			}
+			if err := tx.Model(&types.WorkspaceSubscriptionTransaction{}).
+				Where(
+					"region_domain = ? AND workspace IN ? AND status = ? AND pay_status IN (?, ?) AND updated_at <= ?",
+					regionDomain,
+					workspaces,
+					types.SubscriptionTransactionStatusCompleted,
+					types.SubscriptionPayStatusPaid,
+					types.SubscriptionPayStatusNoNeed,
+					effectiveTime,
+				).
+				Find(&periodTransactions).Error; err != nil {
+				return fmt.Errorf(
+					"query billing-period workspace subscription transactions: %w",
+					err,
+				)
+			}
+			if err := tx.Model(&types.WorkspaceSubscriptionTransaction{}).
+				Where(
+					"region_domain = ? AND workspace IN ? AND status = ? AND operator IN (?, ?) AND updated_at <= ?",
+					regionDomain,
+					workspaces,
+					types.SubscriptionTransactionStatusCompleted,
+					types.SubscriptionTransactionTypeCanceled,
+					types.SubscriptionTransactionTypeDeleted,
+					effectiveTime,
+				).
+				Find(&terminalTransactions).Error; err != nil {
+				return fmt.Errorf(
+					"query billing-period terminal subscription transactions: %w",
+					err,
+				)
+			}
+			return nil
+		},
+		&sql.TxOptions{Isolation: sql.LevelSerializable, ReadOnly: true},
+	); err != nil {
+		return fmt.Errorf("query consistent billing-period subscriptions: %w", err)
 	}
 	transactions := make(
 		[]types.WorkspaceSubscriptionTransaction,
@@ -328,6 +393,11 @@ func (r *BillingReconciler) loadSubscriptionWorkspacesAt(
 		return fmt.Errorf("resolve billing-period workspace subscriptions: %w", err)
 	}
 	SubscriptionWorkspaceMap.Set(workspaces...)
+	r.Info(
+		"load billing-period subscriptions",
+		"count", len(workspaces),
+		"duration", time.Since(startedAt),
+	)
 	return nil
 }
 
@@ -466,36 +536,53 @@ func (r *BillingReconciler) reconcileOwnerList(
 	for owner := range ownerListMap {
 		ownerList = append(ownerList, owner)
 	}
-	existingStartedAt := time.Now()
-	existingBillings, err := r.DBClient.GetOwnerBillingsAt(ownerList, endHourTime)
-	if err != nil {
-		return fmt.Errorf("get existing owner billings failed: %w", err)
-	}
-	r.Info(
-		"get existing owner billings",
-		"owner count", len(existingBillings),
-		"duration", time.Since(existingStartedAt),
-	)
-
-	for _, owner := range DebtUserMap.GetAllKey() {
-		delete(ownerListMap, owner)
+	generationOwners := make(map[string][]string, len(ownerListMap))
+	for owner, namespaces := range ownerListMap {
+		if r.ownerInDebt(owner) {
+			continue
+		}
+		generationOwners[owner] = namespaces
 	}
 
-	generateStartedAt := time.Now()
-	ownerBillings, err := r.DBClient.GenerateBillingData(
-		startHourTime,
-		endHourTime,
-		r.Properties,
-		ownerListMap,
-	)
-	if err != nil {
-		return fmt.Errorf("generate billing data failed: %w", err)
+	var existingBillings map[string][]*resources.Billing
+	var ownerBillings map[string][]*resources.Billing
+	if err := runBillingReads(
+		func() error {
+			startedAt := time.Now()
+			var err error
+			existingBillings, err = r.DBClient.GetOwnerBillingsAt(ownerList, endHourTime)
+			if err != nil {
+				return fmt.Errorf("get existing owner billings: %w", err)
+			}
+			r.Info(
+				"get existing owner billings",
+				"owner count", len(existingBillings),
+				"duration", time.Since(startedAt),
+			)
+			return nil
+		},
+		func() error {
+			startedAt := time.Now()
+			var err error
+			ownerBillings, err = r.DBClient.GenerateBillingData(
+				startHourTime,
+				endHourTime,
+				r.Properties,
+				generationOwners,
+			)
+			if err != nil {
+				return fmt.Errorf("generate billing data: %w", err)
+			}
+			r.Info(
+				"generate billing data",
+				"count", len(ownerBillings),
+				"duration", time.Since(startedAt),
+			)
+			return nil
+		},
+	); err != nil {
+		return err
 	}
-	r.Info(
-		"generate billing data",
-		"count", len(ownerBillings),
-		"duration", time.Since(generateStartedAt),
-	)
 	classifyGeneratedBillings(ownerBillings)
 	ownerBillings = pendingOwnerBillings(ownerBillings, existingBillings)
 
@@ -678,13 +765,13 @@ func (r *BillingReconciler) reconcileOwnerListBatch(
 
 func (r *BillingReconciler) getRecentUsedOwnersAt(
 	endHourTime time.Time,
-) (map[string][]string, error) {
+) (map[string][]string, map[string]uuid.UUID, error) {
 	endHourTime = endHourTime.UTC().Truncate(time.Hour)
 	startHourTime := endHourTime.Add(-1 * time.Hour)
 	monitorStartedAt := time.Now()
 	namespaceList, err := r.DBClient.GetTimeUsedNamespaceList(startHourTime, endHourTime)
 	if err != nil {
-		return nil, fmt.Errorf("get recent owners failed: %w", err)
+		return nil, nil, fmt.Errorf("get recent owners failed: %w", err)
 	}
 	r.Info(
 		"get monitored namespaces",
@@ -701,7 +788,7 @@ func (r *BillingReconciler) getRecentUsedOwnersAt(
 	lookupStartedAt := time.Now()
 	nsToOwnerMap, err := r.getUsersForNamespaces(namespaceList)
 	if err != nil {
-		return nil, fmt.Errorf("get users for monitored namespaces failed: %w", err)
+		return nil, nil, fmt.Errorf("get users for monitored namespaces failed: %w", err)
 	}
 	r.Info(
 		"get owner and namespace",
@@ -713,6 +800,7 @@ func (r *BillingReconciler) getRecentUsedOwnersAt(
 		time.Since(lookupStartedAt),
 	)
 	usedOwnerList := make(map[string][]string)
+	ownerUserUIDs := make(map[string]uuid.UUID)
 	for _, ns := range namespaceList {
 		if owner, ok := nsToOwnerMap[ns]; ok {
 			if _, ok := usedOwnerList[owner]; !ok {
@@ -720,24 +808,43 @@ func (r *BillingReconciler) getRecentUsedOwnersAt(
 					&types.UserQueryOpts{Owner: owner, IgnoreEmpty: true},
 				)
 				if err != nil {
-					return nil, fmt.Errorf("get user uid failed: %w", err)
+					return nil, nil, fmt.Errorf("get user uid failed: %w", err)
 				}
 				if userUID == uuid.Nil {
 					r.Error(errors.New("user uid is nil"), "get user uid failed", "owner", owner)
 					continue
 				}
-				_, inDebt := DebtUserMap.Get(userUID.String())
-				if inDebt {
-					// r.Logger.Info("user is in debt", "user uid", userUID.String())
-					continue
-				}
+				ownerUserUIDs[owner] = userUID
 				usedOwnerList[owner] = []string{}
 			}
 			usedOwnerList[owner] = append(usedOwnerList[owner], ns)
 		}
 	}
 	r.Info("get monitored users", "count", len(usedOwnerList))
-	return usedOwnerList, nil
+	return usedOwnerList, ownerUserUIDs, nil
+}
+
+func (r *BillingReconciler) removeDebtOwners(
+	ownerListMap map[string][]string,
+	ownerUserUIDs map[string]uuid.UUID,
+) {
+	for owner, userUID := range ownerUserUIDs {
+		if _, inDebt := DebtUserMap.Get(userUID.String()); inDebt {
+			delete(ownerListMap, owner)
+			r.debtOwnerMap.Set(owner)
+		}
+	}
+}
+
+func (r *BillingReconciler) ownerInDebt(owner string) bool {
+	if _, inDebt := DebtUserMap.Get(owner); inDebt {
+		return true
+	}
+	if r.debtOwnerMap != nil {
+		_, inDebt := r.debtOwnerMap.Get(owner)
+		return inDebt
+	}
+	return false
 }
 
 func (r *BillingReconciler) getUsersForNamespaces(namespaces []string) (map[string]string, error) {
