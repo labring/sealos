@@ -168,6 +168,10 @@ jobs:
         env:
           MODULE: ${{ matrix.module }}
         run: |
+          if [[ "${MODULE}" == "providers/template" ]]; then
+            bash frontend/providers/template/deploy/verify-template-repo-config.sh
+          fi
+
           chart_root="frontend/${MODULE}/deploy/charts"
           if [[ ! -d "${chart_root}" ]]; then
             echo "No Helm chart found for ${MODULE}; skipping"
