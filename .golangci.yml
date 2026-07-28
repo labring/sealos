@@ -35,14 +35,17 @@ linters:
     - govet
     - iface
     - importas
+    - iotamixing
     - inamedparam
     - ineffassign
     - intrange
     - loggercheck
     - mirror
     - misspell
+    - modernize
     - musttag
     - nakedret
+    - noctx
     - nolintlint
     - nosprintfhostport
     - perfsprint
@@ -111,6 +114,12 @@ linters:
       constant-kind: true
     usetesting:
       os-temp-dir: true
+    modernize:
+      disable:
+        - forvar
+        - omitzero
+    perfsprint:
+      concat-loop: false
     gocritic:
       disabled-checks:
         - exitAfterDefer

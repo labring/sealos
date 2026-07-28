@@ -47,15 +47,35 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_modules: ${{ steps.set-matrix.outputs.has_modules }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Resolve Modules
         id: set-matrix
-        run: bash ./scripts/resolve-modules.sh ./lifecycle
+        run: |
+          BASE_REF=""
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+            HEAD_REF="${{ github.sha }}"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            BASE_REF="${{ github.event.before }}"
+            HEAD_REF="${{ github.sha }}"
+          else
+            HEAD_REF="${{ github.sha }}"
+          fi
+
+          if [[ -n "${BASE_REF}" ]]; then
+            bash ./scripts/resolve-modules.sh ./lifecycle --changed "${BASE_REF}" "${HEAD_REF}"
+          else
+            bash ./scripts/resolve-modules.sh ./lifecycle
+          fi
 
   golangci-lint:
+    if: ${{ needs.resolve-modules.outputs.has_modules == 'true' }}
     needs: [resolve-modules]
     runs-on: ubuntu-24.04
     strategy:
@@ -64,6 +84,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@v5
@@ -73,10 +95,25 @@ jobs:
       - name: Install Dependencies
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
+      - name: Resolve Linter Args
+        id: lint-args
+        run: |
+          args="--color=always --config=${{ github.workspace }}/.golangci.yml"
+          new_from_rev=""
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            new_from_rev="${{ github.event.pull_request.base.sha }}"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
+            new_from_rev="${{ github.event.before }}"
+          fi
+          if [[ -n "${new_from_rev}" ]]; then
+            args="${args} --new-from-rev=${new_from_rev}"
+          fi
+          echo "args=${args}" >> "$GITHUB_OUTPUT"
+
       - name: Run Linter
         uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.5.0
+          version: v2.12.2
           working-directory: ${{ matrix.workdir }}
           # args between =, not space
-          args: --color=always --config=${{ github.workspace }}/.golangci.yml
+          args: ${{ steps.lint-args.outputs.args }}

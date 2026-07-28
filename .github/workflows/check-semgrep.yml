@@ -18,6 +18,9 @@ on:
       - "**/*.yaml"
       - "CHANGELOG/**"
 
+permissions:
+  contents: read
+
 # Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
 concurrency:
   group: check-semgrep-${{ github.head_ref || github.run_id }}
@@ -29,10 +32,11 @@ jobs:
     name: Scan
     # If you are self-hosting, change the following `runs-on` value:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
 
     container:
       # A Docker image with Semgrep installed. Do not change this.
-      image: semgrep/semgrep:1.109.0
+      image: semgrep/semgrep:1.164.0
 
     # allow fails due to too many risks
     continue-on-error: true
@@ -45,6 +49,11 @@ jobs:
       - uses: actions/checkout@v4
       # Run the "semgrep ci" command on the command line of the docker image.
       - run: |
+          # On pushes, compare only against the previous commit so existing findings do not re-break main.
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            export SEMGREP_BASELINE_REF="${{ github.event.before }}"
+          fi
+
           semgrep ci \
           --exclude-rule go.lang.security.audit.xss.import-text-template.import-text-template \
           --exclude-rule yaml.kubernetes.security.run-as-non-root.run-as-non-root \
