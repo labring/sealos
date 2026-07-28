@@ -55,6 +55,7 @@ jobs:
       - name: Resolve Modules
         id: set-matrix
         run: |
+          # Use a diff base when available so lifecycle pushes stay incremental.
           BASE_REF=""
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             BASE_REF="${{ github.event.pull_request.base.sha }}"
@@ -97,6 +98,7 @@ jobs:
         id: lint-args
         run: |
           args="--color=always --config=${{ github.workspace }}/.golangci.yml"
+          # Match module resolution so historical lifecycle lint debt does not fail unrelated pushes.
           new_from_rev=""
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             new_from_rev="${{ github.event.pull_request.base.sha }}"
