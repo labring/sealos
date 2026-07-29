@@ -24,6 +24,7 @@ import {
   Input,
   Switch,
   Tooltip,
+  useDisclosure,
   useTheme
 } from '@chakra-ui/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -34,6 +35,9 @@ import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import { syncDefaultRouteServicePort } from '@/utils/network-routes';
 import type { CustomAccessModalParams } from './CustomAccessModal';
 import type { CertificateCustomAccessModalParams } from './CertificateCustomAccessModal';
+import NetworkIsolationModal from './NetworkIsolationModal';
+import { getNetworkIsolation, putNetworkIsolation } from '@/api/app';
+import type { NetworkIsolationConfig, NetworkIsolationResponse } from '@/types/networkIsolation';
 import dynamic from 'next/dynamic';
 import {
   PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
@@ -246,6 +250,8 @@ type NetworkAction =
 
 interface NetworkSectionProps {
   formHook: UseFormReturn<AppEditType, any>;
+  appName?: string;
+  isEdit?: boolean;
   onDomainVerified?: (params: { index: number; customDomain: string }) => void;
   boxStyles: any;
   headerStyles: any;
@@ -321,6 +327,8 @@ const actionButtonStyles = {
 
 export function NetworkSection({
   formHook,
+  appName,
+  isEdit = false,
   onDomainVerified,
   boxStyles,
   headerStyles
@@ -332,8 +340,108 @@ export function NetworkSection({
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
   const [certificateAccessModalData, setCertificateAccessModalData] =
     useState<CertificateCustomAccessModalParams>();
+  const {
+    isOpen: isNetworkIsolationOpen,
+    onOpen,
+    onClose: onCloseNetworkIsolation
+  } = useDisclosure();
+  const [networkIsolationResponse, setNetworkIsolationResponse] =
+    useState<NetworkIsolationResponse>();
+  const [isNetworkIsolationLoading, setIsNetworkIsolationLoading] = useState(false);
+  const [isNetworkIsolationSaving, setIsNetworkIsolationSaving] = useState(false);
+  const [networkIsolationSaveError, setNetworkIsolationSaveError] = useState<string>();
+  const networkIsolationPollTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const publicDomainCheckSeqRef = useRef<Record<number, number>>({});
   const publicDomainDraftCheckTimerRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+
+  const getNetworkIsolationErrorMessage = useCallback(
+    (error: any) => {
+      const code = error?.error?.code;
+      if (code === 'REVISION_CONFLICT') return t('network_isolation_revision_conflict');
+      if (code === 'SOURCE_APPLICATION_UNRESOLVED') return t('network_isolation_source_unresolved');
+      if (code === 'TARGET_SELECTOR_UNRESOLVED') return t('network_isolation_target_unresolved');
+      if (code === 'PUBLIC_CIDR_CONFIRMATION_REQUIRED')
+        return t('network_isolation_public_confirmation_required');
+      return error?.message || t('network_isolation_save_failed');
+    },
+    [t]
+  );
+
+  const loadNetworkIsolation = useCallback(async () => {
+    if (!appName) return;
+    setIsNetworkIsolationLoading(true);
+    setNetworkIsolationSaveError(undefined);
+    try {
+      setNetworkIsolationResponse(await getNetworkIsolation(appName));
+    } catch (error) {
+      setNetworkIsolationSaveError(getNetworkIsolationErrorMessage(error));
+    } finally {
+      setIsNetworkIsolationLoading(false);
+    }
+  }, [appName, getNetworkIsolationErrorMessage]);
+
+  const scheduleNetworkIsolationPoll = useCallback(() => {
+    if (!appName) return;
+    if (networkIsolationPollTimerRef.current) clearTimeout(networkIsolationPollTimerRef.current);
+    const startedAt = Date.now();
+
+    const poll = async () => {
+      try {
+        const response = await getNetworkIsolation(appName);
+        setNetworkIsolationResponse(response);
+        const needsPolling =
+          response.enforcement.overall === 'progressing' || !response.enforcement.current;
+        if (needsPolling && Date.now() - startedAt < 60_000) {
+          networkIsolationPollTimerRef.current = setTimeout(() => void poll(), 2_000);
+        }
+      } catch {
+        // A save already succeeded; keep its response visible when a polling request is transiently unavailable.
+      }
+    };
+
+    networkIsolationPollTimerRef.current = setTimeout(() => void poll(), 2_000);
+  }, [appName]);
+
+  const saveNetworkIsolation = useCallback(
+    async (config: NetworkIsolationConfig) => {
+      if (!appName || !networkIsolationResponse) return false;
+      setIsNetworkIsolationSaving(true);
+      setNetworkIsolationSaveError(undefined);
+      try {
+        const response = await putNetworkIsolation(
+          appName,
+          config,
+          networkIsolationResponse.revision
+        );
+        setNetworkIsolationResponse(response);
+        scheduleNetworkIsolationPoll();
+        return true;
+      } catch (error) {
+        setNetworkIsolationSaveError(getNetworkIsolationErrorMessage(error));
+        return false;
+      } finally {
+        setIsNetworkIsolationSaving(false);
+      }
+    },
+    [
+      appName,
+      getNetworkIsolationErrorMessage,
+      networkIsolationResponse,
+      scheduleNetworkIsolationPoll
+    ]
+  );
+
+  const openNetworkIsolation = useCallback(() => {
+    onOpen();
+    void loadNetworkIsolation();
+  }, [loadNetworkIsolation, onOpen]);
+
+  useEffect(
+    () => () => {
+      if (networkIsolationPollTimerRef.current) clearTimeout(networkIsolationPollTimerRef.current);
+    },
+    []
+  );
 
   const {
     register,
@@ -1342,38 +1450,62 @@ export function NetworkSection({
           );
         })}
 
-        <Button
-          type={'button'}
-          mt={6}
-          variant={'outline'}
-          {...actionButtonStyles}
-          leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
-          onClick={() => {
-            const currentNetworks = getValues('networks');
-            const port = getNextAvailablePort(currentNetworks);
+        <Flex mt={6} alignItems={'center'} gap={3} data-testid={'network-actions'}>
+          <Button
+            type={'button'}
+            variant={'outline'}
+            {...actionButtonStyles}
+            leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
+            onClick={() => {
+              const currentNetworks = getValues('networks');
+              const port = getNextAvailablePort(currentNetworks);
 
-            dispatch({
-              type: 'ADD_PORT',
-              payload: {
-                networkName: `network-${nanoid()}`,
-                portName: nanoid(),
-                port,
-                protocol: 'TCP',
-                appProtocol: 'HTTP',
-                openPublicDomain: true,
-                publicDomain: nanoid(),
-                customDomain: '',
-                domain: SEALOS_DOMAIN,
-                openNodePort: false,
-                nodePort: undefined,
-                routes: [createDefaultRoute(port)]
-              }
-            });
-          }}
-        >
-          {t('Add Network Port')}
-        </Button>
+              dispatch({
+                type: 'ADD_PORT',
+                payload: {
+                  networkName: `network-${nanoid()}`,
+                  portName: nanoid(),
+                  port,
+                  protocol: 'TCP',
+                  appProtocol: 'HTTP',
+                  openPublicDomain: true,
+                  publicDomain: nanoid(),
+                  customDomain: '',
+                  domain: SEALOS_DOMAIN,
+                  openNodePort: false,
+                  nodePort: undefined,
+                  routes: [createDefaultRoute(port)]
+                }
+              });
+            }}
+          >
+            {t('Add Network Port')}
+          </Button>
+
+          {isEdit && appName && (
+            <Button
+              type={'button'}
+              variant={'outline'}
+              {...actionButtonStyles}
+              onClick={openNetworkIsolation}
+            >
+              {t('network_isolation_configure')}
+            </Button>
+          )}
+        </Flex>
       </Box>
+
+      {isEdit && appName && (
+        <NetworkIsolationModal
+          isOpen={isNetworkIsolationOpen}
+          response={networkIsolationResponse}
+          isLoading={isNetworkIsolationLoading}
+          isSaving={isNetworkIsolationSaving}
+          saveError={networkIsolationSaveError}
+          onClose={onCloseNetworkIsolation}
+          onSave={saveNetworkIsolation}
+        />
+      )}
 
       {routeRulesIndex !== undefined && routeRulesNetwork && (
         <RouteRulesModal

@@ -29,6 +29,7 @@ import {
   User
 } from '@kubernetes/client-node';
 import { ensurePublicDomainPrefixesAvailable } from './publicDomain';
+import { deleteNetworkIsolation } from './networkIsolation';
 
 export interface K8sContext {
   kc: KubeConfig;
@@ -329,6 +330,9 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
  */
 export async function deleteAppByName(name: string, k8s: K8sContext) {
   const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } = k8s;
+
+  // The controller owns derivative CNP, ingress, and Service state. Remove it first.
+  await deleteNetworkIsolation(name, k8s);
 
   const certificatesList = (await k8sCustomObjects.listNamespacedCustomObject(
     'cert-manager.io',

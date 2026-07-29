@@ -558,14 +558,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     const sortedEphemeralStorageList =
       ephemeralStorage !== undefined
@@ -1153,6 +1153,8 @@ const Form = ({
 
           <NetworkSection
             formHook={formHook}
+            appName={typeof name === 'string' ? name : undefined}
+            isEdit={isEdit}
             onDomainVerified={onDomainVerified}
             boxStyles={boxStyles}
             headerStyles={headerStyles}
@@ -1308,8 +1310,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>

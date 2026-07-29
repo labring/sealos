@@ -52,6 +52,8 @@ function createK8sContext() {
       deleteNamespacedHorizontalPodAutoscaler: vi.fn(() => notFound())
     },
     k8sCustomObjects: {
+      getNamespacedCustomObject: vi.fn(() => notFound()),
+      deleteNamespacedCustomObject: vi.fn(() => Promise.resolve({})),
       listNamespacedCustomObject: vi.fn(() =>
         Promise.resolve({
           body: {
