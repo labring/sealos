@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -25,6 +27,45 @@ func AddTrafficPackage(
 	from types.WorkspaceTrafficFrom,
 	fromID string,
 ) error {
+	return AddTrafficPackageWithUpgrade(
+		globalDB,
+		client,
+		sub,
+		plan,
+		expireAt,
+		from,
+		fromID,
+		false,
+		0,
+	)
+}
+
+// AddTrafficPackageWithUpgrade adds traffic package with upgrade support
+func AddTrafficPackageWithUpgrade(
+	globalDB *gorm.DB,
+	client client.Client,
+	sub *types.WorkspaceSubscription,
+	plan *types.WorkspaceSubscriptionPlan,
+	expireAt time.Time,
+	from types.WorkspaceTrafficFrom,
+	fromID string,
+	isUpgrade bool,
+	oldPlanTraffic int64,
+) error {
+	logrus.Infof(
+		"start to add traffic package: subID=%s, plan=%s, isUpgrade=%v, oldPlanTraffic=%d",
+		sub.ID,
+		plan.Name,
+		isUpgrade,
+		oldPlanTraffic,
+	)
+	if isUpgrade && oldPlanTraffic > 0 {
+		err := expireOldTrafficPackages(globalDB, sub.ID, fromID)
+		if err != nil {
+			return fmt.Errorf("failed to expire old traffic packages: %w", err)
+		}
+	}
+
 	err := cockroach.AddWorkspaceSubscriptionTrafficPackage(
 		globalDB,
 		sub.ID,
@@ -53,6 +94,25 @@ func AddTrafficPackage(
 		return fmt.Errorf("failed to resume workspace traffic: %w", err)
 		// Note: We don't rollback here as the traffic package was successfully added
 	}
+	return nil
+}
+
+// expireOldTrafficPackages expires existing traffic packages from old subscription plan
+func expireOldTrafficPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, _ string) error {
+	now := time.Now()
+
+	err := globalDB.Debug().Model(&types.WorkspaceTraffic{}).
+		Where("workspace_subscription_id = ? AND status = ?",
+			subscriptionID, types.WorkspaceTrafficStatusActive).
+		Updates(map[string]any{
+			"status":     types.WorkspaceTrafficStatusExpired,
+			"expired_at": now,
+			"updated_at": now,
+		}).Error
+	if err != nil {
+		return fmt.Errorf("failed to expire old traffic packages: %w", err)
+	}
+
 	return nil
 }
 

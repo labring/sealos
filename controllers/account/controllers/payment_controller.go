@@ -40,6 +40,7 @@ import (
 type PaymentReconciler struct {
 	client.Client
 	Account           *AccountReconciler
+	DebtReconciler    *DebtReconciler
 	WatchClient       client.WithWatch
 	Scheme            *runtime.Scheme
 	Logger            logr.Logger
