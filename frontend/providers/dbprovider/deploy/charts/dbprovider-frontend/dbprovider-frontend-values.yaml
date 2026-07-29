@@ -10,3 +10,50 @@ resources:
   requests:
     cpu: 10m
     memory: 128Mi
+
+startupProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+
+# Keep release-v5.1 env defaults and names. Entrypoint auto-fills cloud values from sealos-config when available.
+dbproviderConfig:
+  monitorUrl: "http://database-monitor.sealos.svc.cluster.local:9090"
+  migrateFileImage: ""
+  backupEnabled: "false"
+  showDocument: "true"
+  guideEnabled: "true"
+  billingUrl: "http://account-service.account-system.svc:2333"
+  managedDbEnabled: "false"
+  vlogsBaseUrl: "http://vlogs.sealos.svc.cluster.local:8428"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - dbprovider-frontend
+          topologyKey: "kubernetes.io/hostname"

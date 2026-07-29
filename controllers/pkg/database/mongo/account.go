@@ -558,28 +558,36 @@ func (m *mongoDB) InitDefaultPropertyTypeLSWithDefaults() error {
 
 	// Merge with defaults if needed
 	var finalProperties []resources.PropertyType
-	if needsInit {
+	switch {
+	case needsInit:
 		// Database is empty, use all defaults
 		finalProperties = resources.DefaultPropertyTypeList
 		if err := m.SavePropertyTypes(finalProperties); err != nil {
 			return fmt.Errorf("failed to save default properties: %w", err)
 		}
 		logger.Info("initialized properties with defaults", "count", len(finalProperties))
-	} else if len(missingBasicResources) > 0 {
+	case len(missingBasicResources) > 0:
 		// Merge existing properties with missing basic resources
 		finalProperties = m.mergeProperties(existingProperties, missingBasicResources)
 		// Upsert missing resources
 		for _, prop := range missingBasicResources {
 			filter := bson.M{"enum": prop.Enum}
 			update := bson.M{"$set": prop}
-			_, err := m.getPropertiesCollection().UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
+			_, err := m.getPropertiesCollection().
+				UpdateOne(ctx, filter, update, options.Update().SetUpsert(true))
 			if err != nil {
 				return fmt.Errorf("failed to upsert property %s: %w", prop.Name, err)
 			}
 		}
-		logger.Info("merged missing basic resources", "count", len(missingBasicResources), "resources", missingBasicResources)
-		//finalProperties = existingProperties
-	} else {
+		logger.Info(
+			"merged missing basic resources",
+			"count",
+			len(missingBasicResources),
+			"resources",
+			missingBasicResources,
+		)
+		// finalProperties = existingProperties
+	default:
 		// All basic resources exist, use existing properties
 		finalProperties = existingProperties
 	}
@@ -593,7 +601,9 @@ func (m *mongoDB) InitDefaultPropertyTypeLSWithDefaults() error {
 }
 
 // findMissingBasicResources checks which properties from DefaultPropertyTypeList are missing
-func (m *mongoDB) findMissingBasicResources(properties []resources.PropertyType) []resources.PropertyType {
+func (m *mongoDB) findMissingBasicResources(
+	properties []resources.PropertyType,
+) []resources.PropertyType {
 	var missing []resources.PropertyType
 	existingEnums := make(map[uint8]bool)
 
@@ -613,7 +623,9 @@ func (m *mongoDB) findMissingBasicResources(properties []resources.PropertyType)
 }
 
 // mergeProperties merges existing properties with missing basic resources
-func (m *mongoDB) mergeProperties(existing, missing []resources.PropertyType) []resources.PropertyType {
+func (m *mongoDB) mergeProperties(
+	existing, missing []resources.PropertyType,
+) []resources.PropertyType {
 	// Create map of existing properties by enum
 	propMap := make(map[uint8]resources.PropertyType)
 	for _, prop := range existing {

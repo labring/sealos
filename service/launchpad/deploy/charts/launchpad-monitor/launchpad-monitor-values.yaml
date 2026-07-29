@@ -1,0 +1,14 @@
+# Custom values for launchpad-monitor.
+
+replicaCount: 1
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 5m
+    memory: 64Mi
+
+launchpadMonitorConfig:
+  vmServiceHost: "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc:8481/select/0/prometheus/"

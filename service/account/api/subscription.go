@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"text/template"
 	"time"
 
@@ -327,9 +328,27 @@ func getOwnNsListWithClt(clt client.Client, user string) ([]string, error) {
 	return nsListStr, nil
 }
 
-func getOwnNsListWithCltWithOutWorkspaceSubscription(
+var workspaceSubscriptionExists = func(workspace string) (bool, error) {
+	if dao.DBClient == nil {
+		return false, errors.New("db client is nil")
+	}
+	subscription, err := dao.DBClient.GetWorkspaceSubscription(
+		workspace,
+		dao.DBClient.GetLocalRegion().Domain,
+	)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("get workspace subscription: %w", err)
+	}
+	return subscription != nil, nil
+}
+
+func getOwnNsListWithCltForDebtFlush(
 	clt client.Client,
 	user string,
+	includeDebtSuspendedNamespaces bool,
 ) ([]string, error) {
 	if user == "" {
 		return nil, errors.New("user is empty")
@@ -344,13 +363,56 @@ func getOwnNsListWithCltWithOutWorkspaceSubscription(
 		if nsList.Items[i].Status.Phase == corev1.NamespaceTerminating {
 			continue
 		}
-		if nsList.Items[i].Annotations != nil &&
-			nsList.Items[i].Annotations[types.WorkspaceSubscriptionStatusAnnoKey] != "" {
+		skipWorkspaceSubscription, err := shouldSkipWorkspaceSubscriptionNamespace(
+			nsList.Items[i].Name,
+			nsList.Items[i].Annotations,
+			includeDebtSuspendedNamespaces,
+		)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"check workspace subscription namespace %s: %w",
+				nsList.Items[i].Name,
+				err,
+			)
+		}
+		if skipWorkspaceSubscription {
 			continue
 		}
 		nsListStr = append(nsListStr, nsList.Items[i].Name)
 	}
 	return nsListStr, nil
+}
+
+func shouldSkipWorkspaceSubscriptionNamespace(
+	namespace string,
+	annotations map[string]string,
+	includeDebtSuspendedNamespaces bool,
+) (bool, error) {
+	if annotations == nil || annotations[types.WorkspaceSubscriptionStatusAnnoKey] == "" {
+		return false, nil
+	}
+	if !includeDebtSuspendedNamespaces ||
+		!isDebtSuspendedNamespaceStatus(annotations[types.DebtNamespaceAnnoStatusKey]) {
+		return true, nil
+	}
+	exists, err := workspaceSubscriptionExists(namespace)
+	if err != nil {
+		return true, err
+	}
+	return exists, nil
+}
+
+func isDebtSuspendedNamespaceStatus(status string) bool {
+	switch status {
+	case types.SuspendDebtNamespaceAnnoStatus,
+		types.SuspendCompletedDebtNamespaceAnnoStatus,
+		types.TerminateSuspendDebtNamespaceAnnoStatus,
+		types.TerminateSuspendCompletedDebtNamespaceAnnoStatus,
+		types.FinalDeletionDebtNamespaceAnnoStatus:
+		return true
+	default:
+		return false
+	}
 }
 
 func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.ResourceQuota {
@@ -602,7 +664,8 @@ func PayForSubscription(
 		}
 		payment := &types.PaymentOrder{}
 		if err := dao.DBClient.GetGlobalDB().Model(&types.PaymentOrder{}).Where(
-			`"userUid" = ? AND "id" = ?`, req.UserUID, lastSubTransaction.PayID).Find(&payment).Error; err != nil {
+			`"userUid" = ? AND "id" = ?`, req.UserUID, lastSubTransaction.PayID).
+			Find(&payment).Error; err != nil {
 			SetErrorResp(
 				c,
 				http.StatusInternalServerError,
@@ -751,10 +814,14 @@ func PayForSubscription(
 		case "CANCELLED":
 			// TODO 处理上次状态
 			err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
-				if err := tx.Model(&payment).Update("status", types.PaymentOrderStatusFailed).Error; err != nil {
+				if err := tx.Model(&payment).
+					Update("status", types.PaymentOrderStatusFailed).
+					Error; err != nil {
 					return fmt.Errorf("failed to update payment status: %w", err)
 				}
-				if err := tx.Model(&lastSubTransaction).Update("status", types.SubscriptionTransactionStatusFailed).Error; err != nil {
+				if err := tx.Model(&lastSubTransaction).
+					Update("status", types.SubscriptionTransactionStatusFailed).
+					Error; err != nil {
 					return fmt.Errorf("failed to update subscription transaction status: %w", err)
 				}
 				return nil
@@ -833,8 +900,12 @@ func PayForSubscription(
 			if err != nil {
 				return fmt.Errorf("failed to create payment: %w", hErr)
 			}
-			if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" || paySvcResp.Result.ResultStatus != "U" {
-				return fmt.Errorf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)
+			if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" ||
+				paySvcResp.Result.ResultStatus != "U" {
+				return fmt.Errorf(
+					"payment result is not PAYMENT_IN_PROCESS: %#+v",
+					paySvcResp.Result,
+				)
 			}
 			return nil
 		}
@@ -1059,7 +1130,11 @@ func sendUserPayEmail(userUID uuid.UUID, emailRender utils.EmailRenderBuilder) e
 		if err = tmp.Execute(&rendered, emailRender.Build()); err != nil {
 			return fmt.Errorf("failed to render email template: %w", err)
 		}
-		if err := dao.SMTPConfig.SendEmailWithSubject(emailRender.GetSubject(), rendered.String(), emailProvider.ProviderID); err != nil {
+		if err := dao.SMTPConfig.SendEmailWithSubject(
+			emailRender.GetSubject(),
+			rendered.String(),
+			emailProvider.ProviderID,
+		); err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}
 		return nil
@@ -1096,7 +1171,10 @@ func SendUserPayEmail(userUID uuid.UUID, payType string) error {
 		}); err != nil {
 			return fmt.Errorf("failed to render email template: %w", err)
 		}
-		if err := dao.SMTPConfig.SendEmail(rendered.String(), emailProvider.ProviderID); err != nil {
+		if err := dao.SMTPConfig.SendEmail(
+			rendered.String(),
+			emailProvider.ProviderID,
+		); err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}
 	}
@@ -1126,7 +1204,9 @@ func SubscriptionPayByBalance(
 		}
 		// check account balance
 		var account types.Account
-		if dErr = tx.Where(types.Account{UserUID: subTransaction.UserUID}).First(&account).Error; dErr != nil {
+		if dErr = tx.Where(types.Account{UserUID: subTransaction.UserUID}).
+			First(&account).
+			Error; dErr != nil {
 			return fmt.Errorf("failed to get account: %w", dErr)
 		}
 		if account.Balance-account.DeductionBalance < subTransaction.Amount {
@@ -1229,7 +1309,13 @@ func NewSubscriptionPayNotifyHandler(c *gin.Context) {
 		logNotification(notification)
 	}
 
-	if err = processSubscriptionPayResult(c, notifyType, notifyResult, paymentRequestID, paymentID); err != nil &&
+	if err = processSubscriptionPayResult(
+		c,
+		notifyType,
+		notifyResult,
+		paymentRequestID,
+		paymentID,
+	); err != nil &&
 		!errors.Is(err, dao.ErrPaymentOrderAlreadyHandle) {
 		logrus.Errorf("Failed to process sub payment result: %v", err)
 		return // 错误已在 processPaymentResult 中处理
@@ -1239,10 +1325,5 @@ func NewSubscriptionPayNotifyHandler(c *gin.Context) {
 }
 
 func contain(planList []string, planName string) bool {
-	for _, plan := range planList {
-		if plan == planName {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(planList, planName)
 }

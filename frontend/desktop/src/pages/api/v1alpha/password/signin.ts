@@ -7,6 +7,8 @@ import { getRegionToken } from '@/services/backend/regionAuth';
 import { verifyAccessToken, verifyJWT } from '@/services/backend/auth';
 import { AccessTokenPayload } from '@/types/token';
 import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
+import { normalizePasswordUsername } from '@/services/backend/passwordUsername';
+import { getSafeAuthErrorInfo } from '@/services/backend/authDiagnostics';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -17,6 +19,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { password, username } = req.body as Record<string, string>;
     if (!password) return jsonRes(res, { code: 400, message: 'password is Required' });
     if (!username) return jsonRes(res, { code: 400, message: 'username is Required' });
+    const normalizedUsername = normalizePasswordUsername(username);
+    if (normalizedUsername.isEmpty || normalizedUsername.hasUnsafeCharacters) {
+      return jsonRes(res, { code: 400, message: 'Invalid username.' });
+    }
 
     const _data = await signInByPassword({
       id: username,
@@ -56,7 +62,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Successfully'
     });
   } catch (err) {
-    console.log(err);
+    console.error('password API signin failed:', getSafeAuthErrorInfo(err));
     return jsonRes(res, {
       message: 'Failed to authenticate with password',
       code: 500

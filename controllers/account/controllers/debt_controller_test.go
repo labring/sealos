@@ -172,8 +172,8 @@ func loadProcessedUsers(filePath string) (map[uuid.UUID]bool, error) {
 		return nil, fmt.Errorf("failed to read processed users file: %w", err)
 	}
 
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(string(data), "\n")
+	for line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -235,7 +235,12 @@ func sendFlushDebtResourceStatusRequest(
 		backoffTime := time.Second
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(quotaReqBody))
+			req, err := http.NewRequestWithContext(
+				context.Background(),
+				http.MethodPost,
+				url,
+				bytes.NewBuffer(quotaReqBody),
+			)
 			if err != nil {
 				return fmt.Errorf("failed to create request: %w", err)
 			}
@@ -355,7 +360,10 @@ func convertAllDebtCr(account database.AccountV2, clt client.Client) error {
 	)
 	existing := make(map[uuid.UUID]struct{})
 	var existingUIDs []uuid.UUID
-	if err := account.GetGlobalDB().Model(&types.Debt{}).Pluck("user_uid", &existingUIDs).Error; err != nil {
+	if err := account.GetGlobalDB().
+		Model(&types.Debt{}).
+		Pluck("user_uid", &existingUIDs).
+		Error; err != nil {
 		return fmt.Errorf("failed to preload existing debts: %w", err)
 	}
 	for _, uid := range existingUIDs {

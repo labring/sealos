@@ -62,7 +62,7 @@ const baseItemStyle = {
 };
 
 export default function Account() {
-  const { layoutConfig, authConfig, isLoaded: configLoaded } = useConfigStore();
+  const { layoutConfig, authConfig, commonConfig, isLoaded: configLoaded } = useConfigStore();
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t } = useTranslation();
@@ -164,10 +164,19 @@ export default function Account() {
       return;
     }
 
-    if (initGuide && !isNarrowScreen && !autoOpenBlocked) {
+    if (commonConfig?.guideEnabled && initGuide && !isNarrowScreen && !autoOpenBlocked) {
       openGuideModal();
     }
-  }, [initGuide, openGuideModal, isNarrowScreen, autoOpenBlocked]);
+  }, [
+    router.query,
+    autolaunch,
+    blockAutoOpen,
+    commonConfig?.guideEnabled,
+    initGuide,
+    openGuideModal,
+    isNarrowScreen,
+    autoOpenBlocked
+  ]);
 
   return (
     <Box position={'relative'} flex={1} w={'full'}>

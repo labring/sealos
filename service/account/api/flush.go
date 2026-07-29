@@ -67,9 +67,10 @@ func adminFlushDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq) e
 	if owner == "" {
 		return nil
 	}
-	namespaces, err := getOwnNsListWithCltWithOutWorkspaceSubscription(
+	namespaces, err := getOwnNsListWithCltForDebtFlush(
 		dao.K8sManager.GetClient(),
 		owner,
+		isDebtRecoveryTransition(req.LastDebtStatus, req.CurrentDebtStatus),
 	)
 	if err != nil {
 		return fmt.Errorf("get own namespace list failed: %w", err)
@@ -78,6 +79,11 @@ func adminFlushDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq) e
 		return fmt.Errorf("failed to flush user resource status: %w", err)
 	}
 	return nil
+}
+
+func isDebtRecoveryTransition(lastStatus, currentStatus types.DebtStatusType) bool {
+	return types.ContainDebtStatus(types.DebtStates, lastStatus) &&
+		types.ContainDebtStatus(types.NonDebtStates, currentStatus)
 }
 
 func flushUserDebtResourceStatus(
@@ -95,7 +101,11 @@ func flushUserDebtResourceStatus(
 				return fmt.Errorf("send desktop notice error: %w", err)
 			}
 		} else {
-			if err := readNotice(context.Background(), clt, namespaces, getAllGtStatus(req.CurrentDebtStatus)...); err != nil {
+			if err := readNotice(
+				context.Background(),
+				clt,
+				namespaces,
+				getAllGtStatus(req.CurrentDebtStatus)...); err != nil {
 				return fmt.Errorf("read notice error: %w", err)
 			}
 		}
@@ -103,7 +113,12 @@ func flushUserDebtResourceStatus(
 			// if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 			//	return err
 			//}
-			if err := updateDebtNamespaceStatus(context.Background(), clt, SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
+			if err := updateDebtNamespaceStatus(
+				context.Background(),
+				clt,
+				SuspendDebtNamespaceAnnoStatus,
+				namespaces,
+			); err != nil {
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 		}
@@ -118,10 +133,19 @@ func flushUserDebtResourceStatus(
 			// if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
 			//	return err
 			//}
-			if err := readNotice(context.Background(), clt, namespaces, getAllGtStatus(req.CurrentDebtStatus)...); err != nil {
+			if err := readNotice(
+				context.Background(),
+				clt,
+				namespaces,
+				getAllGtStatus(req.CurrentDebtStatus)...); err != nil {
 				return fmt.Errorf("read notice error: %w", err)
 			}
-			if err := updateDebtNamespaceStatus(context.Background(), clt, ResumeDebtNamespaceAnnoStatus, namespaces); err != nil {
+			if err := updateDebtNamespaceStatus(
+				context.Background(),
+				clt,
+				ResumeDebtNamespaceAnnoStatus,
+				namespaces,
+			); err != nil {
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 			break
@@ -137,14 +161,24 @@ func flushUserDebtResourceStatus(
 			if err := SendDesktopNotice(context.Background(), clt, req, namespaces); err != nil {
 				return fmt.Errorf("send desktop notice error: %w", err)
 			}
-			if err := updateDebtNamespaceStatus(context.Background(), clt, SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
+			if err := updateDebtNamespaceStatus(
+				context.Background(),
+				clt,
+				SuspendDebtNamespaceAnnoStatus,
+				namespaces,
+			); err != nil {
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 		} else {
 			// if err = r.DeleteUserResource(ctx, userNamespaceList); err != nil {
 			//	return err
 			//}
-			if err := updateDebtNamespaceStatus(context.Background(), clt, FinalDeletionDebtNamespaceAnnoStatus, namespaces); err != nil {
+			if err := updateDebtNamespaceStatus(
+				context.Background(),
+				clt,
+				FinalDeletionDebtNamespaceAnnoStatus,
+				namespaces,
+			); err != nil {
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 		}
@@ -311,7 +345,14 @@ func readNotice(
 	for i := range namespaces {
 		for _, noticeStatus := range noticeTypes {
 			ntf := &v1.Notification{}
-			if err := clt.Get(ctx, types2.NamespacedName{Name: debtChoicePrefix + strings.ToLower(string(noticeStatus)), Namespace: namespaces[i]}, ntf); client.IgnoreNotFound(
+			if err := clt.Get(
+				ctx,
+				types2.NamespacedName{
+					Name:      debtChoicePrefix + strings.ToLower(string(noticeStatus)),
+					Namespace: namespaces[i],
+				},
+				ntf,
+			); client.IgnoreNotFound(
 				err,
 			) != nil {
 				return err

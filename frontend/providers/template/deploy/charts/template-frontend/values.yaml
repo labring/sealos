@@ -25,6 +25,32 @@ service:
   type: ClusterIP
   port: 3000
 
+tests:
+  image: busybox:1.36.1
+  path: /
+
+startupProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+
 resources:
   limits:
     cpu: 2000m
@@ -44,14 +70,17 @@ templateConfig:
   cloudPort: ""
   userDomain: ""
   certSecretName: "wildcard-cert"
+  tlsRejectUnauthorized: "1"
   templateRepoUrl: "https://github.com/labring-actions/templates"
   templateRepoBranch: "main"
+  templateRepoProvider: "github"
   templateRepoPath: "templates"
   showAuthor: "false"
-  accountUrl: "http://account-service.account-system.svc.cluster.local:2333"
+  accountUrl: "http://account-service.account-system.svc:2333"
   guideEnabled: "true"
   billingUrl: "http://account-service.account-system.svc:2333"
   enableReadmeFetch: "true"
+  gitSslNoVerify: "false"
   templateCategories: '[{"slug":"ai","i18n":{"en":"AI","zh":"AI"}},{"slug":"backend","i18n":{"en":"Backend","zh":"后端"}},{"slug":"blog","i18n":{"en":"Blog","zh":"博客"}},{"slug":"database","i18n":{"en":"Database","zh":"数据库"}},{"slug":"dev-ops","i18n":{"en":"DevOps","zh":"运维"}},{"slug":"frontend","i18n":{"en":"Frontend","zh":"前端"}},{"slug":"game","i18n":{"en":"Games","zh":"游戏"}},{"slug":"low-code","i18n":{"en":"Low-Code","zh":"低代码"}},{"slug":"monitor","i18n":{"en":"Monitoring","zh":"监控"}},{"slug":"storage","i18n":{"en":"Storage","zh":"存储"}},{"slug":"tool","i18n":{"en":"Tools","zh":"工具"}}]'
 
 affinity:

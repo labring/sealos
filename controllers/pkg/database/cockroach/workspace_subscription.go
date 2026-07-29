@@ -193,10 +193,40 @@ func AddWorkspaceSubscriptionAIQuotaPackage(
 	from types.PackageFrom,
 	fromID string,
 ) error {
+	return AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
+		globalDB,
+		subscriptionID,
+		aiQuota,
+		expireAt,
+		from,
+		fromID,
+		false,
+		0,
+	)
+}
+
+// AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade adds AI quota package with upgrade support
+func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
+	globalDB *gorm.DB,
+	subscriptionID uuid.UUID,
+	aiQuota int64,
+	expireAt time.Time,
+	from types.PackageFrom,
+	fromID string,
+	isUpgrade bool,
+	oldPlanAIQuota int64,
+) error {
 	if aiQuota <= 0 {
 		return nil
 	}
-	// Get workspace subscription
+
+	if isUpgrade && oldPlanAIQuota > 0 {
+		err := expireOldAIQuotaPackages(globalDB, subscriptionID, fromID)
+		if err != nil {
+			return fmt.Errorf("failed to expire old AI quota packages: %w", err)
+		}
+	}
+
 	var subscription types.WorkspaceSubscription
 	err := globalDB.Where(&types.WorkspaceSubscription{ID: subscriptionID}).
 		Find(&subscription).
@@ -204,7 +234,6 @@ func AddWorkspaceSubscriptionAIQuotaPackage(
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
-	// Create new AI quota package
 	aiQuotaPackage := types.WorkspaceAIQuotaPackage{
 		ID:                      uuid.New(),
 		WorkspaceSubscriptionID: subscriptionID,
@@ -223,6 +252,25 @@ func AddWorkspaceSubscriptionAIQuotaPackage(
 	if err != nil {
 		return fmt.Errorf("failed to create AI quota package: %w", err)
 	}
+	return nil
+}
+
+// expireOldAIQuotaPackages expires existing AI quota packages from old subscription plan
+func expireOldAIQuotaPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, _ string) error {
+	now := time.Now()
+
+	err := globalDB.Model(&types.WorkspaceAIQuotaPackage{}).
+		Where("workspace_subscription_id = ? AND status = ?",
+			subscriptionID, types.PackageStatusActive).
+		Updates(map[string]any{
+			"status":     types.PackageStatusExpired,
+			"expired_at": now,
+			"updated_at": now,
+		}).Error
+	if err != nil {
+		return fmt.Errorf("failed to expire old AI quota packages: %w", err)
+	}
+
 	return nil
 }
 

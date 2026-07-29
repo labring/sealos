@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: costcenter
+  namespace: app-system
+spec:
+  data:
+    desc: Sealos Cloud Cost Center
+    url: {{ include "costcenter-frontend.url" . | quote }}
+  icon: {{ printf "%s/logo.svg" (include "costcenter-frontend.url" .) | quote }}
+  i18n:
+    zh:
+      name: 费用中心
+    zh-Hans:
+      name: 费用中心
+  menuData:
+  name: Cost Center
+  type: iframe
+  displayType: normal

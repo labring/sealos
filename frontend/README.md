@@ -41,7 +41,6 @@ pnpm dev-db         # dbprovider
 pnpm dev-cost       # costcenter
 pnpm dev-terminal   # terminal
 pnpm dev-template   # template
-pnpm dev-cronjob    # cronjob
 
 # or run dev script in app's package directory
 cd desktop
@@ -80,6 +79,10 @@ make -j
 - you can use `make all DOCKER_USERNAME=<your_account>` to build all apps for your account.
 - you can user `make all IMAGE_TAG=<tag>` to build all apps and customize tag (default:dev)
 
+Production frontend images set `UV_USE_IO_URING=0` so libuv uses its thread pool
+for file system operations instead of io_uring SQPOLL. This avoids process-exit
+hangs on affected Linux kernels while leaving network I/O on the normal event loop.
+
 ## how to publish image
 
 ```bash
@@ -93,17 +96,33 @@ make image-push-<app> DOCKER_USERNAME=<your_account> IMAGE_TAG=<tag>
 make push-images DOCKER_USERNAME=<your_account> IMAGE_TAG=<tag>
 ```
 
-## new App
+## Add a provider frontend
 
-Refer to other apps to add some configuration.
+Use an existing provider as the reference and keep these deployment surfaces in sync:
 
-1. .github/workflows/frontends.yml
-2. deploy/cloud/init.sh
-3. deploy/cloud/scripts/init.sh
-4. frontend/providers/app/deploy/manifests/appcr.yaml.tmpl
-5. frontend/providers/app/deploy/manifests/deploy.yaml
-6. frontend/providers/app/deploy/manifests/ingress.yaml.tmpl
-7. makefile
+1. `.github/workflows/frontends.yml` change detection and Helm validation
+2. `frontend/Makefile` image build target
+3. `frontend/providers/<app>/deploy/Kubefile`
+4. `frontend/providers/<app>/deploy/<app>-frontend-entrypoint.sh`
+5. `frontend/providers/<app>/deploy/charts/<release>/Chart.yaml`
+6. Chart defaults in `values.yaml` and, when needed, user overrides in `<release>-values.yaml`
+7. Chart templates for the App CR (where applicable), Deployment, Service, Ingress, probes, and `helm test`
+
+If the provider reads repository-hosted assets whose raw URL shape differs by backend, add an explicit repo provider value/env beside `templateRepoUrl` and `templateRepoBranch` instead of inferring from the host.
+
+Validate the defaults and any user values file before publishing an image:
+
+```bash
+helm lint frontend/providers/<app>/deploy/charts/<release>
+helm template <release> frontend/providers/<app>/deploy/charts/<release> >/dev/null
+# Run this pair only when <release>-values.yaml exists.
+helm lint frontend/providers/<app>/deploy/charts/<release> \
+  -f frontend/providers/<app>/deploy/charts/<release>/<release>-values.yaml
+helm template <release> frontend/providers/<app>/deploy/charts/<release> \
+  -f frontend/providers/<app>/deploy/charts/<release>/<release>-values.yaml >/dev/null
+```
+
+After deployment, run `helm test <release> -n <namespace> --logs` and smoke-test the rendered App CR URL. Deployment-only migrations must preserve existing application routing; route behavior changes belong in a separate application change.
 
 ## multiple namespaces
 

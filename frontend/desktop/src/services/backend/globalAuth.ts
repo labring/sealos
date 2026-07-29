@@ -18,24 +18,50 @@ import { trackSignUp } from './tracking';
 import { emit } from 'process';
 import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
 import { AdClickData } from '@/types/adClick';
+import {
+  isBlockedAdminPasswordAutoSignup,
+  normalizePasswordUsername
+} from '@/services/backend/passwordUsername';
+import {
+  getSafeAuthErrorInfo,
+  retryAuthDatabaseError,
+  retryPrismaTransactionConflict,
+  withAuthStage
+} from '@/services/backend/authDiagnostics';
 
 type TransactionClient = Omit<
   PrismaClient,
   '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
 >;
 
+const shouldLookupRawPasswordUsername = (
+  normalizedUsername: ReturnType<typeof normalizePasswordUsername>
+) =>
+  normalizedUsername.changed &&
+  !normalizedUsername.isAdminLike &&
+  normalizedUsername.rawValue !== normalizedUsername.value;
+
+const shouldBlockChangedPasswordAutoSignup = (
+  normalizedUsername: ReturnType<typeof normalizePasswordUsername>
+) => normalizedUsername.changed;
+
 async function signIn({ provider, id }: { provider: ProviderType; id: string }) {
-  const userProvider = await globalPrisma.oauthProvider.findUnique({
-    where: {
-      providerId_providerType: {
-        providerType: provider,
-        providerId: id
-      }
-    },
-    include: {
-      user: true
-    }
-  });
+  const userProvider = await retryAuthDatabaseError(
+    'globalAuth.provider_sign_in',
+    { provider },
+    () =>
+      globalPrisma.oauthProvider.findUnique({
+        where: {
+          providerId_providerType: {
+            providerType: provider,
+            providerId: id
+          }
+        },
+        include: {
+          user: true
+        }
+      })
+  );
   if (!userProvider) return null;
 
   await checkDeductionBalanceAndCreateTasks(userProvider.user.uid);
@@ -88,18 +114,47 @@ export const inviteHandler = ({
 };
 
 export async function signInByPassword({ id, password }: { id: string; password: string }) {
-  const userProvider = await globalPrisma.oauthProvider.findUnique({
-    where: {
-      providerId_providerType: {
-        providerType: ProviderType.PASSWORD,
-        providerId: id
-      },
-      password: hashPassword(password)
+  const normalizedUsername = normalizePasswordUsername(id);
+  if (normalizedUsername.isEmpty || normalizedUsername.hasUnsafeCharacters) return null;
+  const passwordHash = hashPassword(password);
+
+  const userProvider = await retryAuthDatabaseError(
+    'password.sign_in',
+    {
+      provider: ProviderType.PASSWORD,
+      usernameChanged: normalizedUsername.changed,
+      adminLike: normalizedUsername.isAdminLike
     },
-    include: {
-      user: true
+    async () => {
+      const normalizedProvider = await globalPrisma.oauthProvider.findUnique({
+        where: {
+          providerId_providerType: {
+            providerType: ProviderType.PASSWORD,
+            providerId: normalizedUsername.value
+          },
+          password: passwordHash
+        },
+        include: {
+          user: true
+        }
+      });
+      if (normalizedProvider || !shouldLookupRawPasswordUsername(normalizedUsername)) {
+        return normalizedProvider;
+      }
+      return globalPrisma.oauthProvider.findUnique({
+        where: {
+          providerId_providerType: {
+            providerType: ProviderType.PASSWORD,
+            providerId: normalizedUsername.rawValue
+          },
+          password: passwordHash
+        },
+        include: {
+          user: true
+        }
+      });
     }
-  });
+  );
   if (!userProvider) return null;
 
   await checkDeductionBalanceAndCreateTasks(userProvider.user.uid);
@@ -214,7 +269,7 @@ async function signUp({
 
     return result;
   } catch (error) {
-    console.error('globalAuth: Error during sign up:', error);
+    console.error('globalAuth: Error during sign up:', getSafeAuthErrorInfo(error));
     return null;
   }
 }
@@ -281,7 +336,7 @@ async function signUpWithEmail({
 
     return { user };
   } catch (error) {
-    console.error('globalAuth: Error during sign up:', error);
+    console.error('globalAuth: Error during sign up:', getSafeAuthErrorInfo(error));
     return null;
   }
 }
@@ -298,50 +353,67 @@ export async function signUpByPassword({
   password: string;
   semData?: SemData;
 }) {
+  const normalizedUsername = normalizePasswordUsername(id);
+  if (normalizedUsername.isEmpty || normalizedUsername.hasUnsafeCharacters) {
+    throw new AuthError('Invalid username.', 'INVALID_USERNAME');
+  }
+  if (normalizedUsername.isAdminLike) {
+    throw new AuthError('User not found.', 'USER_NOT_FOUND');
+  }
+
   const name = nanoid(10);
-  const displayName = nickname?.trim() ? nickname : nanoid(8);
+  const displayName = nickname?.trim() ? nickname.trim() : nanoid(8);
 
   try {
-    const result = await globalPrisma.$transaction(async (tx) => {
-      const user: User = await tx.user.create({
-        data: {
-          nickname: displayName,
-          avatarUri: avatar_url,
-          id: name,
-          name,
-          oauthProvider: {
-            create: {
-              providerId: id,
-              providerType: ProviderType.PASSWORD,
-              password: hashPassword(password)
+    const result = await retryPrismaTransactionConflict(
+      'password.global_user_create',
+      {
+        provider: ProviderType.PASSWORD,
+        usernameChanged: normalizedUsername.changed,
+        adminLike: normalizedUsername.isAdminLike
+      },
+      () =>
+        globalPrisma.$transaction(async (tx) => {
+          const user: User = await tx.user.create({
+            data: {
+              nickname: displayName,
+              avatarUri: avatar_url,
+              id: name,
+              name,
+              oauthProvider: {
+                create: {
+                  providerId: normalizedUsername.value,
+                  providerType: ProviderType.PASSWORD,
+                  password: hashPassword(password)
+                }
+              },
+              userInfo: {
+                create: {
+                  signUpRegionUid: getRegionUid(),
+                  isInited: false
+                }
+              }
             }
-          },
-          userInfo: {
-            create: {
-              signUpRegionUid: getRegionUid(),
-              isInited: false
-            }
+          });
+
+          if (semData?.channel) {
+            await tx.userSemChannel.create({
+              data: {
+                userUid: user.uid,
+                channel: semData.channel,
+                additionalInfo: semData.additionalInfo
+              }
+            });
           }
-        }
-      });
 
-      if (semData?.channel) {
-        await tx.userSemChannel.create({
-          data: {
-            userUid: user.uid,
-            channel: semData.channel,
-            additionalInfo: semData.additionalInfo
-          }
-        });
-      }
+          await createNewUserTasks(tx, user.uid);
 
-      await createNewUserTasks(tx, user.uid);
-
-      return { user };
-    });
+          return { user };
+        })
+    );
     return result;
   } catch (error) {
-    console.error('globalAuth: Error during sign up:', error);
+    console.error('globalAuth: Error during sign up:', getSafeAuthErrorInfo(error));
     return null;
   }
 }
@@ -393,15 +465,54 @@ export const getGlobalToken = async ({
   adClickData?: AdClickData;
 }) => {
   let user: User | null = null;
+  const normalizedPasswordUsername =
+    provider === ProviderType.PASSWORD ? normalizePasswordUsername(providerId) : null;
+  if (normalizedPasswordUsername?.isEmpty || normalizedPasswordUsername?.hasUnsafeCharacters) {
+    throw new AuthError('Invalid username.', 'INVALID_USERNAME');
+  }
+  const resolvedProviderId = normalizedPasswordUsername?.value ?? providerId;
+  const resolvedName =
+    provider === ProviderType.PASSWORD && normalizedPasswordUsername ? resolvedProviderId : name;
 
-  const _user = await globalPrisma.oauthProvider.findUnique({
-    where: {
-      providerId_providerType: {
-        providerType: provider,
-        providerId
+  const _user = await retryAuthDatabaseError(
+    provider === ProviderType.PASSWORD ? 'password.provider_lookup' : 'globalAuth.provider_lookup',
+    {
+      provider,
+      usernameChanged: normalizedPasswordUsername?.changed ?? false,
+      adminLike: normalizedPasswordUsername?.isAdminLike ?? false
+    },
+    async () => {
+      if (!normalizedPasswordUsername) {
+        return globalPrisma.oauthProvider.findUnique({
+          where: {
+            providerId_providerType: {
+              providerType: provider,
+              providerId: resolvedProviderId
+            }
+          }
+        });
       }
+      const normalizedProvider = await globalPrisma.oauthProvider.findUnique({
+        where: {
+          providerId_providerType: {
+            providerType: provider,
+            providerId: resolvedProviderId
+          }
+        }
+      });
+      if (normalizedProvider || !shouldLookupRawPasswordUsername(normalizedPasswordUsername)) {
+        return normalizedProvider;
+      }
+      return globalPrisma.oauthProvider.findUnique({
+        where: {
+          providerId_providerType: {
+            providerType: provider,
+            providerId: normalizedPasswordUsername.rawValue
+          }
+        }
+      });
     }
-  });
+  );
 
   if (_user) {
     const find = await globalPrisma.restrictedUser.findFirst({
@@ -422,11 +533,21 @@ export const getGlobalToken = async ({
       return null;
     }
     if (!_user) {
+      if (
+        normalizedPasswordUsername &&
+        (isBlockedAdminPasswordAutoSignup({
+          normalizedUsername: normalizedPasswordUsername,
+          providerExists: false
+        }) ||
+          shouldBlockChangedPasswordAutoSignup(normalizedPasswordUsername))
+      ) {
+        throw new AuthError('User not found.', 'USER_NOT_FOUND');
+      }
       // Auto sign up when user not found
       if (!enableSignUp()) throw new AuthError('Failed to signUp user', 'SIGNUP_FAILED');
       const signUpResult = await signUpByPassword({
-        id: providerId,
-        name: name,
+        id: resolvedProviderId,
+        name: resolvedName,
         avatar_url: avatar_url,
         password: password,
         semData
@@ -455,7 +576,7 @@ export const getGlobalToken = async ({
       }
     } else {
       const result = await signInByPassword({
-        id: providerId,
+        id: _user.providerId,
         password
       });
       // password is wrong
@@ -544,18 +665,30 @@ export const getGlobalToken = async ({
   // - If `name` is empty, do not overwrite existing nickname.
   // - If `avatar_url` is empty, do not overwrite existing avatar.
   if (_user) {
-    const nicknameToUpdate = name?.trim() ? name : null;
+    const nicknameToUpdate = resolvedName?.trim() ? resolvedName.trim() : null;
     const avatarToUpdate = avatar_url?.trim() ? avatar_url : null;
-    if (nicknameToUpdate || avatarToUpdate) {
-      user = await globalPrisma.user.update({
-        where: { uid: user.uid },
-        data: {
-          ...(nicknameToUpdate ? { nickname: nicknameToUpdate } : {}),
-          ...(avatarToUpdate ? { avatarUri: avatarToUpdate } : {})
-        }
-      });
+    const profileUpdate: { nickname?: string; avatarUri?: string } = {
+      ...(nicknameToUpdate && nicknameToUpdate !== user.nickname
+        ? { nickname: nicknameToUpdate }
+        : {}),
+      ...(avatarToUpdate && avatarToUpdate !== user.avatarUri ? { avatarUri: avatarToUpdate } : {})
+    };
+    if (Object.keys(profileUpdate).length > 0) {
+      const userUid = user.uid;
+      user = await retryAuthDatabaseError(
+        provider === ProviderType.PASSWORD
+          ? 'password.profile_update'
+          : 'globalAuth.profile_update',
+        { provider, userUid },
+        () =>
+          globalPrisma.user.update({
+            where: { uid: userUid },
+            data: profileUpdate
+          })
+      );
     }
   }
+  const authenticatedUser = user;
 
   if (!forceBindEmail(provider) && email) {
     try {
@@ -578,27 +711,34 @@ export const getGlobalToken = async ({
   }
 
   // user is deleted or banned
-  if (user.status !== UserStatus.NORMAL_USER) return null;
+  if (authenticatedUser.status !== UserStatus.NORMAL_USER) return null;
   const token = generateAuthenticationToken({
-    userUid: user.uid,
-    userId: user.name
+    userUid: authenticatedUser.uid,
+    userId: authenticatedUser.name
   });
-  const userInfo = await globalPrisma.userInfo.findUnique({
-    where: {
-      userUid: user.uid
-    },
-    select: {
-      isInited: true
-    }
-  });
+  const userInfo = await retryAuthDatabaseError(
+    provider === ProviderType.PASSWORD
+      ? 'password.user_info_lookup'
+      : 'globalAuth.user_info_lookup',
+    { provider, userUid: authenticatedUser.uid },
+    () =>
+      globalPrisma.userInfo.findUnique({
+        where: {
+          userUid: authenticatedUser.uid
+        },
+        select: {
+          isInited: true
+        }
+      })
+  );
   let needInit = userInfo ? !userInfo.isInited : false;
   return {
     token,
     user: {
-      name: user.nickname,
-      avatar: user.avatarUri,
-      userUid: user.uid,
-      userId: user.name
+      name: authenticatedUser.nickname,
+      avatar: authenticatedUser.avatarUri,
+      userUid: authenticatedUser.uid,
+      userId: authenticatedUser.name
     },
     needInit
   };

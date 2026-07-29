@@ -15,3 +15,41 @@ resources:
 # Customize these settings based on your requirements
 licenseConfig:
   licensePurchaseDomain: "license.sealos.io"
+
+startupProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 30
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 5
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Affinity for pod anti-affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - license-frontend
+          topologyKey: "kubernetes.io/hostname"

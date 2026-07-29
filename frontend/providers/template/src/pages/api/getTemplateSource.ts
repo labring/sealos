@@ -233,7 +233,8 @@ function getTemplateYamlByName(
   templateYaml = resolveTemplateAssetUrls(templateYaml, {
     repo: {
       url: TemplateEnvs.TEMPLATE_REPO_URL,
-      branch: TemplateEnvs.TEMPLATE_REPO_BRANCH
+      branch: TemplateEnvs.TEMPLATE_REPO_BRANCH,
+      provider: TemplateEnvs.TEMPLATE_REPO_PROVIDER
     },
     templateFilePath,
     repoRootPath

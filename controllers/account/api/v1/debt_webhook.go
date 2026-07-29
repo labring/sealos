@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -54,7 +55,7 @@ const (
 
 var logger = logf.Log.WithName("debt-resource")
 
-//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=false,failurePolicy=ignore,groups="*",resources=*,verbs=create;update;delete,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None,timeoutSeconds=10
+//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=false,failurePolicy=ignore,groups="*",resources=*,verbs=create;update;delete,versions=*,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None,timeoutSeconds=10
 // +kubebuilder:object:generate=false
 
 type DebtValidate struct {
@@ -163,12 +164,10 @@ func isWhiteList(req admission.Request) bool {
 	}
 	whitelist := strings.Split(whitelists, ",")
 	reqGVK := getGVRK(req)
-	for _, w := range whitelist {
-		if reqGVK == w {
-			logger.V(1).
-				Info("pass for whitelists", "gck", req.Kind.String(), "name", req.Name, "namespace", req.Namespace, "userinfo", req.UserInfo)
-			return true
-		}
+	if slices.Contains(whitelist, reqGVK) {
+		logger.V(1).
+			Info("pass for whitelists", "gck", req.Kind.String(), "name", req.Name, "namespace", req.Namespace, "userinfo", req.UserInfo)
+		return true
 	}
 	return false
 }
@@ -239,7 +238,9 @@ func (d *DebtValidate) checkOption(
 		}
 	} else {
 		// Cache miss, query database
-		userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user, WithOutCache: true})
+		userUID, err := d.AccountV2.GetUserUID(
+			&pkgtype.UserQueryOpts{Owner: user, WithOutCache: true},
+		)
 		if err != nil {
 			logger.Error(err, "get user error", "user", user)
 			return admission.ValidationResponse(true, err.Error())
@@ -254,7 +255,18 @@ func (d *DebtValidate) checkOption(
 		logger.V(1).Info("cached account for user", "user", user)
 
 		if account.Balance+account.UsableCredits <= account.DeductionBalance {
-			return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0, now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(account), user)))
+			return admission.ValidationResponse(
+				false,
+				fmt.Sprintf(
+					code.MessageFormat,
+					code.InsufficientBalance,
+					fmt.Sprintf(
+						"account balance less than 0, now account is %.2f¥. Please recharge the user %s.",
+						GetAccountDebtBalance(account),
+						user,
+					),
+				),
+			)
 		}
 	}
 	return admission.Allowed(fmt.Sprintf("pass user %s, namespace %s", user, ns.Name))

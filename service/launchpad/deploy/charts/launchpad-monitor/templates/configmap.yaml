@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    {{- include "launchpad-monitor.labels" . | nindent 4 }}
+    app: {{ .Release.Name }}
+data:
+  config.yml: |
+    server:
+      addr: ":{{ .Values.service.port }}"

@@ -1,5 +1,4 @@
-# Custom values for applaunchpad frontend helm chart.
-# This file contains user-customizable configurations.
+# Default values for applaunchpad frontend helm chart.
 
 replicaCount: 1
 
@@ -10,12 +9,69 @@ resources:
   requests:
     cpu: 10m
     memory: 128Mi
-
+startupProbe:
+  httpGet:
+    path: /api/platform/getInitData
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /api/platform/getInitData
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /api/platform/getInitData
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+# cloudDomain, cloudPort, httpPort, disableHttps and certSecretName are auto-configured by entrypoint.sh from sealos-config.
 applaunchpadConfig:
-  imagePortsEnabled: false
+  monitorUrl: "http://launchpad-monitor.sealos.svc.cluster.local:8428"
+  billingUrl: "http://account-service.account-system.svc:2333"
+  logUrl: "http://vlogs.sealos.svc.cluster.local:8428"
+  tlsRejectUnauthorized: "1"
+  imagePortsEnabled: true
   imagePortsTrustedRegistries: []
-  customPublicDomainPrefixEnabled: false
-  publicDomainReservedPrefixes: []
-  customDomainMode: "cname"
+  customPublicDomainPrefixEnabled: true
+  publicDomainReservedPrefixes:
+    - api
+    - admin
+  customDomainMode: "certificate"
   customDomainCertificateSecretName: "wildcard-cert"
   nodePortHost: ""
+  guideEnabled: false
+  apiEnabled: false
+  gpuEnabled: false
+  networkStorageEnabled: false
+  pvcStorageMax: 100
+  appResourceFormSliderConfig:
+    default:
+      cpu: [ 100, 200, 500, 1000, 2000, 3000, 4000, 8000 ]
+      memory: [ 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384 ]
+      ephemeralStorage: [ 10, 20, 30, 40, 50 ]
+    defaultGPU:
+      cpu: [ 8000, 16000, 32000, 48000, 64000, 80000, 108000 ]
+      memory: [ 16384, 32768, 65536, 131072, 262144, 524288, 614400 ]
+      ephemeralStorage: [ 10, 20, 30, 40, 50 ]
+  fileManger:
+    uploadLimit: 50 # MB
+    downloadLimit: 100 # MB
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - applaunchpad-frontend
+          topologyKey: "kubernetes.io/hostname"

@@ -61,7 +61,7 @@ func TestAuthStoreUpdateAndGet(t *testing.T) {
 	offline := store.GetOfflineConfigs()
 	offline["example.com"] = rtype.AuthConfig{Username: "mutated"}
 
-	if cfg, _ := store.GetOfflineConfigs()["example.com"]; cfg.Username != "offline" {
+	if cfg := store.GetOfflineConfigs()["example.com"]; cfg.Username != "offline" {
 		t.Fatalf("expected offline cache to be immutable, got %#v", cfg)
 	}
 

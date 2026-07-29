@@ -101,6 +101,21 @@ type MigInformation struct {
 	MigStrategy string
 }
 
+func GetGpuNodeExist(c client.Client) (bool, error) {
+	nodeList := &corev1.NodeList{}
+	err := c.List(context.Background(), nodeList)
+	if err != nil {
+		return false, err
+	}
+
+	for _, node := range nodeList.Items {
+		if _, ok := node.Labels[NvidiaGpuKey]; ok {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // nvidia.com/gpu
 
 func GetNodeGpuModel(c client.Client) (map[string]NvidiaGPU, error) {

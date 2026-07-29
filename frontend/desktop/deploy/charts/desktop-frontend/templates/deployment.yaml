@@ -29,7 +29,7 @@ spec:
     spec:
       {{- $globalPrismaSchema := "/app/desktop/prisma/global/schema.prisma" }}
       {{- $regionPrismaSchema := "/app/desktop/prisma/region/schema.prisma" }}
-      {{- if eq .Values.global.featureConfigs.database.type "postgresql" }}
+      {{- if eq .Values.desktopConfig.databaseType "postgresql" }}
       {{- $globalPrismaSchema = "/app/desktop/prisma/providers/postgresql/global/schema.prisma" }}
       {{- $regionPrismaSchema = "/app/desktop/prisma/providers/postgresql/region/schema.prisma" }}
       {{- end }}
@@ -40,12 +40,15 @@ spec:
       serviceAccountName: {{ include "desktop.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.databaseMigration.enabled }}
       initContainers:
         - name: init-database
           image: "{{ .Values.image }}"
           env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: {{ .Values.desktopConfig.tlsRejectUnauthorized | quote }}
             - name: PRISMA_DB_PROVIDER
-              value: "{{ .Values.global.featureConfigs.database.type }}"
+              value: "{{ .Values.desktopConfig.databaseType }}"
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -57,19 +60,24 @@ spec:
             - mountPath: /app/data/config.yaml
               name: desktop-frontend-volume
               subPath: config.yaml
+      {{- end }}
       containers:
         - name: {{ include "desktop.name" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           env:
+            - name: NODE_TLS_REJECT_UNAUTHORIZED
+              value: {{ .Values.desktopConfig.tlsRejectUnauthorized | quote }}
             - name: PRISMA_DB_PROVIDER
-              value: "{{ .Values.global.featureConfigs.database.type }}"
+              value: "{{ .Values.desktopConfig.databaseType }}"
           command: ["/bin/sh", "-c"]
           args:
             - |
               REGION_DATABASE_URL=$(cat /app/data/config.yaml | awk '/regionalCockroachdbURI:/ {print $2}' | tr -d '"') \
               GLOBAL_DATABASE_URL=$(cat /app/data/config.yaml | awk '/globalCockroachdbURI:/ {print $2}' | tr -d '"') \
               node /app/desktop/server.js
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           livenessProbe:

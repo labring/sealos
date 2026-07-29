@@ -11,6 +11,7 @@ import (
 	"github.com/goccy/go-json"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/database"
+	"github.com/labring/sealos/controllers/pkg/gpu"
 	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/types"
@@ -59,6 +60,7 @@ var (
 	FlushQuotaProcesser   *FlushQuotaTask
 	K8sManager            ctrl.Manager
 	Logger                *logger.Logger
+	HasGpuNode            bool
 
 	// TODO: need init
 	UserContactProvider     usernotify.UserContactProvider
@@ -225,7 +227,10 @@ func Init(ctx context.Context) error {
 			UserContactProvider,
 		)
 	} else {
-		logrus.Errorf("empty notify config env: %s, user notification service disabled", helper.EnvNotifyConfig)
+		logrus.Errorf(
+			"empty notify config env: %s, user notification service disabled",
+			helper.EnvNotifyConfig,
+		)
 	}
 
 	EmailTmplMap = map[string]string{
@@ -262,12 +267,24 @@ func Init(ctx context.Context) error {
 	// Initialize Stripe service if configured
 	services.InitStripeService()
 
+	// Start manager in background
 	go func() {
 		if err := K8sManager.Start(ctrl.SetupSignalHandler()); err != nil {
 			logrus.Errorf("unable to start manager: %v", err)
 			os.Exit(1)
 		}
 	}()
+
+	// Wait for cache to sync before reading objects
+	if !K8sManager.GetCache().WaitForCacheSync(ctx) {
+		return errors.New("failed to wait for cache sync")
+	}
+
+	// Now it's safe to read objects
+	HasGpuNode, err = gpu.GetGpuNodeExist(K8sManager.GetClient())
+	if err != nil {
+		return fmt.Errorf("check gpu node exist error: %w", err)
+	}
 	return nil
 }
 
@@ -298,7 +315,8 @@ func SetupCache(mgr ctrl.Manager) error {
 		{ns, accountv1.Name, nsNameFunc},
 		{ns, accountv1.Owner, nsOwnerFunc},
 	} {
-		if err := mgr.GetFieldIndexer().IndexField(context.TODO(), idx.obj, idx.field, idx.extractValue); err != nil {
+		if err := mgr.GetFieldIndexer().
+			IndexField(context.TODO(), idx.obj, idx.field, idx.extractValue); err != nil {
 			return err
 		}
 	}

@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image: ghcr.io/labring/sealos-launchpad-service:latest
+imagePullPolicy: Always
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 1Gi
+  requests:
+    cpu: 5m
+    memory: 64Mi
+
+service:
+  port: 8428
+
+launchpadMonitorConfig:
+  vmServiceHost: "http://vmselect-vm-stack-victoria-metrics-k8s-stack.vm.svc:8481/select/0/prometheus/"

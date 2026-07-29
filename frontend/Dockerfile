@@ -73,6 +73,8 @@ FROM base AS runner
 ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
+# Avoid io_uring SQPOLL hangs on affected Linux kernels.
+ENV UV_USE_IO_URING=0
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -96,9 +98,6 @@ USER nextjs
 
 # You only need to copy next.config.js if you are NOT using the default configuration
 COPY --from=builder /app/$path/next.config.js ./$path/next.config.js
-RUN if ["$name" = "objectstorage" ]; then \
-  COPY --from=builder /app/$path/next-i18next.config.js ./$path/next-i18next.config.js; \
-  fi
 COPY --from=builder --chown=nextjs:nodejs /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static

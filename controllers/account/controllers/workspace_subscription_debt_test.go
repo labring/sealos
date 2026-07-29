@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	clientfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -71,12 +72,22 @@ func TestWorkspaceSubscriptionDebtStatusSyncsNamespaceAnnotations(t *testing.T) 
 				t.Fatalf("expected current status %s, got %s", tt.expectedStatus, currentStatus)
 			}
 
-			if err := processor.syncWorkspaceDebtStatus(ctx, subscription, subscription.Status, currentStatus, []string{namespace}); err != nil {
+			if err := processor.syncWorkspaceDebtStatus(
+				ctx,
+				subscription,
+				subscription.Status,
+				currentStatus,
+				[]string{namespace},
+			); err != nil {
 				t.Fatalf("sync workspace debt status failed: %v", err)
 			}
 
 			var updatedNS corev1.Namespace
-			if err := processor.Get(ctx, client.ObjectKey{Name: namespace}, &updatedNS); err != nil {
+			if err := processor.Get(
+				ctx,
+				client.ObjectKey{Name: namespace},
+				&updatedNS,
+			); err != nil {
 				t.Fatalf("failed to get updated namespace: %v", err)
 			}
 
@@ -84,13 +95,60 @@ func TestWorkspaceSubscriptionDebtStatusSyncsNamespaceAnnotations(t *testing.T) 
 				t.Fatalf("expected debt annotation %s, got %s", tt.expectedDebtStatus, got)
 			}
 			if got := updatedNS.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; got != tt.expectedDebtStatus {
-				t.Fatalf("expected workspace subscription annotation %s, got %s", tt.expectedDebtStatus, got)
+				t.Fatalf(
+					"expected workspace subscription annotation %s, got %s",
+					tt.expectedDebtStatus,
+					got,
+				)
+			}
+
+			var notice notificationv1.Notification
+			if err := processor.Get(ctx, client.ObjectKey{
+				Name:      workspaceDebtNoticeName(tt.expectedStatus),
+				Namespace: namespace,
+			}, &notice); err != nil {
+				t.Fatalf("failed to get workspace debt notice: %v", err)
 			}
 		})
 	}
 }
 
-func newWorkspaceSubscriptionDebtTestProcessor(t *testing.T, objects ...client.Object) *WorkspaceSubscriptionDebtProcessor {
+func TestWorkspaceDebtNoticeNameIsDNS1123Compatible(t *testing.T) {
+	tests := []struct {
+		status types.SubscriptionStatus
+		want   string
+	}{
+		{
+			status: types.SubscriptionStatusDebt,
+			want:   "workspace-debt-debt",
+		},
+		{
+			status: types.SubscriptionStatusDebtPreDeletion,
+			want:   "workspace-debt-debt-pre-deletion",
+		},
+		{
+			status: types.SubscriptionStatusDebtFinalDeletion,
+			want:   "workspace-debt-debt-final-deletion",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.status), func(t *testing.T) {
+			got := workspaceDebtNoticeName(tt.status)
+			if got != tt.want {
+				t.Fatalf("expected notice name %s, got %s", tt.want, got)
+			}
+			if errs := validation.IsDNS1123Subdomain(got); len(errs) > 0 {
+				t.Fatalf("expected DNS1123-compatible notice name, got errors: %v", errs)
+			}
+		})
+	}
+}
+
+func newWorkspaceSubscriptionDebtTestProcessor(
+	t *testing.T,
+	objects ...client.Object,
+) *WorkspaceSubscriptionDebtProcessor {
 	t.Helper()
 
 	scheme := runtime.NewScheme()

@@ -276,6 +276,9 @@ export function compareFirstLanguages(acceptLanguageHeader: string) {
 }
 
 export function getTemplateEnvs(namespace?: string): EnvResponse {
+  const templateRepoProvider =
+    (process.env.TEMPLATE_REPO_PROVIDER as EnvResponse['TEMPLATE_REPO_PROVIDER'] | undefined) ||
+    'auto';
   const TemplateEnvs: EnvResponse = {
     SEALOS_CLOUD_DOMAIN:
       process.env.SEALOS_USER_DOMAIN || process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io',
@@ -283,6 +286,7 @@ export function getTemplateEnvs(namespace?: string): EnvResponse {
     TEMPLATE_REPO_URL:
       process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates',
     TEMPLATE_REPO_BRANCH: process.env.TEMPLATE_REPO_BRANCH || 'main',
+    TEMPLATE_REPO_PROVIDER: templateRepoProvider,
     SEALOS_NAMESPACE: namespace || '',
     SEALOS_SERVICE_ACCOUNT: namespace?.replace('ns-', '') || '',
     SHOW_AUTHOR: process.env.SHOW_AUTHOR || 'false',

@@ -141,7 +141,11 @@ func (r *DeleteRequestReconciler) reconcile(
 
 	// get namespace
 	ns := corev1.Namespace{}
-	if err := r.Get(ctx, client.ObjectKey{Name: config.GetUsersNamespace(user.Name)}, &ns); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Name: config.GetUsersNamespace(user.Name)},
+		&ns,
+	); err != nil {
 		r.Logger.Error(err, "get ns error", "name", ns.Name)
 		r.Recorder.Eventf(
 			request,

@@ -4,5 +4,6 @@ USER 65532:65532
 
 COPY registry registry
 COPY charts charts
+COPY costcenter-frontend-entrypoint.sh costcenter-frontend-entrypoint.sh
 
-CMD ["./costcenter-frontend-entrypoint.sh"]
+CMD ["bash costcenter-frontend-entrypoint.sh"]

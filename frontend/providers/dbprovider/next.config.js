@@ -22,6 +22,15 @@ const nextConfig = {
     // this includes files from the monorepo base two directories up
     outputFileTracingRoot: path.join(__dirname, '../../')
   },
+  async redirects () {
+    return [
+      {
+        source: '/',
+        destination: '/dbs',
+        permanent: false
+      }
+    ]
+  },
   async rewrites () {
     return [
       {

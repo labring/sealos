@@ -48,6 +48,10 @@ import (
 const (
 	DebtDetectionCycleEnv = "DebtDetectionCycleSeconds"
 
+	finalDeletionDebtNamespaceSyncInterval = time.Hour
+	finalDeletionDebtNamespaceQueryTimeout = 30 * time.Second
+	flushDebtResourceStatusRequestTimeout  = 30 * time.Second
+
 	SMSAccessKeyIDEnv     = "SMS_AK"
 	SMSAccessKeySecretEnv = "SMS_SK"
 	VmsAccessKeyIDEnv     = "VMS_AK"
@@ -234,7 +238,16 @@ func GetSendVmsTimeInUTCPlus8(t time.Time) time.Time {
 			UTCPlus8,
 		)
 	} else {
-		next10AM = time.Date(nowInUTCPlus8.Year(), nowInUTCPlus8.Month(), nowInUTCPlus8.Day()+1, 10, 0, 0, 0, UTCPlus8)
+		next10AM = time.Date(
+			nowInUTCPlus8.Year(),
+			nowInUTCPlus8.Month(),
+			nowInUTCPlus8.Day()+1,
+			10,
+			0,
+			0,
+			0,
+			UTCPlus8,
+		)
 	}
 	return next10AM.In(time.Local)
 }
@@ -242,7 +255,7 @@ func GetSendVmsTimeInUTCPlus8(t time.Time) time.Time {
 // convert "1:code1,2:code2" to map[int]string
 func splitSmsCodeMap(codeStr string) (map[string]string, error) {
 	codeMap := make(map[string]string)
-	for _, code := range strings.Split(codeStr, ",") {
+	for code := range strings.SplitSeq(codeStr, ",") {
 		split := strings.SplitN(code, ":", 2)
 		if len(split) != 2 {
 			return nil, fmt.Errorf("invalid sms code map: %s", codeStr)
@@ -253,7 +266,15 @@ func splitSmsCodeMap(codeStr string) (map[string]string, error) {
 }
 
 func (r *DebtReconciler) setupSmsConfig() error {
-	if err := env.CheckEnvSetting([]string{SMSAccessKeyIDEnv, SMSAccessKeySecretEnv, SMSEndpointEnv, SMSSignNameEnv, SMSCodeMapEnv}); err != nil {
+	if err := env.CheckEnvSetting(
+		[]string{
+			SMSAccessKeyIDEnv,
+			SMSAccessKeySecretEnv,
+			SMSEndpointEnv,
+			SMSSignNameEnv,
+			SMSCodeMapEnv,
+		},
+	); err != nil {
 		return fmt.Errorf("check env setting error: %w", err)
 	}
 
@@ -284,7 +305,9 @@ func (r *DebtReconciler) setupSmsConfig() error {
 }
 
 func (r *DebtReconciler) setupVmsConfig() error {
-	if err := env.CheckEnvSetting([]string{VmsAccessKeyIDEnv, VmsAccessKeySecretEnv, VmsNumberPollEnv}); err != nil {
+	if err := env.CheckEnvSetting(
+		[]string{VmsAccessKeyIDEnv, VmsAccessKeySecretEnv, VmsNumberPollEnv},
+	); err != nil {
 		return fmt.Errorf("check env setting error: %w", err)
 	}
 	vms.DefaultInstance.SetAccessKey(os.Getenv(VmsAccessKeyIDEnv))
@@ -308,7 +331,9 @@ func (r *DebtReconciler) setupVmsConfig() error {
 }
 
 func (r *DebtReconciler) setupSMTPConfig() error {
-	if err := env.CheckEnvSetting([]string{SMTPHostEnv, SMTPFromEnv, SMTPPasswordEnv, SMTPTitleEnv}); err != nil {
+	if err := env.CheckEnvSetting(
+		[]string{SMTPHostEnv, SMTPFromEnv, SMTPPasswordEnv, SMTPTitleEnv},
+	); err != nil {
 		return fmt.Errorf("check env setting error: %w", err)
 	}
 	serverPort, err := strconv.Atoi(env.GetEnvWithDefault(SMTPPortEnv, "465"))
@@ -447,12 +472,12 @@ func (r *DebtReconciler) Start(ctx context.Context) error {
 		}
 	}()
 	log.Printf("debt reconciler lock acquired, process ID: %s", r.processID)
-	r.start()
+	r.start(ctx)
 	log.Printf("debt reconciler started")
 	return nil
 }
 
-func (r *DebtReconciler) start() {
+func (r *DebtReconciler) start(ctx context.Context) {
 	db := r.AccountV2.GetGlobalDB()
 	var wg sync.WaitGroup
 
@@ -494,8 +519,11 @@ func (r *DebtReconciler) start() {
 		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
 			var users []uuid.UUID
-			if err := db.Model(&types.Debt{}).Where("account_debt_status = ? AND updated_at < ?", types.DebtPeriod, time.Now().UTC().Add(-7*24*time.Hour)).
-				Distinct("user_uid").Pluck("user_uid", &users).Error; err != nil {
+			if err := db.Model(&types.Debt{}).
+				Where("account_debt_status = ? AND updated_at < ?", types.DebtPeriod, time.Now().UTC().Add(-7*24*time.Hour)).
+				Distinct("user_uid").
+				Pluck("user_uid", &users).
+				Error; err != nil {
 				r.Error(
 					err,
 					"failed to query unique users",
@@ -526,8 +554,11 @@ func (r *DebtReconciler) start() {
 		ticker := time.NewTicker(5 * time.Minute)
 		for range ticker.C {
 			var users []uuid.UUID
-			if err := db.Model(&types.Debt{}).Where("account_debt_status = ? AND updated_at < ?", types.DebtDeletionPeriod, time.Now().UTC().Add(-7*24*time.Hour)).
-				Distinct("user_uid").Pluck("user_uid", &users).Error; err != nil {
+			if err := db.Model(&types.Debt{}).
+				Where("account_debt_status = ? AND updated_at < ?", types.DebtDeletionPeriod, time.Now().UTC().Add(-7*24*time.Hour)).
+				Distinct("user_uid").
+				Pluck("user_uid", &users).
+				Error; err != nil {
 				r.Error(
 					err,
 					"failed to query unique users",
@@ -549,6 +580,13 @@ func (r *DebtReconciler) start() {
 				)
 			}
 		}
+	}()
+
+	// 1.4 replay final deletion status for accounts that are already in the terminal debt state.
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r.syncFinalDeletionDebtNamespacesLoop(ctx, db)
 	}()
 
 	// 2.1 recharge record processing
@@ -658,6 +696,70 @@ func (r *DebtReconciler) start() {
 	wg.Wait()
 }
 
+func (r *DebtReconciler) syncFinalDeletionDebtNamespacesLoop(ctx context.Context, db *gorm.DB) {
+	run := func() {
+		if err := r.syncFinalDeletionDebtNamespaces(ctx, db); err != nil {
+			r.Error(err, "failed to sync final deletion debt namespaces")
+		}
+	}
+
+	run()
+	ticker := time.NewTicker(finalDeletionDebtNamespaceSyncInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			run()
+		}
+	}
+}
+
+func (r *DebtReconciler) syncFinalDeletionDebtNamespaces(ctx context.Context, db *gorm.DB) error {
+	var users []uuid.UUID
+	queryCtx, cancel := context.WithTimeout(ctx, finalDeletionDebtNamespaceQueryTimeout)
+	defer cancel()
+
+	if err := db.WithContext(queryCtx).Model(&types.Debt{}).
+		Where("account_debt_status = ?", types.FinalDeletionPeriod).
+		Distinct("user_uid").
+		Pluck("user_uid", &users).Error; err != nil {
+		return fmt.Errorf("failed to query final deletion debt users: %w", err)
+	}
+
+	var errs []error
+	for _, userUID := range users {
+		if err := r.syncFinalDeletionDebtNamespacesForUser(ctx, userUID); err != nil {
+			errMsg := "failed to sync final deletion debt namespaces " +
+				"for user %s: %w"
+			errs = append(errs, fmt.Errorf(errMsg, userUID, err))
+		}
+	}
+	if len(users) > 0 {
+		r.Info("synced final deletion debt namespaces", "users", len(users))
+	}
+	return errors.Join(errs...)
+}
+
+func (r *DebtReconciler) syncFinalDeletionDebtNamespacesForUser(
+	ctx context.Context,
+	userUID uuid.UUID,
+) error {
+	return r.sendFlushDebtResourceStatusRequestWithContext(
+		ctx,
+		finalDeletionDebtNamespaceFlushReq(userUID),
+	)
+}
+
+func finalDeletionDebtNamespaceFlushReq(userUID uuid.UUID) AdminFlushResourceStatusReq {
+	return AdminFlushResourceStatusReq{
+		UserUID:           userUID,
+		LastDebtStatus:    types.DebtDeletionPeriod,
+		CurrentDebtStatus: types.FinalDeletionPeriod,
+	}
+}
+
 func (r *DebtReconciler) RefreshDebtStatus(userUID uuid.UUID) error {
 	return r.refreshDebtStatus(userUID, false)
 }
@@ -682,16 +784,20 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil
 	}
-	isBasicUser := account.Balance <= 10*BaseUnit
-	oweamount := account.Balance - account.DeductionBalance + account.UsableCredits
-	// update interval seconds
-	updateIntervalSeconds := time.Now().UTC().Unix() - debt.UpdatedAt.UTC().Unix()
 	lastStatus := debt.AccountDebtStatus
 	update := false
 	if lastStatus == "" {
 		lastStatus = types.NormalPeriod
 		update = true
 	}
+	// A user can still need debt recovery after ResumeBalance has normalized deduction_balance.
+	if account.DeductionBalance == 0 && !types.ContainDebtStatus(types.DebtStates, lastStatus) {
+		return nil
+	}
+	isBasicUser := account.Balance <= 10*BaseUnit
+	oweamount := account.Balance - account.DeductionBalance + account.UsableCredits
+	// update interval seconds
+	updateIntervalSeconds := time.Now().UTC().Unix() - debt.UpdatedAt.UTC().Unix()
 	currentStatusRaw, err := r.DetermineCurrentStatus(
 		oweamount,
 		account.UserUID,
@@ -724,7 +830,12 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 				return fmt.Errorf("failed to resume balance: %w", err)
 			}
 			if !skipSendMsg {
-				if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
+				if err := r.SendUserDebtMsg(
+					userUID,
+					oweamount,
+					currentStatus,
+					isBasicUser,
+				); err != nil {
 					return NewErrSendMsg(err, userUID)
 				}
 			}
@@ -733,7 +844,12 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 		if types.StatusMap[currentStatus] > types.StatusMap[lastStatus] {
 			// TODO send sms
 			if !skipSendMsg && account.Balance > 0 {
-				if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
+				if err := r.SendUserDebtMsg(
+					userUID,
+					oweamount,
+					currentStatus,
+					isBasicUser,
+				); err != nil {
 					return NewErrSendMsg(err, userUID)
 				}
 			}
@@ -748,7 +864,12 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 		}
 		if currentStatus != types.FinalDeletionPeriod {
 			if !skipSendMsg && types.StatusMap[currentStatus] > types.StatusMap[lastStatus] {
-				if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
+				if err := r.SendUserDebtMsg(
+					userUID,
+					oweamount,
+					currentStatus,
+					isBasicUser,
+				); err != nil {
 					return NewErrSendMsg(err, userUID)
 				}
 			}
@@ -966,6 +1087,17 @@ type AdminFlushResourceStatusReq struct {
 func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(
 	quotaReq AdminFlushResourceStatusReq,
 ) error {
+	return r.sendFlushDebtResourceStatusRequestWithContext(context.Background(), quotaReq)
+}
+
+func (r *DebtReconciler) sendFlushDebtResourceStatusRequestWithContext(
+	ctx context.Context,
+	quotaReq AdminFlushResourceStatusReq,
+) error {
+	client := http.Client{
+		Timeout: flushDebtResourceStatusRequestTimeout,
+	}
+
 	for _, domain := range r.allRegionDomain {
 		token, err := r.jwtManager.GenerateToken(utils.JwtUser{
 			Requester: AdminUserName,
@@ -993,14 +1125,18 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(
 
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(quotaReqBody))
+			req, err := http.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				url,
+				bytes.NewBuffer(quotaReqBody),
+			)
 			if err != nil {
 				return fmt.Errorf("failed to create request: %w", err)
 			}
 
 			req.Header.Set("Authorization", "Bearer "+token)
 			req.Header.Set("Content-Type", "application/json")
-			client := http.Client{}
 
 			resp, err := client.Do(req)
 			if err != nil {
@@ -1014,9 +1150,17 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(
 				}
 				body, err := io.ReadAll(resp.Body)
 				if err != nil {
-					lastErr = fmt.Errorf("unexpected status code: %d, failed to read response body: %w", resp.StatusCode, err)
+					lastErr = fmt.Errorf(
+						"unexpected status code: %d, failed to read response body: %w",
+						resp.StatusCode,
+						err,
+					)
 				} else {
-					lastErr = fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, string(body))
+					lastErr = fmt.Errorf(
+						"unexpected status code: %d, response body: %s",
+						resp.StatusCode,
+						string(body),
+					)
 				}
 			}
 
@@ -1116,6 +1260,7 @@ func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 			if !mutex.TryLock() {
 				// r.Logger.V(1).Info("user debt processing skipped due to existing lock",
 				//	"userUID", u)
+				r.failedUserLocks.Store(u, 0)
 				return
 			}
 			defer mutex.Unlock()
@@ -1172,7 +1317,17 @@ func (r *DebtReconciler) processWithTimeRange(
 		endTime = startTime
 	} else if len(users) > 0 {
 		r.processUsersInParallel(users)
-		r.Info("processed table updates", "table", fmt.Sprintf("%T", table), "count", len(users), "start", startTime, "end", endTime)
+		r.Info(
+			"processed table updates",
+			"table",
+			fmt.Sprintf("%T", table),
+			"count",
+			len(users),
+			"start",
+			startTime,
+			"end",
+			endTime,
+		)
 	}
 
 	// 后续按时间区间轮询

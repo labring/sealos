@@ -1,5 +1,3 @@
-# Custom values for costcenter frontend helm chart.
-# This file contains user-customizable configurations.
 
 replicaCount: 1
 
@@ -10,17 +8,45 @@ resources:
   requests:
     cpu: 10m
     memory: 128Mi
-
-# Costcenter business configuration
-# Customize these settings based on your requirements
+startupProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 30
+readinessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 6
+livenessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  periodSeconds: 20
+  timeoutSeconds: 3
+  failureThreshold: 3
+# Costcenter frontend configuration
+# Note: jwtInternal is auto-configured by entrypoint.sh from sealos-config ConfigMap
+# For business configurations (transfer, invoice, recharge, etc.), see costcenter-frontend-values.yaml
 costcenterConfig:
   transferEnabled: true
-  currencyType: "shellCoin"
-
-  # Invoice configuration
   invoice:
     enabled: false
+    # Deprecated compatibility key. Prefer invoice.feishApp.feiShuBotURL.
     feiShuBotURL: ""
+    feishApp:
+      appId: ""
+      appSecret: ""
+      feiShuBotURL: ""
+      chatId: ""
+      token: ""
+      templateId: ""
+      templateVersion: ""
+    serviceToken: ""
     aliSms:
       endpoint: ""
       accessKeyID: ""
@@ -30,8 +56,6 @@ costcenterConfig:
       invoiceCompletedTemplateCode: ""
     mongo:
       uri: ""
-
-  # Recharge configuration
   recharge:
     enabled: false
     payMethods:
@@ -42,8 +66,20 @@ costcenterConfig:
       stripe:
         enabled: false
         publicKey: ""
-
-  # Component URLs
   components:
     accountService:
       url: "http://account-service.account-system.svc:2333"
+
+# Affinity for pod anti-affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: "app"
+                operator: In
+                values:
+                  - costcenter-frontend
+          topologyKey: "kubernetes.io/hostname"

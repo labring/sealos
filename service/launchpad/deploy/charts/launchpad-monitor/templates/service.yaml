@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "launchpad-monitor.labels" . | nindent 4 }}
+    app: {{ .Release.Name }}
+spec:
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      protocol: TCP
+      targetPort: {{ .Values.service.port }}
+  selector:
+    app: {{ .Release.Name }}
