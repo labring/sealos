@@ -71,6 +71,15 @@ module.exports = (phase, { defaultConfig }) => {
           }
         ];
       },
+      async rewrites() {
+        return [
+          {
+            source: '/healthz',
+            destination: '/api/healthz',
+            locale: false
+          }
+        ];
+      },
       transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk']
     };
     return nextConfig;
@@ -81,6 +90,15 @@ module.exports = (phase, { defaultConfig }) => {
         outputFileTracingRoot: path.join(__dirname, '../../')
       },
       output: 'standalone',
-      transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk']
+      transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk'],
+      async rewrites() {
+        return [
+          {
+            source: '/healthz',
+            destination: '/api/healthz',
+            locale: false
+          }
+        ];
+      }
     };
 };

@@ -48,6 +48,15 @@ const nextConfig = {
         permanent: true
       }
     ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/healthz',
+        destination: '/api/healthz',
+        locale: false
+      }
+    ];
   }
 };
 

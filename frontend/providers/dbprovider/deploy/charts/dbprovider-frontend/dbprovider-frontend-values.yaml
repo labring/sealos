@@ -13,7 +13,7 @@ resources:
 
 startupProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   periodSeconds: 2
   timeoutSeconds: 3
@@ -27,7 +27,7 @@ readinessProbe:
   failureThreshold: 6
 livenessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   periodSeconds: 20
   timeoutSeconds: 3

@@ -35,7 +35,16 @@ const nextConfig = {
       }
     ]
   },
-  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver']
+  transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver'],
+  async rewrites() {
+    return [
+      {
+        source: '/healthz',
+        destination: '/api/healthz',
+        locale: false
+      }
+    ];
+  }
 };
 
 module.exports = withBundleAnalyzer(nextConfig);
