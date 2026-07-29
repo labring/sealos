@@ -19,7 +19,6 @@ import (
 
 	"github.com/labring/sealos/controllers/job/init/internal/util/common"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -33,9 +32,7 @@ const (
 	DefaultAdminUserName = "admin"
 )
 
-var (
-	scheme = runtime.NewScheme()
-)
+var scheme = runtime.NewScheme()
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
@@ -51,13 +48,15 @@ func newKubernetesClient() (client.Client, error) {
 }
 
 func newAdminUser(ctx context.Context, c client.Client) (*userv1.User, error) {
-	var u = &userv1.User{}
+	u := &userv1.User{}
 	u.SetName(DefaultAdminUserName)
 	if err := c.Get(ctx, client.ObjectKeyFromObject(u), u); client.IgnoreNotFound(err) != nil {
 		return nil, err
 	}
 	if u.Labels == nil {
-		u.SetLabels(map[string]string{"uid": common.AdminUID().String(), "updateTime": "T2301-01T00-00-00"})
+		u.SetLabels(
+			map[string]string{"uid": common.AdminUID().String(), "updateTime": "T2301-01T00-00-00"},
+		)
 	} else if u.Labels["uid"] == "" {
 		u.Labels["uid"] = common.AdminUID().String()
 		u.Labels["updateTime"] = "T2301-01T00-00-00"

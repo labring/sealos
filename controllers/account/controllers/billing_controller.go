@@ -112,13 +112,21 @@ func (r *BillingReconciler) ExecuteBillingTask() error {
 	DebtUserMap = maps.NewConcurrentNullValueMap()
 	SubscriptionWorkspaceMap = maps.NewConcurrentNullValueMap()
 	var users []string
-	if err := r.AccountV2.GetGlobalDB().Model(&types.Debt{}).Where("account_debt_status IN (?, ?, ?) ", types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod).
-		Distinct("user_uid").Pluck("user_uid", &users).Error; err != nil {
+	if err := r.AccountV2.GetGlobalDB().
+		Model(&types.Debt{}).
+		Where("account_debt_status IN (?, ?, ?) ", types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod).
+		Distinct("user_uid").
+		Pluck("user_uid", &users).
+		Error; err != nil {
 		return fmt.Errorf("failed to query unique users: %w", err)
 	}
 	DebtUserMap.Set(users...)
 	var subscriptionWorkspaces []string
-	if err := r.AccountV2.GetGlobalDB().Model(&types.WorkspaceSubscription{}).Where("region_domain = ?", r.AccountV2.GetLocalRegion().Domain).Pluck("workspace", &subscriptionWorkspaces).Error; err != nil {
+	if err := r.AccountV2.GetGlobalDB().
+		Model(&types.WorkspaceSubscription{}).
+		Where("region_domain = ?", r.AccountV2.GetLocalRegion().Domain).
+		Pluck("workspace", &subscriptionWorkspaces).
+		Error; err != nil {
 		return fmt.Errorf("failed to query workspace subscriptions: %w", err)
 	}
 	SubscriptionWorkspaceMap.Set(subscriptionWorkspaces...)
@@ -245,7 +253,10 @@ func (r *BillingReconciler) reconcileBilling(owner string, billings []*resources
 	}
 	if err := r.rechargeBalance(owner, amount); err != nil {
 		r.Error(err, "recharge balance failed", "owner", owner, "amount", amount)
-		if updateErr := r.DBClient.UpdateBillingStatus(orderIDs, resources.Unsettled); updateErr != nil {
+		if updateErr := r.DBClient.UpdateBillingStatus(
+			orderIDs,
+			resources.Unsettled,
+		); updateErr != nil {
 			r.Error(updateErr, "update billing unsettled status failed", "orderIDs", orderIDs)
 		}
 		return fmt.Errorf("recharge balance failed: %w", err)
@@ -269,9 +280,16 @@ func (r *BillingReconciler) reconcileBillingWithCredits(
 	if err := r.DBClient.SaveBillings(billings...); err != nil {
 		return fmt.Errorf("save billings failed: %w", err)
 	}
-	if err := r.AccountV2.AddDeductionBalanceWithCredits(&types.UserQueryOpts{Owner: owner}, amount, orderIDs); err != nil {
+	if err := r.AccountV2.AddDeductionBalanceWithCredits(
+		&types.UserQueryOpts{Owner: owner},
+		amount,
+		orderIDs,
+	); err != nil {
 		r.Error(err, "AddDeductionBalanceWithCredits failed", "owner", owner, "amount", amount)
-		if updateErr := r.DBClient.UpdateBillingStatus(orderIDs, resources.Unsettled); updateErr != nil {
+		if updateErr := r.DBClient.UpdateBillingStatus(
+			orderIDs,
+			resources.Unsettled,
+		); updateErr != nil {
 			r.Error(
 				updateErr,
 				"update billing unsettled status failed",
@@ -306,10 +324,7 @@ func (r *BillingReconciler) reconcileOwnerListBatch(
 
 	total := len(owners)
 	for i := 0; i < total; i += batchSize {
-		end := i + batchSize
-		if end > total {
-			end = total
-		}
+		end := min(i+batchSize, total)
 
 		batchOwners := owners[i:end] // the owner list of the current batch
 		batchOwnerMap := make(map[string][]string, len(batchOwners))
@@ -329,7 +344,10 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	if amount == 0 {
 		return nil
 	}
-	if err := r.AccountV2.AddDeductionBalance(&types.UserQueryOpts{Owner: owner}, amount); err != nil {
+	if err := r.AccountV2.AddDeductionBalance(
+		&types.UserQueryOpts{Owner: owner},
+		amount,
+	); err != nil {
 		return fmt.Errorf("add balance failed: %w", err)
 	}
 	return nil

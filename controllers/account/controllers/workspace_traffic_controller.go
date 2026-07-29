@@ -135,10 +135,7 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(
 		}
 
 		if availableInPackage > 0 {
-			consumeFromPackage := remainingToConsume
-			if consumeFromPackage > availableInPackage {
-				consumeFromPackage = availableInPackage
-			}
+			consumeFromPackage := min(remainingToConsume, availableInPackage)
 
 			pkg.UsedBytes += consumeFromPackage
 			pkg.UpdatedAt = time.Now()
@@ -228,8 +225,18 @@ func (c *WorkspaceTrafficController) consumeWorkspaceTraffic(
 					subscription.CurrentPeriodEndAt.Format("2006.1.2")),
 				Features: features,
 			}
-			if _, err = c.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeOther, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
-				c.VLogger.Errorf("failed to send traffic usage alert notification for user %s: %v", userUID, err)
+			if _, err = c.UserNotificationService.HandleWorkspaceSubscriptionEvent(
+				context.Background(),
+				userUID,
+				eventData,
+				types.SubscriptionTransactionTypeOther,
+				[]usernotify.NotificationMethod{usernotify.NotificationMethodEmail},
+			); err != nil {
+				c.VLogger.Errorf(
+					"failed to send traffic usage alert notification for user %s: %v",
+					userUID,
+					err,
+				)
 			}
 		}
 
@@ -314,8 +321,18 @@ func (c *WorkspaceTrafficController) handleNoAvailableTraffic(
 					subscription.CurrentPeriodEndAt.Format("2006.1.2")),
 			}
 
-			if _, err = c.UserNotificationService.HandleWorkspaceSubscriptionEvent(context.Background(), userUID, eventData, types.SubscriptionTransactionTypeOther, []usernotify.NotificationMethod{usernotify.NotificationMethodEmail}); err != nil {
-				c.VLogger.Errorf("failed to send subscription success notification for user %s: %v", userUID, err)
+			if _, err = c.UserNotificationService.HandleWorkspaceSubscriptionEvent(
+				context.Background(),
+				userUID,
+				eventData,
+				types.SubscriptionTransactionTypeOther,
+				[]usernotify.NotificationMethod{usernotify.NotificationMethodEmail},
+			); err != nil {
+				c.VLogger.Errorf(
+					"failed to send subscription success notification for user %s: %v",
+					userUID,
+					err,
+				)
 			}
 		}
 	}
@@ -356,7 +373,15 @@ func (c *WorkspaceTrafficController) ProcessTrafficWithTimeRange() {
 			if err != nil {
 				c.VLogger.Errorf("failed to process workspace traffic: %v", err)
 			} else {
-				c.Logger.Info("successfully processed workspace traffic", "count", len(result), "start", startTime, "end", endTime)
+				c.Logger.Info(
+					"successfully processed workspace traffic",
+					"count",
+					len(result),
+					"start",
+					startTime,
+					"end",
+					endTime,
+				)
 			}
 		}
 		startTime = endTime

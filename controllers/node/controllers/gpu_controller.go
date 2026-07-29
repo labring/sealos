@@ -88,7 +88,11 @@ func (r *GpuReconciler) fetchPodsByNode(
 	nodeName string,
 ) []corev1.Pod {
 	var pods corev1.PodList
-	if err := reader.List(ctx, &pods, client.MatchingFields{podNodeNameField: nodeName}); err != nil {
+	if err := reader.List(
+		ctx,
+		&pods,
+		client.MatchingFields{podNodeNameField: nodeName},
+	); err != nil {
 		r.Logger.Error(err, "list pods error from cache", podNodeNameField, nodeName)
 	}
 
@@ -139,7 +143,7 @@ func defaultAliasForNvidiaGPUProduct(s string) string {
 	return s
 }
 
-func matchesNvidiaGPUType(val string, gpuType string) bool {
+func matchesNvidiaGPUType(val, gpuType string) bool {
 	v := normalizeNvidiaGPUProduct(val)
 	if v == "" {
 		return false
@@ -227,7 +231,7 @@ func parseHamiNvidiaRegisterVirtualCount(s string) int64 {
 	return 0
 }
 
-func parseHamiNvidiaRegister(s string) (prod string, mem string) {
+func parseHamiNvidiaRegister(s string) (prod, mem string) {
 	s = strings.TrimSpace(s)
 	if strings.HasPrefix(s, "[") {
 		type hamiDevice struct {
@@ -250,8 +254,8 @@ func parseHamiNvidiaRegister(s string) (prod string, mem string) {
 		}
 	}
 
-	devs := strings.Split(s, ":")
-	for _, d := range devs {
+	devs := strings.SplitSeq(s, ":")
+	for d := range devs {
 		fields := strings.Split(d, ",")
 		if len(fields) < 5 {
 			continue
@@ -269,6 +273,7 @@ func parseHamiNvidiaRegister(s string) (prod string, mem string) {
 	return prod, mem
 }
 
+//nolint:gocyclo // GPU config reconciliation handles several node/alias formats in one pass.
 func (r *GpuReconciler) applyGPUInfoCM(
 	ctx context.Context,
 	reader client.Reader,
@@ -303,7 +308,10 @@ func (r *GpuReconciler) applyGPUInfoCM(
 					Default string `json:"default"`
 				}
 				structured := map[string]aliasRecord{}
-				if unmarshalErr := json.Unmarshal([]byte(aliasStr), &structured); unmarshalErr == nil {
+				if unmarshalErr := json.Unmarshal(
+					[]byte(aliasStr),
+					&structured,
+				); unmarshalErr == nil {
 					for ref, rec := range structured {
 						def := strings.TrimSpace(rec.Default)
 						if def == "" {
@@ -316,7 +324,10 @@ func (r *GpuReconciler) applyGPUInfoCM(
 					}
 				} else {
 					flat := map[string]string{}
-					if unmarshalErr2 := json.Unmarshal([]byte(aliasStr), &flat); unmarshalErr2 == nil {
+					if unmarshalErr2 := json.Unmarshal(
+						[]byte(aliasStr),
+						&flat,
+					); unmarshalErr2 == nil {
 						for def, ref := range flat {
 							def = strings.TrimSpace(def)
 							ref = strings.TrimSpace(ref)
@@ -363,7 +374,9 @@ func (r *GpuReconciler) applyGPUInfoCM(
 		}
 		effectiveCount := gpuCount.Value()
 		if node.Annotations != nil {
-			virtualCount := parseHamiNvidiaRegisterVirtualCount(node.Annotations["hami.io/node-nvidia-register"])
+			virtualCount := parseHamiNvidiaRegisterVirtualCount(
+				node.Annotations["hami.io/node-nvidia-register"],
+			)
 			if virtualCount > 0 {
 				effectiveCount = virtualCount
 			}
@@ -387,10 +400,7 @@ func (r *GpuReconciler) applyGPUInfoCM(
 			nodeMap[nodeName][GPUDevbox] = "true"
 		}
 		nodeMap[nodeName][GPUUse] = strconv.FormatInt(used, 10)
-		available := effectiveCount - used
-		if available < 0 {
-			available = 0
-		}
+		available := max(effectiveCount-used, 0)
 		nodeMap[nodeName][GPUAvailable] = strconv.FormatInt(available, 10)
 	}
 
@@ -433,12 +443,13 @@ func (r *GpuReconciler) applyGPUInfoCM(
 		return ctrl.Result{}, err
 	}
 	aliasMapStr := string(aliasMapBytes)
-	nodeLabelStr := ""
-	if existingNodeLabelStr != "" {
+	var nodeLabelStr string
+	switch {
+	case existingNodeLabelStr != "":
 		nodeLabelStr = existingNodeLabelStr
-	} else if legacyLabelMappingStr != "" {
+	case legacyLabelMappingStr != "":
 		nodeLabelStr = legacyLabelMappingStr
-	} else {
+	default:
 		nodeLabelMap := map[string]string{
 			"kunlunxin": "xpu=on",
 			"nvidia":    "gpu=on",
@@ -492,21 +503,24 @@ func (r *GpuReconciler) applyGPUInfoCM(
 	}
 	if configmap.Data[GPU] != nodeMapStr {
 		configmap.Data[GPU] = nodeMapStr
-		if updateErr := r.Update(ctx, configmap); updateErr != nil && !errors.IsConflict(updateErr) {
+		if updateErr := r.Update(ctx, configmap); updateErr != nil &&
+			!errors.IsConflict(updateErr) {
 			r.Logger.Error(updateErr, "failed to update gpu-info configmap")
 			return ctrl.Result{}, updateErr
 		}
 	}
 	if configmap.Data[GPUAlias] == "" && configmap.Data[GPUAlias] != aliasMapStr {
 		configmap.Data[GPUAlias] = aliasMapStr
-		if updateErr := r.Update(ctx, configmap); updateErr != nil && !errors.IsConflict(updateErr) {
+		if updateErr := r.Update(ctx, configmap); updateErr != nil &&
+			!errors.IsConflict(updateErr) {
 			r.Logger.Error(updateErr, "failed to update gpu-info configmap")
 			return ctrl.Result{}, updateErr
 		}
 	}
 	if configmap.Data[GPUNodeLabel] == "" && configmap.Data[GPUNodeLabel] != nodeLabelStr {
 		configmap.Data[GPUNodeLabel] = nodeLabelStr
-		if updateErr := r.Update(ctx, configmap); updateErr != nil && !errors.IsConflict(updateErr) {
+		if updateErr := r.Update(ctx, configmap); updateErr != nil &&
+			!errors.IsConflict(updateErr) {
 			r.Logger.Error(updateErr, "failed to update gpu-info configmap")
 			return ctrl.Result{}, updateErr
 		}
@@ -547,7 +561,8 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			return []string{nodeName}
 		}
 
-		if err := mgr.GetFieldIndexer().IndexField(context.Background(), pod, podNodeNameField, podsFunc); err != nil {
+		if err := mgr.GetFieldIndexer().
+			IndexField(context.Background(), pod, podNodeNameField, podsFunc); err != nil {
 			return err
 		}
 	}

@@ -16,7 +16,6 @@ package main
 
 import (
 	"github.com/go-resty/resty/v2"
-
 	"github.com/labring/sealos/controllers/job/heartbeat/api/v1alpha"
 	"github.com/labring/sealos/controllers/job/heartbeat/internal/cluster"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"

@@ -103,7 +103,8 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return immediateRequeue, nil
 		}
 	} else {
-		if controllerutil.ContainsFinalizer(license, licenseProtectionFinalizer) && isDefaultLicense(license) {
+		if controllerutil.ContainsFinalizer(license, licenseProtectionFinalizer) &&
+			isDefaultLicense(license) {
 			r.Logger.Info("deletion blocked by protection finalizer", "license", req.NamespacedName)
 			return ctrl.Result{}, nil
 		}
@@ -165,7 +166,11 @@ func (r *LicenseReconciler) reconcile(
 		updateStatus.Reason = reason
 		updateStatus.ActivationTime = license.Status.ActivationTime
 		updateStatus.ExpirationTime = license.Status.ExpirationTime
-		if updateErr := r.updateStatus(ctx, client.ObjectKeyFromObject(license), updateStatus); updateErr != nil {
+		if updateErr := r.updateStatus(
+			ctx,
+			client.ObjectKeyFromObject(license),
+			updateStatus,
+		); updateErr != nil {
 			r.Logger.V(1).
 				Error(updateErr, "failed to update license status after validation failure", "license", nsName)
 			return ctrl.Result{}, updateErr
@@ -174,7 +179,8 @@ func (r *LicenseReconciler) reconcile(
 		// Send notification if license is expired
 		if phase == licensev1.LicenseStatusPhaseExpired {
 			if notifyErr := r.NotifyIfNeeded(ctx, license); notifyErr != nil {
-				r.Logger.V(1).Error(notifyErr, "failed to send license expiration notification", "license", nsName)
+				r.Logger.V(1).
+					Error(notifyErr, "failed to send license expiration notification", "license", nsName)
 			}
 		}
 
@@ -217,7 +223,8 @@ func (r *LicenseReconciler) reconcile(
 		Logger: r.Logger,
 	}
 	if err := notifier.markMissingLicenseReadIfExists(ctx); err != nil {
-		r.Logger.V(1).Error(err, "failed to mark missing license notification as read", "license", nsName)
+		r.Logger.V(1).
+			Error(err, "failed to mark missing license notification as read", "license", nsName)
 	}
 
 	return longRequeueRes, nil

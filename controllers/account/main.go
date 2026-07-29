@@ -24,8 +24,6 @@ import (
 	"strconv"
 	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
@@ -51,6 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 var (
@@ -70,15 +69,17 @@ func init() {
 
 func main() {
 	var (
-		metricsAddr          string
-		enableLeaderElection bool
-		probeAddr            string
-		concurrent           int
-		development          bool
-		rateLimiterOptions   = &utils.LimiterOptions{}
-		leaseDuration        time.Duration
-		renewDeadline        time.Duration
-		retryPeriod          time.Duration
+		metricsAddr              string
+		enableLeaderElection     bool
+		probeAddr                string
+		concurrent               int
+		deleteResourceConcurrent int
+		deleteBackupConcurrent   int
+		development              bool
+		rateLimiterOptions       = &utils.LimiterOptions{}
+		leaseDuration            time.Duration
+		renewDeadline            time.Duration
+		retryPeriod              time.Duration
 	)
 	flag.StringVar(
 		&metricsAddr,
@@ -97,6 +98,18 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.IntVar(&concurrent, "concurrent", 100, "The number of concurrent cluster reconciles.")
+	flag.IntVar(
+		&deleteResourceConcurrent,
+		"delete-resource-concurrent",
+		3,
+		"The number of concurrent DeleteUserResource calls.",
+	)
+	flag.IntVar(
+		&deleteBackupConcurrent,
+		"delete-backup-concurrent",
+		30,
+		"The maximum number of concurrent backup deletions.",
+	)
 	flag.DurationVar(
 		&leaseDuration,
 		"leader-elect-lease-duration",
@@ -203,7 +216,10 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from cockroach")
 		}
 	}()
-	if err = database.InitRegionEnv(v2Account.GetGlobalDB(), v2Account.GetLocalRegion().Domain); err != nil {
+	if err = database.InitRegionEnv(
+		v2Account.GetGlobalDB(),
+		v2Account.GetLocalRegion().Domain,
+	); err != nil {
 		setupLog.Error(err, "unable to init region env")
 		os.Exit(1)
 	}
@@ -234,7 +250,15 @@ func main() {
 	if err != nil {
 		setupLog.Error(err, "parse recharge config failed")
 	} else {
-		setupLog.Info("parse recharge config success", "activities", activities, "discountSteps", discountSteps, "discountRatios", discountRatios)
+		setupLog.Info(
+			"parse recharge config success",
+			"activities",
+			activities,
+			"discountSteps",
+			discountSteps,
+			"discountRatios",
+			discountRatios,
+		)
 		accountReconciler.Activities = activities
 		accountReconciler.DefaultDiscount = types.RechargeDiscount{
 			DiscountRates: discountRatios,
@@ -259,6 +283,16 @@ func main() {
 		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
 	}
 	debtController.Init()
+
+	// Setup OperationRequest monitor controller to trigger debt status refresh on owner transfers
+	operationRequestMonitor := &controllers.OperationRequestMonitorReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}
+	if err = operationRequestMonitor.SetupWithManager(mgr); err != nil {
+		setupManagerError(err, "OperationRequestMonitor")
+	}
+
 	// if err = (&controllers.DebtReconciler{
 	//	AccountReconciler:           accountReconciler,
 	//	Client:                      mgr.GetClient(),
@@ -279,7 +313,8 @@ func main() {
 	if os.Getenv("DISABLE_WEBHOOKS") == _true {
 		setupLog.Info("disable all webhooks")
 	} else {
-		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})
+		mgr.GetWebhookServer().
+			Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})
 		// Start HTTP server for property reload handler (without TLS)
 		jwtSecret := os.Getenv("ACCOUNT_API_JWT_SECRET")
 		reloadHandler := &controllers.PropertyReloadHandler{
@@ -289,11 +324,17 @@ func main() {
 		}
 		go func() {
 			setupLog.Info("starting property reload HTTP server", "port", 9444)
-			if err := http.ListenAndServe(":9444", reloadHandler); err != nil {
+			server := &http.Server{
+				Addr:              ":9444",
+				Handler:           reloadHandler,
+				ReadHeaderTimeout: 10 * time.Second,
+			}
+			if err := server.ListenAndServe(); err != nil {
 				setupLog.Error(err, "failed to start property reload HTTP server")
 			}
 		}()
 	}
+
 	err = dbClient.InitDefaultPropertyTypeLS()
 	if err != nil {
 		setupLog.Error(err, "unable to get property type")
@@ -334,38 +375,23 @@ func main() {
 	if err = (&controllers.NamespaceReconciler{
 		Client: watchClient,
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, rateOpts); err != nil {
+	}).SetupWithManager(mgr, rateOpts, deleteResourceConcurrent, deleteBackupConcurrent); err != nil {
 		setupManagerError(err, "Namespace")
 	}
 
-	paymentReconciler := &controllers.PaymentReconciler{
-		Account:     accountReconciler,
-		WatchClient: watchClient,
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
-	}
-	if err = (paymentReconciler).SetupWithManager(mgr); err != nil {
+	if err = (&controllers.PaymentReconciler{
+		Account:        accountReconciler,
+		DebtReconciler: debtController,
+		WatchClient:    watchClient,
+		Client:         mgr.GetClient(),
+		Scheme:         mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Payment")
 	}
 	trafficDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.TrafficMongoURI))
 	if err != nil {
 		setupLog.Error(err, "unable to connect to traffic mongo")
 		os.Exit(1)
-	}
-	var userTrafficMonitor *controllers.UserTrafficMonitor
-	if os.Getenv(controllers.EnvSubscriptionEnabled) == "true" {
-		userTrafficCtrl := controllers.NewUserTrafficController(accountReconciler, trafficDBClient)
-		go userTrafficCtrl.ProcessTrafficWithTimeRange()
-		if env.GetEnvWithDefault("SUPPORT_MONITOR_USER_TRAFFIC", "false") == _true {
-			userTrafficMonitor, err = controllers.NewUserTrafficMonitor(userTrafficCtrl)
-			if err != nil {
-				setupLog.Error(err, "unable to create user traffic monitor")
-				os.Exit(1)
-			}
-			userTrafficMonitor.Start()
-		}
-	} else {
-		setupLog.Info("skip user traffic controller")
 	}
 	workspaceTrafficProcessor := controllers.NewWorkspaceTrafficController(
 		accountReconciler,
@@ -382,12 +408,6 @@ func main() {
 	go workspaceTrafficProcessor.ProcessTrafficWithTimeRange()
 	// workspaceSubscriptionProcessor.Start(ctx)
 	workspaceSubDebtProcessor.Start(ctx)
-
-	defer func() {
-		if userTrafficMonitor != nil {
-			userTrafficMonitor.Stop()
-		}
-	}()
 
 	//+kubebuilder:scaffold:builder
 

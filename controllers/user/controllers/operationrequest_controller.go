@@ -174,7 +174,11 @@ func (r *OperationReqReconciler) reconcile(
 	)
 
 	user := &userv1.User{}
-	if err := r.Get(ctx, client.ObjectKey{Name: config.GetUserNameByNamespace(request.Spec.Namespace)}, user); err != nil {
+	if err := r.Get(
+		ctx,
+		client.ObjectKey{Name: config.GetUserNameByNamespace(request.Spec.Namespace)},
+		user,
+	); err != nil {
 		r.Recorder.Eventf(
 			request,
 			v1.EventTypeWarning,
@@ -210,7 +214,12 @@ func (r *OperationReqReconciler) reconcile(
 			request.Spec.Role,
 			request.Spec.User,
 		)
-		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, rolebinding, setUpOwnerReferenceFc); err != nil {
+		if _, err := ctrl.CreateOrUpdate(
+			ctx,
+			r.Client,
+			rolebinding,
+			setUpOwnerReferenceFc,
+		); err != nil {
 			r.Recorder.Eventf(
 				request,
 				v1.EventTypeWarning,

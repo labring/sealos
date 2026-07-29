@@ -72,12 +72,22 @@ func TestWorkspaceSubscriptionDebtStatusSyncsNamespaceAnnotations(t *testing.T) 
 				t.Fatalf("expected current status %s, got %s", tt.expectedStatus, currentStatus)
 			}
 
-			if err := processor.syncWorkspaceDebtStatus(ctx, subscription, subscription.Status, currentStatus, []string{namespace}); err != nil {
+			if err := processor.syncWorkspaceDebtStatus(
+				ctx,
+				subscription,
+				subscription.Status,
+				currentStatus,
+				[]string{namespace},
+			); err != nil {
 				t.Fatalf("sync workspace debt status failed: %v", err)
 			}
 
 			var updatedNS corev1.Namespace
-			if err := processor.Get(ctx, client.ObjectKey{Name: namespace}, &updatedNS); err != nil {
+			if err := processor.Get(
+				ctx,
+				client.ObjectKey{Name: namespace},
+				&updatedNS,
+			); err != nil {
 				t.Fatalf("failed to get updated namespace: %v", err)
 			}
 
@@ -85,7 +95,11 @@ func TestWorkspaceSubscriptionDebtStatusSyncsNamespaceAnnotations(t *testing.T) 
 				t.Fatalf("expected debt annotation %s, got %s", tt.expectedDebtStatus, got)
 			}
 			if got := updatedNS.Annotations[types.WorkspaceSubscriptionStatusAnnoKey]; got != tt.expectedDebtStatus {
-				t.Fatalf("expected workspace subscription annotation %s, got %s", tt.expectedDebtStatus, got)
+				t.Fatalf(
+					"expected workspace subscription annotation %s, got %s",
+					tt.expectedDebtStatus,
+					got,
+				)
 			}
 
 			var notice notificationv1.Notification
@@ -131,7 +145,10 @@ func TestWorkspaceDebtNoticeNameIsDNS1123Compatible(t *testing.T) {
 	}
 }
 
-func newWorkspaceSubscriptionDebtTestProcessor(t *testing.T, objects ...client.Object) *WorkspaceSubscriptionDebtProcessor {
+func newWorkspaceSubscriptionDebtTestProcessor(
+	t *testing.T,
+	objects ...client.Object,
+) *WorkspaceSubscriptionDebtProcessor {
 	t.Helper()
 
 	scheme := runtime.NewScheme()

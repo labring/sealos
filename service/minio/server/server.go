@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -26,7 +27,8 @@ func (rs *MinioServer) Serve(c *server.Config) {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	listener, err := net.Listen("tcp", c.Server.ListenAddress)
+	listenerConfig := net.ListenConfig{}
+	listener, err := listenerConfig.Listen(context.Background(), "tcp", c.Server.ListenAddress)
 	if err != nil {
 		fmt.Println(err)
 		return

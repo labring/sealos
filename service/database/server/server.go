@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/labring/sealos/service/pkg/server"
 )
@@ -20,11 +22,13 @@ func (rs *DatabaseServer) Serve(c *server.Config) {
 	}
 
 	hs := &http.Server{
-		Addr:    c.Server.ListenAddress,
-		Handler: ps,
+		Addr:              c.Server.ListenAddress,
+		Handler:           ps,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	listener, err := net.Listen("tcp", c.Server.ListenAddress)
+	listenerConfig := net.ListenConfig{}
+	listener, err := listenerConfig.Listen(context.Background(), "tcp", c.Server.ListenAddress)
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -8,9 +8,8 @@ import (
 	"net/url"
 	"text/template"
 
-	"github.com/labring/sealos/service/pkg/auth"
-
 	"github.com/labring/sealos/service/pkg/api"
+	"github.com/labring/sealos/service/pkg/auth"
 	"github.com/labring/sealos/service/pkg/request"
 )
 
@@ -102,10 +101,10 @@ func (ps *PromServer) ParseRequest(req *http.Request) (*api.PromRequest, error) 
 // 获取客户端请求的信息
 func (ps *PromServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	pathPrefix := ""
-	switch {
-	case req.URL.Path == pathPrefix+"/query": // 将废弃
+	switch req.URL.Path {
+	case pathPrefix + "/query": // 将废弃
 		ps.doReqPre(rw, req)
-	case req.URL.Path == pathPrefix+"/q":
+	case pathPrefix + "/q":
 		ps.doReqNew(rw, req)
 	default:
 		http.Error(rw, "Not found", http.StatusNotFound)
@@ -122,7 +121,11 @@ func (ps *PromServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := ps.Authenticate(pr); err != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("Authentication failed (%s)", err),
+			http.StatusInternalServerError,
+		)
 		log.Printf("Authentication failed (%s)\n", err)
 		return
 	}
@@ -166,7 +169,11 @@ func (ps *PromServer) doReqPre(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := ps.Authenticate(pr); err != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("Authentication failed (%s)", err),
+			http.StatusInternalServerError,
+		)
 		log.Printf("Authentication failed (%s)\n", err)
 		log.Printf("Kubeconfig (%s)\n", pr.Pwd)
 	}

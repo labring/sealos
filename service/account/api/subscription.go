@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"text/template"
 	"time"
 
@@ -663,7 +664,8 @@ func PayForSubscription(
 		}
 		payment := &types.PaymentOrder{}
 		if err := dao.DBClient.GetGlobalDB().Model(&types.PaymentOrder{}).Where(
-			`"userUid" = ? AND "id" = ?`, req.UserUID, lastSubTransaction.PayID).Find(&payment).Error; err != nil {
+			`"userUid" = ? AND "id" = ?`, req.UserUID, lastSubTransaction.PayID).
+			Find(&payment).Error; err != nil {
 			SetErrorResp(
 				c,
 				http.StatusInternalServerError,
@@ -812,10 +814,14 @@ func PayForSubscription(
 		case "CANCELLED":
 			// TODO 处理上次状态
 			err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
-				if err := tx.Model(&payment).Update("status", types.PaymentOrderStatusFailed).Error; err != nil {
+				if err := tx.Model(&payment).
+					Update("status", types.PaymentOrderStatusFailed).
+					Error; err != nil {
 					return fmt.Errorf("failed to update payment status: %w", err)
 				}
-				if err := tx.Model(&lastSubTransaction).Update("status", types.SubscriptionTransactionStatusFailed).Error; err != nil {
+				if err := tx.Model(&lastSubTransaction).
+					Update("status", types.SubscriptionTransactionStatusFailed).
+					Error; err != nil {
 					return fmt.Errorf("failed to update subscription transaction status: %w", err)
 				}
 				return nil
@@ -894,8 +900,12 @@ func PayForSubscription(
 			if err != nil {
 				return fmt.Errorf("failed to create payment: %w", hErr)
 			}
-			if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" || paySvcResp.Result.ResultStatus != "U" {
-				return fmt.Errorf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)
+			if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" ||
+				paySvcResp.Result.ResultStatus != "U" {
+				return fmt.Errorf(
+					"payment result is not PAYMENT_IN_PROCESS: %#+v",
+					paySvcResp.Result,
+				)
 			}
 			return nil
 		}
@@ -1120,7 +1130,11 @@ func sendUserPayEmail(userUID uuid.UUID, emailRender utils.EmailRenderBuilder) e
 		if err = tmp.Execute(&rendered, emailRender.Build()); err != nil {
 			return fmt.Errorf("failed to render email template: %w", err)
 		}
-		if err := dao.SMTPConfig.SendEmailWithSubject(emailRender.GetSubject(), rendered.String(), emailProvider.ProviderID); err != nil {
+		if err := dao.SMTPConfig.SendEmailWithSubject(
+			emailRender.GetSubject(),
+			rendered.String(),
+			emailProvider.ProviderID,
+		); err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}
 		return nil
@@ -1157,7 +1171,10 @@ func SendUserPayEmail(userUID uuid.UUID, payType string) error {
 		}); err != nil {
 			return fmt.Errorf("failed to render email template: %w", err)
 		}
-		if err := dao.SMTPConfig.SendEmail(rendered.String(), emailProvider.ProviderID); err != nil {
+		if err := dao.SMTPConfig.SendEmail(
+			rendered.String(),
+			emailProvider.ProviderID,
+		); err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}
 	}
@@ -1187,7 +1204,9 @@ func SubscriptionPayByBalance(
 		}
 		// check account balance
 		var account types.Account
-		if dErr = tx.Where(types.Account{UserUID: subTransaction.UserUID}).First(&account).Error; dErr != nil {
+		if dErr = tx.Where(types.Account{UserUID: subTransaction.UserUID}).
+			First(&account).
+			Error; dErr != nil {
 			return fmt.Errorf("failed to get account: %w", dErr)
 		}
 		if account.Balance-account.DeductionBalance < subTransaction.Amount {
@@ -1290,7 +1309,13 @@ func NewSubscriptionPayNotifyHandler(c *gin.Context) {
 		logNotification(notification)
 	}
 
-	if err = processSubscriptionPayResult(c, notifyType, notifyResult, paymentRequestID, paymentID); err != nil &&
+	if err = processSubscriptionPayResult(
+		c,
+		notifyType,
+		notifyResult,
+		paymentRequestID,
+		paymentID,
+	); err != nil &&
 		!errors.Is(err, dao.ErrPaymentOrderAlreadyHandle) {
 		logrus.Errorf("Failed to process sub payment result: %v", err)
 		return // 错误已在 processPaymentResult 中处理
@@ -1300,10 +1325,5 @@ func NewSubscriptionPayNotifyHandler(c *gin.Context) {
 }
 
 func contain(planList []string, planName string) bool {
-	for _, plan := range planList {
-		if plan == planName {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(planList, planName)
 }

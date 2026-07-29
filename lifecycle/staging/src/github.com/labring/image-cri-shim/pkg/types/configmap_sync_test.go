@@ -65,7 +65,8 @@ func TestMergeShimConfig(t *testing.T) {
 	if len(cfg.Registries) != 1 {
 		t.Fatalf("expected 1 registry, got %d", len(cfg.Registries))
 	}
-	if entry := cfg.Registries[0]; entry.Address != "https://registry-1.docker.io" || entry.Auth != "3:4" {
+	if entry := cfg.Registries[0]; entry.Address != "https://registry-1.docker.io" ||
+		entry.Auth != "3:4" {
 		t.Fatalf("unexpected registry entry: %+v", entry)
 	}
 	if cfg.ReloadInterval.Duration != 5*time.Second {
@@ -87,7 +88,10 @@ func TestMergeShimConfig(t *testing.T) {
 		t.Fatalf("expected disableStats true")
 	}
 	if cfg.Cache.StatsLogInterval.Duration != 0 {
-		t.Fatalf("expected stats interval 0 due to disableStats, got %s", cfg.Cache.StatsLogInterval.Duration)
+		t.Fatalf(
+			"expected stats interval 0 due to disableStats, got %s",
+			cfg.Cache.StatsLogInterval.Duration,
+		)
 	}
 }
 
@@ -139,7 +143,8 @@ func TestSyncConfigFromConfigMapWritesFile(t *testing.T) {
 	if merged.Auth != "1:2" {
 		t.Fatalf("unexpected auth: %s", merged.Auth)
 	}
-	if len(merged.Registries) != 1 || merged.Registries[0].Address != "https://registry-1.docker.io" {
+	if len(merged.Registries) != 1 ||
+		merged.Registries[0].Address != "https://registry-1.docker.io" {
 		t.Fatalf("unexpected registries: %+v", merged.Registries)
 	}
 	if merged.ReloadInterval.Duration != 5*time.Second {

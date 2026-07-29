@@ -315,9 +315,14 @@ func (r *AccountReconciler) handlerNoTrialInitialWorkspaceSubscription(
 		sub.CancelAtPeriodEnd = true
 		sub.PayStatus = types.SubscriptionPayStatusNoNeed
 		sub.UpdateAt = now
-		if err := dbTx.Where("workspace = ? AND region_domain = ?", workspace, r.localDomain).First(&types.WorkspaceSubscription{}).Error; err == nil {
+		if err := dbTx.Where("workspace = ? AND region_domain = ?", workspace, r.localDomain).
+			First(&types.WorkspaceSubscription{}).
+			Error; err == nil {
 			return nil
-		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		} else if !errors.Is(
+			err,
+			gorm.ErrRecordNotFound,
+		) {
 			return fmt.Errorf("failed to check existing subscription: %w", err)
 		}
 		result := dbTx.Create(&sub)
@@ -384,11 +389,17 @@ func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(
 	sub.CurrentPeriodStartAt = now
 	sub.CurrentPeriodEndAt = now.Add(addPeriod)
 	sub.CancelAtPeriodEnd = false
+	sub.ExpireAt = &sub.CurrentPeriodEndAt
 	sub.PayStatus = tx.PayStatus
 	sub.UpdateAt = now
-	if err := dbTx.Where("workspace = ? AND region_domain = ?", tx.Workspace, r.localDomain).First(&types.WorkspaceSubscription{}).Error; err == nil {
+	if err := dbTx.Where("workspace = ? AND region_domain = ?", tx.Workspace, r.localDomain).
+		First(&types.WorkspaceSubscription{}).
+		Error; err == nil {
 		return nil
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+	} else if !errors.Is(
+		err,
+		gorm.ErrRecordNotFound,
+	) {
 		return fmt.Errorf("failed to check existing subscription: %w", err)
 	}
 	result := dbTx.Create(&sub)
@@ -403,7 +414,14 @@ func (r *AccountReconciler) handleWorkspaceSubscriptionCreated(
 		if err != nil {
 			return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 		}
-		if err = r.NewTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
+		if err = r.NewTrafficPackage(
+			dbTx,
+			&sub,
+			plan,
+			sub.CurrentPeriodEndAt,
+			types.WorkspaceTrafficFromWorkspaceSubscription,
+			tx.ID.String(),
+		); err != nil {
 			return fmt.Errorf("failed to add traffic package: %w", err)
 		}
 		err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
@@ -465,10 +483,24 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
-	if err = wsp.AddTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = wsp.AddTrafficPackage(
+		dbTx,
+		&sub,
+		plan,
+		sub.CurrentPeriodEndAt,
+		types.WorkspaceTrafficFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
-	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+		dbTx,
+		sub.ID,
+		plan.AIQuota,
+		sub.CurrentPeriodEndAt,
+		types.PKGFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to create AI quota package: %w", err)
 	}
 
@@ -508,7 +540,12 @@ func (wsp *WorkspaceSubscriptionProcessor) handleDowngrade(
 	}
 
 	// 检查配额条件
-	if ok, err := wsp.checkWorkspaceQuotaConditions(ctx, sub.Workspace, sub.RegionDomain, tx.NewPlanName); err != nil {
+	if ok, err := wsp.checkWorkspaceQuotaConditions(
+		ctx,
+		sub.Workspace,
+		sub.RegionDomain,
+		tx.NewPlanName,
+	); err != nil {
 		return fmt.Errorf("failed to check workspace quota conditions: %w", err)
 	} else if !ok {
 		tx.Status = types.SubscriptionTransactionStatusFailed
@@ -568,10 +605,24 @@ func (wsp *WorkspaceSubscriptionProcessor) handleRenewal(
 	if err != nil {
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
-	if err = wsp.AddTrafficPackage(dbTx, &sub, plan, sub.CurrentPeriodEndAt, types.WorkspaceTrafficFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = wsp.AddTrafficPackage(
+		dbTx,
+		&sub,
+		plan,
+		sub.CurrentPeriodEndAt,
+		types.WorkspaceTrafficFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
-	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(dbTx, sub.ID, plan.AIQuota, sub.CurrentPeriodEndAt, types.PKGFromWorkspaceSubscription, tx.ID.String()); err != nil {
+	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+		dbTx,
+		sub.ID,
+		plan.AIQuota,
+		sub.CurrentPeriodEndAt,
+		types.PKGFromWorkspaceSubscription,
+		tx.ID.String(),
+	); err != nil {
 		return fmt.Errorf("failed to create AI quota package: %w", err)
 	}
 	sub.Status = types.SubscriptionStatusNormal

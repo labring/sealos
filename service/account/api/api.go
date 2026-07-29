@@ -256,7 +256,12 @@ func GetAllRegionConsumptionAmount(c *gin.Context) {
 			},
 		}
 		client := &http.Client{Transport: tr}
-		req2, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
+		req2, err := http.NewRequestWithContext(
+			c.Request.Context(),
+			http.MethodPost,
+			url,
+			bytes.NewBuffer(body),
+		)
 		if err != nil {
 			c.JSON(
 				http.StatusInternalServerError,
@@ -1159,7 +1164,7 @@ func ApplyInvoice(c *gin.Context) {
 		)
 		return
 	}
-	if len(payments) == 0 {
+	if len(payments) == 0 || invoice.TotalAmount == 0 {
 		c.JSON(http.StatusForbidden, gin.H{"error": "no payment can be applied to the invoice"})
 		return
 	}
