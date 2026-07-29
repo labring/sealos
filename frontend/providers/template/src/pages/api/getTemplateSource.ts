@@ -18,7 +18,7 @@ import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
 import { Config } from '@/config';
-import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
+import { proxyTemplateIconUrls, resolveTemplateAssetUrls } from '@/utils/templateAsset';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -190,6 +190,7 @@ export async function GetTemplateByName({
   }
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, instanceName);
   appYaml = `${JsYaml.dump(instanceYaml)}\n---\n${appYaml}`;
+  const responseTemplateYaml = proxyTemplateIconUrls(templateYaml, config.template.repo);
 
   let readmeContent = '';
   let readUrl = '';
@@ -211,7 +212,7 @@ export async function GetTemplateByName({
     dataSource,
     TemplateEnvs,
     appYaml,
-    templateYaml,
+    templateYaml: responseTemplateYaml,
     readmeContent,
     readUrl
   };

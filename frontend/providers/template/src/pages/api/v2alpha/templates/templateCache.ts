@@ -1,6 +1,7 @@
 import { readTemplatesFromFile } from '../../listTemplate';
 import { TemplateType } from '@/types/app';
 import type { TemplateCategory } from '@/types/config';
+import type { TemplateRepo } from '@/utils/templateAsset';
 
 interface TemplatesCache {
   data: TemplateType[];
@@ -22,7 +23,8 @@ export function getCachedTemplates(
   jsonPath: string,
   cdnUrl?: string,
   configuredCategories: TemplateCategory[] = [],
-  language?: string
+  language?: string,
+  templateRepo?: TemplateRepo
 ) {
   const now = Date.now();
 
@@ -37,7 +39,13 @@ export function getCachedTemplates(
   try {
     isRefreshingCache = true;
 
-    const templates = readTemplatesFromFile(jsonPath, cdnUrl, configuredCategories, language);
+    const templates = readTemplatesFromFile(
+      jsonPath,
+      cdnUrl,
+      configuredCategories,
+      language,
+      templateRepo
+    );
     const templateMap = new Map<string, TemplateType>();
 
     templates.forEach((template) => {

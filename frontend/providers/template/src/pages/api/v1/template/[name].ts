@@ -54,7 +54,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       jsonPath,
       config.template.cdnHost,
       config.template.categories,
-      language
+      language,
+      config.template.repo
     );
     const template = templates.find((t) => t.metadata.name === templateName);
 

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { replaceRawWithCDN } from '@/pages/api/listTemplate';
-import { resolveTemplateAssetUrl, resolveTemplateAssetUrls } from '@/utils/templateAsset';
+import { readTemplates, replaceRawWithCDN } from '@/pages/api/listTemplate';
+import {
+  getTemplateAssetProxyUrl,
+  resolveTemplateAssetUrl,
+  resolveTemplateAssetUrls
+} from '@/utils/templateAsset';
 import type { TemplateType } from '@/types/app';
 
 const repo = {
@@ -9,6 +13,10 @@ const repo = {
 };
 
 const repoRootPath = '/app/providers/template/templates';
+const internalGogsRepo = {
+  url: 'http://admin-template-management-gogs.admin-system.svc.cluster.local:3000/sealos-admin/templates.git',
+  branch: 'main'
+};
 
 function createTemplate(overrides: Partial<TemplateType['spec']> = {}): TemplateType {
   return {
@@ -113,6 +121,81 @@ describe('template asset URL resolution', () => {
 
     expect(replaceRawWithCDN(rawUrl, 'cdn.jsdelivr.net')).toBe(
       'https://cdn.jsdelivr.net/gh/labring-actions/templates@main/template/appsmith/README.md'
+    );
+  });
+
+  it('rewrites external Gogs raw icon URLs to the local template asset proxy', () => {
+    expect(
+      getTemplateAssetProxyUrl(
+        'https://gogs.192.168.0.62.nip.io/sealos-admin/templates/raw/main/template/ace-step/logo.svg',
+        internalGogsRepo
+      )
+    ).toBe('/api/templateAsset?path=template%2Face-step%2Flogo.svg');
+  });
+
+  it('rewrites GitHub raw icon URLs for the configured template repository', () => {
+    expect(
+      getTemplateAssetProxyUrl(
+        'https://raw.githubusercontent.com/labring-actions/templates/main/template/appsmith/logo.svg',
+        repo
+      )
+    ).toBe('/api/templateAsset?path=template%2Fappsmith%2Flogo.svg');
+  });
+
+  it('leaves unrelated raw icon URLs unchanged', () => {
+    expect(
+      getTemplateAssetProxyUrl(
+        'https://gogs.192.168.0.62.nip.io/other/templates/raw/main/template/ace-step/logo.svg',
+        internalGogsRepo
+      )
+    ).toBe('https://gogs.192.168.0.62.nip.io/other/templates/raw/main/template/ace-step/logo.svg');
+  });
+
+  it('does not proxy unsafe repository asset paths', () => {
+    expect(
+      getTemplateAssetProxyUrl(
+        'https://gogs.192.168.0.62.nip.io/sealos-admin/templates/raw/main/template%2F..%2Fsecret%2Flogo.svg',
+        internalGogsRepo
+      )
+    ).toBe(
+      'https://gogs.192.168.0.62.nip.io/sealos-admin/templates/raw/main/template%2F..%2Fsecret%2Flogo.svg'
+    );
+  });
+
+  it('leaves malformed encoded raw icon URLs unchanged', () => {
+    expect(
+      getTemplateAssetProxyUrl(
+        'https://gogs.192.168.0.62.nip.io/sealos-admin/templates/raw/main/template/%E0%A4%A/logo.svg',
+        internalGogsRepo
+      )
+    ).toBe(
+      'https://gogs.192.168.0.62.nip.io/sealos-admin/templates/raw/main/template/%E0%A4%A/logo.svg'
+    );
+  });
+
+  it('rewrites template list icons and localized icons consistently', () => {
+    const templates = readTemplates(
+      JSON.stringify([
+        createTemplate({
+          icon: 'https://gogs.192.168.0.62.nip.io/sealos-admin/templates/raw/main/template/ace-step/logo.svg',
+          i18n: {
+            zh: {
+              description: '中文',
+              icon: 'https://gogs.192.168.0.62.nip.io/sealos-admin/templates/raw/main/template/ace-step/logo.svg'
+            }
+          }
+        })
+      ]),
+      undefined,
+      [],
+      'zh',
+      internalGogsRepo
+    );
+
+    expect(templates).toHaveLength(1);
+    expect(templates[0].spec.icon).toBe('/api/templateAsset?path=template%2Face-step%2Flogo.svg');
+    expect(templates[0].spec.i18n?.zh.icon).toBe(
+      '/api/templateAsset?path=template%2Face-step%2Flogo.svg'
     );
   });
 });

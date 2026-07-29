@@ -129,7 +129,13 @@ async function handleTemplateDetails(
       });
     }
     const config = Config();
-    getCachedTemplates(jsonPath, config.template.cdnHost, config.template.categories, language);
+    getCachedTemplates(
+      jsonPath,
+      config.template.cdnHost,
+      config.template.categories,
+      language,
+      config.template.repo
+    );
     const template = getTemplateFromCache(templateName);
 
     if (!template) {

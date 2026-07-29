@@ -16,7 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       jsonPath,
       config.template.cdnHost,
       config.template.categories,
-      language
+      language,
+      config.template.repo
     );
 
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });

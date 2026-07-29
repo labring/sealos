@@ -3,6 +3,7 @@ import { TemplateType } from '@/types/app';
 import { filterConfiguredCategorySlugs, getCategorySlugs } from '@/utils/template';
 import type { TemplateCategory } from '@/types/config';
 import { parseGithubUrl } from '@/utils/common';
+import { proxyTemplateIconUrls, type TemplateRepo } from '@/utils/templateAsset';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
@@ -23,7 +24,8 @@ export const readTemplates = (
   jsonData: string,
   cdnUrl?: string,
   configuredCategories: TemplateCategory[] = [],
-  language?: string
+  language?: string,
+  templateRepo?: TemplateRepo
 ): TemplateType[] => {
   const _templates: TemplateType[] = JSON.parse(jsonData);
 
@@ -38,12 +40,26 @@ export const readTemplates = (
       if (cdnUrl) {
         spec.readme = replaceRawWithCDN(spec.readme, cdnUrl);
         spec.icon = replaceRawWithCDN(spec.icon, cdnUrl);
+        if (spec.i18n) {
+          spec.i18n = Object.fromEntries(
+            Object.entries(spec.i18n).map(([lang, data]) => {
+              const nextData = { ...data };
+              (['readme', 'icon'] as const).forEach((field) => {
+                if (nextData[field]) {
+                  nextData[field] = replaceRawWithCDN(nextData[field], cdnUrl);
+                }
+              });
+              return [lang, nextData];
+            })
+          ) as typeof spec.i18n;
+        }
       }
 
-      return {
+      const template = {
         ...item,
         spec
       };
+      return templateRepo ? proxyTemplateIconUrls(template, templateRepo) : template;
     })
     .filter((item) => {
       if (!language) return true;
@@ -63,9 +79,16 @@ export const readTemplatesFromFile = (
   jsonPath: string,
   cdnUrl?: string,
   configuredCategories: TemplateCategory[] = [],
-  language?: string
+  language?: string,
+  templateRepo?: TemplateRepo
 ): TemplateType[] =>
-  readTemplates(fs.readFileSync(jsonPath, 'utf8'), cdnUrl, configuredCategories, language);
+  readTemplates(
+    fs.readFileSync(jsonPath, 'utf8'),
+    cdnUrl,
+    configuredCategories,
+    language,
+    templateRepo
+  );
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = req.query.language as string;
@@ -99,7 +122,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       jsonPath,
       config.template.cdnHost,
       config.template.categories,
-      language
+      language,
+      config.template.repo
     );
 
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
