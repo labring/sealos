@@ -841,7 +841,7 @@ run_rollback() {
     if [[ -f "${BACKUP_DIR}/original-config.toml" ]]; then
       backup="${BACKUP_DIR}/original-config.toml"
     else
-      backup="$(ls -1 "${BACKUP_DIR}"/config.toml.* 2>/dev/null | sort | head -1 || true)"
+      backup="$(ls -1 "${BACKUP_DIR}"/config.toml.* 2>/dev/null | sort | tail -1 || true)"
     fi
   fi
   if [[ -z "${backup}" || ! -f "${backup}" ]]; then
