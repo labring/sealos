@@ -884,16 +884,13 @@ func (r *NamespaceReconciler) resumeHPA(
 
 	var minReplicas, maxReplicas, targetValue int32
 	if val, err := strconv.Atoi(minReplicasStr); err == nil {
-		//nolint:gosec
-		minReplicas = int32(val)
+		minReplicas = int32(val) // nosemgrep: trailofbits.go.string-to-int-signedness-cast.string-to-int-signedness-cast
 	}
 	if val, err := strconv.Atoi(maxReplicasStr); err == nil {
-		//nolint:gosec
-		maxReplicas = int32(val)
+		maxReplicas = int32(val) // nosemgrep: trailofbits.go.string-to-int-signedness-cast.string-to-int-signedness-cast
 	}
 	if val, err := strconv.Atoi(pauseData.Value); err == nil {
-		//nolint:gosec
-		targetValue = int32(val)
+		targetValue = int32(val) // nosemgrep: trailofbits.go.string-to-int-signedness-cast.string-to-int-signedness-cast
 	}
 
 	// Create HPA
