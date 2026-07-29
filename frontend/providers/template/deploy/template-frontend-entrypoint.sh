@@ -117,11 +117,9 @@ add_set_string templateConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
 
 if [ "${SEALOS_CERT_MODE}" = "https" ] || [ "${SEALOS_CERT_MODE}" = "acme" ]; then
   add_set_string templateConfig.templateRepoUrl "https://github.com/labring-actions/templates"
-  add_set_string templateConfig.templateUrl "https://github.com/labring-actions/templates"
   add_set_string templateConfig.templateRepoProvider "github"
 else
   add_set_string templateConfig.templateRepoUrl "https://gogs.${SEALOS_CLOUD_DOMAIN}/sealos-admin/templates"
-  add_set_string templateConfig.templateUrl "https://gogs.${SEALOS_CLOUD_DOMAIN}/sealos-admin/templates"
   add_set_string templateConfig.templateRepoProvider "gogs"
 fi
 
