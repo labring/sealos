@@ -1,0 +1,9 @@
+# This configuration teaches kustomize how to rewrite issuerRef names after
+# namePrefix transforms are applied.
+nameReference:
+- kind: Issuer
+  group: cert-manager.io
+  fieldSpecs:
+  - kind: Certificate
+    group: cert-manager.io
+    path: spec/issuerRef/name
