@@ -108,6 +108,8 @@ Use an existing provider as the reference and keep these deployment surfaces in 
 6. Chart defaults in `values.yaml` and, when needed, user overrides in `<release>-values.yaml`
 7. Chart templates for the App CR (where applicable), Deployment, Service, Ingress, probes, and `helm test`
 
+If the provider reads repository-hosted assets whose raw URL shape differs by backend, add an explicit repo provider value/env beside `templateRepoUrl` and `templateRepoBranch` instead of inferring from the host.
+
 Validate the defaults and any user values file before publishing an image:
 
 ```bash

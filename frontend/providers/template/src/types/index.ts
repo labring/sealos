@@ -19,12 +19,15 @@ export type ServiceEnvType = {
   INGRESS_SECRET: string;
 };
 
+export type TemplateRepoProvider = 'auto' | 'github' | 'gitlab' | 'gogs';
+
 export type EnvResponse = {
   FORCED_LANGUAGE: string;
   SEALOS_CLOUD_DOMAIN: string;
   SEALOS_CERT_SECRET_NAME: string;
   TEMPLATE_REPO_URL: string;
   TEMPLATE_REPO_BRANCH: string;
+  TEMPLATE_REPO_PROVIDER: TemplateRepoProvider;
   SEALOS_NAMESPACE: string;
   SEALOS_SERVICE_ACCOUNT: string;
   SHOW_AUTHOR: string;
