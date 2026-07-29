@@ -844,6 +844,14 @@ func (r *NamespaceReconciler) suspendHPA(
 	return true, nil
 }
 
+func parseInt32(value string) (int32, error) {
+	var parsed int32
+	if _, err := fmt.Sscan(value, &parsed); err != nil {
+		return 0, err
+	}
+	return parsed, nil
+}
+
 // resumeHPA handles HPA restoration logic: reads pause annotation and creates HPA if needed
 // Returns true if annotations were modified, false otherwise
 func (r *NamespaceReconciler) resumeHPA(
@@ -883,17 +891,14 @@ func (r *NamespaceReconciler) resumeHPA(
 	}
 
 	var minReplicas, maxReplicas, targetValue int32
-	if val, err := strconv.Atoi(minReplicasStr); err == nil {
-		// nosemgrep
-		minReplicas = int32(val)
+	if val, err := parseInt32(minReplicasStr); err == nil {
+		minReplicas = val
 	}
-	if val, err := strconv.Atoi(maxReplicasStr); err == nil {
-		// nosemgrep
-		maxReplicas = int32(val)
+	if val, err := parseInt32(maxReplicasStr); err == nil {
+		maxReplicas = val
 	}
-	if val, err := strconv.Atoi(pauseData.Value); err == nil {
-		// nosemgrep
-		targetValue = int32(val)
+	if val, err := parseInt32(pauseData.Value); err == nil {
+		targetValue = val
 	}
 
 	// Create HPA
