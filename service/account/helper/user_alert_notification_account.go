@@ -59,7 +59,9 @@ type ListUserAlertNotificationAccountsReq struct {
 	AuthBase `json:",inline" bson:",inline"`
 }
 
-func ParseListUserAlertNotificationAccountsReq(c *gin.Context) (*ListUserAlertNotificationAccountsReq, error) {
+func ParseListUserAlertNotificationAccountsReq(
+	c *gin.Context,
+) (*ListUserAlertNotificationAccountsReq, error) {
 	var req ListUserAlertNotificationAccountsReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, fmt.Errorf("failed to bind request: %w", err)
@@ -88,7 +90,7 @@ type DeleteUserAlertNotificationAccountReq struct {
 	// @Summary Account IDs
 	// @Description List of account IDs to delete
 	// @JSONSchema required
-	IDs []uuid.UUID `json:"ids" bson:"ids" binding:"required" example:"[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]"`
+	IDs []uuid.UUID `json:"ids" bson:"ids" binding:"required"`
 
 	// @Summary User UUID
 	// @Description User UUID
@@ -98,7 +100,9 @@ type DeleteUserAlertNotificationAccountReq struct {
 	AuthBase `json:",inline" bson:",inline"`
 }
 
-func ParseDeleteUserAlertNotificationAccountReq(c *gin.Context) (*DeleteUserAlertNotificationAccountReq, error) {
+func ParseDeleteUserAlertNotificationAccountReq(
+	c *gin.Context,
+) (*DeleteUserAlertNotificationAccountReq, error) {
 	var req DeleteUserAlertNotificationAccountReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, fmt.Errorf("failed to bind request: %w", err)
@@ -122,7 +126,7 @@ type ToggleUserAlertNotificationAccountsReq struct {
 	// @Summary Account IDs
 	// @Description List of account IDs to toggle
 	// @JSONSchema required
-	IDs []uuid.UUID `json:"ids" bson:"ids" binding:"required" example:"[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]"`
+	IDs []uuid.UUID `json:"ids" bson:"ids" binding:"required"`
 
 	// @Summary Enable flag
 	// @Description Set to true to enable, false to disable
@@ -132,7 +136,9 @@ type ToggleUserAlertNotificationAccountsReq struct {
 	AuthBase `json:",inline" bson:",inline"`
 }
 
-func ParseToggleUserAlertNotificationAccountsReq(c *gin.Context) (*ToggleUserAlertNotificationAccountsReq, error) {
+func ParseToggleUserAlertNotificationAccountsReq(
+	c *gin.Context,
+) (*ToggleUserAlertNotificationAccountsReq, error) {
 	var req ToggleUserAlertNotificationAccountsReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, fmt.Errorf("failed to bind request: %w", err)

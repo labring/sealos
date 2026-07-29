@@ -47,11 +47,15 @@ func CreateUserAlertNotificationAccount(c *gin.Context) {
 	}
 
 	// Validate provider type - only EMAIL and PHONE are supported
-	if req.ProviderType != types.OauthProviderTypeEmail && req.ProviderType != types.OauthProviderTypePhone {
+	if req.ProviderType != types.OauthProviderTypeEmail &&
+		req.ProviderType != types.OauthProviderTypePhone {
 		c.JSON(
 			http.StatusBadRequest,
 			helper.ErrorMessage{
-				Error: fmt.Sprintf("unsupported provider type: %s. Only EMAIL and PHONE are supported", req.ProviderType),
+				Error: fmt.Sprintf(
+					"unsupported provider type: %s. Only EMAIL and PHONE are supported",
+					req.ProviderType,
+				),
 			},
 		)
 		return
@@ -107,7 +111,10 @@ func ListUserAlertNotificationAccounts(c *gin.Context) {
 		c.JSON(
 			http.StatusBadRequest,
 			helper.ErrorMessage{
-				Error: fmt.Sprintf("failed to parse list user alert notification accounts request: %v", err),
+				Error: fmt.Sprintf(
+					"failed to parse list user alert notification accounts request: %v",
+					err,
+				),
 			},
 		)
 		return
@@ -168,7 +175,10 @@ func DeleteUserAlertNotificationAccount(c *gin.Context) {
 		c.JSON(
 			http.StatusBadRequest,
 			helper.ErrorMessage{
-				Error: fmt.Sprintf("failed to parse delete user alert notification accounts request: %v", err),
+				Error: fmt.Sprintf(
+					"failed to parse delete user alert notification accounts request: %v",
+					err,
+				),
 			},
 		)
 		return
@@ -181,7 +191,10 @@ func DeleteUserAlertNotificationAccount(c *gin.Context) {
 		return
 	}
 
-	deletedCount, deletedIDs, err := dao.DBClient.DeleteUserAlertNotificationAccounts(req.IDs, req.UserUID)
+	deletedCount, deletedIDs, err := dao.DBClient.DeleteUserAlertNotificationAccounts(
+		req.IDs,
+		req.UserUID,
+	)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
@@ -197,7 +210,10 @@ func DeleteUserAlertNotificationAccount(c *gin.Context) {
 			DeletedCount: deletedCount,
 			DeletedIDs:   deletedIDs,
 		},
-		Message: fmt.Sprintf("Successfully deleted %d user alert notification accounts", deletedCount),
+		Message: fmt.Sprintf(
+			"Successfully deleted %d user alert notification accounts",
+			deletedCount,
+		),
 	})
 }
 
@@ -219,7 +235,10 @@ func ToggleUserAlertNotificationAccounts(c *gin.Context) {
 		c.JSON(
 			http.StatusBadRequest,
 			helper.ErrorMessage{
-				Error: fmt.Sprintf("failed to parse toggle user alert notification accounts request: %v", err),
+				Error: fmt.Sprintf(
+					"failed to parse toggle user alert notification accounts request: %v",
+					err,
+				),
 			},
 		)
 		return
@@ -232,7 +251,10 @@ func ToggleUserAlertNotificationAccounts(c *gin.Context) {
 		return
 	}
 
-	updatedCount, updatedIDs, err := dao.DBClient.ToggleUserAlertNotificationAccounts(req.IDs, req.IsEnabled)
+	updatedCount, updatedIDs, err := dao.DBClient.ToggleUserAlertNotificationAccounts(
+		req.IDs,
+		req.IsEnabled,
+	)
 	if err != nil {
 		c.JSON(
 			http.StatusInternalServerError,
@@ -248,6 +270,9 @@ func ToggleUserAlertNotificationAccounts(c *gin.Context) {
 			UpdatedCount: updatedCount,
 			UpdatedIDs:   updatedIDs,
 		},
-		Message: fmt.Sprintf("Successfully toggled %d user alert notification accounts", updatedCount),
+		Message: fmt.Sprintf(
+			"Successfully toggled %d user alert notification accounts",
+			updatedCount,
+		),
 	})
 }
