@@ -32,21 +32,18 @@ add_set_json() {
 AUTO_CONFIG_HELM_OPTS=()
 
 CONFIG_CLOUD_DOMAIN=$(get_cm_value sealos-system sealos-config cloudDomain)
-CONFIG_NODE_PORT_HOST=$(get_cm_value sealos-system sealos-config nodePortHost)
 CONFIG_CLOUD_PORT=$(get_cm_value sealos-system sealos-config cloudPort)
 CONFIG_HTTP_PORT=$(get_cm_value sealos-system sealos-config httpPort)
 CONFIG_DISABLE_HTTPS=$(get_cm_value sealos-system sealos-config disableHttps)
 CONFIG_CERT_SECRET_NAME=$(get_cm_value sealos-system sealos-config certSecretName)
 
 SEALOS_CLOUD_DOMAIN=${CONFIG_CLOUD_DOMAIN:-${SEALOS_CLOUD_DOMAIN:-${cloudDomain:-}}}
-SEALOS_NODE_PORT_HOST=${CONFIG_NODE_PORT_HOST:-${SEALOS_NODE_PORT_HOST:-${nodePortHost:-}}}
 SEALOS_CLOUD_PORT=${CONFIG_CLOUD_PORT:-${SEALOS_CLOUD_PORT:-${cloudPort:-}}}
 SEALOS_HTTP_PORT=${CONFIG_HTTP_PORT:-${SEALOS_HTTP_PORT:-${httpPort:-}}}
 SEALOS_DISABLE_HTTPS=${CONFIG_DISABLE_HTTPS:-${SEALOS_DISABLE_HTTPS:-${disableHttps:-}}}
 SEALOS_CERT_SECRET_NAME=${CONFIG_CERT_SECRET_NAME:-${SEALOS_CERT_SECRET_NAME:-${certSecretName:-}}}
 
 add_set_string applaunchpadConfig.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
-add_set_string applaunchpadConfig.nodePortHost "${SEALOS_NODE_PORT_HOST}"
 add_set_string applaunchpadConfig.cloudPort "${SEALOS_CLOUD_PORT}"
 add_set_string applaunchpadConfig.httpPort "${SEALOS_HTTP_PORT}"
 add_set_string applaunchpadConfig.disableHttps "${SEALOS_DISABLE_HTTPS}"

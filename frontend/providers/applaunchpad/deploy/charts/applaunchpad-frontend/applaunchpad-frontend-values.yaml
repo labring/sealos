@@ -18,3 +18,4 @@ applaunchpadConfig:
   publicDomainReservedPrefixes: []
   customDomainMode: "cname"
   customDomainCertificateSecretName: "wildcard-cert"
+  nodePortHost: ""
