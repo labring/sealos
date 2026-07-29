@@ -10,6 +10,8 @@ import { verifyJWT } from '@/services/backend/auth';
 import { ProviderType } from 'prisma/global/generated/client';
 import { AccessTokenPayload } from '@/types/token';
 import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
+import { normalizePasswordUsername } from '@/services/backend/passwordUsername';
+import { getSafeAuthErrorInfo } from '@/services/backend/authDiagnostics';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -21,6 +23,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { password, username } = req.body as Record<string, string>;
     if (!password) return jsonRes(res, { code: 400, message: 'password is Required' });
     if (!username) return jsonRes(res, { code: 400, message: 'username is Required' });
+    const normalizedUsername = normalizePasswordUsername(username);
+    if (
+      normalizedUsername.isEmpty ||
+      normalizedUsername.hasUnsafeCharacters ||
+      normalizedUsername.isAdminLike
+    ) {
+      return jsonRes(res, { code: 400, message: 'Invalid username.' });
+    }
 
     if (!strongPassword(password)) {
       return jsonRes(res, {
@@ -33,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: {
         providerId_providerType: {
           providerType: ProviderType.PASSWORD,
-          providerId: username
+          providerId: normalizedUsername.value
         }
       }
     });
@@ -43,10 +53,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 409
       });
     const globalData = await signUpByPassword({
-      id: username,
+      id: normalizedUsername.value,
       password,
       avatar_url: '',
-      name: username
+      name: normalizedUsername.value
     });
     if (!globalData) throw new Error('Failed to edit db');
     const realUser = globalData.user;
@@ -78,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Successfully'
     });
   } catch (err) {
-    console.log(err);
+    console.error('password API signup failed:', getSafeAuthErrorInfo(err));
     return jsonRes(res, {
       message: 'Failed to authenticate with password',
       code: 500

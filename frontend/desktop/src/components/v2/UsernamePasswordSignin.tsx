@@ -47,7 +47,10 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   const bg = useColorModeValue('white', 'gray.700');
 
   const loginSchema = z.object({
-    username: z.string().min(1, { message: t('common:please_input_username') as string }),
+    username: z
+      .string()
+      .trim()
+      .min(1, { message: t('common:please_input_username') as string }),
     password: z.string().min(1, { message: t('common:please_input_password') as string })
   });
 
@@ -69,7 +72,7 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
       const adClickData: AdClickData | null = getAdClickData();
 
       const result = await passwordLoginRequest({
-        user: data.username,
+        user: data.username.trim(),
         password: data.password,
         inviterId,
         semData,
@@ -97,12 +100,20 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
       throw new Error('Invalid username or password');
     },
     onError: (error: any) => {
-      console.error('Login failed:', error);
-
       // Handle authentication errors (500 status code with specific messages)
       const errorMessage = error?.message || 'Login failed';
+      console.error('Login failed:', {
+        code: error?.code,
+        message: errorMessage,
+        status: error?.response?.status
+      });
 
-      if (errorMessage === 'User not found.' || errorMessage === 'Incorrect password.') {
+      if (
+        errorMessage === 'User not found.' ||
+        errorMessage === 'Incorrect password.' ||
+        errorMessage === 'Unauthorized' ||
+        errorMessage === 'Invalid username or password'
+      ) {
         setError('password', {
           type: 'manual',
           message: t('common:invalid_username_or_password')
@@ -121,7 +132,10 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    loginMutation.mutate(data);
+    loginMutation.mutate({
+      ...data,
+      username: data.username.trim()
+    });
   };
 
   const handleBack = () => {

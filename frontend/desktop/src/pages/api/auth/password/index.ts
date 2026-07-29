@@ -5,16 +5,24 @@ import { enablePassword } from '@/services/enable';
 import { getGlobalToken } from '@/services/backend/globalAuth';
 import { AuthError } from '@/services/backend/errors';
 import { ProviderType } from 'prisma/global/generated/client';
-import { initRegionToken } from '@/services/backend/regionAuth';
-import { getRegionUid } from '@/services/enable';
-import { getRequestDefaultPrivateWorkspaceName } from '@/services/backend/svc/workspaceDefaults';
+import { normalizePasswordUsername } from '@/services/backend/passwordUsername';
+import { getSafeAuthErrorInfo, withAuthStage } from '@/services/backend/authDiagnostics';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
       throw new Error('PASSWORD_SALT is not defined');
     }
-    const { user: name, password, inviterId, semData, adClickData } = req.body;
+    const { user: rawName, password, inviterId, semData, adClickData } = req.body;
+    const normalizedUsername = normalizePasswordUsername(rawName);
+    if (normalizedUsername.isEmpty || normalizedUsername.hasUnsafeCharacters) {
+      return jsonRes(res, {
+        message: 'Invalid username.',
+        code: 400
+      });
+    }
+    const name = normalizedUsername.value;
+
     if (!strongPassword(password)) {
       return jsonRes(res, {
         message:
@@ -22,16 +30,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         code: 400
       });
     }
-    const data = await getGlobalToken({
-      provider: ProviderType.PASSWORD,
-      providerId: name,
-      avatar_url: '',
-      password,
-      name,
-      inviterId,
-      semData,
-      adClickData
-    });
+    const data = await withAuthStage(
+      'password.authorize',
+      {
+        provider: ProviderType.PASSWORD,
+        usernameChanged: normalizedUsername.changed,
+        adminLike: normalizedUsername.isAdminLike
+      },
+      () =>
+        getGlobalToken({
+          provider: ProviderType.PASSWORD,
+          providerId: typeof rawName === 'string' ? rawName : name,
+          avatar_url: '',
+          password,
+          name,
+          inviterId,
+          semData,
+          adClickData
+        })
+    );
 
     if (data?.isRestricted) {
       return jsonRes(res, {
@@ -46,60 +63,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'Unauthorized'
       });
 
-    // Auto init region for new users so callers can directly use regionToken API
-    if (data.needInit && data.user) {
-      try {
-        const defaultWorkspaceName = getRequestDefaultPrivateWorkspaceName(req);
-        const regionData = await initRegionToken({
-          userUid: data.user.userUid,
-          userId: data.user.userId,
-          regionUid: getRegionUid(),
-          workspaceName: defaultWorkspaceName,
-          defaultWorkspaceName
-        });
-        if (!regionData) {
-          return jsonRes(res, {
-            data: {
-              token: data.token,
-              needInit: true
-            },
-            code: 409,
-            message: 'Failed to init workspace'
-          });
-        }
-      } catch (e) {
-        console.error('Auto init region failed:', e);
-        return jsonRes(res, {
-          data: {
-            token: data.token,
-            needInit: true
-          },
-          code: 409,
-          message: 'Failed to init workspace'
-        });
-      }
-    }
-
     return jsonRes(res, {
       data: {
         token: data.token,
-        needInit: false
+        needInit: data.needInit
       },
       code: 200,
       message: 'Successfully'
     });
   } catch (err) {
-    console.log(err);
-    let message = 'Failed to authorize with password';
+    console.error('password auth failed:', getSafeAuthErrorInfo(err));
 
     if (err instanceof AuthError) {
-      message = err.message;
-    } else if (err instanceof Error) {
-      message = err.message;
+      if (err.errorCode === 'INVALID_USERNAME') {
+        return jsonRes(res, {
+          message: 'Invalid username.',
+          code: 400
+        });
+      }
+      if (err.errorCode === 'USER_NOT_FOUND' || err.errorCode === 'INCORRECT_PASSWORD') {
+        return jsonRes(res, {
+          message: 'Unauthorized',
+          code: 401
+        });
+      }
     }
 
     return jsonRes(res, {
-      message,
+      message: 'Failed to authorize with password',
       code: 500
     });
   }
