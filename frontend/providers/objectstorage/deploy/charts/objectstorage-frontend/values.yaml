@@ -47,7 +47,7 @@ startupProbe:
   failureThreshold: 30
 readinessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: http
   periodSeconds: 10
   timeoutSeconds: 3

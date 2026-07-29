@@ -117,7 +117,7 @@ livenessProbe:
 
 readinessProbe:
   httpGet:
-    path: /api/platform/getAppConfig
+    path: /healthz
     port: 3000
   initialDelaySeconds: 5
   periodSeconds: 3

@@ -43,7 +43,7 @@ startupProbe:
   failureThreshold: 30
 readinessProbe:
   httpGet:
-    path: /api/platform/getInitData
+    path: /healthz
     port: 3000
   periodSeconds: 10
   timeoutSeconds: 3

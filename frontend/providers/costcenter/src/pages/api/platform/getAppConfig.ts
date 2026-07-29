@@ -47,22 +47,27 @@ export function initAppConfig() {
     global.AppConfig = getAppConfig(DefaultAppConfig, yamlResult);
   }
 }
+
+export function getAppConfigResponse(): Response {
+  return {
+    REALNAME_RECHARGE_LIMIT: global.AppConfig.costCenter.realNameRechargeLimit,
+    RECHARGE_ENABLED: global.AppConfig.costCenter.recharge.enabled,
+    TRANSFER_ENABLED: global.AppConfig.costCenter.transferEnabled,
+    STRIPE_ENABLED: global.AppConfig.costCenter.recharge.payMethods.stripe.enabled,
+    STRIPE_PUB: global.AppConfig.costCenter.recharge.payMethods.stripe.publicKey,
+    WECHAT_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.wechat?.enabled || false,
+    ALIPAY_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.alipay?.enabled || false,
+    CURRENCY: global.AppConfig.costCenter.currencyType,
+    INVOICE_ENABLED: global.AppConfig.costCenter?.invoice?.enabled || false,
+    GPU_ENABLED: global.AppConfig.costCenter?.gpuEnabled || false
+  } as Response;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     initAppConfig();
     jsonRes<Response>(res, {
-      data: {
-        REALNAME_RECHARGE_LIMIT: global.AppConfig.costCenter.realNameRechargeLimit,
-        RECHARGE_ENABLED: global.AppConfig.costCenter.recharge.enabled,
-        TRANSFER_ENABLED: global.AppConfig.costCenter.transferEnabled,
-        STRIPE_ENABLED: global.AppConfig.costCenter.recharge.payMethods.stripe.enabled,
-        STRIPE_PUB: global.AppConfig.costCenter.recharge.payMethods.stripe.publicKey,
-        WECHAT_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.wechat?.enabled || false,
-        ALIPAY_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.alipay?.enabled || false,
-        CURRENCY: global.AppConfig.costCenter.currencyType,
-        INVOICE_ENABLED: global.AppConfig.costCenter?.invoice?.enabled || false,
-        GPU_ENABLED: global.AppConfig.costCenter?.gpuEnabled || false
-      } as Response
+      data: getAppConfigResponse()
     });
   } catch (error) {
     console.log('error: /api/platform/getAppConfig', error);
