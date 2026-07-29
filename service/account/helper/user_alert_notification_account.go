@@ -31,7 +31,9 @@ type CreateUserAlertNotificationAccountReq struct {
 	AuthBase `json:",inline" bson:",inline"`
 }
 
-func ParseCreateUserAlertNotificationAccountReq(c *gin.Context) (*CreateUserAlertNotificationAccountReq, error) {
+func ParseCreateUserAlertNotificationAccountReq(
+	c *gin.Context,
+) (*CreateUserAlertNotificationAccountReq, error) {
 	var req CreateUserAlertNotificationAccountReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		return nil, fmt.Errorf("failed to bind request: %w", err)

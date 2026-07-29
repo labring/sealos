@@ -30,7 +30,10 @@ func CreateUserAlertNotificationAccount(c *gin.Context) {
 		c.JSON(
 			http.StatusBadRequest,
 			helper.ErrorMessage{
-				Error: fmt.Sprintf("failed to parse create user alert notification account request: %v", err),
+				Error: fmt.Sprintf(
+					"failed to parse create user alert notification account request: %v",
+					err,
+				),
 			},
 		)
 		return
