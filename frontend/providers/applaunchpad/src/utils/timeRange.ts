@@ -68,7 +68,10 @@ export function parseDateTimeInTimeZone(date: string, time: string, timeZone: st
     return null;
   }
 
-  return dayjs.tz(input, format, timeZone).toDate();
+  const parsed = dayjs.tz(input, format, timeZone);
+
+  // Day.js normalizes nonexistent wall-clock times during DST spring-forward.
+  return parsed.format(format) === input ? parsed.toDate() : null;
 }
 
 export function getDayBoundsInTimeZone(date: Date, timeZone: string): { start: Date; end: Date } {

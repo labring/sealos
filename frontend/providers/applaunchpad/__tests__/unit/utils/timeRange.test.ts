@@ -60,6 +60,10 @@ describe('time zone date time helpers', () => {
     expect(parseDateTimeInTimeZone('2026-07-27', '25:00', shanghaiTimeZone)).toBeNull();
   });
 
+  it('rejects nonexistent local times during DST spring-forward', () => {
+    expect(parseDateTimeInTimeZone('2026-03-08', '02:30', 'America/Los_Angeles')).toBeNull();
+  });
+
   it('derives calendar day bounds in the selected time zone', () => {
     const bounds = getDayBoundsInTimeZone(new Date('2026-07-27T17:00:00.000Z'), shanghaiTimeZone);
 
