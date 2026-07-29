@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -908,9 +907,12 @@ func GenerateBillingDataFromRecords(
 	}
 
 	// 存储最终计费数据
-	// map[namespace]map[app_type | parent_type/parent_name][]resources.AppCost
-	appCostsMap := make(map[string]map[string][]resources.AppCost)
-	nsTypeAmount := make(map[string]map[string]int64)
+	type billingGroupKey struct {
+		appType uint8
+		appName string
+	}
+	appCostsMap := make(map[string]map[billingGroupKey][]resources.AppCost)
+	nsTypeAmount := make(map[string]map[billingGroupKey]int64)
 
 	calculateFinalUsed := func(values map[uint8][]int64, prols *resources.PropertyTypeLS, minutes float64) map[uint8]int64 {
 		finalUsed := make(map[uint8]int64)
@@ -949,18 +951,18 @@ func GenerateBillingDataFromRecords(
 			continue
 		}
 		appCost.Amount = totalAmount
-		groupKey := strconv.Itoa(int(agg.Type))
+		groupKey := billingGroupKey{appType: agg.Type}
 		if agg.ParentType != 0 && agg.ParentName != "" {
-			groupKey = strconv.Itoa(int(agg.ParentType)) + "/" + agg.ParentName
+			groupKey = billingGroupKey{appType: agg.ParentType, appName: agg.ParentName}
 		}
 		ns := agg.Category
 		if _, ok := nsTypeAmount[ns]; !ok {
-			nsTypeAmount[ns] = make(map[string]int64)
+			nsTypeAmount[ns] = make(map[billingGroupKey]int64)
 		}
 		nsTypeAmount[ns][groupKey] += totalAmount
 
 		if _, ok := appCostsMap[ns]; !ok {
-			appCostsMap[ns] = make(map[string][]resources.AppCost)
+			appCostsMap[ns] = make(map[billingGroupKey][]resources.AppCost)
 		}
 		appCostsMap[ns][groupKey] = append(appCostsMap[ns][groupKey], appCost)
 	}
@@ -968,24 +970,19 @@ func GenerateBillingDataFromRecords(
 
 	// 生成 Billing 数据
 	for ns, appCostMap := range appCostsMap {
-		for tp, appCostList := range appCostMap {
-			amount := nsTypeAmount[ns][tp]
+		for groupKey, appCostList := range appCostMap {
+			amount := nsTypeAmount[ns][groupKey]
 			if amount <= 0 {
 				continue
 			}
-			parts := strings.Split(tp, "/")
-			appType, _ := strconv.Atoi(parts[0])
-			appName := ""
-			if len(parts) > 1 {
-				appName = parts[1]
-			}
-			appTypeValue := uint8(appType) // #nosec G115
 			billings = append(billings, &resources.Billing{
-				OrderID:   stableBillingOrderID(owner, endTime, ns, appTypeValue, appName),
+				OrderID: stableBillingOrderID(
+					owner, endTime, ns, groupKey.appType, groupKey.appName,
+				),
 				Type:      Consumption,
 				Namespace: ns,
-				AppType:   appTypeValue,
-				AppName:   appName,
+				AppType:   groupKey.appType,
+				AppName:   groupKey.appName,
 				AppCosts:  appCostList,
 				Amount:    amount,
 				Owner:     owner,
