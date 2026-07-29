@@ -73,6 +73,7 @@ templateConfig:
   tlsRejectUnauthorized: "1"
   templateRepoUrl: "https://github.com/labring-actions/templates"
   templateRepoBranch: "main"
+  templateRepoProvider: "github"
   templateRepoPath: "templates"
   showAuthor: "false"
   accountUrl: "http://account-service.account-system.svc:2333"

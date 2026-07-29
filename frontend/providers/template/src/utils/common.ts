@@ -188,12 +188,16 @@ export function getTemplateEnvs(namespace?: string): EnvResponse {
     process.env.CURRENCY_SYMBOL === 'cny' || process.env.CURRENCY_SYMBOL === 'usd'
       ? process.env.CURRENCY_SYMBOL
       : 'shellCoin';
+  const templateRepoProvider =
+    (process.env.TEMPLATE_REPO_PROVIDER as EnvResponse['TEMPLATE_REPO_PROVIDER'] | undefined) ||
+    'auto';
   const TemplateEnvs: EnvResponse = {
     SEALOS_CLOUD_DOMAIN: process.env.SEALOS_USER_DOMAIN || cloudDomain,
     SEALOS_CERT_SECRET_NAME: process.env.SEALOS_CERT_SECRET_NAME || 'wildcard-cert',
     TEMPLATE_REPO_URL:
       process.env.TEMPLATE_REPO_URL || 'https://github.com/labring-actions/templates',
     TEMPLATE_REPO_BRANCH: process.env.TEMPLATE_REPO_BRANCH || 'main',
+    TEMPLATE_REPO_PROVIDER: templateRepoProvider,
     SEALOS_NAMESPACE: namespace || '',
     SEALOS_SERVICE_ACCOUNT: namespace?.replace('ns-', '') || '',
     SHOW_AUTHOR: String(process.env.SHOW_AUTHOR === 'true'),
