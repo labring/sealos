@@ -9,10 +9,9 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/labring/sealos/webhook/stargz/test/utils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/labring/sealos/webhook/stargz/test/utils"
 )
 
 var (
@@ -49,7 +48,10 @@ var _ = BeforeSuite(func() {
 	// built and available before running the tests. Also, remove the following block.
 	By("loading the manager(Operator) image on Kind")
 	err = utils.LoadImageToKindClusterWithName(projectImage)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to load the manager(Operator) image into Kind")
+	ExpectWithOffset(
+		1,
+		err,
+	).NotTo(HaveOccurred(), "Failed to load the manager(Operator) image into Kind")
 
 	// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.
 	// To prevent errors when tests run in environments with CertManager already installed,

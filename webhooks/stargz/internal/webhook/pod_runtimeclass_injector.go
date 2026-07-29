@@ -3,6 +3,7 @@ package webhook
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -144,13 +145,7 @@ func isDevboxPod(pod *corev1.Pod) bool {
 }
 
 func (i *PodRuntimeClassInjector) imageMatches(image string) bool {
-	registry := ImageRegistry(image)
-	for _, candidate := range i.registries {
-		if registry == candidate {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(i.registries, ImageRegistry(image))
 }
 
 func ImageRegistry(image string) string {
@@ -168,7 +163,7 @@ func ImageRegistry(image string) string {
 func SplitRegistries(raw string) []string {
 	var out []string
 	seen := map[string]bool{}
-	for _, item := range strings.Split(raw, ",") {
+	for item := range strings.SplitSeq(raw, ",") {
 		item = strings.TrimSpace(item)
 		item = strings.TrimPrefix(item, "http://")
 		item = strings.TrimPrefix(item, "https://")
