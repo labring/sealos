@@ -198,7 +198,7 @@ spec:
         - --leader-elect
         - --health-probe-bind-address=:8081
         - --runtime-class=stargz
-        - --registries=sealos.hub:5000
+        - --registries=<REGISTRY_URL>
         - --skip-annotation=stargz.sealos.io/skip
         command:
         - /stargz-webhook

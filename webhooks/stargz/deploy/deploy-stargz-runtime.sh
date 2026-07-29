@@ -26,6 +26,7 @@ STARGZ_CONFIG_DIR="${STARGZ_CONFIG_DIR:-/etc/containerd-stargz-grpc}"
 STARGZ_CONFIG="${STARGZ_CONFIG:-${STARGZ_CONFIG_DIR}/config.toml}"
 STARGZ_ROOT="${STARGZ_ROOT:-/var/lib/containerd-stargz-grpc}"
 STARGZ_ADDRESS="${STARGZ_ADDRESS:-/run/containerd-stargz-grpc/containerd-stargz-grpc.sock}"
+STARGZ_LOG_LEVEL="${STARGZ_LOG_LEVEL:-debug}"
 STARGZ_INSECURE_REGISTRIES="${STARGZ_INSECURE_REGISTRIES:-}"
 STARGZ_DOCKER_CONFIG_DIR="${STARGZ_DOCKER_CONFIG_DIR:-${STARGZ_CONFIG_DIR}/docker}"
 STARGZ_REGISTRY_AUTHS="${STARGZ_REGISTRY_AUTHS:-}"
@@ -84,6 +85,12 @@ Node scheduling label:
   - STARGZ_NODE_LABEL_VALUE=true
   - STARGZ_LABEL_NODE=true
   - KUBECONFIG=/etc/kubernetes/admin.conf
+
+Logging:
+  stargz-snapshotter logs go to journald. Default log level is info.
+
+  - STARGZ_LOG_LEVEL=info
+  - journalctl -u stargz-snapshotter -f
 USAGE
 }
 
@@ -109,6 +116,17 @@ validate_handler_name() {
   case "$1" in
     *[!A-Za-z0-9_-]*|'')
       echo "invalid runtime handler: $1; use only A-Z a-z 0-9 _ -" >&2
+      exit 1
+      ;;
+  esac
+}
+
+validate_log_level() {
+  case "$1" in
+    trace|debug|info|warn|error|fatal|panic)
+      ;;
+    *)
+      echo "invalid STARGZ_LOG_LEVEL: $1; use trace, debug, info, warn, error, fatal, or panic" >&2
       exit 1
       ;;
   esac
@@ -398,6 +416,9 @@ EOF
 write_stargz_service() {
   local stargz_config="$1"
   local docker_config_dir="${2:-}"
+  local log_level="${3:-${STARGZ_LOG_LEVEL}}"
+
+  validate_log_level "${log_level}"
 
   cat > /etc/systemd/system/stargz-snapshotter.service <<EOF
 [Unit]
@@ -408,12 +429,15 @@ Before=containerd.service
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/containerd-stargz-grpc --config ${stargz_config}
+ExecStart=/usr/local/bin/containerd-stargz-grpc --config ${stargz_config} --log-level ${log_level}
 Restart=always
 RestartSec=5
 Delegate=yes
 LimitNOFILE=1048576
 TasksMax=infinity
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=stargz-snapshotter
 EOF
 
   if [[ -n "${docker_config_dir}" ]]; then
@@ -609,6 +633,7 @@ run_deploy() {
   local backup
 
   validate_handler_name "${STARGZ_RUNTIME_HANDLER}"
+  validate_log_level "${STARGZ_LOG_LEVEL}"
   require_cmd curl
   require_cmd tar
   require_cmd install
@@ -626,6 +651,7 @@ run_deploy() {
   log "host: $(hostname)"
   log "default snapshotter target: ${DEFAULT_SNAPSHOTTER}"
   log "stargz runtime handler: ${STARGZ_RUNTIME_HANDLER}"
+  log "stargz log level: ${STARGZ_LOG_LEVEL}"
   log "containerd: $(containerd --version)"
 
   TMP_DIR="$(mktemp -d)"
@@ -707,6 +733,9 @@ run_status() {
   printf '\n== services ==\n'
   systemctl is-active containerd || true
   systemctl is-active stargz-snapshotter 2>/dev/null || true
+  if systemctl cat stargz-snapshotter >/dev/null 2>&1; then
+    systemctl show stargz-snapshotter -p ExecStart --value 2>/dev/null | sed -n '1p' || true
+  fi
 
   printf '\n== versions ==\n'
   containerd --version
