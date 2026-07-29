@@ -1,9 +1,9 @@
-import dayjs from 'dayjs';
+import { formatDateTimeInTimeZone, getBrowserTimeZone } from '@/utils/timeRange';
 
 export default function DynamicTime({ lastRefreshTime }: { lastRefreshTime?: number }) {
   if (!lastRefreshTime) {
     return <span>--:--:--</span>;
   }
 
-  return <span>{dayjs(lastRefreshTime).format('HH:mm:ss')}</span>;
+  return <span>{formatDateTimeInTimeZone(lastRefreshTime, getBrowserTimeZone(), 'HH:mm:ss')}</span>;
 }

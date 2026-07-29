@@ -7,26 +7,22 @@ import { ChangeEventHandler, useMemo, useState } from 'react';
 import { DateRange, DayPicker } from 'react-day-picker';
 import useDateTimeStore from '@/store/date';
 import {
-  formatUtcDate,
-  formatUtcDateTime,
-  formatUtcTime,
-  getUtcDayBounds,
+  formatDateInTimeZone,
+  formatDateTimeInTimeZone,
+  formatTimeInTimeZone,
+  getBrowserTimeZone,
+  getBoundedRangeStart,
+  getBoundedDayRangeInTimeZone,
+  getDayBoundsInTimeZone,
   normalizeTimeInput,
+  orderDateRange,
   parseTimeRange,
-  parseUtcDateTime
+  parseDateTimeInTimeZone
 } from '@/utils/timeRange';
 import { Button } from '@sealos/shadcn-ui/button';
 import { Calendar, RefreshCw } from 'lucide-react';
 import { Input } from '@sealos/shadcn-ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
-import { Separator } from '@sealos/shadcn-ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@sealos/shadcn-ui/select';
 import { cn } from '@sealos/shadcn-ui';
 import 'react-day-picker/style.css';
 
@@ -45,20 +41,21 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
   const [isOpen, setIsOpen] = useState(false);
+  const timeZone = useMemo(() => getBrowserTimeZone(), []);
 
   const {
     startDateTime,
     endDateTime,
     setStartDateTime,
     setEndDateTime,
-    timeZone,
-    setTimeZone,
     setManualRange,
     setAutoRange
   } = useDateTimeStore();
 
   const now = new Date();
   const sevenDaysAgo = subDays(now, 7);
+  const earliestCalendarDay = getDayBoundsInTimeZone(sevenDaysAgo, timeZone).start;
+  const latestCalendarDay = getDayBoundsInTimeZone(now, timeZone).start;
 
   const initState = {
     from: startDateTime,
@@ -146,10 +143,18 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   const [inputState, setInputState] = useState<0 | 1>(0);
   const [recentDate, setRecentDate] = useState<RecentDate | null>(defaultRecentDate);
 
-  const [fromDateString, setFromDateString] = useState<string>(formatUtcDate(initState.from));
-  const [toDateString, setToDateString] = useState<string>(formatUtcDate(initState.to));
-  const [fromTimeString, setFromTimeString] = useState<string>(formatUtcTime(initState.from));
-  const [toTimeString, setToTimeString] = useState<string>(formatUtcTime(initState.to));
+  const [fromDateString, setFromDateString] = useState<string>(
+    formatDateInTimeZone(initState.from, timeZone)
+  );
+  const [toDateString, setToDateString] = useState<string>(
+    formatDateInTimeZone(initState.to, timeZone)
+  );
+  const [fromTimeString, setFromTimeString] = useState<string>(
+    formatTimeInTimeZone(initState.from, timeZone)
+  );
+  const [toTimeString, setToTimeString] = useState<string>(
+    formatTimeInTimeZone(initState.to, timeZone)
+  );
 
   const [fromDateError, setFromDateError] = useState<string | null>(null);
   const [toDateError, setToDateError] = useState<string | null>(null);
@@ -161,6 +166,14 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
   const [toTimeShake, setToTimeShake] = useState(false);
 
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
+
+  const syncRange = ({ from, to }: { from: Date; to: Date }) => {
+    setSelectedRange({ from, to });
+    setFromDateString(formatDateInTimeZone(from, timeZone));
+    setFromTimeString(formatTimeInTimeZone(from, timeZone));
+    setToDateString(formatDateInTimeZone(to, timeZone));
+    setToTimeString(formatTimeInTimeZone(to, timeZone));
+  };
 
   const onSubmit = () => {
     if (fromDateError || fromTimeError || toDateError || toTimeError) {
@@ -177,8 +190,8 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
 
       return;
     }
-    const start = parseUtcDateTime(fromDateString, fromTimeString);
-    const end = parseUtcDateTime(toDateString, toTimeString);
+    const start = parseDateTimeInTimeZone(fromDateString, fromTimeString, timeZone);
+    const end = parseDateTimeInTimeZone(toDateString, toTimeString, timeZone);
 
     if (!start || !end) {
       if (!start) setFromTimeError('Invalid start time range');
@@ -192,7 +205,16 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       return;
     }
 
-    if (isAfter(end, new Date())) {
+    const submitNow = new Date();
+    const earliestStart = subDays(submitNow, 7);
+    const boundedStart = getBoundedRangeStart(start, end, earliestStart, timeZone);
+
+    if (!boundedStart) {
+      setFromTimeError('start time cannot be before 7 days ago');
+      return;
+    }
+
+    if (isAfter(end, submitNow)) {
       setToTimeError('end time cannot be after current time');
       return;
     }
@@ -201,7 +223,8 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
     setFromTimeError(null);
     setToDateError(null);
     setToTimeError(null);
-    setStartDateTime(start);
+    syncRange({ from: boundedStart, to: end });
+    setStartDateTime(boundedStart);
     setEndDateTime(end);
     setIsOpen(false);
   };
@@ -216,9 +239,10 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       setFromTimeString(normalizedValue);
     }
 
-    const date = parseUtcDateTime(
+    const date = parseDateTimeInTimeZone(
       type === 'date' ? value : fromDateString,
-      type === 'time' ? normalizedValue : fromTimeString
+      type === 'time' ? normalizedValue : fromTimeString,
+      timeZone
     );
 
     if (!date) {
@@ -245,13 +269,9 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
     setRecentDate(null);
 
     if (selectedRange?.to) {
-      if (isAfter(date, selectedRange.to)) {
-        setSelectedRange({ from: selectedRange.to, to: date });
-      } else {
-        setSelectedRange({ from: date, to: selectedRange?.to });
-      }
+      syncRange(orderDateRange(date, selectedRange.to));
     } else {
-      setSelectedRange({ from: date, to: date });
+      syncRange({ from: date, to: date });
     }
   };
 
@@ -265,9 +285,10 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       setToTimeString(normalizedValue);
     }
 
-    const date = parseUtcDateTime(
+    const date = parseDateTimeInTimeZone(
       type === 'date' ? value : toDateString,
-      type === 'time' ? normalizedValue : toTimeString
+      type === 'time' ? normalizedValue : toTimeString,
+      timeZone
     );
 
     if (!date) {
@@ -294,13 +315,9 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
     setRecentDate(null);
 
     if (selectedRange?.from) {
-      if (isBefore(date, selectedRange.from)) {
-        setSelectedRange({ from: date, to: selectedRange.from });
-      } else {
-        setSelectedRange({ from: selectedRange?.from, to: date });
-      }
+      syncRange(orderDateRange(selectedRange.from, date));
     } else {
-      setSelectedRange({ from: date, to: date });
+      syncRange({ from: date, to: date });
     }
   };
 
@@ -308,13 +325,6 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
     setManualRange();
     if (range) {
       let { from, to } = range;
-
-      if (from && isBefore(from, sevenDaysAgo)) {
-        from = sevenDaysAgo;
-      }
-      if (to && isAfter(to, now)) {
-        to = now;
-      }
 
       if (inputState === 0) {
         // from
@@ -328,28 +338,23 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
       } else {
         setInputState(0);
       }
-      const utcFrom = from ? getUtcDayBounds(from).start : undefined;
-      const utcTo = to ? getUtcDayBounds(to).end : undefined;
-      const boundedUtcTo = utcTo && isAfter(utcTo, now) ? now : utcTo;
+      const boundedRange = getBoundedDayRangeInTimeZone(from, to, sevenDaysAgo, now, timeZone);
 
-      setSelectedRange({
-        from: utcFrom,
-        to: boundedUtcTo
-      });
-      if (utcFrom) {
-        setFromDateString(formatUtcDate(utcFrom));
-        setFromTimeString(formatUtcTime(utcFrom));
+      setSelectedRange(boundedRange);
+      if (boundedRange.from) {
+        setFromDateString(formatDateInTimeZone(boundedRange.from, timeZone));
+        setFromTimeString(formatTimeInTimeZone(boundedRange.from, timeZone));
       } else {
-        setFromDateString(formatUtcDate(now));
-        setFromTimeString(formatUtcTime(now));
+        setFromDateString(formatDateInTimeZone(now, timeZone));
+        setFromTimeString(formatTimeInTimeZone(now, timeZone));
       }
-      if (boundedUtcTo) {
-        setToDateString(formatUtcDate(boundedUtcTo));
-        setToTimeString(formatUtcTime(boundedUtcTo));
+      if (boundedRange.to) {
+        setToDateString(formatDateInTimeZone(boundedRange.to, timeZone));
+        setToTimeString(formatTimeInTimeZone(boundedRange.to, timeZone));
       } else {
-        const fallback = utcFrom || now;
-        setToDateString(formatUtcDate(fallback));
-        setToTimeString(formatUtcTime(fallback));
+        const fallback = boundedRange.from || now;
+        setToDateString(formatDateInTimeZone(fallback, timeZone));
+        setToTimeString(formatTimeInTimeZone(fallback, timeZone));
       }
 
       setRecentDate(null);
@@ -378,21 +383,22 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
     setRecentDate({ ...item, value: nextRange });
     setSelectedRange(nextRange);
     if (nextRange.from) {
-      setFromDateString(formatUtcDate(nextRange.from));
-      setFromTimeString(formatUtcTime(nextRange.from));
+      setFromDateString(formatDateInTimeZone(nextRange.from, timeZone));
+      setFromTimeString(formatTimeInTimeZone(nextRange.from, timeZone));
     }
     if (nextRange.to) {
-      setToDateString(formatUtcDate(nextRange.to));
-      setToTimeString(formatUtcTime(nextRange.to));
+      setToDateString(formatDateInTimeZone(nextRange.to, timeZone));
+      setToTimeString(formatTimeInTimeZone(nextRange.to, timeZone));
     }
   };
 
   // format date time display
   const formatDateTimeDisplay = () => {
-    return `${formatUtcDateTime(startDateTime, 'HH:mm, MMM DD')} - ${formatUtcDateTime(
-      endDateTime,
+    return `${formatDateTimeInTimeZone(
+      startDateTime,
+      timeZone,
       'HH:mm, MMM DD'
-    )}`;
+    )} - ${formatDateTimeInTimeZone(endDateTime, timeZone, 'HH:mm, MMM DD')}`;
   };
 
   return (
@@ -420,14 +426,17 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
           <div className="w-[242px] h-fit flex flex-col">
             <DayPicker
               mode="range"
-              timeZone="UTC"
+              timeZone={timeZone}
               navLayout="around"
               selected={selectedRange}
               onSelect={handleRangeSelect}
               locale={currentLang === 'zh' ? zhCN : enUS}
               weekStartsOn={0}
               disabled={(date) => {
-                return isAfter(date, now) || isBefore(date, sevenDaysAgo);
+                const dayStart = getDayBoundsInTimeZone(date, timeZone).start;
+                return (
+                  isAfter(dayStart, latestCalendarDay) || isBefore(dayStart, earliestCalendarDay)
+                );
               }}
               formatters={{
                 formatWeekdayName: (date) =>
@@ -493,20 +502,8 @@ const DatePicker = ({ isDisabled = false, className }: DatePickerProps) => {
           </div>
         </div>
 
-        <div className="flex justify-between pl-3 items-center py-2 border-t border-zinc-100">
-          <Select value={timeZone} onValueChange={(val: 'local' | 'utc') => setTimeZone(val)}>
-            <SelectTrigger className="h-8 w-fit border-none rounded-lg bg-transparent shadow-none text-zinc-600 text-xs font-normal px-0">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent
-              position="popper"
-              className="border-[0.5px] border-zinc-200 rounded-xl p-0.5"
-            >
-              <SelectItem value="utc" className="text-sm rounded-lg py-[10px]">
-                UTC
-              </SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex justify-between items-center px-3 py-2 border-t border-zinc-100">
+          <span className="text-xs text-zinc-500">{timeZone}</span>
           <div className="flex gap-2 px-2.5">
             <Button
               variant="outline"

@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import EmptyChart from '@/components/Icon/icons/emptyChart.svg';
 import { ChevronRight, BarChart3 } from 'lucide-react';
+import { getUtcTimestamp } from '@/utils/timeRange';
 
 export const LogCounts = ({
   logCountsData,
@@ -20,9 +21,9 @@ export const LogCounts = ({
 
   const processChartData = (rawData: Array<{ _time: string; logs_total: string }>) => {
     const sortedData = [...rawData].sort(
-      (a, b) => new Date(a._time).getTime() - new Date(b._time).getTime()
+      (a, b) => getUtcTimestamp(a._time) - getUtcTimestamp(b._time)
     );
-    const xData = sortedData.map((item) => Math.floor(new Date(item._time).getTime() / 1000));
+    const xData = sortedData.map((item) => Math.floor(getUtcTimestamp(item._time) / 1000));
     const yData = sortedData.map((item) => item.logs_total);
 
     return {
