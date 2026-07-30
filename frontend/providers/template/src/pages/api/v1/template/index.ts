@@ -4,6 +4,7 @@ import { getCategorySlugs, parseTemplateCategories } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { readTemplatesFromFile } from '../../listTemplate';
+import { getTemplateEnvs } from '@/utils/tools';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = (req.query.language as string) || 'en';
@@ -12,11 +13,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
+    const templateEnvs = getTemplateEnvs();
+    const templateRepo = {
+      url: templateEnvs.TEMPLATE_REPO_URL,
+      branch: templateEnvs.TEMPLATE_REPO_BRANCH,
+      provider: templateEnvs.TEMPLATE_REPO_PROVIDER
+    };
     const templates = readTemplatesFromFile(
       jsonPath,
       process.env.CDN_URL,
       configuredCategories,
-      language
+      language,
+      templateRepo
     );
 
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
