@@ -18,6 +18,7 @@ import { parseOpenappQuery } from '@/utils/format';
 import { resolveInitialAppTarget } from '@/utils/initialAppTarget';
 import type { InitialAppLaunchState } from '@/utils/initialAppTarget';
 import { sessionConfig, setAdClickData, setUserSemData } from '@/utils/sessionConfig';
+import { resolveStripeCallbackTarget } from '@/utils/stripeCallback';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { Box, useColorMode, useDisclosure } from '@chakra-ui/react';
@@ -391,9 +392,11 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
             callbackParams.set('workspaceId', query.workspaceId as string);
           }
 
+          const callbackTarget = resolveStripeCallbackTarget(query.app);
+
           await openInitialApp({
             state,
-            appKey: 'system-costcenter',
+            ...callbackTarget,
             raw: callbackParams.toString()
           });
           void router.replace(router.pathname, undefined, { shallow: true });

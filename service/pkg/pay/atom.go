@@ -42,6 +42,7 @@ type PaymentRequest struct {
 	ClientIP      string
 	DeviceTokenID string
 	CustomerID    *string
+	PayApp        types.PayApp
 }
 
 // StripeResponse Stripe 支付响应

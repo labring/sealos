@@ -82,6 +82,22 @@ const (
 	PaymentMethodStripe           PaymentMethod = "stripe"              // Stripe 支付
 )
 
+type PayApp string
+
+const (
+	PayAppCostcenter PayApp = "system-costcenter"
+	PayAppBrain      PayApp = "system-brain"
+)
+
+func (p PayApp) IsValid() bool {
+	switch p {
+	case PayAppCostcenter, PayAppBrain:
+		return true
+	default:
+		return false
+	}
+}
+
 type SubscriptionPayStatus string
 
 const (

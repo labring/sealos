@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -1162,8 +1163,21 @@ func handleCalculatedUpgrade(
 // @Param req body WorkspaceSubscriptionOperatorReq true "WorkspaceSubscriptionOperatorReq"
 // @Success 200 {object} WorkspaceSubscriptionPayResp
 // @Router /payment/v1alpha1/workspace-subscription/pay [post]
-func CreateWorkspaceSubscriptionPay(c *gin.Context) {
+func parseWorkspaceSubscriptionPayReq(
+	c *gin.Context,
+) (*helper.WorkspaceSubscriptionOperatorReq, error) {
 	req, err := helper.ParseWorkspaceSubscriptionOperatorReq(c)
+	if err != nil {
+		return nil, err
+	}
+	if req.PayApp != "" && !req.PayApp.IsValid() {
+		return nil, fmt.Errorf("invalid payApp: %s", req.PayApp)
+	}
+	return req, nil
+}
+
+func CreateWorkspaceSubscriptionPay(c *gin.Context) {
+	req, err := parseWorkspaceSubscriptionPayReq(c)
 	if err != nil {
 		SetErrorResp(
 			c,
@@ -1263,6 +1277,16 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 	//	req.Operator = types.SubscriptionTransactionTypeCreated
 	//}
 
+	requestStatusDescription, err := encodePendingWorkspaceSubscriptionRequestIdentity(req, false)
+	if err != nil {
+		SetErrorResp(
+			c,
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("failed to encode payment request identity: %v", err)},
+		)
+		return
+	}
+
 	// Create subscription transaction with direct operator usage
 	transaction := types.WorkspaceSubscriptionTransaction{
 		ID:           uuid.New(),
@@ -1275,6 +1299,7 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 		StartAt:      time.Now().UTC(),
 		CreatedAt:    time.Now().UTC(),
 		Status:       types.SubscriptionTransactionStatusProcessing,
+		StatusDesc:   requestStatusDescription,
 		Period:       req.Period,
 		Amount:       planPrice.Price,
 	}
@@ -1372,10 +1397,20 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 				transaction.Amount = 0
 			}
 
-			// Store promotion code for later use in Stripe session creation
-			if req.PromotionCode != "" {
-				transaction.StatusDesc = "Promotion code: " + req.PromotionCode
+			requestStatusDescription, err := encodePendingWorkspaceSubscriptionRequestIdentity(
+				req,
+				true,
+			)
+			if err != nil {
+				SetErrorResp(
+					c,
+					http.StatusInternalServerError,
+					gin.H{"error": fmt.Sprintf("failed to encode payment request identity: %v", err)},
+				)
+				return
 			}
+			transaction.StatusDesc = requestStatusDescription
+
 		}
 
 	case types.SubscriptionTransactionTypeDowngraded:
@@ -1469,6 +1504,71 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 
 var ErrSamePendingOperation = errors.New("same pending operation exists")
 
+const legacyPromotionCodeStatusPrefix = "Promotion code: "
+
+type pendingWorkspaceSubscriptionRequestIdentity struct {
+	PromotionCode string       `json:"promotionCode,omitempty"`
+	PayApp        types.PayApp `json:"payApp"`
+}
+
+func encodePendingWorkspaceSubscriptionRequestIdentity(
+	req *helper.WorkspaceSubscriptionOperatorReq,
+	includePromotionCode bool,
+) (string, error) {
+	if req.PayApp == "" {
+		if includePromotionCode && req.PromotionCode != "" {
+			return legacyPromotionCodeStatusPrefix + req.PromotionCode, nil
+		}
+		return "", nil
+	}
+	if !req.PayApp.IsValid() {
+		return "", fmt.Errorf("invalid payApp: %s", req.PayApp)
+	}
+
+	identity := pendingWorkspaceSubscriptionRequestIdentity{PayApp: req.PayApp}
+	if includePromotionCode {
+		identity.PromotionCode = req.PromotionCode
+	}
+	data, err := json.Marshal(identity)
+	if err != nil {
+		return "", fmt.Errorf("marshal pending request identity: %w", err)
+	}
+	return string(data), nil
+}
+
+func decodePendingWorkspaceSubscriptionRequestIdentity(
+	description string,
+) pendingWorkspaceSubscriptionRequestIdentity {
+	var identity pendingWorkspaceSubscriptionRequestIdentity
+	if err := json.Unmarshal([]byte(description), &identity); err == nil && identity.PayApp.IsValid() {
+		return identity
+	}
+
+	if strings.Contains(description, legacyPromotionCodeStatusPrefix) {
+		parts := strings.Split(description, legacyPromotionCodeStatusPrefix)
+		if len(parts) > 1 {
+			identity.PromotionCode = strings.TrimSpace(parts[1])
+		}
+	}
+	identity.PayApp = ""
+	return identity
+}
+
+func samePendingWorkspaceSubscriptionRequest(
+	lastTransaction *types.WorkspaceSubscriptionTransaction,
+	req *helper.WorkspaceSubscriptionOperatorReq,
+) bool {
+	lastRequestIdentity := decodePendingWorkspaceSubscriptionRequestIdentity(
+		lastTransaction.StatusDesc,
+	)
+
+	return lastTransaction.NewPlanName == req.PlanName &&
+		lastTransaction.Operator == req.Operator &&
+		lastTransaction.Period == req.Period &&
+		lastRequestIdentity.PromotionCode == req.PromotionCode &&
+		lastRequestIdentity.PayApp == req.PayApp
+}
+
 // handleWorkspaceSubscriptionTransactionWithConcurrencyControl provides unified transaction handling with concurrency control
 func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(
 	c *gin.Context,
@@ -1497,20 +1597,7 @@ func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(
 		// Handle existing pending/processing transactions
 		if lastTransaction != nil &&
 			(lastTransaction.Status == types.SubscriptionTransactionStatusProcessing || lastTransaction.Status == types.SubscriptionTransactionStatusPending) {
-			// 判断是否为相同请求（包括优惠码）
-			// 提取上次交易的优惠码
-			lastPromotionCode := ""
-			if strings.Contains(lastTransaction.StatusDesc, "Promotion code: ") {
-				parts := strings.Split(lastTransaction.StatusDesc, "Promotion code: ")
-				if len(parts) > 1 {
-					lastPromotionCode = strings.TrimSpace(parts[1])
-				}
-			}
-
-			isSameRequest := lastTransaction.NewPlanName == req.PlanName &&
-				lastTransaction.Operator == req.Operator &&
-				lastTransaction.Period == req.Period &&
-				lastPromotionCode == req.PromotionCode
+			isSameRequest := samePendingWorkspaceSubscriptionRequest(lastTransaction, req)
 
 			switch {
 			case isSameRequest:
@@ -2166,6 +2253,7 @@ func createStripeSessionAndPaymentOrder(
 		UserAgent:     c.GetHeader("User-Agent"),
 		ClientIP:      c.ClientIP(),
 		DeviceTokenID: c.GetHeader("Device-Token-ID"),
+		PayApp:        req.PayApp,
 	}
 	// Get or create Stripe customer ID
 	// customer, err := services.StripeServiceInstance.GetCustomerByUID(req.UserUID.String())

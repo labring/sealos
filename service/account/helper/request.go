@@ -740,6 +740,11 @@ type WorkspaceSubscriptionOperatorReq struct {
 	// @Summary Card ID (optional for stripe payments)
 	// @Description Card ID for stripe payments
 	CardID *uuid.UUID `json:"cardId,omitempty" bson:"cardId,omitempty"`
+
+	// @Summary Stripe return app
+	// @Description Desktop app opened after returning from Stripe Checkout
+	// @JSONSchema optional
+	PayApp types.PayApp `json:"payApp,omitempty" bson:"payApp,omitempty" example:"system-costcenter"`
 }
 
 type WorkspaceSubscriptionInfoReq struct {
