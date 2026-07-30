@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 type ConfigRecord = Record<string, unknown>;
 
+export const HEALTHZ_SERVICE = 'applaunchpad';
+
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -21,21 +23,21 @@ function handleHealthz(res: NextApiResponse, head = false) {
   try {
     assertReady();
   } catch (error) {
-    console.error('[healthz] applaunchpad is not ready', error);
+    console.error(`[healthz] ${HEALTHZ_SERVICE} is not ready`, error);
     return head
       ? res.status(503).end()
-      : res.status(503).json({ status: 'error', service: 'applaunchpad' });
+      : res.status(503).json({ status: 'error', service: HEALTHZ_SERVICE });
   }
 
   return head
     ? res.status(200).end()
     : res.status(200).json({
         status: 'ok',
-        service: 'applaunchpad'
+        service: HEALTHZ_SERVICE
       });
 }
 
-function assertReady() {
+export function assertReady() {
   if (!isRecord(global.AppConfig)) {
     throw new Error('AppConfig is not loaded');
   }

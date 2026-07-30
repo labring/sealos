@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
+export const HEALTHZ_SERVICE = 'terminal';
+
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -17,22 +19,26 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
 function handleHealthz(res: NextApiResponse, head = false) {
   try {
-    readNonEmptyEnv('TTYD_IMAGE');
-    readNonEmptyEnv('SITE');
-    readNonEmptyEnv('KEEPALIVED');
+    assertReady();
   } catch (error) {
-    console.error('[healthz] terminal is not ready', error);
+    console.error(`[healthz] ${HEALTHZ_SERVICE} is not ready`, error);
     return head
       ? res.status(503).end()
-      : res.status(503).json({ status: 'error', service: 'terminal' });
+      : res.status(503).json({ status: 'error', service: HEALTHZ_SERVICE });
   }
 
   return head
     ? res.status(200).end()
     : res.status(200).json({
         status: 'ok',
-        service: 'terminal'
+        service: HEALTHZ_SERVICE
       });
+}
+
+export function assertReady() {
+  readNonEmptyEnv('TTYD_IMAGE');
+  readNonEmptyEnv('SITE');
+  readNonEmptyEnv('KEEPALIVED');
 }
 
 function readNonEmptyEnv(name: string, value = process.env[name]): string {
