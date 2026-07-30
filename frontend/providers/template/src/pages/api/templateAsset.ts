@@ -33,8 +33,7 @@ function getSafeAssetPath(baseDir: string, assetPath: string) {
     return '';
   }
 
-  // ok:path-join-resolve-traversal
-  const resolvedPath = path.resolve(baseDir, normalizedAssetPath);
+  const resolvedPath = path.normalize(`${baseDir}${path.sep}${normalizedAssetPath}`);
   return resolvedPath.startsWith(`${baseDir}${path.sep}`) ? resolvedPath : '';
 }
 
