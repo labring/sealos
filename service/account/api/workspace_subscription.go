@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -1277,16 +1276,6 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 	//	req.Operator = types.SubscriptionTransactionTypeCreated
 	//}
 
-	requestStatusDescription, err := encodePendingWorkspaceSubscriptionRequestIdentity(req, false)
-	if err != nil {
-		SetErrorResp(
-			c,
-			http.StatusInternalServerError,
-			gin.H{"error": fmt.Sprintf("failed to encode payment request identity: %v", err)},
-		)
-		return
-	}
-
 	// Create subscription transaction with direct operator usage
 	transaction := types.WorkspaceSubscriptionTransaction{
 		ID:           uuid.New(),
@@ -1299,7 +1288,7 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 		StartAt:      time.Now().UTC(),
 		CreatedAt:    time.Now().UTC(),
 		Status:       types.SubscriptionTransactionStatusProcessing,
-		StatusDesc:   requestStatusDescription,
+		PayApp:       req.PayApp,
 		Period:       req.Period,
 		Amount:       planPrice.Price,
 	}
@@ -1397,19 +1386,9 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 				transaction.Amount = 0
 			}
 
-			requestStatusDescription, err := encodePendingWorkspaceSubscriptionRequestIdentity(
-				req,
-				true,
-			)
-			if err != nil {
-				SetErrorResp(
-					c,
-					http.StatusInternalServerError,
-					gin.H{"error": fmt.Sprintf("failed to encode payment request identity: %v", err)},
-				)
-				return
+			if req.PromotionCode != "" {
+				transaction.StatusDesc = legacyPromotionCodeStatusPrefix + req.PromotionCode
 			}
-			transaction.StatusDesc = requestStatusDescription
 
 		}
 
@@ -1506,67 +1485,27 @@ var ErrSamePendingOperation = errors.New("same pending operation exists")
 
 const legacyPromotionCodeStatusPrefix = "Promotion code: "
 
-type pendingWorkspaceSubscriptionRequestIdentity struct {
-	PromotionCode string       `json:"promotionCode,omitempty"`
-	PayApp        types.PayApp `json:"payApp"`
-}
-
-func encodePendingWorkspaceSubscriptionRequestIdentity(
-	req *helper.WorkspaceSubscriptionOperatorReq,
-	includePromotionCode bool,
-) (string, error) {
-	if req.PayApp == "" {
-		if includePromotionCode && req.PromotionCode != "" {
-			return legacyPromotionCodeStatusPrefix + req.PromotionCode, nil
-		}
-		return "", nil
-	}
-	if !req.PayApp.IsValid() {
-		return "", fmt.Errorf("invalid payApp: %s", req.PayApp)
+func pendingTransactionPromotionCode(description string) string {
+	if !strings.Contains(description, legacyPromotionCodeStatusPrefix) {
+		return ""
 	}
 
-	identity := pendingWorkspaceSubscriptionRequestIdentity{PayApp: req.PayApp}
-	if includePromotionCode {
-		identity.PromotionCode = req.PromotionCode
+	parts := strings.Split(description, legacyPromotionCodeStatusPrefix)
+	if len(parts) < 2 {
+		return ""
 	}
-	data, err := json.Marshal(identity)
-	if err != nil {
-		return "", fmt.Errorf("marshal pending request identity: %w", err)
-	}
-	return string(data), nil
-}
-
-func decodePendingWorkspaceSubscriptionRequestIdentity(
-	description string,
-) pendingWorkspaceSubscriptionRequestIdentity {
-	var identity pendingWorkspaceSubscriptionRequestIdentity
-	if err := json.Unmarshal([]byte(description), &identity); err == nil && identity.PayApp.IsValid() {
-		return identity
-	}
-
-	if strings.Contains(description, legacyPromotionCodeStatusPrefix) {
-		parts := strings.Split(description, legacyPromotionCodeStatusPrefix)
-		if len(parts) > 1 {
-			identity.PromotionCode = strings.TrimSpace(parts[1])
-		}
-	}
-	identity.PayApp = ""
-	return identity
+	return strings.TrimSpace(parts[1])
 }
 
 func samePendingWorkspaceSubscriptionRequest(
 	lastTransaction *types.WorkspaceSubscriptionTransaction,
 	req *helper.WorkspaceSubscriptionOperatorReq,
 ) bool {
-	lastRequestIdentity := decodePendingWorkspaceSubscriptionRequestIdentity(
-		lastTransaction.StatusDesc,
-	)
-
 	return lastTransaction.NewPlanName == req.PlanName &&
 		lastTransaction.Operator == req.Operator &&
 		lastTransaction.Period == req.Period &&
-		lastRequestIdentity.PromotionCode == req.PromotionCode &&
-		lastRequestIdentity.PayApp == req.PayApp
+		pendingTransactionPromotionCode(lastTransaction.StatusDesc) == req.PromotionCode &&
+		lastTransaction.PayApp == req.PayApp
 }
 
 // handleWorkspaceSubscriptionTransactionWithConcurrencyControl provides unified transaction handling with concurrency control

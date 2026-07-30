@@ -44,12 +44,9 @@ func TestSamePendingWorkspaceSubscriptionRequestIncludesPayApp(t *testing.T) {
 		NewPlanName: brainReq.PlanName,
 		Operator:    brainReq.Operator,
 		Period:      brainReq.Period,
+		PayApp:      brainReq.PayApp,
+		StatusDesc:  "Promotion code: SAVE20",
 	}
-	statusDescription, err := encodePendingWorkspaceSubscriptionRequestIdentity(brainReq, true)
-	if err != nil {
-		t.Fatalf("encode request identity: %v", err)
-	}
-	lastTransaction.StatusDesc = statusDescription
 
 	if !samePendingWorkspaceSubscriptionRequest(lastTransaction, brainReq) {
 		t.Fatal("expected the same declared payApp to reuse the pending request")
@@ -63,30 +60,8 @@ func TestSamePendingWorkspaceSubscriptionRequestIncludesPayApp(t *testing.T) {
 
 	omittedReq := *brainReq
 	omittedReq.PayApp = ""
-	lastTransaction.StatusDesc = "Promotion code: SAVE20"
+	lastTransaction.PayApp = ""
 	if !samePendingWorkspaceSubscriptionRequest(lastTransaction, &omittedReq) {
 		t.Fatal("expected an omitted payApp to match a legacy pending request")
-	}
-}
-
-func TestEncodePendingWorkspaceSubscriptionRequestIdentityPreservesLegacyOmission(t *testing.T) {
-	req := &helper.WorkspaceSubscriptionOperatorReq{
-		PromotionCode: "SAVE20",
-	}
-
-	statusDescription, err := encodePendingWorkspaceSubscriptionRequestIdentity(req, false)
-	if err != nil {
-		t.Fatalf("encode request identity: %v", err)
-	}
-	if statusDescription != "" {
-		t.Fatalf("status description = %q, want legacy empty value", statusDescription)
-	}
-
-	statusDescription, err = encodePendingWorkspaceSubscriptionRequestIdentity(req, true)
-	if err != nil {
-		t.Fatalf("encode upgrade request identity: %v", err)
-	}
-	if statusDescription != "Promotion code: SAVE20" {
-		t.Fatalf("status description = %q, want legacy promotion value", statusDescription)
 	}
 }

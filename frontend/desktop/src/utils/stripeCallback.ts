@@ -1,5 +1,4 @@
-const COSTCENTER_APP_KEY = 'system-costcenter';
-const BRAIN_APP_KEY = 'system-brain';
+import { BRAIN_APP_KEY, COSTCENTER_APP_KEY } from '@/constants/app';
 
 export const resolveStripeCallbackTarget = (payApp: string | string[] | undefined) => {
   if (payApp === BRAIN_APP_KEY) {

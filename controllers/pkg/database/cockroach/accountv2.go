@@ -2455,6 +2455,16 @@ func (c *Cockroach) migrateColumns() error {
 			return fmt.Errorf("failed to add column ai_quota to WorkspaceSubscriptionPlan: %w", err)
 		}
 	}
+	if !c.DB.Migrator().HasColumn(&types.WorkspaceSubscriptionTransaction{}, "pay_app") {
+		fmt.Println("add column pay_app to WorkspaceSubscriptionTransaction")
+		tableName := types.WorkspaceSubscriptionTransaction{}.TableName()
+		err := c.DB.Exec(
+			alterTableAddColumnSQL(tableName, `"pay_app" TEXT NOT NULL DEFAULT ''`),
+		).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column pay_app to WorkspaceSubscriptionTransaction: %w", err)
+		}
+	}
 	if !c.Localdb.Migrator().HasColumn(&types.WorkspaceSubscriptionPlan{}, "ai_quota") {
 		fmt.Println("add column ai_quota to WorkspaceSubscriptionPlan")
 		tableName := types.WorkspaceSubscriptionPlan{}.TableName()

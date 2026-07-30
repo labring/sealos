@@ -1,3 +1,4 @@
+import { BRAIN_APP_KEY } from '@/constants/app';
 import request from '@/services/request';
 import { APPTYPE, TApp, TAppMenuData, TOSState, WindowSize, displayType } from '@/types';
 import { formatUrl } from '@/utils/format';
@@ -10,7 +11,7 @@ import { useDesktopConfigStore } from './desktopConfig';
 import { track } from '@sealos/gtm';
 import useSessionStore from './session';
 
-export const BRAIN_APP_KEY = 'system-brain';
+export { BRAIN_APP_KEY };
 export const SESSION_RESTORE_APP_KEY = 'sealos_desktop_restore_app_key';
 
 const buildAppUrl = ({
