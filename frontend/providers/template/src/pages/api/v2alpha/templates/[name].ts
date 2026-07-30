@@ -12,6 +12,7 @@ import {
 } from './templateCache';
 import { parseTemplateCategories } from '@/utils/template';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
+import { getTemplateEnvs } from '@/utils/tools';
 
 // estimate min—max equality
 function simplifyResourceValue(
@@ -128,11 +129,18 @@ async function handleTemplateDetails(
         message: 'Templates catalog not found.'
       });
     }
+    const templateEnvs = getTemplateEnvs();
+    const templateRepo = {
+      url: templateEnvs.TEMPLATE_REPO_URL,
+      branch: templateEnvs.TEMPLATE_REPO_BRANCH,
+      provider: templateEnvs.TEMPLATE_REPO_PROVIDER
+    };
     getCachedTemplates(
       jsonPath,
       process.env.CDN_URL,
       parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
-      language
+      language,
+      templateRepo
     );
     const template = getTemplateFromCache(templateName);
 
