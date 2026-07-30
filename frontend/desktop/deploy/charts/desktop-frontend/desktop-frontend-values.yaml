@@ -45,7 +45,7 @@ desktopConfig:
   # forcedLanguage and currencySymbol will be auto-configured based on version:
   # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
   # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
-  version: "en"
+  version: "cn"
 
   # Google Tag Manager
   gtmId: ""
@@ -88,7 +88,7 @@ desktopConfig:
     zh: "/images/bg-light.svg"
     en: "/images/bg-light.svg"
   protocol:
-    enabled: true
+    enabled: false
     serviceProtocol:
       zh: https://sealos.io/zh-Hans/docs/msa/terms-of-service
       en: https://sealos.io/docs/msa/terms-of-service
@@ -100,7 +100,7 @@ desktopConfig:
   metaDescription: "Sealos Cloud"
   metaKeywords: "Sealos Cloud"
 
-  signUpEnabled: true
+  signUpEnabled: false
   baiduToken: ""
   bingAdTenant: ""
   bingAdClientId: ""
@@ -196,3 +196,27 @@ desktopConfig:
     - 30
     - 1440
     - 10080
+startupProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  periodSeconds: 2
+  timeoutSeconds: 3
+  failureThreshold: 60
+
+livenessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet:
+    path: /api/platform/getAppConfig
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 3
+  timeoutSeconds: 2
+  successThreshold: 3
+  failureThreshold: 3
