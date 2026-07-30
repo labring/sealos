@@ -1,11 +1,7 @@
 import { Coin } from '@/constants/app';
 import { jsonRes } from '@/services/backend/response';
 import type { AppConfigType, EnvResponse } from '@/types';
-import {
-  isCustomPublicDomainPrefixEnabled,
-  isImagePortsEnabled,
-  isNodePortAccessEnabled
-} from '@/utils/feature-gates';
+import { isCustomPublicDomainPrefixEnabled, isImagePortsEnabled } from '@/utils/feature-gates';
 import { normalizeCustomDomainMode } from '@/utils/custom-domain';
 import { resolveNodePortHost } from '@/utils/nodeport-host';
 import { normalizePublicDomainReservedPrefixes } from '@/utils/public-domain';
@@ -41,8 +37,7 @@ export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
   return {
     SEALOS_DOMAIN: AppConfig.cloud.domain,
     NODE_PORT_HOST: resolveNodePortHost({
-      configuredHost: AppConfig.cloud.nodePortHost,
-      cloudDomain: AppConfig.cloud.domain
+      configuredHost: AppConfig.cloud.nodePortHost
     }),
     DOMAIN_PORT: AppConfig.cloud.port?.toString() || '',
     HTTP_PORT: AppConfig.cloud.httpPort?.toString() || '',
@@ -64,7 +59,6 @@ export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
     LOG_ENABLED: !!AppConfig?.launchpad?.components?.log?.url,
     NETWORK_STORAGE_ENABLED: AppConfig.common.networkStorageEnabled,
     IMAGE_PORTS_ENABLED: isImagePortsEnabled(AppConfig),
-    NODE_PORT_ACCESS_ENABLED: isNodePortAccessEnabled(AppConfig),
     CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED: isCustomPublicDomainPrefixEnabled(AppConfig),
     PUBLIC_DOMAIN_RESERVED_PREFIXES: normalizePublicDomainReservedPrefixes(
       AppConfig.launchpad.publicDomain?.reservedPrefixes

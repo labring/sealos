@@ -70,7 +70,7 @@ describe('getServerEnv', () => {
     const env = getServerEnv(createConfig());
 
     expect(env.IMAGE_PORTS_ENABLED).toBe(false);
-    expect(env.NODE_PORT_ACCESS_ENABLED).toBe(false);
+    expect(env.NODE_PORT_HOST).toBe('');
     expect(env.CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED).toBe(false);
   });
 
@@ -86,10 +86,9 @@ describe('getServerEnv', () => {
     const env = getServerEnv(config);
 
     expect(env.IMAGE_PORTS_ENABLED).toBe(true);
-    expect(env.NODE_PORT_ACCESS_ENABLED).toBe(true);
+    expect(env.NODE_PORT_HOST).toBe('10.0.0.10');
     expect(env.CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED).toBe(true);
     expect(env.PUBLIC_DOMAIN_RESERVED_PREFIXES).toEqual(['admin']);
-    expect(env.NODE_PORT_HOST).toBe('10.0.0.10');
   });
 
   it('returns custom domain certificate mode config', () => {

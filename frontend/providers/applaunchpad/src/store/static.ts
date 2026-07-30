@@ -2,12 +2,11 @@ import { getInitData } from '@/api/platform';
 import { Coin } from '@/constants/app';
 import type { CustomDomainMode } from '@/types';
 import { normalizeCustomDomainMode } from '@/utils/custom-domain';
-import { isNodePortAccessEnabled } from '@/utils/feature-gates';
 import { resolveNodePortHost } from '@/utils/nodeport-host';
 import { setPublicDomainReservedPrefixes } from '@/utils/public-domain';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
-export let NODE_PORT_HOST = 'cloud.sealos.io';
+export let NODE_PORT_HOST = '';
 export let SEALOS_USER_DOMAINS = [{ name: 'cloud.sealos.io', secretName: 'wildcard-cert' }];
 export let DESKTOP_DOMAIN = 'cloud.sealos.io';
 export let INFRASTRUCTURE_PROVIDER = 'alibaba';
@@ -26,7 +25,6 @@ export let GPU_ENABLED = false;
 export let LOG_ENABLED = false;
 export let NETWORK_STORAGE_ENABLED = false;
 export let IMAGE_PORTS_ENABLED = false;
-export let NODE_PORT_ACCESS_ENABLED = false;
 export let CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED = false;
 export let PUBLIC_DOMAIN_RESERVED_PREFIXES: string[] = [];
 export let CUSTOM_DOMAIN_MODE: CustomDomainMode = 'cname';
@@ -37,7 +35,7 @@ export const loadInitData = async () => {
     const res = await getInitData();
 
     SEALOS_DOMAIN = res.SEALOS_DOMAIN;
-    NODE_PORT_HOST = res.NODE_PORT_HOST || resolveNodePortHost({ cloudDomain: res.SEALOS_DOMAIN });
+    NODE_PORT_HOST = resolveNodePortHost({ configuredHost: res.NODE_PORT_HOST });
     SEALOS_USER_DOMAINS = res.SEALOS_USER_DOMAINS;
     INFRASTRUCTURE_PROVIDER = res.INFRASTRUCTURE_PROVIDER;
     REQUIRES_DOMAIN_REG = res.REQUIRES_DOMAIN_REG;
@@ -56,7 +54,6 @@ export const loadInitData = async () => {
     LOG_ENABLED = res.LOG_ENABLED;
     NETWORK_STORAGE_ENABLED = res.NETWORK_STORAGE_ENABLED;
     IMAGE_PORTS_ENABLED = res.IMAGE_PORTS_ENABLED;
-    NODE_PORT_ACCESS_ENABLED = !!res.NODE_PORT_ACCESS_ENABLED;
     CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED = res.CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED;
     PUBLIC_DOMAIN_RESERVED_PREFIXES = res.PUBLIC_DOMAIN_RESERVED_PREFIXES || [];
     CUSTOM_DOMAIN_MODE = res.CUSTOM_DOMAIN_MODE || 'cname';
@@ -75,7 +72,6 @@ export const loadInitData = async () => {
       DESKTOP_DOMAIN: res.DESKTOP_DOMAIN,
       GPU_ENABLED,
       IMAGE_PORTS_ENABLED,
-      NODE_PORT_ACCESS_ENABLED,
       CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
       PUBLIC_DOMAIN_RESERVED_PREFIXES,
       CUSTOM_DOMAIN_MODE,
@@ -85,8 +81,7 @@ export const loadInitData = async () => {
 
   return {
     SEALOS_DOMAIN,
-    NODE_PORT_HOST,
-    NODE_PORT_ACCESS_ENABLED
+    NODE_PORT_HOST
   };
 };
 
@@ -95,8 +90,7 @@ export const serverLoadInitData = () => {
   try {
     SEALOS_DOMAIN = global.AppConfig.cloud.domain || 'cloud.sealos.io';
     NODE_PORT_HOST = resolveNodePortHost({
-      configuredHost: global.AppConfig.cloud.nodePortHost,
-      cloudDomain: SEALOS_DOMAIN
+      configuredHost: global.AppConfig.cloud.nodePortHost
     });
     DOMAIN_PORT = global.AppConfig.cloud.port || '';
     HTTP_PORT = global.AppConfig.cloud.httpPort || '';
@@ -104,7 +98,6 @@ export const serverLoadInitData = () => {
     SHOW_EVENT_ANALYZE = global.AppConfig.launchpad.eventAnalyze.enabled;
     SEALOS_USER_DOMAINS = global.AppConfig.cloud.userDomains;
     IMAGE_PORTS_ENABLED = !!global.AppConfig.launchpad.imagePorts?.enabled;
-    NODE_PORT_ACCESS_ENABLED = isNodePortAccessEnabled(global.AppConfig);
     CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED =
       !!global.AppConfig.launchpad.publicDomain?.customPrefixEnabled;
     PUBLIC_DOMAIN_RESERVED_PREFIXES =

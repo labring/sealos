@@ -26,15 +26,6 @@ export const extractIPv4FromNipDomain = (domain?: string) => {
   return '';
 };
 
-export const resolveNodePortHost = ({
-  configuredHost,
-  cloudDomain
-}: {
-  configuredHost?: string;
-  cloudDomain?: string;
-}) => {
-  const normalizedConfiguredHost = (configuredHost || '').trim().replace(/\.+$/g, '');
-  if (normalizedConfiguredHost) return normalizedConfiguredHost;
-
-  return extractIPv4FromNipDomain(cloudDomain) || (cloudDomain || '').trim().replace(/\.+$/g, '');
+export const resolveNodePortHost = ({ configuredHost }: { configuredHost?: string }) => {
+  return (configuredHost || '').trim().replace(/\.+$/g, '');
 };

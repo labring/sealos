@@ -8,7 +8,6 @@ import {
   DISABLE_HTTPS,
   DOMAIN_PORT,
   HTTP_PORT,
-  NODE_PORT_ACCESS_ENABLED,
   NODE_PORT_HOST,
   SEALOS_DOMAIN
 } from '@/store/static';
@@ -347,6 +346,7 @@ export function NetworkSection({
   } = formHook;
   const watchedNetworks = useWatch({ control, name: 'networks' });
   const previousNetworkPortsRef = useRef<Record<string, number>>({});
+  const nodePortHost = NODE_PORT_HOST.trim();
   const clearPublicDomainErrorByIndex = useCallback(
     (index: number) => {
       clearErrors(`networks.${index}.publicDomain`);
@@ -466,7 +466,7 @@ export function NetworkSection({
 
           if (
             accessMode === 'nodePort' &&
-            !NODE_PORT_ACCESS_ENABLED &&
+            !nodePortHost &&
             isApplicationAccessProtocol(currentPublicProtocol)
           ) {
             break;
@@ -527,7 +527,7 @@ export function NetworkSection({
           const currentNetwork = currentNetworks[index];
 
           if (APPLICATION_PROTOCOLS.includes(protocol as any)) {
-            if (NODE_PORT_ACCESS_ENABLED && currentNetwork.openNodePort) {
+            if (nodePortHost && currentNetwork.openNodePort) {
               clearPublicDomainErrorByIndex(index);
               updateNetworks(
                 index,
@@ -620,7 +620,14 @@ export function NetworkSection({
           break;
       }
     },
-    [getValues, appendNetworks, removeNetworks, updateNetworks, clearPublicDomainErrorByIndex]
+    [
+      getValues,
+      appendNetworks,
+      removeNetworks,
+      updateNetworks,
+      clearPublicDomainErrorByIndex,
+      nodePortHost
+    ]
   );
 
   const getPublicDomainFieldName = useCallback(
@@ -950,8 +957,11 @@ export function NetworkSection({
       }
 
       if (network.openNodePort) {
+        if (!nodePortHost) {
+          return '';
+        }
         const protocol = getNodePortPublicProtocol(network);
-        const host = NODE_PORT_HOST || network.domain || SEALOS_DOMAIN;
+        const host = nodePortHost;
         return network?.nodePort
           ? buildExternalUrl({
               protocol,
@@ -976,7 +986,7 @@ export function NetworkSection({
         }
       });
     },
-    [t]
+    [nodePortHost, t]
   );
 
   const getDomainHostDisplay = useCallback(
@@ -986,14 +996,17 @@ export function NetworkSection({
       }
 
       if (network.openNodePort) {
-        const host = NODE_PORT_HOST || network.domain || SEALOS_DOMAIN;
+        if (!nodePortHost) {
+          return '';
+        }
+        const host = nodePortHost;
         const port = network?.nodePort || t('pending_to_allocated');
         return `${host}:${port}`;
       }
 
       return `${network.publicDomain}.${network.domain}`;
     },
-    [t]
+    [nodePortHost, t]
   );
 
   const routeRulesNetwork =
@@ -1008,9 +1021,7 @@ export function NetworkSection({
       <Box px={'42px'} py={'24px'} userSelect={'none'}>
         {networks.map((field, i) => {
           const network = watchedNetworks?.[i] || field;
-          const publicProtocol = network.appProtocol || network.protocol;
-          const shouldShowAccessModeSelector =
-            !isApplicationAccessProtocol(publicProtocol) || NODE_PORT_ACCESS_ENABLED;
+          const shouldShowAccessModeSelector = !!nodePortHost;
           const isExternalAccess = !!network.openPublicDomain || !!network.openNodePort;
           const canConfigureRouteRules = !!network.openPublicDomain && !network.openNodePort;
           const isPublicDomainPrefixVisible =

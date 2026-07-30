@@ -611,6 +611,10 @@ export function transformFromLegacySchema(
   appName?: string,
   namespace?: string
 ): z.infer<typeof LaunchpadApplicationSchema> {
+  const nodePortHost = resolveNodePortHost({
+    configuredHost: globalThis.AppConfig?.cloud?.nodePortHost
+  });
+
   return {
     name: legacyData.appName,
     image: {
@@ -682,13 +686,10 @@ export function transformFromLegacySchema(
               config: network.openNodePort ? undefined : externalAccessConfig
             });
           }
-        } else if (network.openNodePort && network.nodePort) {
+        } else if (network.openNodePort && network.nodePort && nodePortHost) {
           publicAddress = buildExternalUrl({
             protocol,
-            host: resolveNodePortHost({
-              configuredHost: globalThis.AppConfig?.cloud?.nodePortHost,
-              cloudDomain: globalThis.AppConfig?.cloud?.domain || network.domain
-            }),
+            host: nodePortHost,
             nodePort: network.nodePort,
             config: {
               disableHttps: true
