@@ -1,5 +1,6 @@
 cloud:
   domain: 127.0.0.1.nip.io
+  nodePortHost: ''
   desktopDomain: 127.0.0.1.nip.io
   port: ''
   httpPort: ''

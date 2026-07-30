@@ -94,15 +94,28 @@ const CreatePortConfigSchema = PortConfigSchema.pick({
   number: true,
   protocol: true,
   exposesPublicDomain: true,
+  accessMode: true,
   publicDomain: true
 })
   .extend({
     publicDomain: PublicDomainPrefixSchema.optional()
   })
   .superRefine((data, ctx) => {
-    if (data.publicDomain === undefined) return;
     const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(data.protocol);
-    if (!isApplicationProtocol || data.exposesPublicDomain === false) {
+    if (!isApplicationProtocol && data.accessMode === 'domain') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['accessMode'],
+        message: 'domain access mode can only be used for HTTP/GRPC/WS ports'
+      });
+    }
+
+    if (data.publicDomain === undefined) return;
+    if (
+      !isApplicationProtocol ||
+      data.exposesPublicDomain === false ||
+      data.accessMode === 'nodePort'
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['publicDomain'],
@@ -145,6 +158,9 @@ export const PortUpdateSchema = z
       description:
         'Whether to expose this port via public domain (only effective for HTTP/GRPC/WS protocols)'
     }),
+    accessMode: z.enum(['domain', 'nodePort']).optional().openapi({
+      description: 'Public access mode. domain uses Ingress, nodePort exposes IP:port.'
+    }),
     publicDomain: PublicDomainPrefixSchema.optional().openapi({
       description: 'Custom public subdomain prefix. Omit to keep or auto-generate.'
     }),
@@ -163,10 +179,22 @@ export const PortUpdateSchema = z
       'Port configuration. Include portName to update existing port. Omit portName to create new port. Ports not included in the array will be deleted.'
   })
   .superRefine((data, ctx) => {
-    if (data.publicDomain === undefined) return;
     const isKnownNonApplicationProtocol =
       data.protocol !== undefined && !['HTTP', 'GRPC', 'WS'].includes(data.protocol);
-    if (isKnownNonApplicationProtocol || data.exposesPublicDomain === false) {
+    if (isKnownNonApplicationProtocol && data.accessMode === 'domain') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['accessMode'],
+        message: 'domain access mode can only be used for HTTP/GRPC/WS ports'
+      });
+    }
+
+    if (data.publicDomain === undefined) return;
+    if (
+      isKnownNonApplicationProtocol ||
+      data.exposesPublicDomain === false ||
+      data.accessMode === 'nodePort'
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['publicDomain'],
@@ -433,10 +461,10 @@ export function transformToLegacySchema(
 
   const networks = standardRequest.ports?.map((port) => {
     const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(port.protocol);
-    const publicDomain =
-      isApplicationProtocol && port.exposesPublicDomain
-        ? getPublicDomainPrefixOrRandom(port.publicDomain)
-        : '';
+    const openNodePort = !isApplicationProtocol || port.accessMode === 'nodePort';
+    const openPublicDomain =
+      isApplicationProtocol && !openNodePort ? port.exposesPublicDomain : false;
+    const publicDomain = openPublicDomain ? getPublicDomainPrefixOrRandom(port.publicDomain) : '';
 
     return {
       serviceName: `service-${nanoid()}`,
@@ -444,13 +472,16 @@ export function transformToLegacySchema(
       portName: nanoid(),
       port: port.number,
       protocol: (isApplicationProtocol ? 'TCP' : port.protocol) as TransportProtocolType,
-      appProtocol: (isApplicationProtocol ? port.protocol : 'HTTP') as ApplicationProtocolType,
-      openPublicDomain: isApplicationProtocol ? port.exposesPublicDomain : false,
+      appProtocol: isApplicationProtocol ? (port.protocol as ApplicationProtocolType) : undefined,
+      openPublicDomain,
       publicDomain,
       customDomain: '',
-      domain: '',
+      domain:
+        isApplicationProtocol && (openPublicDomain || openNodePort)
+          ? globalThis.AppConfig?.cloud?.domain || 'cloud.sealos.io'
+          : '',
       nodePort: undefined,
-      openNodePort: !isApplicationProtocol
+      openNodePort
     };
   }) || [
     {
@@ -606,7 +637,9 @@ export function transformFromLegacySchema(
     },
     ports:
       legacyData.networks?.map((network) => {
-        const protocol = network.openNodePort ? network.protocol : network.appProtocol || 'HTTP';
+        const protocol = network.openNodePort
+          ? network.appProtocol || network.protocol
+          : network.appProtocol || 'HTTP';
 
         const exposesPublicDomain = network.openNodePort ? true : network.openPublicDomain;
 
@@ -614,6 +647,7 @@ export function transformFromLegacySchema(
           serviceName: network.serviceName,
           number: network.port,
           protocol: protocol,
+          accessMode: network.openNodePort ? 'nodePort' : 'domain',
           exposesPublicDomain: exposesPublicDomain,
           networkName: network.networkName,
           portName: network.portName,
@@ -681,7 +715,8 @@ export const CreatePortsSchema = z.object({
       z.object({
         number: z.number().default(80),
         protocol: z.enum(['HTTP', 'GRPC', 'WS', 'TCP', 'UDP', 'SCTP']),
-        exposesPublicDomain: z.boolean()
+        exposesPublicDomain: z.boolean(),
+        accessMode: z.enum(['domain', 'nodePort']).optional()
       })
     )
     .min(1)
@@ -698,6 +733,7 @@ export const UpdatePortsSchema = z.object({
           number: z.number(),
           protocol: z.enum(['HTTP', 'GRPC', 'WS', 'TCP', 'UDP', 'SCTP']),
           exposesPublicDomain: z.boolean(),
+          accessMode: z.enum(['domain', 'nodePort']).optional(),
           networkName: z.string().optional(),
           portName: z.string().optional(),
           serviceName: z.string().optional()

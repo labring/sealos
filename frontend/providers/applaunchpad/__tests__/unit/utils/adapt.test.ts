@@ -68,6 +68,36 @@ const createService = (name = 'demo', ports = [80, 81]): DeployKindsType =>
     }
   } as DeployKindsType);
 
+const createNodePortService = (
+  appProtocol?: string,
+  port = 80,
+  nodePort = 30080
+): DeployKindsType =>
+  ({
+    apiVersion: 'v1',
+    kind: 'Service',
+    metadata: {
+      name: 'demo-nodeport',
+      labels: {}
+    },
+    spec: {
+      type: 'NodePort',
+      ports: [
+        {
+          name: 'web',
+          port,
+          targetPort: port,
+          protocol: 'TCP',
+          nodePort,
+          ...(appProtocol ? { appProtocol } : {})
+        }
+      ],
+      selector: {
+        app: 'demo'
+      }
+    }
+  } as DeployKindsType);
+
 const createIngress = (): DeployKindsType =>
   ({
     apiVersion: 'networking.k8s.io/v1',
@@ -220,5 +250,45 @@ describe('adaptAppDetail', () => {
       }
     ]);
     expect(app.networks.map((network) => network.port)).toEqual([80, 81]);
+  });
+
+  it('keeps TCP NodePort ports as transport protocol when no ServicePort appProtocol exists', async () => {
+    const app = await adaptAppDetail([createDeployment(), createNodePortService()], {
+      SEALOS_DOMAIN: '192.168.13.209.nip.io',
+      SEALOS_USER_DOMAINS: [
+        {
+          name: '192.168.13.209.nip.io',
+          secretName: 'wildcard-cert'
+        }
+      ]
+    });
+
+    expect(app.networks[0]).toMatchObject({
+      port: 80,
+      protocol: 'TCP',
+      appProtocol: undefined,
+      openNodePort: true,
+      openPublicDomain: false
+    });
+  });
+
+  it('restores application protocol for IP:port ports from ServicePort appProtocol', async () => {
+    const app = await adaptAppDetail([createDeployment(), createNodePortService('http')], {
+      SEALOS_DOMAIN: '192.168.13.209.nip.io',
+      SEALOS_USER_DOMAINS: [
+        {
+          name: '192.168.13.209.nip.io',
+          secretName: 'wildcard-cert'
+        }
+      ]
+    });
+
+    expect(app.networks[0]).toMatchObject({
+      port: 80,
+      protocol: 'TCP',
+      appProtocol: 'HTTP',
+      openNodePort: true,
+      openPublicDomain: false
+    });
   });
 });

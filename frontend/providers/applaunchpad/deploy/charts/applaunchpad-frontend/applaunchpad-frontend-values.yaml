@@ -44,6 +44,7 @@ applaunchpadConfig:
     - admin
   customDomainMode: "certificate"
   customDomainCertificateSecretName: "wildcard-cert"
+  nodePortHost: ""
   guideEnabled: false
   apiEnabled: false
   gpuEnabled: false

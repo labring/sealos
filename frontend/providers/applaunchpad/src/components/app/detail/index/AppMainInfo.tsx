@@ -3,7 +3,7 @@ import { MyTooltip } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import { ProtocolList } from '@/constants/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
-import { DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT } from '@/store/static';
+import { DISABLE_HTTPS, DOMAIN_PORT, HTTP_PORT, NODE_PORT_HOST } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
 import { useCopyData } from '@/utils/tools';
@@ -37,6 +37,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const { detailCompleted } = useGuideStore();
+  const nodePortHost = NODE_PORT_HOST.trim();
 
   useEffect(() => {
     if (!detailCompleted) {
@@ -74,19 +75,33 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         const appProtocol = ProtocolList.find((item) => item.value === network.appProtocol);
 
         if (network.openNodePort) {
+          const publicProtocol = network.appProtocol || network.protocol;
+          if (!nodePortHost) {
+            return {
+              inline: `${(appProtocol || protocol)?.inline}${
+                network?.serviceName ? network.serviceName : app.appName
+              }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
+              public: '',
+              showReadyStatus: false
+            };
+          }
+          const publicHost = nodePortHost;
           return {
-            inline: `${protocol?.inline}${
+            inline: `${(appProtocol || protocol)?.inline}${
               network?.serviceName ? network.serviceName : app.appName
             }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
             public: network.nodePort
               ? buildExternalUrl({
-                  protocol: network.protocol,
-                  host: `${protocol?.value.toLowerCase()}.${network.domain}`,
-                  nodePort: network.nodePort
+                  protocol: publicProtocol,
+                  host: publicHost,
+                  nodePort: network.nodePort,
+                  config: {
+                    disableHttps: true
+                  }
                 })
-              : `${getExternalProtocol(network.protocol)}://${protocol?.value.toLowerCase()}.${
-                  network.domain
-                }`,
+              : `${getExternalProtocol(publicProtocol, { disableHttps: true })}://${publicHost}:${t(
+                  'pending_to_allocated'
+                )}`,
             showReadyStatus: false
           };
         }
@@ -111,7 +126,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           showReadyStatus: true
         };
       }),
-    [app]
+    [app, nodePortHost, t]
   );
 
   const retryCount = useRef(0);
@@ -141,12 +156,15 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const statusMap = useMemo(
     () =>
       networkStatus
-        ? networkStatus.reduce((acc, item) => {
-            if (item?.url) {
-              acc[item.url] = item;
-            }
-            return acc;
-          }, {} as Record<string, { ready: boolean; url: string }>)
+        ? networkStatus.reduce(
+            (acc, item) => {
+              if (item?.url) {
+                acc[item.url] = item;
+              }
+              return acc;
+            },
+            {} as Record<string, { ready: boolean; url: string }>
+          )
         : {},
     [networkStatus]
   );

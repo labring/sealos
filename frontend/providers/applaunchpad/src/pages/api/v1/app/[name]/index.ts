@@ -768,15 +768,22 @@ async function manageAppPorts(
 
         if (portConfig.protocol !== undefined) {
           const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(portConfig.protocol);
+          const openNodePort =
+            !isApplicationProtocol ||
+            portConfig.accessMode === 'nodePort' ||
+            (portConfig.accessMode === undefined &&
+              isApplicationProtocol &&
+              existingNetwork.openNodePort);
           updatedNetwork.protocol = isApplicationProtocol ? 'TCP' : portConfig.protocol;
           updatedNetwork.appProtocol = isApplicationProtocol ? portConfig.protocol : undefined;
-          updatedNetwork.openNodePort = !isApplicationProtocol;
+          updatedNetwork.openNodePort = openNodePort;
 
-          if (!isApplicationProtocol) {
+          if (openNodePort) {
             updatedNetwork.openPublicDomain = false;
             updatedNetwork.publicDomain = '';
             updatedNetwork.customDomain = '';
-            updatedNetwork.domain = '';
+            updatedNetwork.domain =
+              updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
           } else if (isApplicationProtocol && portConfig.exposesPublicDomain) {
             updatedNetwork.publicDomain = existingNetwork.publicDomain || nanoid();
             if (portConfig.publicDomain) {
@@ -789,14 +796,58 @@ async function manageAppPorts(
           }
         }
 
+        if (portConfig.accessMode !== undefined) {
+          const finalAppProtocol = updatedNetwork.appProtocol;
+          const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(finalAppProtocol || '');
+
+          if (!isApplicationProtocol && portConfig.accessMode === 'domain') {
+            throw new PortValidationError(
+              `Cannot set domain access mode for non-application protocol. Current protocol: ${
+                finalAppProtocol || updatedNetwork.protocol
+              }`,
+              {
+                currentAppProtocol: finalAppProtocol,
+                currentProtocol: updatedNetwork.protocol,
+                supportedProtocols: ['HTTP', 'GRPC', 'WS'],
+                operation: 'UPDATE_ACCESS_MODE'
+              }
+            );
+          }
+
+          if (portConfig.accessMode === 'nodePort') {
+            updatedNetwork.openNodePort = true;
+            updatedNetwork.openPublicDomain = false;
+            updatedNetwork.publicDomain = '';
+            updatedNetwork.customDomain = '';
+            updatedNetwork.domain =
+              updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+          } else {
+            updatedNetwork.openNodePort = false;
+            updatedNetwork.openPublicDomain =
+              portConfig.exposesPublicDomain !== undefined ? portConfig.exposesPublicDomain : true;
+            if (updatedNetwork.openPublicDomain) {
+              updatedNetwork.publicDomain = updatedNetwork.publicDomain || nanoid();
+              updatedNetwork.domain =
+                updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+            }
+          }
+        }
+
         if (portConfig.exposesPublicDomain !== undefined) {
           const finalAppProtocol = updatedNetwork.appProtocol;
           const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(finalAppProtocol || '');
 
           if (isApplicationProtocol) {
-            updatedNetwork.openPublicDomain = portConfig.exposesPublicDomain;
+            updatedNetwork.openPublicDomain = updatedNetwork.openNodePort
+              ? false
+              : portConfig.exposesPublicDomain;
 
-            if (portConfig.exposesPublicDomain) {
+            if (updatedNetwork.openNodePort) {
+              updatedNetwork.publicDomain = '';
+              updatedNetwork.customDomain = '';
+              updatedNetwork.domain =
+                updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+            } else if (portConfig.exposesPublicDomain) {
               updatedNetwork.publicDomain = updatedNetwork.publicDomain || nanoid();
               if (portConfig.publicDomain) {
                 updatedNetwork.publicDomain = normalizePublicDomainPrefixOrThrow(
@@ -836,7 +887,11 @@ async function manageAppPorts(
         if (portConfig.publicDomain !== undefined) {
           const finalAppProtocol = updatedNetwork.appProtocol;
           const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(finalAppProtocol || '');
-          if (!isApplicationProtocol || !updatedNetwork.openPublicDomain) {
+          if (
+            !isApplicationProtocol ||
+            !updatedNetwork.openPublicDomain ||
+            updatedNetwork.openNodePort
+          ) {
             throw new PortValidationError(
               'Cannot set publicDomain for a port without public domain access',
               {
@@ -880,8 +935,10 @@ async function manageAppPorts(
         }
 
         const isApplicationProtocol = ['HTTP', 'GRPC', 'WS'].includes(portConfig.protocol);
+        const openNodePort = !isApplicationProtocol || portConfig.accessMode === 'nodePort';
         const openPublicDomain =
           isApplicationProtocol &&
+          !openNodePort &&
           (portConfig.exposesPublicDomain !== undefined ? portConfig.exposesPublicDomain : false);
         const publicDomain =
           openPublicDomain && portConfig.publicDomain
@@ -897,9 +954,12 @@ async function manageAppPorts(
           openPublicDomain,
           publicDomain: openPublicDomain ? publicDomain : '',
           customDomain: '',
-          domain: isApplicationProtocol ? global.AppConfig?.cloud?.domain || 'cloud.sealos.io' : '',
+          domain:
+            isApplicationProtocol && (openPublicDomain || openNodePort)
+              ? global.AppConfig?.cloud?.domain || 'cloud.sealos.io'
+              : '',
           nodePort: undefined,
-          openNodePort: !isApplicationProtocol
+          openNodePort
         };
 
         newNetworks.push(newNetwork);

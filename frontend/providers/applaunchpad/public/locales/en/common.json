@@ -5,6 +5,8 @@
   "Add": "Add",
   "Add Port": "Add Port",
   "Add Network Port": "Add Port",
+  "access_mode_domain": "Domain",
+  "access_mode_ip_port": "IP:port",
   "Add Route Rule": "Add Rule",
   "Add volume": "Add Volumes",
   "Advanced Configuration": "Advanced Configuration",

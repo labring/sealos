@@ -8,6 +8,7 @@ import {
   DISABLE_HTTPS,
   DOMAIN_PORT,
   HTTP_PORT,
+  NODE_PORT_HOST,
   SEALOS_DOMAIN
 } from '@/store/static';
 import { useTranslation } from 'next-i18next';
@@ -25,8 +26,8 @@ import {
   Tooltip,
   useTheme
 } from '@chakra-ui/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AppEditType } from '@/types/app';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { AppEditType, ApplicationProtocolType } from '@/types/app';
 import RouteRulesModal from './RouteRulesModal';
 import { useCopyData } from '@/utils/tools';
 import { buildExternalUrl, getExternalProtocol } from '@/utils/network-url';
@@ -231,6 +232,7 @@ type NetworkAction =
   | { type: 'REMOVE_PORT'; payload: { index: number } }
   | { type: 'ENABLE_EXTERNAL_ACCESS'; payload: { index: number } }
   | { type: 'DISABLE_EXTERNAL_ACCESS'; payload: { index: number } }
+  | { type: 'UPDATE_ACCESS_MODE'; payload: { index: number; accessMode: ExternalAccessMode } }
   | { type: 'UPDATE_PROTOCOL'; payload: { index: number; protocol: string } }
   | { type: 'ENSURE_PUBLIC_DOMAIN'; payload: { index: number; publicDomain: string } }
   | { type: 'UPDATE_CUSTOM_DOMAIN'; payload: { index: number; customDomain: string } }
@@ -248,6 +250,8 @@ interface NetworkSectionProps {
   boxStyles: any;
   headerStyles: any;
 }
+
+type ExternalAccessMode = 'domain' | 'nodePort';
 
 const createDefaultRoute = (
   port: number
@@ -277,6 +281,12 @@ const getNextAvailablePort = (networks: AppEditType['networks']) => {
 
 const getBackendServiceValue = (serviceName = '', servicePort?: number) =>
   `${serviceName}:${servicePort || ''}`;
+
+const isApplicationAccessProtocol = (protocol?: string): protocol is ApplicationProtocolType =>
+  APPLICATION_PROTOCOLS.includes(protocol as any);
+
+const getNodePortPublicProtocol = (network: AppEditType['networks'][number]) =>
+  network.appProtocol || network.protocol;
 
 const fieldLabelStyles = {
   mb: '9px',
@@ -336,6 +346,7 @@ export function NetworkSection({
   } = formHook;
   const watchedNetworks = useWatch({ control, name: 'networks' });
   const previousNetworkPortsRef = useRef<Record<string, number>>({});
+  const nodePortHost = NODE_PORT_HOST.trim();
   const clearPublicDomainErrorByIndex = useCallback(
     (index: number) => {
       clearErrors(`networks.${index}.publicDomain`);
@@ -448,26 +459,109 @@ export function NetworkSection({
           break;
         }
 
-        case 'UPDATE_PROTOCOL': {
-          const { index, protocol } = action.payload;
+        case 'UPDATE_ACCESS_MODE': {
+          const { index, accessMode } = action.payload;
           const currentNetwork = currentNetworks[index];
+          const currentPublicProtocol = currentNetwork.appProtocol || currentNetwork.protocol;
 
-          if (APPLICATION_PROTOCOLS.includes(protocol as any)) {
+          if (
+            accessMode === 'nodePort' &&
+            !nodePortHost &&
+            isApplicationAccessProtocol(currentPublicProtocol)
+          ) {
+            break;
+          }
+
+          if (accessMode === 'nodePort') {
+            clearPublicDomainErrorByIndex(index);
             updateNetworks(
               index,
               withDefaultRoutes({
                 ...currentNetwork,
                 serviceName: '',
-                protocol: 'TCP',
-                appProtocol: protocol as any,
-                openNodePort: false,
-                openPublicDomain: true,
                 networkName: currentNetwork.networkName || `network-${nanoid()}`,
-                publicDomain: currentNetwork.publicDomain || nanoid(),
+                protocol: currentNetwork.appProtocol ? 'TCP' : currentNetwork.protocol,
+                appProtocol:
+                  currentNetwork.appProtocol ||
+                  (APPLICATION_PROTOCOLS.includes(currentNetwork.protocol as any)
+                    ? (currentNetwork.protocol as any)
+                    : undefined),
+                openPublicDomain: false,
+                openNodePort: true,
+                publicDomain: '',
+                customDomain: '',
                 domain: currentNetwork.domain || SEALOS_DOMAIN,
                 nodePort: undefined
               })
             );
+            break;
+          }
+
+          const appProtocol = currentNetwork.appProtocol || currentNetwork.protocol;
+
+          if (!isApplicationAccessProtocol(appProtocol)) {
+            break;
+          }
+
+          updateNetworks(
+            index,
+            withDefaultRoutes({
+              ...currentNetwork,
+              serviceName: '',
+              networkName: currentNetwork.networkName || `network-${nanoid()}`,
+              protocol: 'TCP',
+              appProtocol,
+              openPublicDomain: true,
+              openNodePort: false,
+              publicDomain: currentNetwork.publicDomain || nanoid(),
+              customDomain: '',
+              domain: currentNetwork.domain || SEALOS_DOMAIN,
+              nodePort: undefined
+            })
+          );
+          break;
+        }
+
+        case 'UPDATE_PROTOCOL': {
+          const { index, protocol } = action.payload;
+          const currentNetwork = currentNetworks[index];
+
+          if (APPLICATION_PROTOCOLS.includes(protocol as any)) {
+            if (nodePortHost && currentNetwork.openNodePort) {
+              clearPublicDomainErrorByIndex(index);
+              updateNetworks(
+                index,
+                withDefaultRoutes({
+                  ...currentNetwork,
+                  serviceName: '',
+                  protocol: 'TCP',
+                  appProtocol: protocol as any,
+                  openNodePort: true,
+                  openPublicDomain: false,
+                  networkName: currentNetwork.networkName || `network-${nanoid()}`,
+                  publicDomain: '',
+                  customDomain: '',
+                  domain: currentNetwork.domain || SEALOS_DOMAIN,
+                  nodePort: undefined
+                })
+              );
+            } else {
+              updateNetworks(
+                index,
+                withDefaultRoutes({
+                  ...currentNetwork,
+                  serviceName: '',
+                  protocol: 'TCP',
+                  appProtocol: protocol as any,
+                  openNodePort: false,
+                  openPublicDomain: true,
+                  networkName: currentNetwork.networkName || `network-${nanoid()}`,
+                  publicDomain: currentNetwork.publicDomain || nanoid(),
+                  domain: currentNetwork.domain || SEALOS_DOMAIN,
+                  nodePort: undefined
+                })
+              );
+            }
           } else {
             clearPublicDomainErrorByIndex(index);
             updateNetworks(
@@ -480,6 +574,7 @@ export function NetworkSection({
                 openNodePort: true,
                 openPublicDomain: false,
                 customDomain: '',
+                publicDomain: '',
                 networkName: currentNetwork.networkName || `network-${nanoid()}`,
                 domain: currentNetwork.domain || SEALOS_DOMAIN,
                 nodePort: undefined
@@ -525,7 +620,14 @@ export function NetworkSection({
           break;
       }
     },
-    [getValues, appendNetworks, removeNetworks, updateNetworks, clearPublicDomainErrorByIndex]
+    [
+      getValues,
+      appendNetworks,
+      removeNetworks,
+      updateNetworks,
+      clearPublicDomainErrorByIndex,
+      nodePortHost
+    ]
   );
 
   const getPublicDomainFieldName = useCallback(
@@ -813,6 +915,33 @@ export function NetworkSection({
     );
   }, [getValues, t]);
 
+  const accessModeOptions = useMemo(
+    () => [
+      { label: t('access_mode_domain'), value: 'domain' },
+      { label: t('access_mode_ip_port'), value: 'nodePort' }
+    ],
+    [t]
+  );
+
+  const getAccessModeOptions = useCallback(
+    (network: AppEditType['networks'][number]) => {
+      const publicProtocol = network.appProtocol || network.protocol;
+
+      return isApplicationAccessProtocol(publicProtocol)
+        ? accessModeOptions
+        : accessModeOptions.filter((option) => option.value === 'nodePort');
+    },
+    [accessModeOptions]
+  );
+
+  const getAccessModeValue = useCallback((network: AppEditType['networks'][number]) => {
+    const publicProtocol = network.appProtocol || network.protocol;
+
+    return network.openNodePort || !isApplicationAccessProtocol(publicProtocol)
+      ? 'nodePort'
+      : 'domain';
+  }, []);
+
   const getDomainDisplay = useCallback(
     (network: AppEditType['networks'][number]) => {
       if (network.customDomain) {
@@ -828,15 +957,23 @@ export function NetworkSection({
       }
 
       if (network.openNodePort) {
+        if (!nodePortHost) {
+          return '';
+        }
+        const protocol = getNodePortPublicProtocol(network);
+        const host = nodePortHost;
         return network?.nodePort
           ? buildExternalUrl({
-              protocol: network.protocol,
-              host: `${network.protocol.toLowerCase()}.${network.domain}`,
-              nodePort: network.nodePort
+              protocol,
+              host,
+              nodePort: network.nodePort,
+              config: {
+                disableHttps: true
+              }
             })
-          : `${getExternalProtocol(network.protocol)}://${network.protocol.toLowerCase()}.${
-              network.domain
-            }:${t('pending_to_allocated')}`;
+          : `${getExternalProtocol(protocol, { disableHttps: true })}://${host}:${t(
+              'pending_to_allocated'
+            )}`;
       }
 
       return buildExternalUrl({
@@ -849,7 +986,7 @@ export function NetworkSection({
         }
       });
     },
-    [t]
+    [nodePortHost, t]
   );
 
   const getDomainHostDisplay = useCallback(
@@ -859,13 +996,17 @@ export function NetworkSection({
       }
 
       if (network.openNodePort) {
+        if (!nodePortHost) {
+          return '';
+        }
+        const host = nodePortHost;
         const port = network?.nodePort || t('pending_to_allocated');
-        return `${network.protocol.toLowerCase()}.${network.domain}:${port}`;
+        return `${host}:${port}`;
       }
 
       return `${network.publicDomain}.${network.domain}`;
     },
-    [t]
+    [nodePortHost, t]
   );
 
   const routeRulesNetwork =
@@ -880,6 +1021,7 @@ export function NetworkSection({
       <Box px={'42px'} py={'24px'} userSelect={'none'}>
         {networks.map((field, i) => {
           const network = watchedNetworks?.[i] || field;
+          const shouldShowAccessModeSelector = !!nodePortHost;
           const isExternalAccess = !!network.openPublicDomain || !!network.openNodePort;
           const canConfigureRouteRules = !!network.openPublicDomain && !network.openNodePort;
           const isPublicDomainPrefixVisible =
@@ -982,55 +1124,109 @@ export function NetworkSection({
 
                       {isExternalAccess && (
                         <>
-                          <Flex alignItems={'center'} flex={'1 1 0'} mr={'8px'} h={'32px'} minW={0}>
-                            <MySelect
-                              width={'90px'}
-                              height={'32px'}
-                              borderTopRightRadius={0}
-                              borderBottomRightRadius={0}
-                              fontSize={'12px'}
-                              fontWeight={400}
-                              lineHeight={'16px'}
-                              letterSpacing={'0.048px'}
-                              value={
-                                network.openPublicDomain
-                                  ? network.appProtocol
-                                  : network.openNodePort
-                                    ? network.protocol
-                                    : 'HTTP'
-                              }
-                              list={ProtocolList}
-                              onchange={(val: any) => {
-                                dispatch({
-                                  type: 'UPDATE_PROTOCOL',
-                                  payload: {
-                                    index: i,
-                                    protocol: val
-                                  }
-                                });
-                              }}
-                            />
-                            <Flex
-                              alignItems={'center'}
-                              h={'32px'}
-                              flex={'1 1 0'}
-                              minW={0}
-                              bg={'grayModern.50'}
-                              border={theme.borders.base}
-                              borderLeft={0}
-                              borderTopRightRadius={'md'}
-                              borderBottomRightRadius={'md'}
-                              overflow={'hidden'}
-                            >
-                              {isPublicDomainPrefixVisible ? (
-                                <>
-                                  <PublicDomainPrefixInput
-                                    value={network.publicDomain}
-                                    errorMessage={publicDomainErrorMessage}
-                                    onDraftChange={(value) => updatePublicDomainDraft(i, value)}
-                                    onStartEdit={() => clearPublicDomainValidationError(i)}
-                                    onCommit={(value) => commitPublicDomainDraft(i, value)}
-                                  />
+                          <Flex
+                            alignItems={'center'}
+                            flex={'1 1 0'}
+                            mr={'8px'}
+                            h={'32px'}
+                            minW={0}
+                            gap={'8px'}
+                          >
+                            {shouldShowAccessModeSelector ? (
+                              <MySelect
+                                width={'88px'}
+                                height={'32px'}
+                                borderRadius={'md'}
+                                fontSize={'12px'}
+                                fontWeight={500}
+                                lineHeight={'16px'}
+                                letterSpacing={'0.048px'}
+                                color={'grayModern.600'}
+                                bg={'white'}
+                                borderColor={'grayModern.250'}
+                                boxShadow={
+                                  '0px 1px 2px 0px rgba(19, 51, 107, 0.04), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
+                                }
+                                value={getAccessModeValue(network)}
+                                list={getAccessModeOptions(network)}
+                                onchange={(val: any) => {
+                                  dispatch({
+                                    type: 'UPDATE_ACCESS_MODE',
+                                    payload: {
+                                      index: i,
+                                      accessMode: val
+                                    }
+                                  });
+                                }}
+                              />
+                            ) : null}
+                            <Flex alignItems={'center'} h={'32px'} flex={'1 1 0'} minW={0}>
+                              <MySelect
+                                width={'90px'}
+                                height={'32px'}
+                                borderTopRightRadius={0}
+                                borderBottomRightRadius={0}
+                                fontSize={'12px'}
+                                fontWeight={400}
+                                lineHeight={'16px'}
+                                letterSpacing={'0.048px'}
+                                value={
+                                  network.appProtocol ||
+                                  (network.openNodePort ? network.protocol : 'HTTP')
+                                }
+                                list={ProtocolList}
+                                onchange={(val: any) => {
+                                  dispatch({
+                                    type: 'UPDATE_PROTOCOL',
+                                    payload: {
+                                      index: i,
+                                      protocol: val
+                                    }
+                                  });
+                                }}
+                              />
+                              <Flex
+                                alignItems={'center'}
+                                h={'32px'}
+                                flex={'1 1 0'}
+                                minW={0}
+                                bg={'grayModern.50'}
+                                border={theme.borders.base}
+                                borderLeft={0}
+                                borderTopRightRadius={'md'}
+                                borderBottomRightRadius={'md'}
+                                overflow={'hidden'}
+                              >
+                                {isPublicDomainPrefixVisible ? (
+                                  <>
+                                    <PublicDomainPrefixInput
+                                      value={network.publicDomain}
+                                      errorMessage={publicDomainErrorMessage}
+                                      onDraftChange={(value) => updatePublicDomainDraft(i, value)}
+                                      onStartEdit={() => clearPublicDomainValidationError(i)}
+                                      onCommit={(value) => commitPublicDomainDraft(i, value)}
+                                    />
+                                    <Tooltip label={t('click_to_copy_tooltip')}>
+                                      <Box
+                                        h={'30px'}
+                                        display={'flex'}
+                                        alignItems={'center'}
+                                        flex={'1 1 auto'}
+                                        minW={0}
+                                        px={'8px'}
+                                        userSelect={'all'}
+                                        className="textEllipsis"
+                                        cursor={'pointer'}
+                                        {...fieldInputStyles}
+                                        onClick={() => {
+                                          copyData(getDomainDisplay(network));
+                                        }}
+                                      >
+                                        .{network.domain}
+                                      </Box>
+                                    </Tooltip>
+                                  </>
+                                ) : (
                                   <Tooltip label={t('click_to_copy_tooltip')}>
                                     <Box
                                       h={'30px'}
@@ -1038,7 +1234,7 @@ export function NetworkSection({
                                       alignItems={'center'}
                                       flex={'1 1 auto'}
                                       minW={0}
-                                      px={'8px'}
+                                      px={'12px'}
                                       userSelect={'all'}
                                       className="textEllipsis"
                                       cursor={'pointer'}
@@ -1047,79 +1243,59 @@ export function NetworkSection({
                                         copyData(getDomainDisplay(network));
                                       }}
                                     >
-                                      .{network.domain}
+                                      {getDomainHostDisplay(network)}
                                     </Box>
                                   </Tooltip>
-                                </>
-                              ) : (
-                                <Tooltip label={t('click_to_copy_tooltip')}>
+                                )}
+
+                                {network.openPublicDomain && !network.openNodePort && (
                                   <Box
-                                    h={'30px'}
-                                    display={'flex'}
-                                    alignItems={'center'}
-                                    flex={'1 1 auto'}
-                                    minW={0}
-                                    px={'12px'}
-                                    userSelect={'all'}
-                                    className="textEllipsis"
+                                    flex={'0 0 auto'}
+                                    px={'8px'}
+                                    py={'4px'}
+                                    fontSize={'11px'}
+                                    lineHeight={'16px'}
+                                    fontWeight={500}
+                                    letterSpacing={'0.5px'}
+                                    color={'brightBlue.600'}
                                     cursor={'pointer'}
-                                    {...fieldInputStyles}
-                                    onClick={() => {
-                                      copyData(getDomainDisplay(network));
+                                    onClick={async () => {
+                                      if (CUSTOM_DOMAIN_MODE === 'certificate') {
+                                        const publicDomain = network.publicDomain || nanoid();
+                                        dispatch({
+                                          type: 'ENSURE_PUBLIC_DOMAIN',
+                                          payload: { index: i, publicDomain }
+                                        });
+                                        clearPublicDomainValidationError(i);
+                                        setCertificateAccessModalData({
+                                          networkIndex: i,
+                                          currentCustomDomain: network.customDomain
+                                        });
+                                        return;
+                                      }
+
+                                      const publicDomain = network.customDomain
+                                        ? network.publicDomain
+                                        : await commitPublicDomainDraft(i, network.publicDomain);
+                                      if (!publicDomain) return;
+                                      setCustomAccessModalData({
+                                        publicDomain,
+                                        currentCustomDomain: network.customDomain,
+                                        domain: network.domain
+                                      });
                                     }}
                                   >
-                                    {getDomainHostDisplay(network)}
+                                    {t('bind_custom_domain')}
                                   </Box>
-                                </Tooltip>
-                              )}
-
-                              {network.openPublicDomain && !network.openNodePort && (
-                                <Box
-                                  flex={'0 0 auto'}
-                                  px={'8px'}
-                                  py={'4px'}
-                                  fontSize={'11px'}
-                                  lineHeight={'16px'}
-                                  fontWeight={500}
-                                  letterSpacing={'0.5px'}
-                                  color={'brightBlue.600'}
-                                  cursor={'pointer'}
-                                  onClick={async () => {
-                                    if (CUSTOM_DOMAIN_MODE === 'certificate') {
-                                      const publicDomain = network.publicDomain || nanoid();
-                                      dispatch({
-                                        type: 'ENSURE_PUBLIC_DOMAIN',
-                                        payload: { index: i, publicDomain }
-                                      });
-                                      clearPublicDomainValidationError(i);
-                                      setCertificateAccessModalData({
-                                        networkIndex: i,
-                                        currentCustomDomain: network.customDomain
-                                      });
-                                      return;
-                                    }
-
-                                    const publicDomain = network.customDomain
-                                      ? network.publicDomain
-                                      : await commitPublicDomainDraft(i, network.publicDomain);
-                                    if (!publicDomain) return;
-                                    setCustomAccessModalData({
-                                      publicDomain,
-                                      currentCustomDomain: network.customDomain,
-                                      domain: network.domain
-                                    });
-                                  }}
-                                >
-                                  {t('bind_custom_domain')}
-                                </Box>
-                              )}
-                              {/* keep a hidden field registered so customDomain remains part of form state */}
-                              <Input
-                                display={'none'}
-                                flex={'1 1 auto'}
-                                minW={0}
-                                {...register(`networks.${i}.customDomain`)}
-                              />
+                                )}
+                                {/* keep a hidden field registered so customDomain remains part of form state */}
+                                <Input
+                                  display={'none'}
+                                  flex={'1 1 auto'}
+                                  minW={0}
+                                  {...register(`networks.${i}.customDomain`)}
+                                />
+                              </Flex>
                             </Flex>
                           </Flex>
                           {canConfigureRouteRules && (

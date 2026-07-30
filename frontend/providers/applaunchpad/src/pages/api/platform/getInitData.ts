@@ -3,6 +3,7 @@ import { jsonRes } from '@/services/backend/response';
 import type { AppConfigType, EnvResponse } from '@/types';
 import { isCustomPublicDomainPrefixEnabled, isImagePortsEnabled } from '@/utils/feature-gates';
 import { normalizeCustomDomainMode } from '@/utils/custom-domain';
+import { resolveNodePortHost } from '@/utils/nodeport-host';
 import { normalizePublicDomainReservedPrefixes } from '@/utils/public-domain';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -35,6 +36,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
   return {
     SEALOS_DOMAIN: AppConfig.cloud.domain,
+    NODE_PORT_HOST: resolveNodePortHost({
+      configuredHost: AppConfig.cloud.nodePortHost
+    }),
     DOMAIN_PORT: AppConfig.cloud.port?.toString() || '',
     HTTP_PORT: AppConfig.cloud.httpPort?.toString() || '',
     DISABLE_HTTPS: !!AppConfig.cloud.disableHttps,

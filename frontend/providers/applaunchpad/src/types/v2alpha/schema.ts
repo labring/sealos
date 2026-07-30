@@ -233,6 +233,10 @@ export const PortConfigSchema = z
       description: 'Public access address',
       example: 'https://xyz789.cloud.sealos.io'
     }),
+    accessMode: z.enum(['domain', 'nodePort']).optional().openapi({
+      description: 'Public access mode. domain uses Ingress, nodePort exposes IP:port.',
+      example: 'domain'
+    }),
     publicDomain: z.string().optional().openapi({
       description: 'Public subdomain prefix',
       example: 'xyz789'

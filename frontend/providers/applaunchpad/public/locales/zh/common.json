@@ -5,6 +5,8 @@
   "Add": "新增",
   "Add Port": "添加端口",
   "Add Network Port": "新增端口",
+  "access_mode_domain": "域名",
+  "access_mode_ip_port": "IP:port",
   "Add Route Rule": "新增规则",
   "Add volume": "新增存储卷",
   "Advanced Configuration": "高级配置",

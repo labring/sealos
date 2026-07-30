@@ -689,8 +689,11 @@ async function updateAppPorts(
 function createNetworkConfig(appName: string, portConfig: any): any {
   const protocol = (portConfig.protocol || 'http').toUpperCase();
   const isAppProtocol = isApplicationProtocol(protocol);
+  const openNodePort = !isAppProtocol || portConfig.accessMode === 'nodePort';
   const openPublicDomain =
-    isAppProtocol && (portConfig.isPublic !== undefined ? portConfig.isPublic : false);
+    isAppProtocol &&
+    !openNodePort &&
+    (portConfig.isPublic !== undefined ? portConfig.isPublic : false);
   const publicDomain =
     isAppProtocol && openPublicDomain && portConfig.publicDomain
       ? normalizePublicDomainPrefixOrThrow(portConfig.publicDomain)
@@ -706,9 +709,12 @@ function createNetworkConfig(appName: string, portConfig: any): any {
     openPublicDomain,
     publicDomain: openPublicDomain ? publicDomain : '',
     customDomain: '',
-    domain: isAppProtocol ? global.AppConfig?.cloud?.domain || 'cloud.sealos.io' : '',
+    domain:
+      isAppProtocol && (openPublicDomain || openNodePort)
+        ? global.AppConfig?.cloud?.domain || 'cloud.sealos.io'
+        : '',
     nodePort: undefined,
-    openNodePort: !isAppProtocol
+    openNodePort
   };
 }
 
@@ -722,15 +728,20 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
   if (portConfig.protocol !== undefined) {
     const protocolUpper = portConfig.protocol.toUpperCase();
     const isAppProtocol = isApplicationProtocol(protocolUpper);
+    const openNodePort =
+      !isAppProtocol ||
+      portConfig.accessMode === 'nodePort' ||
+      (portConfig.accessMode === undefined && isAppProtocol && existingNetwork.openNodePort);
     updatedNetwork.protocol = isAppProtocol ? 'TCP' : protocolUpper;
     updatedNetwork.appProtocol = isAppProtocol ? protocolUpper : undefined;
-    updatedNetwork.openNodePort = !isAppProtocol;
+    updatedNetwork.openNodePort = openNodePort;
 
-    if (!isAppProtocol) {
+    if (openNodePort) {
       updatedNetwork.openPublicDomain = false;
       updatedNetwork.publicDomain = '';
       updatedNetwork.customDomain = '';
-      updatedNetwork.domain = '';
+      updatedNetwork.domain =
+        updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
     } else if (portConfig.isPublic) {
       updatedNetwork.publicDomain = existingNetwork.publicDomain || nanoid();
       if (portConfig.publicDomain) {
@@ -741,14 +752,56 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
     }
   }
 
+  if (portConfig.accessMode !== undefined) {
+    const finalAppProtocol = updatedNetwork.appProtocol;
+    const isAppProtocol = isApplicationProtocol(finalAppProtocol);
+
+    if (!isAppProtocol && portConfig.accessMode === 'domain') {
+      throw new PortValidationError(
+        `Cannot set domain access mode for non-application protocol. Current protocol: ${
+          finalAppProtocol || updatedNetwork.protocol
+        }`,
+        {
+          currentAppProtocol: finalAppProtocol,
+          currentProtocol: updatedNetwork.protocol,
+          supportedProtocols: APPLICATION_PROTOCOLS,
+          operation: 'UPDATE_ACCESS_MODE'
+        }
+      );
+    }
+
+    if (portConfig.accessMode === 'nodePort') {
+      updatedNetwork.openNodePort = true;
+      updatedNetwork.openPublicDomain = false;
+      updatedNetwork.publicDomain = '';
+      updatedNetwork.customDomain = '';
+      updatedNetwork.domain =
+        updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+    } else {
+      updatedNetwork.openNodePort = false;
+      updatedNetwork.openPublicDomain =
+        portConfig.isPublic !== undefined ? portConfig.isPublic : true;
+      if (updatedNetwork.openPublicDomain) {
+        updatedNetwork.publicDomain = updatedNetwork.publicDomain || nanoid();
+        updatedNetwork.domain =
+          updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+      }
+    }
+  }
+
   if (portConfig.isPublic !== undefined) {
     const finalAppProtocol = updatedNetwork.appProtocol;
     const isAppProtocol = isApplicationProtocol(finalAppProtocol);
 
     if (isAppProtocol) {
-      updatedNetwork.openPublicDomain = portConfig.isPublic;
+      updatedNetwork.openPublicDomain = updatedNetwork.openNodePort ? false : portConfig.isPublic;
 
-      if (portConfig.isPublic) {
+      if (updatedNetwork.openNodePort) {
+        updatedNetwork.publicDomain = '';
+        updatedNetwork.customDomain = '';
+        updatedNetwork.domain =
+          updatedNetwork.domain || global.AppConfig?.cloud?.domain || 'cloud.sealos.io';
+      } else if (portConfig.isPublic) {
         updatedNetwork.publicDomain = updatedNetwork.publicDomain || nanoid();
         if (portConfig.publicDomain) {
           updatedNetwork.publicDomain = normalizePublicDomainPrefixOrThrow(portConfig.publicDomain);
@@ -787,7 +840,7 @@ function updateNetworkConfig(existingNetwork: any, portConfig: any, appName: str
     const finalAppProtocol = updatedNetwork.appProtocol;
     const isAppProtocol = isApplicationProtocol(finalAppProtocol);
 
-    if (!isAppProtocol || !updatedNetwork.openPublicDomain) {
+    if (!isAppProtocol || !updatedNetwork.openPublicDomain || updatedNetwork.openNodePort) {
       throw new PortValidationError(
         'Cannot set publicDomain for a port without public domain access',
         {

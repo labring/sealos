@@ -72,6 +72,7 @@ ingress:
 # cloudDomain, cloudPort, httpPort, disableHttps and certSecretName are auto-configured by entrypoint.sh from sealos-config.
 applaunchpadConfig:
   cloudDomain: "127.0.0.1.nip.io"
+  nodePortHost: ""
   cloudPort: ""
   httpPort: ""
   disableHttps: false
