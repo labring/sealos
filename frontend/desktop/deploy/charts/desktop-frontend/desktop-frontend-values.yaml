@@ -46,7 +46,6 @@ desktopConfig:
   jwtInternal: ""                  # Auto-fetched from sealos-config.jwtInternal
   jwtRegional: ""                  # Auto-fetched from sealos-config.jwtRegional
   jwtGlobal: ""                    # Auto-fetched from sealos-config.jwtGlobal
-  regionUID: "randomRegionUID"
   # Supported values: cockroachdb, postgresql
   databaseType: cockroachdb
   # Database connections (auto-configured from sealos-config)
