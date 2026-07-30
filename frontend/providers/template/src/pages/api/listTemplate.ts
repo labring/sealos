@@ -6,7 +6,8 @@ import {
   parseTemplateCategories
 } from '@/utils/template';
 import type { TemplateCategory } from '@/types/config';
-import { parseGithubUrl } from '@/utils/tools';
+import { getTemplateEnvs, parseGithubUrl } from '@/utils/tools';
+import { proxyTemplateIconUrls, type TemplateRepo } from '@/utils/templateAsset';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
@@ -26,7 +27,8 @@ export const readTemplates = (
   jsonData: string,
   cdnUrl?: string,
   configuredCategories: TemplateCategory[] = [],
-  language?: string
+  language?: string,
+  templateRepo?: TemplateRepo
 ): TemplateType[] => {
   const _templates: TemplateType[] = JSON.parse(jsonData);
 
@@ -43,10 +45,11 @@ export const readTemplates = (
         spec.icon = replaceRawWithCDN(spec.icon, cdnUrl);
       }
 
-      return {
+      const template = {
         ...item,
         spec
       };
+      return templateRepo ? proxyTemplateIconUrls(template, templateRepo) : template;
     })
     .filter((item) => {
       if (!language) return true;
@@ -66,9 +69,16 @@ export const readTemplatesFromFile = (
   jsonPath: string,
   cdnUrl?: string,
   configuredCategories: TemplateCategory[] = [],
-  language?: string
+  language?: string,
+  templateRepo?: TemplateRepo
 ): TemplateType[] =>
-  readTemplates(fs.readFileSync(jsonPath, 'utf8'), cdnUrl, configuredCategories, language);
+  readTemplates(
+    fs.readFileSync(jsonPath, 'utf8'),
+    cdnUrl,
+    configuredCategories,
+    language,
+    templateRepo
+  );
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = req.query.language as string;
@@ -78,6 +88,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const cdnUrl = process.env.CDN_URL;
   const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
   const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
+  const templateEnvs = getTemplateEnvs();
+  const templateRepo = {
+    url: templateEnvs.TEMPLATE_REPO_URL,
+    branch: templateEnvs.TEMPLATE_REPO_BRANCH,
+    provider: templateEnvs.TEMPLATE_REPO_PROVIDER
+  };
 
   try {
     if (!global.updateRepoCronJob) {
@@ -99,7 +115,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await fetch(`${baseurl}/api/updateRepo`);
     }
 
-    const templates = readTemplatesFromFile(jsonPath, cdnUrl, configuredCategories, language);
+    const templates = readTemplatesFromFile(
+      jsonPath,
+      cdnUrl,
+      configuredCategories,
+      language,
+      templateRepo
+    );
 
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
     console.log(`[${timestamp}] language: ${language}, templates count: ${templates.length}`);

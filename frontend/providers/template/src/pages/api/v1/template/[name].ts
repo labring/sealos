@@ -7,6 +7,7 @@ import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { readTemplatesFromFile } from '../../listTemplate';
 import { GetTemplateByName } from '../../getTemplateSource';
 import { parseTemplateCategories } from '@/utils/template';
+import { getTemplateEnvs } from '@/utils/tools';
 
 function simplifyResourceValue(
   resource: { min: number; max: number },
@@ -49,11 +50,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
+    const templateEnvs = getTemplateEnvs();
+    const templateRepo = {
+      url: templateEnvs.TEMPLATE_REPO_URL,
+      branch: templateEnvs.TEMPLATE_REPO_BRANCH,
+      provider: templateEnvs.TEMPLATE_REPO_PROVIDER
+    };
     const templates = readTemplatesFromFile(
       jsonPath,
       process.env.CDN_URL,
-      parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
-      language
+      configuredCategories,
+      language,
+      templateRepo
     );
     const template = templates.find((t) => t.metadata.name === templateName);
 
