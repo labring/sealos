@@ -28,10 +28,6 @@ const SAFE_ICON_EXTENSIONS = new Set([
   '.avif'
 ]);
 
-function normalizeTemplateRepoProvider(provider?: TemplateRepoProvider): TemplateRepoProvider {
-  return provider || 'auto';
-}
-
 function isHttpUrl(value: string) {
   return /^https?:\/\//i.test(value);
 }
@@ -132,31 +128,22 @@ function decodeUrlPathParts(pathname: string) {
   }
 }
 
-function inferTemplateRepoProvider(host: string): Exclude<TemplateRepoProvider, 'auto'> {
-  if (host === 'github.com') return 'github';
-  if (host === 'gitlab.com' || host.includes('gitlab')) return 'gitlab';
-  return 'gogs';
-}
-
 function getRepoAssetRawUrl(repo: TemplateRepo, assetPath: string) {
   const parsedRepo = parseGitRepoUrl(repo.url);
   if (!parsedRepo || !assetPath) return '';
 
   const encodedRef = encodeURIComponent(repo.branch);
   const projectPath = [...parsedRepo.ownerPath, parsedRepo.repo].map(encodeURIComponent).join('/');
-  const provider = normalizeTemplateRepoProvider(repo.provider);
-  const resolvedProvider =
-    provider === 'auto' ? inferTemplateRepoProvider(parsedRepo.host) : provider;
 
-  if (resolvedProvider === 'github') {
+  if (parsedRepo.host === 'github.com') {
     return `https://raw.githubusercontent.com/${projectPath}/${encodedRef}/${assetPath}`;
   }
 
-  if (resolvedProvider === 'gitlab') {
+  if (parsedRepo.host === 'gitlab.com' || parsedRepo.host.includes('gitlab')) {
     return `${parsedRepo.origin}/${projectPath}/-/raw/${encodedRef}/${assetPath}`;
   }
 
-  return `${parsedRepo.origin}/${projectPath}/raw/${encodedRef}/${assetPath}`;
+  return `${parsedRepo.origin}/${projectPath}/raw/branch/${encodedRef}/${assetPath}`;
 }
 
 function getProxyableTemplateAssetPath(assetUrl: string, repo: TemplateRepo) {
