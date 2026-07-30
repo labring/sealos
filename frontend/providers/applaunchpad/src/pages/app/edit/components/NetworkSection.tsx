@@ -8,6 +8,7 @@ import {
   DISABLE_HTTPS,
   DOMAIN_PORT,
   HTTP_PORT,
+  NODE_PORT_ACCESS_ENABLED,
   NODE_PORT_HOST,
   SEALOS_DOMAIN
 } from '@/store/static';
@@ -461,6 +462,15 @@ export function NetworkSection({
         case 'UPDATE_ACCESS_MODE': {
           const { index, accessMode } = action.payload;
           const currentNetwork = currentNetworks[index];
+          const currentPublicProtocol = currentNetwork.appProtocol || currentNetwork.protocol;
+
+          if (
+            accessMode === 'nodePort' &&
+            !NODE_PORT_ACCESS_ENABLED &&
+            isApplicationAccessProtocol(currentPublicProtocol)
+          ) {
+            break;
+          }
 
           if (accessMode === 'nodePort') {
             clearPublicDomainErrorByIndex(index);
@@ -517,7 +527,7 @@ export function NetworkSection({
           const currentNetwork = currentNetworks[index];
 
           if (APPLICATION_PROTOCOLS.includes(protocol as any)) {
-            if (currentNetwork.openNodePort) {
+            if (NODE_PORT_ACCESS_ENABLED && currentNetwork.openNodePort) {
               clearPublicDomainErrorByIndex(index);
               updateNetworks(
                 index,
@@ -998,6 +1008,9 @@ export function NetworkSection({
       <Box px={'42px'} py={'24px'} userSelect={'none'}>
         {networks.map((field, i) => {
           const network = watchedNetworks?.[i] || field;
+          const publicProtocol = network.appProtocol || network.protocol;
+          const shouldShowAccessModeSelector =
+            !isApplicationAccessProtocol(publicProtocol) || NODE_PORT_ACCESS_ENABLED;
           const isExternalAccess = !!network.openPublicDomain || !!network.openNodePort;
           const canConfigureRouteRules = !!network.openPublicDomain && !network.openNodePort;
           const isPublicDomainPrefixVisible =
@@ -1108,32 +1121,34 @@ export function NetworkSection({
                             minW={0}
                             gap={'8px'}
                           >
-                            <MySelect
-                              width={'88px'}
-                              height={'32px'}
-                              borderRadius={'md'}
-                              fontSize={'12px'}
-                              fontWeight={500}
-                              lineHeight={'16px'}
-                              letterSpacing={'0.048px'}
-                              color={'grayModern.600'}
-                              bg={'white'}
-                              borderColor={'grayModern.250'}
-                              boxShadow={
-                                '0px 1px 2px 0px rgba(19, 51, 107, 0.04), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
-                              }
-                              value={getAccessModeValue(network)}
-                              list={getAccessModeOptions(network)}
-                              onchange={(val: any) => {
-                                dispatch({
-                                  type: 'UPDATE_ACCESS_MODE',
-                                  payload: {
-                                    index: i,
-                                    accessMode: val
-                                  }
-                                });
-                              }}
-                            />
+                            {shouldShowAccessModeSelector ? (
+                              <MySelect
+                                width={'88px'}
+                                height={'32px'}
+                                borderRadius={'md'}
+                                fontSize={'12px'}
+                                fontWeight={500}
+                                lineHeight={'16px'}
+                                letterSpacing={'0.048px'}
+                                color={'grayModern.600'}
+                                bg={'white'}
+                                borderColor={'grayModern.250'}
+                                boxShadow={
+                                  '0px 1px 2px 0px rgba(19, 51, 107, 0.04), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
+                                }
+                                value={getAccessModeValue(network)}
+                                list={getAccessModeOptions(network)}
+                                onchange={(val: any) => {
+                                  dispatch({
+                                    type: 'UPDATE_ACCESS_MODE',
+                                    payload: {
+                                      index: i,
+                                      accessMode: val
+                                    }
+                                  });
+                                }}
+                              />
+                            ) : null}
                             <Flex alignItems={'center'} h={'32px'} flex={'1 1 0'} minW={0}>
                               <MySelect
                                 width={'90px'}

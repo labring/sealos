@@ -9,3 +9,7 @@ export function isCustomPublicDomainPrefixEnabled(config?: unknown) {
 export function isImagePortsEnabled(config?: unknown) {
   return !!getAppConfig(config)?.launchpad?.imagePorts?.enabled;
 }
+
+export function isNodePortAccessEnabled(config?: unknown) {
+  return !!getAppConfig(config)?.cloud?.nodePortHost?.trim();
+}

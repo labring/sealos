@@ -131,6 +131,7 @@ export type EnvResponse = {
   LOG_ENABLED: boolean;
   NETWORK_STORAGE_ENABLED: boolean;
   IMAGE_PORTS_ENABLED: boolean;
+  NODE_PORT_ACCESS_ENABLED: boolean;
   CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED: boolean;
   PUBLIC_DOMAIN_RESERVED_PREFIXES: string[];
   CUSTOM_DOMAIN_MODE: CustomDomainMode;

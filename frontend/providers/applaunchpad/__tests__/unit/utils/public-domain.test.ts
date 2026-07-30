@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   isCustomPublicDomainPrefixEnabled,
-  isImagePortsEnabled
+  isImagePortsEnabled,
+  isNodePortAccessEnabled
 } from '@/utils/feature-gates';
 import {
   PUBLIC_DOMAIN_PREFIX_MAX_LENGTH,
@@ -74,10 +75,14 @@ describe('feature gates', () => {
   it('defaults branch feature gates to disabled', () => {
     expect(isImagePortsEnabled()).toBe(false);
     expect(isCustomPublicDomainPrefixEnabled()).toBe(false);
+    expect(isNodePortAccessEnabled()).toBe(false);
   });
 
   it('reads branch feature gates from config', () => {
     const config = {
+      cloud: {
+        nodePortHost: '10.0.0.10'
+      },
       launchpad: {
         imagePorts: {
           enabled: true
@@ -90,6 +95,7 @@ describe('feature gates', () => {
 
     expect(isImagePortsEnabled(config)).toBe(true);
     expect(isCustomPublicDomainPrefixEnabled(config)).toBe(true);
+    expect(isNodePortAccessEnabled(config)).toBe(true);
   });
 });
 
