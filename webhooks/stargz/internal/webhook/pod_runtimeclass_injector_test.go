@@ -83,7 +83,11 @@ func TestHandleReturnsRuntimeClassPatch(t *testing.T) {
 		t.Fatalf("expected allowed response: %+v", resp.Result)
 	}
 	if len(resp.Patches) != 2 {
-		t.Fatalf("expected one runtimeClassName patch and one annotation patch, got %d: %+v", len(resp.Patches), resp.Patches)
+		t.Fatalf(
+			"expected one runtimeClassName patch and one annotation patch, got %d: %+v",
+			len(resp.Patches),
+			resp.Patches,
+		)
 	}
 	var runtimeClassPatched, runtimeHandlerAnnotated bool
 	for _, patch := range resp.Patches {
@@ -94,8 +98,9 @@ func TestHandleReturnsRuntimeClassPatch(t *testing.T) {
 		case "/spec/runtimeClassName":
 			runtimeClassPatched = true
 		case "/metadata/annotations":
-			annotations, ok := patch.Value.(map[string]interface{})
-			runtimeHandlerAnnotated = ok && annotations[runtimeHandlerAnnotationKey] == stargzRuntimeHandler
+			annotations, ok := patch.Value.(map[string]any)
+			runtimeHandlerAnnotated = ok &&
+				annotations[runtimeHandlerAnnotationKey] == stargzRuntimeHandler
 		}
 	}
 	if !runtimeClassPatched {
