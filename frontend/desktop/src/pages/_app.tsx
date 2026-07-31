@@ -1,3 +1,4 @@
+import 'core-js/stable';
 import { useConfigStore } from '@/stores/config';
 import { theme } from '@/styles/chakraTheme';
 import { getCookie } from '@/utils/cookieUtils';
