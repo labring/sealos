@@ -304,43 +304,30 @@ func (r *BillingReconciler) ExecuteBillingTaskAt(endHourTime time.Time) error {
 
 func (r *BillingReconciler) loadDebtUsersAt(endHourTime time.Time) error {
 	startedAt := time.Now()
-	effectiveTime := endHourTime.Add(-time.Nanosecond)
 	db := r.AccountV2.GetGlobalDB()
 	var debts []types.Debt
-	var recordsAfter []types.DebtStatusRecord
-	// Debt and its status record are committed together, so both reads share one snapshot.
-	if err := db.Transaction(
-		func(tx *gorm.DB) error {
-			if err := tx.Model(&types.Debt{}).
-				Select("user_uid, account_debt_status").
-				Where("created_at <= ?", effectiveTime).
-				Find(&debts).Error; err != nil {
-				return fmt.Errorf("query billing-period debts: %w", err)
-			}
-			if err := tx.Model(&types.DebtStatusRecord{}).
-				Select("user_uid, last_status, create_at").
-				Where("create_at > ?", effectiveTime).
-				Order("create_at ASC").
-				Find(&recordsAfter).Error; err != nil {
-				return fmt.Errorf("query debt status after billing period: %w", err)
-			}
-			return nil
-		},
-		&sql.TxOptions{Isolation: sql.LevelSerializable, ReadOnly: true},
-	); err != nil {
+	// Probe the first transition per debt row so catch-up never materializes
+	// every status record after the billing boundary.
+	if err := db.Raw(`
+		SELECT
+			d.user_uid,
+			COALESCE(first_record.last_status, d.account_debt_status) AS account_debt_status
+		FROM "Debt" AS d
+		LEFT JOIN LATERAL (
+			SELECT r.last_status
+			FROM "DebtStatusRecord" AS r
+			WHERE r.user_uid = d.user_uid AND r.create_at >= ?
+			ORDER BY r.create_at ASC, r.id ASC
+			LIMIT 1
+		) AS first_record ON TRUE
+		WHERE d.created_at < ?`, endHourTime, endHourTime).
+		Scan(&debts).Error; err != nil {
 		return fmt.Errorf("query consistent billing-period debt state: %w", err)
 	}
 
-	afterByUser := make(map[uuid.UUID]types.DebtStatusRecord, len(recordsAfter))
-	for _, record := range recordsAfter {
-		if _, exists := afterByUser[record.UserUID]; !exists {
-			afterByUser[record.UserUID] = record
-		}
-	}
 	var users []string
 	for i := range debts {
-		status := debtStatusAt(debts[i], afterByUser[debts[i].UserUID])
-		if types.ContainDebtStatus(types.DebtStates, status) {
+		if types.ContainDebtStatus(types.DebtStates, debts[i].AccountDebtStatus) {
 			users = append(users, debts[i].UserUID.String())
 		}
 	}
@@ -351,13 +338,6 @@ func (r *BillingReconciler) loadDebtUsersAt(endHourTime time.Time) error {
 		"duration", time.Since(startedAt),
 	)
 	return nil
-}
-
-func debtStatusAt(debt types.Debt, recordAfter types.DebtStatusRecord) types.DebtStatusType {
-	if recordAfter.UserUID != uuid.Nil {
-		return recordAfter.LastStatus
-	}
-	return debt.AccountDebtStatus
 }
 
 func (r *BillingReconciler) loadSubscriptionWorkspacesAt(

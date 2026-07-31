@@ -2,7 +2,9 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,7 +12,20 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+func explainBillingFind(ctx context.Context, account *mongoDB, filter bson.D) (bson.M, error) {
+	var explain bson.M
+	err := account.Client.Database(account.AccountDB).RunCommand(ctx, bson.D{
+		{Key: "explain", Value: bson.D{
+			{Key: "find", Value: account.BillingConn},
+			{Key: "filter", Value: filter},
+		}},
+		{Key: "verbosity", Value: "executionStats"},
+	}).Decode(&explain)
+	return explain, err
+}
 
 func TestBillingPersistenceWithMongoRuntime(t *testing.T) {
 	testcontainers.SkipIfProviderIsNotHealthy(t)
@@ -49,6 +64,16 @@ func TestBillingPersistenceWithMongoRuntime(t *testing.T) {
 			t.Errorf("disconnect MongoDB: %v", err)
 		}
 	})
+	mongoAccount, ok := account.(*mongoDB)
+	if !ok {
+		t.Fatalf("account type = %T", account)
+	}
+	// Simulate an existing production collection so initialization must add
+	// indexes during an upgrade.
+	if err := mongoAccount.Client.Database(mongoAccount.AccountDB).
+		CreateCollection(ctx, mongoAccount.BillingConn); err != nil {
+		t.Fatal(err)
+	}
 	if err := account.CreateBillingIfNotExist(); err != nil {
 		t.Fatal(err)
 	}
@@ -69,9 +94,12 @@ func TestBillingPersistenceWithMongoRuntime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mongoAccount, ok := account.(*mongoDB)
-	if !ok {
-		t.Fatalf("account type = %T", account)
+	indexSpecs, err := mongoAccount.getBillingCollection().Indexes().ListSpecifications(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(indexSpecs) != 4 {
+		t.Fatalf("billing index count = %d, want 4", len(indexSpecs))
 	}
 	monitorTime := end.Add(-time.Hour)
 	namespaces, err := account.GetTimeUsedNamespaceList(monitorTime, end)
@@ -135,6 +163,107 @@ func TestBillingPersistenceWithMongoRuntime(t *testing.T) {
 	checkpoint, exists, err := account.GetBillingCheckpoint()
 	if err != nil || !exists || !checkpoint.Equal(end) {
 		t.Fatalf("checkpoint=%v exists=%v err=%v", checkpoint, exists, err)
+	}
+}
+
+func TestBillingQueriesUseIndexesWithMongoRuntime(t *testing.T) {
+	testcontainers.SkipIfProviderIsNotHealthy(t)
+	ctx := context.Background()
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "mongo:7.0",
+			ExposedPorts: []string{"27017/tcp"},
+			WaitingFor: wait.ForListeningPort("27017/tcp").
+				WithStartupTimeout(2 * time.Minute),
+		},
+		Started: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := container.Terminate(ctx); err != nil {
+			t.Errorf("terminate MongoDB: %v", err)
+		}
+	})
+	host, err := container.Host(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	port, err := container.MappedPort(ctx, "27017/tcp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	account, err := NewMongoInterface(ctx, "mongodb://"+net.JoinHostPort(host, port.Port()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := account.Disconnect(ctx); err != nil {
+			t.Errorf("disconnect MongoDB: %v", err)
+		}
+	})
+	if err := account.CreateBillingIfNotExist(); err != nil {
+		t.Fatal(err)
+	}
+
+	mongoAccount, ok := account.(*mongoDB)
+	if !ok {
+		t.Fatalf("account type = %T", account)
+	}
+	end := time.Date(2026, time.July, 7, 10, 0, 0, 0, time.UTC)
+	documents := make([]any, 0, 50000)
+	for i := 0; i < 50000; i++ {
+		owner := "owner-other"
+		billingTime := end.Add(time.Duration(i%24) * time.Hour)
+		status := resources.Settled
+		if i%1000 == 0 {
+			owner = "owner-target"
+			billingTime = end
+			status = resources.Unsettled
+		}
+		documents = append(documents, &resources.Billing{
+			Time:      billingTime,
+			OrderID:   fmt.Sprintf("bh_%05d", i),
+			Type:      Consumption,
+			Namespace: "ns-owner",
+			AppType:   1,
+			Amount:    1,
+			Owner:     owner,
+			Status:    status,
+		})
+	}
+	if _, err := mongoAccount.getBillingCollection().InsertMany(ctx, documents); err != nil {
+		t.Fatal(err)
+	}
+
+	ownerFilter := bson.D{
+		{Key: "owner", Value: bson.M{"$in": []string{"owner-target"}}},
+		{Key: "time", Value: end},
+		{Key: "type", Value: Consumption},
+		{Key: "app_type", Value: bson.M{"$nin": []int{int(resources.AppType[resources.CVM]), int(resources.AppType[resources.LLMToken])}}},
+	}
+	unsettledFilter := bson.D{
+		{Key: "time", Value: end},
+		{Key: "status", Value: resources.Unsettled},
+		{Key: "type", Value: Consumption},
+		{Key: "order_id", Value: primitive.Regex{Pattern: "^bh_"}},
+		{Key: "app_type", Value: bson.M{"$nin": []int{int(resources.AppType[resources.CVM]), int(resources.AppType[resources.LLMToken])}}},
+	}
+	for name, filter := range map[string]bson.D{
+		"owner billing lookup":      ownerFilter,
+		"unsettled recovery lookup": unsettledFilter,
+	} {
+		explain, err := explainBillingFind(ctx, mongoAccount, filter)
+		if err != nil {
+			t.Fatalf("%s explain: %v", name, err)
+		}
+		plan := fmt.Sprint(explain["queryPlanner"])
+		if !strings.Contains(plan, "IXSCAN") {
+			t.Fatalf("%s did not use an index: %s", name, plan)
+		}
+		stats := fmt.Sprint(explain["executionStats"])
+		t.Logf("%s: %s", name, stats)
 	}
 }
 

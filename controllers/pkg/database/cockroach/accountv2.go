@@ -2256,15 +2256,45 @@ func (c *Cockroach) InitTables() error {
 	if err != nil {
 		return fmt.Errorf("failed to create index on WorkspaceSubscriptionTransaction: %w", err)
 	}
-	err = c.DB.Exec(`
-		CREATE INDEX IF NOT EXISTS idx_debt_record_time_user ON "DebtStatusRecord" (create_at, user_uid);`).Error
-	if err != nil {
-		return fmt.Errorf("failed to create index on DebtStatusRecord: %w", err)
+	if err := ensureBillingQueryIndexes(c.DB); err != nil {
+		return err
 	}
 
 	// TODO: remove this after migration
 	if err := c.migrateColumns(); err != nil {
 		return fmt.Errorf("failed to migrate columns: %w", err)
+	}
+	return nil
+}
+
+// ensureBillingQueryIndexes covers the billing queries that operate on
+// growing historical tables. Equality columns lead each index so a billing
+// request can avoid scanning rows belonging to other users or workspaces.
+func ensureBillingQueryIndexes(db *gorm.DB) error {
+	statements := []struct {
+		name string
+		sql  string
+	}{
+		{
+			name: "DebtStatusRecord first status",
+			sql: `CREATE INDEX IF NOT EXISTS idx_debt_record_user_time
+				ON "DebtStatusRecord" (user_uid, create_at, id, last_status);`,
+		},
+		{
+			name: "WorkspaceSubscriptionTransaction history",
+			sql: `CREATE INDEX IF NOT EXISTS idx_workspace_subscription_billing_history
+				ON "WorkspaceSubscriptionTransaction" (region_domain, workspace, status, updated_at);`,
+		},
+		{
+			name: "Credits active period",
+			sql: `CREATE INDEX IF NOT EXISTS idx_credits_active_period
+				ON "Credits" (user_uid, status, expire_at, start_at);`,
+		},
+	}
+	for _, statement := range statements {
+		if err := db.Exec(statement.sql).Error; err != nil {
+			return fmt.Errorf("failed to create billing history index on %s: %w", statement.name, err)
+		}
 	}
 	return nil
 }

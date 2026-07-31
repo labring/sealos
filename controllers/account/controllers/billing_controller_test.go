@@ -397,25 +397,6 @@ func TestGetRecentUsedOwnersReturnsMonitorError(t *testing.T) {
 	}
 }
 
-func TestDebtStatusAtBillingHour(t *testing.T) {
-	userUID := uuid.New()
-	hour := time.Date(2026, time.July, 7, 10, 0, 0, 0, time.UTC)
-	debt := types.Debt{
-		UserUID: userUID, AccountDebtStatus: types.DebtPeriod, UpdatedAt: hour.Add(time.Hour),
-	}
-
-	if got := debtStatusAt(debt, types.DebtStatusRecord{}); got != types.DebtPeriod {
-		t.Fatalf("status without a later transition = %s", got)
-	}
-
-	after := types.DebtStatusRecord{
-		UserUID: userUID, LastStatus: types.NormalPeriod, CurrentStatus: types.DebtPeriod,
-	}
-	if got := debtStatusAt(debt, after); got != types.NormalPeriod {
-		t.Fatalf("status from next record = %s", got)
-	}
-}
-
 func TestActiveWorkspaceSubscriptionsAtBillingHour(t *testing.T) {
 	hour := time.Date(2026, time.July, 7, 10, 0, 0, 0, time.UTC)
 	activeStart := hour.Add(-24 * time.Hour)

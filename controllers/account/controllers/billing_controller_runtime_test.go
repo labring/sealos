@@ -2,9 +2,6 @@ package controllers
 
 import (
 	"context"
-	"database/sql"
-	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -29,7 +26,7 @@ func (a *debtSnapshotAccountV2) GetGlobalDB() *gorm.DB {
 	return a.db
 }
 
-func TestLoadDebtUsersAtReadsOneConsistentSnapshot(t *testing.T) {
+func TestLoadDebtUsersAtUsesFirstLaterTransition(t *testing.T) {
 	testcontainers.SkipIfProviderIsNotHealthy(t)
 	ctx := context.Background()
 	container, err := postgrescontainer.Run(ctx, "postgres:16-alpine",
@@ -60,44 +57,40 @@ func TestLoadDebtUsersAtReadsOneConsistentSnapshot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	userUID := uuid.New()
 	endHourTime := time.Now().UTC().Add(-time.Hour).Truncate(time.Hour)
-	if err := db.Create(&types.Debt{
-		UserUID:           userUID,
-		CreatedAt:         endHourTime.Add(-time.Hour),
-		UpdatedAt:         endHourTime.Add(-time.Hour),
-		AccountDebtStatus: types.NormalPeriod,
-	}).Error; err != nil {
+	historicalUserUID := uuid.New()
+	currentDebtUserUID := uuid.New()
+	createdLaterUserUID := uuid.New()
+	debts := []types.Debt{
+		{
+			UserUID: historicalUserUID, CreatedAt: endHourTime.Add(-time.Hour),
+			UpdatedAt: endHourTime.Add(20 * time.Minute), AccountDebtStatus: types.NormalPeriod,
+		},
+		{
+			UserUID: currentDebtUserUID, CreatedAt: endHourTime.Add(-time.Hour),
+			UpdatedAt: endHourTime.Add(-time.Hour), AccountDebtStatus: types.DebtPeriod,
+		},
+		{
+			UserUID: createdLaterUserUID, CreatedAt: endHourTime.Add(time.Minute),
+			UpdatedAt: endHourTime.Add(time.Minute), AccountDebtStatus: types.DebtPeriod,
+		},
+	}
+	if err := db.Create(&debts).Error; err != nil {
 		t.Fatal(err)
 	}
-
-	debtRead := make(chan struct{})
-	continueRead := make(chan struct{})
-	var pauseOnce atomic.Bool
-	var transactionMu sync.Mutex
-	var debtTransaction, recordTransaction *sql.Tx
-	if err := db.Callback().Query().After("gorm:query").Register(
-		"test:capture_debt_snapshot",
-		func(tx *gorm.DB) {
-			transaction, ok := tx.Statement.ConnPool.(*sql.Tx)
-			if !ok || tx.Statement.Schema == nil {
-				return
-			}
-			transactionMu.Lock()
-			switch tx.Statement.Schema.Table {
-			case (types.Debt{}).TableName():
-				debtTransaction = transaction
-			case (types.DebtStatusRecord{}).TableName():
-				recordTransaction = transaction
-			}
-			transactionMu.Unlock()
-			if tx.Statement.Schema.Table == (types.Debt{}).TableName() &&
-				pauseOnce.CompareAndSwap(false, true) {
-				close(debtRead)
-				<-continueRead
-			}
+	records := []types.DebtStatusRecord{
+		{
+			ID: uuid.New(), UserUID: historicalUserUID,
+			LastStatus: types.NormalPeriod, CurrentStatus: types.DebtPeriod,
+			CreateAt: endHourTime,
 		},
-	); err != nil {
+		{
+			ID: uuid.New(), UserUID: historicalUserUID,
+			LastStatus: types.DebtPeriod, CurrentStatus: types.NormalPeriod,
+			CreateAt: endHourTime.Add(20 * time.Minute),
+		},
+	}
+	if err := db.Create(&records).Error; err != nil {
 		t.Fatal(err)
 	}
 
@@ -106,55 +99,16 @@ func TestLoadDebtUsersAtReadsOneConsistentSnapshot(t *testing.T) {
 		AccountV2: &debtSnapshotAccountV2{db: db},
 		Logger:    logr.Discard(),
 	}
-	result := make(chan error, 1)
-	go func() {
-		result <- reconciler.loadDebtUsersAt(endHourTime)
-	}()
-	select {
-	case <-debtRead:
-	case <-time.After(5 * time.Second):
-		close(continueRead)
-		t.Fatal("timed out waiting for the debt snapshot read")
-	}
-
-	transitionTime := time.Now().UTC()
-	if err := db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&types.Debt{}).
-			Where("user_uid = ?", userUID).
-			Updates(map[string]any{
-				"account_debt_status": types.DebtPeriod,
-				"updated_at":          transitionTime,
-			}).Error; err != nil {
-			return err
-		}
-		return tx.Create(&types.DebtStatusRecord{
-			ID:            uuid.New(),
-			UserUID:       userUID,
-			LastStatus:    types.NormalPeriod,
-			CurrentStatus: types.DebtPeriod,
-			CreateAt:      transitionTime,
-		}).Error
-	}); err != nil {
-		close(continueRead)
+	if err := reconciler.loadDebtUsersAt(endHourTime); err != nil {
 		t.Fatal(err)
 	}
-	close(continueRead)
-	select {
-	case err := <-result:
-		if err != nil {
-			t.Fatal(err)
-		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("timed out waiting for the consistent debt snapshot")
+	if _, inDebt := DebtUserMap.Get(historicalUserUID.String()); inDebt {
+		t.Fatal("historical user did not use the first later transition")
 	}
-
-	transactionMu.Lock()
-	sameTransaction := debtTransaction != nil && debtTransaction == recordTransaction
-	transactionMu.Unlock()
-	if !sameTransaction {
-		t.Fatal("debt and status history were read from different transactions")
+	if _, inDebt := DebtUserMap.Get(currentDebtUserUID.String()); !inDebt {
+		t.Fatal("current debt user without a later transition was omitted")
 	}
-	if _, inDebt := DebtUserMap.Get(userUID.String()); inDebt {
-		t.Fatal("the historical hour used the concurrently committed debt status")
+	if _, inDebt := DebtUserMap.Get(createdLaterUserUID.String()); inDebt {
+		t.Fatal("debt created after the billing hour was included")
 	}
 }
