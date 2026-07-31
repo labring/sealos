@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	devboxOwnerAPIVersion = "devbox.sealos.io/v1alpha2"
-	devboxOwnerKind       = "Devbox"
+	devboxOwnerAPIVersion       = "devbox.sealos.io/v1alpha2"
+	devboxOwnerKind             = "Devbox"
+	runtimeHandlerAnnotationKey = "io.containerd.cri.runtime-handler"
+	stargzRuntimeHandler        = "stargz"
 )
 
 var wlog = logf.Log.WithName("pod-stargz-runtime-injector")
@@ -78,6 +80,10 @@ func (i *PodRuntimeClassInjector) Handle(
 	)
 
 	mutated.Spec.RuntimeClassName = &i.runtimeClassName
+	if mutated.Annotations == nil {
+		mutated.Annotations = make(map[string]string)
+	}
+	mutated.Annotations[runtimeHandlerAnnotationKey] = stargzRuntimeHandler
 	mutatedRaw, err := json.Marshal(mutated)
 	if err != nil {
 		wlog.Error(
