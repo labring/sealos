@@ -195,7 +195,6 @@ spec:
       containers:
       - args:
         - --metrics-bind-address=:8443
-        - --leader-elect
         - --health-probe-bind-address=:8081
         - --runtime-class=stargz
         - --registries=<REGISTRY_URL>
