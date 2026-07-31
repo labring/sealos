@@ -16,13 +16,6 @@ databaseMigration:
   # Disable only when database migrations are managed separately.
   enabled: true
 
-# Prisma database backend used by the init container migrations.
-# Supported values: cockroachdb, postgresql
-# global:
-#   featureConfigs:
-#     database:
-#       type: cockroachdb
-
 resources:
   limits:
     cpu: 2000m
@@ -46,6 +39,18 @@ desktopConfig:
   # - version: "cn" → forcedLanguage: "zh", currencySymbol: "shellCoin"
   # - version: "en" → forcedLanguage: "en", currencySymbol: "usd"
   version: "cn"
+
+  allowedAllOrigins: true
+  # Authentication secrets (auto-configured from sealos-config)
+  passwordSalt: "randomSalt"       # Auto-fetched from sealos-config.passwordSalt
+  jwtInternal: ""                  # Auto-fetched from sealos-config.jwtInternal
+  jwtRegional: ""                  # Auto-fetched from sealos-config.jwtRegional
+  jwtGlobal: ""                    # Auto-fetched from sealos-config.jwtGlobal
+  # Supported values: cockroachdb, postgresql
+  databaseType: cockroachdb
+  # Database connections (auto-configured from sealos-config)
+  databaseGlobalCockroachdbURI: ""     # Auto-fetched from sealos-config.databaseGlobalCockroachdbURI
+  databaseLocalCockroachdbURI: ""      # Auto-fetched from sealos-config.databaseLocalCockroachdbURI
 
   # Google Tag Manager
   gtmId: ""
