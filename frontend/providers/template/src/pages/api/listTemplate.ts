@@ -11,12 +11,12 @@ import { proxyTemplateIconUrls, type TemplateRepo } from '@/utils/templateAsset'
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
-import { Cron } from 'croner';
 import {
   createTemplateCatalogEtag,
   getTemplateCatalogVersion,
   getTemplateCategories
 } from '@/services/backend/template-categories';
+import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
 export function replaceRawWithCDN(url: string, cdnUrl: string) {
   let parsedUrl = parseGithubUrl(url);
@@ -91,7 +91,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const originalPath = process.cwd();
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const cdnUrl = process.env.CDN_URL;
-  const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
   const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
   const templateEnvs = getTemplateEnvs();
   const templateRepo = {
@@ -101,24 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
-    if (!global.updateRepoCronJob) {
-      global.updateRepoCronJob = new Cron(
-        '*/5 * * * *',
-        async () => {
-          const result = await (await fetch(`${baseurl}/api/updateRepo`)).json();
-          const now = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-          console.log(`[${now}] updateRepoCronJob`);
-        },
-        {
-          timezone: 'Asia/Shanghai'
-        }
-      );
-    }
-
-    if (!fs.existsSync(jsonPath)) {
-      console.log(`${baseurl}/api/updateRepo`);
-      await fetch(`${baseurl}/api/updateRepo`);
-    }
+    await ensureTemplateRepoFresh(originalPath);
 
     const templates = readTemplatesFromFile(
       jsonPath,

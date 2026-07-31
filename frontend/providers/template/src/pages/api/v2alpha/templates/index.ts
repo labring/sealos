@@ -10,6 +10,7 @@ import {
   getTemplateCatalogVersion,
   getTemplateCategories
 } from '@/services/backend/template-categories';
+import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -26,6 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const jsonPath = path.resolve(originalPath, 'templates.json');
 
   try {
+    await ensureTemplateRepoFresh(originalPath);
+
     // Use shared cache instead of directly reading templates
     const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
     const templateEnvs = getTemplateEnvs();

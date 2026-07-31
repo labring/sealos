@@ -3,19 +3,22 @@ import { jsonRes } from '@/services/backend/response';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
-import { Config } from '@/config';
 import { getTemplateCategories } from '@/services/backend/template-categories';
 import { filterConfiguredCategorySlugs } from '@/utils/template';
 import { TemplateType } from '@/types/app';
+import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const originalPath = process.cwd();
   const jsonPath = path.resolve(originalPath, 'templates.json');
 
   try {
+    await ensureTemplateRepoFresh(originalPath);
+
     if (fs.existsSync(jsonPath)) {
-      const config = Config();
-      const categories = getTemplateCategories(config.template.categories);
+      const categories = getTemplateCategories(
+        parseTemplateCategories(process.env.TEMPLATE_CATEGORIES)
+      );
       const jsonData = fs.readFileSync(jsonPath, 'utf8');
       const _templates: TemplateType[] = JSON.parse(jsonData);
       const templates = _templates

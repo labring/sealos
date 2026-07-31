@@ -9,6 +9,7 @@ import { GetTemplateByName } from '../../getTemplateSource';
 import { parseTemplateCategories } from '@/utils/template';
 import { getTemplateEnvs } from '@/utils/tools';
 import { getTemplateCategories } from '@/services/backend/template-categories';
+import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
 function simplifyResourceValue(
   resource: { min: number; max: number },
@@ -43,6 +44,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const originalPath = process.cwd();
     const jsonPath = path.resolve(originalPath, 'templates.json');
+
+    await ensureTemplateRepoFresh(originalPath);
 
     if (!fs.existsSync(jsonPath)) {
       return jsonRes(res, {

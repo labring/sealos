@@ -3,8 +3,10 @@ import { ClientAppConfigSchema } from '@/types/config';
 import { parseTemplateCategories } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getTemplateCategories } from '@/services/backend/template-categories';
+import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
-export function getClientAppConfigServer() {
+export async function getClientAppConfigServer() {
+  await ensureTemplateRepoFresh();
   const categories = getTemplateCategories(
     parseTemplateCategories(process.env.TEMPLATE_CATEGORIES)
   );
@@ -28,6 +30,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader('Cache-Control', 'no-cache, must-revalidate');
   jsonRes(res, {
     code: 200,
-    data: getClientAppConfigServer()
+    data: await getClientAppConfigServer()
   });
 }

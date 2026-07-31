@@ -11,8 +11,21 @@ import { getYamlTemplate } from '@/utils/json-yaml';
 import { getTemplateEnvs } from '@/utils/tools';
 import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
 import { syncTemplateCategoriesFromRepo } from './template-categories';
+import { readmeCache } from '@/utils/readmeCache';
 
 const execAsync = util.promisify(exec);
+const DEFAULT_TEMPLATE_REPO_SYNC_INTERVAL_MS = 30 * 1000;
+
+let templateRepoLastSyncedAt = 0;
+let templateRepoSyncPromise: Promise<void> | null = null;
+
+function getTemplateRepoSyncIntervalMs() {
+  const rawValue = Number(process.env.TEMPLATE_REPO_SYNC_INTERVAL_MS);
+  if (!Number.isFinite(rawValue) || rawValue < 0) {
+    return DEFAULT_TEMPLATE_REPO_SYNC_INTERVAL_MS;
+  }
+  return rawValue;
+}
 
 const writeFileAtomic = (targetPath: string, content: string) => {
   const tempPath = `${targetPath}.${process.pid}.${Date.now()}.tmp`;
@@ -148,4 +161,42 @@ export async function updateRepo() {
   const jsonContent = JSON.stringify(jsonObjArr, null, 2);
   writeFileAtomic(jsonPath, jsonContent);
   syncTemplateCategoriesFromRepo(targetPath, originalPath);
+  templateRepoLastSyncedAt = Date.now();
+}
+
+export async function ensureTemplateRepoFresh(basePath = process.cwd()) {
+  const jsonPath = path.resolve(basePath, 'templates.json');
+  const now = Date.now();
+  const interval = getTemplateRepoSyncIntervalMs();
+
+  if (fs.existsSync(jsonPath) && templateRepoLastSyncedAt === 0) {
+    templateRepoLastSyncedAt = now;
+    return;
+  }
+
+  if (fs.existsSync(jsonPath) && now - templateRepoLastSyncedAt < interval) {
+    return;
+  }
+
+  if (!templateRepoSyncPromise) {
+    templateRepoSyncPromise = updateRepo()
+      .then(() => {
+        readmeCache.clear();
+      })
+      .catch((error) => {
+        if (!fs.existsSync(jsonPath)) {
+          throw error;
+        }
+        templateRepoLastSyncedAt = Date.now();
+        console.warn(
+          '[Template Repo] Failed to refresh repository, using existing catalog:',
+          error
+        );
+      })
+      .finally(() => {
+        templateRepoSyncPromise = null;
+      });
+  }
+
+  await templateRepoSyncPromise;
 }

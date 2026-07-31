@@ -6,6 +6,7 @@ import path from 'path';
 import { readTemplatesFromFile } from '../../listTemplate';
 import { getTemplateEnvs } from '@/utils/tools';
 import { getTemplateCategories } from '@/services/backend/template-categories';
+import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = (req.query.language as string) || 'en';
   const originalPath = process.cwd();
@@ -20,6 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       provider: templateEnvs.TEMPLATE_REPO_PROVIDER
     };
     const categories = getTemplateCategories(configuredCategories);
+    await ensureTemplateRepoFresh(originalPath);
     const templates = readTemplatesFromFile(
       jsonPath,
       process.env.CDN_URL,
