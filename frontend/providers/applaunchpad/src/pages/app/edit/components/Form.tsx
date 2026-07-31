@@ -16,6 +16,7 @@ import {
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
+import type { NetworkIsolationConfig } from '@/types/networkIsolation';
 import { sliderNumber2MarkList } from '@/utils/adapt';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -109,7 +110,10 @@ const Form = ({
   pxVal,
   refresh,
   isAdvancedOpen,
-  onDomainVerified
+  onDomainVerified,
+  networkIsolationDraft,
+  onNetworkIsolationDraftChange,
+  isWorkloadLocked
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
@@ -119,6 +123,9 @@ const Form = ({
   refresh: boolean;
   isAdvancedOpen: boolean;
   onDomainVerified?: (params: { index: number; customDomain: string }) => void;
+  networkIsolationDraft?: NetworkIsolationConfig;
+  onNetworkIsolationDraftChange?: (config: NetworkIsolationConfig) => void;
+  isWorkloadLocked?: boolean;
 }) => {
   if (!formHook) return null;
   const { t, i18n } = useTranslation();
@@ -722,7 +729,12 @@ const Form = ({
           // overflowY={'scroll'}
         >
           {/* base info */}
-          <Box id={'baseInfo'} {...boxStyles}>
+          <Box
+            id={'baseInfo'}
+            {...boxStyles}
+            pointerEvents={isWorkloadLocked ? 'none' : 'auto'}
+            opacity={isWorkloadLocked ? 0.65 : 1}
+          >
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
               {t('Basic Config')}
@@ -1153,8 +1165,11 @@ const Form = ({
 
           <NetworkSection
             formHook={formHook}
-            appName={typeof name === 'string' ? name : undefined}
+            appName={isEdit && typeof name === 'string' ? name : getValues('appName')}
             isEdit={isEdit}
+            isWorkloadLocked={isWorkloadLocked}
+            createDraft={networkIsolationDraft}
+            onCreateDraftChange={onNetworkIsolationDraftChange}
             onDomainVerified={onDomainVerified}
             boxStyles={boxStyles}
             headerStyles={headerStyles}
@@ -1164,6 +1179,8 @@ const Form = ({
             <Accordion
               pb={'100px'}
               id={'settings'}
+              pointerEvents={isWorkloadLocked ? 'none' : 'auto'}
+              opacity={isWorkloadLocked ? 0.65 : 1}
               allowToggle
               index={isAdvancedOpen || navList[2].isSetting ? 0 : undefined}
             >

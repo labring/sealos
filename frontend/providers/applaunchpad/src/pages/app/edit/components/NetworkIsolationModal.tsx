@@ -6,7 +6,6 @@ import {
   type ApplicationAllowRule,
   type CidrAllowRule,
   type NetworkIsolationConfig,
-  type NetworkIsolationResponse,
   type NetworkIsolationRule
 } from '@/types/networkIsolation';
 import {
@@ -53,7 +52,7 @@ import { useEffect, useRef, useState } from 'react';
 
 interface NetworkIsolationModalProps {
   isOpen: boolean;
-  response?: NetworkIsolationResponse;
+  value?: NetworkIsolationConfig;
   isLoading: boolean;
   isSaving: boolean;
   saveError?: string;
@@ -87,7 +86,7 @@ const getRuleTypeValue = (rule: NetworkIsolationRule) => rule.type;
 
 export default function NetworkIsolationModal({
   isOpen,
-  response,
+  value,
   isLoading,
   isSaving,
   saveError,
@@ -105,14 +104,14 @@ export default function NetworkIsolationModal({
   const [isDisableConfirmOpen, setIsDisableConfirmOpen] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || !response) return;
-    setDraft(cloneConfig(response.config));
+    if (!isOpen || !value) return;
+    setDraft(cloneConfig(value));
     setValidation(undefined);
     setCidrDrafts({});
     setCidrInputErrors({});
     setIsPublicCidrConfirmOpen(false);
     setIsDisableConfirmOpen(false);
-  }, [isOpen, response]);
+  }, [isOpen, value]);
 
   const updateDraft = (updater: (config: NetworkIsolationConfig) => NetworkIsolationConfig) => {
     setValidation(undefined);
@@ -177,7 +176,7 @@ export default function NetworkIsolationModal({
   };
 
   const continueSave = (config: NetworkIsolationConfig) => {
-    if (response?.config.enabled && !config.enabled) {
+    if (value?.enabled && !config.enabled) {
       setIsDisableConfirmOpen(true);
       return;
     }
@@ -224,7 +223,7 @@ export default function NetworkIsolationModal({
           </ModalHeader>
           <ModalCloseButton top={3} right={3} aria-label={t('Close')} />
           <ModalBody display={'flex'} minH={0} flex={'1 1 auto'} p={0}>
-            {isLoading || !response ? (
+            {isLoading || !value ? (
               <Center minH={'224px'} flex={'1 1 auto'}>
                 <Spinner color={'brightBlue.600'} />
                 <Text ml={3} color={'grayModern.600'} fontSize={'13px'}>
@@ -613,7 +612,7 @@ export default function NetworkIsolationModal({
               color={'white'}
               _hover={{ bg: 'grayModern.800' }}
               isLoading={isSaving}
-              isDisabled={isLoading || !response}
+              isDisabled={isLoading || !value}
               onClick={saveDraft}
             >
               {t('Save')}

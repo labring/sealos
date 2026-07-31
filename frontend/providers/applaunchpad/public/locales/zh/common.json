@@ -471,6 +471,8 @@
   "network_isolation_configure": "配置网络隔离",
   "network_isolation_loading": "正在加载网络隔离配置…",
   "network_isolation_save_failed": "网络隔离保存失败，请重试。",
+  "network_isolation_create_partial_failure": "应用已创建，但网络隔离保存失败。请修正配置后重试；重试不会重复创建应用。",
+  "network_isolation_retry_create": "重试网络隔离",
   "network_isolation_revision_conflict": "配置已被其他操作更新，请刷新后重试。",
   "network_isolation_source_unresolved": "无法解析来源工作空间或来源应用，请检查名称和权限。",
   "network_isolation_target_unresolved": "无法解析当前应用的工作负载选择器。",

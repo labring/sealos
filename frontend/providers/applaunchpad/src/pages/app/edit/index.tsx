@@ -1,4 +1,10 @@
-import { getBackendServices, postDeployApp, putApp } from '@/api/app';
+import {
+  getBackendServices,
+  getNetworkIsolation,
+  postDeployApp,
+  putApp,
+  putNetworkIsolation
+} from '@/api/app';
 import {
   checkCustomDomainCertificateCoverage,
   checkPermission,
@@ -20,6 +26,7 @@ import {
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { AppEditSyncedFields, AppEditType, DeployKindsType } from '@/types/app';
+import type { NetworkIsolationConfig } from '@/types/networkIsolation';
 import { adaptEditAppData, YamlKindEnum } from '@/utils/adapt';
 import type { V1OwnerReference } from '@kubernetes/client-node';
 import {
@@ -57,10 +64,11 @@ import {
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
 import { getCustomDomainBindings } from '@/utils/custom-domain';
+import { APP_NAME_BASE_MAX_LENGTH, getInvalidNameMessageI18nKey } from '@/utils/appNameValidation';
 import {
-  APP_NAME_BASE_MAX_LENGTH,
-  getInvalidNameMessageI18nKey
-} from '@/utils/appNameValidation';
+  createAppWithNetworkIsolation,
+  NetworkIsolationAfterCreateError
+} from '@/utils/create-app-network-isolation';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -280,6 +288,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [errorCode, setErrorCode] = useState<ResponseCode>();
+  const [networkIsolationDraft, setNetworkIsolationDraft] = useState<NetworkIsolationConfig>();
+  const [createdAppPendingIsolation, setCreatedAppPendingIsolation] = useState<string>();
   const [already, setAlready] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   // For identifying existing stores and quota calculation
@@ -414,7 +424,19 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulset.yaml')?.value
           });
         } else {
-          await postDeployApp(parsedNewYamlList);
+          const targetAppName = formHook.getValues('appName');
+          await createAppWithNetworkIsolation(
+            {
+              appName: targetAppName,
+              yamlList: parsedNewYamlList,
+              config: networkIsolationDraft
+            },
+            {
+              deployApp: postDeployApp,
+              getNetworkIsolation,
+              putNetworkIsolation
+            }
+          );
         }
 
         router.replace(`/app/detail?name=${formHook.getValues('appName')}`);
@@ -428,7 +450,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           refetchPrice();
         }
       } catch (error: any) {
-        if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+        if (error instanceof NetworkIsolationAfterCreateError) {
+          setCreatedAppPendingIsolation(error.appName);
+          setErrorMessage(
+            `${t('network_isolation_create_partial_failure')} ${getErrText(error.cause)}`
+          );
+        } else if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
           setErrorMessage(t('user_balance_not_enough'));
           setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
 
@@ -491,9 +518,46 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       applySuccess,
       userSourcePrice?.gpu,
       refetchPrice,
-      createCompleted
+      createCompleted,
+      networkIsolationDraft
     ]
   );
+
+  const retryCreatedAppNetworkIsolation = useCallback(async () => {
+    if (!createdAppPendingIsolation || !networkIsolationDraft) return;
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      await createAppWithNetworkIsolation(
+        {
+          appName: createdAppPendingIsolation,
+          yamlList: [],
+          config: networkIsolationDraft,
+          appAlreadyCreated: true
+        },
+        {
+          deployApp: postDeployApp,
+          getNetworkIsolation,
+          putNetworkIsolation
+        }
+      );
+      router.replace(`/app/detail?name=${createdAppPendingIsolation}`);
+      toast({ title: t(applySuccess), status: 'success' });
+    } catch (error) {
+      const cause = error instanceof NetworkIsolationAfterCreateError ? error.cause : error;
+      setErrorMessage(`${t('network_isolation_create_partial_failure')} ${getErrText(cause)}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    applySuccess,
+    createdAppPendingIsolation,
+    networkIsolationDraft,
+    router,
+    setIsLoading,
+    t,
+    toast
+  ]);
 
   const submitError = useCallback<SubmitErrorHandler<AppEditType>>(
     (errors) => {
@@ -769,8 +833,14 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           title={title}
           yamlList={yamlList}
           getFormData={() => realTimeForm.current}
-          applyBtnText={applyBtnText}
+          applyBtnText={
+            createdAppPendingIsolation ? 'network_isolation_retry_create' : applyBtnText
+          }
           applyCb={() => {
+            if (createdAppPendingIsolation) {
+              void retryCreatedAppNetworkIsolation();
+              return;
+            }
             formHook.handleSubmit(async (data) => {
               console.log('data', data);
 
@@ -952,6 +1022,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
               refresh={forceUpdate}
               isAdvancedOpen={isAdvancedOpen}
               onDomainVerified={handleDomainVerified}
+              networkIsolationDraft={networkIsolationDraft}
+              onNetworkIsolationDraftChange={setNetworkIsolationDraft}
+              isWorkloadLocked={!!createdAppPendingIsolation}
             />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
