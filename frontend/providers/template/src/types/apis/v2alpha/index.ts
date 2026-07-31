@@ -105,7 +105,7 @@ export const document = createDocument({
         tags: ['Query'],
         summary: 'List all templates',
         description:
-          'Returns metadata only (no resource calculation). Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`. When categories exist, top category keys are returned in `X-Menu-Keys` (comma-separated). For full details including resource requirements, use `/templates/{name}`.',
+          'Returns metadata only (no resource calculation). Response headers: `Cache-Control` (no-cache, must-revalidate), `ETag`. When categories exist, top category keys are returned in `X-Menu-Keys` (comma-separated). For full details including resource requirements, use `/templates/{name}`.',
         operationId: 'listTemplates',
         security: [],
         requestParams: {
@@ -116,12 +116,12 @@ export const document = createDocument({
             description: 'Successfully retrieved template list',
             headers: {
               'Cache-Control': {
-                description: 'Caching directive: public, max-age=300, s-maxage=600',
-                schema: { type: 'string', example: 'public, max-age=300, s-maxage=600' }
+                description: 'Caching directive: no-cache, must-revalidate',
+                schema: { type: 'string', example: 'no-cache, must-revalidate' }
               },
               ETag: {
-                description: 'Entity tag for caching, format: "template-list-{language}"',
-                schema: { type: 'string', example: '"template-list-en"' }
+                description: 'Entity tag for the current template catalog and category version',
+                schema: { type: 'string', example: '"template-1f4de80a5eb10e2a5c8b5a5a"' }
               },
               'X-Menu-Keys': {
                 description:
@@ -188,7 +188,7 @@ export const document = createDocument({
         tags: ['Query'],
         summary: 'Get template details',
         description:
-          'Returns complete template metadata with dynamically calculated resource requirements (CPU, memory, storage, NodePort count) derived from the template YAML. Falls back to static configuration if calculation fails. Response headers: `Cache-Control` (public, max-age=300, s-maxage=600), `ETag`.',
+          'Returns complete template metadata with dynamically calculated resource requirements (CPU, memory, storage, NodePort count) derived from the template YAML. Falls back to static configuration if calculation fails. Response headers: `Cache-Control` (no-cache, must-revalidate), `ETag`.',
         operationId: 'getTemplate',
         security: [],
         requestParams: {
@@ -200,12 +200,12 @@ export const document = createDocument({
             description: 'Successfully retrieved template details',
             headers: {
               'Cache-Control': {
-                description: 'Caching directive: public, max-age=300, s-maxage=600',
-                schema: { type: 'string', example: 'public, max-age=300, s-maxage=600' }
+                description: 'Caching directive: no-cache, must-revalidate',
+                schema: { type: 'string', example: 'no-cache, must-revalidate' }
               },
               ETag: {
-                description: 'Entity tag for caching, format: "{name}-{language}"',
-                schema: { type: 'string', example: '"perplexica-en"' }
+                description: 'Entity tag for the current template catalog, template, and language',
+                schema: { type: 'string', example: '"template-08fe4048593c6d166498e697"' }
               }
             },
             content: {

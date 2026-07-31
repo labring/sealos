@@ -1,8 +1,14 @@
 import fs from 'fs';
+import JsYaml from 'js-yaml';
 import os from 'os';
 import path from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readTemplates } from '@/pages/api/listTemplate';
+import {
+  clearTemplateCache,
+  getCachedTemplates
+} from '@/pages/api/v2alpha/templates/templateCache';
+import { GetTemplateByName } from '@/pages/api/getTemplateSource';
 import {
   filterConfiguredCategorySlugs,
   getCategoryLabel,
@@ -43,6 +49,8 @@ afterEach(() => {
     const dir = tempDirs.pop();
     if (dir) fs.rmSync(dir, { recursive: true, force: true });
   }
+  clearTemplateCache();
+  delete globalThis.__APP_CONFIG__;
 });
 
 describe('template category configuration', () => {
@@ -176,5 +184,184 @@ describe('template category configuration', () => {
     expect(getTemplateCategories(configuredCategories, appRoot)).toEqual(configuredCategories);
     expect(getTemplateCatalogVersion(appRoot)).toContain('missing');
     expect(warnSpy).toHaveBeenCalledOnce();
+  });
+
+  it('does not reuse v2 template cache across category sets or languages', () => {
+    const appRoot = createTempDir();
+    const jsonPath = path.join(appRoot, 'templates.json');
+    const jsonData = JSON.stringify([
+      {
+        apiVersion: 'app.sealos.io/v1',
+        kind: 'Template',
+        metadata: { name: 'english' },
+        spec: {
+          fileName: 'english.yaml',
+          filePath: 'english.yaml',
+          locale: 'en',
+          categories: ['ai', 'database'],
+          templateType: 'inline',
+          gitRepo: '',
+          author: '',
+          title: 'English',
+          url: '',
+          readme: '',
+          icon: '',
+          description: '',
+          draft: false
+        }
+      },
+      {
+        apiVersion: 'app.sealos.io/v1',
+        kind: 'Template',
+        metadata: { name: 'chinese' },
+        spec: {
+          fileName: 'chinese.yaml',
+          filePath: 'chinese.yaml',
+          locale: 'zh',
+          categories: ['database'],
+          templateType: 'inline',
+          gitRepo: '',
+          author: '',
+          title: 'Chinese',
+          url: '',
+          readme: '',
+          icon: '',
+          description: '',
+          draft: false
+        }
+      }
+    ]);
+
+    fs.writeFileSync(jsonPath, jsonData, 'utf-8');
+
+    const aiOnly = getCachedTemplates(jsonPath, undefined, [configuredCategories[0]], 'en');
+    const databaseOnly = getCachedTemplates(jsonPath, undefined, [configuredCategories[1]], 'en');
+    const zhOnly = getCachedTemplates(jsonPath, undefined, configuredCategories, 'zh');
+
+    expect(aiOnly.data.map((template) => template.metadata.name)).toEqual(['english']);
+    expect(aiOnly.data[0].spec.categories).toEqual(['ai']);
+    expect(databaseOnly.data[0].spec.categories).toEqual(['database']);
+    expect(zhOnly.data.map((template) => template.metadata.name)).toEqual(['chinese']);
+  });
+
+  it('removes stale category cache when publishing the managed cache fails', () => {
+    const appRoot = createTempDir();
+    const repoRoot = path.join(appRoot, 'templates');
+    const cachePath = getTemplateCategoriesCachePath(appRoot);
+
+    fs.writeFileSync(
+      cachePath,
+      JSON.stringify([{ slug: 'stale', i18n: { en: 'Stale' } }]),
+      'utf-8'
+    );
+    writeRepoCategories(repoRoot, JSON.stringify(configuredCategories));
+
+    const renameSpy = vi.spyOn(fs, 'renameSync').mockImplementationOnce(() => {
+      throw new Error('rename failed');
+    });
+
+    expect(() => syncTemplateCategoriesFromRepo(repoRoot, appRoot)).toThrow('rename failed');
+    expect(fs.existsSync(cachePath)).toBe(false);
+    expect(renameSpy).toHaveBeenCalledOnce();
+  });
+
+  it('filters managed categories from template source and generated instance yaml', async () => {
+    const appRoot = createTempDir();
+    const previousCwd = process.cwd();
+    const repoRoot = path.join(appRoot, 'templates');
+    const templateFilePath = path.join(repoRoot, 'demo.yaml');
+
+    fs.mkdirSync(repoRoot, { recursive: true });
+    fs.writeFileSync(
+      path.join(appRoot, 'templates.json'),
+      JSON.stringify([
+        {
+          apiVersion: 'app.sealos.io/v1',
+          kind: 'Template',
+          metadata: { name: 'demo' },
+          spec: {
+            fileName: 'demo.yaml',
+            filePath: templateFilePath,
+            categories: ['ai', 'removed'],
+            templateType: 'inline',
+            gitRepo: '',
+            author: '',
+            title: 'Demo',
+            url: '',
+            readme: '',
+            icon: '',
+            description: '',
+            draft: false
+          }
+        }
+      ]),
+      'utf-8'
+    );
+    fs.writeFileSync(
+      templateFilePath,
+      `apiVersion: app.sealos.io/v1
+kind: Template
+metadata:
+  name: demo
+spec:
+  categories:
+    - ai
+    - removed
+  defaults:
+    app_name:
+      type: string
+      value: demo-app
+  inputs: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app
+`,
+      'utf-8'
+    );
+
+    globalThis.__APP_CONFIG__ = {
+      cloud: {
+        domain: 'cloud.example.com',
+        port: 443,
+        regionUid: 'test',
+        certSecretName: 'cert'
+      },
+      template: {
+        ui: {
+          brandName: 'Template',
+          currencySymbol: 'shellCoin',
+          forcedLanguage: 'en',
+          meta: { canonicalUrl: 'https://template.example.com', customScripts: [] },
+          carousel: { enabled: false, slides: [] }
+        },
+        repo: {
+          url: 'https://github.com/labring-actions/templates',
+          branch: 'main',
+          localDir: '.'
+        },
+        features: { fetchReadme: false, showAuthor: true, guide: false },
+        categories: [configuredCategories[0]],
+        desktopDomain: 'desktop.example.com',
+        billingUrl: 'https://billing.example.com'
+      }
+    };
+    process.chdir(appRoot);
+
+    try {
+      const result = await GetTemplateByName({
+        namespace: 'ns-test',
+        templateName: 'demo',
+        includeReadme: 'false'
+      });
+      const instanceYaml = JsYaml.load(String(result.appYaml).split('---')[0]) as any;
+
+      expect(result.code).toBe(20000);
+      expect(result.templateYaml?.spec.categories).toEqual(['ai']);
+      expect(instanceYaml.spec.categories).toEqual(['ai']);
+    } finally {
+      process.chdir(previousCwd);
+    }
   });
 });

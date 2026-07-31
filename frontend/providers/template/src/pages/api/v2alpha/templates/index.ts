@@ -6,6 +6,7 @@ import { getCachedTemplates } from './templateCache';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 import { getTemplateEnvs } from '@/utils/tools';
 import {
+  createTemplateCatalogEtag,
   getTemplateCatalogVersion,
   getTemplateCategories
 } from '@/services/backend/template-categories';
@@ -40,7 +41,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       process.env.CDN_URL,
       categories,
       language,
-      templateRepo
+      templateRepo,
+      catalogVersion
     );
     const templates = cacheResult.data;
 
@@ -67,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const menuKeys = getCategorySlugs(categories);
 
     res.setHeader('Cache-Control', 'no-cache, must-revalidate');
-    res.setHeader('ETag', `"template-v2alpha-list-${language}-${catalogVersion}"`);
+    res.setHeader('ETag', createTemplateCatalogEtag(['v2alpha-list', language, catalogVersion]));
 
     if (menuKeys.length > 0) {
       res.setHeader('X-Menu-Keys', menuKeys.join(','));

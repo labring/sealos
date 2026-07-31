@@ -12,7 +12,11 @@ import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { Cron } from 'croner';
-import { getTemplateCategories } from '@/services/backend/template-categories';
+import {
+  createTemplateCatalogEtag,
+  getTemplateCatalogVersion,
+  getTemplateCategories
+} from '@/services/backend/template-categories';
 
 export function replaceRawWithCDN(url: string, cdnUrl: string) {
   let parsedUrl = parseGithubUrl(url);
@@ -131,6 +135,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const menuKeys = getCategorySlugs(categories).join(',');
 
     res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    res.setHeader(
+      'ETag',
+      createTemplateCatalogEtag([
+        'listTemplate',
+        language || 'default',
+        getTemplateCatalogVersion()
+      ])
+    );
 
     jsonRes(res, {
       data: { templates: templates, menuKeys, categories },

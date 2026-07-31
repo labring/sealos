@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
@@ -102,6 +103,9 @@ function writeTemplateCategoriesCache(cachePath: string, categories: TemplateCat
       flag: 'wx'
     });
     fs.renameSync(tempPath, cachePath);
+  } catch (error) {
+    removeTemplateCategoriesCache(cachePath);
+    throw error;
   } finally {
     if (fs.existsSync(tempPath)) {
       fs.rmSync(tempPath, { force: true });
@@ -161,4 +165,13 @@ export function getTemplateCatalogVersion(basePath = process.cwd()) {
     getFileVersion(path.resolve(basePath, 'templates.json')),
     getFileVersion(getTemplateCategoriesCachePath(basePath))
   ].join('-');
+}
+
+export function createTemplateCatalogEtag(parts: readonly unknown[]) {
+  const digest = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(parts))
+    .digest('hex')
+    .slice(0, 24);
+  return `"template-${digest}"`;
 }
