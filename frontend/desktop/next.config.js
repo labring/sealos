@@ -26,15 +26,6 @@ const nextConfig = withPWA({
       return [];
     }
   },
-  async rewrites() {
-    return [
-      {
-        source: '/healthz',
-        destination: '/api/healthz',
-        locale: false
-      }
-    ];
-  },
   swcMinify: isProduction,
   output: 'standalone',
   transpilePackages: ['@sealos/ui', 'sealos-desktop-sdk', '@sealos/driver'],

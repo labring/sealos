@@ -34,11 +34,6 @@ const nextConfig = {
   async rewrites () {
     return [
       {
-        source: '/healthz',
-        destination: '/api/healthz',
-        locale: false
-      },
-      {
         source: '/api/v2alpha/docs',
         destination: '/doc/v2alpha'
       },

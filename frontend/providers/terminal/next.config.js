@@ -6,15 +6,6 @@ const nextConfig = {
   experimental: {
     outputFileTracingRoot: path.join(__dirname, '../../')
   },
-  async rewrites() {
-    return [
-      {
-        source: '/healthz',
-        destination: '/api/healthz',
-        locale: false
-      }
-    ];
-  }
 };
 
 module.exports = nextConfig;

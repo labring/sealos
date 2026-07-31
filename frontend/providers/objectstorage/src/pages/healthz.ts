@@ -1,5 +1,5 @@
 import type { GetServerSideProps, GetServerSidePropsContext } from 'next';
-import { assertReady, HEALTHZ_SERVICE } from './api/healthz';
+import { assertReady, HEALTHZ_SERVICE } from '../utils/healthz';
 
 export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   res.setHeader('Cache-Control', 'no-store');

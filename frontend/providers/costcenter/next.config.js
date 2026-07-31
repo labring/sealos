@@ -49,15 +49,6 @@ const nextConfig = {
       }
     ];
   },
-  async rewrites() {
-    return [
-      {
-        source: '/healthz',
-        destination: '/api/healthz',
-        locale: false
-      }
-    ];
-  }
 };
 
 module.exports = nextConfig;

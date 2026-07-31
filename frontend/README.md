@@ -107,7 +107,7 @@ Use an existing provider as the reference and keep these deployment surfaces in 
 5. `frontend/providers/<app>/deploy/charts/<release>/Chart.yaml`
 6. Chart defaults in `values.yaml` and, when needed, user overrides in `<release>-values.yaml`
 7. Chart templates for the App CR (where applicable), Deployment, Service, Ingress, probes, and `helm test`
-8. A stable `GET /api/healthz` endpoint plus a `next.config.js` rewrite from `/healthz` to `/api/healthz`
+8. A stable root `GET /healthz` endpoint implemented as an application route
 
 If the provider reads repository-hosted assets whose raw URL shape differs by backend, add an explicit repo provider value/env beside `templateRepoUrl` and `templateRepoBranch` instead of inferring from the host.
 
