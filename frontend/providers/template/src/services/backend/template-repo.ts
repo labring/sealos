@@ -10,8 +10,21 @@ import * as k8s from '@kubernetes/client-node';
 import { getYamlTemplate } from '@/utils/json-yaml';
 import { getTemplateEnvs } from '@/utils/tools';
 import { resolveTemplateAssetUrls } from '@/utils/templateAsset';
+import { syncTemplateCategoriesFromRepo } from './template-categories';
 
 const execAsync = util.promisify(exec);
+
+const writeFileAtomic = (targetPath: string, content: string) => {
+  const tempPath = `${targetPath}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    fs.writeFileSync(tempPath, content, { encoding: 'utf-8', flag: 'wx' });
+    fs.renameSync(tempPath, targetPath);
+  } finally {
+    if (fs.existsSync(tempPath)) {
+      fs.rmSync(tempPath, { force: true });
+    }
+  }
+};
 
 const readFileList = (targetPath: string, fileList: unknown[] = []) => {
   // fix ci
@@ -133,5 +146,6 @@ export async function updateRepo() {
   });
 
   const jsonContent = JSON.stringify(jsonObjArr, null, 2);
-  fs.writeFileSync(jsonPath, jsonContent, 'utf-8');
+  writeFileAtomic(jsonPath, jsonContent);
+  syncTemplateCategoriesFromRepo(targetPath, originalPath);
 }

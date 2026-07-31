@@ -12,6 +12,7 @@ import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { Cron } from 'croner';
+import { getTemplateCategories } from '@/services/backend/template-categories';
 
 export function replaceRawWithCDN(url: string, cdnUrl: string) {
   let parsedUrl = parseGithubUrl(url);
@@ -118,7 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const templates = readTemplatesFromFile(
       jsonPath,
       cdnUrl,
-      configuredCategories,
+      getTemplateCategories(configuredCategories),
       language,
       templateRepo
     );
@@ -126,10 +127,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
     console.log(`[${timestamp}] language: ${language}, templates count: ${templates.length}`);
 
-    const menuKeys = getCategorySlugs(configuredCategories).join(',');
+    const categories = getTemplateCategories(configuredCategories);
+    const menuKeys = getCategorySlugs(categories).join(',');
+
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
 
     jsonRes(res, {
-      data: { templates: templates, menuKeys, categories: configuredCategories },
+      data: { templates: templates, menuKeys, categories },
       code: 200
     });
   } catch (error) {

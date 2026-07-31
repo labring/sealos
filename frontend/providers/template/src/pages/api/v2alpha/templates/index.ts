@@ -5,6 +5,10 @@ import path from 'path';
 import { getCachedTemplates } from './templateCache';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 import { getTemplateEnvs } from '@/utils/tools';
+import {
+  getTemplateCatalogVersion,
+  getTemplateCategories
+} from '@/services/backend/template-categories';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -20,10 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const originalPath = process.cwd();
   const jsonPath = path.resolve(originalPath, 'templates.json');
 
-  // Add caching headers for GET requests
-  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600'); // 5min client, 10min CDN
-  res.setHeader('ETag', `"template-list-${language}"`);
-
   try {
     // Use shared cache instead of directly reading templates
     const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
@@ -33,10 +33,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       branch: templateEnvs.TEMPLATE_REPO_BRANCH,
       provider: templateEnvs.TEMPLATE_REPO_PROVIDER
     };
+    const categories = getTemplateCategories(configuredCategories);
+    const catalogVersion = getTemplateCatalogVersion(originalPath);
     const cacheResult = getCachedTemplates(
       jsonPath,
       process.env.CDN_URL,
-      configuredCategories,
+      categories,
       language,
       templateRepo
     );
@@ -62,14 +64,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     });
 
-    const menuKeys = getCategorySlugs(configuredCategories);
+    const menuKeys = getCategorySlugs(categories);
 
-    // Add menuKeys as response header if needed
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    res.setHeader('ETag', `"template-v2alpha-list-${language}-${catalogVersion}"`);
+
     if (menuKeys.length > 0) {
       res.setHeader('X-Menu-Keys', menuKeys.join(','));
     }
 
-    // Return templates array directly
     res.status(200).json(simplifiedTemplates);
   } catch (error) {
     sendError(res, {

@@ -8,6 +8,7 @@ import { readTemplatesFromFile } from '../../listTemplate';
 import { GetTemplateByName } from '../../getTemplateSource';
 import { parseTemplateCategories } from '@/utils/template';
 import { getTemplateEnvs } from '@/utils/tools';
+import { getTemplateCategories } from '@/services/backend/template-categories';
 
 function simplifyResourceValue(
   resource: { min: number; max: number },
@@ -57,10 +58,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       branch: templateEnvs.TEMPLATE_REPO_BRANCH,
       provider: templateEnvs.TEMPLATE_REPO_PROVIDER
     };
+    const categories = getTemplateCategories(configuredCategories);
     const templates = readTemplatesFromFile(
       jsonPath,
       process.env.CDN_URL,
-      configuredCategories,
+      categories,
       language,
       templateRepo
     );

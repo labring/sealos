@@ -5,7 +5,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { readTemplatesFromFile } from '../../listTemplate';
 import { getTemplateEnvs } from '@/utils/tools';
-
+import { getTemplateCategories } from '@/services/backend/template-categories';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = (req.query.language as string) || 'en';
   const originalPath = process.cwd();
@@ -19,10 +19,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       branch: templateEnvs.TEMPLATE_REPO_BRANCH,
       provider: templateEnvs.TEMPLATE_REPO_PROVIDER
     };
+    const categories = getTemplateCategories(configuredCategories);
     const templates = readTemplatesFromFile(
       jsonPath,
       process.env.CDN_URL,
-      configuredCategories,
+      categories,
       language,
       templateRepo
     );
@@ -48,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     });
 
-    const menuKeys = getCategorySlugs(configuredCategories).join(',');
+    const menuKeys = getCategorySlugs(categories).join(',');
 
     jsonRes(res, {
       data: {
