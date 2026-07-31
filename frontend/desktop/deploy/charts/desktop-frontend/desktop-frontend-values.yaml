@@ -203,7 +203,7 @@ desktopConfig:
     - 10080
 startupProbe:
   httpGet:
-    path: /api/platform/getAppConfig
+    path: /healthz
     port: 3000
   periodSeconds: 2
   timeoutSeconds: 3
@@ -211,14 +211,14 @@ startupProbe:
 
 livenessProbe:
   httpGet:
-    path: /api/platform/getAppConfig
+    path: /healthz
     port: 3000
   initialDelaySeconds: 15
   periodSeconds: 20
 
 readinessProbe:
   httpGet:
-    path: /api/platform/getAppConfig
+    path: /healthz
     port: 3000
   initialDelaySeconds: 5
   periodSeconds: 3
