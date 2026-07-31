@@ -27,25 +27,25 @@ service:
 
 tests:
   image: busybox:1.36.1
-  path: /
+  path: /healthz
 
 startupProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   periodSeconds: 2
   timeoutSeconds: 3
   failureThreshold: 30
 readinessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   periodSeconds: 10
   timeoutSeconds: 3
   failureThreshold: 6
 livenessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   periodSeconds: 20
   timeoutSeconds: 3

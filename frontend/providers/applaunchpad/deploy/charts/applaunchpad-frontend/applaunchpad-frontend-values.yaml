@@ -11,21 +11,21 @@ resources:
     memory: 128Mi
 startupProbe:
   httpGet:
-    path: /api/platform/getInitData
+    path: /healthz
     port: 3000
   periodSeconds: 2
   timeoutSeconds: 3
   failureThreshold: 30
 readinessProbe:
   httpGet:
-    path: /api/platform/getInitData
+    path: /healthz
     port: 3000
   periodSeconds: 10
   timeoutSeconds: 3
   failureThreshold: 6
 livenessProbe:
   httpGet:
-    path: /api/platform/getInitData
+    path: /healthz
     port: 3000
   periodSeconds: 20
   timeoutSeconds: 3

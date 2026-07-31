@@ -107,6 +107,7 @@ Use an existing provider as the reference and keep these deployment surfaces in 
 5. `frontend/providers/<app>/deploy/charts/<release>/Chart.yaml`
 6. Chart defaults in `values.yaml` and, when needed, user overrides in `<release>-values.yaml`
 7. Chart templates for the App CR (where applicable), Deployment, Service, Ingress, probes, and `helm test`
+8. A stable root `GET /healthz` endpoint implemented as an application route
 
 If the provider reads repository-hosted assets whose raw URL shape differs by backend, add an explicit repo provider value/env beside `templateRepoUrl` and `templateRepoBranch` instead of inferring from the host.
 
@@ -123,6 +124,13 @@ helm template <release> frontend/providers/<app>/deploy/charts/<release> \
 ```
 
 After deployment, run `helm test <release> -n <namespace> --logs` and smoke-test the rendered App CR URL. Deployment-only migrations must preserve existing application routing; route behavior changes belong in a separate application change.
+
+Frontend chart `tests.path`, `startupProbe`, `readinessProbe`, and `livenessProbe`
+should use `/healthz`. Keep probe paths stable and put lightweight app-local
+readiness checks inside the health handler instead of binding Kubernetes probes to
+business routes. Because the same endpoint also backs liveness checks, do not
+check external services, databases, or user-specific business flows there; add a
+separate `/livez` or `/readyz` only if an app needs split lifecycle semantics.
 
 ## multiple namespaces
 

@@ -37,7 +37,7 @@ app:
 
 startupProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   periodSeconds: 5
   timeoutSeconds: 5
@@ -45,7 +45,7 @@ startupProbe:
 
 readinessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   periodSeconds: 5
   timeoutSeconds: 5
@@ -53,7 +53,7 @@ readinessProbe:
 
 livenessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   periodSeconds: 20
   timeoutSeconds: 5
@@ -61,7 +61,7 @@ livenessProbe:
 
 tests:
   image: busybox:1.36.1
-  path: /
+  path: /healthz
 
 ingress:
   className: nginx
