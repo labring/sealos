@@ -24,6 +24,7 @@ data:
       "DOMAIN" .Values.accountEnv.cloudDomain
       "PORT" .Values.accountEnv.cloudPort
       "ACCOUNT_API_JWT_SECRET" .Values.accountEnv.accountApiJwtSecret
+      "BILLING_MAX_CATCHUP_DURATION" .Values.accountEnv.billingMaxCatchupDuration
       "BASE_BALANCE" .Values.accountEnv.baseBalance
       "QUOTA_LIMITS_CPU" .Values.accountEnv.quotaLimitsCpu
       "QUOTA_LIMITS_MEMORY" .Values.accountEnv.quotaLimitsMemory

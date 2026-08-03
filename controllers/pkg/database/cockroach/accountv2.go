@@ -1065,44 +1065,52 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(
 	deductionAmount int64,
 	orderIDs []string,
 ) error {
+	return c.AddDeductionBalanceWithCreditsAt(
+		ops, deductionAmount, orderIDs, time.Now().UTC(),
+	)
+}
+
+func (c *Cockroach) AddDeductionBalanceWithCreditsAt(
+	ops *types.UserQueryOpts,
+	deductionAmount int64,
+	_ []string,
+	at time.Time,
+) error {
+	if at.IsZero() {
+		at = time.Now().UTC()
+	}
 	err := RetryTransaction(3, 2*time.Second, c.DB, func(tx *gorm.DB) error {
+		remainingAmount := deductionAmount
 		userUID, dErr := c.GetUserUID(ops)
 		if dErr != nil {
 			return fmt.Errorf("failed to get user uid: %w", dErr)
 		}
 		var credits []types.Credits
-		if dErr = c.DB.Where("user_uid = ? AND expire_at > ? AND status = ?", userUID, time.Now().UTC(), types.CreditsStatusActive).Order("expire_at ASC").Find(&credits).Error; dErr != nil {
+		if dErr = tx.Where(
+			"user_uid = ? AND start_at <= ? AND expire_at > ? AND status = ?",
+			userUID,
+			at,
+			at,
+			types.CreditsStatusActive,
+		).Order("expire_at ASC").Find(&credits).Error; dErr != nil {
 			return fmt.Errorf("failed to get credits: %w", dErr)
 		}
 		now := time.Now().UTC()
-		accountTransactionID := uuid.New()
-		accountTransaction := types.AccountTransaction{
-			ID:            accountTransactionID,
-			RegionUID:     c.LocalRegion.UID,
-			Type:          "RESOURCE_BILLING",
-			UserUID:       userUID,
-			CreatedAt:     now,
-			UpdatedAt:     now,
-			BillingIDList: orderIDs,
-		}
 		var updateCredits []types.Credits
-		var updateCreditsIDs []string
 		// var creditTransactions []types.CreditsTransaction
-		var creditUsedAmountAll int64
 		for i := range credits {
 			creditAmt := credits[i].Amount - credits[i].UsedAmount
-			if creditAmt > 0 && deductionAmount > 0 {
+			if creditAmt > 0 && remainingAmount > 0 {
 				var usedAmount int64
-				if creditAmt > deductionAmount {
-					credits[i].UsedAmount += deductionAmount
-					usedAmount = deductionAmount
+				if creditAmt > remainingAmount {
+					credits[i].UsedAmount += remainingAmount
+					usedAmount = remainingAmount
 				} else {
 					credits[i].UsedAmount = credits[i].Amount
 					credits[i].Status = types.CreditsStatusUsedUp
 					usedAmount = creditAmt
 				}
-				creditUsedAmountAll += usedAmount
-				deductionAmount -= usedAmount
+				remainingAmount -= usedAmount
 				// creditTransactions = append(creditTransactions, types.CreditsTransaction{
 				//	ID:                   uuid.New(),
 				//	UserUID:              userUID,
@@ -1115,7 +1123,6 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(
 				// })
 				credits[i].UpdatedAt = now
 				updateCredits = append(updateCredits, credits[i])
-				updateCreditsIDs = append(updateCreditsIDs, credits[i].ID.String())
 			}
 		}
 		if len(updateCredits) > 0 {
@@ -1124,20 +1131,12 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(
 					return fmt.Errorf("failed to update credits: %w", dErr)
 				}
 			}
-			accountTransaction.DeductionCredit = creditUsedAmountAll
-			accountTransaction.CreditIDList = updateCreditsIDs
 		}
-		if deductionAmount > 0 {
-			if dErr = c.updateBalance(tx, ops, deductionAmount, true, true); dErr != nil {
+		if remainingAmount > 0 {
+			if dErr = c.updateBalance(tx, ops, remainingAmount, true, true); dErr != nil {
 				return fmt.Errorf("failed to update balance: %w", dErr)
 			}
-			accountTransaction.DeductionBalance = deductionAmount
-		} else {
-			accountTransaction.DeductionBalance = 0
 		}
-		// if dErr = tx.Create(&accountTransaction).Error; dErr != nil {
-		//	return fmt.Errorf("failed to create account transaction: %v", dErr)
-		//}
 		// if len(creditTransactions) > 0 {
 		//	if dErr = tx.Create(&creditTransactions).Error; dErr != nil {
 		//		return fmt.Errorf("failed to create credit transactions: %v", dErr)
@@ -2257,10 +2256,45 @@ func (c *Cockroach) InitTables() error {
 	if err != nil {
 		return fmt.Errorf("failed to create index on WorkspaceSubscriptionTransaction: %w", err)
 	}
+	if err := ensureBillingQueryIndexes(c.DB); err != nil {
+		return err
+	}
 
 	// TODO: remove this after migration
 	if err := c.migrateColumns(); err != nil {
 		return fmt.Errorf("failed to migrate columns: %w", err)
+	}
+	return nil
+}
+
+// ensureBillingQueryIndexes covers the billing queries that operate on
+// growing historical tables. Equality columns lead each index so a billing
+// request can avoid scanning rows belonging to other users or workspaces.
+func ensureBillingQueryIndexes(db *gorm.DB) error {
+	statements := []struct {
+		name string
+		sql  string
+	}{
+		{
+			name: "DebtStatusRecord first status",
+			sql: `CREATE INDEX IF NOT EXISTS idx_debt_record_user_time
+				ON "DebtStatusRecord" (user_uid, create_at, id, last_status);`,
+		},
+		{
+			name: "WorkspaceSubscriptionTransaction history",
+			sql: `CREATE INDEX IF NOT EXISTS idx_workspace_subscription_billing_history
+				ON "WorkspaceSubscriptionTransaction" (region_domain, workspace, status, updated_at);`,
+		},
+		{
+			name: "Credits active period",
+			sql: `CREATE INDEX IF NOT EXISTS idx_credits_active_period
+				ON "Credits" (user_uid, status, expire_at, start_at);`,
+		},
+	}
+	for _, statement := range statements {
+		if err := db.Exec(statement.sql).Error; err != nil {
+			return fmt.Errorf("failed to create billing history index on %s: %w", statement.name, err)
+		}
 	}
 	return nil
 }
