@@ -91,6 +91,7 @@ export type TAppCR = {
     icon: string;
     menuData?: TAppMenuData[];
     name: string;
+    position?: number;
     type: APPTYPE;
   };
 };

@@ -10,6 +10,7 @@ import {
   TForcedIconStyle
 } from '@/types';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { compareSystemAppOrder } from '@/utils/appSort';
 
 const normalizeForcedIconStyle = (value: string | undefined): TForcedIconStyle | undefined => {
   if (value === 'contain' || value === 'fill') {
@@ -51,20 +52,11 @@ export default async function handler(_req: NextApiRequest, res: NextApiResponse
           key,
           ...item.spec,
           representativeMeta: getRepresentativeMeta(key, item.metadata.annotations),
+          displayType: item.spec.displayType || 'normal',
           creationTimestamp: item.metadata.creationTimestamp
         };
       })
-      .sort((a, b) => {
-        if (a.displayType === 'more' && b.displayType !== 'more') {
-          return 1;
-        } else if (a.displayType !== 'more' && b.displayType === 'more') {
-          return -1;
-        } else {
-          const timeA = a.creationTimestamp ? new Date(a.creationTimestamp).getTime() : 0;
-          const timeB = b.creationTimestamp ? new Date(b.creationTimestamp).getTime() : 0;
-          return timeB - timeA;
-        }
-      });
+      .sort(compareSystemAppOrder);
 
     jsonRes(res, { data: defaultArr });
   } catch (err) {
