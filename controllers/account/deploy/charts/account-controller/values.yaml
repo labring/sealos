@@ -60,6 +60,9 @@ accountEnv:
   # Authentication secrets (auto-configured from sealos-config)
   accountApiJwtSecret: "secret"  # Auto-fetched from sealos-config.jwtInternal
 
+  # Maximum historical billing window replayed from an existing checkpoint.
+  billingMaxCatchupDuration: "24h"
+
   # Kubernetes API whitelist (auto-generated from cloudDomain)
   whitelistKubernetesHosts: ""  # Auto-generated: https://${cloudDomain}:6443
 
