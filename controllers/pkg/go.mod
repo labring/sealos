@@ -37,6 +37,8 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	github.com/stripe/stripe-go/v74 v74.30.0
+	github.com/testcontainers/testcontainers-go v0.40.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.40.0
 	github.com/wechatpay-apiv3/wechatpay-go v0.2.17
 	go.mongodb.org/mongo-driver v1.12.1
 	go.uber.org/zap v1.26.0
