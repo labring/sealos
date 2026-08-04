@@ -445,9 +445,9 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.protocol.enabled=false"
 
-# Switch the top-right header back to balance mode
+# Enable the top-right workspace resource header
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.workspaceResourceHeaderEnabled=false"
+  -e HELM_OPTIONS="--set desktopConfig.workspaceResourceHeaderEnabled=true"
 
 # OAuth providers via HELM_OPTIONS
 sealos run desktop-frontend:latest \

@@ -70,7 +70,7 @@ export default function SecondaryLinks() {
   const { session } = useSessionStore();
 
   const user = session?.user;
-  const workspaceResourceHeaderEnabled = layoutConfig?.workspaceResourceHeaderEnabled !== false;
+  const workspaceResourceHeaderEnabled = layoutConfig?.workspaceResourceHeaderEnabled === true;
   const currencySymbol = layoutConfig?.currencySymbol || 'shellCoin';
 
   const isCollapsed = useBreakpointValue({

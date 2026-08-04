@@ -8,6 +8,7 @@ import SecondaryLinks from '@/components/SecondaryLinks';
 import { useConfigStore } from '@/stores/config';
 import { getAmount } from '@/api/auth';
 import { getResource } from '@/api/platform';
+import { DefaultLayoutConfig } from '@/types/system';
 
 jest.mock('@/stores/config', () => ({
   useConfigStore: jest.fn()
@@ -65,12 +66,12 @@ const mockedUseBreakpointValue = useBreakpointValue as jest.MockedFunction<
 const mockedGetResource = getResource as jest.MockedFunction<typeof getResource>;
 const mockedGetAmount = getAmount as jest.MockedFunction<typeof getAmount>;
 
-function renderSecondaryLinks(workspaceResourceHeaderEnabled: boolean) {
+function renderSecondaryLinks(workspaceResourceHeaderEnabled?: boolean) {
   mockedUseConfigStore.mockReturnValue({
     layoutConfig: {
       common: {},
       currencySymbol: 'shellCoin',
-      workspaceResourceHeaderEnabled
+      ...(workspaceResourceHeaderEnabled === undefined ? {} : { workspaceResourceHeaderEnabled })
     },
     commonConfig: {
       guideEnabled: false
@@ -97,6 +98,10 @@ function renderSecondaryLinks(workspaceResourceHeaderEnabled: boolean) {
 }
 
 describe('workspace resource header flag', () => {
+  it('defaults to the balance header', () => {
+    expect(DefaultLayoutConfig.workspaceResourceHeaderEnabled).toBe(false);
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockedUseBreakpointValue.mockReturnValue(false);
@@ -115,6 +120,14 @@ describe('workspace resource header flag', () => {
 
   it('falls back to the balance header when the resource header is disabled', async () => {
     renderSecondaryLinks(false);
+
+    expect(await screen.findByText('common:balance')).not.toBeNull();
+    expect(screen.queryByText('common:resources')).toBeNull();
+    expect(mockedGetResource).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the balance header when the flag is omitted', async () => {
+    renderSecondaryLinks();
 
     expect(await screen.findByText('common:balance')).not.toBeNull();
     expect(screen.queryByText('common:resources')).toBeNull();

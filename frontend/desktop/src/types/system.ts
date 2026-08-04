@@ -307,7 +307,7 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   title: 'Sealos Cloud',
   logo: '/logo.svg',
   backgroundImage: '/images/bg-light.svg',
-  workspaceResourceHeaderEnabled: true,
+  workspaceResourceHeaderEnabled: false,
   protocol: {
     enabled: true,
     serviceProtocol: {

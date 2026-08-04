@@ -445,9 +445,9 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.protocol.enabled=false"
 
-# 将右上角头部切回余额模式
+# 开启右上角 workspace 资源头部
 sealos run desktop-frontend:latest \
-  -e HELM_OPTIONS="--set desktopConfig.workspaceResourceHeaderEnabled=false"
+  -e HELM_OPTIONS="--set desktopConfig.workspaceResourceHeaderEnabled=true"
 
 # OAuth 提供商
 sealos run desktop-frontend:latest \
