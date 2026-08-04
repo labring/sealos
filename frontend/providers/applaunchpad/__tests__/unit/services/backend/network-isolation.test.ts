@@ -12,7 +12,7 @@ import type { NetworkIsolationConfig } from '@/types/networkIsolation';
 
 const createK8sContext = (policy?: any) => {
   const persisted = { value: policy };
-  const k8s = {
+  const k8s: any = {
     namespace: 'ns-target',
     getDeployApp: vi.fn(async (name: string) => ({
       kind: 'Deployment',
@@ -62,6 +62,11 @@ const createK8sContext = (policy?: any) => {
       ),
       patchNamespacedCustomObject: vi.fn()
     }
+  };
+
+  k8s.networkIsolationSourceReader = {
+    k8sCore: k8s.k8sCore,
+    k8sApp: k8s.k8sApp
   };
 
   return { k8s, persisted };
@@ -115,7 +120,8 @@ describe('network isolation SNP service', () => {
     expect(persisted.value.spec).toMatchObject({
       enabled: true,
       targets: {
-        serviceRef: { name: 'web-public' },
+        podSelector: { matchLabels: { app: 'web' } },
+        serviceRefs: [{ name: 'web-public' }],
         ingressSelectors: [{ matchLabels: { 'cloud.sealos.io/app-deploy-manager': 'web' } }]
       },
       defaultAccess: { sameNamespace: 'Allow', external: 'Deny' },
@@ -150,6 +156,93 @@ describe('network isolation SNP service', () => {
     await expect(
       saveNetworkIsolation('web', { enabled: false, rules: [] }, '3', k8s as any)
     ).rejects.toMatchObject({ code: 'REVISION_CONFLICT', status: 409 });
+  });
+
+  it('rejects a corrupted config annotation instead of treating an active policy as disabled', async () => {
+    const { k8s } = createK8sContext({
+      metadata: {
+        annotations: {
+          [NETWORK_ISOLATION_CONFIG_ANNOTATION]: '{invalid-json',
+          [NETWORK_ISOLATION_REVISION_ANNOTATION]: '2'
+        }
+      },
+      spec: { enabled: true }
+    });
+
+    await expect(getNetworkIsolation('web', k8s)).rejects.toMatchObject({
+      code: 'NETWORK_ISOLATION_CONFIG_CORRUPTED',
+      status: 503
+    });
+  });
+
+  it('requires the controlled service-account resolver for cross-workspace rules', async () => {
+    const { k8s } = createK8sContext();
+    delete k8s.networkIsolationSourceReader;
+
+    await expect(
+      saveNetworkIsolation(
+        'web',
+        {
+          enabled: true,
+          rules: [
+            {
+              id: 'source',
+              type: 'application',
+              sourceWorkspaceId: 'other-namespace',
+              sourceApplicationId: 'source-app'
+            }
+          ]
+        },
+        '0',
+        k8s
+      )
+    ).rejects.toMatchObject({ code: 'SOURCE_RESOLVER_UNAVAILABLE', status: 503 });
+  });
+
+  it('does not disclose whether a cross-workspace namespace is forbidden or missing', async () => {
+    const { k8s } = createK8sContext();
+    k8s.networkIsolationSourceReader.k8sCore.readNamespace.mockRejectedValue({
+      body: { code: 403 }
+    });
+
+    await expect(
+      saveNetworkIsolation(
+        'web',
+        {
+          enabled: true,
+          rules: [
+            {
+              id: 'source',
+              type: 'application',
+              sourceWorkspaceId: 'private-namespace',
+              sourceApplicationId: 'private-app'
+            }
+          ]
+        },
+        '0',
+        k8s
+      )
+    ).rejects.toMatchObject({ code: 'SOURCE_APPLICATION_UNRESOLVED', status: 422 });
+  });
+
+  it('protects the workload selector while managing every external service', async () => {
+    const { k8s, persisted } = createK8sContext();
+    k8s.k8sCore.listNamespacedService.mockResolvedValue({
+      body: {
+        items: [
+          { metadata: { name: 'web-z' }, spec: { type: 'LoadBalancer' } },
+          { metadata: { name: 'web-internal' }, spec: { type: 'ClusterIP' } },
+          { metadata: { name: 'web-a' }, spec: { type: 'LoadBalancer' } }
+        ]
+      }
+    });
+
+    await saveNetworkIsolation('web', { enabled: true, rules: [] }, '0', k8s);
+
+    expect(persisted.value.spec.targets).toMatchObject({
+      podSelector: { matchLabels: { app: 'web' } },
+      serviceRefs: [{ name: 'web-a' }, { name: 'web-z' }]
+    });
   });
 
   it('marks external paths unsupported when the controller reports an unsupported capability', () => {
@@ -190,12 +283,14 @@ describe('network isolation SNP service', () => {
       { enabled: false, rules: [] },
       {
         selector: { matchLabels: { arbitrary: 'pod-label' } },
+        externalServiceNames: [],
         capabilities: { hasDomainIngress: true, hasExternalPort: false }
       },
       k8s as any
     );
 
     expect(spec.targets).toMatchObject({
+      podSelector: { matchLabels: { arbitrary: 'pod-label' } },
       ingressSelectors: [
         { matchLabels: { 'cloud.sealos.io/app-deploy-manager': 'network-isolation-e2e' } }
       ]

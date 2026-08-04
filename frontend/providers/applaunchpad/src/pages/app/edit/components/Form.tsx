@@ -113,7 +113,8 @@ const Form = ({
   onDomainVerified,
   networkIsolationDraft,
   onNetworkIsolationDraftChange,
-  isWorkloadLocked
+  isWorkloadLocked,
+  editAppName
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
@@ -126,6 +127,7 @@ const Form = ({
   networkIsolationDraft?: NetworkIsolationConfig;
   onNetworkIsolationDraftChange?: (config: NetworkIsolationConfig) => void;
   isWorkloadLocked?: boolean;
+  editAppName?: string;
 }) => {
   if (!formHook) return null;
   const { t, i18n } = useTranslation();
@@ -133,9 +135,9 @@ const Form = ({
   const { userSourcePrice } = useUserStore();
   const router = useRouter();
   const { toast } = useToast();
-  const { name } = router.query as QueryType;
+  const { name: routeName } = router.query as QueryType;
   const theme = useTheme();
-  const isEdit = useMemo(() => !!name, [name]);
+  const isEdit = !!editAppName;
 
   const {
     register,
@@ -643,7 +645,7 @@ const Form = ({
             onChange={() =>
               router.replace(
                 `/app/edit?${obj2Query({
-                  name,
+                  name: routeName,
                   type: 'yaml'
                 })}`
               )
@@ -1165,7 +1167,7 @@ const Form = ({
 
           <NetworkSection
             formHook={formHook}
-            appName={isEdit && typeof name === 'string' ? name : getValues('appName')}
+            appName={editAppName || getValues('appName')}
             isEdit={isEdit}
             isWorkloadLocked={isWorkloadLocked}
             createDraft={networkIsolationDraft}

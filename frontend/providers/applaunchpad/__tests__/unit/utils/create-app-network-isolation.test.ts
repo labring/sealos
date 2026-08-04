@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createAppWithNetworkIsolation,
-  NetworkIsolationAfterCreateError
+  NetworkIsolationAfterCreateError,
+  syncExistingAppNetworkIsolation
 } from '@/utils/create-app-network-isolation';
 import type { NetworkIsolationConfig } from '@/types/networkIsolation';
 
@@ -89,5 +90,41 @@ describe('createAppWithNetworkIsolation', () => {
         }
       )
     ).rejects.toBe(deploymentError);
+  });
+});
+
+describe('syncExistingAppNetworkIsolation', () => {
+  it('does not create a policy for an application that has never configured isolation', async () => {
+    const getNetworkIsolation = vi.fn().mockResolvedValue({
+      config,
+      revision: '0',
+      enforcement: { phase: 'NotCreated' }
+    });
+    const putNetworkIsolation = vi.fn();
+
+    await syncExistingAppNetworkIsolation('demo', { getNetworkIsolation, putNetworkIsolation });
+
+    expect(putNetworkIsolation).not.toHaveBeenCalled();
+  });
+
+  it('rebuilds an existing policy with its latest revision and can be retried independently', async () => {
+    const getNetworkIsolation = vi
+      .fn()
+      .mockResolvedValueOnce({ config, revision: '5', enforcement: { phase: 'Ready' } })
+      .mockResolvedValueOnce({ config, revision: '6', enforcement: { phase: 'Ready' } });
+    const putNetworkIsolation = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('controller unavailable'))
+      .mockResolvedValueOnce({});
+
+    await expect(
+      syncExistingAppNetworkIsolation('demo', { getNetworkIsolation, putNetworkIsolation })
+    ).rejects.toThrow('controller unavailable');
+    await expect(
+      syncExistingAppNetworkIsolation('demo', { getNetworkIsolation, putNetworkIsolation })
+    ).resolves.toBeUndefined();
+
+    expect(putNetworkIsolation).toHaveBeenNthCalledWith(1, 'demo', config, '5');
+    expect(putNetworkIsolation).toHaveBeenNthCalledWith(2, 'demo', config, '6');
   });
 });

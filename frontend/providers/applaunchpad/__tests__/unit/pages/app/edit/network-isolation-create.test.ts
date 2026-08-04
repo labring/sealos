@@ -1,11 +1,9 @@
 import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 
 const readSource = (relativePath: string) =>
-  readFileSync(
-    new URL(`../../../../../src/pages/app/edit/${relativePath}`, import.meta.url),
-    'utf8'
-  );
+  readFileSync(resolve(process.cwd(), 'src/pages/app/edit', relativePath), 'utf8');
 
 describe('new application network isolation contract', () => {
   it('renders the configure action next to the add-port action for both create and edit', () => {
@@ -55,6 +53,15 @@ describe('new application network isolation contract', () => {
     expect(open).toContain('if (isEdit) void loadNetworkIsolation()');
   });
 
+  it('uses the server-provided application name to select edit mode', () => {
+    const formSource = readSource('components/Form.tsx');
+    const pageSource = readSource('index.tsx');
+
+    expect(formSource).toContain('const isEdit = !!editAppName');
+    expect(formSource).toContain("appName={editAppName || getValues('appName')}");
+    expect(pageSource).toContain('editAppName={appName}');
+  });
+
   it('keeps a pending create draft outside AppEditType and retries without redeploying', () => {
     const source = readSource('index.tsx');
 
@@ -62,6 +69,7 @@ describe('new application network isolation contract', () => {
       'const [networkIsolationDraft, setNetworkIsolationDraft] = useState<NetworkIsolationConfig>()'
     );
     expect(source).toContain('appAlreadyCreated: true');
-    expect(source).toContain("createdAppPendingIsolation ? 'network_isolation_retry_create'");
+    expect(source).toContain('createdAppPendingIsolation || updatedAppPendingIsolation');
+    expect(source).toContain("? 'network_isolation_retry_sync'");
   });
 });

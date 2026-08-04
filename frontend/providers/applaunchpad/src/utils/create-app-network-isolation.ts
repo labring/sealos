@@ -29,6 +29,32 @@ export class NetworkIsolationAfterCreateError extends Error {
   }
 }
 
+export class NetworkIsolationAfterUpdateError extends Error {
+  readonly appName: string;
+  readonly cause: unknown;
+
+  constructor(appName: string, cause: unknown) {
+    super(
+      'The application was updated, but the network isolation target could not be synchronized.'
+    );
+    this.name = 'NetworkIsolationAfterUpdateError';
+    this.appName = appName;
+    this.cause = cause;
+  }
+}
+
+export async function syncExistingAppNetworkIsolation(
+  appName: string,
+  dependencies: Pick<
+    CreateAppWithNetworkIsolationDependencies,
+    'getNetworkIsolation' | 'putNetworkIsolation'
+  >
+) {
+  const current = await dependencies.getNetworkIsolation(appName);
+  if (current.enforcement.phase === 'NotCreated') return;
+  await dependencies.putNetworkIsolation(appName, current.config, current.revision);
+}
+
 export async function createAppWithNetworkIsolation(
   options: CreateAppWithNetworkIsolationOptions,
   dependencies: CreateAppWithNetworkIsolationDependencies

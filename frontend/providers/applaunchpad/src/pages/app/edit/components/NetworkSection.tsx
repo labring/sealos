@@ -15,6 +15,8 @@ import { useTranslation } from 'next-i18next';
 import { customAlphabet } from 'nanoid';
 import { UseFormReturn, useFieldArray, useWatch } from 'react-hook-form';
 import {
+  Alert,
+  AlertIcon,
   Box,
   Button,
   Flex,
@@ -23,6 +25,7 @@ import {
   IconButton,
   Input,
   Switch,
+  Text,
   Tooltip,
   useDisclosure,
   useTheme
@@ -367,7 +370,11 @@ export function NetworkSection({
       const code = error?.error?.code;
       if (code === 'REVISION_CONFLICT') return t('network_isolation_revision_conflict');
       if (code === 'SOURCE_APPLICATION_UNRESOLVED') return t('network_isolation_source_unresolved');
+      if (code === 'SOURCE_RESOLVER_UNAVAILABLE')
+        return t('network_isolation_source_resolver_unavailable');
       if (code === 'TARGET_SELECTOR_UNRESOLVED') return t('network_isolation_target_unresolved');
+      if (code === 'NETWORK_ISOLATION_CONFIG_CORRUPTED')
+        return t('network_isolation_config_corrupted');
       if (code === 'PUBLIC_CIDR_CONFIRMATION_REQUIRED')
         return t('network_isolation_public_confirmation_required');
       return error?.message || t('network_isolation_save_failed');
@@ -449,6 +456,10 @@ export function NetworkSection({
     onOpen();
     if (isEdit) void loadNetworkIsolation();
   }, [isEdit, loadNetworkIsolation, onOpen]);
+
+  useEffect(() => {
+    if (isEdit && appName) void loadNetworkIsolation();
+  }, [appName, isEdit, loadNetworkIsolation]);
 
   useEffect(
     () => () => {
@@ -1510,6 +1521,48 @@ export function NetworkSection({
             {t('network_isolation_configure')}
           </Button>
         </Flex>
+
+        {isEdit &&
+          networkIsolationResponse?.config.enabled &&
+          ['degraded', 'unsupported'].includes(networkIsolationResponse.enforcement.overall) && (
+            <Alert
+              mt={3}
+              py={2}
+              px={3}
+              status={'warning'}
+              borderRadius={'4px'}
+              alignItems={'flex-start'}
+              data-testid={'network-isolation-enforcement-warning'}
+            >
+              <AlertIcon mt={'2px'} boxSize={'16px'} />
+              <Box>
+                <Text fontSize={'12px'} fontWeight={500} color={'yellow.800'}>
+                  {t('network_isolation_enforcement_warning')}
+                </Text>
+                <Text mt={1} fontSize={'12px'} color={'yellow.800'}>
+                  {(
+                    [
+                      ['internal', 'network_isolation_scope_internal'],
+                      ['domain', 'network_isolation_scope_domain'],
+                      ['externalPort', 'network_isolation_scope_external_port']
+                    ] as const
+                  )
+                    .filter(([scope]) =>
+                      ['degraded', 'unsupported'].includes(
+                        networkIsolationResponse.enforcement.scopes[scope]
+                      )
+                    )
+                    .map(
+                      ([scope, label]) =>
+                        `${t(label)}: ${t(
+                          `network_isolation_status_${networkIsolationResponse.enforcement.scopes[scope]}`
+                        )}`
+                    )
+                    .join(' · ')}
+                </Text>
+              </Box>
+            </Alert>
+          )}
       </Box>
 
       <NetworkIsolationModal

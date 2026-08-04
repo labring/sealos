@@ -40,6 +40,42 @@ subjects:
     namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "applaunchpad-frontend.fullname" . }}-network-isolation-source-resolver
+  labels:
+    {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - statefulsets
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "applaunchpad-frontend.fullname" . }}-network-isolation-source-resolver
+  labels:
+    {{- include "applaunchpad-frontend.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "applaunchpad-frontend.fullname" . }}-network-isolation-source-resolver
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "applaunchpad-frontend.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ include "applaunchpad-frontend.fullname" . }}-higress-config-reader

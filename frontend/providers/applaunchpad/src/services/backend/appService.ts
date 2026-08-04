@@ -47,6 +47,10 @@ export interface K8sContext {
   getDeployApp: (appName: string) => Promise<V1Deployment | V1StatefulSet>;
   getUserQuota: () => Promise<UserQuotaItemType[]>;
   getUserBalance: () => Promise<number>;
+  networkIsolationSourceReader?: {
+    k8sCore: CoreV1Api;
+    k8sApp: AppsV1Api;
+  };
 }
 
 /**

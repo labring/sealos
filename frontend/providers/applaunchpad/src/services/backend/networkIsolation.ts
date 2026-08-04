@@ -68,7 +68,7 @@ type SealosNetworkPolicy = {
 type ResolvedTarget = {
   selector: LabelSelector;
   capabilities: NetworkIsolationTargetCapabilities;
-  externalServiceName?: string;
+  externalServiceNames: string[];
 };
 
 export class NetworkIsolationError extends Error {
@@ -145,7 +145,11 @@ const getPolicyConfig = (policy: SealosNetworkPolicy | undefined): NetworkIsolat
     }
     return parsed;
   } catch {
-    return createDefaultNetworkIsolationConfig();
+    throw new NetworkIsolationError(
+      503,
+      'NETWORK_ISOLATION_CONFIG_CORRUPTED',
+      'The stored network isolation configuration is corrupted and must be repaired by an administrator.'
+    );
   }
 };
 
@@ -199,13 +203,11 @@ const resolveTarget = async (appName: string, k8s: K8sContext): Promise<Resolved
 
   return {
     selector,
+    externalServiceNames: externalServices.map((service) => service.metadata?.name as string),
     capabilities: {
       hasDomainIngress: ingresses.body.items.length > 0,
       hasExternalPort: externalServices.length > 0
-    },
-    ...(externalServices.length === 1
-      ? { externalServiceName: externalServices[0].metadata?.name }
-      : {})
+    }
   };
 };
 
@@ -310,10 +312,18 @@ const normalizeConfig = (config: NetworkIsolationConfig, targetNamespace: string
 };
 
 const resolveSourceSelector = async (rule: ApplicationAllowRule, k8s: K8sContext) => {
+  const sourceReader = k8s.networkIsolationSourceReader;
+  if (!sourceReader) {
+    throw new NetworkIsolationError(
+      503,
+      'SOURCE_RESOLVER_UNAVAILABLE',
+      'The source application resolver is unavailable.'
+    );
+  }
   try {
-    await k8s.k8sCore.readNamespace(rule.sourceWorkspaceId);
+    await sourceReader.k8sCore.readNamespace(rule.sourceWorkspaceId);
   } catch (error: any) {
-    if (isNotFound(error)) {
+    if (isNotFound(error) || error?.body?.code === 403 || error?.statusCode === 403) {
       throw new NetworkIsolationError(
         422,
         'SOURCE_APPLICATION_UNRESOLVED',
@@ -327,8 +337,8 @@ const resolveSourceSelector = async (rule: ApplicationAllowRule, k8s: K8sContext
   }
 
   const [deployment, statefulSet] = await Promise.allSettled([
-    k8s.k8sApp.readNamespacedDeployment(rule.sourceApplicationId, rule.sourceWorkspaceId),
-    k8s.k8sApp.readNamespacedStatefulSet(rule.sourceApplicationId, rule.sourceWorkspaceId)
+    sourceReader.k8sApp.readNamespacedDeployment(rule.sourceApplicationId, rule.sourceWorkspaceId),
+    sourceReader.k8sApp.readNamespacedStatefulSet(rule.sourceApplicationId, rule.sourceWorkspaceId)
   ]);
   const workload =
     deployment.status === 'fulfilled'
@@ -387,9 +397,10 @@ export const buildNetworkIsolationSpec = async (
   return {
     enabled: config.enabled,
     targets: {
-      ...(target.externalServiceName
-        ? { serviceRef: { name: target.externalServiceName } }
-        : { podSelector: target.selector }),
+      podSelector: target.selector,
+      ...(target.externalServiceNames.length
+        ? { serviceRefs: target.externalServiceNames.map((name) => ({ name })) }
+        : {}),
       ...(target.capabilities.hasDomainIngress
         ? {
             ingressSelectors: [
@@ -482,7 +493,10 @@ const deriveEnforcement = (
     conditionReady(conditions, 'GatewaySourceReady');
   const externalCondition = getCondition(conditions, 'ServiceSourceRangeReady');
   const capabilityCondition = getCondition(conditions, 'CapabilityReady');
-  const externalTargetConfigured = !!(policy.spec?.targets as any)?.serviceRef;
+  const targetSpec = policy.spec?.targets as any;
+  const externalTargetConfigured =
+    !!targetSpec?.serviceRef ||
+    (Array.isArray(targetSpec?.serviceRefs) && targetSpec.serviceRefs.length > 0);
 
   const scopeState = (
     available: boolean,
