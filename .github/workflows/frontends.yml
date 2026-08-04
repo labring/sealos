@@ -94,8 +94,6 @@ jobs:
               - 'frontend/providers/dbprovider/**'
             costcenter:
               - 'frontend/providers/costcenter/**'
-            objectstorage:
-              - 'frontend/providers/objectstorage/**'
             desktop:
               - 'frontend/desktop/**'
       - name: Generate build matrix
@@ -115,7 +113,6 @@ jobs:
               "providers/terminal"
               "providers/dbprovider"
               "providers/costcenter"
-              "providers/objectstorage"
               "desktop"
             )
           else
@@ -126,7 +123,6 @@ jobs:
             [[ "${{ steps.filter.outputs.terminal }}" == "true" ]] && modules+=("providers/terminal")
             [[ "${{ steps.filter.outputs.dbprovider }}" == "true" ]] && modules+=("providers/dbprovider")
             [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
-            [[ "${{ steps.filter.outputs.objectstorage }}" == "true" ]] && modules+=("providers/objectstorage")
             [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
           fi
 

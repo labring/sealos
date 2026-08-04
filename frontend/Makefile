@@ -21,8 +21,7 @@ buildTargets := \
 	providers/applaunchpad \
 	providers/imagehub \
 	providers/template \
-	providers/license \
-	providers/objectstorage
+	providers/license
 
 buildTargets-all := $(addprefix image-build-,$(buildTargets))
 pushTargets-all := $(addprefix image-push-,$(buildTargets))
