@@ -70,6 +70,7 @@ export type LayoutConfigType = {
   title: string;
   logo: string;
   backgroundImage: string;
+  workspaceResourceHeaderEnabled?: boolean;
   authTitle?: {
     zh: string;
     en: string;
@@ -306,6 +307,7 @@ export const DefaultLayoutConfig: LayoutConfigType = {
   title: 'Sealos Cloud',
   logo: '/logo.svg',
   backgroundImage: '/images/bg-light.svg',
+  workspaceResourceHeaderEnabled: false,
   protocol: {
     enabled: true,
     serviceProtocol: {

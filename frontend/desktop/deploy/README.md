@@ -445,6 +445,10 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.protocol.enabled=false"
 
+# Enable the top-right workspace resource header
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.workspaceResourceHeaderEnabled=true"
+
 # OAuth providers via HELM_OPTIONS
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=your-client-id --set desktopConfig.githubClientSecret=your-client-secret"
@@ -462,7 +466,7 @@ sealos run desktop-frontend:latest \
 
 **Common customization options:**
 
-- **UI customization**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`, `protocol.enabled`
+- **UI customization**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`, `protocol.enabled`, `workspaceResourceHeaderEnabled`
 - **OAuth providers**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` and their `*ClientId`, `*ClientSecret`
 - **Features**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **Communication**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`

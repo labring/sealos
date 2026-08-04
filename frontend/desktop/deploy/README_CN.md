@@ -445,6 +445,10 @@ sealos run desktop-frontend:latest \
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.protocol.enabled=false"
 
+# 开启右上角 workspace 资源头部
+sealos run desktop-frontend:latest \
+  -e HELM_OPTIONS="--set desktopConfig.workspaceResourceHeaderEnabled=true"
+
 # OAuth 提供商
 sealos run desktop-frontend:latest \
   -e HELM_OPTIONS="--set desktopConfig.githubEnabled=true --set desktopConfig.githubClientId=your-client-id --set desktopConfig.githubClientSecret=your-client-secret"
@@ -462,7 +466,7 @@ sealos run desktop-frontend:latest \
 
 **常用自定义选项：**
 
-- **UI 自定义**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`, `protocol.enabled`
+- **UI 自定义**: `layoutTitle`, `layoutLogo`, `metaTitle`, `metaDescription`, `customerServiceURL`, `protocol.enabled`, `workspaceResourceHeaderEnabled`
 - **OAuth 提供商**: `githubEnabled`, `googleEnabled`, `wechatEnabled`, `oauth2Enabled` 及其对应的 `*ClientId`, `*ClientSecret`
 - **功能开关**: `guideEnabled`, `rechargeEnabled`, `trackingEnabled`, `apiEnabled`, `realNameAuthEnabled`
 - **通讯配置**: `smsEnabled`, `emailEnabled`, `emailHost`, `emailPort`, `emailUser`, `emailPassword`
