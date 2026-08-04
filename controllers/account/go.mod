@@ -26,6 +26,8 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.36.1
 	github.com/sirupsen/logrus v1.9.3
+	github.com/testcontainers/testcontainers-go v0.42.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0
 	github.com/volcengine/volc-sdk-golang v1.0.159
 	go.mongodb.org/mongo-driver v1.12.1
 	golang.org/x/time v0.7.0
