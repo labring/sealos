@@ -16,6 +16,7 @@ accountEnv:
   imminentDeletionPeriod: "259200"
   finalDeletionPeriod: "604800"
   debtDetectionCycleSeconds: "1800"
+  billingMaxCatchupDuration: "24h"
   osAdminSecret: "object-storage-user-0"
   osInternalEndpoint: "object-storage.objectstorage-system.svc.cluster.local"
   osNamespace: "objectstorage-system"
