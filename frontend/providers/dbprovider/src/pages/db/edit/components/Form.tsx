@@ -487,8 +487,15 @@ const Form = ({
   };
 
   const availableDBTypes = useMemo(() => {
+    const configFilteredTypes = DBTypeList.filter(
+      (item) =>
+        item.id !== DBTypeEnum.kafka ||
+        SystemEnv.KAFKA_ENABLED ||
+        (isEdit && dbType === DBTypeEnum.kafka)
+    );
+
     if (addonLoading) {
-      return DBTypeList;
+      return configFilteredTypes;
     }
 
     const addonStatusMap = new Map<string, string>();
@@ -496,20 +503,24 @@ const Form = ({
       addonStatusMap.set(addon.name, addon.status);
     });
 
-    const filtered = DBTypeList.filter((dbType) => {
+    const filtered = configFilteredTypes.filter((item) => {
       // Exclude weaviate from create form
-      if (dbType.id === DBTypeEnum.weaviate) {
+      if (item.id === DBTypeEnum.weaviate) {
         return false;
       }
 
-      const addonName = dbType.id;
+      if (isEdit && item.id === DBTypeEnum.kafka && dbType === DBTypeEnum.kafka) {
+        return true;
+      }
+
+      const addonName = item.id;
       const addonStatus = addonStatusMap.get(addonName);
       const shouldInclude = addonStatus !== 'Disabled';
       return shouldInclude;
     });
 
     return filtered;
-  }, [addonList, addonLoading]);
+  }, [SystemEnv.KAFKA_ENABLED, addonList, addonLoading, dbType, isEdit]);
 
   return (
     <>

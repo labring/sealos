@@ -1,5 +1,21 @@
 # sealos app launchpad
 
+## Deployment configuration
+
+`dbproviderConfig.kafkaEnabled` controls whether Kafka is available in the database creation
+form. It defaults to `"true"`. Set it to `"false"` in the user values file to hide Kafka while
+leaving existing Kafka instances manageable:
+
+```yaml
+dbproviderConfig:
+  kafkaEnabled: 'false'
+```
+
+The installer seeds `/root/.sealos/cloud/values/apps/dataflow/dbprovider-values.yaml` from
+`dbprovider-frontend-values.yaml` only when the user values file does not exist. Existing
+installations must update their persisted user values explicitly. This setting does not block
+Kafka creation through the database APIs.
+
 ## project tree
 
 ```bash

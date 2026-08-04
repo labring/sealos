@@ -6,6 +6,7 @@ export function assertReady() {
   readNonEmptyEnv('BILLING_URL');
   readOptionalBooleanEnv('BACKUP_ENABLED');
   readOptionalBooleanEnv('GUIDE_ENABLED');
+  readOptionalBooleanEnv('KAFKA_ENABLED');
   readOptionalBooleanEnv('MANAGED_DB_ENABLED');
   readOptionalNumberEnv('STORAGE_MAX_SIZE');
 }

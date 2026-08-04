@@ -75,6 +75,7 @@ dbproviderConfig:
   backupEnabled: "false"
   showDocument: "true"
   guideEnabled: "true"
+  kafkaEnabled: "true"
   billingUrl: "http://account-service.account-system.svc:2333"
   managedDbEnabled: "false"
   vlogsBaseUrl: ""
