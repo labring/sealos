@@ -15,6 +15,7 @@ data:
     BACKUP_ENABLED={{ .Values.dbproviderConfig.backupEnabled }}
     SHOW_DOCUMENT={{ .Values.dbproviderConfig.showDocument }}
     GUIDE_ENABLED={{ .Values.dbproviderConfig.guideEnabled }}
+    KAFKA_ENABLED={{ .Values.dbproviderConfig.kafkaEnabled }}
     BILLING_URL={{ .Values.dbproviderConfig.billingUrl }}
     MANAGED_DB_ENABLED={{ .Values.dbproviderConfig.managedDbEnabled }}
     VLOGS_BASE_URL={{ .Values.dbproviderConfig.vlogsBaseUrl }}
