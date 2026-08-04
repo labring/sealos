@@ -45,7 +45,6 @@ load_cloud_tools_or_exit() {
 
 请先回到当前安装包目录，执行对应命令同步 values + tools：
   Pro 安装包：./sealos-pro.sh sync-config
-  OSS 安装包：./sealos-oss.sh sync-config
 EOF
     exit 1
   fi
@@ -72,7 +71,6 @@ EOF
 
 请先回到当前安装包目录，执行对应命令同步 values + tools：
   Pro 安装包：./sealos-pro.sh sync-config
-  OSS 安装包：./sealos-oss.sh sync-config
 EOF
     exit 1
   fi
