@@ -104,7 +104,7 @@ desktopConfig:
   enterpriseRealNameAuthEnabled: false        # 启用企业实名认证
   trackingEnabled: false                      # 启用追踪/统计
   realNameAuthEnabled: false                  # 启用实名认证
-  workspaceResourceHeaderEnabled: true        # 右上角使用资源头部
+  workspaceResourceHeaderEnabled: false       # 默认显示余额；设为 true 时使用资源头部
   licenseCheckEnabled: false                  # 启用 License 检查
 ```
 

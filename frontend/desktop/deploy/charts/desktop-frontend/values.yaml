@@ -96,7 +96,7 @@ desktopConfig:
     privateProtocol:
       zh: https://sealos.io/zh-Hans/docs/msa/privacy-policy
       en: https://sealos.io/docs/msa/privacy-policy
-  workspaceResourceHeaderEnabled: true
+  workspaceResourceHeaderEnabled: false
 
 # End of auto-configured values
 # ============================================================================
