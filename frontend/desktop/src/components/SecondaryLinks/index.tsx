@@ -23,8 +23,10 @@ import {
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { getResource } from '@/api/platform';
+import Decimal from 'decimal.js';
 import { getAmount } from '@/api/auth';
+import { getResource } from '@/api/platform';
+import { CurrencySymbol } from '@sealos/ui';
 import useSessionStore from '@/stores/session';
 import { formatMoney } from '@/utils/format';
 import { Activity, MoreHorizontal } from 'lucide-react';
@@ -49,13 +51,7 @@ type WorkspaceQuotaItem = {
   usagePercent: number;
 };
 
-const resourceDisplayOrder: WorkspaceQuotaItem['type'][] = [
-  'cpu',
-  'memory',
-  'storage',
-  'gpu',
-  'nodeport'
-];
+const resourceDisplayOrder: WorkspaceQuotaItem['type'][] = ['cpu', 'memory', 'storage', 'nodeport'];
 
 const getAvailableValue = (item: WorkspaceQuotaItem) =>
   item.available ?? Math.max(item.limit - item.used, 0);
@@ -74,6 +70,8 @@ export default function SecondaryLinks() {
   const { session } = useSessionStore();
 
   const user = session?.user;
+  const workspaceResourceHeaderEnabled = layoutConfig?.workspaceResourceHeaderEnabled !== false;
+  const currencySymbol = layoutConfig?.currencySymbol || 'shellCoin';
 
   const isCollapsed = useBreakpointValue({
     base: true,
@@ -97,16 +95,24 @@ export default function SecondaryLinks() {
   const { data: resourceData, isLoading: isResourceLoading } = useQuery({
     queryKey: ['getResource', { userId: user?.userCrUid, workspaceId: user?.ns_uid }],
     queryFn: getResource,
-    enabled: !!user,
+    enabled: !!user && workspaceResourceHeaderEnabled,
     staleTime: 60 * 1000
   });
 
-  const { data: amountData, isLoading: isAmountLoading } = useQuery({
+  const { data: amountData } = useQuery({
     queryKey: ['getAmount', { userId: user?.userCrUid }],
     queryFn: getAmount,
     enabled: !!user,
     staleTime: 60 * 1000
   });
+
+  const balance = useMemo(() => {
+    let realBalance = new Decimal(amountData?.data?.balance || 0);
+    if (amountData?.data?.deductionBalance) {
+      realBalance = realBalance.minus(new Decimal(amountData.data.deductionBalance));
+    }
+    return realBalance.toNumber();
+  }, [amountData]);
 
   const quotaItems = useMemo(() => {
     const items = resourceData?.data?.workspaceQuota || [];
@@ -133,13 +139,7 @@ export default function SecondaryLinks() {
     : isResourceLoading
       ? t('common:loading')
       : '--';
-
-  const creditsValue = amountData?.data
-    ? formatMoney((amountData.data.balance || 0) - (amountData.data.deductionBalance || 0))
-    : null;
-
-  const creditsSummary =
-    creditsValue !== null ? creditsValue.toFixed(2) : isAmountLoading ? t('common:loading') : '--';
+  const balanceSummary = formatMoney(balance).toFixed(2);
 
   const renderHeaderMetric = (label: string, value: string) => (
     <Flex alignItems="baseline" gap="4px" whiteSpace="nowrap" minW={0}>
@@ -156,13 +156,9 @@ export default function SecondaryLinks() {
     <Flex alignItems="center" gap="8px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
       {renderHeaderMetric(t('common:resources'), resourceSummary)}
       <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.14)" />
-      {renderHeaderMetric(t('common:credits'), creditsSummary)}
+      {renderHeaderMetric(t('common:credits'), balanceSummary)}
     </Flex>
   );
-
-  const handleHeaderClick = () => {
-    openCostCenterApp();
-  };
 
   const getQuotaLabel = (type: WorkspaceQuotaItem['type']) => {
     if (type === 'cpu') return 'CPU';
@@ -239,102 +235,241 @@ export default function SecondaryLinks() {
     }
   };
 
-  if (!isCollapsed) {
-    return (
-      <Flex gap={'4px'} ml={'auto'}>
-        <Popover trigger="hover" placement="bottom-end" openDelay={120}>
-          <PopoverTrigger>
-            <Center
-              mr={'12px'}
-              borderRadius={'8px'}
-              bg={
-                'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
-              }
-              h={'36px'}
-              minW="252px"
-              maxW="320px"
-              px={'12px'}
-              py={'8px'}
-              color="#2563EB"
-              fontSize={'14px'}
-              fontWeight={'500'}
-              cursor={'pointer'}
-              onClick={handleHeaderClick}
-            >
-              <Activity size={16} />
-              <Box ml="8px">{renderHeaderSummary()}</Box>
-            </Center>
-          </PopoverTrigger>
-          <Portal>
-            <PopoverContent
-              w="320px"
-              borderRadius="8px"
-              boxShadow="0 12px 32px rgba(15, 23, 42, 0.16)"
-            >
-              <PopoverArrow />
-              <PopoverBody p="14px">{renderResourceRows()}</PopoverBody>
-            </PopoverContent>
-          </Portal>
-        </Popover>
+  const handleHeaderClick = () => {
+    openCostCenterApp();
+  };
 
-        {commonConfig?.guideEnabled ? (
-          <Center
-            className="guide-button"
-            cursor={'pointer'}
-            {...baseItemStyle}
-            px={'8px'}
-            borderRadius={'8px'}
-            onClick={handleGuideClick}
-          >
-            {t('common:guide')}
-          </Center>
-        ) : null}
+  const renderDesktopActions = () => (
+    <>
+      {commonConfig?.guideEnabled ? (
+        <Center
+          className="guide-button"
+          cursor={'pointer'}
+          {...baseItemStyle}
+          px={'8px'}
+          borderRadius={'8px'}
+          onClick={handleGuideClick}
+        >
+          {t('common:guide')}
+        </Center>
+      ) : null}
 
-        {layoutConfig?.common.docsUrl && (
-          <Center
-            {...baseItemStyle}
-            cursor={'pointer'}
-            borderRadius={'8px'}
-            px={'8px'}
-            onClick={handleDocsClick}
-          >
-            {t('common:doc')}
-          </Center>
-        )}
+      {layoutConfig?.common.docsUrl && (
+        <Center
+          {...baseItemStyle}
+          cursor={'pointer'}
+          borderRadius={'8px'}
+          px={'8px'}
+          onClick={handleDocsClick}
+        >
+          {t('common:doc')}
+        </Center>
+      )}
 
-        {layoutConfig?.common.workorderEnabled && (
+      {layoutConfig?.common.workorderEnabled && (
+        <Center
+          cursor={'pointer'}
+          {...baseItemStyle}
+          px={'8px'}
+          borderRadius={'8px'}
+          border={'1px solid transparent'}
+          onClick={openWorkOrderApp}
+        >
+          {t('v2:ticket')}
+        </Center>
+      )}
+
+      {layoutConfig?.discordInviteLink && (
+        <JoinDiscordPrompt>
           <Center
             cursor={'pointer'}
-            {...baseItemStyle}
+            minW="36px"
+            h="40px"
+            fontSize="14px"
+            fontWeight="500"
+            color="primary"
+            _hover={{
+              background: 'secondary'
+            }}
             px={'8px'}
             borderRadius={'8px'}
             border={'1px solid transparent'}
-            onClick={openWorkOrderApp}
           >
-            {t('v2:ticket')}
+            {t('v2:support')}
           </Center>
-        )}
+        </JoinDiscordPrompt>
+      )}
+    </>
+  );
 
-        {layoutConfig?.discordInviteLink && (
-          <JoinDiscordPrompt>
-            <Center
-              cursor={'pointer'}
-              minW="36px"
-              h="40px"
-              fontSize="14px"
-              fontWeight="500"
-              color="primary"
-              _hover={{
-                background: 'secondary'
-              }}
-              px={'8px'}
-              borderRadius={'8px'}
-              border={'1px solid transparent'}
+  const renderMenuActions = () => (
+    <>
+      <Divider my="8px" mx="-8px" w="calc(100% + 16px)" bg="rgba(0, 0, 0, 0.1)" />
+
+      {layoutConfig?.common.docsUrl && (
+        <MenuItem
+          py="8px"
+          px="12px"
+          borderRadius="8px"
+          _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+          onClick={handleDocsClick}
+          fontSize="14px"
+          fontWeight="500"
+        >
+          {t('common:doc')}
+        </MenuItem>
+      )}
+
+      {layoutConfig?.common.workorderEnabled && (
+        <MenuItem
+          py="8px"
+          px="12px"
+          borderRadius="8px"
+          _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+          onClick={openWorkOrderApp}
+          fontSize="14px"
+          fontWeight="500"
+        >
+          {t('v2:ticket')}
+        </MenuItem>
+      )}
+
+      {layoutConfig?.discordInviteLink && (
+        <JoinDiscordPrompt>
+          <MenuItem
+            py="8px"
+            px="12px"
+            borderRadius="8px"
+            _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+            onClick={openWorkOrderApp}
+            fontSize="14px"
+            fontWeight="500"
+          >
+            {t('v2:support')}
+          </MenuItem>
+        </JoinDiscordPrompt>
+      )}
+    </>
+  );
+
+  if (workspaceResourceHeaderEnabled) {
+    if (!isCollapsed) {
+      return (
+        <Flex gap={'4px'} ml={'auto'}>
+          <Popover trigger="hover" placement="bottom-end" openDelay={120}>
+            <PopoverTrigger>
+              <Center
+                mr={'12px'}
+                borderRadius={'8px'}
+                bg={
+                  'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
+                }
+                h={'36px'}
+                minW="252px"
+                maxW="320px"
+                px={'12px'}
+                py={'8px'}
+                color="#2563EB"
+                fontSize={'14px'}
+                fontWeight={'500'}
+                cursor={'pointer'}
+                onClick={handleHeaderClick}
+              >
+                <Activity size={16} />
+                <Box ml="8px">{renderHeaderSummary()}</Box>
+              </Center>
+            </PopoverTrigger>
+            <Portal>
+              <PopoverContent
+                w="320px"
+                borderRadius="8px"
+                boxShadow="0 12px 32px rgba(15, 23, 42, 0.16)"
+              >
+                <PopoverArrow />
+                <PopoverBody p="14px">{renderResourceRows()}</PopoverBody>
+              </PopoverContent>
+            </Portal>
+          </Popover>
+
+          {renderDesktopActions()}
+        </Flex>
+      );
+    }
+
+    return (
+      <Menu>
+        <MenuButton
+          as={Center}
+          {...baseItemStyle}
+          tabIndex={0}
+          boxSize={'36px'}
+          cursor={'pointer'}
+          borderRadius={'full'}
+          border={'1px solid rgba(0, 0, 0, 0.05)'}
+          px={'8px'}
+        >
+          <MoreHorizontal size={16} />
+        </MenuButton>
+        <MenuList
+          p="8px"
+          borderRadius="12px"
+          boxShadow="0 4px 20px rgba(0, 0, 0, 0.15)"
+          border="1px solid rgba(0, 0, 0, 0.05)"
+          minW="200px"
+        >
+          <Box
+            borderRadius="8px"
+            bg={
+              'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
+            }
+            p="12px"
+            cursor="pointer"
+            onClick={handleHeaderClick}
+          >
+            <Flex
+              alignItems="center"
+              justifyContent="space-between"
+              gap="10px"
+              color="#2563EB"
+              flexWrap="wrap"
             >
-              {t('v2:support')}
-            </Center>
-          </JoinDiscordPrompt>
-        )}
+              <Flex alignItems="center" gap="6px" fontSize="14px" fontWeight={600}>
+                <Activity size={16} />
+              </Flex>
+              {renderHeaderSummary({ allowWrap: true })}
+            </Flex>
+            <Box mt="12px">{renderResourceRows({ showTitle: false })}</Box>
+          </Box>
+
+          {renderMenuActions()}
+        </MenuList>
+      </Menu>
+    );
+  }
+
+  if (!isCollapsed) {
+    return (
+      <Flex gap={'4px'} ml={'auto'}>
+        <Center
+          mr={'12px'}
+          borderRadius={'8px'}
+          bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
+          h={'36px'}
+          px={'12px'}
+          py={'8px'}
+          color="#2563EB"
+          fontSize={'14px'}
+          fontWeight={'500'}
+          cursor={'pointer'}
+          onClick={handleHeaderClick}
+        >
+          <Text>{t('common:balance')}</Text>
+          <Divider orientation="vertical" mx={'12px'} />
+          <CurrencySymbol type={currencySymbol} />
+          <Text ml={'4px'}>{balanceSummary}</Text>
+        </Center>
+
+        {renderDesktopActions()}
       </Flex>
     );
   }
@@ -377,69 +512,32 @@ export default function SecondaryLinks() {
             <Flex alignItems="center" gap="6px" fontSize="14px" fontWeight={600}>
               <Activity size={16} />
             </Flex>
-            {renderHeaderSummary({ allowWrap: true })}
+            <Flex alignItems="center" gap="4px" whiteSpace="nowrap" minW={0}>
+              <Text
+                fontSize="13px"
+                fontWeight={500}
+                lineHeight="20px"
+                color="rgba(45, 65, 91, 0.68)"
+              >
+                {t('common:balance')}
+              </Text>
+              <Text
+                fontSize="14px"
+                fontWeight={600}
+                lineHeight="20px"
+                color="primary"
+                noOfLines={1}
+              >
+                <CurrencySymbol type={currencySymbol} />
+                <Text as="span" ml="4px">
+                  {balanceSummary}
+                </Text>
+              </Text>
+            </Flex>
           </Flex>
-          <Box mt="12px">{renderResourceRows({ showTitle: false })}</Box>
         </Box>
 
-        <Divider my="8px" mx="-8px" w="calc(100% + 16px)" bg="rgba(0, 0, 0, 0.1)" />
-
-        {/* // [TODO] Guide is currently not compatible with narrow screen. */}
-        {/* <MenuItem
-          py="8px"
-          px="12px"
-          borderRadius="8px"
-          _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
-          onClick={handleGuideClick}
-          fontSize="14px"
-          fontWeight="500"
-        >
-          {t('common:guide')}
-        </MenuItem> */}
-
-        {layoutConfig?.common.docsUrl && (
-          <MenuItem
-            py="8px"
-            px="12px"
-            borderRadius="8px"
-            _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
-            onClick={handleDocsClick}
-            fontSize="14px"
-            fontWeight="500"
-          >
-            {t('common:doc')}
-          </MenuItem>
-        )}
-
-        {layoutConfig?.common.workorderEnabled && (
-          <MenuItem
-            py="8px"
-            px="12px"
-            borderRadius="8px"
-            _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
-            onClick={openWorkOrderApp}
-            fontSize="14px"
-            fontWeight="500"
-          >
-            {t('v2:ticket')}
-          </MenuItem>
-        )}
-
-        {layoutConfig?.discordInviteLink && (
-          <JoinDiscordPrompt>
-            <MenuItem
-              py="8px"
-              px="12px"
-              borderRadius="8px"
-              _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
-              onClick={openWorkOrderApp}
-              fontSize="14px"
-              fontWeight="500"
-            >
-              {t('v2:support')}
-            </MenuItem>
-          </JoinDiscordPrompt>
-        )}
+        {renderMenuActions()}
       </MenuList>
     </Menu>
   );
