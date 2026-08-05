@@ -14,6 +14,7 @@ data:
     MIGRATE_FILE_IMAGE={{ .Values.dbproviderConfig.migrateFileImage }}
     BACKUP_ENABLED={{ .Values.dbproviderConfig.backupEnabled }}
     SHOW_DOCUMENT={{ .Values.dbproviderConfig.showDocument }}
+    DATA_IMPORT_ENABLED={{ .Values.dbproviderConfig.dataImportEnabled }}
     GUIDE_ENABLED={{ .Values.dbproviderConfig.guideEnabled }}
     KAFKA_ENABLED={{ .Values.dbproviderConfig.kafkaEnabled }}
     BILLING_URL={{ .Values.dbproviderConfig.billingUrl }}
