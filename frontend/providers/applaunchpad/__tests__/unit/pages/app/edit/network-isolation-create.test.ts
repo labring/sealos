@@ -31,6 +31,16 @@ describe('new application network isolation contract', () => {
     expect(source).toContain('isDisabled={isWorkloadLocked}');
   });
 
+  it('gates the action, modal, loading, and polling behind the resolved capability', () => {
+    const source = readSource('components/NetworkSection.tsx');
+
+    expect(source).toContain('NETWORK_ISOLATION_ENABLED && (');
+    expect(source).toContain('if (!NETWORK_ISOLATION_ENABLED || !appName) return;');
+    expect(source).toContain(
+      'if (NETWORK_ISOLATION_ENABLED && isEdit && appName) void loadNetworkIsolation();'
+    );
+  });
+
   it('saves create-page modal values to the page draft without calling the API', () => {
     const source = readSource('components/NetworkSection.tsx');
     const start = source.indexOf('const saveNetworkIsolation = useCallback');

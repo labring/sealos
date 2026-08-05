@@ -5,7 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { appDeployKey, ownerReferencesKey, ownerReferencesReadyValue } from '@/constants/app';
 import { ResponseCode } from '@/types/response';
-import { deleteNetworkIsolation } from '@/services/backend/networkIsolation';
+import { deleteNetworkIsolationIfPresent } from '@/services/backend/networkIsolation';
 
 export type DeleteAppParams = { name: string };
 
@@ -33,7 +33,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
   const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } = k8s;
 
   // Wait for the SNP finalizer before its referenced resources are removed.
-  await deleteNetworkIsolation(name, k8s);
+  await deleteNetworkIsolationIfPresent(name, k8s);
 
   // Check if app has ownerReferences annotation (new apps)
   let hasOwnerReferences = false;

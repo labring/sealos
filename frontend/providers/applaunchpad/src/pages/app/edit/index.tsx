@@ -21,6 +21,7 @@ import { useGlobalStore } from '@/store/global';
 import {
   CUSTOM_DOMAIN_MODE,
   CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
+  NETWORK_ISOLATION_ENABLED,
   SEALOS_DOMAIN
 } from '@/store/static';
 import { useUserStore } from '@/store/user';
@@ -426,13 +427,15 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             appName,
             stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulset.yaml')?.value
           });
-          try {
-            await syncExistingAppNetworkIsolation(appName, {
-              getNetworkIsolation,
-              putNetworkIsolation
-            });
-          } catch (error) {
-            throw new NetworkIsolationAfterUpdateError(appName, error);
+          if (NETWORK_ISOLATION_ENABLED) {
+            try {
+              await syncExistingAppNetworkIsolation(appName, {
+                getNetworkIsolation,
+                putNetworkIsolation
+              });
+            } catch (error) {
+              throw new NetworkIsolationAfterUpdateError(appName, error);
+            }
           }
         } else {
           const targetAppName = formHook.getValues('appName');

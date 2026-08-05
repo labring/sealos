@@ -4,6 +4,7 @@ import handler from '@/pages/api/v1/app/[name]/network-isolation';
 const createK8sContextMock = vi.hoisted(() => vi.fn());
 const getNetworkIsolationMock = vi.hoisted(() => vi.fn());
 const saveNetworkIsolationMock = vi.hoisted(() => vi.fn());
+const isNetworkIsolationAvailableMock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/services/backend', () => ({
   createK8sContext: createK8sContextMock
@@ -30,6 +31,10 @@ vi.mock('@/services/backend/networkIsolation', () => {
   };
 });
 
+vi.mock('@/services/backend/networkIsolationCapability', () => ({
+  isNetworkIsolationAvailable: isNetworkIsolationAvailableMock
+}));
+
 const createRequest = (options: {
   method?: string;
   name?: string | string[];
@@ -46,6 +51,7 @@ const createRequest = (options: {
 const createResponse = () =>
   ({
     setHeader: vi.fn(),
+    status: vi.fn().mockReturnThis(),
     json: vi.fn((payload) => payload)
   } as any);
 
@@ -73,6 +79,7 @@ describe('/api/v1/app/[name]/network-isolation', () => {
     createK8sContextMock.mockResolvedValue({ namespace: 'ns-demo' });
     getNetworkIsolationMock.mockResolvedValue(response);
     saveNetworkIsolationMock.mockResolvedValue(response);
+    isNetworkIsolationAvailableMock.mockResolvedValue(true);
   });
 
   it('returns the server DTO for GET', async () => {
@@ -134,5 +141,22 @@ describe('/api/v1/app/[name]/network-isolation', () => {
     expect(createK8sContextMock).not.toHaveBeenCalled();
     expect(res.setHeader).toHaveBeenCalledWith('Allow', 'GET, PUT');
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 405 }));
+  });
+
+  it('returns 404 without creating a Kubernetes context when the feature is unavailable', async () => {
+    isNetworkIsolationAvailableMock.mockResolvedValue(false);
+    const res = createResponse();
+
+    await handler(createRequest({}), res);
+
+    expect(createK8sContextMock).not.toHaveBeenCalled();
+    expect(getNetworkIsolationMock).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 404,
+        error: { code: 'NETWORK_ISOLATION_UNAVAILABLE' }
+      })
+    );
   });
 });

@@ -6,7 +6,8 @@ import {
   getNetworkIsolationPolicyName,
   NETWORK_ISOLATION_CONFIG_ANNOTATION,
   NETWORK_ISOLATION_REVISION_ANNOTATION,
-  saveNetworkIsolation
+  saveNetworkIsolation,
+  syncExistingNetworkIsolationIfPresent
 } from '@/services/backend/networkIsolation';
 import type { NetworkIsolationConfig } from '@/types/networkIsolation';
 
@@ -243,6 +244,48 @@ describe('network isolation SNP service', () => {
       podSelector: { matchLabels: { app: 'web' } },
       serviceRefs: [{ name: 'web-a' }, { name: 'web-z' }]
     });
+  });
+
+  it('rebuilds an existing policy and retries a revision conflict', async () => {
+    const policy = {
+      apiVersion: 'networking.sealos.io/v1alpha1',
+      kind: 'SealosNetworkPolicy',
+      metadata: {
+        name: 'snp-existing',
+        generation: 1,
+        annotations: {
+          [NETWORK_ISOLATION_CONFIG_ANNOTATION]: JSON.stringify({ enabled: true, rules: [] }),
+          [NETWORK_ISOLATION_REVISION_ANNOTATION]: '2'
+        }
+      },
+      spec: { enabled: true },
+      status: { phase: 'Ready', observedGeneration: 1, conditions: [] }
+    };
+    const { k8s } = createK8sContext(policy);
+    k8s.k8sCustomObjects.patchNamespacedCustomObject
+      .mockRejectedValueOnce({ body: { code: 409 } })
+      .mockResolvedValueOnce({
+        body: {
+          ...policy,
+          metadata: {
+            ...policy.metadata,
+            annotations: {
+              ...policy.metadata.annotations,
+              [NETWORK_ISOLATION_REVISION_ANNOTATION]: '3'
+            }
+          }
+        }
+      });
+
+    await expect(syncExistingNetworkIsolationIfPresent('web', k8s)).resolves.toBe(true);
+    expect(k8s.k8sCustomObjects.patchNamespacedCustomObject).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not create a policy when no existing SNP is present', async () => {
+    const { k8s } = createK8sContext();
+
+    await expect(syncExistingNetworkIsolationIfPresent('web', k8s)).resolves.toBe(false);
+    expect(k8s.k8sCustomObjects.createNamespacedCustomObject).not.toHaveBeenCalled();
   });
 
   it('marks external paths unsupported when the controller reports an unsupported capability', () => {

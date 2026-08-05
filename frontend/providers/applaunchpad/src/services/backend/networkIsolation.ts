@@ -674,6 +674,26 @@ export const saveNetworkIsolation = async (
 
 const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
+export const syncExistingNetworkIsolationIfPresent = async (
+  appName: string,
+  k8s: K8sContext,
+  maxAttempts = 3
+) => {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const current = await getNetworkIsolation(appName, k8s);
+      if (current.enforcement.phase === 'NotCreated') return false;
+      await saveNetworkIsolation(appName, current.config, current.revision, k8s);
+      return true;
+    } catch (error) {
+      lastError = error;
+      if (attempt + 1 < maxAttempts) await sleep(250 * 2 ** attempt);
+    }
+  }
+  throw lastError;
+};
+
 export const deleteNetworkIsolation = async (appName: string, k8s: K8sContext) => {
   const policy = await readPolicy(k8s, appName);
   if (!policy) return;
@@ -703,5 +723,7 @@ export const deleteNetworkIsolation = async (appName: string, k8s: K8sContext) =
     'Timed out while cleaning up network isolation resources.'
   );
 };
+
+export const deleteNetworkIsolationIfPresent = deleteNetworkIsolation;
 
 export const deriveNetworkIsolationEnforcement = deriveEnforcement;

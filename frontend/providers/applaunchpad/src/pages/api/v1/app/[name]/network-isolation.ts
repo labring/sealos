@@ -8,6 +8,7 @@ import {
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import type { NetworkIsolationConfig } from '@/types/networkIsolation';
 import { ResponseCode } from '@/types/response';
+import { isNetworkIsolationAvailable } from '@/services/backend/networkIsolationCapability';
 
 const getAppName = (value: string | string[] | undefined) =>
   typeof value === 'string' && value ? value : undefined;
@@ -43,6 +44,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       code: 405,
       message: 'Method not allowed.',
       error: { code: 'METHOD_NOT_ALLOWED' }
+    });
+  }
+
+  if (!(await isNetworkIsolationAvailable())) {
+    return jsonRes(res.status(404), {
+      code: 404,
+      message: 'Network isolation is not available.',
+      error: { code: 'NETWORK_ISOLATION_UNAVAILABLE' }
     });
   }
 

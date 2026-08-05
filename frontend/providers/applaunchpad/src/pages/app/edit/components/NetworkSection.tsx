@@ -9,6 +9,7 @@ import {
   DOMAIN_PORT,
   HTTP_PORT,
   NODE_PORT_HOST,
+  NETWORK_ISOLATION_ENABLED,
   SEALOS_DOMAIN
 } from '@/store/static';
 import { useTranslation } from 'next-i18next';
@@ -383,7 +384,7 @@ export function NetworkSection({
   );
 
   const loadNetworkIsolation = useCallback(async () => {
-    if (!appName) return;
+    if (!NETWORK_ISOLATION_ENABLED || !appName) return;
     setIsNetworkIsolationLoading(true);
     setNetworkIsolationSaveError(undefined);
     try {
@@ -396,7 +397,7 @@ export function NetworkSection({
   }, [appName, getNetworkIsolationErrorMessage]);
 
   const scheduleNetworkIsolationPoll = useCallback(() => {
-    if (!appName) return;
+    if (!NETWORK_ISOLATION_ENABLED || !appName) return;
     if (networkIsolationPollTimerRef.current) clearTimeout(networkIsolationPollTimerRef.current);
     const startedAt = Date.now();
 
@@ -453,12 +454,13 @@ export function NetworkSection({
   );
 
   const openNetworkIsolation = useCallback(() => {
+    if (!NETWORK_ISOLATION_ENABLED) return;
     onOpen();
     if (isEdit) void loadNetworkIsolation();
   }, [isEdit, loadNetworkIsolation, onOpen]);
 
   useEffect(() => {
-    if (isEdit && appName) void loadNetworkIsolation();
+    if (NETWORK_ISOLATION_ENABLED && isEdit && appName) void loadNetworkIsolation();
   }, [appName, isEdit, loadNetworkIsolation]);
 
   useEffect(
@@ -1512,17 +1514,20 @@ export function NetworkSection({
             {t('Add Network Port')}
           </Button>
 
-          <Button
-            type={'button'}
-            variant={'outline'}
-            {...actionButtonStyles}
-            onClick={openNetworkIsolation}
-          >
-            {t('network_isolation_configure')}
-          </Button>
+          {NETWORK_ISOLATION_ENABLED && (
+            <Button
+              type={'button'}
+              variant={'outline'}
+              {...actionButtonStyles}
+              onClick={openNetworkIsolation}
+            >
+              {t('network_isolation_configure')}
+            </Button>
+          )}
         </Flex>
 
-        {isEdit &&
+        {NETWORK_ISOLATION_ENABLED &&
+          isEdit &&
           networkIsolationResponse?.config.enabled &&
           ['degraded', 'unsupported'].includes(networkIsolationResponse.enforcement.overall) && (
             <Alert
@@ -1565,17 +1570,19 @@ export function NetworkSection({
           )}
       </Box>
 
-      <NetworkIsolationModal
-        isOpen={isNetworkIsolationOpen}
-        value={
-          isEdit ? networkIsolationResponse?.config : createDraft || defaultNetworkIsolationConfig
-        }
-        isLoading={isEdit && isNetworkIsolationLoading}
-        isSaving={isNetworkIsolationSaving}
-        saveError={networkIsolationSaveError}
-        onClose={onCloseNetworkIsolation}
-        onSave={saveNetworkIsolation}
-      />
+      {NETWORK_ISOLATION_ENABLED && (
+        <NetworkIsolationModal
+          isOpen={isNetworkIsolationOpen}
+          value={
+            isEdit ? networkIsolationResponse?.config : createDraft || defaultNetworkIsolationConfig
+          }
+          isLoading={isEdit && isNetworkIsolationLoading}
+          isSaving={isNetworkIsolationSaving}
+          saveError={networkIsolationSaveError}
+          onClose={onCloseNetworkIsolation}
+          onSave={saveNetworkIsolation}
+        />
+      )}
 
       {routeRulesIndex !== undefined && routeRulesNetwork && (
         <RouteRulesModal

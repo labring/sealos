@@ -14,7 +14,7 @@ vi.mock('@/services/backend/kubernetes', () => ({
 }));
 
 vi.mock('@/services/backend/networkIsolation', () => ({
-  deleteNetworkIsolation: deleteNetworkIsolationMock
+  deleteNetworkIsolationIfPresent: deleteNetworkIsolationMock
 }));
 
 function notFound() {
