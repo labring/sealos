@@ -10,6 +10,7 @@ import { initK8s } from 'sealos-desktop-sdk/service';
 import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
 import type { V1Service } from '@kubernetes/client-node';
 import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deployYaml2Json';
+import { appDeployKey } from '@/constants/app';
 import { buildExternalUrl } from '@/utils/network-url';
 import { ResponseCode } from '@/types/response';
 
@@ -61,6 +62,240 @@ const normalizeNetworkResource = <T extends Record<string, any>>(resource: T): T
 
 const isWorkloadKind = (kind?: string) =>
   kind === YamlKindEnum.Deployment || kind === YamlKindEnum.StatefulSet;
+
+type CreatePatchItem = Extract<AppPatchPropsType[number], { type: 'create' }>;
+type CreateResourceItem = {
+  item: CreatePatchItem;
+  resource: Record<string, any>;
+};
+
+const getK8sErrorCode = (error: any) =>
+  error?.body?.code || error?.response?.body?.code || error?.response?.statusCode;
+
+const ignoreNotFound = async <T>(promise: Promise<T>) => {
+  try {
+    return await promise;
+  } catch (error: any) {
+    if (Number(getK8sErrorCode(error)) === 404) {
+      return undefined;
+    }
+    throw error;
+  }
+};
+
+async function getWorkloadOwnerReferences({
+  k8sApp,
+  namespace,
+  appName,
+  kind
+}: {
+  k8sApp: {
+    readNamespacedDeployment: (name: string, namespace: string) => Promise<any>;
+    readNamespacedStatefulSet: (name: string, namespace: string) => Promise<any>;
+  };
+  namespace: string;
+  appName: string;
+  kind?: 'Deployment' | 'StatefulSet';
+}) {
+  const readWorkload = async (targetKind: 'Deployment' | 'StatefulSet') => {
+    const workload =
+      targetKind === 'Deployment'
+        ? await k8sApp.readNamespacedDeployment(appName, namespace)
+        : await k8sApp.readNamespacedStatefulSet(appName, namespace);
+    const uid = workload.body.metadata?.uid;
+    if (!uid) {
+      throw new Error(`${targetKind} UID is empty`);
+    }
+    return generateOwnerReference(appName, targetKind, uid);
+  };
+
+  if (kind) {
+    return readWorkload(kind);
+  }
+
+  try {
+    return await readWorkload('Deployment');
+  } catch (error: any) {
+    if (Number(getK8sErrorCode(error)) !== 404) {
+      throw error;
+    }
+    return readWorkload('StatefulSet');
+  }
+}
+
+const withOwnerReferences = (
+  yamlStr: string,
+  ownerReferences: ReturnType<typeof generateOwnerReference>
+) => {
+  const resource = normalizeNetworkResource(yaml.load(yamlStr) as any);
+  if (resource?.kind && shouldHaveOwnerReference(resource.kind)) {
+    resource.metadata = resource.metadata || {};
+    resource.metadata.ownerReferences = ownerReferences;
+    infoLog('Added ownerReferences to new resource', {
+      kind: resource.kind,
+      name: resource.metadata.name
+    });
+  }
+  return yaml.dump(resource);
+};
+
+async function patchExistingOwnerReferences({
+  k8sCore,
+  k8sNetworkingApp,
+  k8sAutoscaling,
+  k8sCustomObjects,
+  namespace,
+  appName,
+  ownerReferences
+}: {
+  k8sCore: any;
+  k8sNetworkingApp: any;
+  k8sAutoscaling: any;
+  k8sCustomObjects: CustomObjectsApi;
+  namespace: string;
+  appName: string;
+  ownerReferences: ReturnType<typeof generateOwnerReference>;
+}) {
+  const mergePatchOptions = {
+    headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH }
+  };
+  const ownerReferencePatch = {
+    metadata: {
+      ownerReferences
+    }
+  };
+  const labelSelector = `${appDeployKey}=${appName}`;
+
+  const patchServices = k8sCore
+    .listNamespacedService(namespace, undefined, undefined, undefined, undefined, labelSelector)
+    .then((res: { body: { items: V1Service[] } }) =>
+      Promise.all(
+        res.body.items.map((service) =>
+          service.metadata?.name
+            ? k8sCore.patchNamespacedService(
+                service.metadata.name,
+                namespace,
+                ownerReferencePatch,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                mergePatchOptions
+              )
+            : undefined
+        )
+      )
+    );
+
+  const patchIngresses = k8sNetworkingApp
+    .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, labelSelector)
+    .then((res: { body: { items: Array<{ metadata?: { name?: string } }> } }) =>
+      Promise.all(
+        res.body.items.map((ingress) =>
+          ingress.metadata?.name
+            ? k8sNetworkingApp.patchNamespacedIngress(
+                ingress.metadata.name,
+                namespace,
+                ownerReferencePatch,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                mergePatchOptions
+              )
+            : undefined
+        )
+      )
+    );
+
+  const patchAppNamedResources = Promise.all([
+    ignoreNotFound(
+      k8sCore.patchNamespacedConfigMap(
+        appName,
+        namespace,
+        ownerReferencePatch,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mergePatchOptions
+      )
+    ),
+    ignoreNotFound(
+      k8sCore.patchNamespacedSecret(
+        appName,
+        namespace,
+        ownerReferencePatch,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mergePatchOptions
+      )
+    ),
+    ignoreNotFound(
+      k8sAutoscaling.patchNamespacedHorizontalPodAutoscaler(
+        appName,
+        namespace,
+        ownerReferencePatch,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mergePatchOptions
+      )
+    )
+  ]);
+
+  const patchCustomObjects = async (plural: 'issuers' | 'certificates') => {
+    const response = await ignoreNotFound(
+      k8sCustomObjects.listNamespacedCustomObject(
+        'cert-manager.io',
+        'v1',
+        namespace,
+        plural,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        labelSelector
+      )
+    );
+    const items = ((response as any)?.body?.items || []) as Array<{ metadata?: { name?: string } }>;
+
+    await Promise.all(
+      items.map((item) =>
+        item.metadata?.name
+          ? k8sCustomObjects.patchNamespacedCustomObject(
+              'cert-manager.io',
+              'v1',
+              namespace,
+              plural,
+              item.metadata.name,
+              ownerReferencePatch,
+              undefined,
+              undefined,
+              undefined,
+              mergePatchOptions
+            )
+          : undefined
+      )
+    );
+  };
+
+  await Promise.all([
+    patchServices,
+    patchIngresses,
+    patchAppNamedResources,
+    patchCustomObjects('issuers'),
+    patchCustomObjects('certificates')
+  ]);
+}
 
 async function updateAppCRUrl(
   k8sCustomObjects: CustomObjectsApi,
@@ -420,70 +655,91 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     await Promise.all(regularPatches.map(applyPatchItem));
 
     // create
-    const createYamlList = patch
+    const createItems = patch
       .map((item) => {
         const cr = crMap[item.kind];
         if (!cr || item.type !== 'create') {
           return;
         }
-        return item.value;
+        const resource = normalizeNetworkResource(yaml.load(item.value as string) as any);
+        return {
+          item,
+          resource
+        };
       })
-      .filter((item) => item);
+      .filter((item): item is CreateResourceItem => !!item?.resource);
 
-    // Add ownerReferences to newly created resources
-    if (createYamlList.length > 0) {
-      // Get workload UID
-      let workloadUid: string | undefined;
-      let workloadKind: 'Deployment' | 'StatefulSet' | undefined;
+    const workloadCreateItems = createItems.filter(
+      ({ resource }) => isWorkloadKind(resource.kind) && resource.metadata?.name === appName
+    );
+    const dependentCreateItems = createItems.filter(
+      ({ resource }) => !isWorkloadKind(resource.kind) || resource.metadata?.name !== appName
+    );
+    const replacingWorkload =
+      workloadCreateItems.length > 0 &&
+      patch.some(
+        (item) => item.type === 'delete' && isWorkloadKind(item.kind) && item.name === appName
+      );
+    let createdWorkloadOwnerReferences: ReturnType<typeof generateOwnerReference> | undefined;
 
-      try {
-        // Try to read Deployment first
-        const deployment = await k8sApp.readNamespacedDeployment(appName, namespace);
-        workloadUid = deployment.body.metadata?.uid;
-        workloadKind = 'Deployment';
-      } catch (err: any) {
-        if (err?.body?.code === 404) {
-          // Try StatefulSet
-          try {
-            const statefulSet = await k8sApp.readNamespacedStatefulSet(appName, namespace);
-            workloadUid = statefulSet.body.metadata?.uid;
-            workloadKind = 'StatefulSet';
-          } catch (err2) {
-            warnLog('Could not find workload for ownerReferences', { appName });
-          }
-        }
-      }
+    if (workloadCreateItems.length > 0) {
+      await applyYamlList(
+        workloadCreateItems.map(({ resource }) => yaml.dump(resource)),
+        'create'
+      );
 
-      // Add ownerReferences to new resources
-      if (workloadUid && workloadKind) {
-        const ownerReferences = generateOwnerReference(appName, workloadKind, workloadUid);
-        const updatedCreateYamlList = createYamlList.map((yamlStr) => {
-          const resource = yaml.load(yamlStr as string) as any;
-          normalizeNetworkResource(resource);
-          if (shouldHaveOwnerReference(resource.kind)) {
-            if (!resource.metadata) {
-              resource.metadata = {};
-            }
-            resource.metadata.ownerReferences = ownerReferences;
-            infoLog('Added ownerReferences to new resource', {
-              kind: resource.kind,
-              name: resource.metadata.name
-            });
-          }
-          return yaml.dump(resource);
-        });
-        await applyYamlList(updatedCreateYamlList, 'create');
-      } else {
+      const createdWorkloadKind = workloadCreateItems[0].resource.kind as
+        'Deployment' | 'StatefulSet';
+      createdWorkloadOwnerReferences = await getWorkloadOwnerReferences({
+        k8sApp,
+        namespace,
+        appName,
+        kind: createdWorkloadKind
+      });
+
+      if (dependentCreateItems.length > 0) {
         await applyYamlList(
-          createYamlList.map((yamlStr) =>
-            yaml.dump(normalizeNetworkResource(yaml.load(yamlStr as string) as any))
+          dependentCreateItems.map(({ resource }) =>
+            withOwnerReferences(yaml.dump(resource), createdWorkloadOwnerReferences!)
           ),
+          'create'
+        );
+      }
+    } else if (dependentCreateItems.length > 0) {
+      try {
+        const ownerReferences = await getWorkloadOwnerReferences({
+          k8sApp,
+          namespace,
+          appName
+        });
+        await applyYamlList(
+          dependentCreateItems.map(({ resource }) =>
+            withOwnerReferences(yaml.dump(resource), ownerReferences)
+          ),
+          'create'
+        );
+      } catch (error) {
+        warnLog('Could not find workload for ownerReferences', { appName });
+        await applyYamlList(
+          dependentCreateItems.map(({ resource }) => yaml.dump(resource)),
           'create'
         );
       }
     }
 
     await Promise.all(workloadPatches.map(applyPatchItem));
+
+    if (replacingWorkload && createdWorkloadOwnerReferences) {
+      await patchExistingOwnerReferences({
+        k8sCore,
+        k8sNetworkingApp,
+        k8sAutoscaling,
+        k8sCustomObjects,
+        namespace,
+        appName,
+        ownerReferences: createdWorkloadOwnerReferences
+      });
+    }
 
     // delete
     await Promise.all(
