@@ -11,6 +11,7 @@ export type SystemEnvResponse = {
   minio_url: string;
   BACKUP_ENABLED: boolean;
   SHOW_DOCUMENT: boolean;
+  DATA_IMPORT_ENABLED: boolean;
   KAFKA_ENABLED: boolean;
   CurrencySymbol: 'shellCoin' | 'cny' | 'usd';
   STORAGE_MAX_SIZE: number;
@@ -37,6 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       minio_url: process.env.MINIO_URL || '',
       BACKUP_ENABLED: process.env.BACKUP_ENABLED === 'true',
       SHOW_DOCUMENT: process.env.SHOW_DOCUMENT === 'true',
+      DATA_IMPORT_ENABLED: process.env.DATA_IMPORT_ENABLED !== 'false',
       KAFKA_ENABLED: process.env.KAFKA_ENABLED !== 'false',
       CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd',
       STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300,

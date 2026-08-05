@@ -21,6 +21,7 @@ const useEnvStore = create<EnvState>()(
       minio_url: '',
       BACKUP_ENABLED: false,
       SHOW_DOCUMENT: true,
+      DATA_IMPORT_ENABLED: true,
       KAFKA_ENABLED: true,
       CurrencySymbol: 'shellCoin',
       STORAGE_MAX_SIZE: 300,
