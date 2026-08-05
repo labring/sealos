@@ -1351,9 +1351,10 @@ func UseGiftCode(c *gin.Context) {
 
 	// Use the gift code (to be implemented)
 	if _, err := dao.DBClient.UseGiftCode(req); err != nil {
+		status, message := useGiftCodeErrorResponse(err)
 		c.JSON(
-			http.StatusInternalServerError,
-			helper.ErrorMessage{Error: fmt.Sprintf("failed to use gift code: %v", err)},
+			status,
+			helper.ErrorMessage{Error: message},
 		)
 		return
 	}
@@ -1365,6 +1366,19 @@ func UseGiftCode(c *gin.Context) {
 		},
 		Message: "Gift code successfully redeemed",
 	})
+}
+
+func useGiftCodeErrorResponse(err error) (int, string) {
+	switch {
+	case errors.Is(err, dao.ErrGiftCodeAlreadyUsed):
+		return http.StatusConflict, dao.ErrGiftCodeAlreadyUsed.Error()
+	case errors.Is(err, dao.ErrGiftCodeExpired):
+		return http.StatusBadRequest, dao.ErrGiftCodeExpired.Error()
+	case errors.Is(err, dao.ErrGiftCodeNotFound):
+		return http.StatusNotFound, dao.ErrGiftCodeNotFound.Error()
+	default:
+		return http.StatusInternalServerError, fmt.Sprintf("failed to use gift code: %v", err)
+	}
 }
 
 // UserUsage

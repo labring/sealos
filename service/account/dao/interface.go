@@ -152,6 +152,12 @@ type Account struct {
 	*Cockroach
 }
 
+var (
+	ErrGiftCodeAlreadyUsed = errors.New("gift code is already used")
+	ErrGiftCodeExpired     = errors.New("gift code has expired")
+	ErrGiftCodeNotFound    = errors.New("gift code not found")
+)
+
 type MongoDB struct {
 	Client            *mongo.Client
 	AccountDBName     string
@@ -2830,18 +2836,24 @@ func (m *Account) SetStatusInvoice(req *helper.SetInvoiceStatusReq) error {
 func (m *Account) UseGiftCode(req *helper.UseGiftCodeReq) (*types.GiftCode, error) {
 	giftCode, err := m.ck.GetGiftCodeWithCode(req.Code)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrGiftCodeNotFound
+		}
 		return nil, fmt.Errorf("failed to get gift code: %w", err)
 	}
 
 	if !giftCode.ExpiredAt.IsZero() && time.Now().After(giftCode.ExpiredAt) {
-		return nil, errors.New("gift code has expired")
+		return nil, ErrGiftCodeExpired
 	}
 
 	if giftCode.Used {
-		return nil, errors.New("gift code is already used")
+		return nil, ErrGiftCodeAlreadyUsed
 	}
 
 	if err = m.ck.UseGiftCode(giftCode, req.UserID); err != nil {
+		if errors.Is(err, cockroach.ErrGiftCodeAlreadyUsed) {
+			return nil, ErrGiftCodeAlreadyUsed
+		}
 		return nil, fmt.Errorf("failed to use gift code: %w", err)
 	}
 

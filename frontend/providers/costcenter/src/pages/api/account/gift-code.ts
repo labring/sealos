@@ -1,6 +1,7 @@
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
 import { checkSealosUserIsRealName } from '@/utils/tools';
+import axios from 'axios';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
@@ -51,6 +52,17 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     });
   } catch (error) {
     console.error(error);
-    jsonRes(resp, { code: 500, message: 'use gift code error' });
+    if (axios.isAxiosError(error)) {
+      const responseData = error.response?.data as { error?: string; message?: string } | undefined;
+      return jsonRes(resp, {
+        code: error.response?.status || 500,
+        message: responseData?.error || responseData?.message || 'use gift code failed'
+      });
+    }
+
+    jsonRes(resp, {
+      code: 500,
+      message: error instanceof Error ? error.message : 'use gift code error'
+    });
   }
 }
