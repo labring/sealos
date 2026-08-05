@@ -98,14 +98,26 @@ jobs:
               - 'frontend/desktop/**'
       - name: Generate build matrix
         id: set-matrix
+        env:
+          PACKAGES_CHANGED: ${{ steps.filter.outputs.packages }}
+          ROOT_CONFIG_CHANGED: ${{ steps.filter.outputs.root-config }}
+          FORCE_ALL: ${{ inputs.force_all }}
+          EVENT_NAME: ${{ github.event_name }}
+          LICENSE_CHANGED: ${{ steps.filter.outputs.license }}
+          TEMPLATE_CHANGED: ${{ steps.filter.outputs.template }}
+          APPLAUNCHPAD_CHANGED: ${{ steps.filter.outputs.applaunchpad }}
+          TERMINAL_CHANGED: ${{ steps.filter.outputs.terminal }}
+          DBPROVIDER_CHANGED: ${{ steps.filter.outputs.dbprovider }}
+          COSTCENTER_CHANGED: ${{ steps.filter.outputs.costcenter }}
+          DESKTOP_CHANGED: ${{ steps.filter.outputs.desktop }}
         run: |
           modules=()
 
           # Check if we need to build all modules
-          if [[ "${{ steps.filter.outputs.packages }}" == "true" || \
-                "${{ steps.filter.outputs.root-config }}" == "true" || \
-                "${{ inputs.force_all }}" == "true" || \
-                "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "$PACKAGES_CHANGED" == "true" || \
+                "$ROOT_CONFIG_CHANGED" == "true" || \
+                "$FORCE_ALL" == "true" || \
+                "$EVENT_NAME" == "workflow_dispatch" ]]; then
             modules=(
               "providers/license"
               "providers/template"
@@ -117,13 +129,13 @@ jobs:
             )
           else
             # Only build changed modules
-            [[ "${{ steps.filter.outputs.license }}" == "true" ]] && modules+=("providers/license")
-            [[ "${{ steps.filter.outputs.template }}" == "true" ]] && modules+=("providers/template")
-            [[ "${{ steps.filter.outputs.applaunchpad }}" == "true" ]] && modules+=("providers/applaunchpad")
-            [[ "${{ steps.filter.outputs.terminal }}" == "true" ]] && modules+=("providers/terminal")
-            [[ "${{ steps.filter.outputs.dbprovider }}" == "true" ]] && modules+=("providers/dbprovider")
-            [[ "${{ steps.filter.outputs.costcenter }}" == "true" ]] && modules+=("providers/costcenter")
-            [[ "${{ steps.filter.outputs.desktop }}" == "true" ]] && modules+=("desktop")
+            [[ "$LICENSE_CHANGED" == "true" ]] && modules+=("providers/license")
+            [[ "$TEMPLATE_CHANGED" == "true" ]] && modules+=("providers/template")
+            [[ "$APPLAUNCHPAD_CHANGED" == "true" ]] && modules+=("providers/applaunchpad")
+            [[ "$TERMINAL_CHANGED" == "true" ]] && modules+=("providers/terminal")
+            [[ "$DBPROVIDER_CHANGED" == "true" ]] && modules+=("providers/dbprovider")
+            [[ "$COSTCENTER_CHANGED" == "true" ]] && modules+=("providers/costcenter")
+            [[ "$DESKTOP_CHANGED" == "true" ]] && modules+=("desktop")
           fi
 
           # Convert to JSON array (compact format for GitHub Actions)
@@ -132,7 +144,7 @@ jobs:
           else
             json_modules=$(printf '%s\n' "${modules[@]}" | jq -R . | jq -s -c .)
           fi
-          echo "modules=$json_modules" >> $GITHUB_OUTPUT
+          echo "modules=$json_modules" >> "$GITHUB_OUTPUT"
           echo "Building modules: $json_modules"
 
   image-build:
