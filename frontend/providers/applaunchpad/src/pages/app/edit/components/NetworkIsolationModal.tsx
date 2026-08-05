@@ -201,9 +201,9 @@ export default function NetworkIsolationModal({
       <Modal isOpen={isOpen} onClose={onClose} isCentered lockFocusAcrossFrames={false}>
         <ModalOverlay />
         <ModalContent
+          data-testid={'network-isolation-modal-content'}
           w={'calc(100vw - 32px)'}
           maxW={'532px'}
-          h={draft.enabled ? 'calc(100vh - 48px)' : undefined}
           maxH={'calc(100vh - 48px)'}
           mx={4}
           borderRadius={'md'}

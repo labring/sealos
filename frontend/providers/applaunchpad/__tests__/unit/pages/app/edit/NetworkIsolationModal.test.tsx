@@ -32,6 +32,18 @@ const savedConfig: NetworkIsolationConfig = {
   ]
 };
 
+const configWithTwoRules: NetworkIsolationConfig = {
+  enabled: true,
+  rules: [
+    ...savedConfig.rules,
+    {
+      id: 'second-stable-rule-id',
+      type: 'cidr',
+      cidrs: ['10.0.0.0/24']
+    }
+  ]
+};
+
 const renderModal = (overrides: Partial<ComponentProps<typeof NetworkIsolationModal>> = {}) => {
   const props: ComponentProps<typeof NetworkIsolationModal> = {
     isOpen: true,
@@ -64,6 +76,30 @@ describe('NetworkIsolationModal', () => {
     await user.click(screen.getByRole('checkbox'));
     expect(screen.getByDisplayValue('source-space')).toBeInTheDocument();
     expect(screen.getByDisplayValue('source-app')).toBeInTheDocument();
+  });
+
+  it('keeps the modal content-sized when strict mode is enabled', async () => {
+    const user = userEvent.setup();
+    renderModal({ value: { enabled: false, rules: [] } });
+    const modalContent = screen.getByTestId('network-isolation-modal-content');
+
+    expect(getComputedStyle(modalContent).height).not.toBe('calc(100vh - 48px)');
+    await user.click(screen.getByRole('checkbox'));
+
+    expect(screen.getByTestId('network-isolation-rules')).toBeInTheDocument();
+    expect(getComputedStyle(modalContent).height).not.toBe('calc(100vh - 48px)');
+    expect(getComputedStyle(modalContent).maxHeight).toBe('calc(100vh - 48px)');
+  });
+
+  it('limits multiple rules to the internally scrollable rules region', () => {
+    renderModal({ value: configWithTwoRules });
+    const rules = screen.getByTestId('network-isolation-rules');
+
+    expect(screen.getByDisplayValue('source-space')).toBeInTheDocument();
+    expect(screen.getByText('10.0.0.0/24')).toBeInTheDocument();
+    expect(getComputedStyle(rules).height).toBe('');
+    expect(getComputedStyle(rules).maxHeight).toBe('348px');
+    expect(getComputedStyle(rules).overflowY).toBe('auto');
   });
 
   it('discards an unsaved draft when canceled and never calls onSave', async () => {
