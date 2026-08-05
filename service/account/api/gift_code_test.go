@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -41,7 +42,7 @@ func TestUseGiftCodeErrorResponse(t *testing.T) {
 		},
 		{
 			name:        "internal",
-			err:         fmt.Errorf("database unavailable"),
+			err:         errors.New("database unavailable"),
 			wantStatus:  http.StatusInternalServerError,
 			wantMessage: "failed to use gift code: database unavailable",
 		},
