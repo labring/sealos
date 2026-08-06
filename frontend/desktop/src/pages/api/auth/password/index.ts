@@ -81,7 +81,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           code: 400
         });
       }
-      if (err.errorCode === 'USER_NOT_FOUND' || err.errorCode === 'INCORRECT_PASSWORD') {
+      if (
+        err.errorCode === 'USER_NOT_FOUND' ||
+        err.errorCode === 'INCORRECT_PASSWORD' ||
+        err.errorCode === 'SIGNUP_FAILED'
+      ) {
         return jsonRes(res, {
           message: 'Unauthorized',
           code: 401
