@@ -750,6 +750,6 @@ export const UpdateConfigMapSchema = z.object({
 export const UpdateStorageSchema = z.object({
   storage: z.array(SimpleStorageSchema).default([]).openapi({
     description:
-      'Storage configurations to update (incremental). Only includes storage to add or modify, existing storage not listed will be preserved. Name is auto-generated from path.'
+      'Storage configurations to update (incremental). Only includes storage to add or modify, existing storage not listed will be preserved. Pass an empty array to remove all storage. Name is auto-generated from path.'
   })
 });
