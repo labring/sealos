@@ -3,7 +3,7 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 import { debounce } from 'lodash';
 import { nanoid } from 'nanoid';
 import { useRouter } from 'next/router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import styles from './index.module.scss';
 import useSessionStore from '@/store/session';
 
@@ -15,7 +15,7 @@ type Terminal = {
 function Terminal({ url, site }: { url: string; site: string }) {
   const [tabId, setTabId] = useState(nanoid(6));
   const router = useRouter();
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const iframeRefs = useRef(new Map<string, HTMLIFrameElement>());
   const { query } = router;
   const session = useSessionStore((s) => s.session);
   const nsid = session?.user?.nsid;
@@ -29,9 +29,15 @@ function Terminal({ url, site }: { url: string; site: string }) {
     }
   ]);
 
-  useEffect(() => {
-    const event = async (e: MessageEvent) => {
-      const urlOrigin = new URL(url).origin;
+  const newTerminal = useCallback((command?: string) => {
+    const id = nanoid(6);
+    setTabContents((previous) => [...previous, { id, command }]);
+    setTabId(id);
+  }, []);
+
+  useLayoutEffect(() => {
+    const urlOrigin = new URL(url, window.location.origin).origin;
+    const event = (e: MessageEvent) => {
       const whitelist = [urlOrigin, site];
 
       if (!whitelist.includes(e.origin)) return;
@@ -39,21 +45,28 @@ function Terminal({ url, site }: { url: string; site: string }) {
         if (e.data.type === 'new terminal' && e.data.command) {
           newTerminal(decodeURIComponent(e.data.command));
         }
-        if (e.data?.ttyd === 'ready') {
-          iframeRef.current?.contentWindow?.postMessage(
+        if (e.data?.ttyd === 'ready' && e.origin === urlOrigin) {
+          const iframe = Array.from(iframeRefs.current.values()).find(
+            (item) => item.contentWindow === e.source
+          );
+          const target = iframe?.contentWindow;
+
+          if (!iframe || !target) return;
+
+          target.postMessage(
             {
               command: `kubectl config set-context --current --namespace=${nsid} && export PS1="\\u@(${nsid}) \\W\\$ " && clear`
             },
-            url
+            urlOrigin
           );
-          iframeRef.current?.contentWindow?.postMessage(
+          target.postMessage(
             {
               command: `clear && echo -e "\\033[36mThis is a temporary terminal for debugging and testing. The session will automatically end \\033[1m30 minutes\\033[22m after you leave.\\033[0m\\n\\nYou are now working in namespace: \\033[1;32m${nsid}\\033[0m" && history -c`
             },
-            url
+            urlOrigin
           );
-          const command = iframeRef.current?.getAttribute('data-command');
-          iframeRef?.current?.contentWindow?.postMessage({ command }, url);
+          const command = iframe.getAttribute('data-command');
+          target.postMessage({ command }, urlOrigin);
         }
       } catch (error) {
         console.log(error, 'error');
@@ -61,21 +74,7 @@ function Terminal({ url, site }: { url: string; site: string }) {
     };
     window.addEventListener('message', event);
     return () => window.removeEventListener('message', event);
-  }, [site, url, nsid]);
-
-  const newTerminal = (command?: string) => {
-    const temp = nanoid(6);
-    setTabContents((pre) => {
-      return [
-        ...pre,
-        {
-          id: temp,
-          command: command
-        }
-      ];
-    });
-    setTabId(temp);
-  };
+  }, [site, url, nsid, newTerminal]);
 
   const deleteTerminal = (key: string) => {
     if (tabContents.length <= 1) return;
@@ -163,10 +162,16 @@ function Terminal({ url, site }: { url: string; site: string }) {
         return (
           <Box flexGrow={1} key={item?.id} display={item?.id === tabId ? 'block' : 'none'}>
             <iframe
-              ref={iframeRef}
+              ref={(iframe) => {
+                if (iframe) {
+                  iframeRefs.current.set(item.id, iframe);
+                } else {
+                  iframeRefs.current.delete(item.id);
+                }
+              }}
               data-command={item?.command}
               className={styles.iframeWindow}
-              id={tabId}
+              id={item.id}
               src={url}
               allow="camera;microphone;clipboard-write;"
             />
