@@ -88,40 +88,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const updatedAppData: AppEditType = { ...currentAppData };
 
-      const existingStorageByPath = new Map();
-      updatedAppData.storeList.forEach((store) => {
-        existingStorageByPath.set(store.path, store);
-      });
+      if (storage.length === 0) {
+        updatedAppData.storeList = [];
+      } else {
+        const existingStorageByPath = new Map();
+        updatedAppData.storeList.forEach((store) => {
+          existingStorageByPath.set(store.path, store);
+        });
 
-      for (const newStore of storage) {
-        let numericValue = 1;
-        const sizeMatch = newStore.size.match(/^(\d+(?:\.\d+)?)(Gi|Mi|Ti)$/i);
-        if (sizeMatch) {
-          const [, value, unit] = sizeMatch;
-          numericValue = parseFloat(value);
+        for (const newStore of storage) {
+          let numericValue = 1;
+          const sizeMatch = newStore.size.match(/^(\d+(?:\.\d+)?)(Gi|Mi|Ti)$/i);
+          if (sizeMatch) {
+            const [, value, unit] = sizeMatch;
+            numericValue = parseFloat(value);
 
-          if (unit.toLowerCase() === 'mi') {
-            numericValue = numericValue / 1024;
-          } else if (unit.toLowerCase() === 'ti') {
-            numericValue = numericValue * 1024;
+            if (unit.toLowerCase() === 'mi') {
+              numericValue = numericValue / 1024;
+            } else if (unit.toLowerCase() === 'ti') {
+              numericValue = numericValue * 1024;
+            }
           }
-        }
 
-        const storeItem = {
-          name: mountPathToConfigMapKey(newStore.path),
-          path: newStore.path,
-          value: Math.ceil(numericValue)
-        };
+          const storeItem = {
+            name: mountPathToConfigMapKey(newStore.path),
+            path: newStore.path,
+            value: Math.ceil(numericValue)
+          };
 
-        if (existingStorageByPath.has(newStore.path)) {
-          const existingIndex = updatedAppData.storeList.findIndex(
-            (store) => store.path === newStore.path
-          );
-          if (existingIndex >= 0) {
-            updatedAppData.storeList[existingIndex] = storeItem;
+          if (existingStorageByPath.has(newStore.path)) {
+            const existingIndex = updatedAppData.storeList.findIndex(
+              (store) => store.path === newStore.path
+            );
+            if (existingIndex >= 0) {
+              updatedAppData.storeList[existingIndex] = storeItem;
+            }
+          } else {
+            updatedAppData.storeList.push(storeItem);
           }
-        } else {
-          updatedAppData.storeList.push(storeItem);
         }
       }
 
@@ -142,10 +146,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      try {
-        await updateExistingPVCs(k8sCore, namespace, appName, storage);
-      } catch (pvcError: any) {
-        console.error('PVC updates failed after StatefulSet recreation:', pvcError.message);
+      if (storage.length === 0) {
+        try {
+          await k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
+            namespace,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            `app=${appName}`
+          );
+        } catch (pvcError: any) {
+          console.error('Failed to delete PVCs after removing all storage:', pvcError.message);
+        }
+      } else {
+        try {
+          await updateExistingPVCs(k8sCore, namespace, appName, storage);
+        } catch (pvcError: any) {
+          console.error('PVC updates failed after StatefulSet recreation:', pvcError.message);
+        }
       }
 
       return res.status(204).end();

@@ -1466,7 +1466,22 @@ const Form = ({
                                 color: 'red.600',
                                 bg: 'rgba(17, 24, 36, 0.05)'
                               }}
-                              onClick={() => removeStoreList(originalIndex)}
+                              onClick={() => {
+                                const isApplied = existingStores.some((store) => store.path === item.path);
+                                if (isApplied) {
+                                  const appliedCount = localStores.filter((store) =>
+                                    existingStores.some((e) => e.path === store.path)
+                                  ).length;
+                                  if (appliedCount === 1) {
+                                    toast({
+                                      title: t('Store At Least One'),
+                                      status: 'error'
+                                    });
+                                    return;
+                                  }
+                                }
+                                removeStoreList(originalIndex);
+                              }}
                             />
                           </Flex>
                         );

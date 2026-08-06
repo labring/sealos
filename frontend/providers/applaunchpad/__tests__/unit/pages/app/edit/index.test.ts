@@ -20,7 +20,7 @@ describe('EditApp yaml display state', () => {
     expect(handleDomainVerified).not.toContain('setYamlList(formData2Yamls(data));');
   });
 
-  it('allows deleting the last draft storage volume before apply', () => {
+  it('allows deleting draft storage volumes while keeping the last applied one guarded', () => {
     const source = readFileSync(
       new URL('../../../../../src/pages/app/edit/components/Form.tsx', import.meta.url),
       'utf8'
@@ -28,8 +28,9 @@ describe('EditApp yaml display state', () => {
     const start = source.indexOf('{localStores.map((item) => {');
 
     expect(start).toBeGreaterThanOrEqual(0);
-    expect(source.indexOf('onClick={() => removeStoreList(originalIndex)}')).toBeGreaterThan(start);
-    expect(source).not.toContain('Store At Least One');
+    expect(source.indexOf('removeStoreList(originalIndex)')).toBeGreaterThan(start);
+    expect(source).toContain('existingStores.some((store) => store.path === item.path)');
+    expect(source).toContain("t('Store At Least One')");
     expect(source).not.toContain('localStores.length === 1');
   });
 
