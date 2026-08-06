@@ -440,7 +440,7 @@ export const DBReconfigureMap: Partial<
   },
   redis: {
     type: 'ini',
-    configMapName: '-redis',
+    configMapName: '-redis-redis-replication-config',
     configMapKey: 'redis.conf',
     reconfigureName: 'redis-replication-config',
     reconfigureKey: 'redis.conf'
@@ -638,6 +638,12 @@ export const ParameterFieldMetadataMap: Partial<
   mongodb: {
     default: {
       // No params are allowed to be modified for MongoDB
+    }
+  },
+  redis: {
+    default: {
+      maxclients: { editable: true },
+      maxmemory: { editable: true }
     }
   }
 };
