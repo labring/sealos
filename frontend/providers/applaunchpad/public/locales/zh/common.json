@@ -75,6 +75,7 @@
   "Edit Env Variable": "编辑环境变量",
   "Edit Environment Variables": "编辑环境变量",
   "Env Placeholder": "环境变量，每行一个，可用冒号或等号分隔，例如：\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n- env1=test",
+  "Env Variable Name Conflict": "环境变量名 {{name}} 不能重复",
   "Environment Variables": "环境变量",
   "Export": "导出",
   "Export Domain": "出口域名",

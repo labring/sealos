@@ -75,6 +75,7 @@
   "Edit Env Variable": "Edit Environment Variables",
   "Edit Environment Variables": "Edit Environment Variables",
   "Env Placeholder": "one per line, key and value separated by colon or equals sign, e.g.:\nmongoUrl=127.0.0.1:8000\nredisUrl:127.0.0.0:8001\n-env1 =test",
+  "Env Variable Name Conflict": "Environment variable name {{name}} cannot be duplicated",
   "Environment Variables": "Environment Variables",
   "Export": "Export",
   "Export Domain": "Assigned Domain",

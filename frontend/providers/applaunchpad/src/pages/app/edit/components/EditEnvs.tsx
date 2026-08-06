@@ -13,6 +13,26 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { AppEditType } from '@/types/app';
+import { useToast } from '@/hooks/useToast';
+
+type EditableEnv = {
+  key: string;
+  value: string;
+  valueFrom?: any;
+};
+
+const findDuplicateEnvKey = (envs: EditableEnv[]) => {
+  const seenKeys = new Set<string>();
+
+  for (const env of envs) {
+    const key = env.key.trim();
+    if (!key) continue;
+    if (seenKeys.has(key)) return key;
+    seenKeys.add(key);
+  }
+
+  return '';
+};
 
 const EditEnvs = ({
   defaultEnv = [],
@@ -24,6 +44,7 @@ const EditEnvs = ({
   onClose: () => void;
 }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [inputVal, setInputVal] = useState(
     defaultEnv
       .filter((item) => !item.valueFrom) // Only env that is not valuefrom can be edited
@@ -34,7 +55,7 @@ const EditEnvs = ({
   const onSubmit = useCallback(() => {
     const lines = inputVal.split('\n').filter((item) => item);
     const result = lines
-      .map((str) => {
+      .map((str): [string, string] | undefined => {
         // replace special symbol
         str = str.trim();
         if (/^-\s*/.test(str)) {
@@ -47,9 +68,9 @@ const EditEnvs = ({
           const i = str.indexOf(':');
           return [str.slice(0, i), str.slice(i + 1)];
         }
-        return '';
+        return undefined;
       })
-      .filter((item) => item)
+      .filter((item): item is [string, string] => !!item)
       .map((item) => {
         // remove quotation
         const key = item[0].replace(/^['"]|['"]$/g, '').trim();
@@ -60,11 +81,21 @@ const EditEnvs = ({
           value
         };
       });
+    const nextEnv = [...defaultEnv.filter((item) => item.valueFrom), ...result];
+    const duplicateKey = findDuplicateEnvKey(nextEnv);
+
+    if (duplicateKey) {
+      toast({
+        title: t('Env Variable Name Conflict', { name: duplicateKey }),
+        status: 'error'
+      });
+      return;
+    }
 
     // concat valueFrom env
-    successCb([...defaultEnv.filter((item) => item.valueFrom), ...result]);
+    successCb(nextEnv);
     onClose();
-  }, [defaultEnv, inputVal, onClose, successCb]);
+  }, [defaultEnv, inputVal, onClose, successCb, t, toast]);
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
