@@ -117,7 +117,24 @@ function createK8sContext() {
       listNamespacedPersistentVolumeClaim: vi.fn(() =>
         Promise.resolve({
           body: {
-            items: []
+            items: [
+              {
+                metadata: {
+                  name: 'demo-data-0',
+                  annotations: {
+                    path: '/data',
+                    value: '1'
+                  }
+                },
+                spec: {
+                  resources: {
+                    requests: {
+                      storage: '1Gi'
+                    }
+                  }
+                }
+              }
+            ]
           }
         })
       ),
@@ -135,6 +152,7 @@ function createK8sContext() {
         })
       ),
       patchNamespacedService: vi.fn(() => Promise.resolve({})),
+      patchNamespacedPersistentVolumeClaim: vi.fn(() => Promise.resolve({})),
       patchNamespacedConfigMap: vi.fn(() => notFound()),
       patchNamespacedSecret: vi.fn(() => notFound()),
       replaceNamespacedService: vi.fn(() => Promise.resolve({})),
@@ -231,6 +249,21 @@ describe('/api/updateApp', () => {
         }
       })
     );
+    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim).toHaveBeenCalledWith(
+      'demo-data-0',
+      'ns-demo',
+      ownerReferencePatch,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      expect.objectContaining({
+        headers: {
+          'Content-type': 'application/merge-patch+json'
+        }
+      })
+    );
     expect(k8s.k8sNetworkingApp.patchNamespacedIngress).toHaveBeenCalledWith(
       'demo-ingress',
       'ns-demo',
@@ -252,6 +285,115 @@ describe('/api/updateApp', () => {
     expect(k8s.k8sNetworkingApp.patchNamespacedIngress.mock.invocationCallOrder[0]).toBeLessThan(
       k8s.k8sApp.deleteNamespacedDeployment.mock.invocationCallOrder[0]
     );
+    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim.mock.invocationCallOrder[0]).toBeLessThan(
+      k8s.k8sApp.deleteNamespacedDeployment.mock.invocationCallOrder[0]
+    );
+    expect(res.json).toHaveBeenCalledWith({
+      code: 200,
+      message: 'Success',
+      data: undefined,
+      error: undefined
+    });
+  });
+
+  it('reattaches owner references after a StatefulSet patch falls back to delete and create', async () => {
+    const k8s = createK8sContext();
+    k8s.k8sApp.patchNamespacedStatefulSet.mockRejectedValueOnce(new Error('patch failed'));
+    k8s.k8sApp.replaceNamespacedStatefulSet.mockRejectedValueOnce(new Error('replace failed'));
+    initK8sMock.mockResolvedValue(k8s);
+    const res = createResponse();
+
+    await handler(
+      {
+        body: {
+          appName: 'demo',
+          stateFulSetYaml: statefulSetYaml,
+          patch: [
+            {
+              type: 'patch',
+              kind: 'StatefulSet',
+              value: {
+                kind: 'StatefulSet',
+                metadata: {
+                  name: 'demo'
+                },
+                spec: {}
+              }
+            }
+          ]
+        }
+      } as any,
+      res
+    );
+
+    const emptyOwnerReferencePatch = {
+      metadata: {
+        ownerReferences: []
+      }
+    };
+    const ownerReferences = [
+      {
+        apiVersion: 'apps/v1',
+        kind: 'StatefulSet',
+        name: 'demo',
+        uid: 'new-statefulset-uid',
+        controller: true,
+        blockOwnerDeletion: true
+      }
+    ];
+    const ownerReferencePatch = {
+      metadata: {
+        ownerReferences
+      }
+    };
+
+    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim).toHaveBeenNthCalledWith(
+      1,
+      'demo-data-0',
+      'ns-demo',
+      emptyOwnerReferencePatch,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      expect.objectContaining({
+        headers: {
+          'Content-type': 'application/merge-patch+json'
+        }
+      })
+    );
+    expect(k8s.k8sApp.deleteNamespacedStatefulSet).toHaveBeenCalledWith('demo', 'ns-demo');
+    expect(k8s.k8sApp.createNamespacedStatefulSet).toHaveBeenCalledWith(
+      'ns-demo',
+      expect.objectContaining({
+        kind: 'StatefulSet',
+        metadata: expect.objectContaining({
+          name: 'demo'
+        })
+      })
+    );
+    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim).toHaveBeenLastCalledWith(
+      'demo-data-0',
+      'ns-demo',
+      ownerReferencePatch,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      expect.objectContaining({
+        headers: {
+          'Content-type': 'application/merge-patch+json'
+        }
+      })
+    );
+    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim.mock.invocationCallOrder[0]).toBeLessThan(
+      k8s.k8sApp.deleteNamespacedStatefulSet.mock.invocationCallOrder[0]
+    );
+    expect(
+      k8s.k8sApp.createNamespacedStatefulSet.mock.invocationCallOrder[0]
+    ).toBeLessThan(k8s.k8sCore.patchNamespacedPersistentVolumeClaim.mock.invocationCallOrder.at(-1)!);
     expect(res.json).toHaveBeenCalledWith({
       code: 200,
       message: 'Success',

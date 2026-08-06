@@ -210,6 +210,35 @@ async function patchExistingOwnerReferences({
       )
     );
 
+  const patchPvcs = k8sCore
+    .listNamespacedPersistentVolumeClaim(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `app=${appName}`
+    )
+    .then((res: { body: { items: Array<{ metadata?: { name?: string } }> } }) =>
+      Promise.all(
+        res.body.items.map((pvc) =>
+          pvc.metadata?.name
+            ? k8sCore.patchNamespacedPersistentVolumeClaim(
+                pvc.metadata.name,
+                namespace,
+                ownerReferencePatch,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                mergePatchOptions
+              )
+            : undefined
+        )
+      )
+    );
+
   const patchAppNamedResources = Promise.all([
     ignoreNotFound(
       k8sCore.patchNamespacedConfigMap(
@@ -291,6 +320,7 @@ async function patchExistingOwnerReferences({
   await Promise.all([
     patchServices,
     patchIngresses,
+    patchPvcs,
     patchAppNamedResources,
     patchCustomObjects('issuers'),
     patchCustomObjects('certificates')
@@ -434,13 +464,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               undefined,
               { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
             );
+            return { recreated: false, kind: YamlKindEnum.StatefulSet };
           } catch (error) {
             try {
               await k8sApp.replaceNamespacedStatefulSet(appName, namespace, jsonPatch);
+              return { recreated: false, kind: YamlKindEnum.StatefulSet };
             } catch (error) {
               warnLog('delete and create statefulSet', { yaml: yaml.dump(jsonPatch) });
+              await patchExistingOwnerReferences({
+                k8sCore,
+                k8sNetworkingApp,
+                k8sAutoscaling,
+                k8sCustomObjects,
+                namespace,
+                appName,
+                ownerReferences: []
+              });
               await k8sApp.deleteNamespacedStatefulSet(appName, namespace);
               await k8sApp.createNamespacedStatefulSet(namespace, jsonPatch);
+              return { recreated: true, kind: YamlKindEnum.StatefulSet };
             }
           }
         },
@@ -727,9 +769,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     }
 
-    await Promise.all(workloadPatches.map(applyPatchItem));
+    const workloadPatchResults = await Promise.all(workloadPatches.map(applyPatchItem));
+    const recreatedWorkloadPatch = workloadPatchResults.find((result) => result?.recreated);
 
-    if (replacingWorkload && createdWorkloadOwnerReferences) {
+    if (recreatedWorkloadPatch) {
+      createdWorkloadOwnerReferences = await getWorkloadOwnerReferences({
+        k8sApp,
+        namespace,
+        appName,
+        kind: recreatedWorkloadPatch.kind
+      });
+    }
+
+    if (createdWorkloadOwnerReferences && (replacingWorkload || recreatedWorkloadPatch)) {
       await patchExistingOwnerReferences({
         k8sCore,
         k8sNetworkingApp,
