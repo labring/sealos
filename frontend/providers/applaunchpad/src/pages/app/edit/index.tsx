@@ -275,7 +275,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [forceUpdate, setForceUpdate] = useState(false);
   const { setAppDetail } = useAppStore();
   const { screenWidth, formSliderListConfig } = useGlobalStore();
-  const { userSourcePrice, loadUserSourcePrice } = useUserStore();
+  const { userSourcePrice, loadUserSourcePrice, checkQuotaAllow } = useUserStore();
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -837,16 +837,23 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                   });
                 }
               }
-              // quote check
-              // const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
-              // if (quoteCheckRes) {
-              //   return toast({
-              //     status: 'warning',
-              //     title: t(quoteCheckRes),
-              //     duration: 5000,
-              //     isClosable: true
-              //   });
-              // }
+              // quota check
+              try {
+                const quotaCheckResult = await checkQuotaAllow(data, oldAppEditData.current);
+                if (quotaCheckResult) {
+                  return toast({
+                    status: 'warning',
+                    title: t(quotaCheckResult),
+                    duration: 5000,
+                    isClosable: true
+                  });
+                }
+              } catch (error) {
+                return toast({
+                  status: 'error',
+                  title: getErrText(error) || t('Submit Error')
+                });
+              }
 
               // check network port
               if (!checkNetworkPorts(data.networks)) {

@@ -147,38 +147,55 @@ export async function getUserQuota(
     body: { status }
   } = await k8sApi.readNamespacedResourceQuota(`quota-${namespace}`, namespace);
 
-  return [
+  const quotaItems: Array<{
+    type: UserQuotaItemType['type'];
+    resourceName: string;
+    parse: (quantity: string) => number;
+  }> = [
     {
       type: 'cpu',
-      limit: cpuFormatToM(status?.hard?.['limits.cpu'] || '') / 1000,
-      used: cpuFormatToM(status?.used?.['limits.cpu'] || '') / 1000
+      resourceName: 'limits.cpu',
+      parse: (quantity) => cpuFormatToM(quantity) / 1000
     },
     {
       type: 'memory',
-      limit: memoryFormatToMi(status?.hard?.['limits.memory'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['limits.memory'] || '') / 1024
+      resourceName: 'limits.memory',
+      parse: (quantity) => memoryFormatToMi(quantity) / 1024
     },
     {
       type: 'storage',
-      limit: storageQuantityToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: storageQuantityToMi(status?.used?.['requests.storage'] || '') / 1024
+      resourceName: 'requests.storage',
+      parse: (quantity) => storageQuantityToMi(quantity) / 1024
     },
     {
       type: 'ephemeral-storage',
-      limit: storageQuantityToMi(status?.hard?.['limits.ephemeral-storage'] || '') / 1024,
-      used: storageQuantityToMi(status?.used?.['limits.ephemeral-storage'] || '') / 1024
+      resourceName: 'limits.ephemeral-storage',
+      parse: (quantity) => storageQuantityToMi(quantity) / 1024
     },
     {
       type: 'nodeports',
-      limit: Number(status?.hard?.['services.nodeports']) || 0,
-      used: Number(status?.used?.['services.nodeports']) || 0
+      resourceName: 'services.nodeports',
+      parse: (quantity) => Number(quantity) || 0
     },
     {
       type: 'gpu',
-      limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
-      used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
+      resourceName: 'requests.nvidia.com/gpu',
+      parse: (quantity) => Number(quantity) || 0
     }
   ];
+
+  return quotaItems.flatMap(({ type, resourceName, parse }) => {
+    const hardLimit = status?.hard?.[resourceName];
+    if (hardLimit === undefined) return [];
+
+    return [
+      {
+        type,
+        limit: parse(hardLimit),
+        used: parse(status?.used?.[resourceName] || '')
+      }
+    ];
+  });
 }
 
 export async function getUserBalance(kc: k8s.KubeConfig) {
