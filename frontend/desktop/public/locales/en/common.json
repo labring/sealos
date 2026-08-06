@@ -35,7 +35,6 @@
   "apps_running_shutdown": "Go to Shutdown",
   "apps_running_title": "Confirm closing the page?",
   "attachment": "appendix",
-  "auto_signup_failed_contact_admin": "Automatic registration failed. Please contact the administrator.",
   "avatar": "Avatar",
   "balance_popover": {
     "balance": "Balance",
@@ -186,7 +185,6 @@
   "invalid_username_or_password": "Invalid username or password",
   "invalid_verification_amount": "The verification amount format is invalid",
   "invalid_verification_code": "The input verification code is incorrect, please check if there is an input error.",
-  "incorrect_password": "Incorrect password",
   "invitation_reminder": "Invitation reminder",
   "invite_member": "Invite Member",
   "invite_members_to_workspace": "Invite members to workspace {{workspace}}",

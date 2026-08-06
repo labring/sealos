@@ -35,7 +35,7 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
-type PasswordAuthErrorCode = 'AUTO_SIGNUP_FAILED' | 'INCORRECT_PASSWORD';
+type PasswordAuthErrorCode = 'INVALID_USERNAME_OR_PASSWORD';
 
 interface UsernamePasswordSigninProps {
   onBack?: () => void;
@@ -111,13 +111,10 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
 
       const errorCode = error?.data?.errorCode as PasswordAuthErrorCode | undefined;
 
-      if (errorCode === 'AUTO_SIGNUP_FAILED' || errorCode === 'INCORRECT_PASSWORD') {
+      if (errorCode === 'INVALID_USERNAME_OR_PASSWORD') {
         setError('password', {
           type: 'manual',
-          message:
-            errorCode === 'AUTO_SIGNUP_FAILED'
-              ? t('common:auto_signup_failed_contact_admin')
-              : t('common:incorrect_password')
+          message: t('common:invalid_username_or_password')
         });
       } else {
         toast({

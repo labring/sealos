@@ -7,8 +7,7 @@ import { AuthError } from '@/services/backend/errors';
 import { ProviderType } from 'prisma/global/generated/client';
 
 const passwordAuthErrorCode = {
-  autoSignUpFailed: 'AUTO_SIGNUP_FAILED',
-  incorrectPassword: 'INCORRECT_PASSWORD'
+  invalidUsernameOrPassword: 'INVALID_USERNAME_OR_PASSWORD'
 } as const;
 
 const passwordAuthErrorRes = (
@@ -68,12 +67,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log(err);
 
     if (err instanceof AuthError) {
-      if (err.errorCode === 'INCORRECT_PASSWORD') {
-        return passwordAuthErrorRes(res, passwordAuthErrorCode.incorrectPassword);
-      }
-
-      if (err.errorCode === 'USER_NOT_FOUND' || err.errorCode === 'SIGNUP_FAILED') {
-        return passwordAuthErrorRes(res, passwordAuthErrorCode.autoSignUpFailed);
+      if (
+        err.errorCode === 'USER_NOT_FOUND' ||
+        err.errorCode === 'INCORRECT_PASSWORD' ||
+        err.errorCode === 'SIGNUP_FAILED'
+      ) {
+        return passwordAuthErrorRes(res, passwordAuthErrorCode.invalidUsernameOrPassword);
       }
     }
 

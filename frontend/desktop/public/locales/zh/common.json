@@ -34,7 +34,6 @@
   "apps_running_shutdown": "去关机",
   "apps_running_title": "确认关闭页面？",
   "attachment": "附件",
-  "auto_signup_failed_contact_admin": "自动注册失败，请联系管理员",
   "avatar": "头像",
   "balance_popover": {
     "balance": "余额",
@@ -182,7 +181,6 @@
   "invalid_username_or_password": "用户名或密码错误",
   "invalid_verification_amount": "验证金额格式不合法",
   "invalid_verification_code": "输入的验证码不正确，请检查是否输入错误。",
-  "incorrect_password": "密码错误",
   "invitation_reminder": "受邀提醒",
   "invite_member": "邀请成员",
   "invite_members_to_workspace": "邀请成员至工作空间 {{workspace}}",
