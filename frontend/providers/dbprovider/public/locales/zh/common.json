@@ -156,6 +156,7 @@
   "manage_data_redirect_failed": "打开数据管理失败",
   "current_connections": "当前连接数",
   "data_import": "数据导入",
+  "data_import_unsupported_for_redis": "Redis 暂不支持数据导入",
   "data_migration_config": "数据迁移配置",
   "database": "数据库",
   "database_config": "数据库参数",
