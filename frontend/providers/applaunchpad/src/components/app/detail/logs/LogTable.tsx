@@ -21,6 +21,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import MyIcon from '@/components/Icon';
 import { formatTime } from '@/utils/tools';
+import { getLogFieldLabel } from '@/utils/logFields';
 import { LogsFormData } from '@/pages/app/detail/logs';
 import { UseFormReturn } from 'react-hook-form';
 import { useLogStore } from '@/store/logStore';
@@ -72,7 +73,7 @@ export const LogTable = ({
 
     return Array.from(uniqueKeys).map((key) => ({
       value: key,
-      label: key,
+      label: getLogFieldLabel(key),
       checked: key in prevFieldStates ? prevFieldStates[key] : true,
       accessorKey: key
     }));
@@ -102,12 +103,7 @@ export const LogTable = ({
       .filter((field) => field.checked)
       .map((field) => ({
         accessorKey: field.accessorKey,
-        header: () => {
-          if (field.label === '_time' || field.label === '_msg') {
-            return field.label.substring(1);
-          }
-          return field.label;
-        },
+        header: field.label,
         cell: ({ row }) => {
           let value = get(row.original, field.accessorKey, '');
 
