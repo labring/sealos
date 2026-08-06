@@ -40,6 +40,19 @@ spec:
           ports:
             - containerPort: 8428
               protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8428
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8428
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 6
           resources:
             limits:
               cpu: 500m
