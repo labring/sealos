@@ -224,6 +224,29 @@ export const PortUpdateSchema = z
     }
   });
 
+const validateUniqueEnvNames = (
+  envs: z.infer<typeof StandardEnvSchema>[],
+  ctx: z.RefinementCtx
+) => {
+  const seenNames = new Set<string>();
+
+  envs.forEach((env, index) => {
+    const name = env.name.trim();
+    if (!name) return;
+    if (seenNames.has(name)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Duplicate environment variable name: ${name}`,
+        path: [index, 'name']
+      });
+      return;
+    }
+    seenNames.add(name);
+  });
+};
+
+const EnvArraySchema = z.array(StandardEnvSchema).superRefine(validateUniqueEnvNames);
+
 export const UpdateImageSchema = z
   .object({
     imageName: z.string().openapi({
@@ -358,7 +381,7 @@ export const UpdateAppResourcesSchema = z
         'Container image configuration. Set imageRegistry to null to switch to public image.'
     }),
 
-    env: z.array(StandardEnvSchema).optional().openapi({
+    env: EnvArraySchema.optional().openapi({
       description: 'Environment variables'
     }),
 
@@ -429,7 +452,7 @@ export const CreateLaunchpadRequestSchema = z
         description: 'Port/Network configurations for the application'
       }),
 
-    env: z.array(StandardEnvSchema).default([]).openapi({
+    env: EnvArraySchema.default([]).openapi({
       description: 'Environment variables - was: envs'
     }),
 
