@@ -27,7 +27,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
   } catch (error) {
-    console.log(error);
+    const message = error instanceof Error ? error.message : 'unknown error';
+    console.error('get account amount error:', message);
     jsonRes(res, { code: 500, message: 'get amount error' });
   }
 }
