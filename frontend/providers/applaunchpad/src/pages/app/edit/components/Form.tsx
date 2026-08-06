@@ -1466,16 +1466,7 @@ const Form = ({
                                 color: 'red.600',
                                 bg: 'rgba(17, 24, 36, 0.05)'
                               }}
-                              onClick={() => {
-                                if (localStores.length === 1) {
-                                  toast({
-                                    title: t('Store At Least One'),
-                                    status: 'error'
-                                  });
-                                } else {
-                                  removeStoreList(originalIndex);
-                                }
-                              }}
+                              onClick={() => removeStoreList(originalIndex)}
                             />
                           </Flex>
                         );
