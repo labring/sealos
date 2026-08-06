@@ -38,7 +38,7 @@ livenessProbe:
 dbproviderConfig:
   monitorUrl: "http://database-monitor.sealos.svc.cluster.local:9090"
   migrateFileImage: ""
-  backupEnabled: "false"
+  backupEnabled: "true"
   showDocument: "true"
   dataImportEnabled: "true"
   guideEnabled: "true"
