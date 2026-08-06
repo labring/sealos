@@ -14,7 +14,7 @@ import {
   ParameterConfigField,
   ParameterFieldMetadata
 } from '@/types/db';
-import { parseConfig, flattenObject } from '@/utils/tools';
+import { parseConfig, parseRedisConfig, flattenObject } from '@/utils/tools';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
@@ -108,6 +108,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     let parsedConfig: Record<string, any> | null = null;
 
     if (dbType === 'redis') {
+      const redisConfigMapKey = name + dbConfig.configMapName;
+      let redisConfigMapData = '';
+
+      if (redisConfigMapKey && dbConfig.configMapName) {
+        try {
+          const { body } = await k8sCore.readNamespacedConfigMap(redisConfigMapKey, namespace);
+          redisConfigMapData = body?.data?.[dbConfig.configMapKey] || '';
+        } catch (error) {
+          console.warn('Failed to get redis config map, falling back to configuration CR:', error);
+        }
+      }
+
       try {
         const { body: configurationBody } = (await k8sCustomObjects.getNamespacedCustomObject(
           'apps.kubeblocks.io',
@@ -119,9 +131,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const redisConfigItem = configurationBody?.spec?.configItemDetails?.find(
           (item: any) => item.name === dbConfig.reconfigureName
         );
-        parsedConfig = redisConfigItem?.configFileParams?.['redis.conf']?.parameters || null;
+        const redisConfigParams = redisConfigItem?.configFileParams?.['redis.conf']?.parameters || {};
+        const mergedRedisConfig = {
+          ...(redisConfigMapData ? parseRedisConfig(redisConfigMapData) : {}),
+          ...redisConfigParams
+        };
+        parsedConfig = Object.keys(mergedRedisConfig).length > 0 ? mergedRedisConfig : null;
       } catch (error) {
-        console.warn('Failed to get redis configuration, using empty config:', error);
+        console.warn('Failed to get redis configuration, using config map fallback if available:', error);
+        parsedConfig = redisConfigMapData ? parseRedisConfig(redisConfigMapData) : null;
       }
     } else {
       const key = name + dbConfig.configMapName;

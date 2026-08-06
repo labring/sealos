@@ -463,6 +463,22 @@ export const parseConfig = ({
   }
 };
 
+export const parseRedisConfig = (configString: string): Record<string, string> => {
+  const result: Record<string, string> = {};
+
+  configString
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'))
+    .forEach((line) => {
+      const [key, ...rest] = line.split(/\s+/);
+      if (!key) return;
+      result[key] = rest.join(' ');
+    });
+
+  return result;
+};
+
 export const flattenObject = (ob: any, prefix: string = ''): { key: string; value: string }[] => {
   const result: { key: string; value: string }[] = [];
 
