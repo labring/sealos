@@ -4,6 +4,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApplicationProtocolType } from '@/types/app';
 import { normalizeCustomDomainMode } from '@/utils/custom-domain';
+import { getPublicAddressReadyResult } from '@/utils/publicAccess';
 import { getReadyCheckTarget, ReadyCheckTarget } from '@/utils/ready-check';
 import http from 'http';
 import https from 'https';
@@ -115,21 +116,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         try {
           const response = await requestReadyCheckTarget(target);
-
-          if (response.status === 404 && response.headers.get('content-length') === '0') {
-            return { ready: false, url: target.url, error: '404' };
-          }
-
-          const text = await response.text();
-
-          if (
-            response.status === 503 &&
-            (text.includes('upstream connect error') || text.includes('upstream not health'))
-          ) {
-            return { ready: false, url: target.url, error: 'Upstream not healthy' };
-          }
-
-          return { ready: true, url: target.url };
+          return getPublicAddressReadyResult(response as Response, target.url);
         } catch (error) {
           return { ready: false, url: target.url, error: 'fetch error' };
         }
