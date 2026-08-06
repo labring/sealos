@@ -35,6 +35,7 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
+type PasswordAuthErrorCode = 'AUTO_SIGNUP_FAILED' | 'INCORRECT_PASSWORD';
 
 interface UsernamePasswordSigninProps {
   onBack?: () => void;
@@ -108,18 +109,20 @@ export default function UsernamePasswordSignin({ onBack }: UsernamePasswordSigni
     onError: (error: any) => {
       console.error('Login failed:', error);
 
-      // Handle authentication errors (500 status code with specific messages)
-      const errorMessage = error?.message || 'Login failed';
+      const errorCode = error?.data?.errorCode as PasswordAuthErrorCode | undefined;
 
-      if (errorMessage === 'User not found.' || errorMessage === 'Incorrect password.') {
+      if (errorCode === 'AUTO_SIGNUP_FAILED' || errorCode === 'INCORRECT_PASSWORD') {
         setError('password', {
           type: 'manual',
-          message: t('common:invalid_username_or_password')
+          message:
+            errorCode === 'AUTO_SIGNUP_FAILED'
+              ? t('common:auto_signup_failed_contact_admin')
+              : t('common:incorrect_password')
         });
       } else {
         toast({
           title: t('v2:unknown_error'),
-          description: errorMessage,
+          description: error?.message || 'Login failed',
           status: 'error',
           duration: 3000,
           isClosable: true,

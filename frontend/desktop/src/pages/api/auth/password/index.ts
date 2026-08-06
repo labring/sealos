@@ -5,6 +5,22 @@ import { enablePassword } from '@/services/enable';
 import { getGlobalToken } from '@/services/backend/globalAuth';
 import { AuthError } from '@/services/backend/errors';
 import { ProviderType } from 'prisma/global/generated/client';
+
+const passwordAuthErrorCode = {
+  autoSignUpFailed: 'AUTO_SIGNUP_FAILED',
+  incorrectPassword: 'INCORRECT_PASSWORD'
+} as const;
+
+const passwordAuthErrorRes = (
+  res: NextApiResponse,
+  errorCode: (typeof passwordAuthErrorCode)[keyof typeof passwordAuthErrorCode]
+) =>
+  jsonRes(res, {
+    code: 400,
+    message: errorCode,
+    data: { errorCode }
+  });
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!enablePassword()) {
@@ -50,16 +66,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   } catch (err) {
     console.log(err);
-    let message = 'Failed to authorize with password';
 
     if (err instanceof AuthError) {
-      message = err.message;
-    } else if (err instanceof Error) {
-      message = err.message;
+      if (err.errorCode === 'INCORRECT_PASSWORD') {
+        return passwordAuthErrorRes(res, passwordAuthErrorCode.incorrectPassword);
+      }
+
+      if (err.errorCode === 'USER_NOT_FOUND' || err.errorCode === 'SIGNUP_FAILED') {
+        return passwordAuthErrorRes(res, passwordAuthErrorCode.autoSignUpFailed);
+      }
     }
 
     return jsonRes(res, {
-      message,
+      message: 'Failed to authorize with password',
       code: 500
     });
   }
