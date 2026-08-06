@@ -31,7 +31,6 @@ import (
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/labring/sealos/controllers/resources/controllers"
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -195,7 +194,7 @@ func main() {
 		sk != "" &&
 		mAddr != "" {
 		reconciler.Info("init minio client")
-		if reconciler.ObjStorageClient, err = objectstoragev1.NewOSClient(
+		if reconciler.ObjStorageClient, err = objectstorage.NewOSClient(
 			endpoint,
 			ak,
 			sk,

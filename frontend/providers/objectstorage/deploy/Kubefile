@@ -1,9 +1,0 @@
-FROM scratch
-
-USER 65532:65532
-
-COPY registry registry
-COPY charts charts
-COPY object-storage-frontend-entrypoint.sh object-storage-frontend-entrypoint.sh
-
-CMD ["bash object-storage-frontend-entrypoint.sh"]
