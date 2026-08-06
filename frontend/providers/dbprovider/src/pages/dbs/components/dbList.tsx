@@ -98,9 +98,7 @@ const DBList = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusDetailModal, setStatusDetailModal] = useState<{
     dbName: string;
-    title: string;
-    conditions?: DBListItemType['conditions'];
-    details?: string;
+    kind: 'status' | 'alert';
   } | null>(null);
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
@@ -371,15 +369,13 @@ const DBList = ({
             onOpenDetails={() =>
               setStatusDetailModal({
                 dbName: row.original.name,
-                title: t(row.original.status.label as I18nCommonKey),
-                conditions: row.original.conditions
+                kind: 'status'
               })
             }
             onOpenQuestionDetails={() =>
               setStatusDetailModal({
                 dbName: row.original.name,
-                title: alerts[row.original.name]?.reason || t('status'),
-                details: alerts[row.original.name]?.details || ''
+                kind: 'alert'
               })
             }
             renderInternalModals={false}
@@ -666,12 +662,16 @@ const DBList = ({
   }, [applistCompleted, t, router, isClientSide, _hasHydrated]);
 
   const delApp = dbList.find((i) => i.name === delAppName);
+  const selectedStatusDb = statusDetailModal
+    ? dbList.find((item) => item.name === statusDetailModal.dbName)
+    : undefined;
+  const selectedStatusAlert = statusDetailModal ? alerts[statusDetailModal.dbName] : undefined;
 
   useEffect(() => {
-    if (statusDetailModal && !dbList.some((item) => item.name === statusDetailModal.dbName)) {
+    if (statusDetailModal && !selectedStatusDb) {
       setStatusDetailModal(null);
     }
-  }, [dbList, statusDetailModal]);
+  }, [selectedStatusDb, statusDetailModal]);
 
   return (
     <Box
@@ -753,13 +753,19 @@ const DBList = ({
         }}
       />
 
-      {statusDetailModal && (
+      {statusDetailModal && selectedStatusDb && (
         <DBStatusDetailsModal
           isOpen={true}
           onClose={() => setStatusDetailModal(null)}
-          title={statusDetailModal.title}
-          conditions={statusDetailModal.conditions}
-          details={statusDetailModal.details}
+          title={
+            statusDetailModal.kind === 'status'
+              ? t(selectedStatusDb.status.label as I18nCommonKey)
+              : selectedStatusAlert?.reason || t('status')
+          }
+          conditions={statusDetailModal.kind === 'status' ? selectedStatusDb.conditions : undefined}
+          details={
+            statusDetailModal.kind === 'alert' ? selectedStatusAlert?.details || '' : undefined
+          }
         />
       )}
 
