@@ -1,7 +1,7 @@
 import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import { CustomMenu } from '@/components/BaseTable/customMenu';
-import DBStatusTag from '@/components/DBStatusTag';
+import DBStatusTag, { DBStatusDetailsModal } from '@/components/DBStatusTag';
 import type { DatabaseAlertItem } from '@/api/db';
 import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeList } from '@/constants/db';
@@ -48,6 +48,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getLangStore } from '@/utils/cookieUtils';
+import { I18nCommonKey } from '@/types/i18next';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 import {
@@ -95,6 +96,12 @@ const DBList = ({
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusDetailModal, setStatusDetailModal] = useState<{
+    dbName: string;
+    title: string;
+    conditions?: DBListItemType['conditions'];
+    details?: string;
+  } | null>(null);
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
@@ -361,6 +368,21 @@ const DBList = ({
             status={row.original.status}
             alertReason={alerts[row.original.name]?.reason}
             alertDetails={alerts[row.original.name]?.details}
+            onOpenDetails={() =>
+              setStatusDetailModal({
+                dbName: row.original.name,
+                title: t(row.original.status.label as I18nCommonKey),
+                conditions: row.original.conditions
+              })
+            }
+            onOpenQuestionDetails={() =>
+              setStatusDetailModal({
+                dbName: row.original.name,
+                title: alerts[row.original.name]?.reason || t('status'),
+                details: alerts[row.original.name]?.details || ''
+              })
+            }
+            renderInternalModals={false}
           />
         )
       },
@@ -644,6 +666,13 @@ const DBList = ({
   }, [applistCompleted, t, router, isClientSide, _hasHydrated]);
 
   const delApp = dbList.find((i) => i.name === delAppName);
+
+  useEffect(() => {
+    if (statusDetailModal && !dbList.some((item) => item.name === statusDetailModal.dbName)) {
+      setStatusDetailModal(null);
+    }
+  }, [dbList, statusDetailModal]);
+
   return (
     <Box
       backgroundColor={'white'}
@@ -723,6 +752,16 @@ const DBList = ({
           }
         }}
       />
+
+      {statusDetailModal && (
+        <DBStatusDetailsModal
+          isOpen={true}
+          onClose={() => setStatusDetailModal(null)}
+          title={statusDetailModal.title}
+          conditions={statusDetailModal.conditions}
+          details={statusDetailModal.details}
+        />
+      )}
 
       <PauseChild />
       {!!delApp && (
