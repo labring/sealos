@@ -55,11 +55,14 @@ const AppDetail = ({
 
   const [isSmallScreen] = useMediaQuery('(max-width: 1180px)');
 
-  const { listNav } = useMemo(() => {
-    const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbType);
+  const { isDataImportSupported, listNav } = useMemo(() => {
+    const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(
+      dbType
+    );
     const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
     const BackupSupported = BackupSupportedDBTypeList.includes(dbType) && SystemEnv.BACKUP_ENABLED;
     const MonitorSupported = dbType !== 'polardbx';
+    const DataImportSupported = PublicNetMigration && SystemEnv.DATA_IMPORT_ENABLED;
 
     const listNavValue = [
       {
@@ -99,7 +102,7 @@ const AppDetail = ({
             }
           ]
         : []),
-      ...(PublicNetMigration
+      ...(DataImportSupported
         ? [
             {
               label: 'data_import',
@@ -123,9 +126,10 @@ const AppDetail = ({
       isPublicNetMigration: PublicNetMigration,
       isMigrationSupported: MigrateSupported,
       isBackupSupported: BackupSupported,
+      isDataImportSupported: DataImportSupported,
       listNav: listNavValue
     };
-  }, [SystemEnv.BACKUP_ENABLED, dbType, t]);
+  }, [SystemEnv.BACKUP_ENABLED, SystemEnv.DATA_IMPORT_ENABLED, dbType, t]);
 
   const theme = useTheme();
   const { message: toast } = useMessage();
@@ -136,6 +140,12 @@ const AppDetail = ({
   const [showSlider, setShowSlider] = useState(false);
   const [podsCount, setPodsCount] = useState(0);
   const [connInfo, setConnInfo] = useState<ConnectionInfo | null>(null);
+
+  useEffect(() => {
+    if (listType === TabEnum.DataImport && !isDataImportSupported) {
+      router.replace(`/db/detail?name=${dbName}&dbType=${dbType}&listType=${TabEnum.Overview}`);
+    }
+  }, [dbName, dbType, isDataImportSupported, listType, router]);
 
   // Load alerts data once when page loads
   useQuery(['databaseAlertsDetail'], loadAlerts, {
@@ -287,7 +297,9 @@ const AppDetail = ({
               <Monitor dbName={dbName} dbType={dbType} db={dbDetail} />
             )}
 
-            {listType === TabEnum.DataImport && <DataImport db={dbDetail} />}
+            {listType === TabEnum.DataImport && isDataImportSupported && (
+              <DataImport db={dbDetail} />
+            )}
 
             {listType === TabEnum.Reconfigure && (
               <ReconfigureTable ref={ReconfigureTableRef} db={dbDetail} />
@@ -320,7 +332,12 @@ export default AppDetail;
 export async function getServerSideProps(context: any) {
   const dbType = context.query?.dbType || '';
   const dbName = context.query?.name || '';
-  const listType = context.query?.listType || TabEnum.Overview;
+  const queryListType = context.query?.listType || TabEnum.Overview;
+  const dataImportEnabled = process.env.DATA_IMPORT_ENABLED !== 'false';
+  const dataImportSupported =
+    ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbType) && dataImportEnabled;
+  const listType =
+    queryListType === TabEnum.DataImport && !dataImportSupported ? TabEnum.Overview : queryListType;
 
   return {
     props: { ...(await serviceSideProps(context)), dbName, listType, dbType }
