@@ -62,8 +62,8 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
         });
       } catch (err) {
         toast({
-          title: `${t('Restart')}  ${podName} 出现异常`,
-          status: 'warning'
+          title: t(getErrText(err), 'Restart Failed'),
+          status: 'error'
         });
         console.log(err);
       }
