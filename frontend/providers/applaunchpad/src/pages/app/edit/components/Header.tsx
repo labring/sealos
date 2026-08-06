@@ -83,13 +83,17 @@ const Header = ({
       )}
       <Flex
         w={'100%'}
-        px={10}
-        h={'86px'}
+        px={{ base: 4, md: 10 }}
+        minH={'86px'}
+        py={{ base: 4, md: 0 }}
         alignItems={'center'}
+        flexWrap={{ base: 'wrap', md: 'nowrap' }}
+        rowGap={3}
         borderBottom={'1px solid'}
         borderColor={'grayModern.200'}
       >
         <Flex
+          w={{ base: '100%', md: 'auto' }}
           alignItems={'center'}
           cursor={'pointer'}
           gap={'6px'}
@@ -102,106 +106,109 @@ const Header = ({
             {t(title)}
           </Box>
         </Flex>
-        <Box flex={1}></Box>
-        <Button
-          h={'40px'}
-          mr={'14px'}
-          minW={'140px'}
-          variant={'outline'}
-          onClick={handleExportYaml}
-        >
-          {t('Export')} Yaml
-        </Button>
-        <Box position={'relative'}>
+        <Flex w={{ base: '100%', md: 'auto' }} ml={{ base: 0, md: 'auto' }}>
           <Button
-            className="driver-deploy-button"
-            minW={'140px'}
             h={'40px'}
-            onClick={applyCb}
-            _focusVisible={{ boxShadow: '' }}
-            outline={isClientSide && !createCompleted ? '2px solid #1C4EF5' : 'none'}
-            outlineOffset={isClientSide && !createCompleted ? '2px' : '0'}
+            mr={'14px'}
+            minW={{ base: 0, md: '140px' }}
+            flex={{ base: 1, md: 'initial' }}
+            variant={'outline'}
+            onClick={handleExportYaml}
           >
-            {t(applyBtnText)}
+            {t('Export')} Yaml
           </Button>
-          {isClientSide && !createCompleted && (
-            <Box
-              zIndex={1000}
-              position={'absolute'}
-              left={'-180px'}
-              bottom={'-170px'}
-              width={'250px'}
-              bg={'#2563EB'}
-              p={'16px'}
-              borderRadius={'12px'}
-              color={'#fff'}
+          <Box position={'relative'} flex={{ base: 1, md: 'initial' }}>
+            <Button
+              className="driver-deploy-button"
+              minW={{ base: 0, md: '140px' }}
+              w={{ base: '100%', md: 'auto' }}
+              h={'40px'}
+              onClick={applyCb}
+              _focusVisible={{ boxShadow: '' }}
+              outline={isClientSide && !createCompleted ? '2px solid #1C4EF5' : 'none'}
+              outlineOffset={isClientSide && !createCompleted ? '2px' : '0'}
             >
-              <Flex alignItems={'center'} justifyContent={'space-between'}>
-                <Text fontSize={'14px'} fontWeight={600}>
-                  {t('driver.configure_launchpad')}
-                </Text>
-                <Box
-                  cursor={'pointer'}
-                  ml={'auto'}
-                  onClick={() => {
-                    track('guide_exit', {
-                      module: 'guide',
-                      guide_name: 'applaunchpad',
-                      duration_seconds: (Date.now() - (startTimeMs ?? Date.now())) / 1000,
-                      progress_step: 3
-                    });
-
-                    startDriver(quitGuideDriverObj(t));
-                  }}
-                >
-                  <X width={'16px'} height={'16px'} />
-                </Box>
-              </Flex>
-              <Text
-                textAlign={'start'}
-                whiteSpace={'wrap'}
-                mt={'8px'}
-                color={'#FFFFFFCC'}
-                fontSize={'14px'}
-                fontWeight={400}
-              >
-                {t('driver.define_image_settings')}
-              </Text>
-              <Flex mt={'16px'} justifyContent={'space-between'} alignItems={'center'}>
-                <Text fontSize={'13px'} fontWeight={500}>
-                  3/4
-                </Text>
-                <Center
-                  w={'86px'}
-                  color={'#fff'}
-                  fontSize={'14px'}
-                  fontWeight={500}
-                  cursor={'pointer'}
-                  borderRadius={'8px'}
-                  background={'rgba(255, 255, 255, 0.20)'}
-                  h={'32px'}
-                  p={'px'}
-                  onClick={() => {
-                    applyCb();
-                  }}
-                >
-                  {t('driver.next')}
-                </Center>
-              </Flex>
+              {t(applyBtnText)}
+            </Button>
+            {isClientSide && !createCompleted && (
               <Box
+                zIndex={1000}
                 position={'absolute'}
-                top={'-10px'}
-                right={'16px'}
-                width={0}
-                height={0}
-                borderLeft={'8px solid transparent'}
-                borderRight={'8px solid transparent'}
-                borderTop={'10px solid #2563EB'}
-                transform={'rotate(180deg)'}
-              />
-            </Box>
-          )}
-        </Box>
+                left={'-180px'}
+                bottom={'-170px'}
+                width={'250px'}
+                bg={'#2563EB'}
+                p={'16px'}
+                borderRadius={'12px'}
+                color={'#fff'}
+              >
+                <Flex alignItems={'center'} justifyContent={'space-between'}>
+                  <Text fontSize={'14px'} fontWeight={600}>
+                    {t('driver.configure_launchpad')}
+                  </Text>
+                  <Box
+                    cursor={'pointer'}
+                    ml={'auto'}
+                    onClick={() => {
+                      track('guide_exit', {
+                        module: 'guide',
+                        guide_name: 'applaunchpad',
+                        duration_seconds: (Date.now() - (startTimeMs ?? Date.now())) / 1000,
+                        progress_step: 3
+                      });
+
+                      startDriver(quitGuideDriverObj(t));
+                    }}
+                  >
+                    <X width={'16px'} height={'16px'} />
+                  </Box>
+                </Flex>
+                <Text
+                  textAlign={'start'}
+                  whiteSpace={'wrap'}
+                  mt={'8px'}
+                  color={'#FFFFFFCC'}
+                  fontSize={'14px'}
+                  fontWeight={400}
+                >
+                  {t('driver.define_image_settings')}
+                </Text>
+                <Flex mt={'16px'} justifyContent={'space-between'} alignItems={'center'}>
+                  <Text fontSize={'13px'} fontWeight={500}>
+                    3/4
+                  </Text>
+                  <Center
+                    w={'86px'}
+                    color={'#fff'}
+                    fontSize={'14px'}
+                    fontWeight={500}
+                    cursor={'pointer'}
+                    borderRadius={'8px'}
+                    background={'rgba(255, 255, 255, 0.20)'}
+                    h={'32px'}
+                    p={'px'}
+                    onClick={() => {
+                      applyCb();
+                    }}
+                  >
+                    {t('driver.next')}
+                  </Center>
+                </Flex>
+                <Box
+                  position={'absolute'}
+                  top={'-10px'}
+                  right={'16px'}
+                  width={0}
+                  height={0}
+                  borderLeft={'8px solid transparent'}
+                  borderRight={'8px solid transparent'}
+                  borderTop={'10px solid #2563EB'}
+                  transform={'rotate(180deg)'}
+                />
+              </Box>
+            )}
+          </Box>
+        </Flex>
       </Flex>
     </Flex>
   );
