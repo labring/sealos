@@ -483,7 +483,7 @@ export const adjustDifferencesForIni = (
   type: 'ini' | 'yaml',
   dbType: DBType
 ): { path: string; newValue: string; oldValue: string }[] => {
-  if (type !== 'ini' || dbType === 'postgresql') {
+  if (type !== 'ini' || dbType !== 'apecloud-mysql') {
     return differences;
   }
   return differences.map((diff) => {

@@ -440,10 +440,10 @@ export const DBReconfigureMap: Partial<
   },
   redis: {
     type: 'ini',
-    configMapName: '',
-    configMapKey: '',
-    reconfigureName: '',
-    reconfigureKey: ''
+    configMapName: '-redis',
+    configMapKey: 'redis.conf',
+    reconfigureName: 'redis-replication-config',
+    reconfigureKey: 'redis.conf'
   },
   kafka: {
     type: 'ini',
