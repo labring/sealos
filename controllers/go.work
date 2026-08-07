@@ -10,7 +10,6 @@ use (
 	./job/init
 	./license
 	./node
-	./objectstorage
 	./pkg
 	./resources
 	./terminal
