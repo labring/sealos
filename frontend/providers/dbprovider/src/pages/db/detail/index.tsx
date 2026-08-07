@@ -56,7 +56,9 @@ const AppDetail = ({
   const [isSmallScreen] = useMediaQuery('(max-width: 1180px)');
 
   const { isDataImportSupported, listNav } = useMemo(() => {
-    const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb'].includes(dbType);
+    const PublicNetMigration = ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(
+      dbType
+    );
     const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
     const BackupSupported = BackupSupportedDBTypeList.includes(dbType) && SystemEnv.BACKUP_ENABLED;
     const MonitorSupported = dbType !== 'polardbx';
@@ -333,7 +335,7 @@ export async function getServerSideProps(context: any) {
   const queryListType = context.query?.listType || TabEnum.Overview;
   const dataImportEnabled = process.env.DATA_IMPORT_ENABLED !== 'false';
   const dataImportSupported =
-    ['postgresql', 'apecloud-mysql', 'mongodb'].includes(dbType) && dataImportEnabled;
+    ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbType) && dataImportEnabled;
   const listType =
     queryListType === TabEnum.DataImport && !dataImportSupported ? TabEnum.Overview : queryListType;
 

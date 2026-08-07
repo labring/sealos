@@ -14,7 +14,7 @@ import {
   ParameterConfigField,
   ParameterFieldMetadata
 } from '@/types/db';
-import { parseConfig, flattenObject } from '@/utils/tools';
+import { parseConfig, parseRedisConfig, flattenObject } from '@/utils/tools';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
@@ -91,13 +91,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
 
-    const key = name + dbConfig.configMapName;
-    if (!key || !dbConfig.configMapName) {
-      return jsonRes(res, {
-        data: null
-      });
-    }
-
     let dbVersion: string | undefined;
     try {
       const { body: clusterData } = (await k8sCustomObjects.getNamespacedCustomObject(
@@ -112,19 +105,71 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       console.warn('Failed to get cluster version, using default config:', error);
     }
 
-    const { body } = await k8sCore.readNamespacedConfigMap(key, namespace);
+    let parsedConfig: Record<string, any> | null = null;
 
-    const configData = body?.data && body?.data[dbConfig.configMapKey];
-    if (!configData) {
+    if (dbType === 'redis') {
+      const redisConfigMapKey = name + dbConfig.configMapName;
+      let redisConfigMapData = '';
+
+      if (redisConfigMapKey && dbConfig.configMapName) {
+        try {
+          const { body } = await k8sCore.readNamespacedConfigMap(redisConfigMapKey, namespace);
+          redisConfigMapData = body?.data?.[dbConfig.configMapKey] || '';
+        } catch (error) {
+          console.warn('Failed to get redis config map, falling back to configuration CR:', error);
+        }
+      }
+
+      try {
+        const { body: configurationBody } = (await k8sCustomObjects.getNamespacedCustomObject(
+          'apps.kubeblocks.io',
+          'v1alpha1',
+          namespace,
+          'configurations',
+          `${name}-redis`
+        )) as { body: any };
+        const redisConfigItem = configurationBody?.spec?.configItemDetails?.find(
+          (item: any) => item.name === dbConfig.reconfigureName
+        );
+        const redisConfigParams = redisConfigItem?.configFileParams?.['redis.conf']?.parameters || {};
+        const mergedRedisConfig = {
+          ...(redisConfigMapData ? parseRedisConfig(redisConfigMapData) : {}),
+          ...redisConfigParams
+        };
+        parsedConfig = Object.keys(mergedRedisConfig).length > 0 ? mergedRedisConfig : null;
+      } catch (error) {
+        console.warn('Failed to get redis configuration, using config map fallback if available:', error);
+        parsedConfig = redisConfigMapData ? parseRedisConfig(redisConfigMapData) : null;
+      }
+    } else {
+      const key = name + dbConfig.configMapName;
+      if (!key || !dbConfig.configMapName) {
+        return jsonRes(res, {
+          data: null
+        });
+      }
+
+      const { body } = await k8sCore.readNamespacedConfigMap(key, namespace);
+
+      const configData = body?.data && body?.data[dbConfig.configMapKey];
+      if (!configData) {
+        return jsonRes(res, {
+          data: null
+        });
+      }
+
+      parsedConfig = parseConfig({
+        configString: configData,
+        type: dbConfig.type
+      });
+    }
+
+    if (!parsedConfig) {
       return jsonRes(res, {
         data: null
       });
     }
 
-    const parsedConfig = parseConfig({
-      configString: configData,
-      type: dbConfig.type
-    });
     const flattenedConfig = flattenObject(parsedConfig);
 
     const versionedOverrides = ParameterFieldOverrides[dbType] || {};

@@ -440,10 +440,10 @@ export const DBReconfigureMap: Partial<
   },
   redis: {
     type: 'ini',
-    configMapName: '',
-    configMapKey: '',
-    reconfigureName: '',
-    reconfigureKey: ''
+    configMapName: '-redis-redis-replication-config',
+    configMapKey: 'redis.conf',
+    reconfigureName: 'redis-replication-config',
+    reconfigureKey: 'redis.conf'
   },
   kafka: {
     type: 'ini',
@@ -638,6 +638,12 @@ export const ParameterFieldMetadataMap: Partial<
   mongodb: {
     default: {
       // No params are allowed to be modified for MongoDB
+    }
+  },
+  redis: {
+    default: {
+      maxclients: { editable: true },
+      maxmemory: { editable: true }
     }
   }
 };
