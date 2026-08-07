@@ -1,0 +1,55 @@
+import {
+  appendMarketingQuery,
+  marketingQueryFromRecord,
+  mergeMarketingQuery,
+  marketingQueryFromSearch,
+  resolveMarketingQuery
+} from '@/utils/marketing-attribution';
+
+describe('marketing attribution query propagation', () => {
+  it('keeps only the signed attribution parameters from router input', () => {
+    expect(
+      marketingQueryFromRecord({
+        consent_token: 'token-1',
+        sea_attr: ['state-1', 'state-2'],
+        openapp: 'system-brain'
+      })
+    ).toEqual({ consent_token: 'token-1', sea_attr: 'state-1' });
+  });
+
+  it('merges attribution into an app query without changing app parameters', () => {
+    expect(
+      mergeMarketingQuery('templateName=n8n', {
+        consent_token: 'token-1',
+        sea_attr: 'state-1'
+      })
+    ).toBe('templateName=n8n&sea_attr=state-1&consent_token=token-1');
+  });
+
+  it('appends attribution to redirects and parses encoded search strings', () => {
+    const query = marketingQueryFromSearch('?sea_attr=state-1&ignored=value');
+    expect(appendMarketingQuery('/?openapp=system-brain', query)).toBe(
+      '/?openapp=system-brain&sea_attr=state-1'
+    );
+  });
+
+  it('drops a persisted consent token when a new attribution payload arrives', () => {
+    const storage = new Map<string, string>([
+      [
+        'sealos_marketing_query_v1',
+        JSON.stringify({ consent_token: 'old-token', sea_attr: 'old-state' })
+      ]
+    ]);
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => storage.get(key) || null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key)
+    });
+
+    expect(resolveMarketingQuery({ sea_attr: 'new-state' })).toEqual({
+      sea_attr: 'new-state'
+    });
+    vi.unstubAllGlobals();
+  });
+});

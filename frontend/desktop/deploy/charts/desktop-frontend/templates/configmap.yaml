@@ -111,6 +111,7 @@ data:
           internal: "{{ .Values.desktopConfig.jwtInternal }}"
           regional: "{{ .Values.desktopConfig.jwtRegional }}"
           global: "{{ .Values.desktopConfig.jwtGlobal }}"
+          marketingConsent: "{{ .Values.desktopConfig.jwtMarketingConsent }}"
         invite:
           enabled: {{ .Values.desktopConfig.inviteEnabled }}
           lafSecretKey: "{{ .Values.desktopConfig.inviteLafSecretKey }}"

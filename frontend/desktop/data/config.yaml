@@ -95,6 +95,7 @@ desktop:
       internal: "thisisinternaljwt"
       regional: "thisisregionaljwt"
       global: "thisisglobaljwt"
+      marketingConsent: ""
     billingUrl: "http://account-service.account-system.svc:2333"
     workorderUrl: ""
     cloudVitrualMachineUrl: ""

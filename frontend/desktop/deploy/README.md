@@ -150,6 +150,7 @@ The following values are **automatically retrieved** from the `sealos-system/sea
 | `jwtInternal`                  | `desktopConfig.jwtInternal`                  | Internal JWT secret    |
 | `jwtRegional`                  | `desktopConfig.jwtRegional`                  | Regional JWT secret    |
 | `jwtGlobal`                    | `desktopConfig.jwtGlobal`                    | Global JWT secret      |
+| `jwtMarketingConsent`          | `desktopConfig.jwtMarketingConsent`          | Marketing consent JWT secret |
 | `regionUID`                    | `desktopConfig.regionUID`                    | Region UID             |
 | `databaseMongodbURI`           | `desktopConfig.databaseMongodbURI`           | MongoDB connection URI |
 | `databaseGlobalCockroachdbURI` | `desktopConfig.databaseGlobalCockroachdbURI` | Global CockroachDB URI |
