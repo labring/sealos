@@ -3,9 +3,14 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApplicationProtocolType } from '@/types/app';
-import { normalizeCustomDomainMode } from '@/utils/custom-domain';
 import { getPublicAddressReadyResult } from '@/utils/publicAccess';
-import { getReadyCheckTarget, ReadyCheckTarget } from '@/utils/ready-check';
+import {
+  getIngressServiceBackends,
+  getReadyCheckTarget,
+  hasReadyEndpointForBackend,
+  ReadyCheckBackend,
+  ReadyCheckTarget
+} from '@/utils/ready-check';
 import http from 'http';
 import https from 'https';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -60,6 +65,23 @@ const requestReadyCheckTarget = (target: ReadyCheckTarget) => {
   });
 };
 
+const hasReadyServiceBackend = async ({
+  k8sCore,
+  namespace,
+  backend
+}: {
+  k8sCore: Awaited<ReturnType<typeof getK8s>>['k8sCore'];
+  namespace: string;
+  backend: ReadyCheckBackend;
+}) => {
+  try {
+    const endpoints = await k8sCore.readNamespacedEndpoints(backend.serviceName, namespace);
+    return hasReadyEndpointForBackend(endpoints.body.subsets, backend);
+  } catch (error) {
+    return false;
+  }
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { appName } = req.query as { appName: string };
@@ -68,14 +90,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       cloudPort: global.AppConfig.cloud.port,
       httpPort: global.AppConfig.cloud.httpPort
     };
-    const customDomainMode = normalizeCustomDomainMode(
-      global.AppConfig.launchpad.customDomain?.mode
-    );
     if (!appName) {
       throw new Error('appName is empty');
     }
 
-    const { k8sNetworkingApp, namespace } = await getK8s({
+    const { k8sCore, k8sNetworkingApp, namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
@@ -110,9 +129,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           host,
           backendProtocol,
           config: accessConfig,
-          customDomainMode,
           gatewayHost: process.env.CUSTOM_DOMAIN_READY_CHECK_GATEWAY_HOST
         });
+        const serviceBackends = getIngressServiceBackends(item);
+        if (!serviceBackends.length) {
+          return { ready: false, url: target.url, error: 'Invalid ingress backend' };
+        }
+
+        const hasReadyBackend = (
+          await Promise.all(
+            serviceBackends.map((backend) =>
+              hasReadyServiceBackend({
+                k8sCore,
+                namespace,
+                backend
+              })
+            )
+          )
+        ).every(Boolean);
+
+        if (!hasReadyBackend) {
+          return { ready: false, url: target.url, error: 'No ready endpoints' };
+        }
 
         try {
           const response = await requestReadyCheckTarget(target);
