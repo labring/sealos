@@ -296,7 +296,7 @@ describe('/api/updateApp', () => {
     });
   });
 
-  it('reattaches owner references after a StatefulSet patch falls back to delete and create', async () => {
+  it('returns an error instead of deleting and recreating a StatefulSet when patching fails', async () => {
     const k8s = createK8sContext();
     k8s.k8sApp.patchNamespacedStatefulSet.mockRejectedValueOnce(new Error('patch failed'));
     k8s.k8sApp.replaceNamespacedStatefulSet.mockRejectedValueOnce(new Error('replace failed'));
@@ -326,79 +326,15 @@ describe('/api/updateApp', () => {
       res
     );
 
-    const emptyOwnerReferencePatch = {
-      metadata: {
-        ownerReferences: []
-      }
-    };
-    const ownerReferences = [
-      {
-        apiVersion: 'apps/v1',
-        kind: 'StatefulSet',
-        name: 'demo',
-        uid: 'new-statefulset-uid',
-        controller: true,
-        blockOwnerDeletion: true
-      }
-    ];
-    const ownerReferencePatch = {
-      metadata: {
-        ownerReferences
-      }
-    };
-
-    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim).toHaveBeenNthCalledWith(
-      1,
-      'demo-data-0',
-      'ns-demo',
-      emptyOwnerReferencePatch,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      expect.objectContaining({
-        headers: {
-          'Content-type': 'application/merge-patch+json'
-        }
-      })
-    );
-    expect(k8s.k8sApp.deleteNamespacedStatefulSet).toHaveBeenCalledWith('demo', 'ns-demo');
-    expect(k8s.k8sApp.createNamespacedStatefulSet).toHaveBeenCalledWith(
-      'ns-demo',
-      expect.objectContaining({
-        kind: 'StatefulSet',
-        metadata: expect.objectContaining({
-          name: 'demo'
-        })
-      })
-    );
-    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim).toHaveBeenLastCalledWith(
-      'demo-data-0',
-      'ns-demo',
-      ownerReferencePatch,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      expect.objectContaining({
-        headers: {
-          'Content-type': 'application/merge-patch+json'
-        }
-      })
-    );
-    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim.mock.invocationCallOrder[0]).toBeLessThan(
-      k8s.k8sApp.deleteNamespacedStatefulSet.mock.invocationCallOrder[0]
-    );
-    expect(
-      k8s.k8sApp.createNamespacedStatefulSet.mock.invocationCallOrder[0]
-    ).toBeLessThan(k8s.k8sCore.patchNamespacedPersistentVolumeClaim.mock.invocationCallOrder.at(-1)!);
+    expect(k8s.k8sApp.deleteNamespacedStatefulSet).not.toHaveBeenCalled();
+    expect(k8s.k8sApp.createNamespacedStatefulSet).not.toHaveBeenCalled();
+    expect(k8s.k8sCore.patchNamespacedPersistentVolumeClaim).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith({
-      code: 200,
-      message: 'Success',
+      code: 500,
+      message: 'replace failed',
       data: undefined,
       error: undefined
     });
   });
+
 });

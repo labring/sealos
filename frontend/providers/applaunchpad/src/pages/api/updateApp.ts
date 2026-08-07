@@ -451,7 +451,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       [YamlKindEnum.StatefulSet]: {
         patch: async (jsonPatch: Object) => {
-          // patch -> replace -> delete and create
+          // patch -> replace; fail closed if both fail
           try {
             await k8sApp.patchNamespacedStatefulSet(
               appName,
@@ -465,24 +465,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
             );
             return { recreated: false, kind: YamlKindEnum.StatefulSet };
-          } catch (error) {
+          } catch (patchError) {
             try {
               await k8sApp.replaceNamespacedStatefulSet(appName, namespace, jsonPatch);
               return { recreated: false, kind: YamlKindEnum.StatefulSet };
-            } catch (error) {
-              warnLog('delete and create statefulSet', { yaml: yaml.dump(jsonPatch) });
-              await patchExistingOwnerReferences({
-                k8sCore,
-                k8sNetworkingApp,
-                k8sAutoscaling,
-                k8sCustomObjects,
-                namespace,
-                appName,
-                ownerReferences: []
+            } catch (replaceError) {
+              warnLog('statefulSet patch/replace failed; not falling back to delete/create', {
+                yaml: yaml.dump(jsonPatch)
               });
-              await k8sApp.deleteNamespacedStatefulSet(appName, namespace);
-              await k8sApp.createNamespacedStatefulSet(namespace, jsonPatch);
-              return { recreated: true, kind: YamlKindEnum.StatefulSet };
+              throw replaceError || patchError;
             }
           }
         },
