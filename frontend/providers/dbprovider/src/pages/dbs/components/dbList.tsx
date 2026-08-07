@@ -1,7 +1,7 @@
 import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import { CustomMenu } from '@/components/BaseTable/customMenu';
-import DBStatusTag from '@/components/DBStatusTag';
+import DBStatusTag, { DBStatusDetailsModal } from '@/components/DBStatusTag';
 import type { DatabaseAlertItem } from '@/api/db';
 import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeList } from '@/constants/db';
@@ -48,6 +48,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getLangStore } from '@/utils/cookieUtils';
+import { I18nCommonKey } from '@/types/i18next';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 import {
@@ -95,6 +96,10 @@ const DBList = ({
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusDetailModal, setStatusDetailModal] = useState<{
+    dbName: string;
+    kind: 'status' | 'alert';
+  } | null>(null);
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
@@ -361,6 +366,19 @@ const DBList = ({
             status={row.original.status}
             alertReason={alerts[row.original.name]?.reason}
             alertDetails={alerts[row.original.name]?.details}
+            onOpenDetails={() =>
+              setStatusDetailModal({
+                dbName: row.original.name,
+                kind: 'status'
+              })
+            }
+            onOpenQuestionDetails={() =>
+              setStatusDetailModal({
+                dbName: row.original.name,
+                kind: 'alert'
+              })
+            }
+            renderInternalModals={false}
           />
         )
       },
@@ -644,6 +662,17 @@ const DBList = ({
   }, [applistCompleted, t, router, isClientSide, _hasHydrated]);
 
   const delApp = dbList.find((i) => i.name === delAppName);
+  const selectedStatusDb = statusDetailModal
+    ? dbList.find((item) => item.name === statusDetailModal.dbName)
+    : undefined;
+  const selectedStatusAlert = statusDetailModal ? alerts[statusDetailModal.dbName] : undefined;
+
+  useEffect(() => {
+    if (statusDetailModal && !selectedStatusDb) {
+      setStatusDetailModal(null);
+    }
+  }, [selectedStatusDb, statusDetailModal]);
+
   return (
     <Box
       backgroundColor={'white'}
@@ -723,6 +752,22 @@ const DBList = ({
           }
         }}
       />
+
+      {statusDetailModal && selectedStatusDb && (
+        <DBStatusDetailsModal
+          isOpen={true}
+          onClose={() => setStatusDetailModal(null)}
+          title={
+            statusDetailModal.kind === 'status'
+              ? t(selectedStatusDb.status.label as I18nCommonKey)
+              : selectedStatusAlert?.reason || t('status')
+          }
+          conditions={statusDetailModal.kind === 'status' ? selectedStatusDb.conditions : undefined}
+          details={
+            statusDetailModal.kind === 'alert' ? selectedStatusAlert?.details || '' : undefined
+          }
+        />
+      )}
 
       <PauseChild />
       {!!delApp && (
