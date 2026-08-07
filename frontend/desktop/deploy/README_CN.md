@@ -150,6 +150,7 @@ Helm Chart 使用两个 values 文件来管理配置：
 | `jwtInternal`                  | `desktopConfig.jwtInternal`                  | 内部 JWT 密钥        |
 | `jwtRegional`                  | `desktopConfig.jwtRegional`                  | 区域 JWT 密钥        |
 | `jwtGlobal`                    | `desktopConfig.jwtGlobal`                    | 全局 JWT 密钥        |
+| `jwtMarketingConsent`          | `desktopConfig.jwtMarketingConsent`          | 营销 consent JWT 密钥 |
 | `regionUID`                    | `desktopConfig.regionUID`                    | 区域 UID             |
 | `databaseMongodbURI`           | `desktopConfig.databaseMongodbURI`           | MongoDB 连接 URI     |
 | `databaseGlobalCockroachdbURI` | `desktopConfig.databaseGlobalCockroachdbURI` | 全局 CockroachDB URI |

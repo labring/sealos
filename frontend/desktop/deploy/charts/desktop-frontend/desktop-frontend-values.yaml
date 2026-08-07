@@ -4,7 +4,7 @@
 # Note: The following configurations are automatically fetched from sealos-system/sealos-config ConfigMap
 # and do NOT need to be manually configured:
 #   - cloudDomain, cloudPort, regionUID
-#   - jwtInternal, jwtRegional, jwtGlobal
+#   - jwtInternal, jwtRegional, jwtGlobal, jwtMarketingConsent
 #   - passwordSalt
 #   - databaseMongodbURI, databaseGlobalCockroachdbURI, databaseLocalCockroachdbURI
 #

@@ -23,6 +23,11 @@ import { type AxiosInstance } from 'axios';
 import { ProviderType } from 'prisma/global/generated/client';
 import { SubscriptionInfoResponse, WorkspacesPlansResponse } from '@/types/plan';
 
+export const issueMarketingConsentToken = (seaAttr?: string) =>
+  request.post<any, ApiResp<{ token: string }>>('/api/marketing/consent-token', {
+    ...(seaAttr ? { sea_attr: seaAttr } : {})
+  });
+
 export const _getRegionToken = (request: AxiosInstance) => () =>
   request.post<any, ApiResp<{ token: string; kubeconfig: string; appToken: string }>>(
     '/api/auth/regionToken'

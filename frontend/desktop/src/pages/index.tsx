@@ -20,6 +20,13 @@ import type { InitialAppLaunchState } from '@/utils/initialAppTarget';
 import { sessionConfig, setAdClickData, setUserSemData } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
+import {
+  appendMarketingQuery,
+  mergeMarketingQuery,
+  persistMarketingQuery,
+  resolveMarketingQuery,
+  type MarketingQuery
+} from '@/utils/marketing-attribution';
 import { Box, useColorMode, useDisclosure } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -176,6 +183,11 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       };
     }
 
+    const marketingQuery: MarketingQuery = {
+      ...resolveMarketingQuery(router.query)
+    };
+    persistMarketingQuery(marketingQuery);
+
     const handleInit = async () => {
       initialLaunchInFlightRef.current = true;
       const { query } = router;
@@ -207,7 +219,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           return;
         }
 
-        let appQuery = raw;
+        let appQuery = appKey === BRAIN_APP_KEY ? mergeMarketingQuery(raw, marketingQuery) : raw;
         let appRoute = pathname;
         if (appKey === BRAIN_APP_KEY && appRoute === '/trial') {
           appRoute = '/';
@@ -309,7 +321,10 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           if (parsedOpenApp.appkey && (parsedOpenApp.appQuery || parsedOpenApp.appPath)) {
             setAutoLaunch(
               parsedOpenApp.appkey,
-              { raw: parsedOpenApp.appQuery, pathname: parsedOpenApp.appPath },
+              {
+                raw: mergeMarketingQuery(parsedOpenApp.appQuery, marketingQuery),
+                pathname: parsedOpenApp.appPath
+              },
               workspaceUid
             );
           }
@@ -317,7 +332,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           if (hasLoggedInBefore) {
             // logged in user (logged out) → redirect to login page
             initialLaunchResolvedRef.current = true;
-            await router.replace('/signin');
+            await router.replace(appendMarketingQuery('/signin', marketingQuery));
             return;
           }
 
@@ -334,7 +349,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
             // Clear guest session
             useSessionStore.getState().delSession();
             initialLaunchResolvedRef.current = true;
-            await router.replace('/signin');
+            await router.replace(appendMarketingQuery('/signin', marketingQuery));
             return;
           }
 

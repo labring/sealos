@@ -9,7 +9,7 @@ import { parseOpenappQuery } from '@/utils/format';
 import { gtmLoginStart } from '@/utils/gtm';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { createTemplateInstance } from '@/api/platform';
-import { getRegionToken, initRegionToken } from '@/api/auth';
+import { getRegionToken, initRegionToken, issueMarketingConsentToken } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import { SwitchRegionType } from '@/constants/account';
 import { sessionConfig } from '@/utils/sessionConfig';
@@ -19,6 +19,13 @@ import { jwtDecode } from 'jwt-decode';
 import { isString } from 'lodash';
 import { useMutation } from '@tanstack/react-query';
 import { useCustomToast } from '@/hooks/useCustomToast';
+import {
+  appendMarketingQuery,
+  mergeMarketingQuery,
+  persistMarketingQuery,
+  resolveMarketingQuery,
+  type MarketingQuery
+} from '@/utils/marketing-attribution';
 
 export default function OAuth() {
   const router = useRouter();
@@ -74,7 +81,29 @@ export default function OAuth() {
       workspaceName
     } = router.query;
 
-    const openBrainTemplateDeploy = async () => {
+    const marketingQuery: MarketingQuery = {
+      ...resolveMarketingQuery(router.query)
+    };
+    persistMarketingQuery(marketingQuery);
+
+    const ensureMarketingConsentToken = async (): Promise<MarketingQuery> => {
+      if (!marketingQuery.sea_attr || marketingQuery.consent_token) {
+        return marketingQuery;
+      }
+      try {
+        const result = await issueMarketingConsentToken(marketingQuery.sea_attr);
+        const token = result.data?.token;
+        if (token) {
+          marketingQuery.consent_token = token;
+          persistMarketingQuery(marketingQuery);
+        }
+      } catch (error) {
+        console.warn('[OAuth] Marketing consent token unavailable:', error);
+      }
+      return marketingQuery;
+    };
+
+    const openBrainTemplateDeploy = async (activeMarketingQuery = marketingQuery) => {
       if (
         openapp !== 'system-brain' ||
         typeof templateName !== 'string' ||
@@ -87,13 +116,14 @@ export default function OAuth() {
         templateName,
         templateForm
       });
+      const rawQuery = mergeMarketingQuery(brainDeployQuery.toString(), activeMarketingQuery);
 
       setAutoLaunch('system-brain', {
         pathname: '/deploy',
-        raw: brainDeployQuery.toString()
+        raw: rawQuery
       });
       cancelAutoDeployTemplate();
-      await router.replace('/');
+      await router.replace(appendMarketingQuery('/', activeMarketingQuery));
 
       return true;
     };
@@ -150,7 +180,9 @@ export default function OAuth() {
           }
         }
 
-        if (await openBrainTemplateDeploy()) {
+        const activeMarketingQuery = await ensureMarketingConsentToken();
+
+        if (await openBrainTemplateDeploy(activeMarketingQuery)) {
           return;
         }
 
@@ -170,10 +202,16 @@ export default function OAuth() {
 
           const { appkey, appQuery, appPath } = parseOpenappQuery(finalOpenapp);
           if (appkey) {
-            setAutoLaunch(appkey, { raw: appQuery, pathname: appPath });
+            setAutoLaunch(appkey, {
+              raw: mergeMarketingQuery(appQuery, activeMarketingQuery),
+              pathname: appPath
+            });
           }
 
-          const redirectUrl = `/?openapp=${encodeURIComponent(finalOpenapp)}`;
+          const redirectUrl = appendMarketingQuery(
+            `/?openapp=${encodeURIComponent(finalOpenapp)}`,
+            activeMarketingQuery
+          );
           await router.replace(redirectUrl);
           if (deploymentError) {
             setTimeout(() => {
@@ -187,7 +225,7 @@ export default function OAuth() {
             }, 500);
           }
         } else {
-          await router.replace('/');
+          await router.replace(appendMarketingQuery('/', activeMarketingQuery));
           if (deploymentError) {
             setTimeout(() => {
               toast({
@@ -202,7 +240,7 @@ export default function OAuth() {
         }
       } catch (error) {
         setGlobalToken('');
-        await router.replace('/signin');
+        await router.replace(appendMarketingQuery('/signin', marketingQuery));
       }
     };
 
@@ -292,13 +330,17 @@ export default function OAuth() {
         try {
           const { appkey, appQuery, appPath } = parseOpenappQuery(openapp);
           if (appkey) {
-            setAutoLaunch(appkey, { raw: appQuery, pathname: appPath });
+            setAutoLaunch(appkey, {
+              raw: mergeMarketingQuery(appQuery, marketingQuery),
+              pathname: appPath
+            });
           }
         } catch (error) {}
       }
     };
 
     const handleOAuthLogin = async (provider: OauthProvider) => {
+      persistMarketingQuery(marketingQuery);
       gtmLoginStart();
       const state = generateState();
       setProvider(provider);
@@ -371,12 +413,12 @@ export default function OAuth() {
             break;
           }
           default: {
-            router.replace('/signin');
+            router.replace(appendMarketingQuery('/signin', marketingQuery));
             return;
           }
         }
       } catch (error) {
-        router.replace('/signin');
+        router.replace(appendMarketingQuery('/signin', marketingQuery));
       }
     };
 
@@ -389,7 +431,8 @@ export default function OAuth() {
       hasProcessedRef.current = true;
 
       (async () => {
-        if (await openBrainTemplateDeploy()) {
+        const activeMarketingQuery = await ensureMarketingConsentToken();
+        if (await openBrainTemplateDeploy(activeMarketingQuery)) {
           return;
         }
 
@@ -420,7 +463,7 @@ export default function OAuth() {
             }
 
             const redirectUrl = `/?openapp=${encodeURIComponent(finalOpenapp)}`;
-            router.replace(redirectUrl);
+            router.replace(appendMarketingQuery(redirectUrl, activeMarketingQuery));
 
             if (deploymentError) {
               setTimeout(() => {
@@ -434,7 +477,7 @@ export default function OAuth() {
               }, 500);
             }
           } else {
-            router.replace('/');
+            router.replace(appendMarketingQuery('/', activeMarketingQuery));
 
             if (deploymentError) {
               setTimeout(() => {
@@ -457,7 +500,7 @@ export default function OAuth() {
     handleSaveParams();
 
     if (!login || typeof login !== 'string') {
-      router.replace('/signin');
+      router.replace(appendMarketingQuery('/signin', marketingQuery));
       return;
     }
 
@@ -466,7 +509,7 @@ export default function OAuth() {
     } else if (login === 'google' && authConfig.idp.google?.enabled) {
       handleOAuthLogin('GOOGLE');
     } else {
-      router.replace('/signin');
+      router.replace(appendMarketingQuery('/signin', marketingQuery));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady, router.query, authConfig]);
