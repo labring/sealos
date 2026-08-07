@@ -6,6 +6,7 @@ import { normalizeCustomDomainMode } from '@/utils/custom-domain';
 import { resolveNodePortHost } from '@/utils/nodeport-host';
 import { normalizePublicDomainReservedPrefixes } from '@/utils/public-domain';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { isNetworkIsolationAvailable } from '@/services/backend/networkIsolationCapability';
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error(`Caught unhandledRejection:`, reason, promise);
@@ -22,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     jsonRes<EnvResponse>(res, {
-      data: getServerEnv(global.AppConfig)
+      data: getServerEnv(global.AppConfig, await isNetworkIsolationAvailable())
     });
   } catch (error) {
     console.log('error: /api/platform/getInitData', error);
@@ -33,7 +34,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
+export const getServerEnv = (
+  AppConfig: AppConfigType,
+  networkIsolationEnabled = false
+): EnvResponse => {
   return {
     SEALOS_DOMAIN: AppConfig.cloud.domain,
     NODE_PORT_HOST: resolveNodePortHost({
@@ -65,6 +69,7 @@ export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
     ),
     CUSTOM_DOMAIN_MODE: normalizeCustomDomainMode(AppConfig.launchpad.customDomain?.mode),
     CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME:
-      AppConfig.launchpad.customDomain?.certificate?.tlsSecretName || 'wildcard-cert'
+      AppConfig.launchpad.customDomain?.certificate?.tlsSecretName || 'wildcard-cert',
+    NETWORK_ISOLATION_ENABLED: networkIsolationEnabled
   };
 };

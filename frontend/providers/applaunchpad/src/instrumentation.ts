@@ -55,6 +55,9 @@ export async function register() {
             customPrefixEnabled: false,
             reservedPrefixes: []
           },
+          networkIsolation: {
+            mode: 'auto'
+          },
           eventAnalyze: {
             enabled: false,
             fastGPTKey: ''

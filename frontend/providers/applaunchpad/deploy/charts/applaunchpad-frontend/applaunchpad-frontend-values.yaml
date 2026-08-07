@@ -37,6 +37,7 @@ applaunchpadConfig:
   logUrl: "http://vlogs.sealos.svc.cluster.local:8428"
   tlsRejectUnauthorized: "1"
   imagePortsEnabled: true
+  networkIsolationMode: "auto"
   imagePortsTrustedRegistries: []
   customPublicDomainPrefixEnabled: true
   publicDomainReservedPrefixes:

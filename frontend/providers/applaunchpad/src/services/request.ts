@@ -84,6 +84,14 @@ export function POST<T = any>(
   return request.post(url, data, config);
 }
 
+export function PUT<T = any>(
+  url: string,
+  data?: { [key: string]: any },
+  config?: AxiosRequestConfig
+): Promise<T> {
+  return request.put(url, data, config);
+}
+
 export function DELETE<T = any>(
   url: string,
   data?: { [key: string]: any },

@@ -5,6 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { appDeployKey, ownerReferencesKey, ownerReferencesReadyValue } from '@/constants/app';
 import { ResponseCode } from '@/types/response';
+import { deleteNetworkIsolationIfPresent } from '@/services/backend/networkIsolation';
 
 export type DeleteAppParams = { name: string };
 
@@ -26,10 +27,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 }
 
 export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: NextApiRequest }) {
-  const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } =
-    await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
+  const k8s = await getK8s({
+    kubeconfig: await authSession(req.headers)
+  });
+  const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } = k8s;
+
+  // Wait for the SNP finalizer before its referenced resources are removed.
+  await deleteNetworkIsolationIfPresent(name, k8s);
 
   // Check if app has ownerReferences annotation (new apps)
   let hasOwnerReferences = false;

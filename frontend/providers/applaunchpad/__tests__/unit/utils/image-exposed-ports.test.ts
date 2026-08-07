@@ -1,23 +1,30 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { lookup } from 'dns/promises';
-import { request as httpRequest } from 'http';
-import { request as httpsRequest } from 'https';
-import { EventEmitter } from 'events';
-import { Readable } from 'stream';
-import type { IncomingMessage, RequestOptions } from 'http';
-import { getImageExposedPorts, parseExposedPorts, parseImageRef } from '@/utils/image-exposed-ports';
+import { lookup } from 'node:dns/promises';
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
+import { EventEmitter } from 'node:events';
+import { Readable } from 'node:stream';
+import type { IncomingMessage, RequestOptions } from 'node:http';
+import {
+  getImageExposedPorts,
+  parseExposedPorts,
+  parseImageRef
+} from '@/utils/image-exposed-ports';
 
-vi.mock('dns/promises', () => ({
-  lookup: vi.fn()
-}));
+vi.mock('node:dns/promises', () => {
+  const lookup = vi.fn();
+  return { default: { lookup }, lookup };
+});
 
-vi.mock('http', () => ({
-  request: vi.fn()
-}));
+vi.mock('node:http', () => {
+  const request = vi.fn();
+  return { default: { request }, request };
+});
 
-vi.mock('https', () => ({
-  request: vi.fn()
-}));
+vi.mock('node:https', () => {
+  const request = vi.fn();
+  return { default: { request }, request };
+});
 
 const lookupMock = vi.mocked(lookup);
 const httpRequestMock = vi.mocked(httpRequest);
@@ -40,9 +47,7 @@ let connectionLookupOptions: Record<string, unknown> = {};
 
 function createResponse(response: MockRegistryResponse) {
   const body =
-    typeof response.body === 'string'
-      ? response.body
-      : JSON.stringify(response.body ?? {});
+    typeof response.body === 'string' ? response.body : JSON.stringify(response.body ?? {});
   const stream = Readable.from([body]) as IncomingMessage;
   stream.statusCode = response.status ?? 200;
   stream.headers = {
@@ -53,38 +58,40 @@ function createResponse(response: MockRegistryResponse) {
 }
 
 function createRequestMock(responses: MockRegistryResponse[]) {
-  return vi.fn((url: string | URL, options: RequestOptions, callback: (res: IncomingMessage) => void) => {
-    const request = new EventEmitter() as EventEmitter & { end: () => void };
-    const parsedUrl = typeof url === 'string' ? new URL(url) : url;
-    requestCalls.push({ url: parsedUrl, options });
+  return vi.fn(
+    (url: string | URL, options: RequestOptions, callback: (res: IncomingMessage) => void) => {
+      const request = new EventEmitter() as EventEmitter & { end: () => void };
+      const parsedUrl = typeof url === 'string' ? new URL(url) : url;
+      requestCalls.push({ url: parsedUrl, options });
 
-    request.end = () => {
-      const lookupFn = options.lookup;
-      const finish = () => {
-        const response = responses.shift();
-        if (!response) {
-          request.emit('error', new Error(`Unexpected request to ${parsedUrl.toString()}`));
+      request.end = () => {
+        const lookupFn = options.lookup;
+        const finish = () => {
+          const response = responses.shift();
+          if (!response) {
+            request.emit('error', new Error(`Unexpected request to ${parsedUrl.toString()}`));
+            return;
+          }
+          callback(createResponse(response));
+        };
+
+        if (!lookupFn) {
+          finish();
           return;
         }
-        callback(createResponse(response));
+
+        lookupFn(parsedUrl.hostname, connectionLookupOptions as any, (error, address) => {
+          lookupCallbackAddresses.push(address);
+          if (error) {
+            request.emit('error', error);
+            return;
+          }
+          finish();
+        });
       };
-
-      if (!lookupFn) {
-        finish();
-        return;
-      }
-
-      lookupFn(parsedUrl.hostname, connectionLookupOptions as any, (error, address) => {
-        lookupCallbackAddresses.push(address);
-        if (error) {
-          request.emit('error', error);
-          return;
-        }
-        finish();
-      });
-    };
-    return request;
-  });
+      return request;
+    }
+  );
 }
 
 function mockRegistryRequests(...responses: MockRegistryResponse[]) {
@@ -249,10 +256,7 @@ describe('getImageExposedPorts registry safety', () => {
     (globalThis as any).AppConfig = {
       launchpad: {
         imagePorts: {
-          trustedRegistries: [
-            'registry.192.168.10.70.nip.io',
-            'hub.192.168.10.70.nip.io'
-          ]
+          trustedRegistries: ['registry.192.168.10.70.nip.io', 'hub.192.168.10.70.nip.io']
         }
       }
     };

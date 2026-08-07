@@ -512,7 +512,9 @@ export const json2Service = (
       ...(ownerReferences ? { ownerReferences } : {})
     },
     spec: {
-      type: 'NodePort',
+      type: 'LoadBalancer',
+      allocateLoadBalancerNodePorts: true,
+      externalTrafficPolicy: 'Local',
       ports: openPublicPorts,
       selector: {
         app: data.appName

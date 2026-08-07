@@ -1,12 +1,10 @@
 import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 
 describe('EditApp yaml display state', () => {
   it('keeps custom-domain verification yaml display masked while caching raw yaml', () => {
-    const source = readFileSync(
-      new URL('../../../../../src/pages/app/edit/index.tsx', import.meta.url),
-      'utf8'
-    );
+    const source = readFileSync(resolve(process.cwd(), 'src/pages/app/edit/index.tsx'), 'utf8');
     const start = source.indexOf('const handleDomainVerified = useCallback');
     const end = source.indexOf('useQuery(', start);
 
@@ -35,10 +33,7 @@ describe('EditApp yaml display state', () => {
   });
 
   it('creates the missing ClusterIP service before applying a custom-domain ingress', () => {
-    const source = readFileSync(
-      new URL('../../../../../src/pages/app/edit/index.tsx', import.meta.url),
-      'utf8'
-    );
+    const source = readFileSync(resolve(process.cwd(), 'src/pages/app/edit/index.tsx'), 'utf8');
     const start = source.indexOf('const handleDomainVerified = useCallback');
     const end = source.indexOf('useQuery(', start);
     const handleDomainVerified = source.slice(start, end);
