@@ -7,7 +7,7 @@ WORKDIR /app
 # Install dependencies based on the preferred package manager
 COPY package.json pnpm-lock.yaml* ./
 RUN \
-  [ -f pnpm-lock.yaml ] && pnpm install || \
+  [ -f pnpm-lock.yaml ] && pnpm install --frozen-lockfile --ignore-scripts || \
   (echo "Lockfile not found." && exit 1)
 
 # Rebuild the source code only when needed
@@ -22,7 +22,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NEXT_PUBLIC_MOCK_USER ''
 
-RUN npm install -g pnpm@8.9.0 && pnpm run build
+RUN npm install -g pnpm@8.9.0 && pnpm run gen:theme-typings && pnpm run build-packages && pnpm --dir providers/applaunchpad run build
 
 # Production image, copy all the files and run next
 FROM node:current-alpine AS runner
