@@ -40,7 +40,7 @@ dbproviderConfig:
   migrateFileImage: ""
   backupEnabled: "true"
   showDocument: "true"
-  dataImportEnabled: "true"
+  dataImportEnabled: "false"
   guideEnabled: "true"
   kafkaEnabled: "true"
   billingUrl: "http://account-service.account-system.svc:2333"
