@@ -9,7 +9,6 @@ import { PortIcon } from '@/components/icons/PortIcon';
 import { StorageIcon } from '@/components/icons/StorageIcon';
 import BaseMenu from '@/components/menu/BaseMenu';
 import { PricePayload } from '@/components/table/PriceTable';
-import { CYCLE } from '@/constants/valuation';
 import { PRICE_CYCLE_SCALE } from '@/pages/valuation';
 import useEnvStore from '@/stores/env';
 import { formatMoney } from '@/utils/format';
@@ -478,9 +477,6 @@ export default function CalculatorPanel({
             {totalAmount}
           </Text>
           <CurrencySymbol type={currencyType} boxSize={'20px'}></CurrencySymbol>
-          <Text color={'grayModern.900'} fontSize={'16px'} fontWeight={'500'}>
-            /{t(CYCLE[config.usage.timeUnit])}
-          </Text>
         </HStack>
       </Center>
     </TabPanel>
