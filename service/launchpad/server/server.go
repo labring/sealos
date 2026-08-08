@@ -10,6 +10,7 @@ import (
 	"github.com/labring/sealos/service/launchpad/request"
 	"github.com/labring/sealos/service/pkg/api"
 	"github.com/labring/sealos/service/pkg/auth"
+	commonserver "github.com/labring/sealos/service/pkg/server"
 )
 
 type VMServer struct {
@@ -102,6 +103,8 @@ func isNetworkServiceRequest(queryType string) bool {
 func (vs *VMServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	pathPrefix := ""
 	switch req.URL.Path {
+	case commonserver.HealthPath:
+		commonserver.ServeHealth(rw, req)
 	case pathPrefix + "/query":
 		vs.doReqNew(rw, req)
 	default:
