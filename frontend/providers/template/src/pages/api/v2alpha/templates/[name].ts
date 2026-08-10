@@ -10,7 +10,7 @@ import {
   getCachedTemplateDetail,
   setCachedTemplateDetail
 } from './templateCache';
-import { parseTemplateCategories } from '@/utils/template';
+import { getConfiguredCategories } from '@/utils/appConfig';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 import { getTemplateEnvs } from '@/utils/tools';
 
@@ -138,7 +138,7 @@ async function handleTemplateDetails(
     getCachedTemplates(
       jsonPath,
       process.env.CDN_URL,
-      parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
+      getConfiguredCategories(),
       language,
       templateRepo
     );

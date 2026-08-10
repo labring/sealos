@@ -6,7 +6,7 @@ import path from 'path';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
 import { readTemplatesFromFile } from '../../listTemplate';
 import { GetTemplateByName } from '../../getTemplateSource';
-import { parseTemplateCategories } from '@/utils/template';
+import { getConfiguredCategories } from '@/utils/appConfig';
 import { getTemplateEnvs } from '@/utils/tools';
 
 function simplifyResourceValue(
@@ -50,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
+    const configuredCategories = getConfiguredCategories();
     const templateEnvs = getTemplateEnvs();
     const templateRepo = {
       url: templateEnvs.TEMPLATE_REPO_URL,

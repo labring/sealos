@@ -36,6 +36,8 @@ export const cpuFormatToM = (cpu = '0') => {
     value = value / 1000;
   } else if (/m/gi.test(cpu)) {
     value = value;
+  } else if (/k/gi.test(cpu)) {
+    value = value * 1000 * 1000;
   } else {
     value = value * 1000;
   }

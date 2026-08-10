@@ -3,6 +3,8 @@ import { jsonRes } from '@/services/backend/response';
 import {
   getRuntimeCloudPort,
   getRuntimeDesktopDomain,
+  getRuntimeDisableHttps,
+  getRuntimeHttpPort,
   readRuntimeAppConfig
 } from '@/utils/appConfig';
 
@@ -20,24 +22,81 @@ export type PaymentConfigResponse = {
   paymentEnabled: boolean;
 };
 
-const getCostCenterConfigUrl = () => {
-  const config = readRuntimeAppConfig();
-  const domain = getRuntimeDesktopDomain(config);
-  const port = getRuntimeCloudPort(config);
-  const portSuffix = port && port !== '443' && port !== '80' ? `:${port}` : '';
+const COSTCENTER_SERVICE_CONFIG_URL =
+  'http://costcenter-frontend.costcenter-frontend.svc:3000/api/platform/getAppConfig';
 
-  return `https://costcenter.${domain}${portSuffix}/api/platform/getAppConfig`;
+const getHeaderValue = (value: string | string[] | undefined) => {
+  const header = Array.isArray(value) ? value[0] : value;
+  return header?.split(',')[0]?.trim() || '';
 };
 
-export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
+const normalizePort = (value: string) => {
+  if (!/^\d+$/.test(value)) return '';
+  const port = Number(value);
+  return port >= 1 && port <= 65535 ? String(port) : '';
+};
+
+const getHostPort = (host: string) => {
   try {
-    const response = await fetch(getCostCenterConfigUrl());
+    return new URL(`http://${host}`).port;
+  } catch {
+    return '';
+  }
+};
 
-    if (!response.ok) {
-      throw new Error(`CostCenter config request failed with status ${response.status}`);
+const getExternalConfigUrl = (domain: string, protocol: 'http' | 'https', rawPort: string) => {
+  const port = normalizePort(rawPort.trim().replace(/^:/, ''));
+  const isDefaultPort =
+    (protocol === 'http' && port === '80') || (protocol === 'https' && port === '443');
+  const portSuffix = port && !isDefaultPort ? `:${port}` : '';
+
+  return `${protocol}://costcenter.${domain}${portSuffix}/api/platform/getAppConfig`;
+};
+
+const getCostCenterConfigUrls = (req: NextApiRequest) => {
+  const config = readRuntimeAppConfig();
+  const domain = getRuntimeDesktopDomain(config);
+  const disableHttps = getRuntimeDisableHttps(config);
+  const configuredProtocol = disableHttps ? 'http' : 'https';
+  const configuredPort = disableHttps ? getRuntimeHttpPort(config) : getRuntimeCloudPort(config);
+  const configuredUrl = getExternalConfigUrl(domain, configuredProtocol, configuredPort);
+
+  const forwardedProtocol = getHeaderValue(req.headers['x-forwarded-proto']);
+  const requestProtocol =
+    forwardedProtocol === 'http' || forwardedProtocol === 'https' ? forwardedProtocol : undefined;
+  const forwardedPort = normalizePort(getHeaderValue(req.headers['x-forwarded-port']));
+  const hostPort = normalizePort(getHostPort(getHeaderValue(req.headers.host)));
+  const requestUrl = requestProtocol
+    ? getExternalConfigUrl(domain, requestProtocol, forwardedPort || hostPort)
+    : undefined;
+
+  const urls = [COSTCENTER_SERVICE_CONFIG_URL, requestUrl, configuredUrl].filter(
+    (url): url is string => !!url
+  );
+  return [...new Set(urls)];
+};
+
+async function getCostCenterConfig(req: NextApiRequest): Promise<CostCenterConfigResponse> {
+  let lastError: unknown;
+
+  for (const url of getCostCenterConfigUrls(req)) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`CostCenter config request failed with status ${response.status}`);
+      }
+      return (await response.json()) as CostCenterConfigResponse;
+    } catch (error) {
+      lastError = error;
     }
+  }
 
-    const result = (await response.json()) as CostCenterConfigResponse;
+  throw lastError || new Error('CostCenter config request failed');
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const result = await getCostCenterConfig(req);
     const config = result.data;
     const hasPaymentMethod =
       !!config?.STRIPE_ENABLED || !!config?.WECHAT_ENABLED || !!config?.ALIPAY_ENABLED;

@@ -1,12 +1,11 @@
 import { jsonRes } from '@/services/backend/response';
 import { ClientAppConfigSchema } from '@/types/config';
 import {
-  getRuntimeCategories,
+  getConfiguredCategories,
   getRuntimeCurrencySymbol,
   getRuntimeDesktopDomain,
   readRuntimeAppConfig
 } from '@/utils/appConfig';
-import { parseTemplateCategories } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export function getClientAppConfigServer() {
@@ -22,9 +21,7 @@ export function getClientAppConfigServer() {
     currencySymbolType: getRuntimeCurrencySymbol(
       uiConfig?.currencySymbol || uiConfig?.currencySymbolType || process.env.CURRENCY_SYMBOL
     ),
-    categories: templateConfig?.categories
-      ? getRuntimeCategories(templateConfig.categories)
-      : parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
+    categories: getConfiguredCategories(config),
     showAuthor: templateConfig?.features?.showAuthor ?? process.env.SHOW_AUTHOR === 'true',
     carousel: {
       enabled: carousel?.enabled === true,

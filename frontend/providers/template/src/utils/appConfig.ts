@@ -9,7 +9,9 @@ export type TemplateCategory = {
 export type RuntimeAppConfig = {
   cloud?: {
     domain?: string;
-    port?: number;
+    port?: number | string;
+    httpPort?: number | string;
+    disableHttps?: boolean;
     certSecretName?: string;
   };
   template?: {
@@ -49,7 +51,9 @@ export const DEFAULT_TEMPLATE_CATEGORIES: TemplateCategory[] = [
   { slug: 'frontend', i18n: { en: 'Frontend', zh: '前端' } },
   { slug: 'game', i18n: { en: 'Games', zh: '游戏' } },
   { slug: 'low-code', i18n: { en: 'Low-Code', zh: '低代码' } },
-  { slug: 'monitor', i18n: { en: 'Monitoring', zh: '监控' } }
+  { slug: 'monitor', i18n: { en: 'Monitoring', zh: '监控' } },
+  { slug: 'storage', i18n: { en: 'Storage', zh: '存储' } },
+  { slug: 'tool', i18n: { en: 'Tools', zh: '工具' } }
 ];
 
 const CONFIG_PATH = '/app/data/config.yaml';
@@ -69,7 +73,7 @@ export function getRuntimeCurrencySymbol(value?: string): 'shellCoin' | 'cny' | 
   return 'shellCoin';
 }
 
-export function getRuntimeCategories(value?: TemplateCategory[]): TemplateCategory[] {
+export function getRuntimeCategories(value?: unknown): TemplateCategory[] {
   if (!Array.isArray(value)) return DEFAULT_TEMPLATE_CATEGORIES;
 
   const categories = value.filter(
@@ -80,7 +84,25 @@ export function getRuntimeCategories(value?: TemplateCategory[]): TemplateCatego
       category.i18n !== null
   );
 
-  return categories.length > 0 ? categories : DEFAULT_TEMPLATE_CATEGORIES;
+  return categories;
+}
+
+export function getConfiguredCategories(
+  config: RuntimeAppConfig = readRuntimeAppConfig()
+): TemplateCategory[] {
+  if (config.template?.categories !== undefined) {
+    return getRuntimeCategories(config.template.categories);
+  }
+
+  const value = process.env.TEMPLATE_CATEGORIES;
+  if (!value) return DEFAULT_TEMPLATE_CATEGORIES;
+
+  try {
+    return getRuntimeCategories(JSON.parse(value));
+  } catch (error) {
+    console.error('[Template Categories] Failed to parse TEMPLATE_CATEGORIES:', error);
+    return DEFAULT_TEMPLATE_CATEGORIES;
+  }
 }
 
 export function getRuntimeCloudDomain(config: RuntimeAppConfig = readRuntimeAppConfig()) {
@@ -103,6 +125,16 @@ export function getRuntimeCloudPort(config: RuntimeAppConfig = readRuntimeAppCon
   return process.env.SEALOS_CLOUD_PORT || String(config.cloud?.port || '');
 }
 
+export function getRuntimeHttpPort(config: RuntimeAppConfig = readRuntimeAppConfig()) {
+  return process.env.SEALOS_HTTP_PORT || String(config.cloud?.httpPort || '');
+}
+
+export function getRuntimeDisableHttps(config: RuntimeAppConfig = readRuntimeAppConfig()) {
+  const value = process.env.SEALOS_DISABLE_HTTPS;
+  if (value !== undefined && value !== '') return value === 'true';
+  return config.cloud?.disableHttps === true;
+}
+
 function setRuntimeEnv(name: string, value: boolean | number | string | undefined) {
   if (value === undefined || value === '') return;
   if (process.env[name] !== undefined && process.env[name] !== '') return;
@@ -117,6 +149,8 @@ export function applyRuntimeAppConfigEnv() {
 
   setRuntimeEnv('SEALOS_CLOUD_DOMAIN', cloud?.domain);
   setRuntimeEnv('SEALOS_CLOUD_PORT', cloud?.port);
+  setRuntimeEnv('SEALOS_HTTP_PORT', cloud?.httpPort);
+  setRuntimeEnv('SEALOS_DISABLE_HTTPS', cloud?.disableHttps);
   setRuntimeEnv('SEALOS_CERT_SECRET_NAME', cloud?.certSecretName);
   setRuntimeEnv('SEALOS_USER_DOMAIN', template?.userDomain);
   setRuntimeEnv('TEMPLATE_REPO_URL', template?.repo?.url);
