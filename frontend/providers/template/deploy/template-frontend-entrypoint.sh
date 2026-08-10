@@ -96,7 +96,13 @@ add_enforced_set_string() {
 
 load_cloud_tools_or_exit
 tls_reject_unauthorized="$(read_cert_tls_reject_unauthorized)"
+if [ "${tls_reject_unauthorized}" = "1" ]; then
+  git_ssl_no_verify="false"
+else
+  git_ssl_no_verify="true"
+fi
 add_enforced_set_string templateConfig.tlsRejectUnauthorized "${tls_reject_unauthorized}"
+add_enforced_set_string templateConfig.gitSslNoVerify "${git_ssl_no_verify}"
 
 CONFIG_CLOUD_DOMAIN=$(get_cm_value sealos-system sealos-config cloudDomain)
 CONFIG_CLOUD_PORT=$(get_cm_value sealos-system sealos-config cloudPort)
@@ -107,13 +113,14 @@ SEALOS_CLOUD_PORT=${CONFIG_CLOUD_PORT:-${SEALOS_CLOUD_PORT:-${cloudPort:-}}}
 SEALOS_CERT_SECRET_NAME=${CONFIG_CERT_SECRET_NAME:-${SEALOS_CERT_SECRET_NAME:-${certSecretName:-}}}
 #https and acme using default template url. else use gogs.<domain>
 SEALOS_CERT_MODE=$(get_cm_value sealos-system cert-config CERT_MODE)
+SEALOS_CERT_MODE="$(printf '%s' "${CERT_MODE:-${SEALOS_CERT_MODE:-self-signed}}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
 
 
 add_set_string templateConfig.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
 add_set_string templateConfig.cloudPort "${SEALOS_CLOUD_PORT}"
 add_set_string templateConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
 
-if [ "${SEALOS_CERT_MODE}" = "https" ] || [ "${SEALOS_CERT_MODE}" = "acme" ]; then
+if [ "${SEALOS_CERT_MODE}" = "https" ] || [ "${SEALOS_CERT_MODE}" = "acme" ] || [ "${SEALOS_CERT_MODE}" = "acmedns" ]; then
   add_set_string templateConfig.templateRepoUrl "https://github.com/labring-actions/templates"
   add_set_string templateConfig.templateRepoProvider "github"
 else
