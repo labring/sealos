@@ -1,26 +1,38 @@
 import { jsonRes } from '@/services/backend/response';
 import { ClientAppConfigSchema } from '@/types/config';
+import {
+  getRuntimeCategories,
+  getRuntimeCurrencySymbol,
+  getRuntimeDesktopDomain,
+  readRuntimeAppConfig
+} from '@/utils/appConfig';
 import { parseTemplateCategories } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export function getClientAppConfigServer() {
+  const config = readRuntimeAppConfig();
+  const templateConfig = config.template;
+  const uiConfig = templateConfig?.ui;
+  const carousel = uiConfig?.carousel;
+
   return ClientAppConfigSchema.parse({
-    brandName: process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos',
-    desktopDomain: process.env.DESKTOP_DOMAIN || process.env.SEALOS_CLOUD_DOMAIN || '',
-    currencySymbolType:
-      process.env.CURRENCY_SYMBOL === 'cny' || process.env.CURRENCY_SYMBOL === 'usd'
-        ? process.env.CURRENCY_SYMBOL
-        : 'shellCoin',
-    categories: parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
-    showAuthor: process.env.SHOW_AUTHOR === 'true',
+    brandName: uiConfig?.brandName || process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos',
+    desktopDomain: getRuntimeDesktopDomain(config),
+    currencySymbolType: getRuntimeCurrencySymbol(
+      uiConfig?.currencySymbol || uiConfig?.currencySymbolType || process.env.CURRENCY_SYMBOL
+    ),
+    categories: templateConfig?.categories
+      ? getRuntimeCategories(templateConfig.categories)
+      : parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
+    showAuthor: templateConfig?.features?.showAuthor ?? process.env.SHOW_AUTHOR === 'true',
     carousel: {
-      enabled: false,
-      slides: []
+      enabled: carousel?.enabled === true,
+      slides: Array.isArray(carousel?.slides) ? carousel.slides : []
     }
   });
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
   jsonRes(res, {
     code: 200,
     data: getClientAppConfigServer()

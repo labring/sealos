@@ -1,0 +1,135 @@
+import { existsSync, readFileSync } from 'fs';
+import JsYaml from 'js-yaml';
+
+export type TemplateCategory = {
+  slug: string;
+  i18n: Record<string, string>;
+};
+
+export type RuntimeAppConfig = {
+  cloud?: {
+    domain?: string;
+    port?: number;
+    certSecretName?: string;
+  };
+  template?: {
+    ui?: {
+      brandName?: string;
+      forcedLanguage?: string;
+      currencySymbol?: string;
+      currencySymbolType?: string;
+      carousel?: {
+        enabled?: boolean;
+        slides?: unknown[];
+      };
+    };
+    repo?: {
+      url?: string;
+      branch?: string;
+      localDir?: string;
+    };
+    features?: {
+      showAuthor?: boolean;
+      fetchReadme?: boolean;
+      guide?: boolean;
+    };
+    categories?: TemplateCategory[];
+    desktopDomain?: string;
+    userDomain?: string;
+    billingUrl?: string;
+  };
+};
+
+export const DEFAULT_TEMPLATE_CATEGORIES: TemplateCategory[] = [
+  { slug: 'ai', i18n: { en: 'AI', zh: 'AI' } },
+  { slug: 'backend', i18n: { en: 'Backend', zh: '后端' } },
+  { slug: 'blog', i18n: { en: 'Blog', zh: '博客' } },
+  { slug: 'database', i18n: { en: 'Database', zh: '数据库' } },
+  { slug: 'dev-ops', i18n: { en: 'DevOps', zh: '运维' } },
+  { slug: 'frontend', i18n: { en: 'Frontend', zh: '前端' } },
+  { slug: 'game', i18n: { en: 'Games', zh: '游戏' } },
+  { slug: 'low-code', i18n: { en: 'Low-Code', zh: '低代码' } },
+  { slug: 'monitor', i18n: { en: 'Monitoring', zh: '监控' } }
+];
+
+const CONFIG_PATH = '/app/data/config.yaml';
+
+export function readRuntimeAppConfig(): RuntimeAppConfig {
+  try {
+    if (!existsSync(CONFIG_PATH)) return {};
+    return (JsYaml.load(readFileSync(CONFIG_PATH, 'utf-8')) || {}) as RuntimeAppConfig;
+  } catch (error) {
+    console.log('[App Config] Failed to read runtime config:', error);
+    return {};
+  }
+}
+
+export function getRuntimeCurrencySymbol(value?: string): 'shellCoin' | 'cny' | 'usd' {
+  if (value === 'cny' || value === 'usd') return value;
+  return 'shellCoin';
+}
+
+export function getRuntimeCategories(value?: TemplateCategory[]): TemplateCategory[] {
+  if (!Array.isArray(value)) return DEFAULT_TEMPLATE_CATEGORIES;
+
+  const categories = value.filter(
+    (category): category is TemplateCategory =>
+      typeof category?.slug === 'string' &&
+      !!category.slug &&
+      typeof category?.i18n === 'object' &&
+      category.i18n !== null
+  );
+
+  return categories.length > 0 ? categories : DEFAULT_TEMPLATE_CATEGORIES;
+}
+
+export function getRuntimeCloudDomain(config: RuntimeAppConfig = readRuntimeAppConfig()) {
+  return (
+    process.env.SEALOS_USER_DOMAIN ||
+    config.template?.userDomain ||
+    config.cloud?.domain ||
+    process.env.SEALOS_CLOUD_DOMAIN ||
+    'cloud.sealos.io'
+  );
+}
+
+export function getRuntimeDesktopDomain(config: RuntimeAppConfig = readRuntimeAppConfig()) {
+  return (
+    config.template?.desktopDomain || process.env.DESKTOP_DOMAIN || getRuntimeCloudDomain(config)
+  );
+}
+
+export function getRuntimeCloudPort(config: RuntimeAppConfig = readRuntimeAppConfig()) {
+  return process.env.SEALOS_CLOUD_PORT || String(config.cloud?.port || '');
+}
+
+function setRuntimeEnv(name: string, value: boolean | number | string | undefined) {
+  if (value === undefined || value === '') return;
+  if (process.env[name] !== undefined && process.env[name] !== '') return;
+
+  process.env[name] = String(value);
+}
+
+export function applyRuntimeAppConfigEnv() {
+  const config = readRuntimeAppConfig();
+  const cloud = config.cloud;
+  const template = config.template;
+
+  setRuntimeEnv('SEALOS_CLOUD_DOMAIN', cloud?.domain);
+  setRuntimeEnv('SEALOS_CLOUD_PORT', cloud?.port);
+  setRuntimeEnv('SEALOS_CERT_SECRET_NAME', cloud?.certSecretName);
+  setRuntimeEnv('SEALOS_USER_DOMAIN', template?.userDomain);
+  setRuntimeEnv('TEMPLATE_REPO_URL', template?.repo?.url);
+  setRuntimeEnv('TEMPLATE_REPO_BRANCH', template?.repo?.branch);
+  setRuntimeEnv('TEMPLATE_REPO_FOLDER', template?.repo?.localDir);
+  setRuntimeEnv('SHOW_AUTHOR', template?.features?.showAuthor);
+  setRuntimeEnv('DESKTOP_DOMAIN', template?.desktopDomain);
+  setRuntimeEnv(
+    'CURRENCY_SYMBOL',
+    template?.ui?.currencySymbol || template?.ui?.currencySymbolType
+  );
+  setRuntimeEnv('FORCED_LANGUAGE', template?.ui?.forcedLanguage);
+  setRuntimeEnv('ENABLE_README_FETCH', template?.features?.fetchReadme);
+  setRuntimeEnv('GUIDE_ENABLED', template?.features?.guide);
+  setRuntimeEnv('BILLING_URL', template?.billingUrl);
+}
