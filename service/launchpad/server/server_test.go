@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,7 +12,15 @@ import (
 func TestVMServerHealth(t *testing.T) {
 	t.Parallel()
 
-	req := httptest.NewRequest(http.MethodGet, commonserver.HealthPath, nil)
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		commonserver.HealthPath,
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
 	rw := httptest.NewRecorder()
 
 	(&VMServer{}).ServeHTTP(rw, req)
