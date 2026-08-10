@@ -1,5 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
+import {
+  getRuntimeCloudPort,
+  getRuntimeDesktopDomain,
+  readRuntimeAppConfig
+} from '@/utils/appConfig';
 
 type CostCenterConfigResponse = {
   code: number;
@@ -16,8 +21,9 @@ export type PaymentConfigResponse = {
 };
 
 const getCostCenterConfigUrl = () => {
-  const domain = process.env.DESKTOP_DOMAIN || process.env.SEALOS_CLOUD_DOMAIN || 'cloud.sealos.io';
-  const port = process.env.SEALOS_CLOUD_PORT;
+  const config = readRuntimeAppConfig();
+  const domain = getRuntimeDesktopDomain(config);
+  const port = getRuntimeCloudPort(config);
   const portSuffix = port && port !== '443' && port !== '80' ? `:${port}` : '';
 
   return `https://costcenter.${domain}${portSuffix}/api/platform/getAppConfig`;
