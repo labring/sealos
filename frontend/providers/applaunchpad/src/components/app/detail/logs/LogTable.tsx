@@ -21,6 +21,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import MyIcon from '@/components/Icon';
 import { formatTime } from '@/utils/tools';
+import { getLogFieldLabel } from '@/utils/log-field';
 import { LogsFormData } from '@/pages/app/detail/logs';
 import { UseFormReturn } from 'react-hook-form';
 import { useLogStore } from '@/store/logStore';
@@ -55,11 +56,6 @@ export const LogTable = ({
   const isJsonMode = formHook.watch('isJsonMode');
   const { exportLogs } = useLogStore();
 
-  const getFieldLabel = useCallback(
-    (fieldKey: string) => t('common.log_table.' + fieldKey, { defaultValue: fieldKey }),
-    [t]
-  );
-
   const generateFieldList = useCallback((data: any[], prevFieldList: FieldItem[] = []) => {
     if (!data.length) return [];
 
@@ -92,9 +88,9 @@ export const LogTable = ({
       'filterKeys',
       generateFieldList(data)
         .filter((field) => !excludeFields.includes(field.value))
-        .map((field) => ({ value: field.value, label: getFieldLabel(field.value) }))
+        .map((field) => ({ value: field.value, label: getLogFieldLabel(field.value) }))
     );
-  }, [data, generateFieldList, formHook, getFieldLabel]);
+  }, [data, generateFieldList, formHook]);
 
   useEffect(() => {
     const visibleCount = fieldList.filter((field) => field.checked).length;
@@ -108,7 +104,7 @@ export const LogTable = ({
       .map((field) => ({
         accessorKey: field.accessorKey,
         header: () => {
-          return getFieldLabel(field.value);
+          return getLogFieldLabel(field.value);
         },
         cell: ({ row }) => {
           let value = get(row.original, field.accessorKey, '');
@@ -137,7 +133,7 @@ export const LogTable = ({
           isError: (row: any) => row.stream === 'stderr'
         }
       }));
-  }, [fieldList, getFieldLabel]);
+  }, [fieldList]);
 
   const table = useReactTable({
     data: data,
@@ -268,7 +264,7 @@ export const LogTable = ({
                     }
                   }}
                 >
-                  {getFieldLabel(item.value)}
+                  {getLogFieldLabel(item.value)}
                 </Checkbox>
               ))}
             </CheckboxGroup>
