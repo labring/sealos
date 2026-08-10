@@ -36,6 +36,8 @@ resources:
 # Keep release-v5.1 env defaults and names. Entrypoint auto-fills cloud values from sealos-config when available.
 templateConfig:
   userDomain: ""
+  httpPort: ""
+  disableHttps: false
   templateRepoUrl: "https://github.com/labring-actions/templates"
   templateRepoBranch: "main"
   templateRepoProvider: "github"

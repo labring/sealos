@@ -28,23 +28,10 @@ const COSTCENTER_CONFIG_TIMEOUT_MS = 5000;
 const getCostCenterDomain = (config: ReturnType<typeof readRuntimeAppConfig>) =>
   process.env.SEALOS_CLOUD_DOMAIN || config.cloud?.domain || 'cloud.sealos.io';
 
-const getHeaderValue = (value: string | string[] | undefined) => {
-  const header = Array.isArray(value) ? value[0] : value;
-  return header?.split(',')[0]?.trim() || '';
-};
-
 const normalizePort = (value: string) => {
   if (!/^\d+$/.test(value)) return '';
   const port = Number(value);
   return port >= 1 && port <= 65535 ? String(port) : '';
-};
-
-const getHostPort = (host: string) => {
-  try {
-    return new URL(`http://${host}`).port;
-  } catch {
-    return '';
-  }
 };
 
 const getExternalConfigUrl = (domain: string, protocol: 'http' | 'https', rawPort: string) => {
@@ -56,7 +43,7 @@ const getExternalConfigUrl = (domain: string, protocol: 'http' | 'https', rawPor
   return `${protocol}://costcenter.${domain}${portSuffix}/api/platform/getAppConfig`;
 };
 
-const getCostCenterConfigUrls = (req: NextApiRequest) => {
+const getCostCenterConfigUrls = () => {
   const config = readRuntimeAppConfig();
   const domain = getCostCenterDomain(config);
   const disableHttps = getRuntimeDisableHttps(config);
@@ -64,25 +51,14 @@ const getCostCenterConfigUrls = (req: NextApiRequest) => {
   const configuredPort = disableHttps ? getRuntimeHttpPort(config) : getRuntimeCloudPort(config);
   const configuredUrl = getExternalConfigUrl(domain, configuredProtocol, configuredPort);
 
-  const forwardedProtocol = getHeaderValue(req.headers['x-forwarded-proto']);
-  const requestProtocol =
-    forwardedProtocol === 'http' || forwardedProtocol === 'https' ? forwardedProtocol : undefined;
-  const forwardedPort = normalizePort(getHeaderValue(req.headers['x-forwarded-port']));
-  const hostPort = normalizePort(getHostPort(getHeaderValue(req.headers.host)));
-  const requestUrl = requestProtocol
-    ? getExternalConfigUrl(domain, requestProtocol, forwardedPort || hostPort)
-    : undefined;
-
-  const urls = [COSTCENTER_SERVICE_CONFIG_URL, requestUrl, configuredUrl].filter(
-    (url): url is string => !!url
-  );
+  const urls = [COSTCENTER_SERVICE_CONFIG_URL, configuredUrl];
   return [...new Set(urls)];
 };
 
-async function getCostCenterConfig(req: NextApiRequest): Promise<CostCenterConfigResponse> {
+async function getCostCenterConfig(): Promise<CostCenterConfigResponse> {
   let lastError: unknown;
 
-  for (const url of getCostCenterConfigUrls(req)) {
+  for (const url of getCostCenterConfigUrls()) {
     try {
       const response = await fetch(url, {
         signal: AbortSignal.timeout(COSTCENTER_CONFIG_TIMEOUT_MS)
@@ -103,9 +79,9 @@ async function getCostCenterConfig(req: NextApiRequest): Promise<CostCenterConfi
   throw lastError || new Error('CostCenter config request failed');
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
   try {
-    const result = await getCostCenterConfig(req);
+    const result = await getCostCenterConfig();
     const config = result.data;
     const hasPaymentMethod =
       !!config?.STRIPE_ENABLED || !!config?.WECHAT_ENABLED || !!config?.ALIPAY_ENABLED;

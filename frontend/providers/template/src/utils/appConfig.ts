@@ -11,7 +11,7 @@ export type RuntimeAppConfig = {
     domain?: string;
     port?: number | string;
     httpPort?: number | string;
-    disableHttps?: boolean;
+    disableHttps?: boolean | string;
     certSecretName?: string;
   };
   template?: {
@@ -56,16 +56,19 @@ export const DEFAULT_TEMPLATE_CATEGORIES: TemplateCategory[] = [
   { slug: 'tool', i18n: { en: 'Tools', zh: '工具' } }
 ];
 
-const CONFIG_PATH = '/app/data/config.yaml';
+const CONFIG_PATHS = ['/app/data/config.yaml', '/config.yaml'] as const;
 
 export function readRuntimeAppConfig(): RuntimeAppConfig {
-  try {
-    if (!existsSync(CONFIG_PATH)) return {};
-    return (JsYaml.load(readFileSync(CONFIG_PATH, 'utf-8')) || {}) as RuntimeAppConfig;
-  } catch (error) {
-    console.log('[App Config] Failed to read runtime config:', error);
-    return {};
+  for (const configPath of CONFIG_PATHS) {
+    try {
+      if (!existsSync(configPath)) continue;
+      return (JsYaml.load(readFileSync(configPath, 'utf-8')) || {}) as RuntimeAppConfig;
+    } catch (error) {
+      console.log(`[App Config] Failed to read runtime config from ${configPath}:`, error);
+    }
   }
+
+  return {};
 }
 
 export function getRuntimeCurrencySymbol(value?: string): 'shellCoin' | 'cny' | 'usd' {
@@ -132,7 +135,7 @@ export function getRuntimeHttpPort(config: RuntimeAppConfig = readRuntimeAppConf
 export function getRuntimeDisableHttps(config: RuntimeAppConfig = readRuntimeAppConfig()) {
   const value = process.env.SEALOS_DISABLE_HTTPS;
   if (value !== undefined && value !== '') return value === 'true';
-  return config.cloud?.disableHttps === true;
+  return config.cloud?.disableHttps === true || config.cloud?.disableHttps === 'true';
 }
 
 function setRuntimeEnv(name: string, value: boolean | number | string | undefined) {

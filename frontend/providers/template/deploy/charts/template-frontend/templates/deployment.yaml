@@ -58,6 +58,9 @@ spec:
               mountPath: /config.yaml
               subPath: config.yaml
             - name: template-frontend-volume
+              mountPath: /app/data/config.yaml
+              subPath: config.yaml
+            - name: template-frontend-volume
               mountPath: /app/data/config.json
               subPath: config.json
       {{- with .Values.affinity }}

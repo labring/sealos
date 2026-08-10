@@ -18,22 +18,22 @@ export const defaultConfig: SystemConfigType = {
 };
 
 export async function getSystemConfig(): Promise<SystemConfigType> {
+  const carousel = readRuntimeAppConfig().template?.ui?.carousel;
+  if (carousel !== undefined) {
+    return {
+      showCarousel: carousel.enabled === true,
+      slideData: Array.isArray(carousel.slides)
+        ? (carousel.slides as SystemConfigType['slideData'])
+        : []
+    };
+  }
+
   try {
     const filename =
       process.env.NODE_ENV === 'development' ? 'data/config.local.json' : '/app/data/config.json';
     const res = JSON.parse(readFileSync(filename, 'utf-8')) as SystemConfigType;
     return res;
   } catch (error) {
-    const carousel = readRuntimeAppConfig().template?.ui?.carousel;
-    if (carousel) {
-      return {
-        showCarousel: carousel.enabled === true,
-        slideData: Array.isArray(carousel.slides)
-          ? (carousel.slides as SystemConfigType['slideData'])
-          : []
-      };
-    }
-
     console.log('-getSystemConfig-\n', error);
     return defaultConfig;
   }
