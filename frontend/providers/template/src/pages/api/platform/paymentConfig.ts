@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import {
   getRuntimeCloudPort,
-  getRuntimeCloudDomain,
   getRuntimeDisableHttps,
   getRuntimeHttpPort,
   readRuntimeAppConfig
@@ -25,6 +24,9 @@ export type PaymentConfigResponse = {
 const COSTCENTER_SERVICE_CONFIG_URL =
   'http://costcenter-frontend.costcenter-frontend.svc:3000/api/platform/getAppConfig';
 const COSTCENTER_CONFIG_TIMEOUT_MS = 5000;
+
+const getCostCenterDomain = (config: ReturnType<typeof readRuntimeAppConfig>) =>
+  process.env.SEALOS_CLOUD_DOMAIN || config.cloud?.domain || 'cloud.sealos.io';
 
 const getHeaderValue = (value: string | string[] | undefined) => {
   const header = Array.isArray(value) ? value[0] : value;
@@ -56,7 +58,7 @@ const getExternalConfigUrl = (domain: string, protocol: 'http' | 'https', rawPor
 
 const getCostCenterConfigUrls = (req: NextApiRequest) => {
   const config = readRuntimeAppConfig();
-  const domain = getRuntimeCloudDomain(config);
+  const domain = getCostCenterDomain(config);
   const disableHttps = getRuntimeDisableHttps(config);
   const configuredProtocol = disableHttps ? 'http' : 'https';
   const configuredPort = disableHttps ? getRuntimeHttpPort(config) : getRuntimeCloudPort(config);
