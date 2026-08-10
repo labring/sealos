@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -10,7 +11,10 @@ import (
 func TestPromServerHealth(t *testing.T) {
 	t.Parallel()
 
-	req := httptest.NewRequest(http.MethodGet, HealthPath, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, HealthPath, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	rw := httptest.NewRecorder()
 
 	(&PromServer{}).ServeHTTP(rw, req)
@@ -34,7 +38,10 @@ func TestPromServerHealth(t *testing.T) {
 func TestServeHealthRejectsNonGET(t *testing.T) {
 	t.Parallel()
 
-	req := httptest.NewRequest(http.MethodPost, HealthPath, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, HealthPath, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	rw := httptest.NewRecorder()
 
 	ServeHealth(rw, req)
