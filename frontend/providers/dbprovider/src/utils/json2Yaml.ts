@@ -583,7 +583,7 @@ export const json2MigrateCR = (data: MigrateForm) => {
   };
 
   const templateName = templateByDB[data.dbType];
-  if (templateName === undefined) {
+  if (!templateName) {
     throw new Error(`Migration is not supported for database type: ${data.dbType}`);
   }
 
