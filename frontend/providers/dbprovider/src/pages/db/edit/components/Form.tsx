@@ -171,7 +171,7 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
                         <Td w="190px">{keyName}</Td>
                         <Td>{value.cpuMemory.limits.cpu}</Td>
                         <Td>{value.cpuMemory.limits.memory}</Td>
-                        <Td>{value.storage} G</Td>
+                        <Td>{value.storage} Gi</Td>
                         <Td>{value.other?.replicas ?? data.replicas}</Td>
                       </Tr>
                     );
