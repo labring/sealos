@@ -49,7 +49,11 @@ func (sac *ServiceAccountConfig) ApplyWithTokenRequest(
 	if err := sac.applyServiceAccount(config, client); err != nil {
 		return nil, metav1.Time{}, fmt.Errorf("failed to apply service account error: %w", err)
 	}
-	tokenRequest, err := sac.requestToken(ctx, config)
+	boundSecret, err := sac.applyBoundTokenSecret(ctx, client)
+	if err != nil {
+		return nil, metav1.Time{}, fmt.Errorf("failed to apply bound token secret: %w", err)
+	}
+	tokenRequest, err := sac.requestToken(ctx, config, boundSecret)
 	if err != nil {
 		return nil, metav1.Time{}, fmt.Errorf("failed to fetch token: %w", err)
 	}
@@ -77,7 +81,34 @@ func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client clie
 	return err
 }
 
-func (sac *ServiceAccountConfig) requestToken(ctx context.Context, config *rest.Config) (*authenticationv1.TokenRequest, error) {
+func (sac *ServiceAccountConfig) applyBoundTokenSecret(ctx context.Context, cli client.Client) (*v1.Secret, error) {
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      TokenSecretName(sac.user),
+			Namespace: sac.namespace,
+		},
+	}
+	_, err := controllerutil.CreateOrUpdate(ctx, cli, secret, func() error {
+		secret.Type = v1.SecretTypeOpaque
+		if secret.Annotations == nil {
+			secret.Annotations = map[string]string{}
+		}
+		secret.Annotations[v1.ServiceAccountNameKey] = sac.user
+		if sac.sa != nil {
+			secret.OwnerReferences = append([]metav1.OwnerReference(nil), sac.sa.OwnerReferences...)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if secret.UID == "" {
+		return nil, fmt.Errorf("bound token secret %s/%s has empty uid", secret.Namespace, secret.Name)
+	}
+	return secret, nil
+}
+
+func (sac *ServiceAccountConfig) requestToken(ctx context.Context, config *rest.Config, boundSecret *v1.Secret) (*authenticationv1.TokenRequest, error) {
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
@@ -87,6 +118,12 @@ func (sac *ServiceAccountConfig) requestToken(ctx context.Context, config *rest.
 		CreateToken(ctx, sac.user, &authenticationv1.TokenRequest{
 			Spec: authenticationv1.TokenRequestSpec{
 				ExpirationSeconds: ptr.To(int64(sac.tokenRequestExpirationSeconds())),
+				BoundObjectRef: &authenticationv1.BoundObjectReference{
+					Kind:       "Secret",
+					APIVersion: "v1",
+					Name:       boundSecret.Name,
+					UID:        boundSecret.UID,
+				},
 			},
 		}, metav1.CreateOptions{})
 	if err != nil {
@@ -103,6 +140,10 @@ func (sac *ServiceAccountConfig) tokenRequestExpirationSeconds() int32 {
 		return userv1.DefaultCSRExpirationSeconds
 	}
 	return sac.expirationSeconds
+}
+
+func TokenSecretName(name string) string {
+	return fmt.Sprintf("sealos-token-%s", name)
 }
 
 func (sac *ServiceAccountConfig) generatorKubeConfig(

@@ -654,7 +654,18 @@ func (r *UserReconciler) syncKubeConfig(
 	}
 	user.Status.ObservedCSRExpirationSeconds = user.Spec.CSRExpirationSeconds
 	if r.shouldRotateKubeConfig(user) {
-		user.Status.ObservedKubeConfigRotateAt = user.Spec.KubeConfigRotateAt
+		if err := r.deleteBoundTokenSecret(ctx, user); err != nil {
+			helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
+			r.Recorder.Eventf(
+				user,
+				v1.EventTypeWarning,
+				"syncKubeConfig",
+				"Delete bound token secret %s is error: %v",
+				user.Name,
+				err,
+			)
+			return
+		}
 	}
 	cfg := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).
 		WithServiceAccountConfig(config.GetUserSystemNamespace(), sa)
@@ -701,6 +712,9 @@ func (r *UserReconciler) syncKubeConfig(
 		return
 	}
 	state.tokenExpirationDeadline = &tokenExpiresAt
+	if r.shouldRotateKubeConfig(user) {
+		user.Status.ObservedKubeConfigRotateAt = user.Spec.KubeConfigRotateAt
+	}
 	kubeData, err := clientcmd.Write(*apiConfig)
 	if err != nil {
 		helper.SetConditionError(userCondition, "OutputKubeConfigError", err)
@@ -718,6 +732,16 @@ func (r *UserReconciler) syncKubeConfig(
 	userCondition.Message = "renew sync kube config successfully hash " + hash.HashToString(
 		user.Status.KubeConfig,
 	)
+}
+
+func (r *UserReconciler) deleteBoundTokenSecret(ctx context.Context, user *userv1.User) error {
+	secret := &v1.Secret{}
+	secret.Name = kubeconfig.TokenSecretName(user.Name)
+	secret.Namespace = config.GetUserSystemNamespace()
+	if err := r.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete bound token secret: %w", err)
+	}
+	return nil
 }
 
 func syncReNewConfig(user *userv1.User) (*api.Config, *string, error) {
