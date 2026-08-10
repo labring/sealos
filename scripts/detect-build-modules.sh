@@ -27,7 +27,6 @@ declare -A CONTROLLER_MODULES=(
     ["job-heartbeat"]="job/heartbeat"
     ["resources"]="resources"
     ["node"]="node"
-    ["objectstorage"]="objectstorage"
 )
 
 declare -A SERVICE_MODULES=(
