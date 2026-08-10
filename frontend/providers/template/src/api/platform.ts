@@ -2,6 +2,7 @@ import { EnvResponse } from '@/types/index';
 import { GET } from '@/services/request';
 import { SystemConfigType, TemplateType } from '@/types/app';
 import type { UserTask, userPriceType } from '@/types/user';
+import type { PaymentConfigResponse } from '@/pages/api/platform/paymentConfig';
 import useSessionStore from '@/store/session';
 
 export const updateRepo = () => GET('/api/updateRepo');
@@ -20,6 +21,8 @@ export const getSystemConfig = () => {
 };
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
+
+export const getPaymentConfig = () => GET<PaymentConfigResponse>('/api/platform/paymentConfig');
 
 export const getUserTasks = () =>
   GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {
