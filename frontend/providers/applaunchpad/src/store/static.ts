@@ -29,6 +29,7 @@ export let CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED = false;
 export let PUBLIC_DOMAIN_RESERVED_PREFIXES: string[] = [];
 export let CUSTOM_DOMAIN_MODE: CustomDomainMode = 'cname';
 export let CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME = 'wildcard-cert';
+export let NETWORK_ISOLATION_ENABLED = false;
 
 export const loadInitData = async () => {
   try {
@@ -59,6 +60,7 @@ export const loadInitData = async () => {
     CUSTOM_DOMAIN_MODE = res.CUSTOM_DOMAIN_MODE || 'cname';
     CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME =
       res.CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME || 'wildcard-cert';
+    NETWORK_ISOLATION_ENABLED = !!res.NETWORK_ISOLATION_ENABLED;
     setPublicDomainReservedPrefixes(PUBLIC_DOMAIN_RESERVED_PREFIXES);
 
     return {
@@ -75,7 +77,8 @@ export const loadInitData = async () => {
       CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED,
       PUBLIC_DOMAIN_RESERVED_PREFIXES,
       CUSTOM_DOMAIN_MODE,
-      CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME
+      CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME,
+      NETWORK_ISOLATION_ENABLED
     };
   } catch (error) {}
 
@@ -105,6 +108,7 @@ export const serverLoadInitData = () => {
     CUSTOM_DOMAIN_MODE = normalizeCustomDomainMode(global.AppConfig.launchpad.customDomain?.mode);
     CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME =
       global.AppConfig.launchpad.customDomain?.certificate?.tlsSecretName || 'wildcard-cert';
+    NETWORK_ISOLATION_ENABLED = false;
     setPublicDomainReservedPrefixes(PUBLIC_DOMAIN_RESERVED_PREFIXES);
   } catch (error) {}
 };

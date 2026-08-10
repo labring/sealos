@@ -1,4 +1,4 @@
-import { GET, POST, DELETE } from '@/services/request';
+import { GET, POST, PUT, DELETE } from '@/services/request';
 import type { V1Deployment, SinglePodMetrics, V1StatefulSet } from '@kubernetes/client-node';
 import { adaptAppListItem, adaptMetrics, adaptEvents } from '@/utils/adapt';
 import type { AppDetailType, AppPatchPropsType, PodDetailType } from '@/types/app';
@@ -7,6 +7,7 @@ import { LogQueryPayload } from '@/pages/api/log/queryLogs';
 import { PodListQueryPayload } from '@/pages/api/log/queryPodList';
 import { track } from '@sealos/gtm';
 import type { BackendServiceItem } from '@/pages/api/listBackendServices';
+import type { NetworkIsolationConfig, NetworkIsolationResponse } from '@/types/networkIsolation';
 
 export const postDeployApp = (yamlList: string[], mode: 'create' | 'replace' = 'create') =>
   POST('/api/applyApp', { yamlList, mode });
@@ -38,6 +39,20 @@ export const getAppByName = (name: string, mock = false) =>
   GET<AppDetailType>(`/api/getAppByAppName?appName=${name}&mock=${mock}`);
 
 export const getBackendServices = () => GET<BackendServiceItem[]>('/api/listBackendServices');
+
+export const getNetworkIsolation = (appName: string) =>
+  GET<NetworkIsolationResponse>(`/api/v1/app/${encodeURIComponent(appName)}/network-isolation`);
+
+export const putNetworkIsolation = (
+  appName: string,
+  config: NetworkIsolationConfig,
+  revision: string
+) =>
+  PUT<NetworkIsolationResponse>(
+    `/api/v1/app/${encodeURIComponent(appName)}/network-isolation`,
+    { config },
+    { headers: { 'If-Match': revision } }
+  );
 
 export const getAppPodsByAppName = (name: string) =>
   GET<PodDetailType[]>('/api/getAppPodsByAppName', { name });

@@ -52,6 +52,16 @@ export function K8sApi(config: string): k8s.KubeConfig {
   return kc;
 }
 
+function getNetworkIsolationSourceReader() {
+  if (!CheckIsInCluster()[0]) return undefined;
+  const serviceAccountConfig = new k8s.KubeConfig();
+  serviceAccountConfig.loadFromCluster();
+  return {
+    k8sCore: serviceAccountConfig.makeApiClient(k8s.CoreV1Api),
+    k8sApp: serviceAccountConfig.makeApiClient(k8s.AppsV1Api)
+  };
+}
+
 export async function CreateYaml(
   kc: k8s.KubeConfig,
   specs: k8s.KubernetesObject[]
@@ -285,6 +295,7 @@ export async function getK8s({ kubeconfig }: { kubeconfig: string }) {
     applyYamlList,
     getDeployApp,
     getUserQuota: () => getUserQuota(kc, namespace),
-    getUserBalance: () => getUserBalance(kc)
+    getUserBalance: () => getUserBalance(kc),
+    networkIsolationSourceReader: getNetworkIsolationSourceReader()
   });
 }

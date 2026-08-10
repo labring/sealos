@@ -38,6 +38,8 @@ data:
       imagePorts:
         enabled: {{ .Values.applaunchpadConfig.imagePortsEnabled }}
         trustedRegistries:{{ toYaml .Values.applaunchpadConfig.imagePortsTrustedRegistries | nindent 10 }}
+      networkIsolation:
+        mode: {{ .Values.applaunchpadConfig.networkIsolationMode | default "auto" | quote }}
       publicDomain:
         customPrefixEnabled: {{ .Values.applaunchpadConfig.customPublicDomainPrefixEnabled }}
         reservedPrefixes:{{ toYaml .Values.applaunchpadConfig.publicDomainReservedPrefixes | nindent 10 }}

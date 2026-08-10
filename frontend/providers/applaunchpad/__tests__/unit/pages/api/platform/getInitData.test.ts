@@ -72,6 +72,11 @@ describe('getServerEnv', () => {
     expect(env.IMAGE_PORTS_ENABLED).toBe(false);
     expect(env.NODE_PORT_HOST).toBe('');
     expect(env.CUSTOM_PUBLIC_DOMAIN_PREFIX_ENABLED).toBe(false);
+    expect(env.NETWORK_ISOLATION_ENABLED).toBe(false);
+  });
+
+  it('returns the resolved network isolation capability', () => {
+    expect(getServerEnv(createConfig(), true).NETWORK_ISOLATION_ENABLED).toBe(true);
   });
 
   it('returns enabled branch feature gates from config', () => {

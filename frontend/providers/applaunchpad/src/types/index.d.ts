@@ -25,6 +25,7 @@ export type FileMangerType = {
 };
 
 export type CustomDomainMode = 'cname' | 'certificate';
+export type NetworkIsolationMode = 'auto' | 'disabled';
 
 export type AppConfigType = {
   cloud: {
@@ -78,6 +79,9 @@ export type AppConfigType = {
       certificate?: {
         tlsSecretName?: string;
       };
+    };
+    networkIsolation?: {
+      mode?: NetworkIsolationMode;
     };
     eventAnalyze: {
       enabled: boolean;
@@ -135,4 +139,5 @@ export type EnvResponse = {
   PUBLIC_DOMAIN_RESERVED_PREFIXES: string[];
   CUSTOM_DOMAIN_MODE: CustomDomainMode;
   CUSTOM_DOMAIN_CERTIFICATE_SECRET_NAME: string;
+  NETWORK_ISOLATION_ENABLED: boolean;
 };

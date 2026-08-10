@@ -29,6 +29,7 @@ import {
   User
 } from '@kubernetes/client-node';
 import { ensurePublicDomainPrefixesAvailable } from './publicDomain';
+import { deleteNetworkIsolationIfPresent } from './networkIsolation';
 
 export interface K8sContext {
   kc: KubeConfig;
@@ -46,6 +47,10 @@ export interface K8sContext {
   getDeployApp: (appName: string) => Promise<V1Deployment | V1StatefulSet>;
   getUserQuota: () => Promise<UserQuotaItemType[]>;
   getUserBalance: () => Promise<number>;
+  networkIsolationSourceReader?: {
+    k8sCore: CoreV1Api;
+    k8sApp: AppsV1Api;
+  };
 }
 
 /**
@@ -329,6 +334,9 @@ export async function pauseApp(appName: string, k8s: K8sContext) {
  */
 export async function deleteAppByName(name: string, k8s: K8sContext) {
   const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } = k8s;
+
+  // The controller owns derivative CNP, ingress, and Service state. Remove it first.
+  await deleteNetworkIsolationIfPresent(name, k8s);
 
   const certificatesList = (await k8sCustomObjects.listNamespacedCustomObject(
     'cert-manager.io',

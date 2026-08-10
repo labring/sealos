@@ -201,10 +201,36 @@ jobs:
             echo "No Helm chart found for ${MODULE}; skipping"
           fi
 
+  applaunchpad-unit-tests:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        if: contains(needs.detect-changes.outputs.modules, 'providers/applaunchpad')
+      - uses: pnpm/action-setup@v4
+        if: contains(needs.detect-changes.outputs.modules, 'providers/applaunchpad')
+        with:
+          version: 8.9.0
+      - uses: actions/setup-node@v4
+        if: contains(needs.detect-changes.outputs.modules, 'providers/applaunchpad')
+        with:
+          node-version: 20.4.0
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install frontend dependencies
+        if: contains(needs.detect-changes.outputs.modules, 'providers/applaunchpad')
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      - name: Run AppLaunchpad unit tests
+        if: contains(needs.detect-changes.outputs.modules, 'providers/applaunchpad')
+        working-directory: frontend/providers/applaunchpad
+        run: pnpm test:unit
+
   image-build:
     needs:
       - detect-changes
       - helm-validate
+      - applaunchpad-unit-tests
     if: needs.detect-changes.outputs.modules != '[]'
     uses: ./.github/workflows/frontend.yml
     permissions:

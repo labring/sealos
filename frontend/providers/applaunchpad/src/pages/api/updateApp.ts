@@ -6,13 +6,15 @@ import yaml from 'js-yaml';
 import type { CustomObjectsApi, V1StatefulSet } from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
-import { initK8s } from 'sealos-desktop-sdk/service';
 import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
 import type { V1Service } from '@kubernetes/client-node';
 import { generateOwnerReference, shouldHaveOwnerReference } from '@/utils/deployYaml2Json';
 import { appDeployKey } from '@/constants/app';
 import { buildExternalUrl } from '@/utils/network-url';
 import { ResponseCode } from '@/types/response';
+import { createK8sContext } from '@/services/backend';
+import { isNetworkIsolationAvailable } from '@/services/backend/networkIsolationCapability';
+import { syncExistingNetworkIsolationIfPresent } from '@/services/backend/networkIsolation';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -417,6 +419,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 
   try {
+    const k8sContext = await createK8sContext(req);
     const {
       applyYamlList,
       k8sApp,
@@ -425,7 +428,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       k8sAutoscaling,
       k8sCustomObjects,
       namespace
-    } = await initK8s({ req });
+    } = k8sContext;
 
     const crMap: Record<
       `${YamlKindEnum}`,
@@ -800,6 +803,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     updateAppCRUrl(k8sCustomObjects, namespace, appName, patch).catch((error) => {
       errLog('AppCR URL update failed', error);
     });
+
+    if (!(await isNetworkIsolationAvailable())) {
+      try {
+        await syncExistingNetworkIsolationIfPresent(appName, k8sContext);
+      } catch (error) {
+        errLog('Existing network isolation maintenance failed', {
+          appName,
+          error
+        });
+      }
+    }
 
     return jsonRes(res);
   } catch (err: any) {

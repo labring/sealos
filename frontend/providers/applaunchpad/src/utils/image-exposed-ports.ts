@@ -1,10 +1,10 @@
-import { lookup } from 'dns/promises';
-import { request as httpRequest } from 'http';
-import type { IncomingHttpHeaders, IncomingMessage, RequestOptions } from 'http';
-import { request as httpsRequest } from 'https';
-import { isIP } from 'net';
-import type { LookupFunction } from 'net';
-import type { LookupAddress } from 'dns';
+import { lookup } from 'node:dns/promises';
+import { request as httpRequest } from 'node:http';
+import type { IncomingHttpHeaders, IncomingMessage, RequestOptions } from 'node:http';
+import { request as httpsRequest } from 'node:https';
+import { isIP } from 'node:net';
+import type { LookupFunction } from 'node:net';
+import type { LookupAddress } from 'node:dns';
 
 export type ImageRegistryAuth = {
   username?: string;
@@ -501,8 +501,8 @@ export function parseImageRef(imageName: string, registryOverride?: string): Ima
   const registry = registryOverride
     ? normalizeRegistry(registryOverride)
     : hasRegistry
-      ? normalizeRegistry(first)
-      : DEFAULT_REGISTRY;
+    ? normalizeRegistry(first)
+    : DEFAULT_REGISTRY;
   let repositorySegments = hasRegistry ? segments.slice(1) : segments;
   if (registryOverride && !hasRegistry && segments.length > 1) {
     repositorySegments = segments;
