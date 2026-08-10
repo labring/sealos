@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import {
   getRuntimeCloudPort,
-  getRuntimeDesktopDomain,
+  getRuntimeCloudDomain,
   getRuntimeDisableHttps,
   getRuntimeHttpPort,
   readRuntimeAppConfig
@@ -24,6 +24,7 @@ export type PaymentConfigResponse = {
 
 const COSTCENTER_SERVICE_CONFIG_URL =
   'http://costcenter-frontend.costcenter-frontend.svc:3000/api/platform/getAppConfig';
+const COSTCENTER_CONFIG_TIMEOUT_MS = 5000;
 
 const getHeaderValue = (value: string | string[] | undefined) => {
   const header = Array.isArray(value) ? value[0] : value;
@@ -55,7 +56,7 @@ const getExternalConfigUrl = (domain: string, protocol: 'http' | 'https', rawPor
 
 const getCostCenterConfigUrls = (req: NextApiRequest) => {
   const config = readRuntimeAppConfig();
-  const domain = getRuntimeDesktopDomain(config);
+  const domain = getRuntimeCloudDomain(config);
   const disableHttps = getRuntimeDisableHttps(config);
   const configuredProtocol = disableHttps ? 'http' : 'https';
   const configuredPort = disableHttps ? getRuntimeHttpPort(config) : getRuntimeCloudPort(config);
@@ -81,11 +82,17 @@ async function getCostCenterConfig(req: NextApiRequest): Promise<CostCenterConfi
 
   for (const url of getCostCenterConfigUrls(req)) {
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(COSTCENTER_CONFIG_TIMEOUT_MS)
+      });
       if (!response.ok) {
         throw new Error(`CostCenter config request failed with status ${response.status}`);
       }
-      return (await response.json()) as CostCenterConfigResponse;
+      const result = (await response.json()) as CostCenterConfigResponse;
+      if (result.code !== 200 || !result.data) {
+        throw new Error(`CostCenter config request failed with code ${result.code}`);
+      }
+      return result;
     } catch (error) {
       lastError = error;
     }
