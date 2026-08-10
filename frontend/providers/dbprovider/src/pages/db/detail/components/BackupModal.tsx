@@ -11,6 +11,8 @@ import {
   Button,
   Checkbox,
   Flex,
+  FormControl,
+  FormErrorMessage,
   Input,
   Modal,
   ModalBody,
@@ -25,6 +27,7 @@ import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { isValidBackupRemark } from '@/utils/backupRemark';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
 enum NavEnum {
@@ -78,7 +81,8 @@ const BackupModal = ({
   const {
     register: manualRegister,
     handleSubmit: handleSubmitManual,
-    getValues: getManualValues
+    getValues: getManualValues,
+    formState: { errors: manualErrors }
   } = useForm({
     defaultValues: {
       backupName: `${dbName}-${nanoid()}`,
@@ -286,9 +290,20 @@ const BackupModal = ({
                           })}
                         />
                       </Flex>
-                      <Flex mt={7} alignItems={'center'}>
-                        <Box flex={'0 0 80px'}>{t('remark')}</Box>
-                        <Input width={'328px'} maxW={'328px'} {...manualRegister('remark')} />
+                      <Flex mt={7} alignItems={'flex-start'}>
+                        <Box flex={'0 0 80px'} pt={2}>
+                          {t('remark')}
+                        </Box>
+                        <FormControl isInvalid={Boolean(manualErrors.remark)} w={'328px'}>
+                          <Input
+                            {...manualRegister('remark', {
+                              validate: (value) => isValidBackupRemark(value) || t('remark_tip')
+                            })}
+                          />
+                          <FormErrorMessage mt={1}>
+                            {manualErrors.remark && String(manualErrors.remark.message)}
+                          </FormErrorMessage>
+                        </FormControl>
                         <Tip
                           ml={'12px'}
                           icon={<InfoOutlineIcon fontSize={'16px'} />}
