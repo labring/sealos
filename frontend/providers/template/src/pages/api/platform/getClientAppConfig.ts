@@ -14,6 +14,7 @@ export function getClientAppConfigServer() {
   const templateConfig = config.template;
   const uiConfig = templateConfig?.ui;
   const carousel = uiConfig?.carousel;
+  const slides = carousel?.slides;
 
   return ClientAppConfigSchema.parse({
     brandName: uiConfig?.brandName || process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos',
@@ -27,7 +28,7 @@ export function getClientAppConfigServer() {
     showAuthor: templateConfig?.features?.showAuthor ?? process.env.SHOW_AUTHOR === 'true',
     carousel: {
       enabled: carousel?.enabled === true,
-      slides: Array.isArray(carousel?.slides) ? carousel.slides : []
+      slides: Array.isArray(slides) ? slides : []
     }
   });
 }
