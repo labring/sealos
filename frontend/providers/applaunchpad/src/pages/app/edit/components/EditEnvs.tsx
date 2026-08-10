@@ -1,3 +1,5 @@
+import { useToast } from '@/hooks/useToast';
+import { parseDotenvEnvs, stringifyDotenvEnvs } from '@/utils/dotenvEnv';
 import React, { useState, useCallback } from 'react';
 import {
   Modal,
@@ -13,7 +15,25 @@ import {
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { AppEditType } from '@/types/app';
-import { parseDotenvEnvs, stringifyDotenvEnvs } from '@/utils/dotenvEnv';
+
+type EditableEnv = {
+  key: string;
+  value: string;
+  valueFrom?: any;
+};
+
+const findDuplicateEnvKey = (envs: EditableEnv[]) => {
+  const seenKeys = new Set<string>();
+
+  for (const env of envs) {
+    const key = env.key.trim();
+    if (!key) continue;
+    if (seenKeys.has(key)) return key;
+    seenKeys.add(key);
+  }
+
+  return '';
+};
 
 const EditEnvs = ({
   defaultEnv = [],
@@ -25,6 +45,7 @@ const EditEnvs = ({
   onClose: () => void;
 }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [inputVal, setInputVal] = useState(
     stringifyDotenvEnvs(
       defaultEnv
@@ -36,11 +57,21 @@ const EditEnvs = ({
 
   const onSubmit = useCallback(() => {
     const result = parseDotenvEnvs(inputVal);
+    const nextEnv = [...defaultEnv.filter((item) => item.valueFrom), ...result];
+    const duplicateKey = findDuplicateEnvKey(nextEnv);
+
+    if (duplicateKey) {
+      toast({
+        title: t('Env Variable Name Conflict', { name: duplicateKey }),
+        status: 'error'
+      });
+      return;
+    }
 
     // concat valueFrom env
-    successCb([...defaultEnv.filter((item) => item.valueFrom), ...result]);
+    successCb(nextEnv);
     onClose();
-  }, [defaultEnv, inputVal, onClose, successCb]);
+  }, [defaultEnv, inputVal, onClose, successCb, t, toast]);
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
