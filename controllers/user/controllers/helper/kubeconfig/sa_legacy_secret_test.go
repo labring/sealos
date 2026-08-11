@@ -181,6 +181,10 @@ func TestServiceAccountConfigWithForceNewSecret(t *testing.T) {
 		t.Fatalf("secret name reused old secret %q", oldSecret)
 	}
 	if cfg.secretName != cfg.sa.Secrets[0].Name {
-		t.Fatalf("cached secret name %q != current secret name %q", cfg.secretName, cfg.sa.Secrets[0].Name)
+		t.Fatalf(
+			"cached secret name %q != current secret name %q",
+			cfg.secretName,
+			cfg.sa.Secrets[0].Name,
+		)
 	}
 }

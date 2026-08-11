@@ -224,7 +224,10 @@ func (sac *ServiceAccountConfig) generateSecretName() string {
 	if sac.secretName != "" {
 		return sac.secretName
 	}
-	if !sac.forceNewSecret && sac.sa != nil && len(sac.sa.Secrets) > 0 && sac.sa.Secrets[0].Name != "" {
+	if !sac.forceNewSecret &&
+		sac.sa != nil &&
+		len(sac.sa.Secrets) > 0 &&
+		sac.sa.Secrets[0].Name != "" {
 		return sac.sa.Secrets[0].Name
 	}
 	return "sealos-token-" + sac.user + "-" + GetRandomString(5)
