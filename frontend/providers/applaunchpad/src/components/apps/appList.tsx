@@ -205,13 +205,15 @@ const AppList = ({
               pl={4}
               fontSize={'14px'}
               fontWeight={'500'}
+              width="100%"
+              minWidth={0}
               alignItems={item?.remark ? 'flex-start' : 'center'}
               _hover={{
                 '& .remark-button': {
                   opacity: 1,
                   visibility: 'visible'
                 },
-                '& .app-name': {
+                '& .remark-button-sibling': {
                   maxWidth: '100px'
                 }
               }}
@@ -221,7 +223,7 @@ const AppList = ({
               <Flex alignItems="center" width="100%">
                 <MyTooltip label={item.name}>
                   <Text
-                    className="app-name"
+                    className={item.remark ? undefined : 'remark-button-sibling'}
                     overflow="hidden"
                     textOverflow="ellipsis"
                     whiteSpace="nowrap"
@@ -255,7 +257,7 @@ const AppList = ({
               {item.remark && (
                 <Flex alignItems="center" width="100%">
                   <Text
-                    className="app-name"
+                    className="remark-button-sibling"
                     fontSize={'12px'}
                     color={'#737373'}
                     flex={1}
