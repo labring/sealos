@@ -960,7 +960,9 @@ func (r *UserReconciler) isNewUser(user *userv1.User) bool {
 
 func (r *UserReconciler) nextRequeueDuration(state *userReconcileState) time.Duration {
 	duration := RandTimeDurationBetween(r.minRequeueDuration, r.maxRequeueDuration)
-	if state == nil || state.tokenExpirationDeadline == nil || state.tokenExpirationDeadline.IsZero() {
+	if state == nil ||
+		state.tokenExpirationDeadline == nil ||
+		state.tokenExpirationDeadline.IsZero() {
 		return duration
 	}
 	tokenRefreshDuration := time.Until(state.tokenExpirationDeadline.Time) * 8 / 10

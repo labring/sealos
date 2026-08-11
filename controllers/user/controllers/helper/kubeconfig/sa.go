@@ -163,7 +163,11 @@ func CleanupLegacyBoundTokenSecrets(ctx context.Context, cli client.Client, user
 	return nil
 }
 
-func (sac *ServiceAccountConfig) requestToken(ctx context.Context, config *rest.Config, boundSecret *v1.Secret) (*authenticationv1.TokenRequest, error) {
+func (sac *ServiceAccountConfig) requestToken(
+	ctx context.Context,
+	config *rest.Config,
+	boundSecret *v1.Secret,
+) (*authenticationv1.TokenRequest, error) {
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err

@@ -98,7 +98,11 @@ func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 		t.Fatalf("current secret type = %s, want %s", got.Type, corev1.SecretTypeOpaque)
 	}
 
-	if err := cli.Get(context.Background(), client.ObjectKeyFromObject(legacy), &got); !apierrors.IsNotFound(err) {
+	if err := cli.Get(
+		context.Background(),
+		client.ObjectKeyFromObject(legacy),
+		&got,
+	); !apierrors.IsNotFound(err) {
 		t.Fatalf("legacy secret err = %v, want not found", err)
 	}
 
