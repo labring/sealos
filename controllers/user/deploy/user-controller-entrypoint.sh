@@ -26,17 +26,17 @@ add_set_string() {
 # Clean up old resources
 kubectl delete -f ./drop/ --ignore-not-found
 
-# Auto configure from sealos-config
-SEALOS_CLOUD_DOMAIN=${SEALOS_CLOUD_DOMAIN:-"$(get_cm_value sealos-system sealos-config cloudDomain)"}
-SEALOS_CLOUD_PORT=${SEALOS_CLOUD_PORT:-"$(get_cm_value sealos-system sealos-config cloudPort)"}
+# Auto configure from sealos-config, then fall back to chart defaults.
+DEFAULT_SEALOS_CLOUD_DOMAIN="127.0.0.1.nip.io"
+DEFAULT_SEALOS_CLOUD_APISERVER_PORT="6443"
 
-if [ -n "${SEALOS_CLOUD_DOMAIN}" ]; then
-  add_set_string cloudAPIServerDomain "${SEALOS_CLOUD_DOMAIN}"
-fi
+SEALOS_CLOUD_DOMAIN=${SEALOS_CLOUD_DOMAIN:-"${cloudDomain:-$(get_cm_value sealos-system sealos-config cloudDomain)}"}
+SEALOS_CLOUD_DOMAIN=${SEALOS_CLOUD_DOMAIN:-"${DEFAULT_SEALOS_CLOUD_DOMAIN}"}
+SEALOS_CLOUD_APISERVER_PORT=${SEALOS_CLOUD_APISERVER_PORT:-"${apiserverPort:-$(get_cm_value sealos-system sealos-config apiserverPort)}"}
+SEALOS_CLOUD_APISERVER_PORT=${SEALOS_CLOUD_APISERVER_PORT:-"${DEFAULT_SEALOS_CLOUD_APISERVER_PORT}"}
 
-if [ -n "${SEALOS_CLOUD_PORT}" ]; then
-  add_set_string cloudAPIServerPort "${SEALOS_CLOUD_PORT}"
-fi
+add_set_string cloudAPIServerDomain "${SEALOS_CLOUD_DOMAIN}"
+add_set_string cloudAPIServerPort "${SEALOS_CLOUD_APISERVER_PORT}"
 
 # Prepare values files
 SERVICE_NAME="user-controller"
