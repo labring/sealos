@@ -13,6 +13,28 @@ resources:
 service:
   port: 8428
 
+startupProbe:
+  httpGet:
+    path: /health
+    port: 8428
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 30
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8428
+  initialDelaySeconds: 3
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8428
+  initialDelaySeconds: 3
+  periodSeconds: 5
+  failureThreshold: 6
 
 serviceVlogsConfig:
   path: "http://usr-vlc-victoria-logs-cluster-vmauth.vlc.svc:8427"
