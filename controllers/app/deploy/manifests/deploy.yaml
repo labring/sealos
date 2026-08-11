@@ -592,7 +592,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: ghcr.io/labring/sealos-app-controller:latest
+        image: ghcr.io/sealos-apps/private-sealos/sealos-app-controller:latest
         livenessProbe:
           httpGet:
             path: /healthz

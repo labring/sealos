@@ -41,7 +41,7 @@ on:
         required: false
         type: boolean
   push:
-    branches: ["*"]
+    branches: ["release-v5.1"]
     paths:
       - "controllers/**"
       - ".github/workflows/controllers.yml"
@@ -82,7 +82,7 @@ jobs:
     with:
       module_name: ${{ matrix.module.name }}
       module_path: ${{ matrix.module.path }}
-      push_image: ${{ (github.event_name == 'push') || (github.event_name == 'create') || (inputs.push_image == true) }}
+      push_image: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
       push_image_tag: ${{ inputs.push_image_tag || 'latest' }}
       disable_cilint: ${{ inputs.disable_cilint || false }}
     secrets: inherit

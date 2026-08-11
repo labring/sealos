@@ -2,7 +2,7 @@
 
 replicaCount: 1
 
-image: ghcr.io/labring/sealos-terminal-controller:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-terminal-controller:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []

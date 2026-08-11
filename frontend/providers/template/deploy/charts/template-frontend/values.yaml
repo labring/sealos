@@ -1,6 +1,6 @@
 # Default values for template frontend helm chart.
 
-image: ghcr.io/labring/sealos-template-frontend:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-template-frontend:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []

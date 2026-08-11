@@ -54,6 +54,7 @@ on:
 
 env:
   GO_VERSION: "1.24"
+  GHCR_PRIVATE_PREFIX: "ghcr.io/sealos-apps/private-sealos"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
@@ -123,11 +124,11 @@ jobs:
       - name: Set image repo
         id: set-outputs
         env:
-          REPO_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
           MODULE_NAME: ${{ inputs.module_name }}
         run: |
-          echo "GHCR_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
-          echo "image-name=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-controller" >> $GITHUB_OUTPUT
+          echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          echo "image-name=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-controller" >> $GITHUB_OUTPUT
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
           fi
@@ -198,15 +199,15 @@ jobs:
 
       - name: Set image repo
         env:
-          REPO_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
           MODULE_NAME: ${{ inputs.module_name }}
           MODULE_PATH: ${{ inputs.module_path }}
         run: |
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
           echo "MODULE_PATH=${MODULE_PATH}" >> $GITHUB_ENV
-          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
-          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
-          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          echo "OLD_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-controller" >> $GITHUB_ENV
+          echo "GHCR_CLUSTER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-cloud-${MODULE_NAME}-controller" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-controller" >> $GITHUB_ENV
           fi

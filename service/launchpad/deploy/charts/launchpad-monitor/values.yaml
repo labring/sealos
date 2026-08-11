@@ -1,6 +1,6 @@
 replicaCount: 1
 
-image: ghcr.io/labring/sealos-launchpad-service:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-launchpad-service:latest
 imagePullPolicy: Always
 
 resources:

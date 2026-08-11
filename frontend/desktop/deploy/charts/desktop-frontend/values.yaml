@@ -1,4 +1,4 @@
-image: ghcr.io/labring/sealos-desktop-frontend:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-desktop-frontend:latest
 imagePullPolicy: IfNotPresent
 
 imagePullSecrets: []

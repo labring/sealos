@@ -1,6 +1,6 @@
 # Default values for applaunchpad frontend helm chart.
 
-image: ghcr.io/labring/sealos-applaunchpad-frontend:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-applaunchpad-frontend:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []

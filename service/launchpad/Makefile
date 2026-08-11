@@ -1,4 +1,4 @@
-IMG ?= ghcr.io/labring/sealos-launchpad-service:latest
+IMG ?= ghcr.io/sealos-apps/private-sealos/sealos-launchpad-service:latest
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))

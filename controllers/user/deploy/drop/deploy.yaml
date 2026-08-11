@@ -271,7 +271,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        image: ghcr.io/labring/sealos-user-controller:latest
+        image: ghcr.io/sealos-apps/private-sealos/sealos-user-controller:latest
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

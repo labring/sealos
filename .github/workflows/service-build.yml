@@ -46,6 +46,7 @@ on:
 
 env:
   GO_VERSION: "1.25"
+  GHCR_PRIVATE_PREFIX: "ghcr.io/sealos-apps/private-sealos"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
@@ -90,9 +91,9 @@ jobs:
         id: set_repo
         env:
           MODULE: ${{ inputs.module }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
         run: |
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
+          echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE}-service" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE}-service" >> $GITHUB_ENV
           fi
@@ -185,9 +186,9 @@ jobs:
         id: set_repo
         env:
           MODULE: ${{ inputs.module }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
         run: |
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
+          echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE}-service" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE}-service" >> $GITHUB_ENV
           fi
@@ -250,13 +251,13 @@ jobs:
 
       - name: Set image repo
         env:
-          REPO_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
           MODULE: ${{ inputs.module }}
         run: |
           echo "MODULE_NAME=${MODULE}" >> $GITHUB_ENV
-          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE}-service" >> $GITHUB_ENV
-          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE}-service" >> $GITHUB_ENV
-          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE}-service" >> $GITHUB_ENV
+          echo "OLD_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE}-service" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE}-service" >> $GITHUB_ENV
+          echo "GHCR_CLUSTER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-cloud-${MODULE}-service" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE}-service" >> $GITHUB_ENV
           fi

@@ -1,6 +1,6 @@
 # Default values for terminal frontend helm chart.
 
-image: ghcr.io/labring/sealos-terminal-frontend:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-terminal-frontend:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []

@@ -370,7 +370,7 @@ For more details, see [ALLOWED_ORIGINS_USAGE.md](./ALLOWED_ORIGINS_USAGE.md).
 | Parameter                   | Description                    | Default                                          |
 | --------------------------- | ------------------------------ | ------------------------------------------------ |
 | `replicaCount`              | Deployment replica count       | `1`                                              |
-| `image`                     | Container image                | `ghcr.io/labring/sealos-desktop-frontend:latest` |
+| `image`                     | Container image                | `ghcr.io/sealos-apps/private-sealos/sealos-desktop-frontend:latest` |
 | `imagePullPolicy`           | Image pull policy              | `IfNotPresent`                                   |
 | `fullnameOverride`          | Override full resource names   | `sealos-desktop`                                 |
 | `serviceAccount.create`     | Create service account         | `true`                                           |

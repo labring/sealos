@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/labring/sealos-job-init-controller:latest
+IMG ?= ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest
 TARGETARCH ?= amd64
 GOARCH ?= amd64
 

@@ -20,7 +20,7 @@ sealos run 镜像时会在目标节点执行 Kubefile，本镜像通过 Helm 安
 
 ```shell
 # 最简配置（自动读取集群 ConfigMap 中的 MongoDB 配置）
-sealos run ghcr.io/labring/sealos-cloud-resources-controller:latest
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-cloud-resources-controller:latest
 ```
 
 > 默认使用 mongodb 作为存储，sealos-resources 为数据库名
@@ -41,25 +41,25 @@ sealos run ghcr.io/labring/sealos-cloud-resources-controller:latest
 
 ```shell
 # 1. 最简配置（使用集群默认 MongoDB）
-sealos run ghcr.io/labring/sealos-cloud-resources-controller:latest
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-cloud-resources-controller:latest
 
 # 2. 指定自定义 MongoDB
-sealos run ghcr.io/labring/sealos-cloud-resources-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-cloud-resources-controller:latest \
   --env MONGO_URI="mongodb://user:pass@host:27017/resources?authSource=admin"
 
 # 3. 自定义命名空间和流量 MongoDB
-sealos run ghcr.io/labring/sealos-cloud-resources-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-cloud-resources-controller:latest \
   --env MONGO_URI="mongodb://user:pass@mongo1:27017/resources?authSource=admin" \
   --env TRAFFIC_MONGO_URI="mongodb://user:pass@mongo2:27017/traffic?authSource=admin" \
   --env RELEASE_NAMESPACE="my-resources"
 
 # 4. 使用 HELM_OPTS 自定义资源配置
-sealos run ghcr.io/labring/sealos-cloud-resources-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-cloud-resources-controller:latest \
   --env MONGO_URI="mongodb://user:pass@host:27017/resources?authSource=admin" \
   --env HELM_OPTS="--set resources.limits.cpu=2000m --set resources.limits.memory=2048Mi"
 
 # 5. 完整配置示例
-sealos run ghcr.io/labring/sealos-cloud-resources-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-cloud-resources-controller:latest \
   --env MONGO_URI="mongodb://admin:password123@10.0.0.1:27017/resources?authSource=admin" \
   --env TRAFFIC_MONGO_URI="mongodb://admin:password123@10.0.0.1:27017/traffic?authSource=admin" \
   --env RELEASE_NAMESPACE="production" \
@@ -72,7 +72,7 @@ sealos run ghcr.io/labring/sealos-cloud-resources-controller:latest \
 可通过 `HELM_OPTS` 传递以下参数：
 
 - `replicaCount`: 副本数，默认 `1`
-- `image`: 容器镜像，默认 `ghcr.io/labring/sealos-resources-controller:latest`
+- `image`: 容器镜像，默认 `ghcr.io/sealos-apps/private-sealos/sealos-resources-controller:latest`
 - `imagePullPolicy`: 镜像拉取策略，默认 `Always`
 - `secret.name`: Secret 名称，默认 `mongo-secret`
 - `secret.mongoURI`: MongoDB 连接 URI

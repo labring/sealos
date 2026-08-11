@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/labring/sealos-license-controller:latest
+IMG ?= ghcr.io/sealos-apps/private-sealos/sealos-license-controller:latest
 TARGETARCH ?= amd64
 GOARCH ?= amd64
 

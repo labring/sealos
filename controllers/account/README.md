@@ -20,6 +20,6 @@ data:
 
 ### 部署方式
 ```
-sealos run ghcr.io/labring/sealos-account-controller:deploy-cluster --env MONGO_URI="mongodb://username:passwd@ip:port/sealos-resources?authSource=admin"
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-account-controller:deploy-cluster --env MONGO_URI="mongodb://username:passwd@ip:port/sealos-resources?authSource=admin"
 ```
 

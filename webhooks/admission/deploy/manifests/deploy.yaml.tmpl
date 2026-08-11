@@ -304,7 +304,7 @@ spec:
           value: '{{ .icpEndpoint }}'
         - name: ICP_KEY
           value: '{{ .icpKey }}'
-        image: ghcr.io/labring/sealos-admission-webhook:latest
+        image: ghcr.io/sealos-apps/private-sealos/sealos-admission-webhook:latest
         livenessProbe:
           httpGet:
             path: /healthz

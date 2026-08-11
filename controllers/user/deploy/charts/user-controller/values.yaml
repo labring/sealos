@@ -1,6 +1,6 @@
 # Default values for user controller helm chart.
 
-image: ghcr.io/labring/sealos-user-controller:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-user-controller:latest
 
 imagePullSecrets: []
 fullnameOverride: "user"

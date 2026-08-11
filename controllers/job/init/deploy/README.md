@@ -21,14 +21,14 @@ sealos run 镜像时会在目标节点执行 Kubefile，本镜像通过 Helm 安
 
 ```shell
 # 最简配置（自动生成或从 ConfigMap 读取密码）
-sealos run ghcr.io/labring/sealos-job-init-controller:latest
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest
 
 # 自定义密码
-sealos run ghcr.io/labring/sealos-job-init-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest \
   --env ADMIN_PASSWORD="MyCustomPassword123"
 
 # 建议配置（设置密码盐值 + 自动密码）
-sealos run ghcr.io/labring/sealos-job-init-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="your-random-salt-string"
 ```
 
@@ -50,38 +50,38 @@ sealos run ghcr.io/labring/sealos-job-init-controller:latest \
 
 ```shell
 # 1. 最简配置（自动生成随机密码并保存到 ConfigMap）
-sealos run ghcr.io/labring/sealos-job-init-controller:latest
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest
 
 # 2. 查看自动生成的密码
 kubectl get cm sealos-cloud-admin -n sealos-system -o jsonpath='{.data.PASSWORD}'
 
 # 3. 使用已保存的密码（从 ConfigMap 读取）
-sealos run ghcr.io/labring/sealos-job-init-controller:latest
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest
 
 # 4. 自定义密码（不使用随机密码）
-sealos run ghcr.io/labring/sealos-job-init-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest \
   --env ADMIN_PASSWORD="MyStrongPassword123" \
   --env PASSWORD_SALT="your-salt"
 
 # 5. 自定义管理员账号和密码
-sealos run ghcr.io/labring/sealos-job-init-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="your-salt" \
   --env ADMIN_PASSWORD="MyStrongPassword123" \
   --env ADMIN_USER_NAME="admin"
 
 # 6. 自定义命名空间和工作空间前缀
-sealos run ghcr.io/labring/sealos-job-init-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="your-salt" \
   --env DEFAULT_NAMESPACE="my-account-system" \
   --env WORKSPACE_PREFIX="workspace-"
 
 # 7. 使用 HELM_OPTS 自定义 Job 配置
-sealos run ghcr.io/labring/sealos-job-init-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="your-salt" \
   --env HELM_OPTS="--set ttlSecondsAfterFinished=3600 --set backoffLimit=2"
 
 # 8. 完整配置示例
-sealos run ghcr.io/labring/sealos-job-init-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-init-controller:latest \
   --env PASSWORD_SALT="my-secure-random-salt-12345" \
   --env ADMIN_PASSWORD="Admin@2024" \
   --env ADMIN_USER_NAME="admin" \
