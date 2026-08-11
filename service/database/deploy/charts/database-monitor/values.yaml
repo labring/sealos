@@ -14,6 +14,14 @@ resources:
 service:
   port: 9090
 
+startupProbe:
+  httpGet:
+    path: /health
+    port: 9090
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 30
+
 livenessProbe:
   httpGet:
     path: /health

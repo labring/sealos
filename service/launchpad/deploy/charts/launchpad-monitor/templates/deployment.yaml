@@ -34,6 +34,8 @@ spec:
           ports:
             - containerPort: {{ .Values.service.port }}
               protocol: TCP
+          startupProbe:
+            {{- toYaml .Values.startupProbe | nindent 12 }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
