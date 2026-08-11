@@ -153,11 +153,6 @@ export default function Callback() {
                   }
                 } catch (error) {
                   console.error('Auto init failed, fallback to manual:', error);
-                  gtmLoginSuccess({
-                    user_type: 'new',
-                    method: 'oauth2',
-                    oauth2Provider: provider
-                  });
                   await router.push('/workspace');
                 }
                 return;

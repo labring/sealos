@@ -31,6 +31,7 @@ import { SwitchRegionType } from '@/constants/account';
 import { I18nCloudProvidersKey } from '@/types/i18next';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { useGuideModalStore } from '@/stores/guideModal';
+import { track } from '@sealos/gtm';
 
 export default function Workspace() {
   const { t } = useTranslation();
@@ -92,6 +93,9 @@ export default function Workspace() {
       }
       // globalToken is already set in session store, no need to pass it
       await sessionConfig(initRegionTokenResult.data);
+      track('workspace_switch', {
+        module: 'workspace'
+      });
       await router.replace('/');
     } catch (error) {
       console.error(error);
