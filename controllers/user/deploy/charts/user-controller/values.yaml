@@ -44,6 +44,11 @@ readinessProbe:
   initialDelaySeconds: 5
   periodSeconds: 10
 
+kubeAPI:
+  # Kubernetes API client-side rate limit used by the controller manager.
+  qps: 50
+  burst: 100
+
 # Cloud API server configuration
 # cloudAPIServerDomain is auto-configured by entrypoint.sh from sealos-config ConfigMap
 cloudAPIServerDomain: 127.0.0.1.nip.io
