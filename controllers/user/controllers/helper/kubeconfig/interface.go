@@ -39,7 +39,11 @@ type Interface interface {
 
 type TokenRequestInterface interface {
 	Interface
-	ApplyWithTokenRequest(ctx context.Context, config *rest.Config, client client.Client) (*api.Config, metav1.Time, error)
+	ApplyWithTokenRequest(
+		ctx context.Context,
+		config *rest.Config,
+		client client.Client,
+	) (*api.Config, metav1.Time, error)
 }
 
 type CertConfig struct {

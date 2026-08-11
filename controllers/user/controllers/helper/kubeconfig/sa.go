@@ -102,7 +102,10 @@ func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client clie
 	return nil
 }
 
-func (sac *ServiceAccountConfig) applyBoundTokenSecret(ctx context.Context, cli client.Client) (*v1.Secret, error) {
+func (sac *ServiceAccountConfig) applyBoundTokenSecret(
+	ctx context.Context,
+	cli client.Client,
+) (*v1.Secret, error) {
 	secretName := sac.secretName
 	if secretName == "" {
 		secretName = sac.generateSecretName()
@@ -168,7 +171,7 @@ func (sac *ServiceAccountConfig) tokenRequestExpirationSeconds() int32 {
 }
 
 func TokenSecretName(name string) string {
-	return fmt.Sprintf("sealos-token-%s", name)
+	return "sealos-token-" + name
 }
 
 func (sac *ServiceAccountConfig) generateSecretName() string {
@@ -178,7 +181,7 @@ func (sac *ServiceAccountConfig) generateSecretName() string {
 	if sac.sa != nil && len(sac.sa.Secrets) > 0 && sac.sa.Secrets[0].Name != "" {
 		return sac.sa.Secrets[0].Name
 	}
-	return fmt.Sprintf("sealos-token-%s-%s", sac.user, GetRandomString(5))
+	return "sealos-token-" + sac.user + "-" + GetRandomString(5)
 }
 
 func GetRandomString(n int) string {

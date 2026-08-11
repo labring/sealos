@@ -671,14 +671,15 @@ func (r *UserReconciler) syncKubeConfig(
 		WithServiceAccountConfig(config.GetUserSystemNamespace(), sa)
 	tokenRequestConfig, ok := cfg.(kubeconfig.TokenRequestInterface)
 	if !ok {
-		helper.SetConditionError(userCondition, "SyncKubeConfigError", errors.New("kubeconfig config does not support token request"))
+		err := errors.New("kubeconfig config does not support token request")
+		helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
 		r.Recorder.Eventf(
 			user,
 			v1.EventTypeWarning,
 			"syncKubeConfig",
 			"Sync KubeConfig apply %s is error: %v",
 			user.Name,
-			errors.New("kubeconfig config does not support token request"),
+			err,
 		)
 		return
 	}
