@@ -683,7 +683,11 @@ func (r *UserReconciler) syncKubeConfig(
 		)
 		return
 	}
-	apiConfig, tokenExpiresAt, err := tokenRequestConfig.ApplyWithTokenRequest(ctx, r.config, r.Client)
+	apiConfig, tokenExpiresAt, err := tokenRequestConfig.ApplyWithTokenRequest(
+		ctx,
+		r.config,
+		r.Client,
+	)
 	if err != nil {
 		helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
 		r.Recorder.Eventf(

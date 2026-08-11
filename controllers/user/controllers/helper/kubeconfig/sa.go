@@ -131,7 +131,11 @@ func (sac *ServiceAccountConfig) applyBoundTokenSecret(
 		return nil, err
 	}
 	if secret.UID == "" {
-		return nil, fmt.Errorf("bound token secret %s/%s has empty uid", secret.Namespace, secret.Name)
+		return nil, fmt.Errorf(
+			"bound token secret %s/%s has empty uid",
+			secret.Namespace,
+			secret.Name,
+		)
 	}
 	return secret, nil
 }
