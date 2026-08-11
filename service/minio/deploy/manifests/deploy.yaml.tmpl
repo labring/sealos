@@ -100,19 +100,6 @@ spec:
         ports:
         - containerPort: 9090
           protocol: TCP
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 9090
-          initialDelaySeconds: 3
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 9090
-          initialDelaySeconds: 3
-          periodSeconds: 5
-          failureThreshold: 6
         resources:
           limits:
             cpu: 50m
