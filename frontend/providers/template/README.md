@@ -1,13 +1,5 @@
 # sealos app launchpad
 
-## Runtime configuration
-
-The server reads the structured application configuration from `/app/data/config.yaml`. The
-deployment templates mount the same ConfigMap at the legacy `/config.yaml` path as well, so older
-images can be upgraded without changing the ConfigMap name. Template categories in
-`template.categories` are authoritative; `TEMPLATE_CATEGORIES` remains a fallback when the runtime
-configuration does not define categories.
-
 ## project tree
 ```bash
 .

@@ -1,6 +1,5 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApplicationType, SystemConfigType } from '@/types/app';
-import { readRuntimeAppConfig } from '@/utils/appConfig';
 import { readFileSync } from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
@@ -18,16 +17,6 @@ export const defaultConfig: SystemConfigType = {
 };
 
 export async function getSystemConfig(): Promise<SystemConfigType> {
-  const carousel = readRuntimeAppConfig().template?.ui?.carousel;
-  if (carousel !== undefined) {
-    return {
-      showCarousel: carousel.enabled === true,
-      slideData: Array.isArray(carousel.slides)
-        ? (carousel.slides as SystemConfigType['slideData'])
-        : []
-    };
-  }
-
   try {
     const filename =
       process.env.NODE_ENV === 'development' ? 'data/config.local.json' : '/app/data/config.json';

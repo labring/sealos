@@ -1,6 +1,5 @@
 import { TemplateType } from '@/types/app';
-import { getCategorySlugs } from '@/utils/template';
-import { getConfiguredCategories } from '@/utils/appConfig';
+import { getCategorySlugs, parseTemplateCategories } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { getCachedTemplates } from './templateCache';
@@ -27,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Use shared cache instead of directly reading templates
-    const configuredCategories = getConfiguredCategories();
+    const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
     const templateEnvs = getTemplateEnvs();
     const templateRepo = {
       url: templateEnvs.TEMPLATE_REPO_URL,

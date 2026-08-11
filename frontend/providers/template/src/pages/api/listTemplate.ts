@@ -1,7 +1,10 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
-import { filterConfiguredCategorySlugs, getCategorySlugs } from '@/utils/template';
-import { getConfiguredCategories } from '@/utils/appConfig';
+import {
+  filterConfiguredCategorySlugs,
+  getCategorySlugs,
+  parseTemplateCategories
+} from '@/utils/template';
 import type { TemplateCategory } from '@/types/config';
 import { getTemplateEnvs, parseGithubUrl } from '@/utils/tools';
 import { proxyTemplateIconUrls, type TemplateRepo } from '@/utils/templateAsset';
@@ -84,7 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const jsonPath = path.resolve(originalPath, 'templates.json');
   const cdnUrl = process.env.CDN_URL;
   const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-  const configuredCategories = getConfiguredCategories();
+  const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
   const templateEnvs = getTemplateEnvs();
   const templateRepo = {
     url: templateEnvs.TEMPLATE_REPO_URL,

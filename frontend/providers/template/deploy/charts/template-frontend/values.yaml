@@ -68,8 +68,6 @@ ingress:
 templateConfig:
   cloudDomain: "127.0.0.1.nip.io"
   cloudPort: ""
-  httpPort: ""
-  disableHttps: false
   userDomain: ""
   certSecretName: "wildcard-cert"
   tlsRejectUnauthorized: "1"

@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import * as JsYaml from 'js-yaml';
-import { memoryFormatToMi, cpuFormatToM, storageQuantityToMi } from '@/utils/common';
+import { memoryFormatToMi, cpuFormatToM, storageQuantityToMi } from '@/utils/tools';
 import { UserQuotaItemType } from '@/types/user';
 
 // Load default kc

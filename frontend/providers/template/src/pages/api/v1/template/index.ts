@@ -1,7 +1,6 @@
 import { jsonRes } from '@/services/backend/response';
 import { TemplateType } from '@/types/app';
-import { getCategorySlugs } from '@/utils/template';
-import { getConfiguredCategories } from '@/utils/appConfig';
+import { getCategorySlugs, parseTemplateCategories } from '@/utils/template';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { readTemplatesFromFile } from '../../listTemplate';
@@ -13,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const jsonPath = path.resolve(originalPath, 'templates.json');
 
   try {
-    const configuredCategories = getConfiguredCategories();
+    const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
     const templateEnvs = getTemplateEnvs();
     const templateRepo = {
       url: templateEnvs.TEMPLATE_REPO_URL,

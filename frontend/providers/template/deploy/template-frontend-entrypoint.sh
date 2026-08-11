@@ -100,14 +100,10 @@ add_enforced_set_string templateConfig.tlsRejectUnauthorized "${tls_reject_unaut
 
 CONFIG_CLOUD_DOMAIN=$(get_cm_value sealos-system sealos-config cloudDomain)
 CONFIG_CLOUD_PORT=$(get_cm_value sealos-system sealos-config cloudPort)
-CONFIG_HTTP_PORT=$(get_cm_value sealos-system sealos-config httpPort)
-CONFIG_DISABLE_HTTPS=$(get_cm_value sealos-system sealos-config disableHttps)
 CONFIG_CERT_SECRET_NAME=$(get_cm_value sealos-system sealos-config certSecretName)
 
 SEALOS_CLOUD_DOMAIN=${CONFIG_CLOUD_DOMAIN:-${SEALOS_CLOUD_DOMAIN:-${cloudDomain:-}}}
 SEALOS_CLOUD_PORT=${CONFIG_CLOUD_PORT:-${SEALOS_CLOUD_PORT:-${cloudPort:-}}}
-SEALOS_HTTP_PORT=${CONFIG_HTTP_PORT:-${SEALOS_HTTP_PORT:-${httpPort:-}}}
-SEALOS_DISABLE_HTTPS=${CONFIG_DISABLE_HTTPS:-${SEALOS_DISABLE_HTTPS:-${disableHttps:-}}}
 SEALOS_CERT_SECRET_NAME=${CONFIG_CERT_SECRET_NAME:-${SEALOS_CERT_SECRET_NAME:-${certSecretName:-}}}
 #https and acme using default template url. else use gogs.<domain>
 SEALOS_CERT_MODE=$(get_cm_value sealos-system cert-config CERT_MODE)
@@ -115,8 +111,6 @@ SEALOS_CERT_MODE=$(get_cm_value sealos-system cert-config CERT_MODE)
 
 add_set_string templateConfig.cloudDomain "${SEALOS_CLOUD_DOMAIN}"
 add_set_string templateConfig.cloudPort "${SEALOS_CLOUD_PORT}"
-add_set_string templateConfig.httpPort "${SEALOS_HTTP_PORT}"
-add_set_string templateConfig.disableHttps "${SEALOS_DISABLE_HTTPS}"
 add_set_string templateConfig.certSecretName "${SEALOS_CERT_SECRET_NAME}"
 
 if [ "${SEALOS_CERT_MODE}" = "https" ] || [ "${SEALOS_CERT_MODE}" = "acme" ]; then

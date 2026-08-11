@@ -24,25 +24,6 @@ data:
     GIT_SSL_NO_VERIFY={{ .Values.templateConfig.gitSslNoVerify }}
   config.yaml: |-
     addr: :3000
-    cloud:
-      domain: {{ .Values.templateConfig.cloudDomain | quote }}
-      port: {{ .Values.templateConfig.cloudPort | quote }}
-      httpPort: {{ .Values.templateConfig.httpPort | quote }}
-      disableHttps: {{ .Values.templateConfig.disableHttps }}
-      certSecretName: {{ .Values.templateConfig.certSecretName | quote }}
-    template:
-      repo:
-        url: {{ .Values.templateConfig.templateRepoUrl | quote }}
-        branch: {{ .Values.templateConfig.templateRepoBranch | quote }}
-        localDir: {{ .Values.templateConfig.templateRepoPath | quote }}
-      features:
-        showAuthor: {{ eq (toString .Values.templateConfig.showAuthor) "true" }}
-        fetchReadme: {{ eq (toString .Values.templateConfig.enableReadmeFetch) "true" }}
-        guide: {{ eq (toString .Values.templateConfig.guideEnabled) "true" }}
-      categories: {{ .Values.templateConfig.templateCategories }}
-      desktopDomain: {{ .Values.templateConfig.cloudDomain | quote }}
-      userDomain: {{ .Values.templateConfig.userDomain | quote }}
-      billingUrl: {{ .Values.templateConfig.billingUrl | quote }}
   config.json: |-
     {
       "showCarousel": false,

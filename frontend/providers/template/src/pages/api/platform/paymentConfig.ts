@@ -1,11 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-import {
-  getRuntimeCloudPort,
-  getRuntimeDisableHttps,
-  getRuntimeHttpPort,
-  readRuntimeAppConfig
-} from '@/utils/appConfig';
 
 type CostCenterConfigResponse = {
   code: number;
@@ -25,8 +19,8 @@ const COSTCENTER_SERVICE_CONFIG_URL =
   'http://costcenter-frontend.costcenter-frontend.svc:3000/api/platform/getAppConfig';
 const COSTCENTER_CONFIG_TIMEOUT_MS = 5000;
 
-const getCostCenterDomain = (config: ReturnType<typeof readRuntimeAppConfig>) =>
-  process.env.SEALOS_CLOUD_DOMAIN || config.cloud?.domain || 'cloud.sealos.io';
+const getCostCenterDomain = () =>
+  process.env.SEALOS_CLOUD_DOMAIN || process.env.DESKTOP_DOMAIN || 'cloud.sealos.io';
 
 const normalizePort = (value: string) => {
   if (!/^\d+$/.test(value)) return '';
@@ -44,11 +38,14 @@ const getExternalConfigUrl = (domain: string, protocol: 'http' | 'https', rawPor
 };
 
 const getCostCenterConfigUrls = () => {
-  const config = readRuntimeAppConfig();
-  const domain = getCostCenterDomain(config);
-  const disableHttps = getRuntimeDisableHttps(config);
+  const domain = getCostCenterDomain();
+  const disableHttps = ['true', '1'].includes(
+    (process.env.SEALOS_DISABLE_HTTPS || '').toLowerCase()
+  );
   const configuredProtocol = disableHttps ? 'http' : 'https';
-  const configuredPort = disableHttps ? getRuntimeHttpPort(config) : getRuntimeCloudPort(config);
+  const configuredPort = disableHttps
+    ? process.env.SEALOS_HTTP_PORT || ''
+    : process.env.SEALOS_CLOUD_PORT || '';
   const configuredUrl = getExternalConfigUrl(domain, configuredProtocol, configuredPort);
 
   const urls = [COSTCENTER_SERVICE_CONFIG_URL, configuredUrl];
