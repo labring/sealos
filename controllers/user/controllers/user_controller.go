@@ -81,6 +81,7 @@ type UserReconciler struct {
 type userReconcileState struct {
 	serviceAccount          *v1.ServiceAccount
 	tokenExpirationDeadline *metav1.Time
+	cleanupLegacySecrets    bool
 }
 
 // +kubebuilder:rbac:groups=*,resources=*,verbs=*
@@ -165,6 +166,25 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 	r.minRequeueDuration = minRequeueDuration
 	r.maxRequeueDuration = maxRequeueDuration
 
+	if err := mgr.GetFieldIndexer().IndexField(
+		context.Background(),
+		&v1.Secret{},
+		v1.ServiceAccountNameKey,
+		func(rawObj client.Object) []string {
+			secret, ok := rawObj.(*v1.Secret)
+			if !ok || secret.Annotations == nil {
+				return nil
+			}
+			value := secret.Annotations[v1.ServiceAccountNameKey]
+			if value == "" {
+				return nil
+			}
+			return []string{value}
+		},
+	); err != nil {
+		return err
+	}
+
 	ownerEventHandler := handler.EnqueueRequestForOwner(
 		r.Scheme,
 		r.RESTMapper(),
@@ -226,6 +246,20 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	}
 	if user.Status.Phase != userv1.UserUnknown {
 		user.Status.Phase = userv1.UserActive
+	}
+	if state.cleanupLegacySecrets {
+		// Best-effort migration cleanup for legacy service-account-token secrets.
+		if err := kubeconfig.CleanupLegacyBoundTokenSecrets(ctx, r.Client, user.Name); err != nil {
+			r.Recorder.Eventf(
+				user,
+				v1.EventTypeWarning,
+				"CleanupLegacyBoundTokenSecrets",
+				"Cleanup legacy bound token secrets for %s is error: %v",
+				user.Name,
+				err,
+			)
+			r.Logger.Error(err, "cleanup legacy bound token secrets", "user", user.Name)
+		}
 	}
 	err = r.updateStatus(ctx, client.ObjectKeyFromObject(obj), user.Status.DeepCopy())
 	if err != nil {
@@ -717,6 +751,7 @@ func (r *UserReconciler) syncKubeConfig(
 		return
 	}
 	state.tokenExpirationDeadline = &tokenExpiresAt
+	state.cleanupLegacySecrets = true
 	if r.shouldRotateKubeConfig(user) {
 		user.Status.ObservedKubeConfigRotateAt = user.Spec.KubeConfigRotateAt
 	}

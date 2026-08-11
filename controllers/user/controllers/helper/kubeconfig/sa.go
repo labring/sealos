@@ -22,10 +22,10 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
 	authenticationv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -140,6 +140,29 @@ func (sac *ServiceAccountConfig) applyBoundTokenSecret(
 	return secret, nil
 }
 
+// CleanupLegacyBoundTokenSecrets removes legacy ServiceAccountToken secrets for a user.
+func CleanupLegacyBoundTokenSecrets(ctx context.Context, cli client.Client, userName string) error {
+	secrets := &v1.SecretList{}
+	if err := cli.List(
+		ctx,
+		secrets,
+		client.InNamespace(config2.GetUserSystemNamespace()),
+		client.MatchingFields{v1.ServiceAccountNameKey: userName},
+	); err != nil {
+		return fmt.Errorf("failed to list legacy bound token secrets: %w", err)
+	}
+	for i := range secrets.Items {
+		secret := &secrets.Items[i]
+		if secret.Type != v1.SecretTypeServiceAccountToken {
+			continue
+		}
+		if err := cli.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to delete legacy bound token secret %s: %w", secret.Name, err)
+		}
+	}
+	return nil
+}
+
 func (sac *ServiceAccountConfig) requestToken(ctx context.Context, config *rest.Config, boundSecret *v1.Secret) (*authenticationv1.TokenRequest, error) {
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -168,8 +191,8 @@ func (sac *ServiceAccountConfig) requestToken(ctx context.Context, config *rest.
 }
 
 func (sac *ServiceAccountConfig) tokenRequestExpirationSeconds() int32 {
-	if sac.expirationSeconds < userv1.DefaultCSRExpirationSeconds {
-		return userv1.DefaultCSRExpirationSeconds
+	if sac.expirationSeconds < defaultCSRExpirationSeconds {
+		return defaultCSRExpirationSeconds
 	}
 	return sac.expirationSeconds
 }
