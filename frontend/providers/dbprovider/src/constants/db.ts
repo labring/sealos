@@ -637,7 +637,7 @@ export const ParameterFieldMetadataMap: Partial<
   },
   mongodb: {
     default: {
-      // No params are allowed to be modified for MongoDB
+      'net.maxIncomingConnections': { editable: true }
     }
   },
   redis: {

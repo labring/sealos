@@ -8,6 +8,7 @@ import {
   json2Account,
   json2ResourceOps,
   json2CreateCluster,
+  json2Reconfigure,
   json2ParameterConfig
 } from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -17,6 +18,7 @@ import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
 import { getScore } from '@/utils/tools';
 import { validatePolarDBXResources } from '@/utils/database';
+import { getCurrentParameterValues, getParameterDifferences } from '@/utils/parameterConfig';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -28,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     console.log('api createDB dbForm', dbForm);
     validatePolarDBXResources(dbForm);
 
-    const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
+    const { k8sCore, k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
@@ -61,22 +63,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         opsRequests.push(volumeExpansionYaml);
       }
 
-      // Handle parameter configuration updates
+      // Record parameter changes through OpsRequest so they appear in history.
       if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
         if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
-          try {
-            const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
-            const configYaml = json2ParameterConfig(
+          const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+          const currentParameterValues = await getCurrentParameterValues({
+            dbName: dbForm.dbName,
+            dbType: dbForm.dbType,
+            namespace,
+            k8sCore,
+            k8sCustomObjects
+          });
+          const parameterDifferences = getParameterDifferences({
+            dbType: dbForm.dbType,
+            current: currentParameterValues,
+            requested: dbForm.parameterConfig,
+            dynamicMaxConnections
+          });
+
+          if (parameterDifferences.length > 0) {
+            const reconfigureYaml = json2Reconfigure(
               dbForm.dbName,
               dbForm.dbType,
-              dbForm.dbVersion,
-              dbForm.parameterConfig,
-              dynamicMaxConnections
+              body.metadata.uid,
+              parameterDifferences
             );
-            console.log('api createDB configYaml', configYaml);
-            await applyYamlList([configYaml], 'replace');
-          } catch (err) {
-            console.log('Failed to update parameter configuration:', err);
+            opsRequests.push(reconfigureYaml);
           }
         }
       }

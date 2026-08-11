@@ -808,8 +808,7 @@ export const json2Reconfigure = (
       labels: {
         'app.kubernetes.io/instance': dbName,
         'app.kubernetes.io/managed-by': 'kubeblocks',
-        'ops.kubeblocks.io/ops-type': 'Reconfiguring',
-        ...configParams.reduce((acc, param) => ({ ...acc, [param.path]: param.newValue }), {})
+        'ops.kubeblocks.io/ops-type': 'Reconfiguring'
       },
       annotations: {
         // For displaying previous value.
