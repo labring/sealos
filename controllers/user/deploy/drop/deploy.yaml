@@ -199,10 +199,6 @@ data:
     # if you are doing or is intended to do any operation such as perform cleanups
     # after the manager stops then its usage might be unsafe.
     # leaderElectionReleaseOnCancel: true
-  config.yaml: |
-    global:
-      cloudAPIServerDomain: {{ .cloudDomain }}
-      cloudAPIServerPort: "{{ .apiServerPort }}"
 
 kind: ConfigMap
 metadata:
@@ -262,7 +258,8 @@ spec:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
-        - --config-file-path=/config.yaml
+        - --kube-api-qps=5
+        - --kube-api-burst=10
         command:
         - /manager
         env:
@@ -307,9 +304,6 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
-        - name: user-manager-volume
-          mountPath: /config.yaml
-          subPath: config.yaml
       - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
@@ -355,9 +349,6 @@ spec:
         secret:
           defaultMode: 420
           secretName: webhook-server-cert
-      - name: user-manager-volume
-        configMap:
-          name: user-manager-config
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
