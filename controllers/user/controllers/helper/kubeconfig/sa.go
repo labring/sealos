@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
@@ -156,7 +157,7 @@ func CleanupLegacyBoundTokenSecrets(
 		return fmt.Errorf("failed to list legacy bound token secrets: %w", err)
 	}
 	if keepSecretName == "" {
-		return fmt.Errorf("keep secret name is empty")
+		return errors.New("keep secret name is empty")
 	}
 	for i := range secrets.Items {
 		secret := &secrets.Items[i]
@@ -199,7 +200,11 @@ func (sac *ServiceAccountConfig) requestToken(
 		return nil, err
 	}
 	if tokenRequest.Status.Token == "" {
-		return nil, fmt.Errorf("token request returned empty token for serviceaccount %s/%s", sac.namespace, sac.user)
+		return nil, fmt.Errorf(
+			"token request returned empty token for serviceaccount %s/%s",
+			sac.namespace,
+			sac.user,
+		)
 	}
 	return tokenRequest, nil
 }

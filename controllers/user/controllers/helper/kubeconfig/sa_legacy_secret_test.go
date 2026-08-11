@@ -97,7 +97,12 @@ func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 		}).
 		Build()
 
-	if err := CleanupLegacyBoundTokenSecrets(context.Background(), cli, userName, currentSecret); err != nil {
+	if err := CleanupLegacyBoundTokenSecrets(
+		context.Background(),
+		cli,
+		userName,
+		currentSecret,
+	); err != nil {
 		t.Fatalf("cleanup legacy secrets: %v", err)
 	}
 
