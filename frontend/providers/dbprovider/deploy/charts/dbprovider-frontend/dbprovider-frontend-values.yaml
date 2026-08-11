@@ -39,6 +39,7 @@ dbproviderConfig:
   monitorUrl: "http://database-monitor.sealos.svc.cluster.local:9090"
   migrateFileImage: ""
   backupEnabled: "true"
+  logEnabled: "false"
   showDocument: "true"
   dataImportEnabled: "false"
   guideEnabled: "true"

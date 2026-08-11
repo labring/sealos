@@ -20,6 +20,14 @@ dbproviderConfig:
   dataImportEnabled: 'false'
 ```
 
+`dbproviderConfig.logEnabled` controls whether the Log Analysis tab appears on supported database
+detail pages. It defaults to `"false"` and is independent of `backupEnabled`:
+
+```yaml
+dbproviderConfig:
+  logEnabled: 'true'
+```
+
 The installer seeds `/root/.sealos/cloud/values/apps/dataflow/dbprovider-values.yaml` from
 `dbprovider-frontend-values.yaml` only when the user values file does not exist. Existing
 installations must update their persisted user values explicitly. This setting does not block

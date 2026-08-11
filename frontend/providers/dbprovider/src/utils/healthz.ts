@@ -5,6 +5,7 @@ export function assertReady() {
   readNonEmptyEnv('DESKTOP_DOMAIN');
   readNonEmptyEnv('BILLING_URL');
   readOptionalBooleanEnv('BACKUP_ENABLED');
+  readOptionalBooleanEnv('LOG_ENABLED');
   readOptionalBooleanEnv('DATA_IMPORT_ENABLED');
   readOptionalBooleanEnv('GUIDE_ENABLED');
   readOptionalBooleanEnv('KAFKA_ENABLED');
