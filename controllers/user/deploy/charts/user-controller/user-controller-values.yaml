@@ -12,5 +12,5 @@ resources:
     memory: 64Mi
 
 kubeAPI:
-  qps: 5
-  burst: 10
+  qps: 50
+  burst: 100
