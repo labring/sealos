@@ -7,7 +7,9 @@ import { useQuotaGuardConfig, type UseQuotaGuardedConfig } from './QuotaGuardPro
 
 export type QuotaGuardedOptions = {
   /** Resource requirements to check */
-  requirements: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage', number>> & {
+  requirements: Partial<
+    Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'pod' | 'storage', number>
+  > & {
     traffic?: boolean | number;
   };
   /** Whether to check immediately */

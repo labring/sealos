@@ -61,7 +61,7 @@ export type SessionV1 = {
 };
 
 export type WorkspaceQuotaItem = {
-  type: 'cpu' | 'memory' | 'storage' | 'gpu' | 'traffic' | 'nodeport';
+  type: 'cpu' | 'memory' | 'storage' | 'pod' | 'gpu' | 'traffic' | 'nodeport';
   used: number;
   limit: number;
 };

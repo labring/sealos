@@ -4,6 +4,7 @@ export const WorkspaceQuotaItemTypeSchema = z.enum([
   'cpu',
   'memory',
   'storage',
+  'pod',
   'gpu',
   'traffic',
   'nodeport'

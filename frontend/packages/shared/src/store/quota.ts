@@ -26,7 +26,7 @@ type State = {
   exceededQuotas: ExceededWorkspaceQuotaItem[];
   setExceededQuotas: (quotas: ExceededWorkspaceQuotaItem[]) => void;
   checkExceededQuotas: (
-    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage', number>> & {
+    request: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'pod' | 'storage', number>> & {
       traffic?: number | boolean;
     }
   ) => ExceededWorkspaceQuotaItem[];
