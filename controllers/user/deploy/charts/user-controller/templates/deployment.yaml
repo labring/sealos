@@ -39,6 +39,8 @@ spec:
           args:
             - --health-probe-bind-address=:8081
             - --leader-elect
+            - --kube-api-qps={{ .Values.kubeAPI.qps }}
+            - --kube-api-burst={{ .Values.kubeAPI.burst }}
             {{- if .Values.metrics.enabled }}
             - --metrics-secure=true
             - --metrics-bind-address=:8443
