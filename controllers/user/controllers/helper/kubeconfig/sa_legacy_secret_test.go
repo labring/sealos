@@ -33,10 +33,11 @@ func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 	t.Parallel()
 
 	const (
-		userName      = "alice"
-		currentSecret = "sealos-token-alice-new"
-		legacySecret  = "sealos-token-alice-old"
-		otherSecret   = "sealos-token-bob-old"
+		userName        = "alice"
+		currentSecret   = "sealos-token-alice-new"
+		legacySecret    = "sealos-token-alice-old"
+		duplicateSecret = "sealos-token-alice-dupe"
+		otherSecret     = "sealos-token-bob-old"
 	)
 
 	current := &corev1.Secret{
@@ -59,6 +60,16 @@ func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 		},
 		Type: corev1.SecretTypeServiceAccountToken,
 	}
+	duplicate := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      duplicateSecret,
+			Namespace: config2.GetUserSystemNamespace(),
+			Annotations: map[string]string{
+				corev1.ServiceAccountNameKey: userName,
+			},
+		},
+		Type: corev1.SecretTypeOpaque,
+	}
 	other := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      otherSecret,
@@ -72,7 +83,7 @@ func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 
 	cli := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
-		WithObjects(current, legacy, other).
+		WithObjects(current, legacy, duplicate, other).
 		WithIndex(&corev1.Secret{}, corev1.ServiceAccountNameKey, func(obj client.Object) []string {
 			secret, ok := obj.(*corev1.Secret)
 			if !ok || secret.Annotations == nil {
@@ -86,7 +97,7 @@ func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 		}).
 		Build()
 
-	if err := CleanupLegacyBoundTokenSecrets(context.Background(), cli, userName); err != nil {
+	if err := CleanupLegacyBoundTokenSecrets(context.Background(), cli, userName, currentSecret); err != nil {
 		t.Fatalf("cleanup legacy secrets: %v", err)
 	}
 
@@ -105,8 +116,66 @@ func TestCleanupLegacyBoundTokenSecrets(t *testing.T) {
 	); !apierrors.IsNotFound(err) {
 		t.Fatalf("legacy secret err = %v, want not found", err)
 	}
+	if err := cli.Get(
+		context.Background(),
+		client.ObjectKeyFromObject(duplicate),
+		&got,
+	); !apierrors.IsNotFound(err) {
+		t.Fatalf("duplicate secret err = %v, want not found", err)
+	}
 
 	if err := cli.Get(context.Background(), client.ObjectKeyFromObject(other), &got); err != nil {
 		t.Fatalf("get other secret: %v", err)
+	}
+}
+
+func TestServiceAccountConfigWithForceNewSecret(t *testing.T) {
+	t.Parallel()
+
+	const (
+		userName  = "alice"
+		oldSecret = "sealos-token-alice-old"
+		namespace = "user-system"
+	)
+
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      userName,
+			Namespace: namespace,
+		},
+		Secrets: []corev1.ObjectReference{
+			{
+				Name: oldSecret,
+			},
+		},
+	}
+
+	cli := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(sa).
+		Build()
+
+	cfg := &ServiceAccountConfig{
+		DefaultConfig: &DefaultConfig{
+			user:              userName,
+			clusterName:       "",
+			expirationSeconds: defaultCSRExpirationSeconds,
+		},
+		namespace:      namespace,
+		sa:             sa,
+		forceNewSecret: true,
+	}
+
+	if err := cfg.applyServiceAccount(nil, cli); err != nil {
+		t.Fatalf("apply service account: %v", err)
+	}
+	if len(cfg.sa.Secrets) != 1 {
+		t.Fatalf("secret count = %d, want 1", len(cfg.sa.Secrets))
+	}
+	if cfg.sa.Secrets[0].Name == oldSecret {
+		t.Fatalf("secret name reused old secret %q", oldSecret)
+	}
+	if cfg.secretName != cfg.sa.Secrets[0].Name {
+		t.Fatalf("cached secret name %q != current secret name %q", cfg.secretName, cfg.sa.Secrets[0].Name)
 	}
 }

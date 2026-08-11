@@ -83,7 +83,7 @@ func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client clie
 		sa.Namespace = sac.namespace
 	}
 	_, err := controllerutil.CreateOrUpdate(context.TODO(), client, sa, func() error {
-		if len(sa.Secrets) == 0 {
+		if sac.forceNewSecret || len(sa.Secrets) == 0 {
 			sa.Secrets = []v1.ObjectReference{
 				{
 					Name: sac.generateSecretName(),
@@ -140,8 +140,12 @@ func (sac *ServiceAccountConfig) applyBoundTokenSecret(
 	return secret, nil
 }
 
-// CleanupLegacyBoundTokenSecrets removes legacy ServiceAccountToken secrets for a user.
-func CleanupLegacyBoundTokenSecrets(ctx context.Context, cli client.Client, userName string) error {
+// CleanupLegacyBoundTokenSecrets removes stale bound token secrets for a user.
+func CleanupLegacyBoundTokenSecrets(
+	ctx context.Context,
+	cli client.Client,
+	userName, keepSecretName string,
+) error {
 	secrets := &v1.SecretList{}
 	if err := cli.List(
 		ctx,
@@ -151,9 +155,15 @@ func CleanupLegacyBoundTokenSecrets(ctx context.Context, cli client.Client, user
 	); err != nil {
 		return fmt.Errorf("failed to list legacy bound token secrets: %w", err)
 	}
+	if keepSecretName == "" {
+		return fmt.Errorf("keep secret name is empty")
+	}
 	for i := range secrets.Items {
 		secret := &secrets.Items[i]
-		if secret.Type != v1.SecretTypeServiceAccountToken {
+		if secret.Name == "" || secret.Name == keepSecretName {
+			continue
+		}
+		if secret.Annotations == nil || secret.Annotations[v1.ServiceAccountNameKey] != userName {
 			continue
 		}
 		if err := cli.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
@@ -209,7 +219,7 @@ func (sac *ServiceAccountConfig) generateSecretName() string {
 	if sac.secretName != "" {
 		return sac.secretName
 	}
-	if sac.sa != nil && len(sac.sa.Secrets) > 0 && sac.sa.Secrets[0].Name != "" {
+	if !sac.forceNewSecret && sac.sa != nil && len(sac.sa.Secrets) > 0 && sac.sa.Secrets[0].Name != "" {
 		return sac.sa.Secrets[0].Name
 	}
 	return "sealos-token-" + sac.user + "-" + GetRandomString(5)

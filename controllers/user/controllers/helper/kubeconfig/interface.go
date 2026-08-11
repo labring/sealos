@@ -68,9 +68,10 @@ type CsrConfig struct {
 }
 type ServiceAccountConfig struct {
 	*DefaultConfig
-	namespace  string
-	secretName string
-	sa         *v1.ServiceAccount
+	namespace      string
+	secretName     string
+	forceNewSecret bool
+	sa             *v1.ServiceAccount
 }
 
 type WebhookConfig struct {
@@ -141,7 +142,7 @@ func (d *DefaultConfig) WithCsrConfig(
 func (d *DefaultConfig) WithServiceAccountConfig(
 	namespace string,
 	sa *v1.ServiceAccount,
-) Interface {
+) *ServiceAccountConfig {
 	if namespace == "" {
 		namespace = "default"
 	}
@@ -150,6 +151,11 @@ func (d *DefaultConfig) WithServiceAccountConfig(
 		namespace:     namespace,
 		sa:            sa,
 	}
+}
+
+func (sac *ServiceAccountConfig) WithForceNewSecret() *ServiceAccountConfig {
+	sac.forceNewSecret = true
+	return sac
 }
 
 func (d *DefaultConfig) WithWebhookConfigConfig(webhookURL string) Interface {

@@ -81,6 +81,7 @@ type UserReconciler struct {
 type userReconcileState struct {
 	serviceAccount          *v1.ServiceAccount
 	tokenExpirationDeadline *metav1.Time
+	currentSecretName       string
 	cleanupLegacySecrets    bool
 }
 
@@ -249,16 +250,21 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	}
 	if state.cleanupLegacySecrets {
 		// Best-effort migration cleanup for legacy service-account-token secrets.
-		if err := kubeconfig.CleanupLegacyBoundTokenSecrets(ctx, r.Client, user.Name); err != nil {
+		if err := kubeconfig.CleanupLegacyBoundTokenSecrets(
+			ctx,
+			r.Client,
+			user.Name,
+			state.currentSecretName,
+		); err != nil {
 			r.Recorder.Eventf(
 				user,
 				v1.EventTypeWarning,
 				"CleanupLegacyBoundTokenSecrets",
-				"Cleanup legacy bound token secrets for %s is error: %v",
+				"Cleanup stale bound token secrets for %s is error: %v",
 				user.Name,
 				err,
 			)
-			r.Logger.Error(err, "cleanup legacy bound token secrets", "user", user.Name)
+			r.Logger.Error(err, "cleanup stale bound token secrets", "user", user.Name)
 		}
 	}
 	err = r.updateStatus(ctx, client.ObjectKeyFromObject(obj), user.Status.DeepCopy())
@@ -701,21 +707,10 @@ func (r *UserReconciler) syncKubeConfig(
 			return
 		}
 	}
-	cfg := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).
+	tokenRequestConfig := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).
 		WithServiceAccountConfig(config.GetUserSystemNamespace(), sa)
-	tokenRequestConfig, ok := cfg.(kubeconfig.TokenRequestInterface)
-	if !ok {
-		err := errors.New("kubeconfig config does not support token request")
-		helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
-		r.Recorder.Eventf(
-			user,
-			v1.EventTypeWarning,
-			"syncKubeConfig",
-			"Sync KubeConfig apply %s is error: %v",
-			user.Name,
-			err,
-		)
-		return
+	if r.shouldRotateKubeConfig(user) {
+		tokenRequestConfig = tokenRequestConfig.WithForceNewSecret()
 	}
 	apiConfig, tokenExpiresAt, err := tokenRequestConfig.ApplyWithTokenRequest(
 		ctx,
@@ -751,7 +746,6 @@ func (r *UserReconciler) syncKubeConfig(
 		return
 	}
 	state.tokenExpirationDeadline = &tokenExpiresAt
-	state.cleanupLegacySecrets = true
 	if r.shouldRotateKubeConfig(user) {
 		user.Status.ObservedKubeConfigRotateAt = user.Spec.KubeConfigRotateAt
 	}
@@ -772,6 +766,12 @@ func (r *UserReconciler) syncKubeConfig(
 	userCondition.Message = "renew sync kube config successfully hash " + hash.HashToString(
 		user.Status.KubeConfig,
 	)
+	keepSecretName := ""
+	if len(sa.Secrets) > 0 {
+		keepSecretName = sa.Secrets[0].Name
+	}
+	state.currentSecretName = keepSecretName
+	state.cleanupLegacySecrets = keepSecretName != ""
 }
 
 func (r *UserReconciler) deleteBoundTokenSecret(ctx context.Context, user *userv1.User) error {
