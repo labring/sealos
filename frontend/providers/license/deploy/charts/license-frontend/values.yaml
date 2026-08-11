@@ -1,6 +1,6 @@
 # Default values for license frontend helm chart.
 
-image: ghcr.io/sealos-apps/sealos-private/sealos-license-frontend:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-license-frontend:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []

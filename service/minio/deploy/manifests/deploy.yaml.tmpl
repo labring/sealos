@@ -94,7 +94,7 @@ spec:
           value: object-storage.objectstorage-system.svc.cluster.local:80
         - name: PROMETHEUS_SERVICE_HOST
           value: http://vmselect-victoria-metrics-k8s-stack.vm.svc:8481/select/0/prometheus/
-        image: ghcr.io/labring/sealos-minio-service:latest
+        image: ghcr.io/sealos-apps/private-sealos/sealos-minio-service:latest
         imagePullPolicy: Always
         name: object-storage-monitor
         ports:

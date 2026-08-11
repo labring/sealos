@@ -19,7 +19,7 @@ sealos run labring/account-service:latest \
 
 # 自定义镜像
 sealos run labring/account-service:latest \
-  --env HELM_OPTS="--set image=ghcr.io/labring/sealos-account-service:v1.0.0"
+  --env HELM_OPTS="--set image=ghcr.io/sealos-apps/private-sealos/sealos-account-service:v1.0.0"
 
 # 自定义副本数
 sealos run labring/account-service:latest \
@@ -40,7 +40,7 @@ sealos run labring/account-service:latest \
 ### 基础配置
 
 - `replicaCount`: 副本数，默认 `1`
-- `image`: 容器镜像，默认 `ghcr.io/labring/sealos-account-service:latest`
+- `image`: 容器镜像，默认 `ghcr.io/sealos-apps/private-sealos/sealos-account-service:latest`
 - `imagePullPolicy`: 镜像拉取策略，默认 `Always`
 - `imagePullSecrets`: 镜像拉取密钥，默认 `[]`
 
@@ -102,7 +102,7 @@ sealos run labring/account-service:latest \
 
 # 3. 自定义镜像和标签
 sealos run labring/account-service:latest \
-  --env HELM_OPTS="--set image=ghcr.io/labring/sealos-account-service:v1.0.0"
+  --env HELM_OPTS="--set image=ghcr.io/sealos-apps/private-sealos/sealos-account-service:v1.0.0"
 
 # 4. 自定义副本数和资源限制
 sealos run labring/account-service:latest \
@@ -124,7 +124,7 @@ sealos run labring/account-service:latest \
 sealos run labring/account-service:latest \
   --env RELEASE_NAMESPACE=production-account \
   --env HELM_OPTS="--set replicaCount=3 \
-    --set image=ghcr.io/labring/sealos-account-service:v1.0.0 \
+    --set image=ghcr.io/sealos-apps/private-sealos/sealos-account-service:v1.0.0 \
     --set resources.limits.cpu=1000m \
     --set resources.limits.memory=512Mi \
     --set resources.requests.cpu=100m \

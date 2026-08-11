@@ -11,7 +11,7 @@ sealos run 镜像时会在目标节点执行 Kubefile，本镜像通过 Helm 安
 
 ```shell
 # 最简配置
-sealos run ghcr.io/labring/sealos-job-heartbeat-controller:latest
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-heartbeat-controller:latest
 ```
 
 ## 可选参数
@@ -25,19 +25,19 @@ sealos run ghcr.io/labring/sealos-job-heartbeat-controller:latest
 
 ```shell
 # 1. 最简配置（每天午夜执行）
-sealos run ghcr.io/labring/sealos-job-heartbeat-controller:latest
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-heartbeat-controller:latest
 
 # 2. 自定义命名空间和执行计划
-sealos run ghcr.io/labring/sealos-job-heartbeat-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-heartbeat-controller:latest \
   --env RELEASE_NAMESPACE="my-namespace" \
   --env HELM_OPTS="--set schedule=\"0 */6 * * *\""
 
 # 3. 自定义资源限制
-sealos run ghcr.io/labring/sealos-job-heartbeat-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-heartbeat-controller:latest \
   --env HELM_OPTS="--set resources.limits.cpu=500m --set resources.limits.memory=256Mi"
 
 # 4. 组合多个参数
-sealos run ghcr.io/labring/sealos-job-heartbeat-controller:latest \
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-job-heartbeat-controller:latest \
   --env RELEASE_NAMESPACE="production" \
   --env HELM_OPTS="--set schedule=\"0 2 * * *\" --set activeDeadlineSeconds=1800"
 ```
@@ -49,7 +49,7 @@ sealos run ghcr.io/labring/sealos-job-heartbeat-controller:latest \
 - `schedule`: Cron 执行计划，默认 `"0 0 * * *"`（每天午夜执行）
 - `activeDeadlineSeconds`: Job 超时时间，默认 `600`
 - `backoffLimit`: 重试次数，默认 `1`
-- `image`: 容器镜像，默认 `ghcr.io/labring/sealos-job-heartbeat-controller:latest`
+- `image`: 容器镜像，默认 `ghcr.io/sealos-apps/private-sealos/sealos-job-heartbeat-controller:latest`
 - `imagePullPolicy`: 镜像拉取策略，默认 `Always`
 - `resources.limits.cpu/memory`: CPU/内存限制
 - `resources.requests.cpu/memory`: CPU/内存请求

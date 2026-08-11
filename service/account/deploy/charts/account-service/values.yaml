@@ -2,7 +2,7 @@
 
 replicaCount: 1
 
-image: ghcr.io/labring/sealos-account-service:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-account-service:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []

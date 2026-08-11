@@ -67,7 +67,7 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
-        image: ghcr.io/labring/sealos-account-controller:latest
+        image: ghcr.io/sealos-apps/private-sealos/sealos-account-controller:latest
         imagePullPolicy: Always
         args:
         - "--health-probe-bind-address=:8081"

@@ -38,7 +38,7 @@ env:
   # Common versions
   GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
-  GHCR_PRIVATE_PREFIX: "ghcr.io/sealos-apps/sealos-private"
+  GHCR_PRIVATE_PREFIX: "ghcr.io/sealos-apps/private-sealos"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
@@ -68,23 +68,9 @@ jobs:
         run: |
           MODULE_NAME=$(basename "$MODULE_INPUT")
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          case "${MODULE_NAME}" in
-            applaunchpad)
-              echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/applaunchpad-frontend" >> $GITHUB_ENV
-              ;;
-            *)
-              echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-              ;;
-          esac
+          echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            case "${MODULE_NAME}" in
-              applaunchpad)
-                echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/applaunchpad-frontend" >> $GITHUB_ENV
-                ;;
-              *)
-                echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-                ;;
-            esac
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
           fi
 
       - name: Docker meta
@@ -180,23 +166,9 @@ jobs:
         run: |
           MODULE_NAME=$(basename "$MODULE_INPUT")
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          case "${MODULE_NAME}" in
-            applaunchpad)
-              echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/applaunchpad-frontend" >> $GITHUB_ENV
-              ;;
-            *)
-              echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-              ;;
-          esac
+          echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            case "${MODULE_NAME}" in
-              applaunchpad)
-                echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/applaunchpad-frontend" >> $GITHUB_ENV
-                ;;
-              *)
-                echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-                ;;
-            esac
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
           fi
 
       - name: Download digests
@@ -266,24 +238,12 @@ jobs:
           MODULE_NAME=$(basename "$MODULE_INPUT")
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
           # Docker image repo (always use GHCR for values.yaml to avoid Aliyun bandwidth costs)
-          case "${MODULE_NAME}" in
-            applaunchpad)
-              echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-applaunchpad-frontend" >> $GITHUB_ENV
-              echo "GHCR_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/applaunchpad-frontend" >> $GITHUB_ENV
-              echo "GHCR_CLUSTER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-cloud-applaunchpad-frontend" >> $GITHUB_ENV
-              if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-                echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-applaunchpad-frontend" >> $GITHUB_ENV
-              fi
-              ;;
-            *)
-              echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-              echo "GHCR_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-              echo "GHCR_CLUSTER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-              if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-                echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-              fi
-              ;;
-          esac
+          echo "OLD_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          echo "GHCR_CLUSTER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          fi
 
       - name: Docker meta for cluster image
         id: meta

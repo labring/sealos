@@ -42,7 +42,7 @@ The `deploy/base` directory provides essential infrastructure components for Kub
 
 **Usage:**
 ```bash
-sealos run ghcr.io/labring/sealos/cert-manager:v1.14.6
+sealos run ghcr.io/sealos-apps/private-sealos/sealos/cert-manager:v1.14.6
 ```
 
 ### cilium
@@ -54,7 +54,7 @@ sealos run ghcr.io/labring/sealos/cert-manager:v1.14.6
 
 **Usage:**
 ```bash
-sealos run ghcr.io/labring/sealos/cilium:v1.17.1
+sealos run ghcr.io/sealos-apps/private-sealos/sealos/cilium:v1.17.1
 ```
 
 ### cockroach
@@ -65,7 +65,7 @@ sealos run ghcr.io/labring/sealos/cilium:v1.17.1
 
 **Usage:**
 ```bash
-sealos run ghcr.io/labring/sealos/cockroach:v2.12.0
+sealos run ghcr.io/sealos-apps/private-sealos/sealos/cockroach:v2.12.0
 ```
 
 ### helm
@@ -76,7 +76,7 @@ sealos run ghcr.io/labring/sealos/cockroach:v2.12.0
 
 **Usage:**
 ```bash
-sealos run ghcr.io/labring/sealos/helm:v3.16.2
+sealos run ghcr.io/sealos-apps/private-sealos/sealos/helm:v3.16.2
 ```
 
 ### higress
@@ -94,7 +94,7 @@ sealos run ghcr.io/labring/sealos/helm:v3.16.2
 
 **Usage:**
 ```bash
-sealos run -e CLOUD_PORT=443 -e CLOUD_DOMAIN=sealos.cloud ghcr.io/labring/sealos/higress:v2.1.3
+sealos run -e CLOUD_PORT=443 -e CLOUD_DOMAIN=sealos.cloud ghcr.io/sealos-apps/private-sealos/sealos/higress:v2.1.3
 ```
 
 ### kubeblocks
@@ -110,7 +110,7 @@ sealos run -e CLOUD_PORT=443 -e CLOUD_DOMAIN=sealos.cloud ghcr.io/labring/sealos
 
 **Usage:**
 ```bash
-sealos run ghcr.io/labring/sealos/kubeblocks:v0.8.2
+sealos run ghcr.io/sealos-apps/private-sealos/sealos/kubeblocks:v0.8.2
 ```
 
 ### kubernetes
@@ -128,7 +128,7 @@ sealos run ghcr.io/labring/sealos/kubeblocks:v0.8.2
 
 **Usage:**
 ```bash
-sealos run -e KUBEADM_MAX_PODS=200 ghcr.io/labring/sealos/kubernetes:v1.28.15
+sealos run -e KUBEADM_MAX_PODS=200 ghcr.io/sealos-apps/private-sealos/sealos/kubernetes:v1.28.15
 ```
 
 ### metrics-server
@@ -139,7 +139,7 @@ sealos run -e KUBEADM_MAX_PODS=200 ghcr.io/labring/sealos/kubernetes:v1.28.15
 
 **Usage:**
 ```bash
-sealos run ghcr.io/labring/sealos/metrics-server:v0.6.4
+sealos run ghcr.io/sealos-apps/private-sealos/sealos/metrics-server:v0.6.4
 ```
 
 ### openebs
@@ -159,7 +159,7 @@ sealos run ghcr.io/labring/sealos/metrics-server:v0.6.4
 
 **Usage:**
 ```bash
-sealos run --env OPENEBS_STORAGE_PREFIX="/data/openebs" ghcr.io/labring/sealos/openebs:v3.10.0
+sealos run --env OPENEBS_STORAGE_PREFIX="/data/openebs" ghcr.io/sealos-apps/private-sealos/sealos/openebs:v3.10.0
 ```
 
 ### victoria-metrics-k8s-stack
@@ -178,7 +178,7 @@ sealos run --env OPENEBS_STORAGE_PREFIX="/data/openebs" ghcr.io/labring/sealos/o
 
 **Usage:**
 ```bash
-sealos run ghcr.io/labring/sealos/victoria-metrics-k8s-stack:v1.124.0
+sealos run ghcr.io/sealos-apps/private-sealos/sealos/victoria-metrics-k8s-stack:v1.124.0
 ```
 
 ## Common Environment Variables
@@ -193,7 +193,7 @@ All components support these common environment variables:
 
 All images are available from the GitHub Container Registry:
 ```
-ghcr.io/labring/sealos/<component>:<version>
+ghcr.io/sealos-apps/private-sealos/sealos/<component>:<version>
 ```
 
 ## Installation Notes

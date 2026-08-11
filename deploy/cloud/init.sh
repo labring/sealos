@@ -3,29 +3,29 @@ set -e
 
 declare -A images=(
   # controllers
-  ["ghcr.io/labring/sealos-cloud-user-controller:latest"]="user.tar"
-  ["ghcr.io/labring/sealos-cloud-terminal-controller:latest"]="terminal.tar"
-  ["ghcr.io/labring/sealos-cloud-app-controller:latest"]="app.tar"
-  ["ghcr.io/labring/sealos-cloud-resources-controller:latest"]="monitoring.tar"
-  ["ghcr.io/labring/sealos-cloud-account-controller:latest"]="account.tar"
-  ["ghcr.io/labring/sealos-cloud-license-controller:latest"]="license.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-user-controller:latest"]="user.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-terminal-controller:latest"]="terminal.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-app-controller:latest"]="app.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-resources-controller:latest"]="monitoring.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-account-controller:latest"]="account.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-license-controller:latest"]="license.tar"
 
   # frontends
-  ["ghcr.io/sealos-apps/sealos-private/sealos-cloud-desktop-frontend:latest"]="frontend-desktop.tar"
-  ["ghcr.io/sealos-apps/sealos-private/sealos-cloud-terminal-frontend:latest"]="frontend-terminal.tar"
-  ["ghcr.io/sealos-apps/sealos-private/sealos-cloud-applaunchpad-frontend:latest"]="frontend-applaunchpad.tar"
-  ["ghcr.io/sealos-apps/sealos-private/sealos-cloud-dbprovider-frontend:latest"]="frontend-dbprovider.tar"
-  ["ghcr.io/sealos-apps/sealos-private/sealos-cloud-costcenter-frontend:latest"]="frontend-costcenter.tar"
-  ["ghcr.io/sealos-apps/sealos-private/sealos-cloud-template-frontend:latest"]="frontend-template.tar"
-  ["ghcr.io/sealos-apps/sealos-private/sealos-cloud-license-frontend:latest"]="frontend-license.tar"
-  ["ghcr.io/sealos-apps/sealos-private/sealos-cloud-cronjob-frontend:latest"]="frontend-cronjob.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-desktop-frontend:latest"]="frontend-desktop.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-terminal-frontend:latest"]="frontend-terminal.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-applaunchpad-frontend:latest"]="frontend-applaunchpad.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-dbprovider-frontend:latest"]="frontend-dbprovider.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-costcenter-frontend:latest"]="frontend-costcenter.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-template-frontend:latest"]="frontend-template.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-license-frontend:latest"]="frontend-license.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-cronjob-frontend:latest"]="frontend-cronjob.tar"
 
   # services
-  ["ghcr.io/labring/sealos-cloud-database-service:latest"]="database-service.tar"
-  ["ghcr.io/labring/sealos-cloud-account-service:latest"]="account-service.tar"
-  ["ghcr.io/labring/sealos-cloud-launchpad-service:latest"]="launchpad-service.tar"
-  ["ghcr.io/labring/sealos-cloud-job-init-controller:latest"]="job-init.tar"
-  ["ghcr.io/labring/sealos-cloud-job-heartbeat-controller:latest"]="job-heartbeat.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-database-service:latest"]="database-service.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-account-service:latest"]="account-service.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-launchpad-service:latest"]="launchpad-service.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-job-init-controller:latest"]="job-init.tar"
+  ["ghcr.io/sealos-apps/private-sealos/sealos-cloud-job-heartbeat-controller:latest"]="job-heartbeat.tar"
 )
 
 mkdir -p images/shim

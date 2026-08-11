@@ -57,7 +57,7 @@ spec:
           - --runtime-class=stargz
           - --registries=sealos.hub:5000
           - --skip-annotation=stargz.sealos.io/skip
-        image: ghcr.io/labring/sealos/stargz-webhook:latest
+        image: ghcr.io/sealos-apps/private-sealos/sealos/stargz-webhook:latest
         name: manager
         ports: []
         securityContext:

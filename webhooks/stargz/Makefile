@@ -1,5 +1,5 @@
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/labring/sealos/stargz-webhook:latest
+IMG ?= ghcr.io/sealos-apps/private-sealos/sealos/stargz-webhook:latest
 # Default platform for local image builds (override with PLATFORM=linux/arm64, etc.)
 PLATFORM ?= linux/amd64
 

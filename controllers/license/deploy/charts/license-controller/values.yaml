@@ -1,7 +1,7 @@
 # Default values for license controller helm chart.
 
 # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
-image: ghcr.io/labring/sealos-license-controller:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-license-controller:latest
 
 # This is for the secretes for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []

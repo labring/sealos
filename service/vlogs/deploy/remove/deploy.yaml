@@ -35,7 +35,7 @@ spec:
             - /config/config.yml
           command:
             - /manager
-          image: ghcr.io/labring/sealos-vlogs-service:latest
+          image: ghcr.io/sealos-apps/private-sealos/sealos-vlogs-service:latest
           imagePullPolicy: Always
           name: service-vlogs
           ports:

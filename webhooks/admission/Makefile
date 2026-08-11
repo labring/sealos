@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/labring/sealos-admission-webhook:latest
+IMG ?= ghcr.io/sealos-apps/private-sealos/sealos-admission-webhook:latest
 TARGETARCH ?= amd64
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.

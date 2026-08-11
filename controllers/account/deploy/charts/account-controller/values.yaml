@@ -1,6 +1,6 @@
 # Default values for account controller helm chart.
 
-image: ghcr.io/labring/sealos-account-controller:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-account-controller:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []

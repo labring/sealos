@@ -22,7 +22,7 @@ helm install --namespace minio-system --create-namespace minio-operator operator
 # DOMAIN 是 Sealos 集群的域名
 # 环境变量设置 Minio 管理员账户（默认的 Minio 管理员账户为 username/passw0rd）
 # -e minioAdminUser={16位随机大小写字符串} -e minioAdminPassword={32位随机大小写字符串}
-sealos run ghcr.io/labring/sealos-cloud-objectstorage:latest -e cloudDomain={DOMAIN}
+sealos run ghcr.io/sealos-apps/private-sealos/sealos-cloud-objectstorage:latest -e cloudDomain={DOMAIN}
 ```
 
 # 卸载对象存储

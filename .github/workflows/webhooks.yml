@@ -36,7 +36,7 @@ on:
         required: false
         type: boolean
   push:
-    branches: ["*"]
+    branches: ["release-v5.1"]
     paths:
       - "webhooks/**"
       - ".github/workflows/webhooks.yml"
@@ -53,6 +53,7 @@ env:
   # Common versions
   GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
+  GHCR_PRIVATE_PREFIX: "ghcr.io/sealos-apps/private-sealos"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
@@ -144,11 +145,11 @@ jobs:
 
       - name: Set image repo
         env:
-          REPO_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
           MODULE_NAME: ${{ matrix.module }}
           GHCR_REPOSITORY: ${{ matrix.ghcr_repository }}
         run: |
-          echo "GHCR_REPO=ghcr.io/${REPO_OWNER}/${GHCR_REPOSITORY}" >> $GITHUB_ENV
+          echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/${GHCR_REPOSITORY}" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           fi
@@ -164,7 +165,7 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
-        if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
+        if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -172,7 +173,7 @@ jobs:
 
       - name: Login to Aliyun Registry
         uses: docker/login-action@v3
-        if: ${{ ((github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)) && env.ALIYUN_REGISTRY }}
+        if: ${{ ((github.event_name == 'push') || (inputs.push_image == true)) && env.ALIYUN_REGISTRY }}
         with:
           registry: ${{ env.ALIYUN_REGISTRY }}
           username: ${{ secrets.ALIYUN_USERNAME }}
@@ -200,13 +201,13 @@ jobs:
           context: ./webhooks/${{ matrix.module }}
           file: ./webhooks/${{ matrix.module }}/Dockerfile
           # Push if it's a push event or if push_image is true
-          push: ${{ (github.event_name == 'push')||(github.event_name == 'create') || (inputs.push_image == true) }}
+          push: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
 
   build-cluster-image:
-    if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
     needs:
       - image-build
     runs-on: namespace-profile-sealos-apps-amd64
@@ -224,15 +225,15 @@ jobs:
 
       - name: Set image repo
         env:
-          REPO_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
           MODULE_NAME: ${{ matrix.module }}
         run: |
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
+          echo "OLD_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           # Docker image repo (always use GHCR for manifests to avoid Aliyun bandwidth costs)
-          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
+          echo "GHCR_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           # Cluster image repos
-          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-webhook" >> $GITHUB_ENV
+          echo "GHCR_CLUSTER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-cloud-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
             echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-webhook" >> $GITHUB_ENV
           fi

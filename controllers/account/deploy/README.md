@@ -95,7 +95,7 @@ sealos run account-controller:latest \
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `image` | `ghcr.io/labring/sealos-account-controller:latest` | 镜像地址 |
+| `image` | `ghcr.io/sealos-apps/private-sealos/sealos-account-controller:latest` | 镜像地址 |
 | `imagePullPolicy` | `Always` | 镜像拉取策略 |
 | `replicaCount` | `1` | 副本数 |
 

@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= ghcr.io/labring/sealos-job-heartbeat-controller:latest
+IMG ?= ghcr.io/sealos-apps/private-sealos/sealos-job-heartbeat-controller:latest
 TARGETARCH ?= amd64
 GOARCH ?= amd64
 

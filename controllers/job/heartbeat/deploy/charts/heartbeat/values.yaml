@@ -4,7 +4,7 @@ schedule: "0 0 * * *"
 activeDeadlineSeconds: 600
 backoffLimit: 1
 
-image: ghcr.io/labring/sealos-job-heartbeat-controller:latest
+image: ghcr.io/sealos-apps/private-sealos/sealos-job-heartbeat-controller:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []
