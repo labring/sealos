@@ -59,6 +59,7 @@ import {
   APP_NAME_BASE_PATTERN,
   isValidAppNameBase
 } from '@/utils/appNameValidation';
+import { getImageRegistryAddress } from '@/utils/deployYaml2Json';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
@@ -178,9 +179,7 @@ const Form = ({
           getValues('appName') &&
           getValues('imageName') &&
           (getValues('secret.use')
-            ? getValues('secret.username') &&
-              getValues('secret.password') &&
-              getValues('secret.serverAddress')
+            ? getValues('secret.username') && getValues('secret.password')
             : true)
       },
       {
@@ -221,7 +220,6 @@ const Form = ({
   const watchedSecretUse = watch('secret.use');
   const watchedSecretUsername = watch('secret.username');
   const watchedSecretPassword = watch('secret.password');
-  const watchedSecretServerAddress = watch('secret.serverAddress');
 
   useEffect(() => {
     secretPasswordVersion.current += 1;
@@ -320,10 +318,11 @@ const Form = ({
       return;
     }
     const secret = getValues('secret');
+    const serverAddress = getImageRegistryAddress(imageName);
     const autoPortKey = [
       imageName,
       secret.use ? secret.username : '',
-      secret.use ? secret.serverAddress : '',
+      secret.use ? serverAddress : '',
       secret.use && secret.password ? `password-v${secretPasswordVersion.current}` : ''
     ].join('|');
     if (lastAutoPortKey.current === autoPortKey) return;
@@ -343,7 +342,7 @@ const Form = ({
             ? {
                 username: secret.username,
                 password: secret.password,
-                serverAddress: secret.serverAddress
+                serverAddress
               }
             : undefined
         });
@@ -395,7 +394,6 @@ const Form = ({
     setValue,
     watchedImageName,
     watchedSecretPassword,
-    watchedSecretServerAddress,
     watchedSecretUse,
     watchedSecretUsername
   ]);
@@ -871,20 +869,6 @@ const Form = ({
                           }
                           {...register('secret.password', {
                             required: t('The password cannot be empty') || ''
-                          })}
-                        />
-                      </FormControl>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.serverAddress} w={'420px'}>
-                        <Box mb={1} fontSize={'sm'}>
-                          {t('Image Address')}
-                        </Box>
-                        <Input
-                          backgroundColor={
-                            getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
-                          }
-                          placeholder={`${t('Image Address')}`}
-                          {...register('secret.serverAddress', {
-                            required: t('The image cannot be empty') || ''
                           })}
                         />
                       </FormControl>
@@ -1467,7 +1451,9 @@ const Form = ({
                                 bg: 'rgba(17, 24, 36, 0.05)'
                               }}
                               onClick={() => {
-                                const isApplied = existingStores.some((store) => store.path === item.path);
+                                const isApplied = existingStores.some(
+                                  (store) => store.path === item.path
+                                );
                                 if (isApplied) {
                                   const appliedCount = localStores.filter((store) =>
                                     existingStores.some((e) => e.path === store.path)

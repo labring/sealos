@@ -115,6 +115,19 @@ export const yamlString2Objects = (yamlString: string): object[] => {
 
 const normalizeIngressHost = (host: string) => host.trim().toLowerCase().replace(/\.+$/g, '');
 
+export const getImageRegistryAddress = (imageName: string): string => {
+  const components = imageName.trim().split('/');
+  const firstComponent = components[0];
+  if (
+    components.length > 1 &&
+    firstComponent &&
+    (firstComponent === 'localhost' || firstComponent.includes('.') || firstComponent.includes(':'))
+  ) {
+    return firstComponent;
+  }
+  return 'docker.io';
+};
+
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
@@ -129,13 +142,10 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       ? {
           [`${data.gpu.manufacturers}.com/use-gputype`]: data.gpu.type
         }
-      : supportedGpuManufacturers.reduce(
-          (acc, manufacturer) => {
-            acc[`${manufacturer}.com/use-gputype`] = null;
-            return acc;
-          },
-          {} as Record<string, null>
-        );
+      : supportedGpuManufacturers.reduce((acc, manufacturer) => {
+          acc[`${manufacturer}.com/use-gputype`] = null;
+          return acc;
+        }, {} as Record<string, null>);
 
   const metadata = {
     name: data.appName,
@@ -182,7 +192,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
 
   const commonContainer = {
     name: data.appName,
-    image: `${data.secret.use ? `${data.secret.serverAddress}/` : ''}${data.imageName}`,
+    image: data.imageName,
     env:
       data.envs.length > 0
         ? data.envs.map((env) => ({
@@ -778,7 +788,7 @@ export const json2Secret = (
   const dockerconfigjson = strToBase64(
     JSON.stringify({
       auths: {
-        [data.secret.serverAddress || '']: {
+        [getImageRegistryAddress(data.imageName)]: {
           username: data.secret.username,
           password: data.secret.password,
           auth

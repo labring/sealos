@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { compare } from 'fast-json-patch';
 import {
+  getImageRegistryAddress,
   json2DeployCr,
   json2Ingress,
   json2Secret,
@@ -8,6 +9,7 @@ import {
   yamlString2Objects
 } from '@/utils/deployYaml2Json';
 import type { AppEditType } from '@/types/app';
+import { resolveAppImageName } from '@/utils/adapt';
 
 const createApp = (customDomain = ''): AppEditType =>
   ({
@@ -512,5 +514,55 @@ describe('json2Secret', () => {
 
     expect(secretYaml).toContain('.dockerconfigjson: ********');
     expect(secretYaml).not.toContain(".dockerconfigjson: '********'");
+  });
+
+  it.each([
+    ['hub.example.com/team/app:v1', 'hub.example.com'],
+    ['192.168.1.10:5000/team/app:v1', '192.168.1.10:5000'],
+    ['team/app:v1', 'docker.io'],
+    ['app:v1', 'docker.io']
+  ])('resolves the registry for %s as %s', (imageName, registry) => {
+    expect(getImageRegistryAddress(imageName)).toBe(registry);
+  });
+
+  it('uses the complete image as-is and derives the pull secret registry', () => {
+    const app = createApp();
+    app.imageName = 'hub.example.com/team/app:v1';
+    app.secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: ''
+    };
+
+    const deployment = yamlString2Objects(json2DeployCr(app, 'deployment'))[0] as any;
+    const secret = yamlString2Objects(json2Secret(app))[0] as any;
+    const dockerconfigjson = JSON.parse(
+      Buffer.from(secret.data['.dockerconfigjson'], 'base64').toString()
+    );
+
+    expect(deployment.spec.template.spec.containers[0].image).toBe('hub.example.com/team/app:v1');
+    expect(Object.keys(dockerconfigjson.auths)).toEqual(['hub.example.com']);
+  });
+
+  it('uses docker.io for the pull secret of a short image reference', () => {
+    const app = createApp();
+    app.imageName = 'team/app:v1';
+    const secret = yamlString2Objects(json2Secret(app))[0] as any;
+    const dockerconfigjson = JSON.parse(
+      Buffer.from(secret.data['.dockerconfigjson'], 'base64').toString()
+    );
+
+    expect(dockerconfigjson.auths).toHaveProperty('docker.io');
+  });
+
+  it('uses the deployed image when editing a legacy private registry app', () => {
+    expect(
+      resolveAppImageName({
+        deployedImage: 'hub.example.com/team/app:v1',
+        originImageName: 'team/app:v1',
+        usesPrivateRegistry: true
+      })
+    ).toBe('hub.example.com/team/app:v1');
   });
 });
