@@ -33,7 +33,7 @@ jobs:
             ci
             chore
             revert
-          requireScope: true
+          requireScope: false
           ignoreLabels: |
             bot
           subjectPattern: ^.+$
@@ -52,6 +52,8 @@ jobs:
           header: pr-title-lint-error
           message: |
             We require pull request titles to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and it looks like your proposed title needs to be adjusted.
+
+            Supported formats include `<type>: <description>` and `<type>(<scope>): <description>`.
 
             Details:
 
