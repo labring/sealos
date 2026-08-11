@@ -1,6 +1,6 @@
 # Default values for costcenter frontend helm chart.
 
-image: ghcr.io/labring/sealos-costcenter-frontend:latest
+image: ghcr.io/sealos-apps/sealos-private/sealos-costcenter-frontend:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []

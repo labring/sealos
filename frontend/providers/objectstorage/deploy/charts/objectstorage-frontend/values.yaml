@@ -1,4 +1,4 @@
-image: ghcr.io/labring/sealos-objectstorage-frontend:latest
+image: ghcr.io/sealos-apps/sealos-private/sealos-objectstorage-frontend:latest
 imagePullPolicy: Always
 imagePullSecrets: []
 

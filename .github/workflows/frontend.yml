@@ -38,6 +38,7 @@ env:
   # Common versions
   GO_VERSION: "1.25"
   DEFAULT_OWNER: "labring"
+  GHCR_PRIVATE_PREFIX: "ghcr.io/sealos-apps/sealos-private"
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
   ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
@@ -63,13 +64,27 @@ jobs:
         id: module_name
         env:
           MODULE_INPUT: ${{ inputs.module }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
         run: |
           MODULE_NAME=$(basename "$MODULE_INPUT")
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          case "${MODULE_NAME}" in
+            applaunchpad)
+              echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/applaunchpad-frontend" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+              ;;
+          esac
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+            case "${MODULE_NAME}" in
+              applaunchpad)
+                echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/applaunchpad-frontend" >> $GITHUB_ENV
+                ;;
+              *)
+                echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+                ;;
+            esac
           fi
 
       - name: Docker meta
@@ -161,13 +176,27 @@ jobs:
         id: module_name
         env:
           MODULE_INPUT: ${{ inputs.module }}
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
         run: |
           MODULE_NAME=$(basename "$MODULE_INPUT")
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          case "${MODULE_NAME}" in
+            applaunchpad)
+              echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/applaunchpad-frontend" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "GHCR_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+              ;;
+          esac
           if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+            case "${MODULE_NAME}" in
+              applaunchpad)
+                echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/applaunchpad-frontend" >> $GITHUB_ENV
+                ;;
+              *)
+                echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+                ;;
+            esac
           fi
 
       - name: Download digests
@@ -232,18 +261,29 @@ jobs:
       - name: Set image repo
         env:
           MODULE_INPUT: ${{ inputs.module }}
-          REPO_OWNER: ${{ github.repository_owner }}
+          GHCR_PRIVATE_PREFIX: ${{ env.GHCR_PRIVATE_PREFIX }}
         run: |
           MODULE_NAME=$(basename "$MODULE_INPUT")
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
           # Docker image repo (always use GHCR for values.yaml to avoid Aliyun bandwidth costs)
-          echo "GHCR_DOCKER_REPO=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-          # Cluster image repos
-          echo "GHCR_CLUSTER_REPO=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
-            echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
-          fi
+          case "${MODULE_NAME}" in
+            applaunchpad)
+              echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-applaunchpad-frontend" >> $GITHUB_ENV
+              echo "GHCR_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/applaunchpad-frontend" >> $GITHUB_ENV
+              echo "GHCR_CLUSTER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-cloud-applaunchpad-frontend" >> $GITHUB_ENV
+              if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+                echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-applaunchpad-frontend" >> $GITHUB_ENV
+              fi
+              ;;
+            *)
+              echo "OLD_DOCKER_REPO=ghcr.io/labring/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+              echo "GHCR_DOCKER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+              echo "GHCR_CLUSTER_REPO=${GHCR_PRIVATE_PREFIX}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+              if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+                echo "ALIYUN_CLUSTER_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+              fi
+              ;;
+          esac
 
       - name: Docker meta for cluster image
         id: meta
@@ -264,6 +304,21 @@ jobs:
       - name: Install sealos
         run: |
           sudo bash ./.github/scripts/install.sh
+
+      - name: Sealos login to ghcr.io
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Build ${{ env.MODULE_NAME }}-frontend cluster image
         working-directory: frontend/${{ inputs.module }}/deploy
@@ -309,21 +364,6 @@ jobs:
             echo "Building ${TAG}-arm64"
             sudo sealos build -t "${TAG}-arm64" --platform linux/arm64 -f Kubefile
           done
-
-      - name: Sealos login to ghcr.io
-        env:
-          REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" --debug ghcr.io
-
-      - name: Sealos login to Aliyun Registry
-        if: ${{ env.ALIYUN_REGISTRY }}
-        env:
-          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
-          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
-        run: |
-          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Manifest Cluster Images
         run: |

@@ -1,6 +1,6 @@
 # Default values for dbprovider frontend helm chart.
 
-image: ghcr.io/labring/sealos-dbprovider-frontend:latest
+image: ghcr.io/sealos-apps/sealos-private/sealos-dbprovider-frontend:latest
 imagePullPolicy: Always
 
 imagePullSecrets: []
