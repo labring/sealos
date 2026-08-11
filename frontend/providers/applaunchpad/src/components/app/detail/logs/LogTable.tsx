@@ -27,7 +27,6 @@ import { useLogStore } from '@/store/logStore';
 
 interface FieldItem {
   value: string;
-  label: string;
   checked: boolean;
   accessorKey: string;
 }
@@ -72,7 +71,6 @@ export const LogTable = ({
 
     return Array.from(uniqueKeys).map((key) => ({
       value: key,
-      label: key,
       checked: key in prevFieldStates ? prevFieldStates[key] : true,
       accessorKey: key
     }));
@@ -87,7 +85,7 @@ export const LogTable = ({
       'filterKeys',
       generateFieldList(data)
         .filter((field) => !excludeFields.includes(field.value))
-        .map((field) => ({ value: field.value, label: field.label }))
+        .map((field) => ({ value: field.value, label: field.value }))
     );
   }, [data, generateFieldList, formHook]);
 
@@ -103,10 +101,11 @@ export const LogTable = ({
       .map((field) => ({
         accessorKey: field.accessorKey,
         header: () => {
-          if (field.label === '_time' || field.label === '_msg') {
-            return field.label.substring(1);
-          }
-          return field.label;
+          return (
+            <Text as="span" textTransform="none">
+              {field.value}
+            </Text>
+          );
         },
         cell: ({ row }) => {
           let value = get(row.original, field.accessorKey, '');
@@ -266,7 +265,7 @@ export const LogTable = ({
                     }
                   }}
                 >
-                  {item.label}
+                  {item.value}
                 </Checkbox>
               ))}
             </CheckboxGroup>

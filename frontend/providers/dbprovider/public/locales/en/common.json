@@ -157,6 +157,7 @@
   "current_connections": "Current Connections",
   "manage_data_redirect_failed": "Failed to open data management",
   "data_import": "Data Import",
+  "data_import_unsupported_for_redis": "Redis does not support data import yet",
   "data_migration_config": "Data Migration Settings",
   "database": "database",
   "database_config": "parameters",
