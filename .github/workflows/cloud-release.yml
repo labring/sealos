@@ -1,4 +1,4 @@
-name: Release Cloud
+name: Release Components
 
 on:
   workflow_call:
@@ -8,11 +8,6 @@ on:
         required: false
         default: ""
         type: string
-      build_offline_tar_only:
-        description: "Build offline tar only"
-        required: false
-        default: false
-        type: boolean
   workflow_dispatch:
     inputs:
       tag:
@@ -20,25 +15,13 @@ on:
         required: false
         default: ""
         type: string
-      build_offline_tar_only:
-        description: "Build offline tar only"
-        required: false
-        default: false
-        type: boolean
-
-env:
-  # Common versions
-  GO_VERSION: "1.25"
-  DEFAULT_OWNER: "labring"
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
   packages: write
 
 jobs:
   release-controllers:
-    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/controllers.yml
     with:
       push_image: true
@@ -48,7 +31,6 @@ jobs:
     secrets: inherit
 
   release-frontends:
-    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/frontends.yml
     with:
       push_image: true
@@ -57,7 +39,6 @@ jobs:
     secrets: inherit
 
   release-service:
-    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/services.yml
     with:
       push_image: true
@@ -67,24 +48,9 @@ jobs:
     secrets: inherit
 
   release-webhook:
-    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/webhooks.yml
     with:
       push_image: true
       push_image_tag: ${{ inputs.tag }}
       disable_cilint: true
-    secrets: inherit
-
-  release-cloud:
-    if: ${{ inputs.build_offline_tar_only == false }}
-    needs:
-      - release-controllers
-      - release-frontends
-      - release-service
-      - release-webhook
-    uses: ./.github/workflows/cloud.yml
-    with:
-      push_image: true
-      push_image_tag: ${{ inputs.tag }}
-      build_from: ${{ inputs.tag }}
     secrets: inherit

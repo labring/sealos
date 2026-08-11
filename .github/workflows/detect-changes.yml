@@ -19,7 +19,7 @@ on:
 
 jobs:
   detect:
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     outputs:
       modules: ${{ steps.detect.outputs.modules }}
     steps:

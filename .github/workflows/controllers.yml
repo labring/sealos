@@ -49,15 +49,6 @@ on:
       - "scripts/detect-build-modules.sh"
       - "!**/*.md"
       - "!**/*.yaml"
-  pull_request:
-    branches: ["*"]
-    paths:
-      - "controllers/**"
-      - ".github/workflows/controllers.yml"
-      - ".github/workflows/controller-build.yml"
-      - "scripts/detect-build-modules.sh"
-      - "!**/*.md"
-      - "!**/*.yaml"
 
 env:
   GO_VERSION: "1.24"

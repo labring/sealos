@@ -15,7 +15,7 @@ output='matrix={"include":['
 if [ "$only_arch" == "true" ]; then
   for arch in "${arch_array[@]}"; do
     if [ "$arch" == "arm64" ]; then
-      output+="{\"arch\":\"${arch}\",\"runs-on\":\"ubuntu-24.04-arm\"},"
+      output+="{\"arch\":\"${arch}\",\"runs-on\":\"namespace-profile-sealos-apps-arm64\"},"
     else
       output+="{\"arch\":\"${arch}\"},"
     fi
@@ -25,7 +25,7 @@ else
   for arch in "${arch_array[@]}"; do
     for binary in "${binary_array[@]}"; do
       if [ "$arch" == "arm64" ]; then
-        output+="{\"binary\":\"${binary}\",\"arch\":\"${arch}\",\"runs-on\":\"ubuntu-24.04-arm\"},"
+        output+="{\"binary\":\"${binary}\",\"arch\":\"${arch}\",\"runs-on\":\"namespace-profile-sealos-apps-arm64\"},"
       else
         output+="{\"binary\":\"${binary}\",\"arch\":\"${arch}\"},"
       fi

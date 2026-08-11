@@ -16,7 +16,7 @@ on:
       - "CHANGELOG/CHANGELOG.md"
 jobs:
   tagpr:
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     permissions:
       contents: write
       pull-requests: write

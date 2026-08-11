@@ -43,13 +43,6 @@ on:
       - "!**/*.md"
       - "!**/*.yaml"
 
-  pull_request:
-    branches: ["*"]
-    paths:
-      - "webhooks/**"
-      - ".github/workflows/webhooks.yml"
-      - "!**/*.md"
-      - "!**/*.yaml"
 
 # Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
 concurrency:
@@ -65,7 +58,7 @@ env:
 
 jobs:
   resolve-modules:
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -79,7 +72,7 @@ jobs:
   golangci-lint:
     if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request') }}
     needs: [resolve-modules]
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
@@ -105,7 +98,7 @@ jobs:
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
   image-build:
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     permissions:
       contents: read
       packages: write
@@ -216,7 +209,7 @@ jobs:
     if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
     needs:
       - image-build
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     permissions:
       contents: read
       packages: write

@@ -61,7 +61,7 @@ env:
 jobs:
   golangci-lint:
     if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') }}
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -82,7 +82,7 @@ jobs:
           args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
   image-build:
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     permissions:
       contents: read
       packages: write
@@ -186,7 +186,7 @@ jobs:
   cluster-image-build:
     if: ${{ inputs.push_image }}
     needs: [image-build]
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     permissions:
       contents: read
       packages: write

@@ -44,20 +44,6 @@ on:
       - ".github/workflows/frontend.yml"
       - ".github/workflows/frontends.yml"
       - "!**/*.md"
-  pull_request:
-    branches: ["*"]
-    paths:
-      - "frontend/desktop/**"
-      - "frontend/providers/**"
-      - "frontend/packages/**"
-      - "frontend/package.json"
-      - "frontend/pnpm-lock.yaml"
-      - "frontend/pnpm-workspace.yaml"
-      - "frontend/tsconfig*.json"
-      - "frontend/Dockerfile"
-      - ".github/workflows/frontend.yml"
-      - ".github/workflows/frontends.yml"
-      - "!**/*.md"
 
 # Avoid using ${{ github.workflow }} - when called via workflow_call, it inherits the caller's name causing conflicts
 concurrency:
@@ -66,7 +52,7 @@ concurrency:
 
 jobs:
   detect-changes:
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-sealos-apps-amd64
     outputs:
       modules: ${{ steps.set-matrix.outputs.modules }}
     steps:
@@ -160,7 +146,7 @@ jobs:
   helm-validate:
     needs: detect-changes
     if: needs.detect-changes.outputs.modules != '[]'
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-sealos-apps-amd64
     strategy:
       fail-fast: false
       matrix:

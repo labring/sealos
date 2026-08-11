@@ -52,7 +52,7 @@ env:
 jobs:
   golangci-lint:
     if: ${{ !inputs.disable_cilint && (github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') }}
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,8 +75,8 @@ jobs:
         include:
           - arch: amd64
           - arch: arm64
-            runs-on: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
+            runs-on: namespace-profile-sealos-apps-arm64
+    runs-on: ${{ matrix.runs-on || 'namespace-profile-sealos-apps-amd64' }}
     permissions:
       contents: read
       packages: write
@@ -155,7 +155,7 @@ jobs:
   image-release:
     name: Push Docker Images
     needs: image-build
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     permissions:
       contents: read
       packages: write
@@ -238,7 +238,7 @@ jobs:
     needs:
       - image-release
     if: ${{ inputs.push_image }}
-    runs-on: ubuntu-24.04
+    runs-on: namespace-profile-sealos-apps-amd64
     permissions:
       contents: read
       packages: write
