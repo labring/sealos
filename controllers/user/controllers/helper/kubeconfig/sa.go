@@ -18,6 +18,8 @@ package kubeconfig
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -65,26 +67,49 @@ func (sac *ServiceAccountConfig) ApplyWithTokenRequest(
 }
 
 func (sac *ServiceAccountConfig) applyServiceAccount(_ *rest.Config, client client.Client) error {
-	if sac.sa != nil {
-		return nil
+	sa := sac.sa
+	if sa == nil {
+		sa = &v1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      sac.user,
+				Namespace: sac.namespace,
+			},
+		}
 	}
-	sa := &v1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      sac.user,
-			Namespace: sac.namespace,
-		},
+	if sa.Name == "" {
+		sa.Name = sac.user
+	}
+	if sa.Namespace == "" {
+		sa.Namespace = sac.namespace
 	}
 	_, err := controllerutil.CreateOrUpdate(context.TODO(), client, sa, func() error {
+		if len(sa.Secrets) == 0 {
+			sa.Secrets = []v1.ObjectReference{
+				{
+					Name: sac.generateSecretName(),
+				},
+			}
+		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 	sac.sa = sa
-	return err
+	if len(sa.Secrets) > 0 {
+		sac.secretName = sa.Secrets[0].Name
+	}
+	return nil
 }
 
 func (sac *ServiceAccountConfig) applyBoundTokenSecret(ctx context.Context, cli client.Client) (*v1.Secret, error) {
+	secretName := sac.secretName
+	if secretName == "" {
+		secretName = sac.generateSecretName()
+	}
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      TokenSecretName(sac.user),
+			Name:      secretName,
 			Namespace: sac.namespace,
 		},
 	}
@@ -144,6 +169,24 @@ func (sac *ServiceAccountConfig) tokenRequestExpirationSeconds() int32 {
 
 func TokenSecretName(name string) string {
 	return fmt.Sprintf("sealos-token-%s", name)
+}
+
+func (sac *ServiceAccountConfig) generateSecretName() string {
+	if sac.secretName != "" {
+		return sac.secretName
+	}
+	if sac.sa != nil && len(sac.sa.Secrets) > 0 && sac.sa.Secrets[0].Name != "" {
+		return sac.sa.Secrets[0].Name
+	}
+	return fmt.Sprintf("sealos-token-%s-%s", sac.user, GetRandomString(5))
+}
+
+func GetRandomString(n int) string {
+	randBytes := make([]byte, n/2)
+	if _, err := rand.Read(randBytes); err != nil {
+		return ""
+	}
+	return hex.EncodeToString(randBytes)
 }
 
 func (sac *ServiceAccountConfig) generatorKubeConfig(

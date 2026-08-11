@@ -735,8 +735,21 @@ func (r *UserReconciler) syncKubeConfig(
 }
 
 func (r *UserReconciler) deleteBoundTokenSecret(ctx context.Context, user *userv1.User) error {
+	secretName := kubeconfig.TokenSecretName(user.Name)
+	sa := &v1.ServiceAccount{}
+	if err := r.Get(ctx, client.ObjectKey{
+		Namespace: config.GetUserSystemNamespace(),
+		Name:      user.Name,
+	}, sa); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get service account for bound token secret: %w", err)
+		}
+	} else if len(sa.Secrets) > 0 && sa.Secrets[0].Name != "" {
+		secretName = sa.Secrets[0].Name
+	}
+
 	secret := &v1.Secret{}
-	secret.Name = kubeconfig.TokenSecretName(user.Name)
+	secret.Name = secretName
 	secret.Namespace = config.GetUserSystemNamespace()
 	if err := r.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete bound token secret: %w", err)

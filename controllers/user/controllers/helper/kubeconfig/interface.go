@@ -63,8 +63,9 @@ type CsrConfig struct {
 }
 type ServiceAccountConfig struct {
 	*DefaultConfig
-	namespace string
-	sa        *v1.ServiceAccount
+	namespace  string
+	secretName string
+	sa         *v1.ServiceAccount
 }
 
 type WebhookConfig struct {
