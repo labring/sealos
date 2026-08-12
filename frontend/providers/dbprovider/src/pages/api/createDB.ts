@@ -8,7 +8,6 @@ import {
   json2Account,
   json2ResourceOps,
   json2CreateCluster,
-  json2Reconfigure,
   json2ParameterConfig
 } from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -18,7 +17,14 @@ import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
 import { getScore } from '@/utils/tools';
 import { validatePolarDBXResources } from '@/utils/database';
-import { getCurrentParameterValues, getParameterDifferences } from '@/utils/parameterConfig';
+import {
+  getCurrentParameterValues,
+  getParameterDifferences,
+  updateParameterConfiguration,
+  waitForParameterValues
+} from '@/utils/parameterConfig';
+import { completeParameterHistory, createParameterHistory } from '@/utils/parameterHistory';
+import { ReconfigStatus } from '@/constants/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -82,13 +88,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           });
 
           if (parameterDifferences.length > 0) {
-            const reconfigureYaml = json2Reconfigure(
-              dbForm.dbName,
-              dbForm.dbType,
-              body.metadata.uid,
-              parameterDifferences
-            );
-            opsRequests.push(reconfigureYaml);
+            const history = await createParameterHistory({
+              k8sCore,
+              namespace,
+              dbName: dbForm.dbName,
+              dbType: dbForm.dbType,
+              dbUid: body.metadata.uid,
+              differences: parameterDifferences
+            });
+
+            try {
+              await updateParameterConfiguration({
+                dbName: dbForm.dbName,
+                dbType: dbForm.dbType,
+                namespace,
+                k8sCustomObjects,
+                differences: parameterDifferences
+              });
+              await waitForParameterValues({
+                dbName: dbForm.dbName,
+                dbType: dbForm.dbType,
+                namespace,
+                k8sCore,
+                k8sCustomObjects,
+                differences: parameterDifferences
+              });
+            } catch (error: any) {
+              try {
+                await completeParameterHistory({
+                  k8sCore,
+                  configMap: history,
+                  status: ReconfigStatus.Failed,
+                  error: error?.message || String(error)
+                });
+              } catch (historyError) {
+                console.error('Failed to record parameter update failure:', historyError);
+              }
+              throw error;
+            }
+
+            try {
+              await completeParameterHistory({
+                k8sCore,
+                configMap: history,
+                status: ReconfigStatus.Succeed
+              });
+            } catch (historyError) {
+              console.error('Failed to record parameter update success:', historyError);
+            }
           }
         }
       }

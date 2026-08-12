@@ -5,6 +5,8 @@ import { ApiResp } from '@/services/kubernet';
 import { KubeBlockOpsRequestType } from '@/types/cluster';
 import { DBType, OpsRequestItemType } from '@/types/db';
 import { adaptOpsRequest } from '@/utils/adapt';
+import { DBNameLabel, DBParameterHistoryLabel } from '@/constants/db';
+import { adaptParameterHistory } from '@/utils/parameterHistory';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -15,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       dbType: DBType;
     };
 
-    const { k8sCustomObjects, namespace } = await getK8s({
+    const { k8sCore, k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
@@ -47,8 +49,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       data = opsrequestsList.body.items.map((res) => adaptOpsRequest(res, 'Switchover'));
     }
 
+    const { body: historyList } = await k8sCore.listNamespacedConfigMap(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${DBNameLabel}=${name},${DBParameterHistoryLabel}=true`
+    );
+    const parameterHistory = historyList.items
+      .map(adaptParameterHistory)
+      .filter((item): item is OpsRequestItemType => Boolean(item));
+
     jsonRes(res, {
-      data: data
+      data: [...data, ...parameterHistory].sort(
+        (left, right) => new Date(right.startTime).getTime() - new Date(left.startTime).getTime()
+      )
     });
   } catch (err: any) {
     jsonRes(res, {

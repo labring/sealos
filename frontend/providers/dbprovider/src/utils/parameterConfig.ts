@@ -2,40 +2,20 @@ import { DBReconfigureMap } from '@/constants/db';
 import type { DBEditType } from '@/types/db';
 import { flattenObject, parseConfig, parseRedisConfig } from '@/utils/tools';
 import type { CoreV1Api, CustomObjectsApi } from '@kubernetes/client-node';
+import {
+  applyParameterDifferences,
+  areParameterValuesApplied,
+  getParameterDifferences,
+  type ParameterDifference
+} from './parameterChanges';
 
 type ParameterConfig = NonNullable<DBEditType['parameterConfig']>;
-type ParameterPath = {
-  current: string;
-  requested: string;
-};
 
-const parameterPathsByDbType: Record<
-  string,
-  Partial<Record<keyof ParameterConfig, ParameterPath>>
-> = {
-  postgresql: {
-    maxConnections: { current: 'max_connections', requested: 'max_connections' },
-    timeZone: { current: 'timezone', requested: 'timezone' }
-  },
-  'apecloud-mysql': {
-    maxConnections: { current: 'mysqld.max_connections', requested: 'max_connections' },
-    timeZone: { current: 'mysqld.default-time-zone', requested: 'default-time-zone' },
-    lowerCaseTableNames: {
-      current: 'mysqld.lower_case_table_names',
-      requested: 'lower_case_table_names'
-    }
-  },
-  mongodb: {
-    maxConnections: {
-      current: 'net.maxIncomingConnections',
-      requested: 'net.maxIncomingConnections'
-    }
-  },
-  redis: {
-    maxConnections: { current: 'maxclients', requested: 'maxclients' },
-    maxmemory: { current: 'maxmemory', requested: 'maxmemory' }
-  }
-};
+export {
+  applyParameterDifferences,
+  areParameterValuesApplied,
+  getParameterDifferences
+} from './parameterChanges';
 
 export const getDBConfigurationName = (dbName: string, dbType: string) => {
   const suffixByDbType: Record<string, string> = {
@@ -128,46 +108,26 @@ export function extractParameterConfigFromConfiguration(
   return hasParams ? parameterConfig : undefined;
 }
 
-export function getParameterDifferences({
-  dbType,
-  current,
-  requested,
-  dynamicMaxConnections
-}: {
-  dbType: string;
-  current: Record<string, string>;
-  requested: DBEditType['parameterConfig'];
-  dynamicMaxConnections: number;
+export async function waitForParameterValues({
+  differences,
+  timeoutMs = 50_000,
+  intervalMs = 2_000,
+  ...options
+}: Parameters<typeof getCurrentParameterValues>[0] & {
+  differences: ParameterDifference[];
+  timeoutMs?: number;
+  intervalMs?: number;
 }) {
-  const paths = parameterPathsByDbType[dbType];
-  if (!paths) return [];
+  const deadline = Date.now() + timeoutMs;
 
-  const desired: ParameterConfig = {
-    ...requested,
-    maxConnections: requested?.isMaxConnectionsCustomized
-      ? requested.maxConnections
-      : dynamicMaxConnections.toString(),
-    ...(dbType === 'apecloud-mysql' && {
-      lowerCaseTableNames: requested?.lowerCaseTableNames || '0'
-    })
-  };
+  while (Date.now() < deadline) {
+    const currentValues = await getCurrentParameterValues(options);
+    if (areParameterValuesApplied(currentValues, differences)) return;
 
-  return Object.entries(paths).flatMap(([field, paths]) => {
-    const key = field as keyof ParameterConfig;
-    const newValue = desired[key];
-    if (newValue === undefined) return [];
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
 
-    const oldValue = current[paths.current];
-    if (String(oldValue ?? '') === String(newValue)) return [];
-
-    return [
-      {
-        path: paths.requested,
-        oldValue: String(oldValue ?? ''),
-        newValue: String(newValue)
-      }
-    ];
-  });
+  throw new Error('Timed out waiting for database parameters to take effect');
 }
 
 export async function getCurrentParameterValues({
@@ -223,4 +183,47 @@ export async function getCurrentParameterValues({
   }
 
   return currentValues;
+}
+
+export async function updateParameterConfiguration({
+  dbName,
+  dbType,
+  namespace,
+  k8sCustomObjects,
+  differences
+}: {
+  dbName: string;
+  dbType: DBEditType['dbType'];
+  namespace: string;
+  k8sCustomObjects: CustomObjectsApi;
+  differences: ParameterDifference[];
+}) {
+  const dbConfig = DBReconfigureMap[dbType];
+  if (!dbConfig) {
+    throw new Error(`Parameter configuration is not supported for database type: ${dbType}`);
+  }
+
+  const configurationName = getDBConfigurationName(dbName, dbType);
+  const { body: configuration } = (await k8sCustomObjects.getNamespacedCustomObject(
+    'apps.kubeblocks.io',
+    'v1alpha1',
+    namespace,
+    'configurations',
+    configurationName
+  )) as { body: any };
+  applyParameterDifferences({
+    configuration,
+    configItemName: dbConfig.reconfigureName,
+    configMapKey: dbConfig.configMapKey,
+    differences
+  });
+
+  await k8sCustomObjects.replaceNamespacedCustomObject(
+    'apps.kubeblocks.io',
+    'v1alpha1',
+    namespace,
+    'configurations',
+    configurationName,
+    configuration
+  );
 }
