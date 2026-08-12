@@ -220,6 +220,13 @@ const Form = ({
   const watchedSecretUse = watch('secret.use');
   const watchedSecretUsername = watch('secret.username');
   const watchedSecretPassword = watch('secret.password');
+  const [isImageNameFocused, setIsImageNameFocused] = useState(false);
+  const imageNameField = register('imageName', {
+    required: 'Image name cannot be empty',
+    setValueAs(e) {
+      return e.replace(/\s*/g, '');
+    }
+  });
 
   useEffect(() => {
     secretPasswordVersion.current += 1;
@@ -816,12 +823,12 @@ const Form = ({
                         value={getValues('imageName')}
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
                         placeholder={`${t('Image Name')}`}
-                        {...register('imageName', {
-                          required: 'Image name cannot be empty',
-                          setValueAs(e) {
-                            return e.replace(/\s*/g, '');
-                          }
-                        })}
+                        {...imageNameField}
+                        onFocus={() => setIsImageNameFocused(true)}
+                        onBlur={(event) => {
+                          setIsImageNameFocused(false);
+                          imageNameField.onBlur(event);
+                        }}
                       />
                       <Flex
                         alignItems={'center'}
@@ -841,7 +848,7 @@ const Form = ({
                         </Box>
                       </Flex>
                     </Flex>
-                    {watchedImageName ? (
+                    {isImageNameFocused ? (
                       <Box mt={2} fontSize={'12px'} color={'brightBlue.600'}>
                         {t('private_image_registry_tip')}
                       </Box>
