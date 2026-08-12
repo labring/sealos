@@ -461,7 +461,7 @@ const Form = ({
 
   const headerStyles = {
     py: 4,
-    pl: '42px',
+    pl: { base: '16px', md: '24px', lg: '42px' },
     borderTopRadius: 'lg',
     fontSize: 'xl',
     color: 'grayModern.900',
@@ -621,10 +621,14 @@ const Form = ({
     <>
       <Grid
         height={'100%'}
-        templateColumns={'220px 1fr'}
-        gridGap={5}
+        templateColumns={{
+          base: 'minmax(0, 1fr)',
+          md: '180px minmax(0, 1fr)',
+          lg: '220px minmax(0, 1fr)'
+        }}
+        gridGap={{ base: 3, lg: 5 }}
         alignItems={'start'}
-        pl={`${pxVal}px`}
+        px={`${pxVal}px`}
       >
         <Box>
           <Tabs
@@ -716,9 +720,10 @@ const Form = ({
 
         <Box
           id={'form-container'}
-          pr={`${pxVal}px`}
           height={'100%'}
           position={'relative'}
+          minW={0}
+          overflowX={{ base: 'auto', md: 'visible' }}
           // overflowY={'scroll'}
         >
           {/* base info */}
@@ -727,13 +732,15 @@ const Form = ({
               <MyIcon name={'formInfo'} mr={'12px'} w={'24px'} color={'grayModern.900'} />
               {t('Basic Config')}
             </Box>
-            <Box px={'42px'} py={'24px'}>
+            <Box px={{ base: '16px', md: '24px', lg: '42px' }} py={'24px'}>
               {/* app name */}
-              <FormControl mb={7} isInvalid={!!errors.appName} w={'500px'}>
+              <FormControl mb={7} isInvalid={!!errors.appName} w={'100%'} maxW={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label>{t('App Name')}</Label>
                   <Input
-                    width={'350px'}
+                    flex={1}
+                    minW={0}
+                    maxW={'350px'}
                     disabled={isEdit}
                     title={isEdit ? t('Not allowed to change app name') || '' : ''}
                     autoFocus={true}
@@ -810,10 +817,11 @@ const Form = ({
                     <Box mb={1} fontSize={'sm'}>
                       {t('Image Name')}
                     </Box>
-                    <Flex alignItems={'center'} gap={3}>
+                    <Flex alignItems={'center'} gap={3} flexWrap={{ base: 'wrap', lg: 'nowrap' }}>
                       <Input
-                        width={'350px'}
-                        flexShrink={0}
+                        width={'100%'}
+                        maxW={'350px'}
+                        minW={0}
                         value={getValues('imageName')}
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
                         placeholder={`${t('Image Name')}`}
@@ -827,8 +835,9 @@ const Form = ({
                       <Flex
                         alignItems={'center'}
                         gap={2}
-                        minW={'160px'}
+                        minW={0}
                         maxW={'220px'}
+                        flex={{ base: '1 1 100%', lg: '0 1 220px' }}
                         h={'22px'}
                         fontSize={'12px'}
                         color={imagePortDetectionView?.color}
@@ -845,7 +854,12 @@ const Form = ({
                   </FormControl>
                   {getValues('secret.use') ? (
                     <>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.username} w={'420px'}>
+                      <FormControl
+                        mt={4}
+                        isInvalid={!!errors.secret?.username}
+                        w={'100%'}
+                        maxW={'420px'}
+                      >
                         <Box mb={1} fontSize={'sm'}>
                           {t('Username')}
                         </Box>
@@ -859,7 +873,12 @@ const Form = ({
                           })}
                         />
                       </FormControl>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.password} w={'420px'}>
+                      <FormControl
+                        mt={4}
+                        isInvalid={!!errors.secret?.password}
+                        w={'100%'}
+                        maxW={'420px'}
+                      >
                         <Box mb={1} fontSize={'sm'}>
                           {t('Password')}
                         </Box>
@@ -874,7 +893,12 @@ const Form = ({
                           })}
                         />
                       </FormControl>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.serverAddress} w={'420px'}>
+                      <FormControl
+                        mt={4}
+                        isInvalid={!!errors.secret?.serverAddress}
+                        w={'100%'}
+                        maxW={'420px'}
+                      >
                         <Box mb={1} fontSize={'sm'}>
                           {t('Image Address')}
                         </Box>
@@ -968,7 +992,7 @@ const Form = ({
                         <Label mb={1} fontSize={'sm'}>
                           {t('Replicas')}
                         </Label>
-                        <Box w={'410px'} ml={'7px'}>
+                        <Box w={'100%'} maxW={'410px'} ml={'7px'}>
                           <MyRangeSlider
                             min={1}
                             max={20}
@@ -1190,7 +1214,7 @@ const Form = ({
                   <AccordionIcon w={'20px'} h={'20px'} color={'#485264'} />
                 </AccordionButton>
 
-                <AccordionPanel px={'42px'} py={'24px'}>
+                <AccordionPanel px={{ base: '16px', md: '24px', lg: '42px' }} py={'24px'}>
                   {/* Shared Memory */}
                   <Flex alignItems={'center'} gap={'32px'} mb={'24px'}>
                     <Flex alignItems={'center'} gap={'16px'}>
