@@ -866,6 +866,8 @@ const Form = ({
                           {t('Username')}
                         </Box>
                         <Input
+                          w={'350px'}
+                          maxW={'100%'}
                           backgroundColor={
                             getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
                           }
@@ -885,6 +887,8 @@ const Form = ({
                           {t('Password')}
                         </Box>
                         <Input
+                          w={'350px'}
+                          maxW={'100%'}
                           type={'password'}
                           placeholder={`${t('Password for the image registry')}`}
                           backgroundColor={
