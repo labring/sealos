@@ -841,9 +841,11 @@ const Form = ({
                         </Box>
                       </Flex>
                     </Flex>
-                    <Box mt={2} fontSize={'12px'} color={'brightBlue.600'}>
-                      {t('private_image_registry_tip')}
-                    </Box>
+                    {watchedImageName ? (
+                      <Box mt={2} fontSize={'12px'} color={'brightBlue.600'}>
+                        {t('private_image_registry_tip')}
+                      </Box>
+                    ) : null}
                   </FormControl>
                   {getValues('secret.use') ? (
                     <>
