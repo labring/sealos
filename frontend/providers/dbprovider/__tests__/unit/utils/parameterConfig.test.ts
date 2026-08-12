@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  applyParameterDifferences,
   areParameterValuesApplied,
-  getParameterDifferences
+  getParameterConfigFromRuntimeValues,
+  getParameterDifferences,
+  toKubeBlocksParameterPairs
 } from '../../../src/utils/parameterChanges';
 import {
   getParameterHistoryName,
@@ -38,6 +39,32 @@ test('keeps MySQL submission and runtime paths distinct', () => {
   ]);
 });
 
+test('builds edit form parameters from runtime values', () => {
+  assert.deepEqual(
+    getParameterConfigFromRuntimeValues({
+      dbType: 'postgresql',
+      currentValues: { max_connections: '700', timezone: 'UTC' },
+      dynamicMaxConnections: 100
+    }),
+    {
+      maxConnections: '700',
+      timeZone: 'UTC',
+      isMaxConnectionsCustomized: true
+    }
+  );
+});
+
+test('serializes parameter differences for a KubeBlocks reconfigure OpsRequest', () => {
+  assert.deepEqual(
+    toKubeBlocksParameterPairs([
+      { path: 'max_connections', oldValue: '700', newValue: '701' }
+    ]),
+    [
+    { key: 'max_connections', value: '701' }
+    ]
+  );
+});
+
 test('reports success only after the runtime value matches', () => {
   const differences = [
     {
@@ -50,51 +77,6 @@ test('reports success only after the runtime value matches', () => {
 
   assert.equal(areParameterValuesApplied({ max_connections: '700' }, differences), false);
   assert.equal(areParameterValuesApplied({ max_connections: '900' }, differences), true);
-});
-
-test('updates only the requested configuration item', () => {
-  const configuration = {
-    metadata: { resourceVersion: '10' },
-    spec: {
-      configItemDetails: [
-        {
-          name: 'postgresql-configuration',
-          configFileParams: {
-            'postgresql.conf': { parameters: { max_connections: '700', timezone: 'UTC' } }
-          }
-        },
-        { name: 'pgbouncer-configuration', configSpec: { name: 'pgbouncer-configuration' } }
-      ]
-    }
-  };
-
-  const updated = applyParameterDifferences({
-    configuration,
-    configItemName: 'postgresql-configuration',
-    configMapKey: 'postgresql.conf',
-    differences: [
-      {
-        path: 'max_connections',
-        currentPath: 'max_connections',
-        oldValue: '700',
-        newValue: '900'
-      }
-    ]
-  });
-
-  assert.equal(
-    updated.spec.configItemDetails[0].configFileParams['postgresql.conf'].parameters.max_connections,
-    '900'
-  );
-  assert.equal(
-    updated.spec.configItemDetails[0].configFileParams['postgresql.conf'].parameters.timezone,
-    'UTC'
-  );
-  assert.deepEqual(updated.spec.configItemDetails[1], {
-    name: 'pgbouncer-configuration',
-    configSpec: { name: 'pgbouncer-configuration' }
-  });
-  assert.equal(updated.metadata.resourceVersion, '10');
 });
 
 test('keeps parameter history names within the Kubernetes limit', () => {

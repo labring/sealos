@@ -78,8 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           dbName: name,
           dbType,
           namespace,
-          k8sCore,
-          k8sCustomObjects
+          k8sCore
         });
 
         await Promise.all(

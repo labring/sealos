@@ -111,7 +111,7 @@ const ReconfigureTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<Compo
           subMenu: SubMenuEnum.History
         }
       });
-      toast({ title: t('Success'), status: 'success' });
+      toast({ title: t('update_submitted'), status: 'success' });
     } catch (error) {
       toast({ title: t('have_error'), status: 'error' });
     }

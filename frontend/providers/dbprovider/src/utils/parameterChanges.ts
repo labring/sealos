@@ -9,6 +9,10 @@ export type ParameterDifference = {
   newValue: string;
 };
 
+export const toKubeBlocksParameterPairs = (
+  differences: Pick<ParameterDifference, 'path' | 'newValue'>[]
+) => differences.map(({ path, newValue }) => ({ key: path, value: newValue }));
+
 type ParameterPath = {
   current: string;
   requested: string;
@@ -41,6 +45,43 @@ const parameterPathsByDbType: Record<
     maxmemory: { current: 'maxmemory', requested: 'maxmemory' }
   }
 };
+
+export function getParameterConfigFromRuntimeValues({
+  dbType,
+  currentValues,
+  dynamicMaxConnections
+}: {
+  dbType: string;
+  currentValues: Record<string, string>;
+  dynamicMaxConnections: number;
+}): DBEditType['parameterConfig'] {
+  const paths = parameterPathsByDbType[dbType];
+  if (!paths) return undefined;
+
+  const parameterConfig: ParameterConfig = {};
+  for (const [field, path] of Object.entries(paths)) {
+    const value = currentValues[path.current];
+    if (value !== undefined) {
+      parameterConfig[field as keyof ParameterConfig] = String(value) as never;
+    }
+  }
+
+  if (parameterConfig.maxConnections !== undefined) {
+    parameterConfig.isMaxConnectionsCustomized =
+      parameterConfig.maxConnections !== dynamicMaxConnections.toString();
+  }
+
+  if (dbType === 'apecloud-mysql') {
+    parameterConfig.timeZone =
+      parameterConfig.timeZone === '+00:00'
+        ? 'UTC'
+        : parameterConfig.timeZone === '+08:00'
+          ? 'Asia/Shanghai'
+          : parameterConfig.timeZone;
+  }
+
+  return Object.keys(parameterConfig).length > 0 ? parameterConfig : undefined;
+}
 
 export function getParameterDifferences({
   dbType,
@@ -93,33 +134,3 @@ export const areParameterValuesApplied = (
     (difference) =>
       String(currentValues[difference.currentPath || difference.path] ?? '') === difference.newValue
   );
-
-export function applyParameterDifferences({
-  configuration,
-  configItemName,
-  configMapKey,
-  differences
-}: {
-  configuration: any;
-  configItemName: string;
-  configMapKey: string;
-  differences: ParameterDifference[];
-}) {
-  const configItem = configuration?.spec?.configItemDetails?.find(
-    (item: any) => item.name === configItemName
-  );
-
-  if (!configItem) {
-    throw new Error(`Configuration item not found: ${configItemName}`);
-  }
-
-  configItem.configFileParams ||= {};
-  configItem.configFileParams[configMapKey] ||= {};
-  configItem.configFileParams[configMapKey].parameters ||= {};
-
-  for (const difference of differences) {
-    configItem.configFileParams[configMapKey].parameters[difference.path] = difference.newValue;
-  }
-
-  return configuration;
-}

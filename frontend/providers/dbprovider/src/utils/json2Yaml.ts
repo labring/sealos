@@ -21,6 +21,7 @@ import { V1StatefulSet } from '@kubernetes/client-node';
 import { customAlphabet } from 'nanoid';
 import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 import { distributeResources } from './database';
+import { toKubeBlocksParameterPairs } from './parameterChanges';
 import z from 'zod';
 import { backupBaseSchema } from '@/types/schemas/backup';
 
@@ -836,7 +837,7 @@ export const json2Reconfigure = (
             keys: [
               {
                 key: reconfigureConfig.reconfigureKey,
-                parameters: configParams.map((item) => ({ key: item.path, value: item.newValue }))
+                parameters: toKubeBlocksParameterPairs(configParams)
               }
             ],
             name: reconfigureConfig.reconfigureName

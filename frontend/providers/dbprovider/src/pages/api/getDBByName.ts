@@ -6,14 +6,13 @@ import { jsonRes } from '@/services/backend/response';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail } from '@/utils/adapt';
 import { defaultDBDetail } from '@/constants/db';
-import {
-  extractParameterConfigFromConfiguration,
-  getDBConfigurationName
-} from '@/utils/parameterConfig';
+import { getCurrentParameterValues } from '@/utils/parameterConfig';
+import { getScore } from '@/utils/tools';
+import { getParameterConfigFromRuntimeValues } from '@/utils/parameterChanges';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { namespace } = await getK8s({
+    const { namespace, k8sCore, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
@@ -32,14 +31,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const dbDetail = adaptDBDetail(body);
 
     try {
-      const configurationBody = await getDBConfiguration(req, dbDetail.dbName, dbDetail.dbType);
-      if (configurationBody) {
-        const parameterConfig = extractParameterConfigFromConfiguration(
-          configurationBody,
-          dbDetail.dbType
-        );
-        dbDetail.parameterConfig = parameterConfig;
-      }
+      const currentValues = await getCurrentParameterValues({
+        dbName: dbDetail.dbName,
+        dbType: dbDetail.dbType,
+        namespace,
+        k8sCore
+      });
+      dbDetail.parameterConfig = getParameterConfigFromRuntimeValues({
+        dbType: dbDetail.dbType,
+        currentValues,
+        dynamicMaxConnections: getScore(dbDetail.dbType, dbDetail.cpu, dbDetail.memory)
+      });
     } catch (error) {
       console.log('Failed to get configuration:', error);
     }
@@ -71,28 +73,4 @@ export async function getCluster(req: NextApiRequest, name: string) {
   };
 
   return body;
-}
-
-export async function getDBConfiguration(req: NextApiRequest, dbName: string, dbType: string) {
-  const { k8sCustomObjects, namespace } = await getK8s({
-    kubeconfig: await authSession(req)
-  });
-
-  try {
-    const configurationName = getDBConfigurationName(dbName, dbType);
-
-    const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
-      'apps.kubeblocks.io',
-      'v1alpha1',
-      namespace,
-      'configurations',
-      configurationName
-    )) as {
-      body: any;
-    };
-
-    return body;
-  } catch (err: any) {
-    return null;
-  }
 }

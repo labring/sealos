@@ -120,27 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
       }
 
-      try {
-        const { body: configurationBody } = (await k8sCustomObjects.getNamespacedCustomObject(
-          'apps.kubeblocks.io',
-          'v1alpha1',
-          namespace,
-          'configurations',
-          `${name}-redis`
-        )) as { body: any };
-        const redisConfigItem = configurationBody?.spec?.configItemDetails?.find(
-          (item: any) => item.name === dbConfig.reconfigureName
-        );
-        const redisConfigParams = redisConfigItem?.configFileParams?.['redis.conf']?.parameters || {};
-        const mergedRedisConfig = {
-          ...(redisConfigMapData ? parseRedisConfig(redisConfigMapData) : {}),
-          ...redisConfigParams
-        };
-        parsedConfig = Object.keys(mergedRedisConfig).length > 0 ? mergedRedisConfig : null;
-      } catch (error) {
-        console.warn('Failed to get redis configuration, using config map fallback if available:', error);
-        parsedConfig = redisConfigMapData ? parseRedisConfig(redisConfigMapData) : null;
-      }
+      parsedConfig = redisConfigMapData ? parseRedisConfig(redisConfigMapData) : null;
     } else {
       const key = name + dbConfig.configMapName;
       if (!key || !dbConfig.configMapName) {
