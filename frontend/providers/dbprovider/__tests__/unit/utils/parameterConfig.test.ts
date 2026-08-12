@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   areParameterValuesApplied,
+  getPostgreSQLConfigSpecMetadata,
+  getPostgreSQLConfigSpecPatch,
   getParameterConfigFromRuntimeValues,
   getParameterDifferences,
   toKubeBlocksParameterPairs
@@ -62,6 +64,59 @@ test('serializes parameter differences for a KubeBlocks reconfigure OpsRequest',
     [
     { key: 'max_connections', value: '701' }
     ]
+  );
+});
+
+test('preserves KubeBlocks PostgreSQL parameter constraints in generated configurations', () => {
+  assert.deepEqual(getPostgreSQLConfigSpecMetadata('12'), {
+    constraintRef: 'postgresql12-cc',
+    keys: ['postgresql.conf']
+  });
+  assert.deepEqual(getPostgreSQLConfigSpecMetadata('14'), {
+    constraintRef: 'postgresql14-cc',
+    keys: ['postgresql.conf']
+  });
+});
+
+test('repairs missing PostgreSQL parameter constraints for existing configurations', () => {
+  assert.deepEqual(
+    getPostgreSQLConfigSpecPatch({
+      dbVersion: 'postgresql-14.8.0',
+      configItemDetails: [
+        { name: 'metrics', configSpec: {} },
+        { name: 'postgresql-configuration', configSpec: {} }
+      ]
+    }),
+    [
+      {
+        op: 'add',
+        path: '/spec/configItemDetails/1/configSpec/constraintRef',
+        value: 'postgresql14-cc'
+      },
+      {
+        op: 'add',
+        path: '/spec/configItemDetails/1/configSpec/keys',
+        value: ['postgresql.conf']
+      }
+    ]
+  );
+});
+
+test('does not patch an existing valid PostgreSQL configuration', () => {
+  assert.deepEqual(
+    getPostgreSQLConfigSpecPatch({
+      dbVersion: 'postgresql-12.14.0',
+      configItemDetails: [
+        {
+          name: 'postgresql-configuration',
+          configSpec: {
+            constraintRef: 'postgresql12-cc',
+            keys: ['postgresql.conf']
+          }
+        }
+      ]
+    }),
+    []
   );
 });
 

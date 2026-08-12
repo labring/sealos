@@ -7,6 +7,7 @@ import { KbPgClusterType } from '@/types/cluster';
 import { DBType, ParameterFieldMetadata } from '@/types/db';
 import { adjustDifferencesForIni } from '@/utils/tools';
 import { json2Reconfigure } from '@/utils/json2Yaml';
+import { ensurePostgreSQLConfigSpec } from '@/utils/parameterConfig';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
@@ -113,6 +114,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       reconfigureType,
       dbType
     );
+    if (dbType === 'postgresql') {
+      await ensurePostgreSQLConfigSpec({
+        dbName,
+        dbVersion: dbVersion || '',
+        namespace,
+        k8sCustomObjects
+      });
+    }
     const reconfigureYaml = json2Reconfigure(dbName, dbType, dbUid, adjustedDifferences);
 
     await applyYamlList([reconfigureYaml], 'create');

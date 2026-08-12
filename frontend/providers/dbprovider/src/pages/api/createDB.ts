@@ -18,7 +18,11 @@ import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { CustomObjectsApi, PatchUtils } from '@kubernetes/client-node';
 import { getScore } from '@/utils/tools';
 import { validatePolarDBXResources } from '@/utils/database';
-import { getCurrentParameterValues, getParameterDifferences } from '@/utils/parameterConfig';
+import {
+  ensurePostgreSQLConfigSpec,
+  getCurrentParameterValues,
+  getParameterDifferences
+} from '@/utils/parameterConfig';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -81,6 +85,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           });
 
           if (parameterDifferences.length > 0) {
+            if (dbForm.dbType === 'postgresql') {
+              await ensurePostgreSQLConfigSpec({
+                dbName: dbForm.dbName,
+                dbVersion: dbForm.dbVersion,
+                namespace,
+                k8sCustomObjects
+              });
+            }
             opsRequests.push(
               json2Reconfigure(
                 dbForm.dbName,

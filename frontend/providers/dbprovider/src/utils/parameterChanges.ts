@@ -13,6 +13,60 @@ export const toKubeBlocksParameterPairs = (
   differences: Pick<ParameterDifference, 'path' | 'newValue'>[]
 ) => differences.map(({ path, newValue }) => ({ key: path, value: newValue }));
 
+export const getPostgreSQLConfigSpecMetadata = (majorVersion: string) => ({
+  constraintRef: `postgresql${majorVersion}-cc`,
+  keys: ['postgresql.conf']
+});
+
+type PostgreSQLConfigItem = {
+  name?: string;
+  configSpec?: {
+    constraintRef?: string;
+    keys?: string[];
+  };
+};
+
+export const getPostgreSQLConfigSpecPatch = ({
+  dbVersion,
+  configItemDetails
+}: {
+  dbVersion: string;
+  configItemDetails: PostgreSQLConfigItem[];
+}) => {
+  const majorVersion = dbVersion.replace(/^postgresql-/, '').split('.')[0];
+  const expected = getPostgreSQLConfigSpecMetadata(majorVersion);
+  const index = configItemDetails.findIndex(({ name }) => name === 'postgresql-configuration');
+  if (index < 0) {
+    throw new Error('PostgreSQL configuration item not found');
+  }
+
+  const configSpec = configItemDetails[index].configSpec;
+  if (!configSpec) {
+    throw new Error('PostgreSQL configSpec not found');
+  }
+
+  const basePath = `/spec/configItemDetails/${index}/configSpec`;
+  const patch = [];
+  if (configSpec.constraintRef !== expected.constraintRef) {
+    patch.push({
+      op: 'add',
+      path: `${basePath}/constraintRef`,
+      value: expected.constraintRef
+    });
+  }
+  if (
+    configSpec.keys?.length !== expected.keys.length ||
+    !expected.keys.every((key) => configSpec.keys?.includes(key))
+  ) {
+    patch.push({
+      op: 'add',
+      path: `${basePath}/keys`,
+      value: expected.keys
+    });
+  }
+  return patch;
+};
+
 type ParameterPath = {
   current: string;
   requested: string;
