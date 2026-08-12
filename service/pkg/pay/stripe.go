@@ -64,7 +64,7 @@ func buildURLs(
 	transaction *types.WorkspaceSubscriptionTransaction,
 	payApp types.PayApp,
 ) (string, string) {
-	// https://192.168.10.35.nip.io/?openapp=system-costcenter?payId%3D4W86BOp70ltT%26stripeState%3Dsuccess%26transactionId%3D3d09bc07-976c-44bc-8b52-05619693056e%26workspaceId%3Dns-47f3dbxj
+	// Example: https://cloud.sealos.io/?payId=4W86BOp70ltT&workspaceId=ns-47f3dbxj&transactionId=3d09bc07-976c-44bc-8b52-05619693056e&stripeState=success&app=system-brain
 	baseURL := s.Domain + "/?payId=" + transaction.PayID + "&workspaceId=" + transaction.Workspace + "&transactionId=" + transaction.ID.String() + "&stripeState="
 	successURL := baseURL + "success"
 	cancelURL := baseURL + "cancel"

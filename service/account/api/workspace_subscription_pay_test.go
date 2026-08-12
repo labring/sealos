@@ -1,6 +1,8 @@
 package api
 
 import (
+	"context"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -14,8 +16,9 @@ func TestParseWorkspaceSubscriptionPayReqRejectsInvalidPayApp(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
-	ctx.Request = httptest.NewRequest(
-		"POST",
+	ctx.Request = httptest.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
 		"/workspace-subscription/pay",
 		strings.NewReader(`{
 			"regionDomain":"example.com",

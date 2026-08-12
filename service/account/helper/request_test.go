@@ -1,7 +1,9 @@
 package helper
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -9,14 +11,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestParseWorkspaceSubscriptionOperatorReqAcceptsAllowedPayApps(t *testing.T) {
+func TestParseWorkspaceSubscriptionOperatorReqBindsPayApp(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	for _, payApp := range []string{"system-costcenter", "system-brain"} {
 		t.Run(payApp, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			ctx, _ := gin.CreateTestContext(recorder)
-			ctx.Request = httptest.NewRequest(
-				"POST",
+			ctx.Request = httptest.NewRequestWithContext(
+				context.Background(),
+				http.MethodPost,
 				"/workspace-subscription/pay",
 				strings.NewReader(fmt.Sprintf(`{
 					"regionDomain":"example.com",
@@ -43,8 +46,9 @@ func TestParseWorkspaceSubscriptionOperatorReqLeavesPayAppValidationToPayEndpoin
 	gin.SetMode(gin.TestMode)
 	recorder := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(recorder)
-	ctx.Request = httptest.NewRequest(
-		"POST",
+	ctx.Request = httptest.NewRequestWithContext(
+		context.Background(),
+		http.MethodPost,
 		"/workspace-subscription/upgrade-amount",
 		strings.NewReader(`{
 			"regionDomain":"example.com",

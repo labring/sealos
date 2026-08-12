@@ -1389,7 +1389,6 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 			if req.PromotionCode != "" {
 				transaction.StatusDesc = legacyPromotionCodeStatusPrefix + req.PromotionCode
 			}
-
 		}
 
 	case types.SubscriptionTransactionTypeDowngraded:
@@ -1486,11 +1485,7 @@ var ErrSamePendingOperation = errors.New("same pending operation exists")
 const legacyPromotionCodeStatusPrefix = "Promotion code: "
 
 func pendingTransactionPromotionCode(description string) string {
-	if !strings.Contains(description, legacyPromotionCodeStatusPrefix) {
-		return ""
-	}
-
-	parts := strings.Split(description, legacyPromotionCodeStatusPrefix)
+	parts := strings.SplitN(description, legacyPromotionCodeStatusPrefix, 2)
 	if len(parts) < 2 {
 		return ""
 	}

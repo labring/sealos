@@ -10,6 +10,13 @@ describe('resolveStripeCallbackTarget', () => {
     });
   });
 
+  it('normalizes a repeated app query param to its first value', () => {
+    expect(resolveStripeCallbackTarget(['system-brain', 'system-costcenter'])).toEqual({
+      appKey: 'system-brain',
+      pathname: '/billing'
+    });
+  });
+
   it.each([undefined, 'system-costcenter', 'untrusted-app'])(
     'keeps the existing costcenter callback for %s',
     (payApp) => {
