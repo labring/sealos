@@ -115,7 +115,7 @@ export const yamlString2Objects = (yamlString: string): object[] => {
 
 const normalizeIngressHost = (host: string) => host.trim().toLowerCase().replace(/\.+$/g, '');
 
-export const getImageRegistryAddress = (imageName: string): string => {
+const getExplicitImageRegistryAddress = (imageName: string): string | undefined => {
   const components = imageName.trim().split('/');
   const firstComponent = components[0];
   if (
@@ -125,10 +125,125 @@ export const getImageRegistryAddress = (imageName: string): string => {
   ) {
     return firstComponent;
   }
-  return 'docker.io';
+  return undefined;
+};
+
+const dockerHubRegistryAliases = new Set(['docker.io', 'index.docker.io', 'index.docker.io/v1']);
+
+const normalizeRegistryAddress = (serverAddress: string) => {
+  const normalized = serverAddress
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/+$/g, '')
+    .toLowerCase();
+
+  return dockerHubRegistryAliases.has(normalized) ? 'docker.io' : normalized;
+};
+
+export const getImageRegistryAddress = (imageName: string): string =>
+  normalizeRegistryAddress(getExplicitImageRegistryAddress(imageName) || 'docker.io');
+
+const registryCredentialsCoverImage = (imageName: string, credentialRegistry: string) => {
+  const explicitRegistry = getExplicitImageRegistryAddress(imageName);
+  if (!explicitRegistry) {
+    return normalizeRegistryAddress(credentialRegistry) === 'docker.io';
+  }
+
+  const normalizedImageRegistry = normalizeRegistryAddress(explicitRegistry);
+  const normalizedCredentialRegistry = normalizeRegistryAddress(credentialRegistry);
+  if (normalizedCredentialRegistry === normalizedImageRegistry) {
+    return true;
+  }
+
+  const normalizedImageName = `${normalizedImageRegistry}${imageName
+    .trim()
+    .slice(explicitRegistry.length)
+    .toLowerCase()}`;
+  return normalizedImageName.startsWith(`${normalizedCredentialRegistry}/`);
+};
+
+export const alignImageRegistrySecret = (
+  imageName: string,
+  secret: AppEditType['secret']
+): AppEditType['secret'] => {
+  const imageRegistry = getImageRegistryAddress(imageName);
+  const credentialRegistry = normalizeRegistryAddress(secret.serverAddress);
+
+  if (
+    credentialRegistry === imageRegistry ||
+    registryCredentialsCoverImage(imageName, secret.serverAddress)
+  ) {
+    return secret;
+  }
+
+  return {
+    ...secret,
+    username: '',
+    password: '',
+    serverAddress: imageRegistry
+  };
+};
+
+export const getBoundImageRegistryCredentials = (
+  imageName: string,
+  secret: AppEditType['secret']
+) => {
+  const imageRegistry = getImageRegistryAddress(imageName);
+  if (!secret.use || !registryCredentialsCoverImage(imageName, secret.serverAddress)) {
+    return undefined;
+  }
+
+  return {
+    username: secret.username,
+    password: secret.password,
+    serverAddress: imageRegistry
+  };
+};
+
+export const resolveImageRegistryBinding = ({
+  imageName: rawImageName,
+  credentialRegistry: rawCredentialRegistry,
+  useCredentials,
+  requireCredentialMatch = false
+}: {
+  imageName: string;
+  credentialRegistry?: string;
+  useCredentials: boolean;
+  requireCredentialMatch?: boolean;
+}) => {
+  const imageName = rawImageName.trim();
+  const explicitRegistry = getExplicitImageRegistryAddress(imageName);
+  const normalizedExplicitRegistry = explicitRegistry
+    ? normalizeRegistryAddress(explicitRegistry)
+    : undefined;
+  const credentialRegistry = useCredentials
+    ? normalizeRegistryAddress(rawCredentialRegistry || '')
+    : '';
+
+  if (
+    requireCredentialMatch &&
+    normalizedExplicitRegistry &&
+    credentialRegistry &&
+    !registryCredentialsCoverImage(imageName, credentialRegistry)
+  ) {
+    throw new Error('Image registry credentials do not match the image registry');
+  }
+
+  const registry = credentialRegistry || normalizedExplicitRegistry || 'docker.io';
+  const resolvedImageName =
+    useCredentials && !explicitRegistry && registry !== 'docker.io' && imageName
+      ? `${registry}/${imageName}`
+      : imageName;
+
+  return { imageName: resolvedImageName, registry };
 };
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
+  const privateImage = resolveImageRegistryBinding({
+    imageName: data.imageName,
+    credentialRegistry: data.secret.serverAddress,
+    useCredentials: data.secret.use
+  });
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
   // Separate local and remote stores
@@ -142,10 +257,13 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       ? {
           [`${data.gpu.manufacturers}.com/use-gputype`]: data.gpu.type
         }
-      : supportedGpuManufacturers.reduce((acc, manufacturer) => {
-          acc[`${manufacturer}.com/use-gputype`] = null;
-          return acc;
-        }, {} as Record<string, null>);
+      : supportedGpuManufacturers.reduce(
+          (acc, manufacturer) => {
+            acc[`${manufacturer}.com/use-gputype`] = null;
+            return acc;
+          },
+          {} as Record<string, null>
+        );
 
   const metadata = {
     name: data.appName,
@@ -192,7 +310,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
 
   const commonContainer = {
     name: data.appName,
-    image: data.imageName,
+    image: privateImage.imageName,
     env:
       data.envs.length > 0
         ? data.envs.map((env) => ({
@@ -784,11 +902,17 @@ export const json2Secret = (
   ownerReferences?: V1OwnerReference[],
   options?: { maskPassword?: boolean }
 ) => {
+  const privateImage = resolveImageRegistryBinding({
+    imageName: data.imageName,
+    credentialRegistry: data.secret.serverAddress,
+    useCredentials: data.secret.use,
+    requireCredentialMatch: true
+  });
   const auth = strToBase64(`${data.secret.username}:${data.secret.password}`);
   const dockerconfigjson = strToBase64(
     JSON.stringify({
       auths: {
-        [getImageRegistryAddress(data.imageName)]: {
+        [privateImage.registry]: {
           username: data.secret.username,
           password: data.secret.password,
           auth

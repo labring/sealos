@@ -59,7 +59,10 @@ import {
   APP_NAME_BASE_PATTERN,
   isValidAppNameBase
 } from '@/utils/appNameValidation';
-import { getImageRegistryAddress } from '@/utils/deployYaml2Json';
+import {
+  alignImageRegistrySecret,
+  getBoundImageRegistryCredentials
+} from '@/utils/deployYaml2Json';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
@@ -325,12 +328,12 @@ const Form = ({
       return;
     }
     const secret = getValues('secret');
-    const serverAddress = getImageRegistryAddress(imageName);
+    const imageRegistry = getBoundImageRegistryCredentials(imageName, secret);
     const autoPortKey = [
       imageName,
-      secret.use ? secret.username : '',
-      secret.use ? serverAddress : '',
-      secret.use && secret.password ? `password-v${secretPasswordVersion.current}` : ''
+      imageRegistry?.username || '',
+      imageRegistry?.serverAddress || '',
+      imageRegistry?.password ? `password-v${secretPasswordVersion.current}` : ''
     ].join('|');
     if (lastAutoPortKey.current === autoPortKey) return;
 
@@ -345,13 +348,7 @@ const Form = ({
       try {
         const res = await getImagePorts({
           imageName,
-          imageRegistry: secret.use
-            ? {
-                username: secret.username,
-                password: secret.password,
-                serverAddress
-              }
-            : undefined
+          imageRegistry
         });
 
         if (requestId !== imagePortRequestId.current) {
@@ -805,7 +802,13 @@ const Form = ({
                       if (val === 'public') {
                         setValue('secret.use', false);
                       } else {
-                        setValue('secret.use', true);
+                        setValue(
+                          'secret',
+                          alignImageRegistrySecret(getValues('imageName'), {
+                            ...getValues('secret'),
+                            use: true
+                          })
+                        );
                       }
                     }}
                   />
@@ -824,6 +827,20 @@ const Form = ({
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
                         placeholder={`${t('Image Name')}`}
                         {...imageNameField}
+                        onChange={(event) => {
+                          imageNameField.onChange(event);
+                          const secret = getValues('secret');
+                          if (!secret.use) return;
+
+                          const imageName = event.target.value.replace(/\s*/g, '');
+                          const nextSecret = alignImageRegistrySecret(imageName, secret);
+                          if (nextSecret !== secret) {
+                            setValue('secret', nextSecret, {
+                              shouldDirty: true,
+                              shouldValidate: true
+                            });
+                          }
+                        }}
                         onFocus={() => setIsImageNameFocused(true)}
                         onBlur={(event) => {
                           setIsImageNameFocused(false);
