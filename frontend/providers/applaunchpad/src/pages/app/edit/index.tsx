@@ -57,6 +57,7 @@ import {
   validatePublicDomainPrefix
 } from '@/utils/public-domain';
 import { getCustomDomainBindings } from '@/utils/custom-domain';
+import { rebindMainServiceRoutes } from '@/utils/network-routes';
 import {
   APP_NAME_BASE_MAX_LENGTH,
   getInvalidNameMessageI18nKey
@@ -656,18 +657,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       });
 
       if (Array.isArray(parsedData.networks)) {
-        const completeNetworks = parsedData.networks.map((network) => ({
-          networkName: network.networkName || `network-${nanoid()}`,
-          portName: network.portName || nanoid(),
-          port: network.port || 80,
-          protocol: network.protocol || 'TCP',
-          appProtocol: network.appProtocol || undefined,
-          openPublicDomain: network.openPublicDomain || false,
-          openNodePort: network.openNodePort || false,
-          publicDomain: network.publicDomain || nanoid(),
-          customDomain: network.customDomain || '',
-          domain: network.domain || SEALOS_DOMAIN,
-          routes: network.routes?.length
+        const currentNetworks = formHook.getValues('networks');
+        const completeNetworks = parsedData.networks.map((network) => {
+          const previousServiceName = currentNetworks.find(
+            (currentNetwork) => currentNetwork.portName === network.portName
+          )?.serviceName;
+          const routes = network.routes?.length
             ? network.routes.map((route) => ({
                 path: route.path || '/',
                 pathType: route.pathType || ('Prefix' as const),
@@ -681,8 +676,22 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                   serviceName: '',
                   servicePort: network.port || 80
                 }
-              ]
-        }));
+              ];
+
+          return {
+            networkName: network.networkName || `network-${nanoid()}`,
+            portName: network.portName || nanoid(),
+            port: network.port || 80,
+            protocol: network.protocol || 'TCP',
+            appProtocol: network.appProtocol || undefined,
+            openPublicDomain: network.openPublicDomain || false,
+            openNodePort: network.openNodePort || false,
+            publicDomain: network.publicDomain || nanoid(),
+            customDomain: network.customDomain || '',
+            domain: network.domain || SEALOS_DOMAIN,
+            routes: rebindMainServiceRoutes({ routes, previousServiceName })
+          };
+        });
         formHook.setValue('networks', completeNetworks);
       }
 

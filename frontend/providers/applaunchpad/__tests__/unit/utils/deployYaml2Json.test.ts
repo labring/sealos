@@ -8,6 +8,7 @@ import {
   yamlString2Objects
 } from '@/utils/deployYaml2Json';
 import type { AppEditType } from '@/types/app';
+import { rebindMainServiceRoutes } from '@/utils/network-routes';
 
 const createApp = (customDomain = ''): AppEditType =>
   ({
@@ -201,6 +202,40 @@ describe('json2Ingress', () => {
         }
       }
     ]);
+  });
+
+  it('writes a regenerated main service name after stale route bindings are removed', () => {
+    const app = createApp();
+    app.networks[0].serviceName = '';
+    app.networks[0].port = 8080;
+    app.networks[0].routes = rebindMainServiceRoutes({
+      routes: [
+        {
+          path: '/',
+          pathType: 'Prefix',
+          serviceName: 'demo-old-service',
+          servicePort: 8080
+        },
+        {
+          path: '/api',
+          pathType: 'Prefix',
+          serviceName: 'demo-api',
+          servicePort: 8081
+        }
+      ],
+      previousServiceName: 'demo-old-service'
+    });
+
+    const objects = yamlString2Objects(
+      json2Ingress(app, {
+        disableHttps: true
+      })
+    ) as any[];
+    const paths = objects[0].spec.rules[0].http.paths;
+
+    expect(paths[0].backend.service.name).not.toBe('demo-old-service');
+    expect(paths[0].backend.service.name).toMatch(/^demo-[a-z]{12}$/);
+    expect(paths[1].backend.service.name).toBe('demo-api');
   });
 
   it('syncs the default main service route port with the network port', () => {
