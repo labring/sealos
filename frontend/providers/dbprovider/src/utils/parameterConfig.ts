@@ -108,28 +108,6 @@ export function extractParameterConfigFromConfiguration(
   return hasParams ? parameterConfig : undefined;
 }
 
-export async function waitForParameterValues({
-  differences,
-  timeoutMs = 50_000,
-  intervalMs = 2_000,
-  ...options
-}: Parameters<typeof getCurrentParameterValues>[0] & {
-  differences: ParameterDifference[];
-  timeoutMs?: number;
-  intervalMs?: number;
-}) {
-  const deadline = Date.now() + timeoutMs;
-
-  while (Date.now() < deadline) {
-    const currentValues = await getCurrentParameterValues(options);
-    if (areParameterValuesApplied(currentValues, differences)) return;
-
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-
-  throw new Error('Timed out waiting for database parameters to take effect');
-}
-
 export async function getCurrentParameterValues({
   dbName,
   dbType,

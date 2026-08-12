@@ -5,8 +5,19 @@ import { ApiResp } from '@/services/kubernet';
 import { KubeBlockOpsRequestType } from '@/types/cluster';
 import { DBType, OpsRequestItemType } from '@/types/db';
 import { adaptOpsRequest } from '@/utils/adapt';
-import { DBNameLabel, DBParameterHistoryLabel } from '@/constants/db';
-import { adaptParameterHistory } from '@/utils/parameterHistory';
+import {
+  DBNameLabel,
+  DBParameterHistoryDataKey,
+  DBParameterHistoryLabel,
+  ReconfigStatus
+} from '@/constants/db';
+import {
+  adaptParameterHistory,
+  completeParameterHistory,
+  readParameterHistory,
+  resolveParameterHistoryStatus
+} from '@/utils/parameterHistory';
+import { getCurrentParameterValues } from '@/utils/parameterConfig';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -57,6 +68,65 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       undefined,
       `${DBNameLabel}=${name},${DBParameterHistoryLabel}=true`
     );
+
+    const runningHistory = historyList.items.filter(
+      (configMap) => readParameterHistory(configMap)?.status === ReconfigStatus.Running
+    );
+    if (runningHistory.length > 0) {
+      try {
+        const currentValues = await getCurrentParameterValues({
+          dbName: name,
+          dbType,
+          namespace,
+          k8sCore,
+          k8sCustomObjects
+        });
+
+        await Promise.all(
+          runningHistory.map(async (configMap) => {
+            const history = readParameterHistory(configMap);
+            if (!history) return;
+            const status = resolveParameterHistoryStatus({ history, currentValues });
+            if (status !== ReconfigStatus.Succeed && status !== ReconfigStatus.Failed) return;
+
+            await completeParameterHistory({
+              k8sCore,
+              configMap,
+              status,
+              ...(status === ReconfigStatus.Failed
+                ? { error: 'Timed out waiting for database parameters to take effect' }
+                : {})
+            });
+            history.status = status;
+            history.completedAt = new Date().toISOString();
+            configMap.data ||= {};
+            configMap.data[DBParameterHistoryDataKey] = JSON.stringify(history);
+          })
+        );
+      } catch (error) {
+        console.warn('Failed to read current parameter values:', error);
+        await Promise.all(
+          runningHistory.map(async (configMap) => {
+            const history = readParameterHistory(configMap);
+            if (!history) return;
+            const status = resolveParameterHistoryStatus({ history });
+            if (status !== ReconfigStatus.Failed) return;
+
+            await completeParameterHistory({
+              k8sCore,
+              configMap,
+              status,
+              error: 'Timed out waiting for database parameters to take effect'
+            });
+            history.status = status;
+            history.completedAt = new Date().toISOString();
+            configMap.data ||= {};
+            configMap.data[DBParameterHistoryDataKey] = JSON.stringify(history);
+          })
+        );
+      }
+    }
+
     const parameterHistory = historyList.items
       .map(adaptParameterHistory)
       .filter((item): item is OpsRequestItemType => Boolean(item));

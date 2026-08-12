@@ -432,6 +432,7 @@
   "update": "变更",
   "update_database": "变更数据库",
   "update_failed": "更新失败",
+  "update_submitted": "变更已提交，请在变更历史中查看状态",
   "update_remark_failed": "更新备注失败",
   "update_sealaf_app_tip": "该数据库是通过云开发部署的，变更该数据库请到云开发中进行。",
   "update_successful": "更新成功",

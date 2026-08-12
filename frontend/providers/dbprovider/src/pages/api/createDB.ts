@@ -20,8 +20,7 @@ import { validatePolarDBXResources } from '@/utils/database';
 import {
   getCurrentParameterValues,
   getParameterDifferences,
-  updateParameterConfiguration,
-  waitForParameterValues
+  updateParameterConfiguration
 } from '@/utils/parameterConfig';
 import { completeParameterHistory, createParameterHistory } from '@/utils/parameterHistory';
 import { ReconfigStatus } from '@/constants/db';
@@ -105,14 +104,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 k8sCustomObjects,
                 differences: parameterDifferences
               });
-              await waitForParameterValues({
-                dbName: dbForm.dbName,
-                dbType: dbForm.dbType,
-                namespace,
-                k8sCore,
-                k8sCustomObjects,
-                differences: parameterDifferences
-              });
             } catch (error: any) {
               try {
                 await completeParameterHistory({
@@ -125,16 +116,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
                 console.error('Failed to record parameter update failure:', historyError);
               }
               throw error;
-            }
-
-            try {
-              await completeParameterHistory({
-                k8sCore,
-                configMap: history,
-                status: ReconfigStatus.Succeed
-              });
-            } catch (historyError) {
-              console.error('Failed to record parameter update success:', historyError);
             }
           }
         }

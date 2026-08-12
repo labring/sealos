@@ -434,6 +434,7 @@
   "update": "Update",
   "update_database": "Update DataBase",
   "update_failed": "Update Failed",
+  "update_submitted": "Change submitted. Check Change History for its status.",
   "update_remark_failed": "Update remark failed",
   "update_sealaf_app_tip": "The database is deployed through cloud development. To change the database, please go to cloud development.",
   "update_successful": "Update succeeded",

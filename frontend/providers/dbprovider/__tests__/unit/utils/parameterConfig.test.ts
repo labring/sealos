@@ -5,7 +5,11 @@ import {
   areParameterValuesApplied,
   getParameterDifferences
 } from '../../../src/utils/parameterChanges';
-import { getParameterHistoryName } from '../../../src/utils/parameterHistory';
+import {
+  getParameterHistoryName,
+  resolveParameterHistoryStatus
+} from '../../../src/utils/parameterHistory';
+import { ReconfigStatus } from '../../../src/constants/db';
 
 test('keeps MySQL submission and runtime paths distinct', () => {
   const differences = getParameterDifferences({
@@ -98,4 +102,81 @@ test('keeps parameter history names within the Kubernetes limit', () => {
 
   assert.ok(name.length <= 63);
   assert.match(name, /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/);
+});
+
+test('keeps a submitted parameter change running until runtime values match', () => {
+  const history = {
+    dbType: 'mongodb' as const,
+    status: ReconfigStatus.Running,
+    createdAt: '2026-08-12T00:00:00.000Z',
+    differences: [
+      {
+        path: 'net.maxIncomingConnections',
+        currentPath: 'net.maxIncomingConnections',
+        oldValue: '700',
+        newValue: '900'
+      }
+    ]
+  };
+
+  assert.equal(
+    resolveParameterHistoryStatus({
+      history,
+      currentValues: { 'net.maxIncomingConnections': '700' },
+      now: Date.parse('2026-08-12T00:01:00.000Z')
+    }),
+    ReconfigStatus.Running
+  );
+  assert.equal(
+    resolveParameterHistoryStatus({
+      history,
+      currentValues: { 'net.maxIncomingConnections': '900' },
+      now: Date.parse('2026-08-12T00:01:00.000Z')
+    }),
+    ReconfigStatus.Succeed
+  );
+});
+
+test('marks a parameter change failed after the apply deadline', () => {
+  assert.equal(
+    resolveParameterHistoryStatus({
+      history: {
+        dbType: 'mongodb',
+        status: ReconfigStatus.Running,
+        createdAt: '2026-08-12T00:00:00.000Z',
+        differences: [
+          {
+            path: 'net.maxIncomingConnections',
+            oldValue: '700',
+            newValue: '900'
+          }
+        ]
+      },
+      currentValues: { 'net.maxIncomingConnections': '700' },
+      now: Date.parse('2026-08-12T00:05:00.000Z')
+    }),
+    ReconfigStatus.Failed
+  );
+});
+
+test('prefers an applied runtime value over an expired deadline', () => {
+  assert.equal(
+    resolveParameterHistoryStatus({
+      history: {
+        dbType: 'mongodb',
+        status: ReconfigStatus.Running,
+        createdAt: '2026-08-12T00:00:00.000Z',
+        differences: [
+          {
+            path: 'net.maxIncomingConnections',
+            oldValue: '700',
+            newValue: '900'
+          }
+        ]
+      },
+      currentValues: { 'net.maxIncomingConnections': '900' },
+      now: Date.parse('2026-08-12T00:10:00.000Z')
+    }),
+    ReconfigStatus.Succeed
+  );
 });

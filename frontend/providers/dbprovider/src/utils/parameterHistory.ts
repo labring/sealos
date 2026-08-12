@@ -7,10 +7,14 @@ import {
 } from '@/constants/db';
 import type { DBType, OpsRequestItemType } from '@/types/db';
 import type { CoreV1Api, V1ConfigMap } from '@kubernetes/client-node';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
 import type { ParameterDifference } from './parameterChanges';
+import { areParameterValuesApplied } from './parameterChanges';
 
-type ParameterHistoryData = {
+export const ParameterHistoryTimeoutMs = 5 * 60 * 1000;
+const createHistorySuffix = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 4);
+
+export type ParameterHistoryData = {
   dbType: DBType;
   status: ReconfigStatus;
   createdAt: string;
@@ -20,9 +24,39 @@ type ParameterHistoryData = {
 };
 
 export const getParameterHistoryName = (dbName: string) =>
-  `${dbName}-param-${Date.now().toString(36)}-${nanoid(4).toLowerCase()}`;
+  `${dbName}-param-${Date.now().toString(36)}-${createHistorySuffix()}`;
 
 const serializeHistory = (history: ParameterHistoryData) => JSON.stringify(history);
+
+export function resolveParameterHistoryStatus({
+  history,
+  currentValues = {},
+  now = Date.now(),
+  timeoutMs = ParameterHistoryTimeoutMs
+}: {
+  history: ParameterHistoryData;
+  currentValues?: Record<string, string>;
+  now?: number;
+  timeoutMs?: number;
+}): ReconfigStatus {
+  if (history.status !== ReconfigStatus.Running) return history.status;
+  if (areParameterValuesApplied(currentValues, history.differences)) return ReconfigStatus.Succeed;
+  return now - new Date(history.createdAt).getTime() >= timeoutMs
+    ? ReconfigStatus.Failed
+    : ReconfigStatus.Running;
+}
+
+export function readParameterHistory(configMap: V1ConfigMap): ParameterHistoryData | undefined {
+  const rawHistory = configMap.data?.[DBParameterHistoryDataKey];
+  if (!rawHistory) return undefined;
+
+  try {
+    return JSON.parse(rawHistory) as ParameterHistoryData;
+  } catch (error) {
+    console.error('Failed to parse parameter history:', error);
+    return undefined;
+  }
+}
 
 export async function createParameterHistory({
   k8sCore,
@@ -103,11 +137,10 @@ export async function completeParameterHistory({
 }
 
 export function adaptParameterHistory(configMap: V1ConfigMap): OpsRequestItemType | undefined {
-  const rawHistory = configMap.data?.[DBParameterHistoryDataKey];
-  if (!rawHistory || !configMap.metadata?.name) return undefined;
+  const history = readParameterHistory(configMap);
+  if (!history || !configMap.metadata?.name) return undefined;
 
   try {
-    const history = JSON.parse(rawHistory) as ParameterHistoryData;
     return {
       id: configMap.metadata.uid || configMap.metadata.name,
       name: configMap.metadata.name,
