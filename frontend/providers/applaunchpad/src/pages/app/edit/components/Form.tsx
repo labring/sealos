@@ -556,14 +556,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     const sortedEphemeralStorageList =
       ephemeralStorage !== undefined
@@ -810,7 +810,8 @@ const Form = ({
                     </Box>
                     <Flex alignItems={'center'} gap={3}>
                       <Input
-                        width={'350px'}
+                        w={'350px'}
+                        maxW={'100%'}
                         flexShrink={0}
                         value={getValues('imageName')}
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
@@ -840,10 +841,18 @@ const Form = ({
                         </Box>
                       </Flex>
                     </Flex>
+                    <Box mt={2} fontSize={'12px'} color={'brightBlue.600'}>
+                      {t('private_image_registry_tip')}
+                    </Box>
                   </FormControl>
                   {getValues('secret.use') ? (
                     <>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.username} w={'420px'}>
+                      <FormControl
+                        mt={4}
+                        isInvalid={!!errors.secret?.username}
+                        w={'350px'}
+                        maxW={'100%'}
+                      >
                         <Box mb={1} fontSize={'sm'}>
                           {t('Username')}
                         </Box>
@@ -857,7 +866,12 @@ const Form = ({
                           })}
                         />
                       </FormControl>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.password} w={'420px'}>
+                      <FormControl
+                        mt={4}
+                        isInvalid={!!errors.secret?.password}
+                        w={'350px'}
+                        maxW={'100%'}
+                      >
                         <Box mb={1} fontSize={'sm'}>
                           {t('Password')}
                         </Box>
@@ -1292,8 +1306,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>

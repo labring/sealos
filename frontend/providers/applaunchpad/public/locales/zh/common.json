@@ -103,6 +103,7 @@
   "Image Name": "镜像名",
   "Image Name (Private)": "镜像名称（私有）",
   "Image name cannot be empty": "镜像名称不能为空。",
+  "private_image_registry_tip": "请在镜像名中填写镜像仓库地址；未填写时默认使用 docker.io。",
   "image_ports_detection_failed": "端口识别失败",
   "no_image_ports_detected": "未识别到暴露端口",
   "recognized_image_ports": "已识别 {{count}} 个端口",
