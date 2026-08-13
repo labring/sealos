@@ -21,7 +21,8 @@ import { proxyTemplateIconUrls, resolveTemplateAssetUrls } from '@/utils/templat
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const envEnableReadme = process.env.ENABLE_README_FETCH;
+    const envEnableReadme =
+      process.env.TEMPLATE_REPO_ENABLE_README_FETCH || process.env.ENABLE_README_FETCH;
     const queryIncludeReadme = req.query.includeReadme !== 'false';
     const includeRequirements = req.query.includeRequirements !== 'false';
 
@@ -185,7 +186,9 @@ export async function GetTemplateReadmeByName({
   templateName: string;
   locale?: string;
 }) {
-  if (process.env.ENABLE_README_FETCH === 'false') {
+  const envEnableReadme =
+    process.env.TEMPLATE_REPO_ENABLE_README_FETCH || process.env.ENABLE_README_FETCH;
+  if (envEnableReadme === 'false') {
     return {
       code: 20000,
       message: 'success',
