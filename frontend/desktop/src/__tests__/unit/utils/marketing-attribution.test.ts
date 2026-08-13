@@ -1,5 +1,6 @@
 import {
   appendMarketingQuery,
+  clearPersistedMarketingQuery,
   marketingQueryFromRecord,
   mergeMarketingQuery,
   resolveMarketingQuery
@@ -48,6 +49,22 @@ describe('marketing attribution query propagation', () => {
     expect(resolveMarketingQuery({ sea_attr: 'new-state' })).toEqual({
       sea_attr: 'new-state'
     });
+    vi.unstubAllGlobals();
+  });
+
+  it('clears persisted attribution on logout', () => {
+    const storage = new Map<string, string>([
+      ['sealos_marketing_query_v1', JSON.stringify({ sea_attr: 'state-1' })]
+    ]);
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => storage.get(key) || null,
+      removeItem: (key: string) => storage.delete(key)
+    });
+
+    clearPersistedMarketingQuery();
+
+    expect(storage.has('sealos_marketing_query_v1')).toBe(false);
     vi.unstubAllGlobals();
   });
 });

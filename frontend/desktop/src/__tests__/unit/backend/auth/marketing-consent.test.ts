@@ -34,7 +34,7 @@ describe('marketing consent token', () => {
     const token = generateMarketingConsentToken({
       ad_personalization: 'granted',
       ad_user_data_consent: 'granted',
-      attribution_hash: 'hash-test',
+      attribution_hash: 'a'.repeat(64),
       region: 'region-test',
       sub: 'user-test'
     });
@@ -46,7 +46,7 @@ describe('marketing consent token', () => {
     expect(payload).toMatchObject({
       ad_personalization: 'granted',
       ad_user_data_consent: 'granted',
-      attribution_hash: 'hash-test',
+      attribution_hash: 'a'.repeat(64),
       consent_source: 'desktop_oauth',
       region: 'region-test',
       sub: 'user-test'
@@ -56,7 +56,7 @@ describe('marketing consent token', () => {
     expect(payload).toHaveProperty('exp');
   });
 
-  it('does not elevate consent from browser attribution input', async () => {
+  it('propagates consent from the versioned browser attribution input', async () => {
     const globalToken = generateGlobalAccessToken({
       preferred_username: 'user-test',
       sub: 'user-test',
@@ -70,12 +70,53 @@ describe('marketing consent token', () => {
       setHeader: vi.fn()
     } as any;
     const seaAttr = Buffer.from(
-      JSON.stringify({ ad_personalization: 'granted', ad_user_data_consent: 'granted' })
+      JSON.stringify({
+        ad_personalization: 'granted',
+        ad_user_data_consent: true,
+        version: 2
+      })
     ).toString('base64url');
 
     await handler(
       {
         body: { sea_attr: seaAttr },
+        cookies: {},
+        headers: { authorization: encodeURIComponent(globalToken) },
+        method: 'POST'
+      } as any,
+      res
+    );
+
+    expect(
+      verify(responseBody.data.token, marketingConsentJwtSecret(), {
+        audience: 'brain-marketing-attribution',
+        issuer: 'sealos-desktop'
+      })
+    ).toMatchObject({
+      ad_personalization: 'granted',
+      ad_user_data_consent: 'granted',
+      attribution_hash: expect.any(String),
+      sub: 'user-test'
+    });
+  });
+
+  it('keeps opaque attribution input unspecified', async () => {
+    const globalToken = generateGlobalAccessToken({
+      preferred_username: 'user-test',
+      sub: 'user-test',
+      user_id: '10001'
+    });
+    let responseBody: any;
+    const res = {
+      json: vi.fn((body) => {
+        responseBody = body;
+      }),
+      setHeader: vi.fn()
+    } as any;
+
+    await handler(
+      {
+        body: { sea_attr: 'opaque-attribution-test' },
         cookies: {},
         headers: { authorization: encodeURIComponent(globalToken) },
         method: 'POST'

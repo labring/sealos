@@ -4,6 +4,7 @@ import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
 import { clearSharedAuthCookie } from '@/utils/cookieUtils';
+import { clearPersistedMarketingQuery } from '@/utils/marketing-attribution';
 import {
   Box,
   Center,
@@ -100,6 +101,7 @@ export default function Account() {
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     clearSharedAuthCookie(); // Clear shared cookie for cross-domain logout
+    clearPersistedMarketingQuery();
     delSession();
     queryclient.clear();
     router.replace('/signin');

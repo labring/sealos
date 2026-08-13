@@ -387,6 +387,16 @@ run_cloud(){
        run_and_log "sealos pull --policy=always -q  ${registry_domain}/${sealos_cloud_image_repository}/${cloudImages[$name]}:${sealos_cloud_version}"
     done
     if [[ "${dry_run,,}" == "false" ]]; then
+      varJwtMarketingConsent=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.jwtMarketingConsent}')
+      if [[ -z "${varJwtMarketingConsent}" ]]; then
+        if ! command -v openssl >/dev/null 2>&1; then
+          error "openssl is required to generate the marketing consent signing secret"
+        fi
+        varJwtMarketingConsent=$(openssl rand -hex 32)
+        kubectl patch configmap sealos-config -n sealos-system --type merge \
+          --patch "{\"data\":{\"jwtMarketingConsent\":\"${varJwtMarketingConsent}\"}}" >/dev/null
+        info "Generated the marketing consent signing secret in sealos-config."
+      fi
       varCloudDomain=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudDomain}')
       varCloudPort=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.cloudPort}')
       varRegionUID=$(kubectl get configmap sealos-config -n sealos-system -o jsonpath='{.data.regionUID}')

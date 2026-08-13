@@ -249,7 +249,7 @@ export type MarketingConsentState = 'granted' | 'denied' | 'unspecified';
 export type MarketingConsentTokenInput = {
   ad_personalization: MarketingConsentState;
   ad_user_data_consent: MarketingConsentState;
-  attribution_hash?: string;
+  attribution_hash: string;
   region: string;
   sub: string;
 };

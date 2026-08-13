@@ -19,6 +19,33 @@ const requestSchema = z
   })
   .strict();
 
+function consentState(value: unknown): 'granted' | 'denied' | 'unspecified' {
+  if (value === true || value === 'granted') return 'granted';
+  if (value === false || value === 'denied') return 'denied';
+  return 'unspecified';
+}
+
+function browserConsentState(seaAttr: string): {
+  ad_personalization: 'granted' | 'denied' | 'unspecified';
+  ad_user_data_consent: 'granted' | 'denied' | 'unspecified';
+} {
+  try {
+    const value = JSON.parse(Buffer.from(seaAttr, 'base64url').toString('utf8')) as Record<
+      string,
+      unknown
+    >;
+    if (value.version !== 2 && value.version !== 3) {
+      return { ad_personalization: 'unspecified', ad_user_data_consent: 'unspecified' };
+    }
+    return {
+      ad_personalization: consentState(value.ad_personalization),
+      ad_user_data_consent: consentState(value.ad_user_data_consent)
+    };
+  } catch {
+    return { ad_personalization: 'unspecified', ad_user_data_consent: 'unspecified' };
+  }
+}
+
 async function requestUserUid(req: NextApiRequest): Promise<string | undefined> {
   const cookieClaims = ensureGlobalTokenClaims(
     await verifyGlobalJwt<OAuth2AccessTokenPayload | OAuth2RefreshTokenPayload>(
@@ -52,9 +79,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 400, message: 'Invalid marketing consent payload' });
     }
 
+    const consent = browserConsentState(parsed.data.sea_attr);
+
     const token = generateMarketingConsentToken({
-      ad_personalization: 'unspecified',
-      ad_user_data_consent: 'unspecified',
+      ad_personalization: consent.ad_personalization,
+      ad_user_data_consent: consent.ad_user_data_consent,
       attribution_hash: createHash('sha256').update(parsed.data.sea_attr).digest('hex'),
       region: global.AppConfig?.cloud.regionUID || 'unknown',
       sub: userUid

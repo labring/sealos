@@ -81,6 +81,17 @@ export function persistMarketingQuery(query: MarketingQuery): void {
   }
 }
 
+export function clearPersistedMarketingQuery(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  try {
+    sessionStorage.removeItem(MARKETING_QUERY_STORAGE_KEY);
+  } catch {
+    // Session storage is optional in private browsing contexts.
+  }
+}
+
 function readPersistedMarketingQuery(): MarketingQuery {
   if (typeof window === 'undefined') {
     return {};
