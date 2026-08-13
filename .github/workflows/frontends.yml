@@ -71,6 +71,9 @@ jobs:
       modules: ${{ steps.set-matrix.outputs.modules }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          # paths-filter may need the merge-base; avoid its shallow-history deepen race.
+          fetch-depth: 0
       - name: Verify shared frontend runtime settings
         run: grep -qx 'ENV UV_USE_IO_URING=0' frontend/Dockerfile
       - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3

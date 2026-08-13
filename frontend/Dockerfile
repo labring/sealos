@@ -20,15 +20,28 @@ WORKDIR /app
 FROM base AS deps
 
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat && corepack enable && corepack prepare pnpm@8.9.0 --activate
+RUN apk add --no-cache libc6-compat python3 make g++ && \
+  corepack enable && corepack prepare pnpm@8.9.0 --activate
 
 
 # Install dependencies based on the preferred package manager root workspace
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-  [ -f pnpm-lock.yaml ] && pnpm fetch || \
-  (echo "Lockfile not found." && exit 1)
+  if [ ! -f pnpm-lock.yaml ]; then \
+    echo "Lockfile not found." >&2; \
+    exit 1; \
+  fi; \
+  for attempt in 1 2 3; do \
+    if pnpm fetch; then \
+      exit 0; \
+    fi; \
+    if [ "${attempt}" -lt 3 ]; then \
+      echo "pnpm fetch failed (attempt ${attempt}/3), retrying..." >&2; \
+      sleep $((attempt * 10)); \
+    fi; \
+  done; \
+  exit 1
 COPY ./tsconfig.json ./tsconfig.json
 COPY ./tsconfig.deps.json ./tsconfig.deps.json
 COPY ./tsconfig.base.json ./tsconfig.base.json
