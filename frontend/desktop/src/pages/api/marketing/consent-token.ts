@@ -5,7 +5,9 @@ import { z } from 'zod';
 import {
   ensureGlobalTokenClaims,
   generateMarketingConsentToken,
-  verifyGlobalJwt
+  verifyAccessToken,
+  verifyGlobalJwt,
+  verifyGlobalToken
 } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import type { OAuth2AccessTokenPayload, OAuth2RefreshTokenPayload } from '@/types/token';
@@ -17,20 +19,18 @@ const requestSchema = z
   })
   .strict();
 
-function requestToken(req: NextApiRequest): string | undefined {
-  const cookieToken = req.cookies[SHARED_AUTH_COOKIE_NAME];
-  if (cookieToken) {
-    return cookieToken;
-  }
-  const headerToken = req.headers.authorization;
-  if (!headerToken) {
-    return undefined;
-  }
-  try {
-    return decodeURIComponent(headerToken);
-  } catch {
-    return headerToken;
-  }
+async function requestUserUid(req: NextApiRequest): Promise<string | undefined> {
+  const cookieClaims = ensureGlobalTokenClaims(
+    await verifyGlobalJwt<OAuth2AccessTokenPayload | OAuth2RefreshTokenPayload>(
+      req.cookies[SHARED_AUTH_COOKIE_NAME]
+    )
+  );
+  if (cookieClaims) return cookieClaims.sub;
+
+  const globalClaims = await verifyGlobalToken(req.headers);
+  if (globalClaims) return globalClaims.userUid;
+
+  return (await verifyAccessToken(req.headers))?.userUid;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -42,11 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const payload = await verifyGlobalJwt<OAuth2AccessTokenPayload | OAuth2RefreshTokenPayload>(
-      requestToken(req)
-    );
-    const claims = ensureGlobalTokenClaims(payload);
-    if (!claims) {
+    const userUid = await requestUserUid(req);
+    if (!userUid) {
       return jsonRes(res, { code: 401, message: 'Unauthorized' });
     }
 
@@ -60,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ad_user_data_consent: 'unspecified',
       attribution_hash: createHash('sha256').update(parsed.data.sea_attr).digest('hex'),
       region: global.AppConfig?.cloud.regionUID || 'unknown',
-      sub: claims.sub
+      sub: userUid
     });
 
     return jsonRes(res, { code: 200, data: { token } });

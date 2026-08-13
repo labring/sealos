@@ -4,6 +4,7 @@ import handler from '@/pages/api/marketing/consent-token';
 import {
   generateGlobalAccessToken,
   generateMarketingConsentToken,
+  generateRegionalToken,
   marketingConsentJwtSecret
 } from '@/services/backend/auth';
 
@@ -13,7 +14,15 @@ describe('marketing consent token', () => {
   beforeEach(() => {
     global.AppConfig = {
       cloud: { regionUID: 'region-test' },
-      desktop: { auth: { jwt: { marketingConsent: 'marketing-secret-test' } } }
+      desktop: {
+        auth: {
+          jwt: {
+            global: 'global-secret-test',
+            marketingConsent: 'marketing-secret-test',
+            regional: 'regional-secret-test'
+          }
+        }
+      }
     } as typeof global.AppConfig;
   });
 
@@ -84,5 +93,41 @@ describe('marketing consent token', () => {
       ad_user_data_consent: 'unspecified',
       sub: 'user-test'
     });
+  });
+
+  it('accepts an authenticated regional session without a shared global cookie', async () => {
+    const regionalToken = generateRegionalToken({
+      regionUid: 'region-test',
+      userCrName: 'user-cr-test',
+      userCrUid: 'user-cr-uid-test',
+      userId: '10002',
+      userUid: 'regional-user-test',
+      workspaceId: 'workspace-test',
+      workspaceUid: 'workspace-uid-test'
+    });
+    let responseBody: any;
+    const res = {
+      json: vi.fn((body) => {
+        responseBody = body;
+      }),
+      setHeader: vi.fn()
+    } as any;
+
+    await handler(
+      {
+        body: { sea_attr: 'regional-attribution-test' },
+        cookies: {},
+        headers: { authorization: encodeURIComponent(regionalToken) },
+        method: 'POST'
+      } as any,
+      res
+    );
+
+    expect(
+      verify(responseBody.data.token, marketingConsentJwtSecret(), {
+        audience: 'brain-marketing-attribution',
+        issuer: 'sealos-desktop'
+      })
+    ).toMatchObject({ sub: 'regional-user-test' });
   });
 });
