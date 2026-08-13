@@ -495,10 +495,10 @@ export const flattenObject = (ob: any, prefix: string = ''): { key: string; valu
 };
 
 export const adjustDifferencesForIni = (
-  differences: { path: string; oldValue: any; newValue: any }[],
+  differences: { path: string; oldValue: any; newValue: any; currentPath?: string }[],
   type: 'ini' | 'yaml',
   dbType: DBType
-): { path: string; newValue: string; oldValue: string }[] => {
+): { path: string; newValue: string; oldValue: string; currentPath?: string }[] => {
   if (type !== 'ini' || dbType !== 'apecloud-mysql') {
     return differences;
   }
@@ -508,7 +508,8 @@ export const adjustDifferencesForIni = (
     return {
       path: adjustedPath,
       newValue: diff.newValue,
-      oldValue: diff.oldValue
+      oldValue: diff.oldValue,
+      currentPath: diff.currentPath || diff.path
     };
   });
 };

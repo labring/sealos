@@ -18,6 +18,7 @@ import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
 import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
+import { getDefaultMaxConnections } from '@/utils/parameterChanges';
 import {
   distributeResources,
   POLARDBX_MIN_COMPONENT_CPU,
@@ -452,20 +453,7 @@ const Form = ({
   }, [backupSettingsRef, parameterConfigRef, supportBackup, supportParameterConfig]);
 
   const getScore = (dbType: DBType) => {
-    const cpuCores = (getValues('cpu') || 0) / 1000; // cpu in cores
-    const memoryGB = (getValues('memory') || 0) / 1024; // memory in GB
-
-    let score = 0;
-    if (
-      dbType === DBTypeEnum.postgresql ||
-      dbType === DBTypeEnum.mongodb ||
-      dbType === DBTypeEnum.mysql
-    ) {
-      score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
-    } else if (dbType === DBTypeEnum.redis) {
-      score = Math.min(cpuCores * 500 + memoryGB * 400, 100000);
-    }
-    return Math.floor(score);
+    return getDefaultMaxConnections(dbType, getValues('cpu') || 0, getValues('memory') || 0);
   };
 
   const getParaName = (dbType: DBType) => {

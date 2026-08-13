@@ -7,6 +7,8 @@ import { KbPgClusterType } from '@/types/cluster';
 import { DBType, ParameterFieldMetadata } from '@/types/db';
 import { adjustDifferencesForIni } from '@/utils/tools';
 import { json2Reconfigure } from '@/utils/json2Yaml';
+import { ensurePostgreSQLConfigSpec } from '@/utils/parameterConfig';
+import { createParameterHistory } from '@/utils/parameterHistory';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
@@ -56,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
 
-    const { k8sCustomObjects, applyYamlList, namespace } = await getK8s({
+    const { k8sCore, k8sCustomObjects, applyYamlList, namespace } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
@@ -113,9 +115,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       reconfigureType,
       dbType
     );
+    if (dbType === 'postgresql') {
+      await ensurePostgreSQLConfigSpec({
+        dbName,
+        dbVersion: dbVersion || '',
+        namespace,
+        k8sCustomObjects
+      });
+    }
     const reconfigureYaml = json2Reconfigure(dbName, dbType, dbUid, adjustedDifferences);
 
-    await applyYamlList([reconfigureYaml], 'create');
+    const [createdOpsRequest] = await applyYamlList([reconfigureYaml], 'create');
+    try {
+      await createParameterHistory({
+        k8sCore,
+        namespace,
+        dbName,
+        dbType,
+        dbUid,
+        opsRequestName: createdOpsRequest?.metadata?.name,
+        differences: adjustedDifferences
+      });
+    } catch (historyError) {
+      console.error('Failed to record parameter update history:', historyError);
+    }
 
     jsonRes(res, {
       data: { success: true }
