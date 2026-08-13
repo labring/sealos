@@ -52,6 +52,7 @@ type WorkspaceSubscriptionTransaction struct {
 	StatusDesc    string                        `gorm:"type:varchar(255);column:status_desc"`                                             // 状态描述
 	PayStatus     SubscriptionPayStatus         `gorm:"type:subscription_pay_status;column:pay_status"`                                   // 支付状态
 	PayID         string                        `gorm:"type:text;column:pay_id"`                                                          // 支付订单号
+	PayApp        PayApp                        `gorm:"type:text;column:pay_app"`                                                         // Stripe 回跳后打开的应用
 	Period        SubscriptionPeriod            `gorm:"type:text;column:period"`                                                          // 周期, 默认1一个月，年或者月
 	Amount        int64                         `gorm:"type:bigint;column:amount"`                                                        // 金额
 }

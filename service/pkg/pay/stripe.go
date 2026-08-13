@@ -62,11 +62,17 @@ func getBaseURL() string {
 func buildURLs(
 	s *StripeService,
 	transaction *types.WorkspaceSubscriptionTransaction,
+	payApp types.PayApp,
 ) (string, string) {
-	// https://192.168.10.35.nip.io/?openapp=system-costcenter?payId%3D4W86BOp70ltT%26stripeState%3Dsuccess%26transactionId%3D3d09bc07-976c-44bc-8b52-05619693056e%26workspaceId%3Dns-47f3dbxj
+	// Example: https://cloud.sealos.io/?payId=examplePayId&workspaceId=ns-example&transactionId=00000000-0000-0000-0000-000000000000&stripeState=success&app=system-brain
 	baseURL := s.Domain + "/?payId=" + transaction.PayID + "&workspaceId=" + transaction.Workspace + "&transactionId=" + transaction.ID.String() + "&stripeState="
 	successURL := baseURL + "success"
 	cancelURL := baseURL + "cancel"
+	if payApp != "" {
+		appParam := "&app=" + string(payApp)
+		successURL += appParam
+		cancelURL += appParam
+	}
 
 	return successURL, cancelURL
 }
@@ -89,7 +95,7 @@ func (s *StripeService) CreateWorkspaceSubscriptionSessionWithPromotion(
 ) (*StripeResponse, error) {
 	// 构造成功与取消回调URL，避免硬编码斜杠问题
 	// Assuming workspaceID and transaction.PayID are your custom variables
-	successURL, cancelURL := buildURLs(s, transaction)
+	successURL, cancelURL := buildURLs(s, transaction, paymentReq.PayApp)
 	// Create checkout session following official example pattern
 	// var anchorTime int64
 

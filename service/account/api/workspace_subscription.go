@@ -1162,8 +1162,21 @@ func handleCalculatedUpgrade(
 // @Param req body WorkspaceSubscriptionOperatorReq true "WorkspaceSubscriptionOperatorReq"
 // @Success 200 {object} WorkspaceSubscriptionPayResp
 // @Router /payment/v1alpha1/workspace-subscription/pay [post]
-func CreateWorkspaceSubscriptionPay(c *gin.Context) {
+func parseWorkspaceSubscriptionPayReq(
+	c *gin.Context,
+) (*helper.WorkspaceSubscriptionOperatorReq, error) {
 	req, err := helper.ParseWorkspaceSubscriptionOperatorReq(c)
+	if err != nil {
+		return nil, err
+	}
+	if req.PayApp != "" && !req.PayApp.IsValid() {
+		return nil, fmt.Errorf("invalid payApp: %s", req.PayApp)
+	}
+	return req, nil
+}
+
+func CreateWorkspaceSubscriptionPay(c *gin.Context) {
+	req, err := parseWorkspaceSubscriptionPayReq(c)
 	if err != nil {
 		SetErrorResp(
 			c,
@@ -1275,6 +1288,7 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 		StartAt:      time.Now().UTC(),
 		CreatedAt:    time.Now().UTC(),
 		Status:       types.SubscriptionTransactionStatusProcessing,
+		PayApp:       req.PayApp,
 		Period:       req.Period,
 		Amount:       planPrice.Price,
 	}
@@ -1372,9 +1386,8 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 				transaction.Amount = 0
 			}
 
-			// Store promotion code for later use in Stripe session creation
 			if req.PromotionCode != "" {
-				transaction.StatusDesc = "Promotion code: " + req.PromotionCode
+				transaction.StatusDesc = legacyPromotionCodeStatusPrefix + req.PromotionCode
 			}
 		}
 
@@ -1469,6 +1482,27 @@ func CreateWorkspaceSubscriptionPay(c *gin.Context) {
 
 var ErrSamePendingOperation = errors.New("same pending operation exists")
 
+const legacyPromotionCodeStatusPrefix = "Promotion code: "
+
+func pendingTransactionPromotionCode(description string) string {
+	parts := strings.SplitN(description, legacyPromotionCodeStatusPrefix, 2)
+	if len(parts) < 2 {
+		return ""
+	}
+	return strings.TrimSpace(parts[1])
+}
+
+func samePendingWorkspaceSubscriptionRequest(
+	lastTransaction *types.WorkspaceSubscriptionTransaction,
+	req *helper.WorkspaceSubscriptionOperatorReq,
+) bool {
+	return lastTransaction.NewPlanName == req.PlanName &&
+		lastTransaction.Operator == req.Operator &&
+		lastTransaction.Period == req.Period &&
+		pendingTransactionPromotionCode(lastTransaction.StatusDesc) == req.PromotionCode &&
+		lastTransaction.PayApp == req.PayApp
+}
+
 // handleWorkspaceSubscriptionTransactionWithConcurrencyControl provides unified transaction handling with concurrency control
 func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(
 	c *gin.Context,
@@ -1497,20 +1531,7 @@ func handleWorkspaceSubscriptionTransactionWithConcurrencyControl(
 		// Handle existing pending/processing transactions
 		if lastTransaction != nil &&
 			(lastTransaction.Status == types.SubscriptionTransactionStatusProcessing || lastTransaction.Status == types.SubscriptionTransactionStatusPending) {
-			// 判断是否为相同请求（包括优惠码）
-			// 提取上次交易的优惠码
-			lastPromotionCode := ""
-			if strings.Contains(lastTransaction.StatusDesc, "Promotion code: ") {
-				parts := strings.Split(lastTransaction.StatusDesc, "Promotion code: ")
-				if len(parts) > 1 {
-					lastPromotionCode = strings.TrimSpace(parts[1])
-				}
-			}
-
-			isSameRequest := lastTransaction.NewPlanName == req.PlanName &&
-				lastTransaction.Operator == req.Operator &&
-				lastTransaction.Period == req.Period &&
-				lastPromotionCode == req.PromotionCode
+			isSameRequest := samePendingWorkspaceSubscriptionRequest(lastTransaction, req)
 
 			switch {
 			case isSameRequest:
@@ -2166,6 +2187,7 @@ func createStripeSessionAndPaymentOrder(
 		UserAgent:     c.GetHeader("User-Agent"),
 		ClientIP:      c.ClientIP(),
 		DeviceTokenID: c.GetHeader("Device-Token-ID"),
+		PayApp:        req.PayApp,
 	}
 	// Get or create Stripe customer ID
 	// customer, err := services.StripeServiceInstance.GetCustomerByUID(req.UserUID.String())
