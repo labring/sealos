@@ -29,7 +29,8 @@ describe('EditApp yaml display state', () => {
 
     expect(start).toBeGreaterThanOrEqual(0);
     expect(source.indexOf('removeStoreList(originalIndex)')).toBeGreaterThan(start);
-    expect(source).toContain('existingStores.some((store) => store.path === item.path)');
+    expect(source).toContain('existingStores.some(');
+    expect(source).toContain('(store) => store.path === item.path');
     expect(source).toContain("t('Store At Least One')");
     expect(source).not.toContain('localStores.length === 1');
   });
@@ -47,5 +48,15 @@ describe('EditApp yaml display state', () => {
     expect(handleDomainVerified).toContain('json2Service(data, ownerReferences, {');
     expect(handleDomainVerified).toContain('includeNodePort: false');
     expect(handleDomainVerified).toContain("postDeployApp(yamlList, 'replace')");
+  });
+
+  it('verifies only new or changed custom-domain bindings on update', () => {
+    const source = readFileSync(
+      new URL('../../../../../src/pages/app/edit/index.tsx', import.meta.url),
+      'utf8'
+    );
+
+    expect(source).toContain('getChangedCustomDomainBindings(');
+    expect(source).toContain('oldAppEditData.current?.networks');
   });
 });
