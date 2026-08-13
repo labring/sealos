@@ -71,6 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       // Record parameter changes through OpsRequest so they appear in history.
       let parameterDifferencesForHistory: ParameterDifference[] | undefined;
+      let parameterPreparationError: any;
       if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
         if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
           try {
@@ -109,6 +110,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               parameterDifferencesForHistory = parameterDifferences;
             }
           } catch (error) {
+            parameterPreparationError = error;
             console.warn('Failed to prepare parameter configuration update:', error);
           }
         }
@@ -141,6 +143,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
       }
 
+      if (parameterPreparationError && opsRequests.length === 0) {
+        throw parameterPreparationError;
+      }
+
       if (
         process.env.BACKUP_ENABLED === 'true' &&
         BackupSupportedDBTypeList.includes(dbForm.dbType) &&
@@ -167,6 +173,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             namespace
           });
         }
+      }
+
+      if (parameterPreparationError) {
+        throw parameterPreparationError;
       }
 
       return jsonRes(res, {

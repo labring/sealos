@@ -8,6 +8,7 @@ import {
   getParameterDifferences,
   getDefaultMaxConnections,
   mergeRedisParameterValues,
+  shouldUseRedisConfigurationFallback,
   toKubeBlocksParameterPairs
 } from '../../../src/utils/parameterChanges';
 import {
@@ -15,6 +16,23 @@ import {
   resolveParameterHistoryStatus
 } from '../../../src/utils/parameterHistory';
 import { ReconfigStatus } from '../../../src/constants/db';
+
+test('uses Redis Configuration fallback only when runtime ConfigMap values are absent', () => {
+  assert.equal(
+    shouldUseRedisConfigurationFallback({
+      includeConfigurationOverrides: false,
+      hasConfigMapValues: false
+    }),
+    true
+  );
+  assert.equal(
+    shouldUseRedisConfigurationFallback({
+      includeConfigurationOverrides: false,
+      hasConfigMapValues: true
+    }),
+    false
+  );
+});
 
 test('keeps MySQL submission and runtime paths distinct', () => {
   const differences = getParameterDifferences({

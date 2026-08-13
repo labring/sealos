@@ -13,6 +13,14 @@ export const mergeRedisParameterValues = (
     ])
   );
 
+export const shouldUseRedisConfigurationFallback = ({
+  includeConfigurationOverrides,
+  hasConfigMapValues
+}: {
+  includeConfigurationOverrides: boolean;
+  hasConfigMapValues: boolean;
+}) => includeConfigurationOverrides || !hasConfigMapValues;
+
 export const getDefaultMaxConnections = (dbType: string, cpu: number, memory: number) => {
   const cpuCores = cpu / 1000;
   const memoryGB = memory / 1024;

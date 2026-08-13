@@ -141,42 +141,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       const proxiedOpsRequestNames = new Set(
         historyItems.map(({ opsRequestName }) => opsRequestName).filter(Boolean)
       );
-      const parameterHistorySignatureCounts = new Map<string, number>();
-      historyItems
-        .filter(({ opsRequestName }) => !opsRequestName)
-        .forEach(({ item }) => {
-          const signature = item?.configurations
-            ?.map(
-              ({ parameterName, oldValue, newValue }) =>
-                `${parameterName}\u0000${oldValue}\u0000${newValue}`
-            )
-            .sort()
-            .join('\u0001');
-          if (signature) {
-            parameterHistorySignatureCounts.set(
-              signature,
-              (parameterHistorySignatureCounts.get(signature) || 0) + 1
-            );
-          }
-        });
-      data = data.filter((item) => {
-        if (proxiedOpsRequestNames.has(item.name)) return false;
-        const signature = item.configurations
+      const getParameterSignature = (item: OpsRequestItemType) =>
+        item.configurations
           ?.map(
             ({ parameterName, oldValue, newValue }) =>
               `${parameterName}\u0000${oldValue}\u0000${newValue}`
           )
           .sort()
           .join('\u0001');
-        const matchingHistoryCount = signature
-          ? parameterHistorySignatureCounts.get(signature) || 0
-          : 0;
-        if (signature && matchingHistoryCount > 0) {
-          parameterHistorySignatureCounts.set(signature, matchingHistoryCount - 1);
-          return false;
-        }
-        return true;
-      });
+
+      // Histories created before opsRequestName was persisted need a
+      // compatibility match. Pair each one with the closest OpsRequest of
+      // the same signature, so repeated identical edits remain visible.
+      const legacyHistoryItems = historyItems.filter(({ opsRequestName }) => !opsRequestName);
+      const matchedLegacyOps = new Set<number>();
+      for (const { item: historyItem } of legacyHistoryItems) {
+        if (!historyItem) continue;
+        const historySignature = getParameterSignature(historyItem);
+        if (!historySignature) continue;
+
+        let closestIndex = -1;
+        let closestDistance = Number.POSITIVE_INFINITY;
+        data.forEach((opsItem, index) => {
+          if (matchedLegacyOps.has(index) || proxiedOpsRequestNames.has(opsItem.name)) return;
+          if (getParameterSignature(opsItem) !== historySignature) return;
+          const distance = Math.abs(
+            new Date(opsItem.startTime).getTime() - new Date(historyItem.startTime).getTime()
+          );
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+          }
+        });
+        if (closestIndex >= 0) matchedLegacyOps.add(closestIndex);
+      }
+
+      data = data.filter(
+        (item, index) => !proxiedOpsRequestNames.has(item.name) && !matchedLegacyOps.has(index)
+      );
       parameterHistory = historyItems
         .map(({ item }) => item)
         .filter((item): item is OpsRequestItemType => Boolean(item));

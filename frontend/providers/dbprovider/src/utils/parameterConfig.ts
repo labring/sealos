@@ -6,8 +6,15 @@ import {
   areParameterValuesApplied,
   getParameterDifferences,
   getPostgreSQLConfigSpecPatch,
-  mergeRedisParameterValues
+  mergeRedisParameterValues,
+  shouldUseRedisConfigurationFallback
 } from './parameterChanges';
+
+const isNotFoundError = (error: any) =>
+  error?.response?.statusCode === 404 ||
+  error?.statusCode === 404 ||
+  error?.body?.code === 404 ||
+  error?.body?.reason === 'NotFound';
 
 export {
   areParameterValuesApplied,
@@ -50,12 +57,20 @@ export async function getCurrentParameterValues({
       );
     }
   } catch (error) {
-    if (dbType !== 'redis' || !k8sCustomObjects) throw error;
+    if (dbType !== 'redis' || !k8sCustomObjects || !isNotFoundError(error)) throw error;
   }
 
-  // Configuration is the fallback source for edit/display reads. History
-  // polling explicitly disables this so desired state cannot look applied.
-  if (dbType === 'redis' && k8sCustomObjects && includeConfigurationOverrides) {
+  // Use the Configuration CR as a fallback when Redis has no generated
+  // ConfigMap. When runtime values exist, history polling can disable this
+  // override to avoid treating desired values as applied.
+  if (
+    dbType === 'redis' &&
+    k8sCustomObjects &&
+    shouldUseRedisConfigurationFallback({
+      includeConfigurationOverrides,
+      hasConfigMapValues: Object.keys(configMapValues).length > 0
+    })
+  ) {
     try {
       const { body: configuration } = (await k8sCustomObjects.getNamespacedCustomObject(
         'apps.kubeblocks.io',
