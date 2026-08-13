@@ -10,3 +10,7 @@ resources:
   requests:
     cpu: 10m
     memory: 64Mi
+
+kubeAPI:
+  qps: 50
+  burst: 100

@@ -103,6 +103,7 @@
   "Image Name": "Image Name",
   "Image Name (Private)": "Image Name (Private)",
   "Image name cannot be empty": "Image name is required.",
+  "private_image_registry_tip": "Include the registry address in the image name. If omitted, docker.io is used by default.",
   "image_ports_detection_failed": "Port detection failed",
   "no_image_ports_detected": "No exposed ports detected",
   "recognized_image_ports": "{{count}} ports detected",

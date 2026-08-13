@@ -17,12 +17,13 @@ limitations under the License.
 package kubeconfig
 
 import (
+	"context"
 	"net"
 	"os"
-	"time"
 
 	csrv1 "k8s.io/api/certificates/v1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,8 +32,19 @@ import (
 
 var defaultLog = ctrl.Log.WithName("kubeconfig")
 
+const defaultCSRExpirationSeconds int32 = 1_000_000_000
+
 type Interface interface {
 	Apply(config *rest.Config, client client.Client) (*api.Config, error)
+}
+
+type TokenRequestInterface interface {
+	Interface
+	ApplyWithTokenRequest(
+		ctx context.Context,
+		config *rest.Config,
+		client client.Client,
+	) (*api.Config, metav1.Time, error)
 }
 
 type CertConfig struct {
@@ -56,9 +68,10 @@ type CsrConfig struct {
 }
 type ServiceAccountConfig struct {
 	*DefaultConfig
-	namespace  string
-	sa         *v1.ServiceAccount
-	secretName string
+	namespace      string
+	secretName     string
+	forceNewSecret bool
+	sa             *v1.ServiceAccount
 }
 
 type WebhookConfig struct {
@@ -89,7 +102,7 @@ func NewConfig(user, clusterName string, expirationSeconds int32) *DefaultConfig
 		clusterName = "sealos"
 	}
 	if expirationSeconds == 0 {
-		expirationSeconds = int32(2 * time.Hour.Seconds())
+		expirationSeconds = defaultCSRExpirationSeconds
 	}
 	return &DefaultConfig{
 		user:              user,
@@ -129,7 +142,7 @@ func (d *DefaultConfig) WithCsrConfig(
 func (d *DefaultConfig) WithServiceAccountConfig(
 	namespace string,
 	sa *v1.ServiceAccount,
-) Interface {
+) *ServiceAccountConfig {
 	if namespace == "" {
 		namespace = "default"
 	}
@@ -138,6 +151,11 @@ func (d *DefaultConfig) WithServiceAccountConfig(
 		namespace:     namespace,
 		sa:            sa,
 	}
+}
+
+func (sac *ServiceAccountConfig) WithForceNewSecret() *ServiceAccountConfig {
+	sac.forceNewSecret = true
+	return sac
 }
 
 func (d *DefaultConfig) WithWebhookConfigConfig(webhookURL string) Interface {

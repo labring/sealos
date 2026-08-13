@@ -17,9 +17,7 @@ limitations under the License.
 package kubeconfig
 
 import (
-	"crypto/rand"
 	"crypto/x509"
-	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -61,16 +59,4 @@ func DecodeX509CertificateBytes(certBytes []byte) (*x509.Certificate, error) {
 	}
 
 	return certs[0], nil
-}
-
-func GetRandomString(n int) string {
-	randBytes := make([]byte, n/2)
-	if _, err := rand.Read(randBytes); err != nil {
-		return ""
-	}
-	return hex.EncodeToString(randBytes)
-}
-
-func SecretName(name string) string {
-	return fmt.Sprintf("sealos-token-%s-%s", name, GetRandomString(5))
 }

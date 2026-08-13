@@ -33,6 +33,7 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -69,6 +70,8 @@ func main() {
 		operationReqExpirationTime time.Duration
 		restartPredicateDuration   time.Duration
 		operationReqRetentionTime  time.Duration
+		kubeAPIQPS                 float64
+		kubeAPIBurst               int
 		secureMetrics              bool
 		enableHTTP2                bool
 		tlsOpts                    []func(*tls.Config)
@@ -124,6 +127,18 @@ func main() {
 		time.Hour*2,
 		"Sets the restrat predicate time duration for user controller restart. By default, the duration is set to 2 hours.",
 	)
+	flag.Float64Var(
+		&kubeAPIQPS,
+		"kube-api-qps",
+		float64(rest.DefaultQPS),
+		"Sets the Kubernetes API client QPS used by the manager and reconciler clients.",
+	)
+	flag.IntVar(
+		&kubeAPIBurst,
+		"kube-api-burst",
+		rest.DefaultBurst,
+		"Sets the Kubernetes API client burst used by the manager and reconciler clients.",
+	)
 	flag.BoolVar(
 		&secureMetrics,
 		"metrics-secure",
@@ -177,7 +192,12 @@ func main() {
 		// this setup is not recommended for production.
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	cfg := ctrl.GetConfigOrDie()
+	cfg.QPS = float32(kubeAPIQPS)
+	cfg.Burst = kubeAPIBurst
+	setupLog.Info("configured Kubernetes API client rate limit", "qps", cfg.QPS, "burst", cfg.Burst)
+
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:  scheme,
 		Metrics: metricsServerOptions,
 		// WebhookServer: webhook.NewServer(webhook.Options{

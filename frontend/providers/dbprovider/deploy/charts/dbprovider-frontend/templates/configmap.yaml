@@ -13,6 +13,7 @@ data:
     MONITOR_URL={{ .Values.dbproviderConfig.monitorUrl }}
     MIGRATE_FILE_IMAGE={{ .Values.dbproviderConfig.migrateFileImage }}
     BACKUP_ENABLED={{ .Values.dbproviderConfig.backupEnabled }}
+    LOG_ENABLED={{ .Values.dbproviderConfig.logEnabled }}
     SHOW_DOCUMENT={{ .Values.dbproviderConfig.showDocument }}
     DATA_IMPORT_ENABLED={{ .Values.dbproviderConfig.dataImportEnabled }}
     GUIDE_ENABLED={{ .Values.dbproviderConfig.guideEnabled }}

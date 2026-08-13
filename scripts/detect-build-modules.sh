@@ -32,7 +32,6 @@ declare -A CONTROLLER_MODULES=(
 declare -A SERVICE_MODULES=(
     ["database"]="database"
     ["account"]="account"
-    ["minio"]="minio"
     ["launchpad"]="launchpad"
     ["vlogs"]="vlogs"
 )

@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -80,10 +79,14 @@ type UserReconciler struct {
 }
 
 type userReconcileState struct {
-	serviceAccount *v1.ServiceAccount
+	serviceAccount          *v1.ServiceAccount
+	tokenExpirationDeadline *metav1.Time
+	currentSecretName       string
+	cleanupLegacySecrets    bool
 }
 
 // +kubebuilder:rbac:groups=*,resources=*,verbs=*
+// +kubebuilder:rbac:groups="",resources=serviceaccounts/token,verbs=create
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -164,6 +167,25 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 	r.minRequeueDuration = minRequeueDuration
 	r.maxRequeueDuration = maxRequeueDuration
 
+	if err := mgr.GetFieldIndexer().IndexField(
+		context.Background(),
+		&v1.Secret{},
+		v1.ServiceAccountNameKey,
+		func(rawObj client.Object) []string {
+			secret, ok := rawObj.(*v1.Secret)
+			if !ok || secret.Annotations == nil {
+				return nil
+			}
+			value := secret.Annotations[v1.ServiceAccountNameKey]
+			if value == "" {
+				return nil
+			}
+			return []string{value}
+		},
+	); err != nil {
+		return err
+	}
+
 	ownerEventHandler := handler.EnqueueRequestForOwner(
 		r.Scheme,
 		r.RESTMapper(),
@@ -176,7 +198,6 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 		Watches(&licensev1.License{}, handler.EnqueueRequestsFromMapFunc(r.licenseToUserRequests)).
 		Watches(&rbacv1.Role{}, ownerEventHandler).
 		Watches(&rbacv1.RoleBinding{}, ownerEventHandler).
-		Watches(&v1.Secret{}, ownerEventHandler).
 		Watches(&v1.ServiceAccount{}, ownerEventHandler).
 		WithOptions(kubecontroller.Options{
 			MaxConcurrentReconciles: ratelimiter.GetConcurrent(opts),
@@ -214,7 +235,6 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 		r.initStatus,
 		r.syncNamespace,
 		r.syncServiceAccount,
-		r.syncServiceAccountSecrets,
 		r.syncKubeConfig,
 		r.syncRole,
 		r.syncRoleBinding,
@@ -227,6 +247,25 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	}
 	if user.Status.Phase != userv1.UserUnknown {
 		user.Status.Phase = userv1.UserActive
+	}
+	if state.cleanupLegacySecrets {
+		// Best-effort migration cleanup for legacy service-account-token secrets.
+		if err := kubeconfig.CleanupLegacyBoundTokenSecrets(
+			ctx,
+			r.Client,
+			user.Name,
+			state.currentSecretName,
+		); err != nil {
+			r.Recorder.Eventf(
+				user,
+				v1.EventTypeWarning,
+				"CleanupLegacyBoundTokenSecrets",
+				"Cleanup stale bound token secrets for %s is error: %v",
+				user.Name,
+				err,
+			)
+			r.Logger.Error(err, "cleanup stale bound token secrets", "user", user.Name)
+		}
 	}
 	err = r.updateStatus(ctx, client.ObjectKeyFromObject(obj), user.Status.DeepCopy())
 	if err != nil {
@@ -241,7 +280,7 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{
-		RequeueAfter: RandTimeDurationBetween(r.minRequeueDuration, r.maxRequeueDuration),
+		RequeueAfter: r.nextRequeueDuration(state),
 	}, nil
 }
 
@@ -579,46 +618,17 @@ func (r *UserReconciler) syncServiceAccount(
 		sa.Namespace = config.GetUserSystemNamespace()
 		sa.Labels = map[string]string{}
 
-		// Check if SA exists and needs rotation
-		if err = r.Get(context.Background(), client.ObjectKey{
+		if err = r.Get(ctx, client.ObjectKey{
 			Namespace: config.GetUserSystemNamespace(),
 			Name:      user.Name,
-		}, sa); err == nil {
-			// SA exists, check if we need to rotate (delete and recreate)
-			if r.shouldRotateKubeConfig(user) {
-				if delErr := r.Delete(ctx, sa); delErr != nil && !apierrors.IsNotFound(delErr) {
-					return fmt.Errorf("failed to delete serviceaccount for rotation: %w", delErr)
-				}
-				// Reset SA to recreate it
-				sa = &v1.ServiceAccount{}
-				sa.Name = user.Name
-				sa.Namespace = config.GetUserSystemNamespace()
-				sa.Labels = map[string]string{}
-				r.Recorder.Eventf(
-					user,
-					v1.EventTypeNormal,
-					"ServiceAccountRotated",
-					"ServiceAccount %s deleted for kubeconfig rotation",
-					user.Name,
-				)
-			}
-		} else if !apierrors.IsNotFound(err) {
-			// Error other than not found
+		}, sa); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
 
-		secretName := kubeconfig.SecretName(user.Name)
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, sa, func() error {
 			sa.Annotations = map[string]string{
 				userAnnotationCreatorKey: user.Name,
 				userAnnotationOwnerKey:   user.Annotations[userAnnotationOwnerKey],
-			}
-			if len(sa.Secrets) == 0 {
-				sa.Secrets = []v1.ObjectReference{
-					{
-						Name: secretName,
-					},
-				}
 			}
 			return controllerutil.SetControllerReference(user, sa, r.Scheme)
 		}); err != nil {
@@ -645,99 +655,8 @@ func (r *UserReconciler) syncServiceAccount(
 	}
 }
 
-func (r *UserReconciler) syncServiceAccountSecrets(
-	ctx context.Context,
-	user *userv1.User,
-	state *userReconcileState,
-) {
-	secretsConditionType := userv1.ConditionType("ServiceAccountSecretsSyncReady")
-	secretsCondition := &userv1.Condition{
-		Type:               secretsConditionType,
-		Status:             v1.ConditionTrue,
-		LastTransitionTime: metav1.Now(),
-		LastHeartbeatTime:  metav1.Now(),
-		Reason:             string(userv1.Ready),
-		Message:            "sync namespace secrets successfully",
-	}
-	condition := helper.GetCondition(user.Status.Conditions, secretsCondition)
-	defer func() {
-		if helper.DiffCondition(condition, secretsCondition) {
-			r.saveCondition(user, secretsCondition.DeepCopy())
-		}
-	}()
-	sa := state.serviceAccount
-	if sa == nil {
-		helper.SetConditionError(
-			secretsCondition,
-			"SyncUserError",
-			errors.New("syncServiceAccountSecrets serviceAccount not found"),
-		)
-		r.Recorder.Eventf(
-			user,
-			v1.EventTypeWarning,
-			"syncKubeConfig",
-			"Sync User namespace  syncServiceAccountSecrets %s is error: %v",
-			user.Name,
-			"serviceAccount not found",
-		)
-		return
-	}
-
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		secretName := sa.Secrets[0].Name
-		secrets := &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: config.GetUserSystemNamespace(),
-			},
-		}
-		var err error
-		if err = r.Get(ctx, client.ObjectKeyFromObject(secrets), secrets); err == nil {
-			// Secret already exists, no need to recreate
-			return nil
-		}
-		var change controllerutil.OperationResult
-		if change, err = controllerutil.CreateOrUpdate(
-			context.TODO(),
-			r.Client,
-			secrets,
-			func() error {
-				if secrets.Annotations == nil {
-					secrets.Annotations = make(map[string]string, 0)
-				}
-				secrets.Type = v1.SecretTypeServiceAccountToken
-				secrets.Annotations[v1.ServiceAccountNameKey] = sa.Name
-				secrets.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(
-					int(user.Spec.CSRExpirationSeconds),
-				)
-				return controllerutil.SetControllerReference(user, secrets, r.Scheme)
-			},
-		); err != nil {
-			return fmt.Errorf("unable to create namespace sa secrets by User: %w", err)
-		}
-		r.Logger.V(1).
-			Info("create or update namespace sa secrets by User", "OperationResult", change)
-		secretsCondition.Message = fmt.Sprintf(
-			"sync namespace sa sercrets %s/%s successfully",
-			secrets.Name,
-			secrets.ResourceVersion,
-		)
-		return nil
-	}); err != nil {
-		helper.SetConditionError(secretsCondition, "SyncUserError", err)
-		r.Recorder.Eventf(
-			user,
-			v1.EventTypeWarning,
-			"syncUserServiceAccount",
-			"Sync User namespace sa %s is error: %v",
-			user.Name,
-			err,
-		)
-	}
-}
-
 func (r *UserReconciler) syncKubeConfig(
-	_ context.Context,
+	ctx context.Context,
 	user *userv1.User,
 	state *userReconcileState,
 ) {
@@ -775,11 +694,29 @@ func (r *UserReconciler) syncKubeConfig(
 	}
 	user.Status.ObservedCSRExpirationSeconds = user.Spec.CSRExpirationSeconds
 	if r.shouldRotateKubeConfig(user) {
-		user.Status.ObservedKubeConfigRotateAt = user.Spec.KubeConfigRotateAt
+		if err := r.deleteBoundTokenSecret(ctx, user); err != nil {
+			helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
+			r.Recorder.Eventf(
+				user,
+				v1.EventTypeWarning,
+				"syncKubeConfig",
+				"Delete bound token secret %s is error: %v",
+				user.Name,
+				err,
+			)
+			return
+		}
 	}
-	cfg := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).
+	tokenRequestConfig := kubeconfig.NewConfig(user.Name, "", user.Spec.CSRExpirationSeconds).
 		WithServiceAccountConfig(config.GetUserSystemNamespace(), sa)
-	apiConfig, err := cfg.Apply(r.config, r.Client)
+	if r.shouldRotateKubeConfig(user) {
+		tokenRequestConfig = tokenRequestConfig.WithForceNewSecret()
+	}
+	apiConfig, tokenExpiresAt, err := tokenRequestConfig.ApplyWithTokenRequest(
+		ctx,
+		r.config,
+		r.Client,
+	)
 	if err != nil {
 		helper.SetConditionError(userCondition, "SyncKubeConfigError", err)
 		r.Recorder.Eventf(
@@ -808,6 +745,10 @@ func (r *UserReconciler) syncKubeConfig(
 		)
 		return
 	}
+	state.tokenExpirationDeadline = &tokenExpiresAt
+	if r.shouldRotateKubeConfig(user) {
+		user.Status.ObservedKubeConfigRotateAt = user.Spec.KubeConfigRotateAt
+	}
 	kubeData, err := clientcmd.Write(*apiConfig)
 	if err != nil {
 		helper.SetConditionError(userCondition, "OutputKubeConfigError", err)
@@ -825,6 +766,35 @@ func (r *UserReconciler) syncKubeConfig(
 	userCondition.Message = "renew sync kube config successfully hash " + hash.HashToString(
 		user.Status.KubeConfig,
 	)
+	keepSecretName := ""
+	if len(sa.Secrets) > 0 {
+		keepSecretName = sa.Secrets[0].Name
+	}
+	state.currentSecretName = keepSecretName
+	state.cleanupLegacySecrets = keepSecretName != ""
+}
+
+func (r *UserReconciler) deleteBoundTokenSecret(ctx context.Context, user *userv1.User) error {
+	secretName := kubeconfig.TokenSecretName(user.Name)
+	sa := &v1.ServiceAccount{}
+	if err := r.Get(ctx, client.ObjectKey{
+		Namespace: config.GetUserSystemNamespace(),
+		Name:      user.Name,
+	}, sa); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get service account for bound token secret: %w", err)
+		}
+	} else if len(sa.Secrets) > 0 && sa.Secrets[0].Name != "" {
+		secretName = sa.Secrets[0].Name
+	}
+
+	secret := &v1.Secret{}
+	secret.Name = secretName
+	secret.Namespace = config.GetUserSystemNamespace()
+	if err := r.Delete(ctx, secret); err != nil && !apierrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete bound token secret: %w", err)
+	}
+	return nil
 }
 
 func syncReNewConfig(user *userv1.User) (*api.Config, *string, error) {
@@ -986,6 +956,23 @@ func (r *UserReconciler) handleLicenseLimit(ctx context.Context, user *userv1.Us
 
 func (r *UserReconciler) isNewUser(user *userv1.User) bool {
 	return user.Status.ObservedGeneration == 0 && len(user.Status.Conditions) == 0
+}
+
+func (r *UserReconciler) nextRequeueDuration(state *userReconcileState) time.Duration {
+	duration := RandTimeDurationBetween(r.minRequeueDuration, r.maxRequeueDuration)
+	if state == nil ||
+		state.tokenExpirationDeadline == nil ||
+		state.tokenExpirationDeadline.IsZero() {
+		return duration
+	}
+	tokenRefreshDuration := time.Until(state.tokenExpirationDeadline.Time) * 8 / 10
+	if tokenRefreshDuration <= 0 {
+		return time.Second
+	}
+	if tokenRefreshDuration < duration {
+		return tokenRefreshDuration
+	}
+	return duration
 }
 
 func (r *UserReconciler) licenseToUserRequests(

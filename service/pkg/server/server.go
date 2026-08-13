@@ -102,6 +102,8 @@ func (ps *PromServer) ParseRequest(req *http.Request) (*api.PromRequest, error) 
 func (ps *PromServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	pathPrefix := ""
 	switch req.URL.Path {
+	case HealthPath:
+		ServeHealth(rw, req)
 	case pathPrefix + "/query": // 将废弃
 		ps.doReqPre(rw, req)
 	case pathPrefix + "/q":

@@ -55,6 +55,16 @@ import { getInitData } from '@/api/platform';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
+export const resolveAppImageName = ({
+  deployedImage,
+  originImageName,
+  usesPrivateRegistry
+}: {
+  deployedImage: string;
+  originImageName: string;
+  usesPrivateRegistry: boolean;
+}) => (usesPrivateRegistry ? deployedImage || originImageName : originImageName || deployedImage);
+
 export const getAppSource = (
   app: V1Deployment | V1StatefulSet
 ): {
@@ -476,6 +486,10 @@ export const adaptAppDetail = async (
     return map;
   }, new Map<number, V1Ingress>());
 
+  const secret = atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']);
+  const deployedImage = appDeploy.spec?.template?.spec?.containers?.[0]?.image || '';
+  const originImageName = appDeploy?.metadata?.annotations?.originImageName || '';
+
   return {
     labels: appDeploy?.metadata?.labels || {},
     crYamlList: configs,
@@ -484,10 +498,11 @@ export const adaptAppDetail = async (
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     status: appStatusMap.waiting,
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
-    imageName:
-      appDeploy?.metadata?.annotations?.originImageName ||
-      appDeploy.spec?.template?.spec?.containers?.[0]?.image ||
-      '',
+    imageName: resolveAppImageName({
+      deployedImage,
+      originImageName,
+      usesPrivateRegistry: secret.use
+    }),
     runCMD: appDeploy.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
     cmdParam:
       (appDeploy.spec?.template?.spec?.containers?.[0]?.args?.length === 1
@@ -562,7 +577,7 @@ export const adaptAppDetail = async (
         // and only fall back to HTTP when an Ingress proves this TCP port is application traffic.
         const appProtocol = APPLICATION_PROTOCOLS.includes(serviceAppProtocol)
           ? (serviceAppProtocol as ApplicationProtocolType)
-          : (ingressAppProtocol ?? (ingress && protocol === 'TCP' ? 'HTTP' : undefined));
+          : ingressAppProtocol ?? (ingress && protocol === 'TCP' ? 'HTTP' : undefined);
 
         const isCustomDomain =
           !domain.endsWith(SEALOS_DOMAIN) &&
@@ -585,8 +600,8 @@ export const adaptAppDetail = async (
           domain: isCustomDomain
             ? SEALOS_DOMAIN
             : item?.nodePort
-              ? domain
-              : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
+            ? domain
+            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN,
           routes: ingressPaths.length
             ? ingressPaths.map((path) => ({
                 path: path.path || '/',
@@ -628,7 +643,7 @@ export const adaptAppDetail = async (
         }
       : defaultEditVal.hpa,
     configMapList: getConfigMapList(),
-    secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']),
+    secret,
     storeList: (() => {
       // Local stores from volumeClaimTemplates
       const localStores = deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates
@@ -721,8 +736,8 @@ export const sliderNumber2MarkList = ({
           ? `${item / 1024} G`
           : `${item} M`
         : type === 'ephemeralStorage'
-          ? `${item}`
-          : `${item / 1000}`,
+        ? `${item}`
+        : `${item / 1000}`,
     value: item
   }));
 };

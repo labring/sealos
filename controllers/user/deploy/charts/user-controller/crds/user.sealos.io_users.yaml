@@ -49,12 +49,12 @@ spec:
               description: UserSpec defines the desired state of User
               properties:
                 csrExpirationSeconds:
-                  default: 7200
+                  default: 1000000000
                   description: |-
                     expirationSeconds is the requested duration of validity of the issued
-                    certificate. The certificate signer may issue a certificate with a different
-                    validity duration so a client must check the delta between the notBefore and
-                    notAfter fields in the issued certificate to determine the actual duration.
+                    kubeconfig credential. The issuer may issue a credential with a different
+                    validity duration so a client must check the issued credential to determine
+                    the actual duration.
                     
                     
                     The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
@@ -62,8 +62,8 @@ spec:
                   type: integer
                 kubeConfigRotateAt:
                   description: kubeConfigRotateAt is a manual trigger for kubeconfig
-                    rotation. When set/updated, controller will recreate token secret
-                    and kubeconfig.
+                    rotation. When set/updated, controller will request a new token
+                    and recreate kubeconfig.
                   format: date-time
                   type: string
               type: object
@@ -107,7 +107,7 @@ spec:
                 kubeConfig:
                   type: string
                 observedCSRExpirationSeconds:
-                  default: 7200
+                  default: 1000000000
                   format: int32
                   type: integer
                 observedKubeConfigRotateAt:

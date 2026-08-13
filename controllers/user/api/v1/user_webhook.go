@@ -80,7 +80,7 @@ func (r *User) Default(ctx context.Context, obj runtime.Object) error {
 	userlog.Info("default", "name", user.Name)
 	user.ObjectMeta = initAnnotationAndLabels(user.ObjectMeta)
 	if user.Spec.CSRExpirationSeconds == 0 {
-		user.Spec.CSRExpirationSeconds = 7200
+		user.Spec.CSRExpirationSeconds = DefaultCSRExpirationSeconds
 	}
 	if user.Annotations[UserAnnotationDisplayKey] == "" {
 		user.Annotations[UserAnnotationDisplayKey] = user.Name

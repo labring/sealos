@@ -61,6 +61,7 @@ const AppDetail = ({
     );
     const MigrateSupported = ['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType);
     const BackupSupported = BackupSupportedDBTypeList.includes(dbType) && SystemEnv.BACKUP_ENABLED;
+    const LogSupported = BackupSupportedDBTypeList.includes(dbType) && SystemEnv.LOG_ENABLED;
     const MonitorSupported = dbType !== 'polardbx';
     const DataImportSupported = PublicNetMigration && SystemEnv.DATA_IMPORT_ENABLED;
 
@@ -111,7 +112,7 @@ const AppDetail = ({
             }
           ]
         : []),
-      ...(BackupSupported
+      ...(LogSupported
         ? [
             {
               label: 'error_log.analysis',
@@ -129,7 +130,7 @@ const AppDetail = ({
       isDataImportSupported: DataImportSupported,
       listNav: listNavValue
     };
-  }, [SystemEnv.BACKUP_ENABLED, SystemEnv.DATA_IMPORT_ENABLED, dbType, t]);
+  }, [SystemEnv.BACKUP_ENABLED, SystemEnv.DATA_IMPORT_ENABLED, SystemEnv.LOG_ENABLED, dbType, t]);
 
   const theme = useTheme();
   const { message: toast } = useMessage();
