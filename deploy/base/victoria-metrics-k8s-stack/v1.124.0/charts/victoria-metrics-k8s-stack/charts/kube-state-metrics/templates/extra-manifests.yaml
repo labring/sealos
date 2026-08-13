@@ -1,4 +1,0 @@
-{{ range .Values.extraManifests }}
----
-{{ tpl (toYaml .) $ }}
-{{ end }}
