@@ -35,7 +35,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         dbName: dbDetail.dbName,
         dbType: dbDetail.dbType,
         namespace,
-        k8sCore
+        k8sCore,
+        k8sCustomObjects
       });
       dbDetail.parameterConfig = getParameterConfigFromRuntimeValues({
         dbType: dbDetail.dbType,

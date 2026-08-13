@@ -20,6 +20,7 @@ export type ParameterHistoryData = {
   createdAt: string;
   completedAt?: string;
   error?: string;
+  opsRequestName?: string;
   differences: ParameterDifference[];
 };
 
@@ -64,7 +65,8 @@ export async function createParameterHistory({
   dbName,
   dbType,
   dbUid,
-  differences
+  differences,
+  opsRequestName
 }: {
   k8sCore: CoreV1Api;
   namespace: string;
@@ -72,11 +74,13 @@ export async function createParameterHistory({
   dbType: DBType;
   dbUid: string;
   differences: ParameterDifference[];
+  opsRequestName?: string;
 }) {
   const history: ParameterHistoryData = {
     dbType,
     status: ReconfigStatus.Running,
     createdAt: new Date().toISOString(),
+    ...(opsRequestName ? { opsRequestName } : {}),
     differences
   };
   const configMap: V1ConfigMap = {

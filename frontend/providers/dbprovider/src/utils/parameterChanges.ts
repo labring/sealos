@@ -2,6 +2,29 @@ import type { DBEditType } from '@/types/db';
 
 type ParameterConfig = NonNullable<DBEditType['parameterConfig']>;
 
+export const mergeRedisParameterValues = (
+  configMapValues: Record<string, string>,
+  configurationValues: Record<string, string | number>
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries({ ...configMapValues, ...configurationValues }).map(([key, value]) => [
+      key,
+      String(value)
+    ])
+  );
+
+export const getDefaultMaxConnections = (dbType: string, cpu: number, memory: number) => {
+  const cpuCores = cpu / 1000;
+  const memoryGB = memory / 1024;
+  let score = 0;
+  if (['postgresql', 'mongodb', 'apecloud-mysql'].includes(dbType)) {
+    score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
+  } else if (dbType === 'redis') {
+    score = Math.min(cpuCores * 1000 + memoryGB * 500, 100000);
+  }
+  return Math.floor(score);
+};
+
 export type ParameterDifference = {
   path: string;
   currentPath?: string;
@@ -100,6 +123,13 @@ const parameterPathsByDbType: Record<
   }
 };
 
+const normalizeMySQLTimeZone = (value: string) =>
+  value === 'UTC' || value === '+00:00'
+    ? '+00:00'
+    : value === 'Asia/Shanghai' || value === '+08:00'
+      ? '+08:00'
+      : value;
+
 export function getParameterConfigFromRuntimeValues({
   dbType,
   currentValues,
@@ -167,14 +197,22 @@ export function getParameterDifferences({
     if (newValue === undefined) return [];
 
     const oldValue = current[paths.current];
-    if (String(oldValue ?? '') === String(newValue)) return [];
+    const comparableOldValue =
+      dbType === 'apecloud-mysql' && key === 'timeZone'
+        ? normalizeMySQLTimeZone(String(oldValue ?? ''))
+        : String(oldValue ?? '');
+    const comparableNewValue =
+      dbType === 'apecloud-mysql' && key === 'timeZone'
+        ? normalizeMySQLTimeZone(String(newValue))
+        : String(newValue);
+    if (comparableOldValue === comparableNewValue) return [];
 
     return [
       {
         path: paths.requested,
         currentPath: paths.current,
         oldValue: String(oldValue ?? ''),
-        newValue: String(newValue)
+        newValue: comparableNewValue
       }
     ];
   });

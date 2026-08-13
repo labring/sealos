@@ -14,7 +14,8 @@ import {
   ParameterConfigField,
   ParameterFieldMetadata
 } from '@/types/db';
-import { parseConfig, parseRedisConfig, flattenObject } from '@/utils/tools';
+import { parseConfig, flattenObject } from '@/utils/tools';
+import { getCurrentParameterValues } from '@/utils/parameterConfig';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 /**
@@ -108,19 +109,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     let parsedConfig: Record<string, any> | null = null;
 
     if (dbType === 'redis') {
-      const redisConfigMapKey = name + dbConfig.configMapName;
-      let redisConfigMapData = '';
-
-      if (redisConfigMapKey && dbConfig.configMapName) {
-        try {
-          const { body } = await k8sCore.readNamespacedConfigMap(redisConfigMapKey, namespace);
-          redisConfigMapData = body?.data?.[dbConfig.configMapKey] || '';
-        } catch (error) {
-          console.warn('Failed to get redis config map, falling back to configuration CR:', error);
-        }
+      try {
+        parsedConfig = await getCurrentParameterValues({
+          dbName: name,
+          dbType,
+          namespace,
+          k8sCore,
+          k8sCustomObjects
+        });
+      } catch (error) {
+        console.warn('Failed to get redis configuration:', error);
       }
-
-      parsedConfig = redisConfigMapData ? parseRedisConfig(redisConfigMapData) : null;
     } else {
       const key = name + dbConfig.configMapName;
       if (!key || !dbConfig.configMapName) {

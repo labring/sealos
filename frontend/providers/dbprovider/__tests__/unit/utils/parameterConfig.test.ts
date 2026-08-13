@@ -6,6 +6,8 @@ import {
   getPostgreSQLConfigSpecPatch,
   getParameterConfigFromRuntimeValues,
   getParameterDifferences,
+  getDefaultMaxConnections,
+  mergeRedisParameterValues,
   toKubeBlocksParameterPairs
 } from '../../../src/utils/parameterChanges';
 import {
@@ -41,6 +43,22 @@ test('keeps MySQL submission and runtime paths distinct', () => {
   ]);
 });
 
+test('does not resubmit an equivalent MySQL timezone representation', () => {
+  assert.deepEqual(
+    getParameterDifferences({
+      dbType: 'apecloud-mysql',
+      current: {
+        'mysqld.max_connections': '100',
+        'mysqld.default-time-zone': '+00:00',
+        'mysqld.lower_case_table_names': '0'
+      },
+      requested: { timeZone: 'UTC' },
+      dynamicMaxConnections: 100
+    }),
+    []
+  );
+});
+
 test('builds edit form parameters from runtime values', () => {
   assert.deepEqual(
     getParameterConfigFromRuntimeValues({
@@ -53,6 +71,28 @@ test('builds edit form parameters from runtime values', () => {
       timeZone: 'UTC',
       isMaxConnectionsCustomized: true
     }
+  );
+});
+
+test('uses the backend Redis default connection formula consistently', () => {
+  assert.equal(getDefaultMaxConnections('redis', 100, 256), 225);
+  assert.deepEqual(
+    getParameterConfigFromRuntimeValues({
+      dbType: 'redis',
+      currentValues: { maxclients: '225' },
+      dynamicMaxConnections: 225
+    }),
+    {
+      maxConnections: '225',
+      isMaxConnectionsCustomized: false
+    }
+  );
+});
+
+test('lets Redis Configuration values override stale ConfigMap values', () => {
+  assert.deepEqual(
+    mergeRedisParameterValues({ maxclients: '700', maxmemory: '1gb' }, { maxclients: 900 }),
+    { maxclients: '900', maxmemory: '1gb' }
   );
 });
 
