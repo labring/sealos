@@ -6,12 +6,4 @@ COPY registry registry
 COPY charts charts
 COPY template-frontend-entrypoint.sh template-frontend-entrypoint.sh
 
-ENV templateRepoAutoInject="true"
-ENV templateRepoUrl="https://github.com/labring-actions/templates"
-ENV templateRepoBranch="main"
-ENV templateRepoPath="templates"
-ENV templateRepoProvider="github"
-ENV templateRepoEnableReadmeFetch="true"
-ENV templateRepoGitSslNoVerify="false"
-
 CMD ["bash template-frontend-entrypoint.sh"]
