@@ -73,39 +73,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       let parameterDifferencesForHistory: ParameterDifference[] | undefined;
       if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
         if (!(dbForm.dbType === 'apecloud-mysql' && dbForm.dbVersion === 'mysql-5.7.42')) {
-          const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
-          const currentParameterValues = await getCurrentParameterValues({
-            dbName: dbForm.dbName,
-            dbType: dbForm.dbType,
-            namespace,
-            k8sCore,
-            k8sCustomObjects
-          });
-          const parameterDifferences = getParameterDifferences({
-            dbType: dbForm.dbType,
-            current: currentParameterValues,
-            requested: dbForm.parameterConfig,
-            dynamicMaxConnections
-          });
+          try {
+            const dynamicMaxConnections = getScore(dbForm.dbType, dbForm.cpu, dbForm.memory);
+            const currentParameterValues = await getCurrentParameterValues({
+              dbName: dbForm.dbName,
+              dbType: dbForm.dbType,
+              namespace,
+              k8sCore,
+              k8sCustomObjects
+            });
+            const parameterDifferences = getParameterDifferences({
+              dbType: dbForm.dbType,
+              current: currentParameterValues,
+              requested: dbForm.parameterConfig,
+              dynamicMaxConnections
+            });
 
-          if (parameterDifferences.length > 0) {
-            if (dbForm.dbType === 'postgresql') {
-              await ensurePostgreSQLConfigSpec({
-                dbName: dbForm.dbName,
-                dbVersion: dbForm.dbVersion,
-                namespace,
-                k8sCustomObjects
-              });
+            if (parameterDifferences.length > 0) {
+              if (dbForm.dbType === 'postgresql') {
+                await ensurePostgreSQLConfigSpec({
+                  dbName: dbForm.dbName,
+                  dbVersion: dbForm.dbVersion,
+                  namespace,
+                  k8sCustomObjects
+                });
+              }
+              opsRequests.push(
+                json2Reconfigure(
+                  dbForm.dbName,
+                  dbForm.dbType,
+                  body.metadata.uid,
+                  parameterDifferences
+                )
+              );
+              parameterDifferencesForHistory = parameterDifferences;
             }
-            opsRequests.push(
-              json2Reconfigure(
-                dbForm.dbName,
-                dbForm.dbType,
-                body.metadata.uid,
-                parameterDifferences
-              )
-            );
-            parameterDifferencesForHistory = parameterDifferences;
+          } catch (error) {
+            console.warn('Failed to prepare parameter configuration update:', error);
           }
         }
       }
