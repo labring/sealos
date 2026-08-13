@@ -3,13 +3,13 @@ import { useEffect, useRef } from 'react';
 import useSessionStore from '@/stores/session';
 import { OauthProvider } from '@/types/user';
 import { useConfigStore } from '@/stores/config';
-import useAppStore from '@/stores/app';
+import useAppStore, { BRAIN_APP_KEY } from '@/stores/app';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { parseOpenappQuery } from '@/utils/format';
-import { gtmLoginStart } from '@/utils/gtm';
+import { gtmLoginStart, gtmLoginSuccess } from '@/utils/gtm';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { createTemplateInstance } from '@/api/platform';
-import { getRegionToken, initRegionToken, issueMarketingConsentToken } from '@/api/auth';
+import { getRegionToken, initRegionToken } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import { SwitchRegionType } from '@/constants/account';
 import { sessionConfig } from '@/utils/sessionConfig';
@@ -86,23 +86,6 @@ export default function OAuth() {
     };
     persistMarketingQuery(marketingQuery);
 
-    const ensureMarketingConsentToken = async (): Promise<MarketingQuery> => {
-      if (!marketingQuery.sea_attr || marketingQuery.consent_token) {
-        return marketingQuery;
-      }
-      try {
-        const result = await issueMarketingConsentToken(marketingQuery.sea_attr);
-        const token = result.data?.token;
-        if (token) {
-          marketingQuery.consent_token = token;
-          persistMarketingQuery(marketingQuery);
-        }
-      } catch (error) {
-        console.warn('[OAuth] Marketing consent token unavailable:', error);
-      }
-      return marketingQuery;
-    };
-
     const openBrainTemplateDeploy = async (activeMarketingQuery = marketingQuery) => {
       if (
         openapp !== 'system-brain' ||
@@ -139,6 +122,7 @@ export default function OAuth() {
         setGlobalToken(globalToken); // Sets global token and cookie immediately
 
         // INIT mode: initialize new region
+        let productUserTraits;
         if (switchRegionType === SwitchRegionType.INIT) {
           if (!isString(workspaceName)) throw Error('workspace not found');
           const decodedWorkspaceName = decodeURIComponent(workspaceName);
@@ -151,7 +135,7 @@ export default function OAuth() {
             throw new Error('No result data');
           }
 
-          await sessionConfig(initRegionTokenResult.data);
+          productUserTraits = await sessionConfig(initRegionTokenResult.data);
         } else {
           // Normal mode: get region token
           const regionTokenRes = await getRegionToken();
@@ -160,7 +144,7 @@ export default function OAuth() {
             throw new Error('Failed to get region token');
           }
 
-          await sessionConfig(regionTokenRes.data);
+          productUserTraits = await sessionConfig(regionTokenRes.data);
 
           // Switch workspace if needed
           const currentSession = useSessionStore.getState().session;
@@ -180,9 +164,13 @@ export default function OAuth() {
           }
         }
 
-        const activeMarketingQuery = await ensureMarketingConsentToken();
+        gtmLoginSuccess({
+          method: 'oauth2',
+          productUserTraits,
+          user_type: switchRegionType === SwitchRegionType.INIT ? 'new' : 'existing'
+        });
 
-        if (await openBrainTemplateDeploy(activeMarketingQuery)) {
+        if (await openBrainTemplateDeploy(marketingQuery)) {
           return;
         }
 
@@ -203,14 +191,15 @@ export default function OAuth() {
           const { appkey, appQuery, appPath } = parseOpenappQuery(finalOpenapp);
           if (appkey) {
             setAutoLaunch(appkey, {
-              raw: mergeMarketingQuery(appQuery, activeMarketingQuery),
+              raw:
+                appkey === BRAIN_APP_KEY ? mergeMarketingQuery(appQuery, marketingQuery) : appQuery,
               pathname: appPath
             });
           }
 
           const redirectUrl = appendMarketingQuery(
             `/?openapp=${encodeURIComponent(finalOpenapp)}`,
-            activeMarketingQuery
+            marketingQuery
           );
           await router.replace(redirectUrl);
           if (deploymentError) {
@@ -225,7 +214,7 @@ export default function OAuth() {
             }, 500);
           }
         } else {
-          await router.replace(appendMarketingQuery('/', activeMarketingQuery));
+          await router.replace(appendMarketingQuery('/', marketingQuery));
           if (deploymentError) {
             setTimeout(() => {
               toast({
@@ -331,7 +320,8 @@ export default function OAuth() {
           const { appkey, appQuery, appPath } = parseOpenappQuery(openapp);
           if (appkey) {
             setAutoLaunch(appkey, {
-              raw: mergeMarketingQuery(appQuery, marketingQuery),
+              raw:
+                appkey === BRAIN_APP_KEY ? mergeMarketingQuery(appQuery, marketingQuery) : appQuery,
               pathname: appPath
             });
           }
@@ -431,8 +421,7 @@ export default function OAuth() {
       hasProcessedRef.current = true;
 
       (async () => {
-        const activeMarketingQuery = await ensureMarketingConsentToken();
-        if (await openBrainTemplateDeploy(activeMarketingQuery)) {
+        if (await openBrainTemplateDeploy(marketingQuery)) {
           return;
         }
 
@@ -463,7 +452,7 @@ export default function OAuth() {
             }
 
             const redirectUrl = `/?openapp=${encodeURIComponent(finalOpenapp)}`;
-            router.replace(appendMarketingQuery(redirectUrl, activeMarketingQuery));
+            router.replace(appendMarketingQuery(redirectUrl, marketingQuery));
 
             if (deploymentError) {
               setTimeout(() => {
@@ -477,7 +466,7 @@ export default function OAuth() {
               }, 500);
             }
           } else {
-            router.replace(appendMarketingQuery('/', activeMarketingQuery));
+            router.replace(appendMarketingQuery('/', marketingQuery));
 
             if (deploymentError) {
               setTimeout(() => {

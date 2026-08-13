@@ -8,7 +8,6 @@ import { isString } from 'lodash';
 import {
   bindRequest,
   getRegionToken,
-  issueMarketingConsentToken,
   signInRequest,
   unBindRequest,
   autoInitRegionToken
@@ -120,17 +119,6 @@ export default function Callback() {
             if (data.data && data.code === 200 && !('error' in data.data)) {
               const globalToken = data.data?.token; // This is the global token from OAuth
               setGlobalToken(globalToken); // Sets global token and cookie
-              if (marketingQuery.sea_attr && !marketingQuery.consent_token) {
-                try {
-                  const consentResult = await issueMarketingConsentToken(marketingQuery.sea_attr);
-                  if (consentResult.data?.token) {
-                    marketingQuery.consent_token = consentResult.data.token;
-                    persistMarketingQuery(marketingQuery);
-                  }
-                } catch (error) {
-                  console.warn('[Callback] Marketing consent token unavailable:', error);
-                }
-              }
               const needInit = data.data.needInit;
 
               // Helper function to handle redirect after login
@@ -175,12 +163,7 @@ export default function Callback() {
                   }
                 } catch (error) {
                   console.error('Auto init failed, fallback to manual:', error);
-                  gtmLoginSuccess({
-                    user_type: 'new',
-                    method: 'oauth2',
-                    oauth2Provider: provider
-                  });
-                  await router.push('/workspace');
+                  await router.push(appendMarketingQuery('/workspace', marketingQuery));
                 }
                 return;
               }

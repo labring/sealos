@@ -2,7 +2,6 @@ import {
   appendMarketingQuery,
   marketingQueryFromRecord,
   mergeMarketingQuery,
-  marketingQueryFromSearch,
   resolveMarketingQuery
 } from '@/utils/marketing-attribution';
 
@@ -17,18 +16,17 @@ describe('marketing attribution query propagation', () => {
     ).toEqual({ consent_token: 'token-1', sea_attr: 'state-1' });
   });
 
-  it('merges attribution into an app query without changing app parameters', () => {
+  it('merges current attribution over stale query parameters', () => {
     expect(
-      mergeMarketingQuery('templateName=n8n', {
+      mergeMarketingQuery('templateName=n8n&sea_attr=old-state&consent_token=old-token', {
         consent_token: 'token-1',
         sea_attr: 'state-1'
       })
     ).toBe('templateName=n8n&sea_attr=state-1&consent_token=token-1');
   });
 
-  it('appends attribution to redirects and parses encoded search strings', () => {
-    const query = marketingQueryFromSearch('?sea_attr=state-1&ignored=value');
-    expect(appendMarketingQuery('/?openapp=system-brain', query)).toBe(
+  it('appends attribution to redirects', () => {
+    expect(appendMarketingQuery('/?openapp=system-brain', { sea_attr: 'state-1' })).toBe(
       '/?openapp=system-brain&sea_attr=state-1'
     );
   });

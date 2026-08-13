@@ -59,4 +59,24 @@ describe('gtmLoginSuccess', () => {
       context: 'app'
     });
   });
+
+  it('queues login events before the GTM script initializes', () => {
+    window.dataLayer = undefined as unknown as any[];
+
+    gtmLoginSuccess({
+      method: 'oauth2',
+      user_type: 'existing'
+    });
+
+    expect(window.dataLayer).toEqual([
+      {
+        event: 'login_success',
+        method: 'oauth2',
+        oauth2_provider: undefined,
+        user_type: 'existing',
+        module: 'auth',
+        context: 'app'
+      }
+    ]);
+  });
 });

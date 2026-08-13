@@ -310,8 +310,7 @@ const useAppStore = create<TOSState>()(
 
           const iframe = document.getElementById(`app-window-${appKey}`) as HTMLIFrameElement;
           if (!iframe) return;
-          const targetOrigin = new URL(app.data.url, window.location.origin).origin;
-          iframe.contentWindow?.postMessage(messageData, targetOrigin);
+          iframe.contentWindow?.postMessage(messageData, app.data.url);
         },
         // maximize app
         switchAppById: (pid: number) => {

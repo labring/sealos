@@ -31,6 +31,12 @@ import { SwitchRegionType } from '@/constants/account';
 import { I18nCloudProvidersKey } from '@/types/i18next';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { useGuideModalStore } from '@/stores/guideModal';
+import { gtmLoginSuccess } from '@/utils/gtm';
+import {
+  appendMarketingQuery,
+  persistMarketingQuery,
+  resolveMarketingQuery
+} from '@/utils/marketing-attribution';
 
 export default function Workspace() {
   const { t } = useTranslation();
@@ -73,13 +79,18 @@ export default function Workspace() {
         });
         return;
       }
+      const marketingQuery = resolveMarketingQuery(router.query);
+      persistMarketingQuery(marketingQuery);
       if (selectedRegion.uid !== cloudConfig?.regionUID) {
-        const target = new URL(`https://${selectedRegion.domain}/switchRegion`);
+        const target = new URL(`https://${selectedRegion.domain}/oauth`);
         if (!globalToken) throw Error('No global token found');
         target.searchParams.append('token', globalToken);
         target.searchParams.append('workspaceName', encodeURIComponent(workspaceName.trim()));
         // target.searchParams.append('regionUid', encodeURIComponent(region.uid));
         target.searchParams.append('switchRegionType', SwitchRegionType.INIT);
+        Object.entries(marketingQuery).forEach(([key, value]) => {
+          if (value) target.searchParams.set(key, value);
+        });
         await router.replace(target);
         return;
       }
@@ -91,8 +102,13 @@ export default function Workspace() {
         throw new Error('No result data');
       }
       // globalToken is already set in session store, no need to pass it
-      await sessionConfig(initRegionTokenResult.data);
-      await router.replace('/');
+      const productUserTraits = await sessionConfig(initRegionTokenResult.data);
+      gtmLoginSuccess({
+        method: 'oauth2',
+        productUserTraits,
+        user_type: 'new'
+      });
+      await router.replace(appendMarketingQuery('/', marketingQuery));
     } catch (error) {
       console.error(error);
       toast({

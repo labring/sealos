@@ -1,4 +1,4 @@
-import { getPlanInfo, UserInfo } from '@/api/auth';
+import { getPlanInfo, issueMarketingConsentToken, UserInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
 import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindingModal';
@@ -219,6 +219,17 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           return;
         }
 
+        if (appKey === BRAIN_APP_KEY && isUserLogin() && marketingQuery.sea_attr) {
+          try {
+            const result = await issueMarketingConsentToken(marketingQuery.sea_attr);
+            if (result.data?.token) {
+              marketingQuery.consent_token = result.data.token;
+              persistMarketingQuery(marketingQuery);
+            }
+          } catch (error) {
+            console.warn('[Home] Marketing consent token unavailable:', error);
+          }
+        }
         let appQuery = appKey === BRAIN_APP_KEY ? mergeMarketingQuery(raw, marketingQuery) : raw;
         let appRoute = pathname;
         if (appKey === BRAIN_APP_KEY && appRoute === '/trial') {
@@ -322,7 +333,10 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
             setAutoLaunch(
               parsedOpenApp.appkey,
               {
-                raw: mergeMarketingQuery(parsedOpenApp.appQuery, marketingQuery),
+                raw:
+                  parsedOpenApp.appkey === BRAIN_APP_KEY
+                    ? mergeMarketingQuery(parsedOpenApp.appQuery, marketingQuery)
+                    : parsedOpenApp.appQuery,
                 pathname: parsedOpenApp.appPath
               },
               workspaceUid
