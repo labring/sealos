@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { compare } from 'fast-json-patch';
 import {
+  alignImageRegistrySecret,
+  getBoundImageRegistryCredentials,
+  getImageRegistryAddress,
   json2DeployCr,
   json2Ingress,
   json2Secret,
+  resolveImageRegistryBinding,
   json2Service,
   yamlString2Objects
 } from '@/utils/deployYaml2Json';
 import type { AppEditType } from '@/types/app';
+import { resolveAppImageName } from '@/utils/adapt';
 
 const createApp = (customDomain = ''): AppEditType =>
   ({
@@ -512,5 +517,245 @@ describe('json2Secret', () => {
 
     expect(secretYaml).toContain('.dockerconfigjson: ********');
     expect(secretYaml).not.toContain(".dockerconfigjson: '********'");
+  });
+
+  it.each([
+    ['hub.example.com/team/app:v1', 'hub.example.com'],
+    ['192.168.1.10:5000/team/app:v1', '192.168.1.10:5000'],
+    ['team/app:v1', 'docker.io'],
+    ['app:v1', 'docker.io']
+  ])('resolves the registry for %s as %s', (imageName, registry) => {
+    expect(getImageRegistryAddress(imageName)).toBe(registry);
+  });
+
+  it('uses the complete image as-is and derives the pull secret registry', () => {
+    const app = createApp();
+    app.imageName = 'hub.example.com/team/app:v1';
+    app.secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: ''
+    };
+
+    const deployment = yamlString2Objects(json2DeployCr(app, 'deployment'))[0] as any;
+    const secret = yamlString2Objects(json2Secret(app))[0] as any;
+    const dockerconfigjson = JSON.parse(
+      Buffer.from(secret.data['.dockerconfigjson'], 'base64').toString()
+    );
+
+    expect(deployment.spec.template.spec.containers[0].image).toBe('hub.example.com/team/app:v1');
+    expect(Object.keys(dockerconfigjson.auths)).toEqual(['hub.example.com']);
+  });
+
+  it('uses docker.io for the pull secret of a short image reference', () => {
+    const app = createApp();
+    app.imageName = 'team/app:v1';
+    const secret = yamlString2Objects(json2Secret(app))[0] as any;
+    const dockerconfigjson = JSON.parse(
+      Buffer.from(secret.data['.dockerconfigjson'], 'base64').toString()
+    );
+
+    expect(dockerconfigjson.auths).toHaveProperty('docker.io');
+  });
+
+  it('keeps the API contract for a short image and a separate private registry', () => {
+    const app = createApp();
+    app.imageName = 'team/app:v1';
+    app.secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'registry.example.com'
+    };
+
+    const deployment = yamlString2Objects(json2DeployCr(app, 'deployment'))[0] as any;
+    const secret = yamlString2Objects(json2Secret(app))[0] as any;
+    const dockerconfigjson = JSON.parse(
+      Buffer.from(secret.data['.dockerconfigjson'], 'base64').toString()
+    );
+
+    expect(deployment.spec.template.spec.containers[0].image).toBe(
+      'registry.example.com/team/app:v1'
+    );
+    expect(Object.keys(dockerconfigjson.auths)).toEqual(['registry.example.com']);
+  });
+
+  it('rejects credentials that belong to a different explicit registry', () => {
+    const app = createApp();
+    app.imageName = 'new-registry.example.com/team/app:v1';
+    app.secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'old-registry.example.com'
+    };
+
+    const deployment = yamlString2Objects(json2DeployCr(app, 'deployment'))[0] as any;
+    expect(deployment.spec.template.spec.containers[0].image).toBe(
+      'new-registry.example.com/team/app:v1'
+    );
+    expect(() => json2Secret(app)).toThrow('registry credentials');
+  });
+
+  it('resolves API image updates using a separate private registry', () => {
+    expect(
+      resolveImageRegistryBinding({
+        imageName: 'team/app:v2',
+        credentialRegistry: 'registry.example.com',
+        useCredentials: true,
+        requireCredentialMatch: true
+      })
+    ).toEqual({
+      imageName: 'registry.example.com/team/app:v2',
+      registry: 'registry.example.com'
+    });
+  });
+
+  it('ignores stale registry fields when private credentials are disabled', () => {
+    const app = createApp();
+    app.imageName = 'new-registry.example.com/team/app:v1';
+    app.secret = {
+      use: false,
+      username: 'old-user',
+      password: 'old-password',
+      serverAddress: 'old-registry.example.com'
+    };
+
+    const deployment = yamlString2Objects(json2DeployCr(app, 'deployment'))[0] as any;
+    expect(deployment.spec.template.spec.containers[0].image).toBe(
+      'new-registry.example.com/team/app:v1'
+    );
+  });
+
+  it('clears credentials when the image registry changes', () => {
+    expect(
+      alignImageRegistrySecret('new-registry.example.com/team/app:v1', {
+        use: true,
+        username: 'demo-user',
+        password: 'real-password',
+        serverAddress: 'old-registry.example.com'
+      })
+    ).toEqual({
+      use: true,
+      username: '',
+      password: '',
+      serverAddress: 'new-registry.example.com'
+    });
+  });
+
+  it('keeps Docker Hub credentials stored under the legacy auth key', () => {
+    const secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'https://index.docker.io/v1/'
+    };
+
+    expect(alignImageRegistrySecret('team/app:v1', secret)).toBe(secret);
+    expect(getBoundImageRegistryCredentials('team/app:v1', secret)).toEqual({
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'docker.io'
+    });
+  });
+
+  it('accepts Docker Hub aliases in explicit image and credential registries', () => {
+    const app = createApp();
+    app.imageName = 'index.docker.io/team/app:v1';
+    app.secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'https://index.docker.io/v1/'
+    };
+
+    const deployment = yamlString2Objects(json2DeployCr(app, 'deployment'))[0] as any;
+    const secret = yamlString2Objects(json2Secret(app))[0] as any;
+    const dockerconfigjson = JSON.parse(
+      Buffer.from(secret.data['.dockerconfigjson'], 'base64').toString()
+    );
+
+    expect(deployment.spec.template.spec.containers[0].image).toBe('index.docker.io/team/app:v1');
+    expect(Object.keys(dockerconfigjson.auths)).toEqual(['docker.io']);
+  });
+
+  it.each(['registry-1.docker.io', 'registry.hub.docker.com'])(
+    'preserves the explicit Docker registry hostname %s',
+    (registry) => {
+      const app = createApp();
+      app.imageName = `${registry}/team/app:v1`;
+      app.secret = {
+        use: true,
+        username: 'demo-user',
+        password: 'real-password',
+        serverAddress: registry
+      };
+
+      const secret = yamlString2Objects(json2Secret(app))[0] as any;
+      const dockerconfigjson = JSON.parse(
+        Buffer.from(secret.data['.dockerconfigjson'], 'base64').toString()
+      );
+
+      expect(Object.keys(dockerconfigjson.auths)).toEqual([registry]);
+    }
+  );
+
+  it('preserves credentials scoped to the image repository path', () => {
+    const app = createApp();
+    app.imageName = 'registry.example.com/team/app:v1';
+    app.secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'registry.example.com/team'
+    };
+
+    expect(alignImageRegistrySecret(app.imageName, app.secret)).toBe(app.secret);
+    expect(getBoundImageRegistryCredentials(app.imageName, app.secret)).toEqual({
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'registry.example.com'
+    });
+
+    const secret = yamlString2Objects(json2Secret(app))[0] as any;
+    const dockerconfigjson = JSON.parse(
+      Buffer.from(secret.data['.dockerconfigjson'], 'base64').toString()
+    );
+    expect(Object.keys(dockerconfigjson.auths)).toEqual(['registry.example.com/team']);
+  });
+
+  it('rejects credentials scoped to a sibling image repository path', () => {
+    const app = createApp();
+    app.imageName = 'registry.example.com/team/app:v1';
+    app.secret = {
+      use: true,
+      username: 'demo-user',
+      password: 'real-password',
+      serverAddress: 'registry.example.com/other-team'
+    };
+
+    expect(() => json2Secret(app)).toThrow('registry credentials');
+  });
+
+  it('does not expose credentials to an image registry they are not bound to', () => {
+    expect(
+      getBoundImageRegistryCredentials('new-registry.example.com/team/app:v1', {
+        use: true,
+        username: 'demo-user',
+        password: 'real-password',
+        serverAddress: 'old-registry.example.com'
+      })
+    ).toBeUndefined();
+  });
+
+  it('uses the deployed image when editing a legacy private registry app', () => {
+    expect(
+      resolveAppImageName({
+        deployedImage: 'hub.example.com/team/app:v1',
+        originImageName: 'team/app:v1',
+        usesPrivateRegistry: true
+      })
+    ).toBe('hub.example.com/team/app:v1');
   });
 });

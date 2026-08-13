@@ -59,6 +59,10 @@ import {
   APP_NAME_BASE_PATTERN,
   isValidAppNameBase
 } from '@/utils/appNameValidation';
+import {
+  alignImageRegistrySecret,
+  getBoundImageRegistryCredentials
+} from '@/utils/deployYaml2Json';
 
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
 const StoreModal = dynamic(() => import('./StoreModal'));
@@ -178,9 +182,7 @@ const Form = ({
           getValues('appName') &&
           getValues('imageName') &&
           (getValues('secret.use')
-            ? getValues('secret.username') &&
-              getValues('secret.password') &&
-              getValues('secret.serverAddress')
+            ? getValues('secret.username') && getValues('secret.password')
             : true)
       },
       {
@@ -221,7 +223,13 @@ const Form = ({
   const watchedSecretUse = watch('secret.use');
   const watchedSecretUsername = watch('secret.username');
   const watchedSecretPassword = watch('secret.password');
-  const watchedSecretServerAddress = watch('secret.serverAddress');
+  const [isImageNameFocused, setIsImageNameFocused] = useState(false);
+  const imageNameField = register('imageName', {
+    required: 'Image name cannot be empty',
+    setValueAs(e) {
+      return e.replace(/\s*/g, '');
+    }
+  });
 
   useEffect(() => {
     secretPasswordVersion.current += 1;
@@ -320,11 +328,12 @@ const Form = ({
       return;
     }
     const secret = getValues('secret');
+    const imageRegistry = getBoundImageRegistryCredentials(imageName, secret);
     const autoPortKey = [
       imageName,
-      secret.use ? secret.username : '',
-      secret.use ? secret.serverAddress : '',
-      secret.use && secret.password ? `password-v${secretPasswordVersion.current}` : ''
+      imageRegistry?.username || '',
+      imageRegistry?.serverAddress || '',
+      imageRegistry?.password ? `password-v${secretPasswordVersion.current}` : ''
     ].join('|');
     if (lastAutoPortKey.current === autoPortKey) return;
 
@@ -339,13 +348,7 @@ const Form = ({
       try {
         const res = await getImagePorts({
           imageName,
-          imageRegistry: secret.use
-            ? {
-                username: secret.username,
-                password: secret.password,
-                serverAddress: secret.serverAddress
-              }
-            : undefined
+          imageRegistry
         });
 
         if (requestId !== imagePortRequestId.current) {
@@ -395,7 +398,6 @@ const Form = ({
     setValue,
     watchedImageName,
     watchedSecretPassword,
-    watchedSecretServerAddress,
     watchedSecretUse,
     watchedSecretUsername
   ]);
@@ -558,14 +560,14 @@ const Form = ({
     const sortedCpuList = !!gpuType
       ? cpuList
       : cpu !== undefined
-      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
-      : cpuList;
+        ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+        : cpuList;
 
     const sortedMemoryList = !!gpuType
       ? memoryList
       : memory !== undefined
-      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-      : memoryList;
+        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+        : memoryList;
 
     const sortedEphemeralStorageList =
       ephemeralStorage !== undefined
@@ -800,7 +802,13 @@ const Form = ({
                       if (val === 'public') {
                         setValue('secret.use', false);
                       } else {
-                        setValue('secret.use', true);
+                        setValue(
+                          'secret',
+                          alignImageRegistrySecret(getValues('imageName'), {
+                            ...getValues('secret'),
+                            use: true
+                          })
+                        );
                       }
                     }}
                   />
@@ -812,17 +820,32 @@ const Form = ({
                     </Box>
                     <Flex alignItems={'center'} gap={3}>
                       <Input
-                        width={'350px'}
+                        w={'350px'}
+                        maxW={'100%'}
                         flexShrink={0}
                         value={getValues('imageName')}
                         backgroundColor={getValues('imageName') ? 'myWhite.500' : 'grayModern.100'}
                         placeholder={`${t('Image Name')}`}
-                        {...register('imageName', {
-                          required: 'Image name cannot be empty',
-                          setValueAs(e) {
-                            return e.replace(/\s*/g, '');
+                        {...imageNameField}
+                        onChange={(event) => {
+                          imageNameField.onChange(event);
+                          const secret = getValues('secret');
+                          if (!secret.use) return;
+
+                          const imageName = event.target.value.replace(/\s*/g, '');
+                          const nextSecret = alignImageRegistrySecret(imageName, secret);
+                          if (nextSecret !== secret) {
+                            setValue('secret', nextSecret, {
+                              shouldDirty: true,
+                              shouldValidate: true
+                            });
                           }
-                        })}
+                        }}
+                        onFocus={() => setIsImageNameFocused(true)}
+                        onBlur={(event) => {
+                          setIsImageNameFocused(false);
+                          imageNameField.onBlur(event);
+                        }}
                       />
                       <Flex
                         alignItems={'center'}
@@ -842,14 +865,26 @@ const Form = ({
                         </Box>
                       </Flex>
                     </Flex>
+                    {isImageNameFocused ? (
+                      <Box mt={2} fontSize={'12px'} color={'brightBlue.600'}>
+                        {t('private_image_registry_tip')}
+                      </Box>
+                    ) : null}
                   </FormControl>
                   {getValues('secret.use') ? (
                     <>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.username} w={'420px'}>
+                      <FormControl
+                        mt={4}
+                        isInvalid={!!errors.secret?.username}
+                        w={'350px'}
+                        maxW={'100%'}
+                      >
                         <Box mb={1} fontSize={'sm'}>
                           {t('Username')}
                         </Box>
                         <Input
+                          w={'350px'}
+                          maxW={'100%'}
                           backgroundColor={
                             getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
                           }
@@ -859,11 +894,18 @@ const Form = ({
                           })}
                         />
                       </FormControl>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.password} w={'420px'}>
+                      <FormControl
+                        mt={4}
+                        isInvalid={!!errors.secret?.password}
+                        w={'350px'}
+                        maxW={'100%'}
+                      >
                         <Box mb={1} fontSize={'sm'}>
                           {t('Password')}
                         </Box>
                         <Input
+                          w={'350px'}
+                          maxW={'100%'}
                           type={'password'}
                           placeholder={`${t('Password for the image registry')}`}
                           backgroundColor={
@@ -871,20 +913,6 @@ const Form = ({
                           }
                           {...register('secret.password', {
                             required: t('The password cannot be empty') || ''
-                          })}
-                        />
-                      </FormControl>
-                      <FormControl mt={4} isInvalid={!!errors.secret?.serverAddress} w={'420px'}>
-                        <Box mb={1} fontSize={'sm'}>
-                          {t('Image Address')}
-                        </Box>
-                        <Input
-                          backgroundColor={
-                            getValues('imageName') ? 'myWhite.500' : 'grayModern.100'
-                          }
-                          placeholder={`${t('Image Address')}`}
-                          {...register('secret.serverAddress', {
-                            required: t('The image cannot be empty') || ''
                           })}
                         />
                       </FormControl>
@@ -1308,8 +1336,8 @@ const Form = ({
                             const valText = env.value
                               ? env.value
                               : env.valueFrom
-                              ? 'value from | ***'
-                              : '';
+                                ? 'value from | ***'
+                                : '';
                             return (
                               <tr key={env.id}>
                                 <th>{env.key}</th>
@@ -1467,7 +1495,9 @@ const Form = ({
                                 bg: 'rgba(17, 24, 36, 0.05)'
                               }}
                               onClick={() => {
-                                const isApplied = existingStores.some((store) => store.path === item.path);
+                                const isApplied = existingStores.some(
+                                  (store) => store.path === item.path
+                                );
                                 if (isApplied) {
                                   const appliedCount = localStores.filter((store) =>
                                     existingStores.some((e) => e.path === store.path)
