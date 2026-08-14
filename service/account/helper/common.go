@@ -63,6 +63,19 @@ const (
 
 	AdminRefundForms     = "/refund-forms"
 	AdminCreateCorporate = "/corporate"
+
+	// Admin read-only account management routes.
+	AdminUserList                 = "/users"
+	AdminUserDetailPath           = "/user"
+	AdminUserRechargeRecordsPath  = "/user/recharge-records"
+	AdminUserBalanceAdjustRecords = "/user/balance-adjust-records"
+	AdminGiftCodeList             = "/gift-codes"
+	AdminGiftCodeUsagePath        = "/gift-codes/usage"
+	AdminInvoiceList              = "/invoices"
+	AdminInvoiceDetail            = "/invoice"
+	AdminRefundStatus             = "/refund-status"
+	AdminRechargeGiftPolicyPath   = "/recharge-gift-policy"
+	AdminRegionList               = "/regions"
 )
 
 const (

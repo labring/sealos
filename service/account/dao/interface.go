@@ -144,6 +144,19 @@ type Interface interface {
 	GetWorkspaceRemainingAIQuota(workspace string) (totalQuota, remainingQuota int64, err error)
 	ChargeWorkspaceAIQuota(usage int64, workspace string) error
 
+	// Admin read-only account management methods.
+	ListAdminUsers(req helper.AdminUserListReq) (helper.AdminUserListResp, error)
+	GetAdminUser(id string) (*helper.AdminUserDetail, error)
+	ListAdminUserRechargeRecords(id string, pageIndex, pageSize int) (helper.AdminRechargeRecordsResp, error)
+	ListAdminUserBalanceAdjustRecords(id string, pageIndex, pageSize int) (helper.AdminBalanceAdjustRecordsResp, error)
+	ListAdminGiftCodes(req helper.AdminGiftCodeListReq) (helper.AdminGiftCodeListResp, error)
+	ListAdminGiftCodeUsage(id string, pageIndex, pageSize int) (helper.AdminGiftCodeUsageResp, error)
+	ListAdminInvoices(req helper.AdminInvoiceListReq) (helper.AdminInvoiceListResp, error)
+	GetAdminInvoice(id string) (*helper.AdminInvoice, error)
+	GetAdminRefundStatus(id string) (helper.AdminRefundStatusResp, error)
+	GetAdminRechargeGiftPolicy() (helper.AdminRechargeGiftPolicy, error)
+	ListAdminRegions() ([]helper.AdminRegion, error)
+
 	ReloadConfig() error
 }
 
