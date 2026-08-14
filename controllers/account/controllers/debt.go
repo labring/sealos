@@ -1119,7 +1119,7 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequestWithContext(
 	}
 
 	for _, domain := range r.allRegionDomain {
-		token, err := r.jwtManager.GenerateToken(utils.JwtUser{
+		token, err := r.adminJwtManager.GenerateAdminToken(utils.JwtUser{
 			Requester: AdminUserName,
 		})
 		if err != nil {

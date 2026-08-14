@@ -126,6 +126,7 @@ const (
 	ENVLocalCockroach  = "LOCAL_COCKROACH_URI"
 	EnvLocalRegion     = "LOCAL_REGION"
 	EnvJwtSecret       = "ACCOUNT_API_JWT_SECRET"
+	EnvAdminJwtSecret  = "ACCOUNT_ADMIN_JWT_SECRET"
 
 	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
 	EnvKycProcessEnabled   = "KYC_PROCESS_ENABLED"
