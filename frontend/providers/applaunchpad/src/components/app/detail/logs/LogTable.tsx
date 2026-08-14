@@ -65,13 +65,10 @@ export const LogTable = ({
       });
     });
 
-    const prevFieldStates = prevFieldList.reduce(
-      (acc, field) => {
-        acc[field.value] = field.checked;
-        return acc;
-      },
-      {} as Record<string, boolean>
-    );
+    const prevFieldStates = prevFieldList.reduce((acc, field) => {
+      acc[field.value] = field.checked;
+      return acc;
+    }, {} as Record<string, boolean>);
 
     return Array.from(uniqueKeys).map((key) => ({
       value: key,
