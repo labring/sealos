@@ -226,12 +226,11 @@ export async function ensureTemplateRepoFresh(basePath = process.cwd()) {
   const now = Date.now();
   const interval = getTemplateRepoSyncIntervalMs();
 
-  if (fs.existsSync(jsonPath) && templateRepoLastSyncedAt === 0) {
-    templateRepoLastSyncedAt = now;
-    return;
-  }
-
-  if (fs.existsSync(jsonPath) && now - templateRepoLastSyncedAt < interval) {
+  if (
+    fs.existsSync(jsonPath) &&
+    templateRepoLastSyncedAt !== 0 &&
+    now - templateRepoLastSyncedAt < interval
+  ) {
     return;
   }
 
