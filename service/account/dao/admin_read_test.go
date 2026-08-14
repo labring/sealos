@@ -16,7 +16,10 @@ func TestAdminPage(t *testing.T) {
 		totalItems int64
 		totalPages int
 	}{2, 10, 21, 3}
-	if got.PageIndex != want.pageIndex || got.PageSize != want.pageSize || got.TotalItems != want.totalItems || got.TotalPages != want.totalPages {
+	if got.PageIndex != want.pageIndex ||
+		got.PageSize != want.pageSize ||
+		got.TotalItems != want.totalItems ||
+		got.TotalPages != want.totalPages {
 		t.Fatalf("adminPage() = %+v, want %+v", got, want)
 	}
 }

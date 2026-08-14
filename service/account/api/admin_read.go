@@ -210,8 +210,15 @@ func AdminListGiftCodes(c *gin.Context) {
 		return
 	}
 	result, err := dao.DBClient.ListAdminGiftCodes(helper.AdminGiftCodeListReq{
-		PageIndex: pageIndex, PageSize: pageSize, Status: c.Query("status"), StartTime: startTime, EndTime: endTime,
-		ID: c.Query("id"), Code: c.Query("code"), Comment: c.Query("comment"), RechargeType: c.Query("rechargeType"),
+		PageIndex:    pageIndex,
+		PageSize:     pageSize,
+		Status:       c.Query("status"),
+		StartTime:    startTime,
+		EndTime:      endTime,
+		ID:           c.Query("id"),
+		Code:         c.Query("code"),
+		Comment:      c.Query("comment"),
+		RechargeType: c.Query("rechargeType"),
 	})
 	if err != nil {
 		adminReadFailure(c, err)

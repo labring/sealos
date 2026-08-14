@@ -113,7 +113,11 @@ func adminUserQuery(db *gorm.DB, req helper.AdminUserListReq) *gorm.DB {
 		)
 	}
 	if req.Phone != "" {
-		query = query.Where(`EXISTS (SELECT 1 FROM "OauthProvider" op WHERE op."userUid" = "User".uid AND op."providerType" = ? AND op."providerId" = ?)`, types.OauthProviderTypePhone, req.Phone)
+		query = query.Where(
+			`EXISTS (SELECT 1 FROM "OauthProvider" op WHERE op."userUid" = "User".uid AND op."providerType" = ? AND op."providerId" = ?)`,
+			types.OauthProviderTypePhone,
+			req.Phone,
+		)
 	}
 	return query
 }

@@ -36,7 +36,13 @@ func TestAdminReadPage(t *testing.T) {
 			}
 			if pageIndex != tt.pageIndex ||
 				pageSize != tt.pageSize {
-				t.Fatalf("adminReadPage() = %d, %d; want %d, %d", pageIndex, pageSize, tt.pageIndex, tt.pageSize)
+				t.Fatalf(
+					"adminReadPage() = %d, %d; want %d, %d",
+					pageIndex,
+					pageSize,
+					tt.pageIndex,
+					tt.pageSize,
+				)
 			}
 		})
 	}

@@ -150,7 +150,9 @@ type Interface interface {
 	ListAdminUserRechargeRecords(
 		id string, pageIndex, pageSize int,
 	) (helper.AdminRechargeRecordsResp, error)
-	ListAdminUserBalanceAdjustRecords(id string, pageIndex, pageSize int) (helper.AdminBalanceAdjustRecordsResp, error)
+	ListAdminUserBalanceAdjustRecords(
+		id string, pageIndex, pageSize int,
+	) (helper.AdminBalanceAdjustRecordsResp, error)
 	ListAdminGiftCodes(req helper.AdminGiftCodeListReq) (helper.AdminGiftCodeListResp, error)
 	ListAdminGiftCodeUsage(id string, pageIndex, pageSize int) (helper.AdminGiftCodeUsageResp, error)
 	ListAdminInvoices(req helper.AdminInvoiceListReq) (helper.AdminInvoiceListResp, error)
