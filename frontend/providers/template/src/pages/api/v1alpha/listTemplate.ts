@@ -4,7 +4,7 @@ import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 import { getTemplateCategories } from '@/services/backend/template-categories';
-import { filterConfiguredCategorySlugs } from '@/utils/template';
+import { filterConfiguredCategorySlugs, parseTemplateCategories } from '@/utils/template';
 import { TemplateType } from '@/types/app';
 import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
