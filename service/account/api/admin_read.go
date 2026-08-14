@@ -273,7 +273,14 @@ func AdminListInvoices(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: err.Error()})
 		return
 	}
-	result, err := dao.DBClient.ListAdminInvoices(helper.AdminInvoiceListReq{PageIndex: pageIndex, PageSize: pageSize, Status: c.Query("status"), CompanyName: c.Query("companyName")})
+	result, err := dao.DBClient.ListAdminInvoices(
+		helper.AdminInvoiceListReq{
+			PageIndex:   pageIndex,
+			PageSize:    pageSize,
+			Status:      c.Query("status"),
+			CompanyName: c.Query("companyName"),
+		},
+	)
 	if err != nil {
 		adminReadFailure(c, err)
 		return

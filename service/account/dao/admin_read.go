@@ -164,7 +164,11 @@ func (g *Cockroach) loadAdminUsers(users []types.User) ([]helper.AdminUser, erro
 	return result, nil
 }
 
-func formatAdminUser(user *types.User, providers []types.OauthProvider, account *types.Account) helper.AdminUser {
+func formatAdminUser(
+	user *types.User,
+	providers []types.OauthProvider,
+	account *types.Account,
+) helper.AdminUser {
 	item := helper.AdminUser{
 		UID:                 user.UID,
 		ID:                  user.ID,
@@ -255,7 +259,10 @@ func (g *Cockroach) ListAdminUsers(req helper.AdminUserListReq) (helper.AdminUse
 	query := adminUserQuery(g.ck.GetGlobalDB(), req)
 	if req.WorkspaceID != "" || req.WorkspaceName != "" {
 		if len(workspaceUIDs) == 0 {
-			return helper.AdminUserListResp{AdminPage: adminPage(pageIndex, pageSize, 0), List: []helper.AdminUser{}}, nil
+			return helper.AdminUserListResp{
+				AdminPage: adminPage(pageIndex, pageSize, 0),
+				List:      []helper.AdminUser{},
+			}, nil
 		}
 		query = query.Where(`"User".uid IN ?`, workspaceUIDs)
 	}
@@ -264,14 +271,21 @@ func (g *Cockroach) ListAdminUsers(req helper.AdminUserListReq) (helper.AdminUse
 		return helper.AdminUserListResp{}, fmt.Errorf("failed to count admin users: %w", err)
 	}
 	var users []types.User
-	if err := query.Order(`"User"."createdAt" DESC`).Offset(pageIndex * pageSize).Limit(pageSize).Find(&users).Error; err != nil {
+	if err := query.Order(`"User"."createdAt" DESC`).
+		Offset(pageIndex * pageSize).
+		Limit(pageSize).
+		Find(&users).
+		Error; err != nil {
 		return helper.AdminUserListResp{}, fmt.Errorf("failed to list admin users: %w", err)
 	}
 	list, err := g.loadAdminUsers(users)
 	if err != nil {
 		return helper.AdminUserListResp{}, err
 	}
-	return helper.AdminUserListResp{AdminPage: adminPage(pageIndex, pageSize, total), List: list}, nil
+	return helper.AdminUserListResp{
+		AdminPage: adminPage(pageIndex, pageSize, total),
+		List:      list,
+	}, nil
 }
 
 func (g *Cockroach) GetAdminUser(id string) (*helper.AdminUserDetail, error) {
@@ -302,7 +316,12 @@ func (g *Cockroach) GetAdminUser(id string) (*helper.AdminUserDetail, error) {
 		}
 	}
 	var accountType adminUserAccountType
-	if err := g.ck.GetGlobalDB().Table("UserAccountType").Where(`"userUid" = ?`, user.UID).First(&accountType).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := g.ck.GetGlobalDB().
+		Table("UserAccountType").
+		Where(`"userUid" = ?`, user.UID).
+		First(&accountType).
+		Error; err != nil &&
+		!errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("failed to get user account type: %w", err)
 	}
 	workspaces, err := g.adminUserWorkspaces(user.UID)
@@ -362,7 +381,10 @@ func (g *Cockroach) resolveAdminUserID(id string) (uuid.UUID, error) {
 	return user.UID, nil
 }
 
-func (g *Cockroach) ListAdminUserRechargeRecords(id string, pageIndex, pageSize int) (helper.AdminRechargeRecordsResp, error) {
+func (g *Cockroach) ListAdminUserRechargeRecords(
+	id string,
+	pageIndex, pageSize int,
+) (helper.AdminRechargeRecordsResp, error) {
 	userUID, err := g.resolveAdminUserID(id)
 	if err != nil {
 		return helper.AdminRechargeRecordsResp{}, err
@@ -371,11 +393,22 @@ func (g *Cockroach) ListAdminUserRechargeRecords(id string, pageIndex, pageSize 
 	query := g.ck.GetGlobalDB().Table("Payment").Where(`"userUid" = ?`, userUID)
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		return helper.AdminRechargeRecordsResp{}, fmt.Errorf("failed to count recharge records: %w", err)
+		return helper.AdminRechargeRecordsResp{}, fmt.Errorf(
+			"failed to count recharge records: %w",
+			err,
+		)
 	}
 	var rows []adminPaymentRow
-	if err := query.Select(`id, trade_no, created_at, method, status, amount, gift, type, charge_source`).Order(`created_at DESC`).Offset(pageIndex * pageSize).Limit(pageSize).Scan(&rows).Error; err != nil {
-		return helper.AdminRechargeRecordsResp{}, fmt.Errorf("failed to list recharge records: %w", err)
+	if err := query.Select(`id, trade_no, created_at, method, status, amount, gift, type, charge_source`).
+		Order(`created_at DESC`).
+		Offset(pageIndex * pageSize).
+		Limit(pageSize).
+		Scan(&rows).
+		Error; err != nil {
+		return helper.AdminRechargeRecordsResp{}, fmt.Errorf(
+			"failed to list recharge records: %w",
+			err,
+		)
 	}
 	tradeNos := make([]string, 0, len(rows))
 	for i := range rows {
@@ -386,8 +419,15 @@ func (g *Cockroach) ListAdminUserRechargeRecords(id string, pageIndex, pageSize 
 	refunds := map[string][]types.PaymentRefund{}
 	if len(tradeNos) > 0 {
 		var refundRows []types.PaymentRefund
-		if err := g.ck.GetGlobalDB().Where(`trade_no IN ?`, tradeNos).Order(`created_at DESC`).Find(&refundRows).Error; err != nil {
-			return helper.AdminRechargeRecordsResp{}, fmt.Errorf("failed to list recharge refunds: %w", err)
+		if err := g.ck.GetGlobalDB().
+			Where(`trade_no IN ?`, tradeNos).
+			Order(`created_at DESC`).
+			Find(&refundRows).
+			Error; err != nil {
+			return helper.AdminRechargeRecordsResp{}, fmt.Errorf(
+				"failed to list recharge refunds: %w",
+				err,
+			)
 		}
 		for i := range refundRows {
 			key := normalizeAdminTradeNo(refundRows[i].TradeNo)
@@ -397,13 +437,28 @@ func (g *Cockroach) ListAdminUserRechargeRecords(id string, pageIndex, pageSize 
 	list := make([]helper.AdminRechargeRecord, len(rows))
 	for i := range rows {
 		refundList := refunds[normalizeAdminTradeNo(rows[i].TradeNo)]
-		item := helper.AdminRechargeRecord{ID: rows[i].ID, TradeNo: rows[i].TradeNo, CreatedAt: rows[i].CreatedAt, Method: rows[i].Method, Status: rows[i].Status, Amount: rows[i].Amount, Gift: rows[i].Gift, Type: rows[i].Type, ChargeSource: rows[i].ChargeSource, RefundCount: len(refundList), Refunded: strings.EqualFold(rows[i].Status, "REFUNDED") || len(refundList) > 0}
+		item := helper.AdminRechargeRecord{
+			ID:           rows[i].ID,
+			TradeNo:      rows[i].TradeNo,
+			CreatedAt:    rows[i].CreatedAt,
+			Method:       rows[i].Method,
+			Status:       rows[i].Status,
+			Amount:       rows[i].Amount,
+			Gift:         rows[i].Gift,
+			Type:         rows[i].Type,
+			ChargeSource: rows[i].ChargeSource,
+			RefundCount:  len(refundList),
+			Refunded:     strings.EqualFold(rows[i].Status, "REFUNDED") || len(refundList) > 0,
+		}
 		if len(refundList) > 0 {
 			item.LatestRefund = adminRefund(&refundList[0])
 		}
 		list[i] = item
 	}
-	return helper.AdminRechargeRecordsResp{AdminPage: adminPage(pageIndex, pageSize, total), List: list}, nil
+	return helper.AdminRechargeRecordsResp{
+		AdminPage: adminPage(pageIndex, pageSize, total),
+		List:      list,
+	}, nil
 }
 
 func normalizeAdminTradeNo(value string) string {
@@ -418,23 +473,46 @@ func normalizeAdminTradeNo(value string) string {
 }
 
 func adminRefund(refund *types.PaymentRefund) *helper.AdminRefund {
-	return &helper.AdminRefund{ID: refund.ID, RefundNo: refund.RefundNo, RefundAmount: refund.RefundAmount, DeductAmount: refund.DeductAmount, CreatedAt: refund.CreatedAt, RefundReason: refund.RefundReason}
+	return &helper.AdminRefund{
+		ID:           refund.ID,
+		RefundNo:     refund.RefundNo,
+		RefundAmount: refund.RefundAmount,
+		DeductAmount: refund.DeductAmount,
+		CreatedAt:    refund.CreatedAt,
+		RefundReason: refund.RefundReason,
+	}
 }
 
-func (g *Cockroach) ListAdminUserBalanceAdjustRecords(id string, pageIndex, pageSize int) (helper.AdminBalanceAdjustRecordsResp, error) {
+func (g *Cockroach) ListAdminUserBalanceAdjustRecords(
+	id string,
+	pageIndex, pageSize int,
+) (helper.AdminBalanceAdjustRecordsResp, error) {
 	userUID, err := g.resolveAdminUserID(id)
 	if err != nil {
 		return helper.AdminBalanceAdjustRecordsResp{}, err
 	}
 	pageIndex, pageSize = normalizeAdminPage(pageIndex, pageSize)
-	query := g.ck.GetGlobalDB().Table("AccountTransaction").Where(`"userUid" = ? AND "type" = ?`, userUID, "AdminRecharge")
+	query := g.ck.GetGlobalDB().
+		Table("AccountTransaction").
+		Where(`"userUid" = ? AND "type" = ?`, userUID, "AdminRecharge")
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		return helper.AdminBalanceAdjustRecordsResp{}, fmt.Errorf("failed to count balance adjustment records: %w", err)
+		return helper.AdminBalanceAdjustRecordsResp{}, fmt.Errorf(
+			"failed to count balance adjustment records: %w",
+			err,
+		)
 	}
 	var rows []adminAccountTransactionRow
-	if err := query.Select(`id, created_at, type, balance, balance_before, message`).Order(`created_at DESC`).Offset(pageIndex * pageSize).Limit(pageSize).Scan(&rows).Error; err != nil {
-		return helper.AdminBalanceAdjustRecordsResp{}, fmt.Errorf("failed to list balance adjustment records: %w", err)
+	if err := query.Select(`id, created_at, type, balance, balance_before, message`).
+		Order(`created_at DESC`).
+		Offset(pageIndex * pageSize).
+		Limit(pageSize).
+		Scan(&rows).
+		Error; err != nil {
+		return helper.AdminBalanceAdjustRecordsResp{}, fmt.Errorf(
+			"failed to list balance adjustment records: %w",
+			err,
+		)
 	}
 	list := make([]helper.AdminBalanceAdjustRecord, len(rows))
 	for i := range rows {
@@ -447,12 +525,25 @@ func (g *Cockroach) ListAdminUserBalanceAdjustRecords(id string, pageIndex, page
 		if rows[i].Message != nil {
 			message = *rows[i].Message
 		}
-		list[i] = helper.AdminBalanceAdjustRecord{ID: rows[i].ID, CreatedAt: rows[i].CreatedAt, Type: rows[i].Type, Amount: amount, BalanceBefore: rows[i].BalanceBefore, BalanceAfter: rows[i].Balance, Message: message}
+		list[i] = helper.AdminBalanceAdjustRecord{
+			ID:            rows[i].ID,
+			CreatedAt:     rows[i].CreatedAt,
+			Type:          rows[i].Type,
+			Amount:        amount,
+			BalanceBefore: rows[i].BalanceBefore,
+			BalanceAfter:  rows[i].Balance,
+			Message:       message,
+		}
 	}
-	return helper.AdminBalanceAdjustRecordsResp{AdminPage: adminPage(pageIndex, pageSize, total), List: list}, nil
+	return helper.AdminBalanceAdjustRecordsResp{
+		AdminPage: adminPage(pageIndex, pageSize, total),
+		List:      list,
+	}, nil
 }
 
-func (g *Cockroach) ListAdminGiftCodes(req helper.AdminGiftCodeListReq) (helper.AdminGiftCodeListResp, error) {
+func (g *Cockroach) ListAdminGiftCodes(
+	req helper.AdminGiftCodeListReq,
+) (helper.AdminGiftCodeListResp, error) {
 	pageIndex, pageSize := normalizeAdminPage(req.PageIndex, req.PageSize)
 	query := g.ck.GetGlobalDB().Table("GiftCode").
 		Select(`"GiftCode"."id", "GiftCode"."code", "GiftCode"."used", "GiftCode"."creditAmount", "GiftCode"."usedBy", used_user."id" AS "usedByUserID", "GiftCode"."usedAt", "GiftCode"."createdAt", "GiftCode"."expiredAt", "GiftCode"."comment", creator."id" AS "createdByID", creator."nickname" AS "createdBy", creator_real."realName" AS "createdByReal", "GiftCodeCreation"."rechargeType"`).
@@ -489,7 +580,11 @@ func (g *Cockroach) ListAdminGiftCodes(req helper.AdminGiftCodeListReq) (helper.
 		return helper.AdminGiftCodeListResp{}, fmt.Errorf("failed to count gift codes: %w", err)
 	}
 	var rows []adminGiftCodeRow
-	if err := query.Order(`"GiftCode"."createdAt" DESC`).Offset(pageIndex * pageSize).Limit(pageSize).Scan(&rows).Error; err != nil {
+	if err := query.Order(`"GiftCode"."createdAt" DESC`).
+		Offset(pageIndex * pageSize).
+		Limit(pageSize).
+		Scan(&rows).
+		Error; err != nil {
 		return helper.AdminGiftCodeListResp{}, fmt.Errorf("failed to list gift codes: %w", err)
 	}
 	list := make([]helper.AdminGiftCode, len(rows))
@@ -498,9 +593,25 @@ func (g *Cockroach) ListAdminGiftCodes(req helper.AdminGiftCodeListReq) (helper.
 		if createdBy == nil || *createdBy == "" {
 			createdBy = &rows[i].CreatedBy
 		}
-		list[i] = helper.AdminGiftCode{ID: rows[i].ID, Code: rows[i].Code, Used: rows[i].Used, CreditAmount: rows[i].CreditAmount, UsedBy: rows[i].UsedBy, UsedAt: rows[i].UsedAt, CreatedAt: rows[i].CreatedAt, ExpiredAt: rows[i].ExpiredAt, Comment: rows[i].Comment, CreatedBy: valueOrEmpty(createdBy), CreatedByID: rows[i].CreatedByID, RechargeType: rows[i].RechargeType}
+		list[i] = helper.AdminGiftCode{
+			ID:           rows[i].ID,
+			Code:         rows[i].Code,
+			Used:         rows[i].Used,
+			CreditAmount: rows[i].CreditAmount,
+			UsedBy:       rows[i].UsedBy,
+			UsedAt:       rows[i].UsedAt,
+			CreatedAt:    rows[i].CreatedAt,
+			ExpiredAt:    rows[i].ExpiredAt,
+			Comment:      rows[i].Comment,
+			CreatedBy:    valueOrEmpty(createdBy),
+			CreatedByID:  rows[i].CreatedByID,
+			RechargeType: rows[i].RechargeType,
+		}
 	}
-	return helper.AdminGiftCodeListResp{AdminPage: adminPage(pageIndex, pageSize, total), List: list}, nil
+	return helper.AdminGiftCodeListResp{
+		AdminPage: adminPage(pageIndex, pageSize, total),
+		List:      list,
+	}, nil
 }
 
 func valueOrEmpty(value *string) string {
@@ -510,7 +621,10 @@ func valueOrEmpty(value *string) string {
 	return *value
 }
 
-func (g *Cockroach) ListAdminGiftCodeUsage(id string, pageIndex, pageSize int) (helper.AdminGiftCodeUsageResp, error) {
+func (g *Cockroach) ListAdminGiftCodeUsage(
+	id string,
+	pageIndex, pageSize int,
+) (helper.AdminGiftCodeUsageResp, error) {
 	userUID, err := g.resolveAdminUserID(id)
 	if err != nil {
 		return helper.AdminGiftCodeUsageResp{}, err
@@ -522,20 +636,42 @@ func (g *Cockroach) ListAdminGiftCodeUsage(id string, pageIndex, pageSize int) (
 		Where(`"GiftCode"."used" = ? AND "GiftCode"."usedBy" = ?`, true, userUID)
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
-		return helper.AdminGiftCodeUsageResp{}, fmt.Errorf("failed to count gift code usage: %w", err)
+		return helper.AdminGiftCodeUsageResp{}, fmt.Errorf(
+			"failed to count gift code usage: %w",
+			err,
+		)
 	}
 	var rows []adminGiftCodeUsageRow
-	if err := query.Order(`"GiftCode"."usedAt" DESC`).Offset(pageIndex * pageSize).Limit(pageSize).Scan(&rows).Error; err != nil {
-		return helper.AdminGiftCodeUsageResp{}, fmt.Errorf("failed to list gift code usage: %w", err)
+	if err := query.Order(`"GiftCode"."usedAt" DESC`).
+		Offset(pageIndex * pageSize).
+		Limit(pageSize).
+		Scan(&rows).
+		Error; err != nil {
+		return helper.AdminGiftCodeUsageResp{}, fmt.Errorf(
+			"failed to list gift code usage: %w",
+			err,
+		)
 	}
 	list := make([]helper.AdminGiftCodeUsage, len(rows))
 	for i := range rows {
-		list[i] = helper.AdminGiftCodeUsage{ID: rows[i].ID, Code: rows[i].Code, CreditAmount: rows[i].CreditAmount, UsedAt: rows[i].UsedAt, RechargeType: rows[i].RechargeType, Comment: rows[i].Comment}
+		list[i] = helper.AdminGiftCodeUsage{
+			ID:           rows[i].ID,
+			Code:         rows[i].Code,
+			CreditAmount: rows[i].CreditAmount,
+			UsedAt:       rows[i].UsedAt,
+			RechargeType: rows[i].RechargeType,
+			Comment:      rows[i].Comment,
+		}
 	}
-	return helper.AdminGiftCodeUsageResp{AdminPage: adminPage(pageIndex, pageSize, total), List: list}, nil
+	return helper.AdminGiftCodeUsageResp{
+		AdminPage: adminPage(pageIndex, pageSize, total),
+		List:      list,
+	}, nil
 }
 
-func (g *Cockroach) ListAdminInvoices(req helper.AdminInvoiceListReq) (helper.AdminInvoiceListResp, error) {
+func (g *Cockroach) ListAdminInvoices(
+	req helper.AdminInvoiceListReq,
+) (helper.AdminInvoiceListResp, error) {
 	pageIndex, pageSize := normalizeAdminPage(req.PageIndex, req.PageSize)
 	query := g.ck.GetGlobalDB().Table("Invoice")
 	if req.Status != "" {
@@ -549,23 +685,43 @@ func (g *Cockroach) ListAdminInvoices(req helper.AdminInvoiceListReq) (helper.Ad
 		return helper.AdminInvoiceListResp{}, fmt.Errorf("failed to count invoices: %w", err)
 	}
 	var rows []adminInvoiceRow
-	if err := query.Order(`created_at DESC`).Offset(pageIndex * pageSize).Limit(pageSize).Find(&rows).Error; err != nil {
+	if err := query.Order(`created_at DESC`).
+		Offset(pageIndex * pageSize).
+		Limit(pageSize).
+		Find(&rows).
+		Error; err != nil {
 		return helper.AdminInvoiceListResp{}, fmt.Errorf("failed to list invoices: %w", err)
 	}
-	return helper.AdminInvoiceListResp{AdminPage: adminPage(pageIndex, pageSize, total), List: mapAdminInvoices(rows)}, nil
+	return helper.AdminInvoiceListResp{
+		AdminPage: adminPage(pageIndex, pageSize, total),
+		List:      mapAdminInvoices(rows),
+	}, nil
 }
 
 func mapAdminInvoices(rows []adminInvoiceRow) []helper.AdminInvoice {
 	list := make([]helper.AdminInvoice, len(rows))
 	for i := range rows {
-		list[i] = helper.AdminInvoice{ID: rows[i].ID, UserID: rows[i].UserID, CreatedAt: rows[i].CreatedAt, UpdatedAt: rows[i].UpdatedAt, Detail: rows[i].Detail, Remark: rows[i].Remark, TotalAmount: rows[i].TotalAmount, Status: rows[i].Status}
+		list[i] = helper.AdminInvoice{
+			ID:          rows[i].ID,
+			UserID:      rows[i].UserID,
+			CreatedAt:   rows[i].CreatedAt,
+			UpdatedAt:   rows[i].UpdatedAt,
+			Detail:      rows[i].Detail,
+			Remark:      rows[i].Remark,
+			TotalAmount: rows[i].TotalAmount,
+			Status:      rows[i].Status,
+		}
 	}
 	return list
 }
 
 func (g *Cockroach) GetAdminInvoice(id string) (*helper.AdminInvoice, error) {
 	var row adminInvoiceRow
-	if err := g.ck.GetGlobalDB().Table("Invoice").Where(`id = ?`, id).First(&row).Error; err != nil {
+	if err := g.ck.GetGlobalDB().
+		Table("Invoice").
+		Where(`id = ?`, id).
+		First(&row).
+		Error; err != nil {
 		return nil, fmt.Errorf("failed to get invoice: %w", err)
 	}
 	list := mapAdminInvoices([]adminInvoiceRow{row})
@@ -592,18 +748,28 @@ func (g *Cockroach) GetAdminRefundStatus(id string) (helper.AdminRefundStatusRes
 	}
 	var latest types.PaymentRefund
 	latestErr := query.Order(`created_at DESC`).First(&latest).Error
-	response := helper.AdminRefundStatusResp{Refunded: total > 0, RefundCount: int(total), TradeNo: tradeNo}
+	response := helper.AdminRefundStatusResp{
+		Refunded:    total > 0,
+		RefundCount: int(total),
+		TradeNo:     tradeNo,
+	}
 	if latestErr == nil {
 		response.LatestRefund = adminRefund(&latest)
 	} else if !errors.Is(latestErr, gorm.ErrRecordNotFound) {
-		return helper.AdminRefundStatusResp{}, fmt.Errorf("failed to get latest refund: %w", latestErr)
+		return helper.AdminRefundStatusResp{}, fmt.Errorf(
+			"failed to get latest refund: %w",
+			latestErr,
+		)
 	}
 	return response, nil
 }
 
 func (g *Cockroach) GetAdminRechargeGiftPolicy() (helper.AdminRechargeGiftPolicy, error) {
 	var config types.Configs
-	err := g.ck.GetGlobalDB().Where(&types.Configs{Type: types.AccountConfigType}).First(&config).Error
+	err := g.ck.GetGlobalDB().
+		Where(&types.Configs{Type: types.AccountConfigType}).
+		First(&config).
+		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return helper.AdminRechargeGiftPolicy{}, nil
 	}
@@ -612,9 +778,15 @@ func (g *Cockroach) GetAdminRechargeGiftPolicy() (helper.AdminRechargeGiftPolicy
 	}
 	var accountConfig types.AccountConfig
 	if err := json.Unmarshal([]byte(config.Data), &accountConfig); err != nil {
-		return helper.AdminRechargeGiftPolicy{}, fmt.Errorf("failed to unmarshal account config: %w", err)
+		return helper.AdminRechargeGiftPolicy{}, fmt.Errorf(
+			"failed to unmarshal account config: %w",
+			err,
+		)
 	}
-	return helper.AdminRechargeGiftPolicy{DefaultDiscountSteps: intMapToStringMap(accountConfig.DefaultDiscountSteps), FirstRechargeDiscountSteps: intMapToStringMap(accountConfig.FirstRechargeDiscountSteps)}, nil
+	return helper.AdminRechargeGiftPolicy{
+		DefaultDiscountSteps:       intMapToStringMap(accountConfig.DefaultDiscountSteps),
+		FirstRechargeDiscountSteps: intMapToStringMap(accountConfig.FirstRechargeDiscountSteps),
+	}, nil
 }
 
 func intMapToStringMap(input map[int64]int64) map[string]int64 {
@@ -632,7 +804,13 @@ func (g *Cockroach) ListAdminRegions() ([]helper.AdminRegion, error) {
 	}
 	result := make([]helper.AdminRegion, len(regions))
 	for i := range regions {
-		result[i] = helper.AdminRegion{UID: regions[i].UID, DisplayName: regions[i].DisplayName, Location: regions[i].Location, Domain: regions[i].Domain, Description: regions[i].Description}
+		result[i] = helper.AdminRegion{
+			UID:         regions[i].UID,
+			DisplayName: regions[i].DisplayName,
+			Location:    regions[i].Location,
+			Domain:      regions[i].Domain,
+			Description: regions[i].Description,
+		}
 	}
 	return result, nil
 }

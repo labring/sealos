@@ -39,7 +39,12 @@ func TestNormalizeAdminTradeNo(t *testing.T) {
 }
 
 func TestFormatAdminUser(t *testing.T) {
-	user := &types.User{UID: uuid.New(), ID: "user-id", Nickname: "User", Status: types.UserStatusNormal}
+	user := &types.User{
+		UID:      uuid.New(),
+		ID:       "user-id",
+		Nickname: "User",
+		Status:   types.UserStatusNormal,
+	}
 	account := &types.Account{Balance: 120, DeductionBalance: 30}
 	providers := []types.OauthProvider{
 		{ProviderType: types.OauthProviderTypePassword, ProviderID: "username"},
@@ -48,13 +53,18 @@ func TestFormatAdminUser(t *testing.T) {
 	}
 
 	got := formatAdminUser(user, providers, account)
-	if got.Username != "username" || got.Email != "user@example.com" || got.SourceType != "ADMIN_CREATED" {
+	if got.Username != "username" || got.Email != "user@example.com" ||
+		got.SourceType != "ADMIN_CREATED" {
 		t.Fatalf("formatAdminUser() identity fields = %+v", got)
 	}
-	if len(got.SourceProviderTypes) != 1 || got.SourceProviderTypes[0] != string(types.OauthProviderTypePassword) {
+	if len(got.SourceProviderTypes) != 1 ||
+		got.SourceProviderTypes[0] != string(types.OauthProviderTypePassword) {
 		t.Fatalf("formatAdminUser() source providers = %v", got.SourceProviderTypes)
 	}
-	if got.Balance == nil || *got.Balance != 120 || got.DeductionBalance == nil || *got.DeductionBalance != 30 || got.AvailableBalance == nil || *got.AvailableBalance != 90 {
+	if got.Balance == nil || *got.Balance != 120 || got.DeductionBalance == nil ||
+		*got.DeductionBalance != 30 ||
+		got.AvailableBalance == nil ||
+		*got.AvailableBalance != 90 {
 		t.Fatalf("formatAdminUser() balances = %+v", got)
 	}
 	if got.BillingStatus != "normal" {

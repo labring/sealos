@@ -154,7 +154,10 @@ type Interface interface {
 		id string, pageIndex, pageSize int,
 	) (helper.AdminBalanceAdjustRecordsResp, error)
 	ListAdminGiftCodes(req helper.AdminGiftCodeListReq) (helper.AdminGiftCodeListResp, error)
-	ListAdminGiftCodeUsage(id string, pageIndex, pageSize int) (helper.AdminGiftCodeUsageResp, error)
+	ListAdminGiftCodeUsage(
+		id string,
+		pageIndex, pageSize int,
+	) (helper.AdminGiftCodeUsageResp, error)
 	ListAdminInvoices(req helper.AdminInvoiceListReq) (helper.AdminInvoiceListResp, error)
 	GetAdminInvoice(id string) (*helper.AdminInvoice, error)
 	GetAdminRefundStatus(id string) (helper.AdminRefundStatusResp, error)

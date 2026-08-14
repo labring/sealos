@@ -51,7 +51,12 @@ func TestAdminReadPage(t *testing.T) {
 func TestAdminReadTime(t *testing.T) {
 	want := time.Date(2026, time.August, 13, 12, 0, 0, 0, time.UTC)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	c.Request = httptest.NewRequestWithContext(context.Background(), "GET", "/?startTime="+want.Format(time.RFC3339), nil)
+	c.Request = httptest.NewRequestWithContext(
+		context.Background(),
+		"GET",
+		"/?startTime="+want.Format(time.RFC3339),
+		nil,
+	)
 	got, err := adminReadTime(c, "startTime")
 	if err != nil {
 		t.Fatalf("adminReadTime() error = %v", err)
@@ -61,7 +66,12 @@ func TestAdminReadTime(t *testing.T) {
 	}
 
 	invalidContext, _ := gin.CreateTestContext(httptest.NewRecorder())
-	invalidContext.Request = httptest.NewRequestWithContext(context.Background(), "GET", "/?startTime=invalid", nil)
+	invalidContext.Request = httptest.NewRequestWithContext(
+		context.Background(),
+		"GET",
+		"/?startTime=invalid",
+		nil,
+	)
 	if _, err := adminReadTime(invalidContext, "startTime"); err == nil {
 		t.Fatal("adminReadTime() expected invalid time error")
 	}
