@@ -1,6 +1,7 @@
 import { getPlatformEnv, getSystemConfig, getTemplates } from '@/api/platform';
 import { EnvResponse } from '@/types';
 import { ApplicationType, SideBarMenuType, SystemConfigType } from '@/types/app';
+import type { TemplateCategory } from '@/types/config';
 import { getCategoryLabel } from '@/utils/template';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -16,6 +17,33 @@ type State = {
   setSideBarMenu: (data: SideBarMenuType[]) => void;
   setEnvs: (data: EnvResponse) => void;
 };
+
+export function buildSideBarMenu(
+  categories: TemplateCategory[] | undefined,
+  menuKeys: string,
+  language?: string
+): SideBarMenuType[] {
+  const menus =
+    categories?.map((category) => ({
+      id: category.slug,
+      type: category.slug as ApplicationType,
+      value: getCategoryLabel(category, language)
+    })) ??
+    menuKeys.split(',').map((i) => ({
+      id: i,
+      type: i as ApplicationType,
+      value: `SideBar.${i}`
+    }));
+
+  return [
+    {
+      id: 'applications',
+      type: ApplicationType.All,
+      value: 'SideBar.Applications'
+    },
+    ...menus
+  ];
+}
 
 export const useSystemConfigStore = create<State>()(
   devtools(
@@ -33,28 +61,9 @@ export const useSystemConfigStore = create<State>()(
         const data = await getSystemConfig();
         const { menuKeys, categories } = await getTemplates(language);
 
-        const menus =
-          categories?.map((category) => ({
-            id: category.slug,
-            type: category.slug as ApplicationType,
-            value: getCategoryLabel(category, language)
-          })) ??
-          menuKeys.split(',').map((i) => ({
-            id: i,
-            type: i as ApplicationType,
-            value: `SideBar.${i}`
-          }));
-
         set((state) => {
           state.menuKeys = menuKeys;
-          state.sideBarMenu = [
-            {
-              id: 'applications',
-              type: ApplicationType.All,
-              value: 'SideBar.Applications'
-            },
-            ...menus
-          ];
+          state.sideBarMenu = buildSideBarMenu(categories, menuKeys, language);
         });
         set((state) => {
           state.systemConfig = data;

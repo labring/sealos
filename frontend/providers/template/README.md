@@ -91,4 +91,6 @@ missing or invalid, the provider falls back to `TEMPLATE_CATEGORIES`.
 Template read APIs run a TTL-bound freshness check before reading the generated
 catalog. `TEMPLATE_REPO_SYNC_INTERVAL_MS` controls the interval and defaults to
 `30000`, so repository category changes made by Admin are picked up without
-manually calling `/api/updateRepo`.
+manually calling `/api/updateRepo`. The App Store sidebar reads the lightweight
+`/api/platform/getClientAppConfig` category response, refreshes it every 60
+seconds, and refreshes again when the window regains focus.

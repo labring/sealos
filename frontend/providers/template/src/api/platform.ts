@@ -1,7 +1,7 @@
 import { EnvResponse } from '@/types/index';
 import { GET } from '@/services/request';
 import { SystemConfigType, TemplateType } from '@/types/app';
-import type { TemplateCategory } from '@/types/config';
+import type { ClientAppConfig, TemplateCategory } from '@/types/config';
 import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
 import { getUserSession } from '@/utils/user';
 import type { PaymentConfigResponse } from '@/pages/api/platform/paymentConfig';
@@ -16,6 +16,8 @@ export const getTemplates = (language?: string) =>
       language
     }
   );
+
+export const getClientAppConfig = () => GET<ClientAppConfig>('/api/platform/getClientAppConfig');
 
 export const getPlatformEnv = (
   { insideCloud }: { insideCloud: boolean } = { insideCloud: false }

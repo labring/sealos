@@ -1,4 +1,6 @@
+import { getClientAppConfig } from '@/api/platform';
 import { useCachedStore } from '@/store/cached';
+import { buildSideBarMenu, useSystemConfigStore } from '@/store/config';
 import { useSearchStore } from '@/store/search';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import {
@@ -21,12 +23,35 @@ import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useEffect } from 'react';
 import { track } from '@sealos/gtm';
+import { useQuery } from '@tanstack/react-query';
 
 export default function AppMenu() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const { setSearchValue, setAppType } = useSearchStore();
+  const { appType, setSearchValue, setAppType } = useSearchStore();
+  const { setSideBarMenu } = useSystemConfigStore();
   const { insideCloud } = useCachedStore();
+
+  const { data: clientAppConfig } = useQuery(['client-app-config'], getClientAppConfig, {
+    staleTime: 60 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    retry: 3
+  });
+
+  useEffect(() => {
+    if (!clientAppConfig) return;
+
+    setSideBarMenu(buildSideBarMenu(clientAppConfig.categories, '', i18n.language));
+
+    if (
+      appType !== ApplicationType.All &&
+      !clientAppConfig.categories.some((category) => category.slug === appType)
+    ) {
+      setAppType(ApplicationType.All);
+    }
+  }, [appType, clientAppConfig, i18n.language, setAppType, setSideBarMenu]);
 
   const changeI18n = () => {
     const lastLang = getLangStore();
