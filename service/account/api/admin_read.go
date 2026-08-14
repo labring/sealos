@@ -45,7 +45,10 @@ func adminReadTime(c *gin.Context, name string) (*time.Time, error) {
 }
 
 func adminReadUnauthorized(c *gin.Context, err error) {
-	c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error: %v", err)})
+	c.JSON(
+		http.StatusUnauthorized,
+		helper.ErrorMessage{Error: fmt.Sprintf("authenticate error: %v", err)},
+	)
 }
 
 func adminReadFailure(c *gin.Context, err error) {

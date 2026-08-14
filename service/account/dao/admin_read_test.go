@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -22,11 +23,11 @@ func TestAdminPage(t *testing.T) {
 
 func TestNormalizeAdminTradeNo(t *testing.T) {
 	id := uuid.New()
-	compact := ""
+	var compact strings.Builder
 	for _, part := range []string{id.String()[:8], id.String()[9:13], id.String()[14:18], id.String()[19:23], id.String()[24:]} {
-		compact += part
+		compact.WriteString(part)
 	}
-	if got := normalizeAdminTradeNo(compact); got != id.String() {
+	if got := normalizeAdminTradeNo(compact.String()); got != id.String() {
 		t.Fatalf("normalizeAdminTradeNo(compact) = %q, want %q", got, id.String())
 	}
 	if got := normalizeAdminTradeNo("not-a-uuid"); got != "" {

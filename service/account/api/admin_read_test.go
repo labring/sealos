@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -25,7 +26,7 @@ func TestAdminReadPage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c, _ := gin.CreateTestContext(httptest.NewRecorder())
-			c.Request = httptest.NewRequest("GET", tt.query, nil)
+			c.Request = httptest.NewRequestWithContext(context.Background(), "GET", tt.query, nil)
 			pageIndex, pageSize, err := adminReadPage(c)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("adminReadPage() error = %v, wantErr %v", err, tt.wantErr)
@@ -33,7 +34,8 @@ func TestAdminReadPage(t *testing.T) {
 			if tt.wantErr {
 				return
 			}
-			if pageIndex != tt.pageIndex || pageSize != tt.pageSize {
+			if pageIndex != tt.pageIndex ||
+				pageSize != tt.pageSize {
 				t.Fatalf("adminReadPage() = %d, %d; want %d, %d", pageIndex, pageSize, tt.pageIndex, tt.pageSize)
 			}
 		})
@@ -43,7 +45,7 @@ func TestAdminReadPage(t *testing.T) {
 func TestAdminReadTime(t *testing.T) {
 	want := time.Date(2026, time.August, 13, 12, 0, 0, 0, time.UTC)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	c.Request = httptest.NewRequest("GET", "/?startTime="+want.Format(time.RFC3339), nil)
+	c.Request = httptest.NewRequestWithContext(context.Background(), "GET", "/?startTime="+want.Format(time.RFC3339), nil)
 	got, err := adminReadTime(c, "startTime")
 	if err != nil {
 		t.Fatalf("adminReadTime() error = %v", err)
@@ -53,7 +55,7 @@ func TestAdminReadTime(t *testing.T) {
 	}
 
 	invalidContext, _ := gin.CreateTestContext(httptest.NewRecorder())
-	invalidContext.Request = httptest.NewRequest("GET", "/?startTime=invalid", nil)
+	invalidContext.Request = httptest.NewRequestWithContext(context.Background(), "GET", "/?startTime=invalid", nil)
 	if _, err := adminReadTime(invalidContext, "startTime"); err == nil {
 		t.Fatal("adminReadTime() expected invalid time error")
 	}

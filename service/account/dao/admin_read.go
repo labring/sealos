@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -99,18 +100,22 @@ func adminPage(pageIndex, pageSize int, total int64) helper.AdminPage {
 	}
 }
 
-func adminUserQuery(db *gorm.DB, req helper.AdminUserListReq) (*gorm.DB, error) {
+func adminUserQuery(db *gorm.DB, req helper.AdminUserListReq) *gorm.DB {
 	query := db.Model(&types.User{})
 	if req.ID != "" {
 		query = query.Where(`"User"."id" = ?`, req.ID)
 	}
 	if req.Username != "" {
-		query = query.Where(`EXISTS (SELECT 1 FROM "OauthProvider" op WHERE op."userUid" = "User".uid AND op."providerType" = ? AND op."providerId" = ?)`, types.OauthProviderTypePassword, req.Username)
+		query = query.Where(
+			`EXISTS (SELECT 1 FROM "OauthProvider" op WHERE op."userUid" = "User".uid AND op."providerType" = ? AND op."providerId" = ?)`,
+			types.OauthProviderTypePassword,
+			req.Username,
+		)
 	}
 	if req.Phone != "" {
 		query = query.Where(`EXISTS (SELECT 1 FROM "OauthProvider" op WHERE op."userUid" = "User".uid AND op."providerType" = ? AND op."providerId" = ?)`, types.OauthProviderTypePhone, req.Phone)
 	}
-	return query, nil
+	return query
 }
 
 func (g *Cockroach) userUIDsByWorkspace(id, displayName string) ([]uuid.UUID, error) {
@@ -243,10 +248,7 @@ func (g *Cockroach) ListAdminUsers(req helper.AdminUserListReq) (helper.AdminUse
 			return helper.AdminUserListResp{}, err
 		}
 	}
-	query, err := adminUserQuery(g.ck.GetGlobalDB(), req)
-	if err != nil {
-		return helper.AdminUserListResp{}, err
-	}
+	query := adminUserQuery(g.ck.GetGlobalDB(), req)
 	if req.WorkspaceID != "" || req.WorkspaceName != "" {
 		if len(workspaceUIDs) == 0 {
 			return helper.AdminUserListResp{AdminPage: adminPage(pageIndex, pageSize, 0), List: []helper.AdminUser{}}, nil
@@ -463,9 +465,10 @@ func (g *Cockroach) ListAdminGiftCodes(req helper.AdminGiftCodeListReq) (helper.
 	if req.Comment != "" {
 		query = query.Where(`"GiftCode"."comment" LIKE ?`, "%"+req.Comment+"%")
 	}
-	if req.Status == "used" {
+	switch req.Status {
+	case "used":
 		query = query.Where(`"GiftCode"."used" = ?`, true)
-	} else if req.Status == "unused" {
+	case "unused":
 		query = query.Where(`"GiftCode"."used" = ?`, false)
 	}
 	if req.StartTime != nil {
@@ -613,7 +616,7 @@ func (g *Cockroach) GetAdminRechargeGiftPolicy() (helper.AdminRechargeGiftPolicy
 func intMapToStringMap(input map[int64]int64) map[string]int64 {
 	output := make(map[string]int64, len(input))
 	for key, value := range input {
-		output[fmt.Sprint(key)] = value
+		output[strconv.FormatInt(key, 10)] = value
 	}
 	return output
 }
