@@ -72,6 +72,34 @@ func TestFormatAdminUser(t *testing.T) {
 	}
 }
 
+func TestGroupAdminUserProviders(t *testing.T) {
+	userUID := uuid.New()
+	providers := []types.OauthProvider{
+		{
+			UserUID:      userUID,
+			ProviderType: types.OauthProviderTypeEmail,
+			ProviderID:   "user@example.com",
+		},
+	}
+	alertAccounts := []types.UserAlertNotificationAccount{
+		{
+			UserUID:      userUID,
+			ProviderType: types.OauthProviderTypeEmail,
+			ProviderID:   "user@example.com",
+		},
+		{UserUID: userUID, ProviderType: types.OauthProviderTypePhone, ProviderID: "+123456789"},
+		{UserUID: userUID, ProviderType: types.OauthProviderTypeGithub, ProviderID: "github-id"},
+	}
+
+	got := groupAdminUserProviders(providers, alertAccounts)[userUID]
+	if len(got) != 2 {
+		t.Fatalf("groupAdminUserProviders() returned %d providers, want 2", len(got))
+	}
+	if got[0].ProviderID != "user@example.com" || got[1].ProviderID != "+123456789" {
+		t.Fatalf("groupAdminUserProviders() = %+v", got)
+	}
+}
+
 func TestIntMapToStringMap(t *testing.T) {
 	got := intMapToStringMap(map[int64]int64{100: 95, 1000: 850})
 	if len(got) != 2 || got["100"] != 95 || got["1000"] != 850 {

@@ -2,7 +2,10 @@ package api
 
 import (
 	"context"
+	"errors"
+	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -74,5 +77,22 @@ func TestAdminReadTime(t *testing.T) {
 	)
 	if _, err := adminReadTime(invalidContext, "startTime"); err == nil {
 		t.Fatal("adminReadTime() expected invalid time error")
+	}
+}
+
+func TestAdminReadFailureHidesInternalError(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	adminReadFailure(c, errors.New("database schema details"))
+
+	if recorder.Code != http.StatusInternalServerError {
+		t.Fatalf(
+			"adminReadFailure() status = %d, want %d",
+			recorder.Code,
+			http.StatusInternalServerError,
+		)
+	}
+	if strings.Contains(recorder.Body.String(), "database schema details") {
+		t.Fatalf("adminReadFailure() exposed internal error: %s", recorder.Body.String())
 	}
 }

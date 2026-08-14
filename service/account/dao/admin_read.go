@@ -147,21 +147,94 @@ func (g *Cockroach) userUIDsByWorkspace(id, displayName string) ([]uuid.UUID, er
 }
 
 func (g *Cockroach) loadAdminUsers(users []types.User) ([]helper.AdminUser, error) {
-	result := make([]helper.AdminUser, 0, len(users))
+	if len(users) == 0 {
+		return []helper.AdminUser{}, nil
+	}
+
+	userUIDs := make([]uuid.UUID, len(users))
 	for i := range users {
-		user := &users[i]
-		providers, err := g.ck.GetUserOauthProvider(&types.UserQueryOpts{UID: user.UID})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get oauth providers for user %s: %w", user.ID, err)
-		}
-		account, err := g.GetAccount(types.UserQueryOpts{UID: user.UID, IgnoreEmpty: true})
-		if err != nil {
-			return nil, fmt.Errorf("failed to get account for user %s: %w", user.ID, err)
-		}
-		item := formatAdminUser(user, providers, account)
-		result = append(result, item)
+		userUIDs[i] = users[i].UID
+	}
+	db := g.ck.GetGlobalDB()
+
+	var providers []types.OauthProvider
+	if err := db.Where(`"userUid" IN ?`, userUIDs).Find(&providers).Error; err != nil {
+		return nil, fmt.Errorf("failed to list oauth providers for admin users: %w", err)
+	}
+	var alertAccounts []types.UserAlertNotificationAccount
+	if err := db.Where(`"user_uid" IN ? AND "is_enabled" = ?`, userUIDs, true).
+		Find(&alertAccounts).
+		Error; err != nil {
+		return nil, fmt.Errorf(
+			"failed to list alert notification accounts for admin users: %w",
+			err,
+		)
+	}
+	var accounts []types.Account
+	if err := db.Where(`"userUid" IN ?`, userUIDs).Find(&accounts).Error; err != nil {
+		return nil, fmt.Errorf("failed to list accounts for admin users: %w", err)
+	}
+
+	providersByUser := groupAdminUserProviders(providers, alertAccounts)
+	accountsByUser := make(map[uuid.UUID]*types.Account, len(accounts))
+	for i := range accounts {
+		accountsByUser[accounts[i].UserUID] = &accounts[i]
+	}
+	result := make([]helper.AdminUser, len(users))
+	for i := range users {
+		result[i] = formatAdminUser(
+			&users[i],
+			providersByUser[users[i].UID],
+			accountsByUser[users[i].UID],
+		)
 	}
 	return result, nil
+}
+
+func groupAdminUserProviders(
+	providers []types.OauthProvider,
+	alertAccounts []types.UserAlertNotificationAccount,
+) map[uuid.UUID][]types.OauthProvider {
+	providersByUser := make(map[uuid.UUID][]types.OauthProvider)
+	existingProviders := make(map[uuid.UUID]map[string]struct{})
+	for i := range providers {
+		provider := providers[i]
+		providersByUser[provider.UserUID] = append(providersByUser[provider.UserUID], provider)
+		if existingProviders[provider.UserUID] == nil {
+			existingProviders[provider.UserUID] = make(map[string]struct{})
+		}
+		existingProviders[provider.UserUID][adminProviderKey(provider.ProviderType, provider.ProviderID)] = struct{}{}
+	}
+	for i := range alertAccounts {
+		account := alertAccounts[i]
+		if account.ProviderType != types.OauthProviderTypeEmail &&
+			account.ProviderType != types.OauthProviderTypePhone {
+			continue
+		}
+		if existingProviders[account.UserUID] == nil {
+			existingProviders[account.UserUID] = make(map[string]struct{})
+		}
+		key := adminProviderKey(account.ProviderType, account.ProviderID)
+		if _, exists := existingProviders[account.UserUID][key]; exists {
+			continue
+		}
+		providersByUser[account.UserUID] = append(
+			providersByUser[account.UserUID],
+			types.OauthProvider{
+				UserUID:      account.UserUID,
+				ProviderType: account.ProviderType,
+				ProviderID:   account.ProviderID,
+				CreatedAt:    account.CreatedAt,
+				UpdatedAt:    account.UpdatedAt,
+			},
+		)
+		existingProviders[account.UserUID][key] = struct{}{}
+	}
+	return providersByUser
+}
+
+func adminProviderKey(providerType types.OauthProviderType, providerID string) string {
+	return string(providerType) + "_" + providerID
 }
 
 func formatAdminUser(

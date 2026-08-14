@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/helper"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -56,7 +57,8 @@ func adminReadFailure(c *gin.Context, err error) {
 		c.JSON(http.StatusNotFound, helper.ErrorMessage{Error: "resource not found"})
 		return
 	}
-	c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: err.Error()})
+	logrus.WithError(err).Error("admin read request failed")
+	c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: "internal server error"})
 }
 
 // AdminListUsers returns account users and their global account/provider data.
