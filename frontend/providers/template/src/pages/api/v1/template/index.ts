@@ -13,6 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const jsonPath = path.resolve(originalPath, 'templates.json');
 
   try {
+    await ensureTemplateRepoFresh(originalPath);
+
     const configuredCategories = parseTemplateCategories(process.env.TEMPLATE_CATEGORIES);
     const templateEnvs = getTemplateEnvs();
     const templateRepo = {
@@ -21,7 +23,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       provider: templateEnvs.TEMPLATE_REPO_PROVIDER
     };
     const categories = getTemplateCategories(configuredCategories);
-    await ensureTemplateRepoFresh(originalPath);
     const templates = readTemplatesFromFile(
       jsonPath,
       process.env.CDN_URL,

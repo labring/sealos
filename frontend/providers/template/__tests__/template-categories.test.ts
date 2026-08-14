@@ -23,6 +23,11 @@ import {
   syncTemplateCategoriesFromRepo
 } from '@/services/backend/template-categories';
 
+vi.mock('@/services/backend/template-repo', () => ({
+  ensureTemplateRepoFresh: vi.fn().mockResolvedValue(undefined),
+  updateRepo: vi.fn().mockResolvedValue(undefined)
+}));
+
 const configuredCategories: TemplateCategory[] = [
   { slug: 'ai', i18n: { en: 'AI', zh: 'AI' } },
   { slug: 'database', i18n: { en: 'Database', zh: '数据库' } }
@@ -269,9 +274,9 @@ describe('template category configuration', () => {
     const appRoot = createTempDir();
     const previousCwd = process.cwd();
     const repoRoot = path.join(appRoot, 'templates');
-    const templateFilePath = path.join(repoRoot, 'demo.yaml');
+    const templateFilePath = path.join(repoRoot, 'template', 'demo.yaml');
 
-    fs.mkdirSync(repoRoot, { recursive: true });
+    fs.mkdirSync(path.dirname(templateFilePath), { recursive: true });
     fs.writeFileSync(
       path.join(appRoot, 'templates.json'),
       JSON.stringify([
