@@ -23,6 +23,7 @@ data:
     DESKTOP_DOMAIN={{ .Values.templateConfig.cloudDomain }}
     TEMPLATE_REPO_ENABLE_README_FETCH={{ .Values.templateConfig.templateRepoEnableReadmeFetch }}
     TEMPLATE_CATEGORIES={{ .Values.templateConfig.templateCategories }}
+    TEMPLATE_CATEGORIES_PATH=config/categories.json
     TEMPLATE_REPO_GIT_SSL_NO_VERIFY={{ .Values.templateConfig.templateRepoGitSslNoVerify }}
     GIT_SSL_NO_VERIFY={{ .Values.templateConfig.templateRepoGitSslNoVerify }}
   config.yaml: |-

@@ -1,7 +1,7 @@
 import { K8sApiDefault } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
@@ -14,6 +14,7 @@ import { syncTemplateCategoriesFromRepo } from './template-categories';
 import { readmeCache } from '@/utils/readmeCache';
 
 const execAsync = util.promisify(exec);
+const execFileAsync = util.promisify(execFile);
 const DEFAULT_TEMPLATE_REPO_SYNC_INTERVAL_MS = 30 * 1000;
 
 let templateRepoLastSyncedAt = 0;
@@ -25,6 +26,62 @@ function getTemplateRepoSyncIntervalMs() {
     return DEFAULT_TEMPLATE_REPO_SYNC_INTERVAL_MS;
   }
   return rawValue;
+}
+
+function normalizeTemplateRepoRef(value: string) {
+  return value
+    .trim()
+    .replace(/\/+$/, '')
+    .replace(/\.git$/, '');
+}
+
+async function cloneOrRefreshTemplateRepo(
+  targetPath: string,
+  templateRepoUrl: string,
+  templateRepoBranch: string
+) {
+  let existingRemote = '';
+  let existingBranch = '';
+
+  if (fs.existsSync(targetPath)) {
+    try {
+      const remoteResult = await execFileAsync(
+        'git',
+        ['-C', targetPath, 'remote', 'get-url', 'origin'],
+        { timeout: 10000 }
+      );
+      existingRemote = remoteResult.stdout.trim();
+
+      const branchResult = await execFileAsync(
+        'git',
+        ['-C', targetPath, 'branch', '--show-current'],
+        { timeout: 10000 }
+      );
+      existingBranch = branchResult.stdout.trim();
+    } catch {
+      // A prebuilt image may contain a template directory without a usable Git checkout.
+    }
+  }
+
+  const repositoryChanged =
+    normalizeTemplateRepoRef(existingRemote) !== normalizeTemplateRepoRef(templateRepoUrl) ||
+    existingBranch !== templateRepoBranch;
+
+  if (!existingRemote || repositoryChanged) {
+    if (fs.existsSync(targetPath)) {
+      fs.rmSync(targetPath, { recursive: true, force: true });
+    }
+    await execFileAsync(
+      'git',
+      ['clone', '-b', templateRepoBranch, templateRepoUrl, targetPath, '--depth=1'],
+      { timeout: 60000 }
+    );
+    return;
+  }
+
+  await execFileAsync('git', ['-C', targetPath, 'pull', '--depth=1', '--rebase'], {
+    timeout: 60000
+  });
 }
 
 const writeFileAtomic = (targetPath: string, content: string) => {
@@ -104,13 +161,13 @@ export async function updateRepo() {
       'git config --global --add safe.directory /app/providers/template/templates',
       { timeout: 10000 }
     );
-    const gitCommand = !fs.existsSync(targetPath)
-      ? `git clone -b ${TemplateEnvs.TEMPLATE_REPO_BRANCH} ${TemplateEnvs.TEMPLATE_REPO_URL} ${targetPath} --depth=1`
-      : `cd ${targetPath} && git pull --depth=1 --rebase`;
+    await cloneOrRefreshTemplateRepo(
+      targetPath,
+      TemplateEnvs.TEMPLATE_REPO_URL,
+      TemplateEnvs.TEMPLATE_REPO_BRANCH
+    );
 
-    const result = await execAsync(gitCommand, { timeout: 60000 });
-
-    console.log('git operation:', result);
+    console.log('git operation: template repository refreshed');
   } catch (error) {
     // Note: git operation timeout should not block the process. Just log the error, do not throw.
     console.log('git operation timed out (non-blocking): \n', error);
