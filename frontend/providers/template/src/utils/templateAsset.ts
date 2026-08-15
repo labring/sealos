@@ -195,7 +195,17 @@ export function getTemplateAssetProxyUrl(assetUrl: string, repo: TemplateRepo) {
   return `${TEMPLATE_ASSET_PROXY_PREFIX}${encodeURIComponent(proxyablePath)}`;
 }
 
-export function proxyTemplateIconUrls(template: TemplateType, repo: TemplateRepo) {
+type TemplateAssetResource = {
+  spec: {
+    icon?: string;
+    i18n?: Record<string, { icon?: string; [key: string]: string | undefined }>;
+  };
+};
+
+export function proxyTemplateIconUrls<T extends TemplateAssetResource>(
+  template: T,
+  repo: TemplateRepo
+): T {
   const spec = {
     ...template.spec,
     icon: getTemplateAssetProxyUrl(template.spec.icon || '', repo)
@@ -216,7 +226,7 @@ export function proxyTemplateIconUrls(template: TemplateType, repo: TemplateRepo
   return {
     ...template,
     spec
-  };
+  } as T;
 }
 
 export function resolveTemplateAssetUrl({
