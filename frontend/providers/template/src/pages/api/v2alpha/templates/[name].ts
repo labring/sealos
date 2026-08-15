@@ -13,6 +13,12 @@ import {
 import { parseTemplateCategories } from '@/utils/template';
 import { sendError, ErrorType, ErrorCode } from '@/types/v2alpha/error';
 import { getTemplateEnvs } from '@/utils/tools';
+import {
+  createTemplateCatalogEtag,
+  getTemplateCatalogVersion,
+  getTemplateCategories
+} from '@/services/backend/template-categories';
+import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
 // estimate min—max equality
 function simplifyResourceValue(
@@ -95,10 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  // Add caching headers for GET requests
   if (req.method === 'GET') {
-    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600');
-    res.setHeader('ETag', `"${templateName}-${language}"`);
     return handleTemplateDetails(req, res, templateName, language);
   }
 
@@ -121,6 +124,8 @@ async function handleTemplateDetails(
     const originalPath = process.cwd();
     const jsonPath = path.resolve(originalPath, 'templates.json');
 
+    await ensureTemplateRepoFresh(originalPath);
+
     if (!fs.existsSync(jsonPath)) {
       return sendError(res, {
         status: 404,
@@ -135,14 +140,19 @@ async function handleTemplateDetails(
       branch: templateEnvs.TEMPLATE_REPO_BRANCH,
       provider: templateEnvs.TEMPLATE_REPO_PROVIDER
     };
-    getCachedTemplates(
+    const categories = getTemplateCategories(
+      parseTemplateCategories(process.env.TEMPLATE_CATEGORIES)
+    );
+    const catalogVersion = getTemplateCatalogVersion(originalPath);
+    const templateCache = getCachedTemplates(
       jsonPath,
       process.env.CDN_URL,
-      parseTemplateCategories(process.env.TEMPLATE_CATEGORIES),
+      categories,
       language,
-      templateRepo
+      templateRepo,
+      catalogVersion
     );
-    const template = getTemplateFromCache(templateName);
+    const template = getTemplateFromCache(templateCache, templateName);
 
     if (!template) {
       return sendError(res, {
@@ -156,10 +166,10 @@ async function handleTemplateDetails(
     const i18nData = template.spec?.i18n?.[language];
 
     let simplifiedResource = null;
-    const cacheKey = `${templateName}-${language}`;
+    const cacheKey = createTemplateCatalogEtag(['v2alpha-detail-resource', templateName, language]);
 
     // Check cache first
-    simplifiedResource = getCachedTemplateDetail(cacheKey);
+    simplifiedResource = getCachedTemplateDetail(cacheKey, catalogVersion);
 
     if (simplifiedResource === null) {
       try {
@@ -195,7 +205,7 @@ async function handleTemplateDetails(
           simplifiedResource = simplifyResourceUsage(resourceUsage);
 
           // Cache the result using shared cache
-          setCachedTemplateDetail(cacheKey, simplifiedResource);
+          setCachedTemplateDetail(cacheKey, simplifiedResource, catalogVersion);
         }
       } catch (error) {
         console.error('Error getting template details:', error);
@@ -222,6 +232,12 @@ async function handleTemplateDetails(
       args: template.spec.inputs || {},
       deployCount: template.spec.deployCount || 0
     };
+
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    res.setHeader(
+      'ETag',
+      createTemplateCatalogEtag(['v2alpha-detail', templateName, language, catalogVersion])
+    );
 
     res.status(200).json(result);
   } catch (error) {

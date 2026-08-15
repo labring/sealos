@@ -44,6 +44,18 @@ spec:
           env:
             - name: NODE_TLS_REJECT_UNAUTHORIZED
               value: {{ .Values.templateConfig.tlsRejectUnauthorized | quote }}
+            - name: TEMPLATE_REPO_URL
+              value: {{ .Values.templateConfig.templateRepoUrl | quote }}
+            - name: TEMPLATE_REPO_BRANCH
+              value: {{ .Values.templateConfig.templateRepoBranch | quote }}
+            - name: TEMPLATE_REPO_PROVIDER
+              value: {{ .Values.templateConfig.templateRepoProvider | quote }}
+            - name: TEMPLATE_REPO_FOLDER
+              value: {{ .Values.templateConfig.templateRepoPath | quote }}
+            - name: TEMPLATE_CATEGORIES
+              value: {{ .Values.templateConfig.templateCategories | quote }}
+            - name: TEMPLATE_CATEGORIES_PATH
+              value: "config/categories.json"
           startupProbe:
             {{- toYaml .Values.startupProbe | nindent 12 }}
           readinessProbe:

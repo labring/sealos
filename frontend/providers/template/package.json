@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "vitest run"
   },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.2.1",
@@ -86,6 +87,7 @@
     "eslint-config-next": "13.5.9",
     "prettier": "^2.8.8",
     "svg-inline-loader": "^0.8.2",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "vitest": "^1.6.0"
   }
 }
