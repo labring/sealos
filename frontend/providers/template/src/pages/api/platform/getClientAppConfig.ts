@@ -5,8 +5,12 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getTemplateCategories } from '@/services/backend/template-categories';
 import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
-export async function getClientAppConfigServer() {
-  await ensureTemplateRepoFresh();
+export async function getClientAppConfigServer({
+  refreshRepo = true
+}: { refreshRepo?: boolean } = {}) {
+  if (refreshRepo) {
+    await ensureTemplateRepoFresh();
+  }
   const categories = getTemplateCategories(
     parseTemplateCategories(process.env.TEMPLATE_CATEGORIES)
   );

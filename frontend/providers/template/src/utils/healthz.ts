@@ -2,5 +2,5 @@ import { getClientAppConfigServer } from '@/pages/api/platform/getClientAppConfi
 export const HEALTHZ_SERVICE = 'template';
 
 export async function assertReady() {
-  await getClientAppConfigServer();
+  await getClientAppConfigServer({ refreshRepo: false });
 }

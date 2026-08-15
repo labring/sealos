@@ -249,6 +249,52 @@ describe('template category configuration', () => {
     expect(zhOnly.data.map((template) => template.metadata.name)).toEqual(['chinese']);
   });
 
+  it('replaces the current template cache when the catalog version changes', () => {
+    const appRoot = createTempDir();
+    const jsonPath = path.join(appRoot, 'templates.json');
+    const firstCatalog = JSON.stringify([
+      {
+        apiVersion: 'app.sealos.io/v1',
+        kind: 'Template',
+        metadata: { name: 'first' },
+        spec: { categories: ['ai'], draft: false }
+      }
+    ]);
+    const secondCatalog = JSON.stringify([
+      {
+        apiVersion: 'app.sealos.io/v1',
+        kind: 'Template',
+        metadata: { name: 'second' },
+        spec: { categories: ['ai'], draft: false }
+      }
+    ]);
+
+    fs.writeFileSync(jsonPath, firstCatalog, 'utf-8');
+    expect(
+      getCachedTemplates(jsonPath, undefined, configuredCategories, 'en', undefined, 'v1').data
+    ).toHaveLength(1);
+    fs.writeFileSync(jsonPath, secondCatalog, 'utf-8');
+
+    expect(
+      getCachedTemplates(jsonPath, undefined, configuredCategories, 'en', undefined, 'v2').data[0]
+        .metadata.name
+    ).toBe('second');
+    expect(
+      getCachedTemplates(jsonPath, undefined, configuredCategories, 'en', undefined, 'v1').data[0]
+        .metadata.name
+    ).toBe('second');
+  });
+
+  it('invalidates cached template details when the catalog version changes', async () => {
+    const { getCachedTemplateDetail, setCachedTemplateDetail } = await import(
+      '@/pages/api/v2alpha/templates/templateCache'
+    );
+
+    setCachedTemplateDetail('detail', { cpu: 1 }, 'v1');
+    expect(getCachedTemplateDetail('detail', 'v1')).toEqual({ cpu: 1 });
+    expect(getCachedTemplateDetail('detail', 'v2')).toBeNull();
+  });
+
   it('removes stale category cache when publishing the managed cache fails', () => {
     const appRoot = createTempDir();
     const repoRoot = path.join(appRoot, 'templates');

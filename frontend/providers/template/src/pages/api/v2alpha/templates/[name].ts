@@ -166,15 +166,10 @@ async function handleTemplateDetails(
     const i18nData = template.spec?.i18n?.[language];
 
     let simplifiedResource = null;
-    const cacheKey = createTemplateCatalogEtag([
-      'v2alpha-detail-resource',
-      templateName,
-      language,
-      catalogVersion
-    ]);
+    const cacheKey = createTemplateCatalogEtag(['v2alpha-detail-resource', templateName, language]);
 
     // Check cache first
-    simplifiedResource = getCachedTemplateDetail(cacheKey);
+    simplifiedResource = getCachedTemplateDetail(cacheKey, catalogVersion);
 
     if (simplifiedResource === null) {
       try {
@@ -210,7 +205,7 @@ async function handleTemplateDetails(
           simplifiedResource = simplifyResourceUsage(resourceUsage);
 
           // Cache the result using shared cache
-          setCachedTemplateDetail(cacheKey, simplifiedResource);
+          setCachedTemplateDetail(cacheKey, simplifiedResource, catalogVersion);
         }
       } catch (error) {
         console.error('Error getting template details:', error);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildSideBarMenu } from '@/store/config';
+import { ApplicationType } from '@/types/app';
+import { buildSideBarMenu, shouldResetAppType } from '@/store/config';
 
 describe('sidebar menu', () => {
   it('builds the menu from the current managed categories', () => {
@@ -25,5 +26,12 @@ describe('sidebar menu', () => {
       'SideBar.ai',
       'SideBar.database'
     ]);
+  });
+
+  it('keeps MyApp as a non-category app type', () => {
+    expect(shouldResetAppType(ApplicationType.MyApp, [{ slug: 'ai', i18n: { en: 'AI' } }])).toBe(
+      false
+    );
+    expect(shouldResetAppType('removed', [{ slug: 'ai', i18n: { en: 'AI' } }])).toBe(true);
   });
 });

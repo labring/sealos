@@ -18,6 +18,17 @@ type State = {
   setEnvs: (data: EnvResponse) => void;
 };
 
+export function shouldResetAppType(
+  appType: ApplicationType,
+  categories: readonly TemplateCategory[]
+) {
+  if (appType === ApplicationType.All || appType === ApplicationType.MyApp) {
+    return false;
+  }
+
+  return !categories.some((category) => category.slug === appType);
+}
+
 export function buildSideBarMenu(
   categories: TemplateCategory[] | undefined,
   menuKeys: string,

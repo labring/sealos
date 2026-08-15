@@ -1,6 +1,6 @@
 import { getClientAppConfig } from '@/api/platform';
 import { useCachedStore } from '@/store/cached';
-import { buildSideBarMenu, useSystemConfigStore } from '@/store/config';
+import { buildSideBarMenu, shouldResetAppType, useSystemConfigStore } from '@/store/config';
 import { useSearchStore } from '@/store/search';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import {
@@ -45,10 +45,7 @@ export default function AppMenu() {
 
     setSideBarMenu(buildSideBarMenu(clientAppConfig.categories, '', i18n.language));
 
-    if (
-      appType !== ApplicationType.All &&
-      !clientAppConfig.categories.some((category) => category.slug === appType)
-    ) {
+    if (shouldResetAppType(appType, clientAppConfig.categories)) {
       setAppType(ApplicationType.All);
     }
   }, [appType, clientAppConfig, i18n.language, setAppType, setSideBarMenu]);

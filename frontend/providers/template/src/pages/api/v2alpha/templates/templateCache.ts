@@ -7,11 +7,13 @@ interface TemplatesCache {
   data: TemplateType[];
   timestamp: number;
   map: Map<string, TemplateType>;
+  catalogVersion?: string;
 }
 
 interface TemplateDetailCache {
   data: any;
   timestamp: number;
+  catalogVersion?: string;
 }
 
 const templatesCache = new Map<string, TemplatesCache>();
@@ -24,15 +26,13 @@ function getTemplatesCacheKey({
   cdnUrl,
   configuredCategories,
   language,
-  templateRepo,
-  catalogVersion
+  templateRepo
 }: {
   jsonPath: string;
   cdnUrl?: string;
   configuredCategories: TemplateCategory[];
   language?: string;
   templateRepo?: TemplateRepo;
-  catalogVersion?: string;
 }) {
   return JSON.stringify({
     jsonPath,
@@ -44,8 +44,7 @@ function getTemplatesCacheKey({
           url: templateRepo.url,
           branch: templateRepo.branch
         }
-      : null,
-    catalogVersion: catalogVersion || ''
+      : null
   });
 }
 
@@ -63,12 +62,15 @@ export function getCachedTemplates(
     cdnUrl,
     configuredCategories,
     language,
-    templateRepo,
-    catalogVersion
+    templateRepo
   });
   const cachedTemplates = templatesCache.get(cacheKey);
 
-  if (cachedTemplates && now - cachedTemplates.timestamp < CACHE_TTL) {
+  if (
+    cachedTemplates &&
+    cachedTemplates.catalogVersion === catalogVersion &&
+    now - cachedTemplates.timestamp < CACHE_TTL
+  ) {
     return cachedTemplates;
   }
 
@@ -95,7 +97,8 @@ export function getCachedTemplates(
     const cacheResult = {
       data: templates,
       timestamp: now,
-      map: templateMap
+      map: templateMap,
+      catalogVersion
     };
     templatesCache.set(cacheKey, cacheResult);
 
@@ -114,22 +117,31 @@ export function getTemplateFromCache(
 }
 
 // Get cached template detail
-export function getCachedTemplateDetail(cacheKey: string): any | null {
+export function getCachedTemplateDetail(cacheKey: string, catalogVersion?: string): any | null {
   const cached = templateDetailCache.get(cacheKey);
   const now = Date.now();
 
-  if (cached && now - cached.timestamp < CACHE_TTL) {
+  if (cached && cached.catalogVersion === catalogVersion && now - cached.timestamp < CACHE_TTL) {
     return cached.data;
+  }
+
+  if (cached) {
+    templateDetailCache.delete(cacheKey);
   }
 
   return null;
 }
 
 // Set template detail cache
-export function setCachedTemplateDetail(cacheKey: string, data: any): void {
+export function setCachedTemplateDetail(
+  cacheKey: string,
+  data: any,
+  catalogVersion?: string
+): void {
   templateDetailCache.set(cacheKey, {
     data,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    catalogVersion
   });
 }
 
