@@ -76,7 +76,7 @@ desktopConfig:
   layoutTitle: "Sealos Cloud"
   layoutLogo: "/logo.svg"
   layoutBackgroundImage: "/images/bg-light.svg"
-  workspaceResourceHeaderEnabled: false
+  workspaceResourceHeaderEnabled: true
   customerServiceURL: ""
   layoutDocsUseDocs: false
   layoutDocsUrl: "https://sealos.run/docs/Intro/"
