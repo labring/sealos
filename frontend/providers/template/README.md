@@ -38,7 +38,7 @@
 │   │   ├── useLoading.tsx
 │   │   ├── useScreen.ts
 │   │   └── useToast.ts
-│   ├── mock 
+│   ├── mock
 │   ├── pages
 │   │   ├── 404.tsx
 │   │   ├── _app.tsx
@@ -74,3 +74,23 @@
 │       └── user.ts
 └── tsconfig.json
 ```
+
+## Template repository categories
+
+The provider clones the template repository configured by `TEMPLATE_REPO_URL` and
+`TEMPLATE_REPO_BRANCH`, then builds `templates.json` from the configured template
+directory. Category menus and template category filtering prefer
+`<template-repo>/config/categories.json` when that file exists. The file is a JSON
+array of `{ "slug": string, "i18n": Record<string, string> }`.
+
+`/api/updateRepo` publishes the managed category list after `templates.json` is
+successfully regenerated. The generated `template-categories.json` file is a
+runtime cache and should stay ignored by git. If the repository categories file is
+missing or invalid, the provider falls back to `TEMPLATE_CATEGORIES`.
+
+Template read APIs run a TTL-bound freshness check before reading the generated
+catalog. `TEMPLATE_REPO_SYNC_INTERVAL_MS` controls the interval and defaults to
+`30000`, so repository category changes made by Admin are picked up without
+manually calling `/api/updateRepo`. The App Store sidebar reads the lightweight
+`/api/platform/getClientAppConfig` category response, refreshes it every 60
+seconds, and refreshes again when the window regains focus.

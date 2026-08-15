@@ -15,9 +15,16 @@ import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
 import { getTemplateEnvs } from '@/utils/tools';
 import { getResourceUsage, ResourceUsage } from '@/utils/usage';
-import { generateYamlData, getTemplateDefaultValues } from '@/utils/template';
+import {
+  filterConfiguredCategorySlugs,
+  generateYamlData,
+  getTemplateDefaultValues,
+  parseTemplateCategories
+} from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
 import { proxyTemplateIconUrls, resolveTemplateAssetUrls } from '@/utils/templateAsset';
+import { getTemplateCategories } from '@/services/backend/template-categories';
+import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -122,6 +129,10 @@ export async function GetTemplateByName({
   locale?: string;
   includeReadme?: string;
 }) {
+  await ensureTemplateRepoFresh();
+  const categories = getTemplateCategories(
+    parseTemplateCategories(process.env.TEMPLATE_CATEGORIES)
+  );
   const TemplateEnvs = getTemplateEnvs(namespace);
   let { appYaml, templateYaml } = getTemplateYamlByName(templateName, TemplateEnvs);
 
@@ -131,6 +142,10 @@ export async function GetTemplateByName({
       message: 'Lack of kind template'
     };
   }
+  templateYaml.spec.categories = filterConfiguredCategorySlugs(
+    templateYaml.spec.categories,
+    categories
+  );
 
   templateYaml = parseTemplateVariable(templateYaml, TemplateEnvs);
   const dataSource = getTemplateDataSource(templateYaml);

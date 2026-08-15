@@ -40,7 +40,7 @@ templateConfig:
   templateRepoUrl: "https://github.com/labring-actions/templates"
   templateRepoBranch: "main"
   templateRepoProvider: "github"
-  templateRepoPath: "templates"
+  templateRepoPath: "template"
   templateRepoEnableReadmeFetch: "true"
   templateRepoGitSslNoVerify: "false"
   showAuthor: "false"
