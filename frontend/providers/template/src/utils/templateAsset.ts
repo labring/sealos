@@ -143,7 +143,7 @@ function getRepoAssetRawUrl(repo: TemplateRepo, assetPath: string) {
     return `${parsedRepo.origin}/${projectPath}/-/raw/${encodedRef}/${assetPath}`;
   }
 
-  return `${parsedRepo.origin}/${projectPath}/raw/branch/${encodedRef}/${assetPath}`;
+  return `${parsedRepo.origin}/${projectPath}/raw/${encodedRef}/${assetPath}`;
 }
 
 function getProxyableTemplateAssetPath(assetUrl: string, repo: TemplateRepo) {
