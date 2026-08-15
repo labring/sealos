@@ -274,7 +274,7 @@ export default function CalculatorPanel({
               </HStack>
               <HStack gap={'40px'}>
                 <CalculatorSlider
-                  unit={'G'}
+                  unit={'GiB'}
                   rangeList={MEMORY_RANGE}
                   value={config.resources.memory.idx}
                   onChange={(v) => {
@@ -282,7 +282,7 @@ export default function CalculatorPanel({
                   }}
                 />
                 <CalculatorNumberInput
-                  unit={'G'}
+                  unit={'GiB'}
                   value={config.resources.memory.val}
                   onChange={(str, v) => {
                     updateMemoryVal(v);
@@ -301,7 +301,7 @@ export default function CalculatorPanel({
               </HStack>
               <HStack gap={'40px'}>
                 <CalculatorNumberInput
-                  unit="G"
+                  unit="GiB"
                   value={config.resources.storage}
                   width={'280px'}
                   onChange={(str, val) => {
