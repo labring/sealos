@@ -57,6 +57,16 @@ describe('template manifest sources', () => {
     expect(getTemplateManifestFiles(path.join(templateDirectory, 'index.yaml'))).toEqual([]);
   });
 
+  it('does not recurse through a symlinked directory cycle', () => {
+    const templateDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'template-manifests-'));
+    temporaryDirectories.push(templateDirectory);
+    const manifestsDirectory = path.join(templateDirectory, 'manifests');
+    fs.mkdirSync(manifestsDirectory);
+    fs.symlinkSync(manifestsDirectory, path.join(manifestsDirectory, 'loop'));
+
+    expect(getTemplateManifestFiles(path.join(templateDirectory, 'index.yaml'))).toEqual([]);
+  });
+
   it('does not read a template directory outside the repository root', () => {
     const repositoryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'template-repository-'));
     const templateDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'template-outside-'));

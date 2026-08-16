@@ -11,9 +11,24 @@ function isWithinDirectory(rootPath: string, candidatePath: string, allowSamePat
   );
 }
 
-function readYamlFiles(targetPath: string, rootPath: string, fileList: string[]) {
-  for (const item of fs.readdirSync(targetPath).sort()) {
-    const filePath = path.join(targetPath, item);
+function readYamlFiles(
+  targetPath: string,
+  rootPath: string,
+  fileList: string[],
+  visitedDirectories: Set<string>
+) {
+  let realTargetPath: string;
+  try {
+    realTargetPath = fs.realpathSync(targetPath);
+  } catch (error) {
+    return;
+  }
+
+  if (visitedDirectories.has(realTargetPath)) return;
+  visitedDirectories.add(realTargetPath);
+
+  for (const item of fs.readdirSync(realTargetPath).sort()) {
+    const filePath = `${realTargetPath}${path.sep}${item}`;
     let realFilePath: string;
     try {
       realFilePath = fs.realpathSync(filePath);
@@ -26,7 +41,7 @@ function readYamlFiles(targetPath: string, rootPath: string, fileList: string[])
     const stats = fs.statSync(realFilePath);
 
     if (stats.isDirectory()) {
-      readYamlFiles(realFilePath, rootPath, fileList);
+      readYamlFiles(realFilePath, rootPath, fileList, visitedDirectories);
       continue;
     }
 
@@ -37,20 +52,20 @@ function readYamlFiles(targetPath: string, rootPath: string, fileList: string[])
 }
 
 export function getTemplateManifestFiles(templateFilePath: string, repoRootPath?: string) {
-  const manifestsPath = path.join(path.dirname(templateFilePath), 'manifests');
-  if (!fs.existsSync(manifestsPath) || !fs.statSync(manifestsPath).isDirectory()) {
-    return [];
-  }
-
   const repositoryRoot = fs.realpathSync(repoRootPath || path.dirname(templateFilePath));
   const templateDirectory = fs.realpathSync(path.dirname(templateFilePath));
   if (!isWithinDirectory(repositoryRoot, templateDirectory, true)) return [];
+
+  const manifestsPath = `${templateDirectory}${path.sep}manifests`;
+  if (!fs.existsSync(manifestsPath) || !fs.statSync(manifestsPath).isDirectory()) {
+    return [];
+  }
 
   const realManifestsPath = fs.realpathSync(manifestsPath);
   if (!isWithinDirectory(templateDirectory, realManifestsPath)) return [];
 
   const fileList: string[] = [];
-  readYamlFiles(realManifestsPath, templateDirectory, fileList);
+  readYamlFiles(realManifestsPath, templateDirectory, fileList, new Set());
   return fileList;
 }
 
