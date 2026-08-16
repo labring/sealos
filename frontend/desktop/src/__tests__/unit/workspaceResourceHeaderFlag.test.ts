@@ -138,7 +138,8 @@ describe('workspace resource header flag', () => {
     renderSecondaryLinks(true);
 
     expect(await screen.findByText('common:resources')).not.toBeNull();
-    expect(screen.queryByText('common:balance')).toBeNull();
+    expect(await screen.findByText('common:balance')).not.toBeNull();
+    expect(screen.queryByText('common:credits')).toBeNull();
     await waitFor(() => expect(mockedGetResource).toHaveBeenCalledTimes(1));
   });
 });

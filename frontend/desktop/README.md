@@ -169,7 +169,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### Workspace 资源展示
 
-- 桌面右上角摘要展示当前 workspace 的可用 CPU 以及账号积分；积分复用 `/api/account/getAmount` 的余额净额口径，即 `balance - deductionBalance` 后保留两位小数展示，点击摘要进入费用中心。
+- 桌面右上角摘要展示当前 workspace 的可用 CPU 以及账号余额；余额复用 `/api/account/getAmount` 的余额净额口径，即 `balance - deductionBalance` 后保留两位小数展示，点击摘要进入费用中心。
 - 桌面右上角的资源入口通过 `src/pages/api/desktop/getResource.ts` 读取当前登录 workspace namespace 的 Kubernetes `ResourceQuota`，默认 quota 名称为 `quota-${namespace}`。
 - `/api/desktop/getResource` 保留原有 Pod/PVC 运行资源统计，同时返回 `workspaceQuota`，用于展示 CPU、内存、存储、NodePort 的总量、已用和可用量；GPU 仍在接口里返回，但右上角头部暂不展示。
 - `desktopConfig.workspaceResourceHeaderEnabled` 控制右上角头部使用资源模式还是旧余额模式，默认关闭，也就是默认显示余额。
