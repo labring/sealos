@@ -202,7 +202,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       });
       router.replace(`/db/detail?name=${formData.dbName}&dbType=${formData.dbType}`);
     } catch (error: any) {
-      toast({ title: t(applyError), status: 'error' });
       if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
         setErrorMessage(t('user_balance_not_enough'));
         setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);

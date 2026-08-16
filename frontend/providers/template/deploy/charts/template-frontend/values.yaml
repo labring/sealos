@@ -75,7 +75,7 @@ templateConfig:
   templateRepoUrl: "https://github.com/labring-actions/templates"
   templateRepoBranch: "main"
   templateRepoProvider: "github"
-  templateRepoPath: "templates"
+  templateRepoPath: "template"
   showAuthor: "false"
   accountUrl: "http://account-service.account-system.svc:2333"
   guideEnabled: "true"

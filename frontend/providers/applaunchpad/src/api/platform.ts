@@ -4,6 +4,7 @@ import { getUserSession } from '@/utils/user';
 import { AuthCnamePrams, AuthDomainChallengeParams } from './params';
 import type { EnvResponse } from '@/types';
 import type { PublicDomainConflictOwner } from '@/utils/public-domain';
+import type { PaymentConfigResponse } from '@/pages/api/platform/paymentConfig';
 
 export type CustomDomainCertificateCoverageStatus =
   'covered' | 'pendingSync' | 'notConfigured' | 'unsupported';
@@ -17,6 +18,8 @@ export type CustomDomainCertificateCoverageResult = {
 };
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
+
+export const getPaymentConfig = () => GET<PaymentConfigResponse>('/api/platform/paymentConfig');
 
 export const getInitData = () => GET<EnvResponse>('/api/platform/getInitData');
 

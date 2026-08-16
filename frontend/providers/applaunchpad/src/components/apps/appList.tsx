@@ -380,7 +380,7 @@ const AppList = ({
         title: t('Storage'),
         key: 'store',
         render: (item: AppListItemType) => (
-          <>{item.localStoreAmount > 0 ? `${item.localStoreAmount}Gi` : '-'}</>
+          <>{item.localStoreAmount > 0 ? `${item.localStoreAmount}GiB` : '-'}</>
         )
       },
       {

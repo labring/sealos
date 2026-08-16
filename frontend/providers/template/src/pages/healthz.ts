@@ -17,9 +17,9 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   return sendHealthz(res);
 };
 
-function sendHealthz(res: GetServerSidePropsContext['res'], head = false) {
+async function sendHealthz(res: GetServerSidePropsContext['res'], head = false) {
   try {
-    assertReady();
+    await assertReady();
   } catch (error) {
     console.error(`[healthz] ${HEALTHZ_SERVICE} is not ready`, error);
     if (head) {

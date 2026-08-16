@@ -1,13 +1,14 @@
-import { resolve } from 'path';
+import path from 'node:path';
+import { defineConfig } from 'vitest/config';
 
-export default {
+export default defineConfig({
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
+      '@': path.resolve(__dirname, 'src')
     }
   },
   test: {
     environment: 'node',
     pool: 'forks'
   }
-};
+});
