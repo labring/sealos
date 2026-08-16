@@ -156,7 +156,7 @@ export default function SecondaryLinks() {
     <Flex alignItems="center" gap="8px" minW={0} flexWrap={allowWrap ? 'wrap' : 'nowrap'}>
       {renderHeaderMetric(t('common:resources'), resourceSummary)}
       <Divider orientation="vertical" h="16px" borderColor="rgba(37, 99, 235, 0.14)" />
-      {renderHeaderMetric(t('common:credits'), balanceSummary)}
+      {renderHeaderMetric(t('common:balance'), balanceSummary)}
     </Flex>
   );
 
