@@ -23,6 +23,7 @@ import {
 } from '@/utils/template';
 import { readmeCache } from '@/utils/readmeCache';
 import { proxyTemplateIconUrls, resolveTemplateAssetUrls } from '@/utils/templateAsset';
+import { appendTemplateManifestSources } from '@/services/backend/template-manifests';
 import { getTemplateCategories } from '@/services/backend/template-categories';
 import { ensureTemplateRepoFresh } from '@/services/backend/template-repo';
 
@@ -147,7 +148,16 @@ export async function GetTemplateByName({
     categories
   );
 
-  templateYaml = parseTemplateVariable(templateYaml, TemplateEnvs);
+  const templateRepo = {
+    url: TemplateEnvs.TEMPLATE_REPO_URL,
+    branch: TemplateEnvs.TEMPLATE_REPO_BRANCH,
+    provider: TemplateEnvs.TEMPLATE_REPO_PROVIDER
+  };
+
+  templateYaml = proxyTemplateIconUrls(
+    parseTemplateVariable(templateYaml, TemplateEnvs),
+    templateRepo
+  );
   const dataSource = getTemplateDataSource(templateYaml);
 
   const instanceName = dataSource?.defaults?.['app_name']?.value;
@@ -159,11 +169,6 @@ export async function GetTemplateByName({
   }
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, instanceName);
   appYaml = `${JsYaml.dump(instanceYaml)}\n---\n${appYaml}`;
-  const templateRepo = {
-    url: TemplateEnvs.TEMPLATE_REPO_URL,
-    branch: TemplateEnvs.TEMPLATE_REPO_BRANCH,
-    provider: TemplateEnvs.TEMPLATE_REPO_PROVIDER
-  };
   const responseTemplateYaml = proxyTemplateIconUrls(templateYaml, templateRepo);
 
   let readmeContent = '';
@@ -251,7 +256,8 @@ function getTemplateYamlByName(
   const templateFilePath = template?.spec?.filePath || `${targetPath}/${templateFileName}`;
   const yamlString = fs.readFileSync(templateFilePath, 'utf-8');
 
-  const { appYaml, templateYaml: rawTemplateYaml } = getYamlTemplate(yamlString);
+  let { appYaml, templateYaml: rawTemplateYaml } = getYamlTemplate(yamlString);
+  appYaml = appendTemplateManifestSources(appYaml, templateFilePath, repoRootPath);
   let templateYaml = rawTemplateYaml;
   templateYaml.spec.deployCount = template?.spec?.deployCount;
   const templateRepo = {

@@ -75,6 +75,15 @@
 └── tsconfig.json
 ```
 
+## Template repository layout
+
+Each catalog template keeps its metadata in `index.yaml`. Optional Kubernetes
+resources can live under the same template directory in `manifests/**/*.yaml`;
+the template provider loads those files as the deployment source while keeping
+the `Template` document as catalog metadata. Repository-hosted icons are served
+through the provider asset proxy when the repository's raw response is not
+browser-renderable.
+
 ## Template repository categories
 
 The provider clones the template repository configured by `TEMPLATE_REPO_URL` and

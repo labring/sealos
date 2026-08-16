@@ -184,36 +184,38 @@ export async function updateRepo() {
   const templateStaticMap: { [key: string]: number } = await GetTemplateStatic();
 
   let jsonObjArr: unknown[] = [];
-  fileList.forEach((item: any) => {
-    try {
-      if (!item) return;
-      const fileName = path.basename(item);
-      const content = fs.readFileSync(item, 'utf-8');
-      let { templateYaml } = getYamlTemplate(content);
-      if (!!templateYaml) {
-        templateYaml = resolveTemplateAssetUrls(templateYaml, {
-          repo: {
-            url: TemplateEnvs.TEMPLATE_REPO_URL,
-            branch: TemplateEnvs.TEMPLATE_REPO_BRANCH,
-            provider: TemplateEnvs.TEMPLATE_REPO_PROVIDER
-          },
-          templateFilePath: item,
-          repoRootPath: targetPath
-        });
-        const appTitle = templateYaml.spec.title.toUpperCase();
-        const currentCount = templateStaticMap[appTitle] || 0;
-        const randomFactor = 11 + Math.floor(Math.random() * 5); // [11,12,13,14,15]
-        const newCount = (currentCount + 1) * randomFactor;
+  fileList
+    .filter((item: any) => !path.relative(_targetPath, item).split(path.sep).includes('manifests'))
+    .forEach((item: any) => {
+      try {
+        if (!item) return;
+        const fileName = path.basename(item);
+        const content = fs.readFileSync(item, 'utf-8');
+        const { templateYaml } = getYamlTemplate(content);
+        if (!!templateYaml) {
+          const resolvedTemplateYaml = resolveTemplateAssetUrls(templateYaml, {
+            repo: {
+              url: TemplateEnvs.TEMPLATE_REPO_URL,
+              branch: TemplateEnvs.TEMPLATE_REPO_BRANCH,
+              provider: TemplateEnvs.TEMPLATE_REPO_PROVIDER
+            },
+            templateFilePath: item,
+            repoRootPath: targetPath
+          });
+          const appTitle = resolvedTemplateYaml.spec.title.toUpperCase();
+          const currentCount = templateStaticMap[appTitle] || 0;
+          const randomFactor = 11 + Math.floor(Math.random() * 5); // [11,12,13,14,15]
+          const newCount = (currentCount + 1) * randomFactor;
 
-        templateYaml.spec['deployCount'] = newCount;
-        templateYaml.spec['filePath'] = item;
-        templateYaml.spec['fileName'] = fileName;
-        jsonObjArr.push(templateYaml);
+          resolvedTemplateYaml.spec['deployCount'] = newCount;
+          resolvedTemplateYaml.spec['filePath'] = item;
+          resolvedTemplateYaml.spec['fileName'] = fileName;
+          jsonObjArr.push(resolvedTemplateYaml);
+        }
+      } catch (error) {
+        console.log(error, 'yaml parse error');
       }
-    } catch (error) {
-      console.log(error, 'yaml parse error');
-    }
-  });
+    });
 
   const jsonContent = JSON.stringify(jsonObjArr, null, 2);
   writeFileAtomic(jsonPath, jsonContent);
