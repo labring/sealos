@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -58,7 +59,9 @@ func TestAuthenticateAdminRequestUsesDedicatedSecret(t *testing.T) {
 				t.Fatalf("generate token: %v", err)
 			}
 
-			req := httptest.NewRequest(http.MethodPost, "/reload-property-types", nil)
+			req := httptest.NewRequestWithContext(
+				context.Background(), http.MethodPost, "/reload-property-types", nil,
+			)
 			req.Header.Set("Authorization", "Bearer "+token)
 			err = authenticateAdminRequest(req, "admin-secret", "api-secret")
 			if (err != nil) != tt.wantErr {

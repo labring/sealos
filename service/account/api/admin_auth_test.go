@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -71,7 +72,9 @@ func TestAuthenticateAdminRequestUsesDedicatedSecret(t *testing.T) {
 				t.Fatalf("generate token: %v", err)
 			}
 
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequestWithContext(
+				context.Background(), http.MethodGet, "/", nil,
+			)
 			req.Header.Set("Authorization", "Bearer "+token)
 			c, _ := gin.CreateTestContext(httptest.NewRecorder())
 			c.Request = req
