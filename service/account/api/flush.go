@@ -78,8 +78,9 @@ func adminFlushDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq) e
 	if req.ReplayFinalDeletion {
 		if req.CurrentDebtStatus != types.FinalDeletionPeriod {
 			return fmt.Errorf(
-				"final deletion replay requires current status %s",
+				"final deletion replay requires current status %s, got %q",
 				types.FinalDeletionPeriod,
+				req.CurrentDebtStatus,
 			)
 		}
 		if err = replayFinalDeletionNamespaceStatus(

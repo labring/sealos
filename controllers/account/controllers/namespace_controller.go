@@ -481,8 +481,14 @@ func (r *NamespaceReconciler) ensureFinalDeletionActive(
 			err,
 		)
 	}
-	if current.Status.Phase == corev1.NamespaceTerminating ||
-		current.Annotations[types.DebtNamespaceAnnoStatusKey] != types.FinalDeletionDebtNamespaceAnnoStatus {
+	if current.Status.Phase == corev1.NamespaceTerminating {
+		return fmt.Errorf(
+			"%w: namespace %s is terminating",
+			errFinalDeletionCancelled,
+			namespace,
+		)
+	}
+	if current.Annotations[types.DebtNamespaceAnnoStatusKey] != types.FinalDeletionDebtNamespaceAnnoStatus {
 		return fmt.Errorf(
 			"%w: namespace %s has debt status %q",
 			errFinalDeletionCancelled,
@@ -525,6 +531,9 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 			}
 		}(rs)
 	}
+	// Cancellation is expected when recharge changes the namespace status while
+	// deletion workers are still running. Record it and collect sibling results
+	// so this expected cancellation does not become a reconcile failure.
 	wasCancelled := false
 	for range deleteResources {
 		if err := <-errChan; err != nil {
@@ -2927,6 +2936,9 @@ func deleteResourceListAndWait(
 		close(errCh)
 	}()
 
+	// Cancellation is an expected result when recharge changes the namespace
+	// status during cleanup. It must be separated from real deletion errors so
+	// the caller can stop cleanly after every worker has finished.
 	wasCancelled := false
 	for deleteErr := range errCh {
 		if errors2.Is(deleteErr, errFinalDeletionCancelled) {
