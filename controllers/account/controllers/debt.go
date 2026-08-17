@@ -1096,10 +1096,10 @@ func (r *DebtReconciler) SendUserDebtMsg(
 }
 
 type AdminFlushResourceStatusReq struct {
-	UserUID             uuid.UUID            `json:"userUID"           bson:"userUID"`
-	LastDebtStatus      types.DebtStatusType `json:"lastDebtStatus"    bson:"lastDebtStatus"`
-	CurrentDebtStatus   types.DebtStatusType `json:"currentDebtStatus" bson:"currentDebtStatus"`
-	IsBasicUser         bool                 `json:"isBasicUser"       bson:"isBasicUser"`
+	UserUID             uuid.UUID            `json:"userUID"                       bson:"userUID"`
+	LastDebtStatus      types.DebtStatusType `json:"lastDebtStatus"                bson:"lastDebtStatus"`
+	CurrentDebtStatus   types.DebtStatusType `json:"currentDebtStatus"             bson:"currentDebtStatus"`
+	IsBasicUser         bool                 `json:"isBasicUser"                   bson:"isBasicUser"`
 	ReplayFinalDeletion bool                 `json:"replayFinalDeletion,omitempty" bson:"replayFinalDeletion,omitempty"`
 }
 

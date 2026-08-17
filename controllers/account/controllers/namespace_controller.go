@@ -462,13 +462,24 @@ func (r *NamespaceReconciler) deleteBackup(ctx context.Context, namespace string
 	)
 }
 
-func (r *NamespaceReconciler) ensureFinalDeletionActive(ctx context.Context, namespace string) error {
+func (r *NamespaceReconciler) ensureFinalDeletionActive(
+	ctx context.Context,
+	namespace string,
+) error {
 	current := &corev1.Namespace{}
 	if err := r.Client.Get(ctx, client.ObjectKey{Name: namespace}, current); err != nil {
 		if errors.IsNotFound(err) {
-			return fmt.Errorf("%w: namespace %s no longer exists", errFinalDeletionCancelled, namespace)
+			return fmt.Errorf(
+				"%w: namespace %s no longer exists",
+				errFinalDeletionCancelled,
+				namespace,
+			)
 		}
-		return fmt.Errorf("failed to verify final deletion status for namespace %s: %w", namespace, err)
+		return fmt.Errorf(
+			"failed to verify final deletion status for namespace %s: %w",
+			namespace,
+			err,
+		)
 	}
 	if current.Status.Phase == corev1.NamespaceTerminating ||
 		current.Annotations[types.DebtNamespaceAnnoStatusKey] != types.FinalDeletionDebtNamespaceAnnoStatus {
@@ -1425,7 +1436,8 @@ func (AnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
 
 	debtChanged := oldDebtStatus != newDebtStatus && !isDebtCompleted(newDebtStatus)
 	networkChanged := oldNetworkStatus != newNetworkStatus && !isNetworkCompleted(newNetworkStatus)
-	replayChanged := oldFinalDeletionReplay != newFinalDeletionReplay && newFinalDeletionReplay != ""
+	replayChanged := oldFinalDeletionReplay != newFinalDeletionReplay &&
+		newFinalDeletionReplay != ""
 
 	return debtChanged || networkChanged || replayChanged
 }

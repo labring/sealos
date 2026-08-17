@@ -190,7 +190,10 @@ func TestReplayFinalDeletionNamespaceStatusProtectsResumedNamespaces(t *testing.
 	}
 
 	assertNamespaceDebtStatus("resumed", types.ResumeCompletedDebtNamespaceAnnoStatus)
-	if ns := assertNamespaceDebtStatus("in-progress", types.FinalDeletionDebtNamespaceAnnoStatus); ns.Annotations[types.FinalDeletionReplayAnnotationKey] == "" {
+	if ns := assertNamespaceDebtStatus(
+		"in-progress",
+		types.FinalDeletionDebtNamespaceAnnoStatus,
+	); ns.Annotations[types.FinalDeletionReplayAnnotationKey] == "" {
 		t.Fatal("in-progress namespace should receive a replay marker")
 	}
 	assertNamespaceDebtStatus("completed", types.FinalDeletionCompletedDebtNamespaceAnnoStatus)

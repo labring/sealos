@@ -77,7 +77,10 @@ func adminFlushDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq) e
 	}
 	if req.ReplayFinalDeletion {
 		if req.CurrentDebtStatus != types.FinalDeletionPeriod {
-			return fmt.Errorf("final deletion replay requires current status %s", types.FinalDeletionPeriod)
+			return fmt.Errorf(
+				"final deletion replay requires current status %s",
+				types.FinalDeletionPeriod,
+			)
 		}
 		if err = replayFinalDeletionNamespaceStatus(
 			context.Background(),
@@ -127,7 +130,9 @@ func replayFinalDeletionNamespaceStatus(
 		case types.FinalDeletionDebtNamespaceAnnoStatus:
 			// Changing a separate annotation creates a new namespace event while
 			// keeping the destructive state explicit and idempotent.
-			ns.Annotations[types.FinalDeletionReplayAnnotationKey] = time.Now().UTC().Format(time.RFC3339Nano)
+			ns.Annotations[types.FinalDeletionReplayAnnotationKey] = time.Now().
+				UTC().
+				Format(time.RFC3339Nano)
 		default:
 			ns.Annotations[types.DebtNamespaceAnnoStatusKey] = types.FinalDeletionDebtNamespaceAnnoStatus
 		}
