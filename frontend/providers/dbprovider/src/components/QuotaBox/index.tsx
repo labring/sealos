@@ -1,5 +1,6 @@
 import MyTooltip from '@/components/MyTooltip';
 import { useUserStore } from '@/store/user';
+import type { UserQuotaItemType } from '@/types/user';
 import { Box, Flex, Progress, css, useTheme } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -24,6 +25,8 @@ const sourceMap = {
   }
 };
 
+type DisplayQuotaType = Extract<UserQuotaItemType['type'], keyof typeof sourceMap>;
+
 const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
   const { t } = useTranslation();
   const { userQuota, loadUserQuota } = useUserStore();
@@ -34,11 +37,14 @@ const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
     if (!userQuota) return [];
 
     return userQuota
-      .filter((item) => item.limit > 0)
+      .filter(
+        (item): item is UserQuotaItemType & { type: DisplayQuotaType } =>
+          item.limit > 0 && item.type in sourceMap
+      )
       .map((item) => {
         const { limit, used, type } = item;
-        const unit = sourceMap[type]?.unit;
-        const color = sourceMap[type]?.color;
+        const unit = sourceMap[type].unit;
+        const color = sourceMap[type].color;
         const tip = `${t('common.Total')}: ${limit} ${unit}
 ${t('common.Used')}: ${used.toFixed(2)} ${unit}
 ${t('common.Surplus')}: ${Math.max(0, limit - used).toFixed(2)} ${unit}`;

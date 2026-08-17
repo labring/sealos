@@ -222,28 +222,60 @@ export async function getUserQuota(
     body: { status }
   } = await k8sApi.readNamespacedResourceQuota(`quota-${namespace}`, namespace);
 
-  return [
+  const quotaResources: Array<{
+    type: UserQuotaItemType['type'];
+    resourceName: string;
+    parse: (value: string) => number;
+  }> = [
     {
       type: 'cpu',
-      limit: cpuFormatToM(status?.hard?.['limits.cpu'] || '') / 1000,
-      used: cpuFormatToM(status?.used?.['limits.cpu'] || '') / 1000
+      resourceName: 'limits.cpu',
+      parse: (value) => cpuFormatToM(value) / 1000
     },
     {
       type: 'memory',
-      limit: memoryFormatToMi(status?.hard?.['limits.memory'] || '') / 1024,
-      used: memoryFormatToMi(status?.used?.['limits.memory'] || '') / 1024
+      resourceName: 'limits.memory',
+      parse: (value) => memoryFormatToMi(value) / 1024
     },
     {
       type: 'storage',
-      limit: storageQuantityToMi(status?.hard?.['requests.storage'] || '') / 1024,
-      used: storageQuantityToMi(status?.used?.['requests.storage'] || '') / 1024
+      resourceName: 'requests.storage',
+      parse: (value) => storageQuantityToMi(value) / 1024
+    },
+    {
+      type: 'pods',
+      resourceName: 'pods',
+      parse: Number
+    },
+    {
+      type: 'nodeports',
+      resourceName: 'services.nodeports',
+      parse: Number
+    },
+    {
+      type: 'ephemeral-storage',
+      resourceName: 'limits.ephemeral-storage',
+      parse: (value) => storageQuantityToMi(value) / 1024
+    },
+    {
+      type: 'ephemeral-storage',
+      resourceName: 'requests.ephemeral-storage',
+      parse: (value) => storageQuantityToMi(value) / 1024
     }
-    // {
-    //   type: 'gpu',
-    //   limit: Number(status?.hard?.['requests.nvidia.com/gpu'] || 0),
-    //   used: Number(status?.used?.['requests.nvidia.com/gpu'] || 0)
-    // }
   ];
+
+  return quotaResources.flatMap(({ type, resourceName, parse }) => {
+    const hardLimit = status?.hard?.[resourceName];
+    if (hardLimit === undefined) return [];
+
+    return [
+      {
+        type,
+        limit: parse(String(hardLimit)),
+        used: parse(String(status?.used?.[resourceName] || ''))
+      }
+    ];
+  });
 }
 
 export async function getUserBalance(kc: k8s.KubeConfig) {

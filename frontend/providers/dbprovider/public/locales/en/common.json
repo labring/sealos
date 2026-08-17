@@ -73,7 +73,11 @@
   "anticipated_price": "Projected Cost",
   "app": {
     "cpu_exceeds_quota": "CPU requested exceeds quota. Contact admin.",
+    "ephemeral_storage_exceeds_quota": "Ephemeral storage quota is exhausted. Contact admin.",
     "memory_exceeds_quota": "Memory requested exceeds quota. Contact admin.",
+    "nodeports_exceeds_quota": "NodePort requested exceeds quota. Contact admin.",
+    "pods_exceeds_quota": "Pod count requested exceeds quota. Contact admin.",
+    "quota_check_failed": "Unable to verify the current resource quota. Try again later.",
     "resource_quota": "Resource Limits",
     "storage_exceeds_quota": "Storage requested exceeds quota. Contact admin."
   },
