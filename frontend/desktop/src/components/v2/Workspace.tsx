@@ -31,7 +31,6 @@ import { SwitchRegionType } from '@/constants/account';
 import { I18nCloudProvidersKey } from '@/types/i18next';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import { useGuideModalStore } from '@/stores/guideModal';
-import { gtmLoginSuccess } from '@/utils/gtm';
 import {
   appendMarketingQuery,
   persistMarketingQuery,
@@ -102,12 +101,7 @@ export default function Workspace() {
         throw new Error('No result data');
       }
       // globalToken is already set in session store, no need to pass it
-      const productUserTraits = await sessionConfig(initRegionTokenResult.data);
-      gtmLoginSuccess({
-        method: 'oauth2',
-        productUserTraits,
-        user_type: 'new'
-      });
+      await sessionConfig(initRegionTokenResult.data);
       await router.replace(appendMarketingQuery('/', marketingQuery));
     } catch (error) {
       console.error(error);

@@ -17,7 +17,6 @@ import type { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import { track } from '@sealos/gtm';
-import { gtmLoginSuccess } from '@/utils/gtm';
 import {
   appendMarketingQuery,
   mergeMarketingQuery,
@@ -128,12 +127,7 @@ const Callback: NextPage = () => {
           if (!initRegionTokenResult.data) {
             throw new Error('No result data');
           }
-          const productUserTraits = await sessionConfig(initRegionTokenResult.data);
-          gtmLoginSuccess({
-            method: 'oauth2',
-            productUserTraits,
-            user_type: 'new'
-          });
+          await sessionConfig(initRegionTokenResult.data);
           await router.replace(appendMarketingQuery('/', marketingQuery));
           return;
         } catch (error) {

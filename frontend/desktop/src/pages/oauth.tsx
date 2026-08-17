@@ -6,7 +6,7 @@ import { useConfigStore } from '@/stores/config';
 import useAppStore, { BRAIN_APP_KEY } from '@/stores/app';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { parseOpenappQuery } from '@/utils/format';
-import { gtmLoginStart, gtmLoginSuccess } from '@/utils/gtm';
+import { gtmLoginStart } from '@/utils/gtm';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import { createTemplateInstance } from '@/api/platform';
 import { getRegionToken, initRegionToken } from '@/api/auth';
@@ -122,7 +122,6 @@ export default function OAuth() {
         setGlobalToken(globalToken); // Sets global token and cookie immediately
 
         // INIT mode: initialize new region
-        let productUserTraits;
         if (switchRegionType === SwitchRegionType.INIT) {
           if (!isString(workspaceName)) throw Error('workspace not found');
           const decodedWorkspaceName = decodeURIComponent(workspaceName);
@@ -135,7 +134,7 @@ export default function OAuth() {
             throw new Error('No result data');
           }
 
-          productUserTraits = await sessionConfig(initRegionTokenResult.data);
+          await sessionConfig(initRegionTokenResult.data);
         } else {
           // Normal mode: get region token
           const regionTokenRes = await getRegionToken();
@@ -144,7 +143,7 @@ export default function OAuth() {
             throw new Error('Failed to get region token');
           }
 
-          productUserTraits = await sessionConfig(regionTokenRes.data);
+          await sessionConfig(regionTokenRes.data);
 
           // Switch workspace if needed
           const currentSession = useSessionStore.getState().session;
@@ -163,12 +162,6 @@ export default function OAuth() {
             }
           }
         }
-
-        gtmLoginSuccess({
-          method: 'oauth2',
-          productUserTraits,
-          user_type: switchRegionType === SwitchRegionType.INIT ? 'new' : 'existing'
-        });
 
         if (await openBrainTemplateDeploy(marketingQuery)) {
           return;

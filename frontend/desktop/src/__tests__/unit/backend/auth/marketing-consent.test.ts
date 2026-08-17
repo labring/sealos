@@ -56,7 +56,7 @@ describe('marketing consent token', () => {
     expect(payload).toHaveProperty('exp');
   });
 
-  it('propagates consent from the versioned browser attribution input', async () => {
+  it('does not elevate browser-asserted consent', async () => {
     const globalToken = generateGlobalAccessToken({
       preferred_username: 'user-test',
       sub: 'user-test',
@@ -93,8 +93,8 @@ describe('marketing consent token', () => {
         issuer: 'sealos-desktop'
       })
     ).toMatchObject({
-      ad_personalization: 'granted',
-      ad_user_data_consent: 'granted',
+      ad_personalization: 'unspecified',
+      ad_user_data_consent: 'unspecified',
       attribution_hash: expect.any(String),
       sub: 'user-test'
     });
