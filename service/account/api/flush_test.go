@@ -147,6 +147,56 @@ func TestIsDebtRecoveryTransition(t *testing.T) {
 	}
 }
 
+func TestReplayFinalDeletionNamespaceStatusProtectsResumedNamespaces(t *testing.T) {
+	scheme := runtime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("add core scheme: %v", err)
+	}
+
+	clt := clientfake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(
+			newTestNamespace("resumed", "owner", map[string]string{
+				types.DebtNamespaceAnnoStatusKey: types.ResumeCompletedDebtNamespaceAnnoStatus,
+			}),
+			newTestNamespace("in-progress", "owner", map[string]string{
+				types.DebtNamespaceAnnoStatusKey: types.FinalDeletionDebtNamespaceAnnoStatus,
+			}),
+			newTestNamespace("completed", "owner", map[string]string{
+				types.DebtNamespaceAnnoStatusKey: types.FinalDeletionCompletedDebtNamespaceAnnoStatus,
+			}),
+			newTestNamespace("missing", "owner", nil),
+		).
+		Build()
+
+	if err := replayFinalDeletionNamespaceStatus(
+		context.Background(),
+		clt,
+		[]string{"resumed", "in-progress", "completed", "missing"},
+	); err != nil {
+		t.Fatalf("replay final deletion namespace status: %v", err)
+	}
+
+	assertNamespaceDebtStatus := func(name, want string) *corev1.Namespace {
+		t.Helper()
+		ns := &corev1.Namespace{}
+		if err := clt.Get(context.Background(), client.ObjectKey{Name: name}, ns); err != nil {
+			t.Fatalf("get namespace %s: %v", name, err)
+		}
+		if got := ns.Annotations[types.DebtNamespaceAnnoStatusKey]; got != want {
+			t.Fatalf("namespace %s debt status = %q, want %q", name, got, want)
+		}
+		return ns
+	}
+
+	assertNamespaceDebtStatus("resumed", types.ResumeCompletedDebtNamespaceAnnoStatus)
+	if ns := assertNamespaceDebtStatus("in-progress", types.FinalDeletionDebtNamespaceAnnoStatus); ns.Annotations[types.FinalDeletionReplayAnnotationKey] == "" {
+		t.Fatal("in-progress namespace should receive a replay marker")
+	}
+	assertNamespaceDebtStatus("completed", types.FinalDeletionCompletedDebtNamespaceAnnoStatus)
+	assertNamespaceDebtStatus("missing", types.FinalDeletionDebtNamespaceAnnoStatus)
+}
+
 func setWorkspaceSubscriptionExistsForTest(t *testing.T, fn func(workspace string) (bool, error)) {
 	t.Helper()
 	old := workspaceSubscriptionExists

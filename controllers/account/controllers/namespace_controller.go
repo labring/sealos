@@ -74,6 +74,8 @@ const (
 	DeployPVCResizeKey = "deploy.cloud.sealos.io/resize"
 )
 
+var errFinalDeletionCancelled = errors2.New("final deletion cancelled by namespace status")
+
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=namespaces/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=namespaces/finalizers,verbs=update
@@ -146,6 +148,9 @@ func (r *NamespaceReconciler) Reconcile(
 	// auxiliary function handles resource operations
 	performAction := func(action func(context.Context, string) error, actionName string) (ctrl.Result, error) {
 		if err := action(ctx, req.Name); err != nil {
+			if errors2.Is(err, errFinalDeletionCancelled) {
+				return ctrl.Result{}, err
+			}
 			logger.Error(err, actionName+" namespace resources failed")
 			return ctrl.Result{
 				Requeue:      actionName == deleteConst,
@@ -379,6 +384,10 @@ func (r *NamespaceReconciler) Reconcile(
 		if t.condition() {
 			if t.action != nil {
 				if result, err := performAction(t.action, t.actionName); err != nil {
+					if errors2.Is(err, errFinalDeletionCancelled) {
+						logger.Info("final deletion cancelled by current namespace status")
+						return ctrl.Result{}, nil
+					}
 					return result, err
 				}
 			}
@@ -441,10 +450,43 @@ func (r *NamespaceReconciler) deleteBackup(ctx context.Context, namespace string
 		Version:  "v1alpha1",
 		Resource: "backups",
 	}
-	return deleteResourceListAndWait(ctx, r.dynamicClient, gvr, namespace, r.deleteBackupSemaphore)
+	return deleteResourceListAndWait(
+		ctx,
+		r.dynamicClient,
+		gvr,
+		namespace,
+		r.deleteBackupSemaphore,
+		func(ctx context.Context) error {
+			return r.ensureFinalDeletionActive(ctx, namespace)
+		},
+	)
+}
+
+func (r *NamespaceReconciler) ensureFinalDeletionActive(ctx context.Context, namespace string) error {
+	current := &corev1.Namespace{}
+	if err := r.Client.Get(ctx, client.ObjectKey{Name: namespace}, current); err != nil {
+		if errors.IsNotFound(err) {
+			return fmt.Errorf("%w: namespace %s no longer exists", errFinalDeletionCancelled, namespace)
+		}
+		return fmt.Errorf("failed to verify final deletion status for namespace %s: %w", namespace, err)
+	}
+	if current.Status.Phase == corev1.NamespaceTerminating ||
+		current.Annotations[types.DebtNamespaceAnnoStatusKey] != types.FinalDeletionDebtNamespaceAnnoStatus {
+		return fmt.Errorf(
+			"%w: namespace %s has debt status %q",
+			errFinalDeletionCancelled,
+			namespace,
+			current.Annotations[types.DebtNamespaceAnnoStatusKey],
+		)
+	}
+	return nil
 }
 
 func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace string) error {
+	if err := r.ensureFinalDeletionActive(ctx, namespace); err != nil {
+		return err
+	}
+
 	// Delete backup first and wait for completion
 	if err := r.deleteBackup(ctx, namespace); err != nil {
 		return err
@@ -472,10 +514,18 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 			}
 		}(rs)
 	}
+	wasCancelled := false
 	for range deleteResources {
 		if err := <-errChan; err != nil {
+			if errors2.Is(err, errFinalDeletionCancelled) {
+				wasCancelled = true
+				continue
+			}
 			return err
 		}
+	}
+	if wasCancelled {
+		return errFinalDeletionCancelled
 	}
 	return nil
 }
@@ -1370,11 +1420,14 @@ func (AnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
 	newDebtStatus := newObj.Annotations[types.DebtNamespaceAnnoStatusKey]
 	oldNetworkStatus := oldObj.Annotations[types.NetworkStatusAnnoKey]
 	newNetworkStatus := newObj.Annotations[types.NetworkStatusAnnoKey]
+	oldFinalDeletionReplay := oldObj.Annotations[types.FinalDeletionReplayAnnotationKey]
+	newFinalDeletionReplay := newObj.Annotations[types.FinalDeletionReplayAnnotationKey]
 
 	debtChanged := oldDebtStatus != newDebtStatus && !isDebtCompleted(newDebtStatus)
 	networkChanged := oldNetworkStatus != newNetworkStatus && !isNetworkCompleted(newNetworkStatus)
+	replayChanged := oldFinalDeletionReplay != newFinalDeletionReplay && newFinalDeletionReplay != ""
 
-	return debtChanged || networkChanged
+	return debtChanged || networkChanged || replayChanged
 }
 
 func (AnnotationChangedPredicate) Create(e event.CreateEvent) bool {
@@ -2370,6 +2423,10 @@ func (r *NamespaceReconciler) deleteResource(
 	ctx context.Context,
 	resource, namespace string,
 ) error {
+	if err := r.ensureFinalDeletionActive(ctx, namespace); err != nil {
+		return err
+	}
+
 	deletePolicy := v12.DeletePropagationForeground
 	var gvr schema.GroupVersionResource
 	switch resource {
@@ -2803,7 +2860,12 @@ func deleteResourceListAndWait(
 	gvr schema.GroupVersionResource,
 	namespace string,
 	semaphore chan struct{},
+	guard func(context.Context) error,
 ) error {
+	if err := guard(ctx); err != nil {
+		return err
+	}
+
 	// List all resources
 	list, err := dynamicClient.Resource(gvr).Namespace(namespace).List(ctx, v12.ListOptions{})
 	if err != nil {
@@ -2828,6 +2890,10 @@ func deleteResourceListAndWait(
 			select {
 			case semaphore <- struct{}{}:
 				defer func() { <-semaphore }() // Release semaphore when done
+				if guardErr := guard(ctx); guardErr != nil {
+					errCh <- guardErr
+					return
+				}
 				if deleteErr := deleteResourceAndWait(
 					ctx,
 					dynamicClient,
@@ -2849,12 +2915,20 @@ func deleteResourceListAndWait(
 		close(errCh)
 	}()
 
+	wasCancelled := false
 	for deleteErr := range errCh {
+		if errors2.Is(deleteErr, errFinalDeletionCancelled) {
+			wasCancelled = true
+			continue
+		}
 		allErrors = append(allErrors, deleteErr)
 	}
 
 	if len(allErrors) > 0 {
 		return fmt.Errorf("failed to delete some %s resources: %v", gvr, allErrors)
+	}
+	if wasCancelled {
+		return errFinalDeletionCancelled
 	}
 
 	return nil
