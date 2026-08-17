@@ -521,6 +521,36 @@ describe('json2DeployCr', () => {
     expect(paths).not.toContain('/spec/template/metadata/labels/restartTime');
     expect(paths.some((path) => path.startsWith('/spec/template'))).toBe(false);
   });
+
+  it('keeps the existing StatefulSet governing Service when ports change', () => {
+    const app = createApp();
+    app.kind = 'statefulset';
+    app.statefulSetServiceName = 'demo-governing';
+    app.networks = [{ ...app.networks[0], serviceName: '', port: 4819 }];
+
+    const statefulSet = yamlString2Objects(json2DeployCr(app, 'statefulset'))[0] as any;
+    const service = yamlString2Objects(json2Service(app))[0] as any;
+
+    expect(statefulSet.spec.serviceName).toBe('demo-governing');
+    expect(service.metadata.name).toBe('demo-governing');
+    expect(service.spec.ports[0].port).toBe(4819);
+  });
+
+  it('keeps a governing ClusterIP Service when every StatefulSet port uses NodePort', () => {
+    const app = createApp();
+    app.kind = 'statefulset';
+    app.statefulSetServiceName = 'demo-governing';
+    app.networks = [{ ...app.networks[0], openNodePort: true, nodePort: 30080 }];
+
+    const services = yamlString2Objects(json2Service(app)) as any[];
+
+    expect(services.map((service) => service.metadata.name)).toEqual([
+      'demo-governing',
+      expect.stringContaining('-nodeport-')
+    ]);
+    expect(services[0].spec.type).toBeUndefined();
+    expect(services[0].spec.ports[0]).not.toHaveProperty('nodePort');
+  });
 });
 
 describe('json2Secret', () => {
