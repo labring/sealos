@@ -11,7 +11,7 @@ type State = {
   loadUserQuota: () => Promise<null>;
   userSourcePrice: userPriceType | undefined;
   loadUserSourcePrice: () => Promise<null>;
-  checkQuotaAllow: (request: AppEditType, usedData?: AppEditType) => string;
+  checkQuotaAllow: (request: AppEditType, usedData?: AppEditType) => Promise<string>;
 };
 
 let retryGetPrice = 3;
@@ -47,11 +47,15 @@ export const useUserStore = create<State>()(
         });
         return null;
       },
-      checkQuotaAllow: (
+      checkQuotaAllow: async (
         { cpu, memory, gpu, storeList, replicas, hpa, networks, ephemeralStorage },
         usedData
       ) => {
-        const quote = get().userQuota;
+        const response = await getUserQuota();
+        const quote = response.quota;
+        set((state) => {
+          state.userQuota = quote;
+        });
 
         const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
         const nodeportsAmount = networks.filter((item) => item.openNodePort).length;
@@ -62,11 +66,12 @@ export const useUserStore = create<State>()(
           gpu: (gpu?.type ? gpu.amount : 0) * requestReplicas,
           storage: storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas,
           nodeports: nodeportsAmount,
-          'ephemeral-storage': ephemeralStorage || 0
+          'ephemeral-storage': (ephemeralStorage || 0) * requestReplicas
         };
 
         if (usedData) {
-          const { cpu, memory, gpu, storeList, replicas, hpa, networks } = usedData;
+          const { cpu, memory, gpu, storeList, replicas, hpa, networks, ephemeralStorage } =
+            usedData;
           const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
           const nodeportsAmount = networks.filter((item) => item.openNodePort).length;
 
@@ -75,6 +80,7 @@ export const useUserStore = create<State>()(
           request.gpu -= (gpu?.type ? gpu.amount : 0) * requestReplicas;
           request.storage -= storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas;
           request.nodeports -= nodeportsAmount;
+          request['ephemeral-storage'] -= (ephemeralStorage || 0) * requestReplicas;
         }
 
         const overLimitTip = {
