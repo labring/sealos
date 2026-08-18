@@ -66,7 +66,6 @@ spec:
                 name: account-manager-env
             - secretRef:
                 name: {{ .Values.adminJwtSecretName }}
-                optional: true
           ports:
             - containerPort: 9443
               name: webhook-server

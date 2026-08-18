@@ -107,7 +107,7 @@ func (manager *JWTManager) VerifyAdminToken(tokenString string) (*UserClaims, er
 		tokenString,
 		&UserClaims{},
 		func(token *jwt.Token) (any, error) {
-			if token.Method != jwt.SigningMethodHS256 {
+			if token.Method == nil || token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 				return nil, errors.New("unexpected token signing method")
 			}
 

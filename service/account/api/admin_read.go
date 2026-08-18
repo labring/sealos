@@ -46,9 +46,10 @@ func adminReadTime(c *gin.Context, name string) (*time.Time, error) {
 }
 
 func adminReadUnauthorized(c *gin.Context, err error) {
+	logrus.WithError(err).Warn("admin read authentication failed")
 	c.JSON(
 		http.StatusUnauthorized,
-		helper.ErrorMessage{Error: fmt.Sprintf("authenticate error: %v", err)},
+		helper.ErrorMessage{Error: "authentication failed"},
 	)
 }
 

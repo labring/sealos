@@ -96,3 +96,20 @@ func TestAdminReadFailureHidesInternalError(t *testing.T) {
 		t.Fatalf("adminReadFailure() exposed internal error: %s", recorder.Body.String())
 	}
 }
+
+func TestAdminReadUnauthorizedHidesAuthenticationError(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	adminReadUnauthorized(c, errors.New("invalid admin token: signing key details"))
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf(
+			"adminReadUnauthorized() status = %d, want %d",
+			recorder.Code,
+			http.StatusUnauthorized,
+		)
+	}
+	if strings.Contains(recorder.Body.String(), "signing key details") {
+		t.Fatalf("adminReadUnauthorized() exposed authentication error: %s", recorder.Body.String())
+	}
+}
