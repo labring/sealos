@@ -75,8 +75,71 @@ func adminFlushDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq) e
 	if err != nil {
 		return fmt.Errorf("get own namespace list failed: %w", err)
 	}
+	if req.ReplayFinalDeletion {
+		if req.CurrentDebtStatus != types.FinalDeletionPeriod {
+			return fmt.Errorf(
+				"final deletion replay requires current status %s, got %q",
+				types.FinalDeletionPeriod,
+				req.CurrentDebtStatus,
+			)
+		}
+		if err = replayFinalDeletionNamespaceStatus(
+			context.Background(),
+			dao.K8sManager.GetClient(),
+			namespaces,
+		); err != nil {
+			return fmt.Errorf("failed to replay final deletion namespace status: %w", err)
+		}
+		return nil
+	}
 	if err = flushUserDebtResourceStatus(req, dao.K8sManager.GetClient(), namespaces); err != nil {
 		return fmt.Errorf("failed to flush user resource status: %w", err)
+	}
+	return nil
+}
+
+func replayFinalDeletionNamespaceStatus(
+	ctx context.Context,
+	clt client.Client,
+	namespaces []string,
+) error {
+	for _, namespace := range namespaces {
+		original := &corev1.Namespace{}
+		if err := clt.Get(ctx, types2.NamespacedName{Name: namespace}, original); err != nil {
+			return err
+		}
+		if original.Status.Phase == corev1.NamespaceTerminating {
+			continue
+		}
+
+		currentStatus := original.Annotations[types.DebtNamespaceAnnoStatusKey]
+		switch currentStatus {
+		case types.ResumeDebtNamespaceAnnoStatus,
+			types.ResumeCompletedDebtNamespaceAnnoStatus,
+			types.FinalDeletionCompletedDebtNamespaceAnnoStatus:
+			// A recharge has already won this namespace transition. A stale
+			// replay must never turn it back into FinalDeletion. Completed
+			// namespaces are already reconciled and need no retry marker.
+			continue
+		}
+
+		ns := original.DeepCopy()
+		if ns.Annotations == nil {
+			ns.Annotations = make(map[string]string)
+		}
+		switch currentStatus {
+		case types.FinalDeletionDebtNamespaceAnnoStatus:
+			// Changing a separate annotation creates a new namespace event while
+			// keeping the destructive state explicit and idempotent.
+			ns.Annotations[types.FinalDeletionReplayAnnotationKey] = time.Now().
+				UTC().
+				Format(time.RFC3339Nano)
+		default:
+			ns.Annotations[types.DebtNamespaceAnnoStatusKey] = types.FinalDeletionDebtNamespaceAnnoStatus
+		}
+		if err := clt.Patch(ctx, ns, client.MergeFrom(original)); err != nil {
+			return fmt.Errorf("patch namespace %s for final deletion replay: %w", namespace, err)
+		}
 	}
 	return nil
 }
