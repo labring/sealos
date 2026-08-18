@@ -746,9 +746,50 @@ func (r *DebtReconciler) syncFinalDeletionDebtNamespacesForUser(
 	ctx context.Context,
 	userUID uuid.UUID,
 ) error {
+	mutex, err := r.getUserMutex(userUID)
+	if err != nil {
+		return err
+	}
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	// The hourly query can race with a successful recharge. Recompute the
+	// current debt state while holding the same lock as normal refreshes before
+	// issuing another destructive cleanup request.
+	var debt types.Debt
+	if err := r.AccountV2.GetGlobalDB().
+		Where("user_uid = ?", userUID).
+		First(&debt).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("failed to reload debt %s: %w", userUID, err)
+	}
+	if debt.AccountDebtStatus != types.FinalDeletionPeriod {
+		return nil
+	}
+
+	if err := r.refreshDebtStatus(userUID, true); err != nil {
+		return fmt.Errorf("failed to refresh debt status before final deletion replay: %w", err)
+	}
+
+	if err := r.AccountV2.GetGlobalDB().
+		Where("user_uid = ?", userUID).
+		First(&debt).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("failed to reload debt %s after refresh: %w", userUID, err)
+	}
+	if debt.AccountDebtStatus != types.FinalDeletionPeriod {
+		return nil
+	}
+
+	req := finalDeletionDebtNamespaceFlushReq(userUID)
+	req.ReplayFinalDeletion = true
 	return r.sendFlushDebtResourceStatusRequestWithContext(
 		ctx,
-		finalDeletionDebtNamespaceFlushReq(userUID),
+		req,
 	)
 }
 
@@ -1077,10 +1118,11 @@ func (r *DebtReconciler) SendUserDebtMsg(
 }
 
 type AdminFlushResourceStatusReq struct {
-	UserUID           uuid.UUID            `json:"userUID"           bson:"userUID"`
-	LastDebtStatus    types.DebtStatusType `json:"lastDebtStatus"    bson:"lastDebtStatus"`
-	CurrentDebtStatus types.DebtStatusType `json:"currentDebtStatus" bson:"currentDebtStatus"`
-	IsBasicUser       bool                 `json:"isBasicUser"       bson:"isBasicUser"`
+	UserUID             uuid.UUID            `json:"userUID"                       bson:"userUID"`
+	LastDebtStatus      types.DebtStatusType `json:"lastDebtStatus"                bson:"lastDebtStatus"`
+	CurrentDebtStatus   types.DebtStatusType `json:"currentDebtStatus"             bson:"currentDebtStatus"`
+	IsBasicUser         bool                 `json:"isBasicUser"                   bson:"isBasicUser"`
+	ReplayFinalDeletion bool                 `json:"replayFinalDeletion,omitempty" bson:"replayFinalDeletion,omitempty"`
 }
 
 // TODO flush desktop message (send or read) && flush resource quota (suspend or resume or delete)
@@ -1235,6 +1277,18 @@ func (r *DebtReconciler) retryFailedUsers() {
 	}
 }
 
+func (r *DebtReconciler) getUserMutex(userUID uuid.UUID) (*sync.Mutex, error) {
+	if r.userLocks == nil {
+		return nil, errors.New("user locks are not initialized")
+	}
+	lock, _ := r.userLocks.LoadOrStore(userUID, &sync.Mutex{})
+	mutex, ok := lock.(*sync.Mutex)
+	if !ok {
+		return nil, fmt.Errorf("invalid mutex for user %s", userUID)
+	}
+	return mutex, nil
+}
+
 // Parallel processing of user debt status, the same user simultaneously through the lock to implement a debt refresh processing.
 func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 	var (
@@ -1248,13 +1302,9 @@ func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 		go func(u uuid.UUID) {
 			defer wg.Done()
 			defer func() { <-semaphore }()
-			lock, _ := r.userLocks.LoadOrStore(u, &sync.Mutex{})
-			mutex, ok := lock.(*sync.Mutex)
-			if !ok {
-				r.Error(
-					fmt.Errorf("invalid mutex for user %s", u),
-					"failed to load user mutex",
-				)
+			mutex, err := r.getUserMutex(u)
+			if err != nil {
+				r.Error(err, "failed to load user mutex", "userUID", u)
 				return
 			}
 			if !mutex.TryLock() {

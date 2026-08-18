@@ -224,6 +224,18 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		}
 		r.userLock[userUID].Lock()
 		defer r.userLock[userUID].Unlock()
+		debtMutex, err := r.DebtReconciler.getUserMutex(userUID)
+		if err != nil {
+			return fmt.Errorf("get debt user lock failed: %w", err)
+		}
+		debtMutex.Lock()
+		shouldRefreshDebt := false
+		defer func() {
+			debtMutex.Unlock()
+			if shouldRefreshDebt {
+				go r.DebtReconciler.processUsersInParallel([]uuid.UUID{userUID})
+			}
+		}()
 		userDiscount, err := r.Account.AccountV2.GetUserRechargeDiscount(
 			&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID},
 		)
@@ -253,11 +265,12 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		}); err != nil {
 			return fmt.Errorf("payment failed: %w", err)
 		}
+		shouldRefreshDebt = true
 		payment.Status.Status = pay.PaymentSuccess
 		if err := r.Status().Update(context.Background(), payment); err != nil {
 			return fmt.Errorf("update payment failed: %w", err)
 		}
-	// case pay.PaymentFailed, pay.PaymentExpired:
+		// case pay.PaymentFailed, pay.PaymentExpired:
 	default:
 		if err := r.expiredOvertimePayment(payment); err != nil {
 			return fmt.Errorf("expired payment failed: %w", err)

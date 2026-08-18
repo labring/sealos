@@ -3,9 +3,11 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/go-logr/logr"
+	"github.com/labring/sealos/controllers/pkg/types"
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	batchv1 "k8s.io/api/batch/v1"
@@ -18,7 +20,76 @@ import (
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	clientfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 )
+
+func TestAnnotationChangedPredicateFinalDeletionReplay(t *testing.T) {
+	oldNamespace := &corev1.Namespace{
+		ObjectMeta: v1.ObjectMeta{
+			Annotations: map[string]string{
+				types.DebtNamespaceAnnoStatusKey: types.FinalDeletionDebtNamespaceAnnoStatus,
+			},
+		},
+	}
+	newNamespace := oldNamespace.DeepCopy()
+	newNamespace.Annotations[types.FinalDeletionReplayAnnotationKey] = "2026-08-17T00:00:00Z"
+
+	if !(AnnotationChangedPredicate{}).Update(event.UpdateEvent{
+		ObjectOld: oldNamespace,
+		ObjectNew: newNamespace,
+	}) {
+		t.Fatal("final deletion replay annotation should trigger reconciliation")
+	}
+
+	oldNamespace = newNamespace
+	newNamespace = oldNamespace.DeepCopy()
+	newNamespace.Annotations[types.DebtNamespaceAnnoStatusKey] = types.ResumeCompletedDebtNamespaceAnnoStatus
+	if (AnnotationChangedPredicate{}).Update(event.UpdateEvent{
+		ObjectOld: oldNamespace,
+		ObjectNew: newNamespace,
+	}) {
+		t.Fatal("completed resume transition should not trigger deletion reconciliation")
+	}
+}
+
+func TestDeleteUserResourceStopsAfterRecharge(t *testing.T) {
+	scheme := runtime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add core scheme: %v", err)
+	}
+
+	namespace := &corev1.Namespace{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "test-ns",
+			Annotations: map[string]string{
+				types.DebtNamespaceAnnoStatusKey: types.FinalDeletionDebtNamespaceAnnoStatus,
+			},
+		},
+	}
+	fakeClient := clientfake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(namespace).
+		Build()
+
+	ctx := context.Background()
+	var recharged corev1.Namespace
+	if err := fakeClient.Get(ctx, client.ObjectKey{Name: "test-ns"}, &recharged); err != nil {
+		t.Fatalf("failed to get namespace: %v", err)
+	}
+	recharged.Annotations[types.DebtNamespaceAnnoStatusKey] = types.ResumeDebtNamespaceAnnoStatus
+	if err := fakeClient.Update(ctx, &recharged); err != nil {
+		t.Fatalf("failed to update namespace after recharge: %v", err)
+	}
+
+	reconciler := &NamespaceReconciler{
+		Client: fakeClient,
+		Log:    logr.Discard(),
+	}
+	err := reconciler.DeleteUserResource(ctx, "test-ns")
+	if !errors.Is(err, errFinalDeletionCancelled) {
+		t.Fatalf("expected final deletion cancellation, got %v", err)
+	}
+}
 
 // Test suspendOrphanDeployments and resumeOrphanDeployments
 func TestSuspendResumeOrphanDeployments(t *testing.T) {
