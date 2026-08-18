@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/labring/sealos/controllers/pkg/types"
@@ -16,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -88,6 +90,140 @@ func TestDeleteUserResourceStopsAfterRecharge(t *testing.T) {
 	err := reconciler.DeleteUserResource(ctx, "test-ns")
 	if !errors.Is(err, errFinalDeletionCancelled) {
 		t.Fatalf("expected final deletion cancellation, got %v", err)
+	}
+}
+
+type deleteCollectionTestDynamicClient struct {
+	dynamic.Interface
+	onDeleteCollection func(schema.GroupVersionResource) error
+}
+
+func (c *deleteCollectionTestDynamicClient) Resource(
+	gvr schema.GroupVersionResource,
+) dynamic.NamespaceableResourceInterface {
+	return &deleteCollectionTestNamespaceableResource{
+		NamespaceableResourceInterface: c.Interface.Resource(gvr),
+		gvr:                            gvr,
+		onDeleteCollection:             c.onDeleteCollection,
+	}
+}
+
+type deleteCollectionTestNamespaceableResource struct {
+	dynamic.NamespaceableResourceInterface
+	gvr                schema.GroupVersionResource
+	onDeleteCollection func(schema.GroupVersionResource) error
+}
+
+func (r *deleteCollectionTestNamespaceableResource) Namespace(
+	namespace string,
+) dynamic.ResourceInterface {
+	return &deleteCollectionTestResource{
+		ResourceInterface:  r.NamespaceableResourceInterface.Namespace(namespace),
+		gvr:                r.gvr,
+		onDeleteCollection: r.onDeleteCollection,
+	}
+}
+
+type deleteCollectionTestResource struct {
+	dynamic.ResourceInterface
+	gvr                schema.GroupVersionResource
+	onDeleteCollection func(schema.GroupVersionResource) error
+}
+
+func (r *deleteCollectionTestResource) DeleteCollection(
+	_ context.Context,
+	_ v1.DeleteOptions,
+	_ v1.ListOptions,
+) error {
+	return r.onDeleteCollection(r.gvr)
+}
+
+func TestDeleteUserResourceWaitsForSiblingWorkersAfterError(t *testing.T) {
+	scheme := runtime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("failed to add core scheme: %v", err)
+	}
+
+	namespace := &corev1.Namespace{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "test-ns",
+			Annotations: map[string]string{
+				types.DebtNamespaceAnnoStatusKey: types.FinalDeletionDebtNamespaceAnnoStatus,
+			},
+		},
+	}
+	fakeClient := clientfake.NewClientBuilder().
+		WithScheme(scheme).
+		WithObjects(namespace).
+		Build()
+
+	fakeDynamicClient := fake.NewSimpleDynamicClientWithCustomListKinds(
+		scheme,
+		map[schema.GroupVersionResource]string{
+			{
+				Group:    "dataprotection.kubeblocks.io",
+				Version:  "v1alpha1",
+				Resource: "backups",
+			}: "BackupList",
+		},
+	)
+	deleteError := errors.New("delete clusters failed")
+	deleteErrorStarted := make(chan struct{})
+	siblingDeleteStarted := make(chan struct{})
+	releaseSiblingDelete := make(chan struct{})
+	dynamicClient := &deleteCollectionTestDynamicClient{
+		Interface: fakeDynamicClient,
+		onDeleteCollection: func(gvr schema.GroupVersionResource) error {
+			resource := gvr.Resource
+			switch resource {
+			case "clusters":
+				close(deleteErrorStarted)
+				return deleteError
+			case "pods":
+				close(siblingDeleteStarted)
+				<-releaseSiblingDelete
+			}
+			return nil
+		},
+	}
+
+	reconciler := &NamespaceReconciler{
+		Client:                  fakeClient,
+		dynamicClient:           dynamicClient,
+		Log:                     logr.Discard(),
+		deleteResourceSemaphore: make(chan struct{}, 20),
+	}
+
+	result := make(chan error, 1)
+	go func() {
+		result <- reconciler.DeleteUserResource(context.Background(), "test-ns")
+	}()
+
+	select {
+	case <-deleteErrorStarted:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for the failing worker")
+	}
+	select {
+	case <-siblingDeleteStarted:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for the sibling worker")
+	}
+
+	select {
+	case err := <-result:
+		t.Fatalf("DeleteUserResource returned before sibling worker completed: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	close(releaseSiblingDelete)
+	select {
+	case err := <-result:
+		if !errors.Is(err, deleteError) {
+			t.Fatalf("expected delete error, got %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for DeleteUserResource")
 	}
 }
 
