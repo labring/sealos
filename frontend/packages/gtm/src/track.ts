@@ -5,6 +5,9 @@ interface GTMConfig {
   debug?: boolean;
 }
 
+// Rybbit event properties are limited to 2KB in total and primitive values only.
+const MAX_RYBBIT_PROPERTY_LENGTH = 512;
+
 type ExtractEventByType<T extends GTMEventType> = Extract<GTMEvent, { event: T }>;
 
 type EventProperties<T extends GTMEventType> = Omit<ExtractEventByType<T>, 'event' | 'context'>;
@@ -52,6 +55,31 @@ class GTMTracker {
     } else if (this.config.debug) {
       console.warn('[Sealos GTM] dataLayer not found');
     }
+
+    this.forwardToRybbit(gtmEvent);
+  }
+
+  private forwardToRybbit(gtmEvent: GTMEvent): void {
+    if (typeof window === 'undefined' || typeof window.rybbit?.event !== 'function') return;
+
+    const { event, ...payload } = gtmEvent;
+    const properties: Record<string, string | number> = {};
+
+    for (const [key, value] of Object.entries(payload)) {
+      if (value === undefined || value === null) continue;
+      const serialized =
+        typeof value === 'string' || typeof value === 'number' ? value : JSON.stringify(value);
+      properties[key] =
+        typeof serialized === 'string' && serialized.length > MAX_RYBBIT_PROPERTY_LENGTH
+          ? serialized.slice(0, MAX_RYBBIT_PROPERTY_LENGTH)
+          : serialized;
+    }
+
+    if (this.config.debug) {
+      console.log('[Sealos Rybbit] event forwarded:', event, properties);
+    }
+
+    window.rybbit.event(event, properties);
   }
 }
 

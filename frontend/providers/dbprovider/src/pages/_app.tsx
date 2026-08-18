@@ -21,6 +21,7 @@ import 'nprogress/nprogress.css';
 import Script from 'next/script';
 import App from 'next/app';
 import { useUserStore } from '@/store/user';
+import { RybbitScript } from '@sealos/gtm';
 import {
   ClientConfigProvider,
   prefetchClientAppConfig,
@@ -226,6 +227,7 @@ function AppContent({
       {customScripts.map((scriptProps, i) => (
         <Script key={i} {...scriptProps} />
       ))}
+      <RybbitScript debug={process.env.NODE_ENV === 'development'} />
     </>
   );
 }

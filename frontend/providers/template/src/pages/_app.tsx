@@ -14,6 +14,7 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import useSessionStore from '@/store/session';
 import { useUserStore } from '@/store/user';
+import { RybbitScript } from '@sealos/gtm';
 import {
   ClientConfigProvider,
   prefetchClientAppConfig,
@@ -219,6 +220,7 @@ const MyApp = ({
       {customScripts.map((scriptProps, i) => (
         <Script key={i} {...scriptProps} />
       ))}
+      <RybbitScript debug={process.env.NODE_ENV === 'development'} />
     </>
   );
 };

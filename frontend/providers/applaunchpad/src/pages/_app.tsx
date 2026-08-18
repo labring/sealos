@@ -25,7 +25,7 @@ import '@sealos/driver/src/driver.css';
 import Head from 'next/head';
 import App from 'next/app';
 import Script from 'next/script';
-import { GTMScript } from '@sealos/gtm';
+import { GTMScript, RybbitScript } from '@sealos/gtm';
 import { InsufficientQuotaDialog, type SupportedLang } from '@sealos/shared/shadcn';
 import {
   ClientConfigProvider,
@@ -300,6 +300,7 @@ const MyApp = ({
       <Script key={i} {...script} />
     ))}
     <GTMScript enabled={gtmEnabled} gtmId={gtmId} debug={process.env.NODE_ENV === 'development'} />
+    <RybbitScript debug={process.env.NODE_ENV === 'development'} />
   </>
 );
 

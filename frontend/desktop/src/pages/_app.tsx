@@ -7,7 +7,7 @@ import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Router, { useRouter } from 'next/router';
 import { useEffect } from 'react';
-import { GTMScript } from '@sealos/gtm';
+import { GTMScript, RybbitScript } from '@sealos/gtm';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
@@ -117,6 +117,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         gtmId={layoutConfig?.gtmId ?? ''}
         debug={process.env.NODE_ENV === 'development'}
       />
+      <RybbitScript debug={process.env.NODE_ENV === 'development'} />
       <Hydrate state={pageProps.dehydratedState}>
         <ChakraProvider theme={theme} resetScope=".ck-reset" disableGlobalStyle>
           <Component {...pageProps} />
