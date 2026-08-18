@@ -378,7 +378,7 @@
     "2": " 或调整设置"
   },
   "pls_create": "无结果，请自行创建",
-  "pod": "实例",
+  "pod": "Pod",
   "pod_completed": "Pod已经结束，无法查看日志",
   "prompt": "提示",
   "query_operations": "查询操作数",
