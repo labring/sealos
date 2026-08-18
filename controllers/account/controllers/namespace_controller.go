@@ -535,14 +535,18 @@ func (r *NamespaceReconciler) DeleteUserResource(ctx context.Context, namespace 
 	// deletion workers are still running. Record it and collect sibling results
 	// so this expected cancellation does not become a reconcile failure.
 	wasCancelled := false
+	var allErrors []error
 	for range deleteResources {
 		if err := <-errChan; err != nil {
 			if errors2.Is(err, errFinalDeletionCancelled) {
 				wasCancelled = true
 				continue
 			}
-			return err
+			allErrors = append(allErrors, err)
 		}
+	}
+	if len(allErrors) > 0 {
+		return errors2.Join(allErrors...)
 	}
 	if wasCancelled {
 		return errFinalDeletionCancelled
