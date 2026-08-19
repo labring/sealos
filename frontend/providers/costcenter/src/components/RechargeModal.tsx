@@ -99,11 +99,11 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
             minVersion={4}
             style={{ margin: '0 auto' }}
             imageSettings={{
-              // 二维码中间的logo图片
+              // logo image in the center of the QR code
               src: wechat_icon.src,
               height: 40,
               width: 40,
-              excavate: true // 中间图片所在的位置是否镂空
+              excavate: true // whether to cut out the area where the center image is located
             }}
           />
         ) : (
@@ -130,6 +130,8 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
 }
 function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: string }) {
   const { t } = useTranslation();
+  // The Alipay cashier is returned as an HTML form and embedded via iframe; otherwise (legacy data) render as a QR code
+  const isCashierHTML = !!props.codeURL?.trim().startsWith('<');
   return (
     <Flex
       flexDirection="column"
@@ -142,23 +144,35 @@ function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: st
       alignItems={'center'}
       position={'relative'}
     >
-      <Flex height={'295px'} direction={'column'} align="center" justify={'space-between'}>
+      <Flex
+        height={isCashierHTML ? 'auto' : '295px'}
+        direction={'column'}
+        align="center"
+        justify={'space-between'}
+      >
         <p className="text-lg font-semibold mb-2 text-center">{t('common:scan_with_alipay')}</p>
         {props.complete === 2 && !!props.codeURL ? (
-          <QRCodeSVG
-            size={185}
-            value={props.codeURL}
-            level="Q"
-            minVersion={4}
-            style={{ margin: '0 auto' }}
-            imageSettings={{
-              // 二维码中间的logo图片
-              src: alipay_icon.src,
-              height: 40,
-              width: 40,
-              excavate: true // 中间图片所在的位置是否镂空
-            }}
-          />
+          isCashierHTML ? (
+            <iframe
+              srcDoc={props.codeURL}
+              style={{ width: 215, height: 215, border: 'none', display: 'inline-block' }}
+            />
+          ) : (
+            <QRCodeSVG
+              size={185}
+              value={props.codeURL}
+              level="Q"
+              minVersion={4}
+              style={{ margin: '0 auto' }}
+              imageSettings={{
+                // logo image in the center of the QR code
+                src: alipay_icon.src,
+                height: 40,
+                width: 40,
+                excavate: true // whether to cut out the area where the center image is located
+              }}
+            />
+          )
         ) : (
           <Box>waiting...</Box>
         )}
@@ -292,11 +306,11 @@ const RechargeModal = forwardRef(
 
     const [step, setStep] = useState(1);
 
-    // 整个流程跑通需要状态管理, 0 初始态， 1 创建支付单， 2 支付中, 3 支付成功
+    // the whole flow needs state management: 0 initial, 1 payment order created, 2 paying, 3 paid
     const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0);
-    // 0 是微信，1 是stripe, 2 是支付宝
+    // 0 is wechat, 1 is stripe, 2 is alipay
     const [payType, setPayType] = useState<'wechat' | 'stripe' | 'alipay'>('wechat');
-    // 计费详情
+    // billing details
     const [detail, setDetail] = useState(false);
     const [paymentName, setPaymentName] = useState('');
     const [selectAmount, setSelectAmount] = useState(0);
@@ -448,7 +462,7 @@ const RechargeModal = forwardRef(
           status: 'error',
           title: t('common:pay_minimum_tips')
         });
-        // 校检，stripe有最低费用的要求
+        // validation: stripe has a minimum charge requirement
         return;
       }
       setComplete(1);
