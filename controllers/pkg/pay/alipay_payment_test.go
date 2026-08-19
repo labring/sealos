@@ -1,12 +1,36 @@
 package pay
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/account"
+	"github.com/smartwalle/alipay/v3"
 )
+
+type mockAlipayClient struct {
+	preCreateParam alipay.TradePreCreate
+	preCreateResp  *alipay.TradePreCreateRsp
+}
+
+func (m *mockAlipayClient) TradePreCreate(_ context.Context, param alipay.TradePreCreate) (*alipay.TradePreCreateRsp, error) {
+	m.preCreateParam = param
+	return m.preCreateResp, nil
+}
+
+func (m *mockAlipayClient) TradeQuery(context.Context, alipay.TradeQuery) (*alipay.TradeQueryRsp, error) {
+	return nil, nil
+}
+
+func (m *mockAlipayClient) TradeClose(context.Context, alipay.TradeClose) (*alipay.TradeCloseRsp, error) {
+	return nil, nil
+}
+
+func (m *mockAlipayClient) TradeRefund(context.Context, alipay.TradeRefund) (*alipay.TradeRefundRsp, error) {
+	return nil, nil
+}
 
 func setupenvAlipay() {
 	const (
@@ -52,6 +76,30 @@ func setupenvAlipay() {
 	err := os.Setenv(account.PayIsProduction, "true")
 	if err != nil {
 		return
+	}
+}
+
+func TestAlipayPaymentCreatePaymentUsesPrecreatedQRCode(t *testing.T) {
+	client := &mockAlipayClient{
+		preCreateResp: &alipay.TradePreCreateRsp{QRCode: "https://qr.alipay.com/example"},
+	}
+	payment := &AlipayPayment{client: client}
+
+	tradeNo, codeURL, err := payment.CreatePayment(1_000_000, "test-user", "test payment")
+	if err != nil {
+		t.Fatalf("CreatePayment() failed: %v", err)
+	}
+	if tradeNo == "" {
+		t.Fatal("CreatePayment() returned an empty trade number")
+	}
+	if codeURL != "https://qr.alipay.com/example" {
+		t.Fatalf("CreatePayment() codeURL = %q, want precreated QR code", codeURL)
+	}
+	if client.preCreateParam.ProductCode != "FACE_TO_FACE_PAYMENT" {
+		t.Fatalf("ProductCode = %q, want FACE_TO_FACE_PAYMENT", client.preCreateParam.ProductCode)
+	}
+	if client.preCreateParam.TotalAmount != "1.00" {
+		t.Fatalf("TotalAmount = %q, want 1.00", client.preCreateParam.TotalAmount)
 	}
 }
 

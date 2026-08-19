@@ -14,7 +14,14 @@ import (
 )
 
 type AlipayPayment struct {
-	client *alipay.Client
+	client alipayClient
+}
+
+type alipayClient interface {
+	TradePreCreate(context.Context, alipay.TradePreCreate) (*alipay.TradePreCreateRsp, error)
+	TradeQuery(context.Context, alipay.TradeQuery) (*alipay.TradeQueryRsp, error)
+	TradeClose(context.Context, alipay.TradeClose) (*alipay.TradeCloseRsp, error)
+	TradeRefund(context.Context, alipay.TradeRefund) (*alipay.TradeRefundRsp, error)
 }
 
 func NewAlipayPayment() (*AlipayPayment, error) {
@@ -39,26 +46,28 @@ func NewAlipayPayment() (*AlipayPayment, error) {
 	if err = client.LoadAlipayCertPublicKey(os.Getenv(account.AlipayCertPublicKey)); err != nil {
 		return nil, fmt.Errorf("load alipayCertPublicKey failed: %w", err)
 	}
-	return &AlipayPayment{client}, nil
+	return &AlipayPayment{client: client}, nil
 }
 
-// CreatePayment Create a payment and return the payment URL and order number
+// CreatePayment creates a payment and returns the QR code content and order number.
 func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string, error) {
-	p := alipay.TradePagePay{}
+	p := alipay.TradePreCreate{}
 	p.Subject = "sealos_cloud_pay"
 	p.OutTradeNo = uuid.NewString()
 	p.TotalAmount = fmt.Sprintf(
 		"%.2f",
 		float64(amount)/1_000_000,
 	) // the unit of the amount is converted to a dollar
-	p.ProductCode = "FAST_INSTANT_TRADE_PAY"
-	p.QRPayMode = "2"
+	p.ProductCode = "FACE_TO_FACE_PAYMENT"
 	p.TimeoutExpress = "10m"
-	url, err := a.client.TradePagePay(p)
+	response, err := a.client.TradePreCreate(context.Background(), p)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("alipay precreate failed: %w", err)
 	}
-	return p.OutTradeNo, url.String(), nil
+	if response == nil || response.QRCode == "" {
+		return "", "", fmt.Errorf("alipay precreate returned an empty QR code")
+	}
+	return p.OutTradeNo, response.QRCode, nil
 }
 
 // GetPaymentDetails check the status of your payment

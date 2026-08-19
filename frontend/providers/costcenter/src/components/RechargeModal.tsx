@@ -149,7 +149,6 @@ function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: st
             size={185}
             value={props.codeURL}
             level="Q"
-            minVersion={4}
             style={{ margin: '0 auto' }}
             imageSettings={{
               // 二维码中间的logo图片
