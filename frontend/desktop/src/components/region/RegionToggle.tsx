@@ -26,6 +26,7 @@ import { useMemo } from 'react';
 import { useConfigStore } from '@/stores/config';
 import { CheckIcon, ChevronDown } from 'lucide-react';
 import { I18nCloudProvidersKey } from '@/types/i18next';
+import { persistMarketingQuery, resolveMarketingQuery } from '@/utils/marketing-attribution';
 
 export default function RegionToggle() {
   const { setWorkSpaceId, session } = useSessionStore();
@@ -61,6 +62,11 @@ export default function RegionToggle() {
     target.searchParams.append('token', token);
     target.searchParams.append('regionId', region.uid);
     target.searchParams.append('regionDomain', region.domain);
+    const marketingQuery = resolveMarketingQuery(router.query);
+    persistMarketingQuery(marketingQuery);
+    Object.entries(marketingQuery).forEach(([key, value]) => {
+      if (value) target.searchParams.set(key, value);
+    });
     await router.replace(target);
   };
 

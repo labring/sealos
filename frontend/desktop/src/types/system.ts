@@ -242,6 +242,7 @@ export type JwtConfigType = {
   internal?: string;
   regional?: string;
   global?: string;
+  marketingConsent?: string;
 };
 
 export type DesktopConfigType<T = AuthConfigType> = {

@@ -58,6 +58,7 @@ desktopConfig:
   jwtInternal: 'your-jwt-internal-key' # 内部 JWT 密钥
   jwtRegional: 'your-jwt-regional-key' # 区域 JWT 密钥
   jwtGlobal: 'your-jwt-global-key' # 全局 JWT 密钥
+  jwtMarketingConsent: 'your-marketing-consent-key' # 与 Brain 共享的营销 consent JWT 密钥
 ```
 
 ### 4. 计费配置

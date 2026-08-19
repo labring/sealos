@@ -63,6 +63,7 @@ if [ "$AUTO_CONFIG_ENABLED" = "true" ]; then
   SEALOS_JWT_INTERNAL=$(get_cm_value sealos-system sealos-config jwtInternal)
   SEALOS_JWT_REGIONAL=$(get_cm_value sealos-system sealos-config jwtRegional)
   SEALOS_JWT_GLOBAL=$(get_cm_value sealos-system sealos-config jwtGlobal)
+  SEALOS_JWT_MARKETING_CONSENT=$(get_cm_value sealos-system sealos-config jwtMarketingConsent)
   SEALOS_REGION_UID=$(get_cm_value sealos-system sealos-config regionUID)
   SEALOS_DATABASE_MONGODB_URI=$(get_cm_value sealos-system sealos-config databaseMongodbURI)
   SEALOS_DATABASE_GLOBAL_COCKROACHDB_URI=$(get_cm_value sealos-system sealos-config databaseGlobalCockroachdbURI)
@@ -83,6 +84,7 @@ if [ "$AUTO_CONFIG_ENABLED" = "true" ]; then
   [ -n "$SEALOS_JWT_INTERNAL" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.jwtInternal=$SEALOS_JWT_INTERNAL"
   [ -n "$SEALOS_JWT_REGIONAL" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.jwtRegional=$SEALOS_JWT_REGIONAL"
   [ -n "$SEALOS_JWT_GLOBAL" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.jwtGlobal=$SEALOS_JWT_GLOBAL"
+  [ -n "$SEALOS_JWT_MARKETING_CONSENT" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.jwtMarketingConsent=$SEALOS_JWT_MARKETING_CONSENT"
   [ -n "$SEALOS_REGION_UID" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.regionUID=$SEALOS_REGION_UID"
   [ -n "$SEALOS_DATABASE_MONGODB_URI" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.databaseMongodbURI=$SEALOS_DATABASE_MONGODB_URI"
   [ -n "$SEALOS_DATABASE_GLOBAL_COCKROACHDB_URI" ] && HELM_ARGS="$HELM_ARGS --set-string desktopConfig.databaseGlobalCockroachdbURI=$SEALOS_DATABASE_GLOBAL_COCKROACHDB_URI"

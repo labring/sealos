@@ -24,6 +24,12 @@ import { useGuideModalStore } from '@/stores/guideModal';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
 import useAppStore from '@/stores/app';
 import { consumePendingOauth2RedirectPath } from '@/utils/oauth2';
+import {
+  appendMarketingQuery,
+  persistMarketingQuery,
+  resolveMarketingQuery,
+  type MarketingQuery
+} from '@/utils/marketing-attribution';
 
 export default function Callback() {
   const router = useRouter();
@@ -36,6 +42,10 @@ export default function Callback() {
   useEffect(() => {
     if (!router.isReady) return;
     let isProxy: boolean = false;
+    const marketingQuery: MarketingQuery = {
+      ...resolveMarketingQuery(router.query)
+    };
+    persistMarketingQuery(marketingQuery);
     (async () => {
       try {
         if (!provider || !['GITHUB', 'WECHAT', 'GOOGLE', 'OAUTH2'].includes(provider))
@@ -102,9 +112,7 @@ export default function Callback() {
               data.data.error === 'OAUTH_PROVIDER_CONFLICT'
             ) {
               setSigninPageAction('PROMPT_REAUTH_GITHUB');
-              await router.push({
-                pathname: '/signin'
-              });
+              await router.push(appendMarketingQuery('/signin', marketingQuery));
               return;
             }
 
@@ -117,7 +125,7 @@ export default function Callback() {
               const handleLoginRedirect = async () => {
                 const oauth2RedirectPath = consumePendingOauth2RedirectPath();
                 if (oauth2RedirectPath) {
-                  await router.replace(oauth2RedirectPath);
+                  await router.replace(appendMarketingQuery(oauth2RedirectPath, marketingQuery));
                   return;
                 }
                 const appState = useAppStore.getState();
@@ -129,9 +137,11 @@ export default function Callback() {
                   if (appState.autolaunch) {
                     params.append('openapp', appState.autolaunch);
                   }
-                  await router.replace(`/oauth?${params.toString()}`);
+                  await router.replace(
+                    appendMarketingQuery(`/oauth?${params.toString()}`, marketingQuery)
+                  );
                 } else {
-                  await router.replace('/');
+                  await router.replace(appendMarketingQuery('/', marketingQuery));
                 }
               };
 
@@ -153,12 +163,7 @@ export default function Callback() {
                   }
                 } catch (error) {
                   console.error('Auto init failed, fallback to manual:', error);
-                  gtmLoginSuccess({
-                    user_type: 'new',
-                    method: 'oauth2',
-                    oauth2Provider: provider
-                  });
-                  await router.push('/workspace');
+                  await router.push(appendMarketingQuery('/workspace', marketingQuery));
                 }
                 return;
               }
@@ -181,7 +186,7 @@ export default function Callback() {
               const response = await bindRequest(provider)({ code });
               if (response.message === BIND_STATUS.RESULT_SUCCESS) {
                 setProvider();
-                await router.replace('/');
+                await router.replace(appendMarketingQuery('/', marketingQuery));
               } else if (response.message === MERGE_USER_READY.MERGE_USER_CONTINUE) {
                 const code = response.data?.code;
                 if (!code) return;
@@ -191,19 +196,19 @@ export default function Callback() {
                 });
                 setMergeUserStatus(MergeUserStatus.CANMERGE);
                 setProvider();
-                await router.replace('/');
+                await router.replace(appendMarketingQuery('/', marketingQuery));
               } else if (response.message === MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT) {
                 setMergeUserData();
                 setMergeUserStatus(MergeUserStatus.CONFLICT);
                 setProvider();
-                await router.replace('/');
+                await router.replace(appendMarketingQuery('/', marketingQuery));
               }
             } catch (bindError) {
               if ((bindError as any)?.message === MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT) {
                 setMergeUserData();
                 setMergeUserStatus(MergeUserStatus.CONFLICT);
                 setProvider();
-                await router.replace('/');
+                await router.replace(appendMarketingQuery('/', marketingQuery));
               } else {
                 console.log('unkownerror', bindError);
                 throw Error();
@@ -212,12 +217,12 @@ export default function Callback() {
           } else if (action === 'UNBIND') {
             await unBindRequest(provider)({ code });
             setProvider();
-            await router.replace('/');
+            await router.replace(appendMarketingQuery('/', marketingQuery));
           }
         }
       } catch (error) {
         console.error(error);
-        await router.replace('/signin');
+        await router.replace(appendMarketingQuery('/signin', marketingQuery));
       }
     })();
   }, [router]);

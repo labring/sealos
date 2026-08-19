@@ -1,4 +1,5 @@
 import useSessionStore from '@/stores/session';
+import { clearPersistedMarketingQuery } from '@/utils/marketing-attribution';
 import type { ApiResp } from '@/types';
 import axios, { AxiosHeaders, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 const request = axios.create({
@@ -40,6 +41,7 @@ request.interceptors.response.use(
     if (data.code === 401 && !isGuest) {
       console.log('鉴权失败');
       console.log(data.message);
+      clearPersistedMarketingQuery();
       useSessionStore.getState().delSession();
       useSessionStore.getState().setToken('');
       return window.location.replace('/signin');

@@ -9,6 +9,7 @@ import {
   OAuth2RefreshTokenPayload,
   OnceTokenPayload
 } from '@/types/token';
+import { randomUUID } from 'node:crypto';
 import { IncomingHttpHeaders } from 'http';
 import { sign, verify } from 'jsonwebtoken';
 
@@ -16,6 +17,8 @@ const regionUID = () => global.AppConfig?.cloud.regionUID || '123456789';
 export const globalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.global || '123456789';
 const regionalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.regional || '123456789';
 const internalJwtSecret = () => global.AppConfig?.desktop.auth.jwt.internal || '123456789';
+export const marketingConsentJwtSecret = () =>
+  global.AppConfig?.desktop.auth.jwt.marketingConsent || '';
 
 const ACCESS_TOKEN_TYPE = 'access_token' as const;
 const REFRESH_TOKEN_TYPE = 'refresh_token' as const;
@@ -240,6 +243,38 @@ export const generateGlobalAccessToken = (
     },
     expiresIn
   );
+
+export type MarketingConsentState = 'granted' | 'denied' | 'unspecified';
+
+export type MarketingConsentTokenInput = {
+  ad_personalization: MarketingConsentState;
+  ad_user_data_consent: MarketingConsentState;
+  attribution_hash: string;
+  region: string;
+  sub: string;
+};
+
+/** Issues the short-lived, server-authenticated consent receipt consumed by Brain. */
+export const generateMarketingConsentToken = (props: MarketingConsentTokenInput) => {
+  const secret = marketingConsentJwtSecret();
+  if (!secret) {
+    throw new Error('Marketing consent signing secret is not configured');
+  }
+  return sign(
+    {
+      ...props,
+      consent_source: 'desktop_oauth'
+    },
+    secret,
+    {
+      algorithm: 'HS256',
+      audience: 'brain-marketing-attribution',
+      expiresIn: '15m',
+      issuer: 'sealos-desktop',
+      jwtid: randomUUID()
+    }
+  );
+};
 
 const verifyOAuth2TokenByType = async (
   token: string | undefined,

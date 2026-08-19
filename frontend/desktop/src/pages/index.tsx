@@ -1,4 +1,4 @@
-import { getPlanInfo, UserInfo } from '@/api/auth';
+import { getPlanInfo, issueMarketingConsentToken, UserInfo } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
 import { PhoneBindingModal } from '@/components/account/AccountCenter/PhoneBindingModal';
@@ -21,6 +21,13 @@ import { sessionConfig, setAdClickData, setUserSemData } from '@/utils/sessionCo
 import { resolveStripeCallbackTarget } from '@/utils/stripeCallback';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { ensureLocaleCookie } from '@/utils/ssrLocale';
+import {
+  appendMarketingQuery,
+  mergeMarketingQuery,
+  persistMarketingQuery,
+  resolveMarketingQuery,
+  type MarketingQuery
+} from '@/utils/marketing-attribution';
 import { Box, useColorMode, useDisclosure } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -177,6 +184,11 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       };
     }
 
+    const marketingQuery: MarketingQuery = {
+      ...resolveMarketingQuery(router.query)
+    };
+    persistMarketingQuery(marketingQuery);
+
     const handleInit = async () => {
       initialLaunchInFlightRef.current = true;
       const { query } = router;
@@ -208,7 +220,18 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           return;
         }
 
-        let appQuery = raw;
+        if (appKey === BRAIN_APP_KEY && isUserLogin() && marketingQuery.sea_attr) {
+          try {
+            const result = await issueMarketingConsentToken(marketingQuery.sea_attr);
+            if (result.data?.token) {
+              marketingQuery.consent_token = result.data.token;
+              persistMarketingQuery(marketingQuery);
+            }
+          } catch (error) {
+            console.warn('[Home] Marketing consent token unavailable:', error);
+          }
+        }
+        let appQuery = appKey === BRAIN_APP_KEY ? mergeMarketingQuery(raw, marketingQuery) : raw;
         let appRoute = pathname;
         if (appKey === BRAIN_APP_KEY && appRoute === '/trial') {
           appRoute = '/';
@@ -310,7 +333,13 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           if (parsedOpenApp.appkey && (parsedOpenApp.appQuery || parsedOpenApp.appPath)) {
             setAutoLaunch(
               parsedOpenApp.appkey,
-              { raw: parsedOpenApp.appQuery, pathname: parsedOpenApp.appPath },
+              {
+                raw:
+                  parsedOpenApp.appkey === BRAIN_APP_KEY
+                    ? mergeMarketingQuery(parsedOpenApp.appQuery, marketingQuery)
+                    : parsedOpenApp.appQuery,
+                pathname: parsedOpenApp.appPath
+              },
               workspaceUid
             );
           }
@@ -318,7 +347,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           if (hasLoggedInBefore) {
             // logged in user (logged out) → redirect to login page
             initialLaunchResolvedRef.current = true;
-            await router.replace('/signin');
+            await router.replace(appendMarketingQuery('/signin', marketingQuery));
             return;
           }
 
@@ -335,7 +364,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
             // Clear guest session
             useSessionStore.getState().delSession();
             initialLaunchResolvedRef.current = true;
-            await router.replace('/signin');
+            await router.replace(appendMarketingQuery('/signin', marketingQuery));
             return;
           }
 
