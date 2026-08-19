@@ -3,7 +3,6 @@ package pay
 import (
 	"context"
 	"fmt"
-	"html"
 	"os"
 	"strconv"
 	"time"
@@ -43,7 +42,7 @@ func NewAlipayPayment() (*AlipayPayment, error) {
 	return &AlipayPayment{client}, nil
 }
 
-// CreatePayment Create a payment and return the cashier page HTML and order number
+// CreatePayment Create a payment and return the payment URL and order number
 func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string, error) {
 	p := alipay.TradePagePay{}
 	p.Subject = "sealos_cloud_pay"
@@ -60,12 +59,7 @@ func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string
 	if err != nil {
 		return "", "", err
 	}
-	// Return an auto-submitting cashier form, embedded by the frontend via iframe srcDoc (same as FastGPT payment)
-	html := fmt.Sprintf(
-		`<form action="%s" method="get" id="alipaySubmit" style="display:none"></form><script>document.getElementById("alipaySubmit").submit();</script>`,
-		html.EscapeString(url.String()),
-	)
-	return p.OutTradeNo, html, nil
+	return p.OutTradeNo, url.String(), nil
 }
 
 // GetPaymentDetails check the status of your payment

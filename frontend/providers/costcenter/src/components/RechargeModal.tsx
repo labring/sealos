@@ -130,8 +130,8 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
 }
 function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: string }) {
   const { t } = useTranslation();
-  // The Alipay cashier is returned as an HTML form and embedded via iframe; otherwise (legacy data) render as a QR code
-  const isCashierHTML = !!props.codeURL?.trim().startsWith('<');
+  // The Alipay cashier is loaded directly in an iframe by its URL; otherwise (legacy data) render as a QR code
+  const isCashierURL = !!props.codeURL?.trim().startsWith('https://openapi.alipay.com');
   return (
     <Flex
       flexDirection="column"
@@ -145,16 +145,16 @@ function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: st
       position={'relative'}
     >
       <Flex
-        height={isCashierHTML ? 'auto' : '295px'}
+        height={isCashierURL ? 'auto' : '295px'}
         direction={'column'}
         align="center"
         justify={'space-between'}
       >
         <p className="text-lg font-semibold mb-2 text-center">{t('common:scan_with_alipay')}</p>
         {props.complete === 2 && !!props.codeURL ? (
-          isCashierHTML ? (
+          isCashierURL ? (
             <iframe
-              srcDoc={props.codeURL}
+              src={props.codeURL}
               style={{ width: 215, height: 215, border: 'none', display: 'inline-block' }}
             />
           ) : (
