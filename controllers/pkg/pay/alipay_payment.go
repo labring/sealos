@@ -52,7 +52,8 @@ func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string
 		float64(amount)/1_000_000,
 	) // the unit of the amount is converted to a dollar
 	p.ProductCode = "FAST_INSTANT_TRADE_PAY"
-	p.QRPayMode = "2"
+	p.QRPayMode = "4" // order code mode: Alipay renders the cashier page (with official QR code), embedded by the frontend via iframe
+	p.QRCodeWidth = "210"
 	p.TimeoutExpress = "10m"
 	url, err := a.client.TradePagePay(p)
 	if err != nil {
