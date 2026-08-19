@@ -54,6 +54,8 @@ data:
         customerServiceURL: "{{ .Values.desktopConfig.customerServiceURL }}"
         discordInviteLink: {{ if eq .Values.desktopConfig.version "en" }}"{{ .Values.desktopConfig.discordInviteLink }}"{{ else }}""{{ end }}
         gtmId: {{ if .Values.desktopConfig.gtmId }}"{{ .Values.desktopConfig.gtmId }}"{{ else }}null{{ end }}
+        rybbitHost: {{ if .Values.desktopConfig.rybbitHost }}"{{ .Values.desktopConfig.rybbitHost }}"{{ else }}null{{ end }}
+        rybbitSiteId: {{ if .Values.desktopConfig.rybbitSiteId }}"{{ .Values.desktopConfig.rybbitSiteId }}"{{ else }}null{{ end }}
         currencySymbol: {{ if eq .Values.desktopConfig.version "cn" }}"shellCoin"{{ else }}"usd"{{ end }}
         authTitle:
           zh: "{{.Values.desktopConfig.authTitle.zh}}"

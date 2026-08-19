@@ -165,6 +165,22 @@ const ComponentsSchema = z.strictObject({
 });
 
 /**
+ * Analytics configuration schema.
+ */
+const AnalyticsSchema = z.strictObject({
+  rybbit: z
+    .strictObject({
+      host: z
+        .string()
+        .describe(
+          'Self-hosted Rybbit server URL, e.g. https://rybbit.example.com; empty disables tracking'
+        ),
+      siteId: z.string().describe('Rybbit site ID')
+    })
+    .describe('Rybbit analytics configuration')
+});
+
+/**
  * DbProvider-specific configuration schema.
  */
 const DbProviderSchema = z.strictObject({
@@ -173,7 +189,8 @@ const DbProviderSchema = z.strictObject({
   storage: StorageSchema.describe('Kubernetes storage configuration'),
   components: ComponentsSchema.describe('External component service configuration'),
   migration: MigrationSchema.describe('File migration job configuration'),
-  backup: BackupSchema.describe('Database backup configuration')
+  backup: BackupSchema.describe('Database backup configuration'),
+  analytics: AnalyticsSchema.optional().describe('Analytics configuration')
 });
 
 /**

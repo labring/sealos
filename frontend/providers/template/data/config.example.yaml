@@ -76,3 +76,8 @@ template:
     desktopDomain: ''
     userDomain: ''
     billingUrl: 'http://account-api.example.org'
+
+    analytics:
+        rybbit:
+            host: ''
+            siteId: ''

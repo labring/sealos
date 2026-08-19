@@ -54,6 +54,8 @@ setupClientAppConfigDefaults(queryClient, ['client-app-config']);
 type AppOwnProps = {
   brandName: string;
   customScripts: ComponentProps<typeof Script>[];
+  rybbitHost: string;
+  rybbitSiteId: string;
   dehydratedState?: unknown;
 };
 
@@ -207,6 +209,8 @@ const MyApp = ({
   pageProps,
   brandName,
   customScripts,
+  rybbitHost,
+  rybbitSiteId,
   dehydratedState
 }: AppProps & AppOwnProps) => {
   return (
@@ -220,7 +224,11 @@ const MyApp = ({
       {customScripts.map((scriptProps, i) => (
         <Script key={i} {...scriptProps} />
       ))}
-      <RybbitScript debug={process.env.NODE_ENV === 'development'} />
+      <RybbitScript
+        host={rybbitHost}
+        siteId={rybbitSiteId}
+        debug={process.env.NODE_ENV === 'development'}
+      />
     </>
   );
 };
@@ -230,10 +238,14 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
 
   let brandName = '';
   let customScripts: AppOwnProps['customScripts'] = [];
+  let rybbitHost = '';
+  let rybbitSiteId = '';
 
   if (typeof window === 'undefined') {
     const config = Config();
     brandName = config.template.ui.brandName;
+    rybbitHost = config.template.analytics?.rybbit.host ?? '';
+    rybbitSiteId = config.template.analytics?.rybbit.siteId ?? '';
     customScripts = config.template.ui.meta.customScripts.map(
       (script): ComponentProps<typeof Script> => {
         const scriptProps: ComponentProps<typeof Script> = {
@@ -261,7 +273,7 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
     dehydratedState = dehydrate(qc);
   }
 
-  return { ...ctx, brandName, customScripts, dehydratedState };
+  return { ...ctx, brandName, customScripts, rybbitHost, rybbitSiteId, dehydratedState };
 };
 
 export default appWithTranslation(MyApp);

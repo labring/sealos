@@ -84,3 +84,7 @@ data:
         desktopDomain: {{ .Values.templateConfig.cloudDomain | quote }}
         userDomain: {{ .Values.templateConfig.userDomain | quote }}
         billingUrl: {{ .Values.templateConfig.billingUrl | quote }}
+        analytics:
+            rybbit:
+                host: {{ .Values.templateConfig.rybbitHost | quote }}
+                siteId: {{ .Values.templateConfig.rybbitSiteId | quote }}

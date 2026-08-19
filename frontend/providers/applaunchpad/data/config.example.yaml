@@ -55,6 +55,9 @@ launchpad:
     gtm:
       enabled: false
       gtmId: ''
+    rybbit:
+      host: ''
+      siteId: ''
 
   fileManager:
     uploadLimit: 50

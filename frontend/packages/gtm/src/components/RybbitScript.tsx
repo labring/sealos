@@ -13,13 +13,12 @@ declare global {
 }
 
 interface RybbitScriptProps {
+  host: string;
+  siteId: string;
   debug?: boolean;
 }
 
-export function RybbitScript({ debug = false }: RybbitScriptProps) {
-  const host = process.env.NEXT_PUBLIC_RYBBIT_HOST?.replace(/\/+$/, '');
-  const siteId = process.env.NEXT_PUBLIC_RYBBIT_SITE_ID;
-
+export function RybbitScript({ host, siteId, debug = false }: RybbitScriptProps) {
   if (debug) {
     console.log('[Sealos Rybbit] host:', host, 'site ID:', siteId);
   }
@@ -32,7 +31,7 @@ export function RybbitScript({ debug = false }: RybbitScriptProps) {
     <Script
       id="rybbit-script"
       strategy="afterInteractive"
-      src={`${host}/api/script.js`}
+      src={`${host.replace(/\/+$/, '')}/api/script.js`}
       data-site-id={siteId}
     />
   );

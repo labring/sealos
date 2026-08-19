@@ -117,7 +117,11 @@ const App = ({ Component, pageProps }: AppProps) => {
         gtmId={layoutConfig?.gtmId ?? ''}
         debug={process.env.NODE_ENV === 'development'}
       />
-      <RybbitScript debug={process.env.NODE_ENV === 'development'} />
+      <RybbitScript
+        host={layoutConfig?.rybbitHost ?? ''}
+        siteId={layoutConfig?.rybbitSiteId ?? ''}
+        debug={process.env.NODE_ENV === 'development'}
+      />
       <Hydrate state={pageProps.dehydratedState}>
         <ChakraProvider theme={theme} resetScope=".ck-reset" disableGlobalStyle>
           <Component {...pageProps} />

@@ -56,3 +56,7 @@ data:
         enabled: {{ .Values.dbproviderConfig.backupEnabled }}
         jobCpuMillicores: {{ .Values.dbproviderConfig.backupJobCPURequirement }}
         jobMemoryMiB: {{ .Values.dbproviderConfig.backupJobMemoryRequirement }}
+      analytics:
+        rybbit:
+          host: {{ .Values.dbproviderConfig.rybbitHost | quote }}
+          siteId: {{ .Values.dbproviderConfig.rybbitSiteId | quote }}

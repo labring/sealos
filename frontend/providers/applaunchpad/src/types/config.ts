@@ -55,7 +55,17 @@ const AnalyticsSchema = z.strictObject({
   gtm: z.strictObject({
     enabled: z.boolean().describe('Whether to enable GTM analytics feature'),
     gtmId: z.string().describe('Google Tag Manager ID, e.g. GTM-XXXXXX')
-  })
+  }),
+  rybbit: z
+    .strictObject({
+      host: z
+        .string()
+        .describe(
+          'Self-hosted Rybbit server URL, e.g. https://rybbit.example.com; empty disables tracking'
+        ),
+      siteId: z.string().describe('Rybbit site ID')
+    })
+    .optional()
 });
 
 const FeaturesSchema = z.strictObject({
@@ -158,7 +168,13 @@ export const ClientAppConfigSchema = z.strictObject({
     gtm: z.strictObject({
       enabled: z.boolean(),
       gtmId: z.string()
-    })
+    }),
+    rybbit: z
+      .strictObject({
+        host: z.string(),
+        siteId: z.string()
+      })
+      .optional()
   }),
   components: z.strictObject({
     monitoring: z.strictObject({ url: z.string() }),

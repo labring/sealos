@@ -68,6 +68,8 @@ type AppOwnProps = {
   scripts: MetaScript[];
   gtmEnabled: boolean;
   gtmId: string;
+  rybbitHost: string;
+  rybbitSiteId: string;
   dehydratedState?: unknown;
 };
 
@@ -283,6 +285,8 @@ const MyApp = ({
   scripts,
   gtmEnabled,
   gtmId,
+  rybbitHost,
+  rybbitSiteId,
   dehydratedState
 }: AppProps & AppOwnProps) => (
   <>
@@ -300,7 +304,11 @@ const MyApp = ({
       <Script key={i} {...script} />
     ))}
     <GTMScript enabled={gtmEnabled} gtmId={gtmId} debug={process.env.NODE_ENV === 'development'} />
-    <RybbitScript debug={process.env.NODE_ENV === 'development'} />
+    <RybbitScript
+      host={rybbitHost}
+      siteId={rybbitSiteId}
+      debug={process.env.NODE_ENV === 'development'}
+    />
   </>
 );
 
@@ -312,6 +320,8 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
   let scripts: MetaScript[] = [];
   let gtmEnabled: boolean = false;
   let gtmId: string = '';
+  let rybbitHost: string = '';
+  let rybbitSiteId: string = '';
 
   try {
     if (typeof window === 'undefined') {
@@ -321,6 +331,8 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
       scripts = config.launchpad.ui.meta.scripts as MetaScript[];
       gtmEnabled = config.launchpad.analytics.gtm.enabled;
       gtmId = config.launchpad.analytics.gtm.gtmId;
+      rybbitHost = config.launchpad.analytics.rybbit?.host ?? '';
+      rybbitSiteId = config.launchpad.analytics.rybbit?.siteId ?? '';
     }
   } catch (error) {
     console.error('Failed to load config:', error);
@@ -333,7 +345,17 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
     dehydratedState = dehydrate(qc);
   }
 
-  return { ...ctx, title, description, scripts, gtmEnabled, gtmId, dehydratedState };
+  return {
+    ...ctx,
+    title,
+    description,
+    scripts,
+    gtmEnabled,
+    gtmId,
+    rybbitHost,
+    rybbitSiteId,
+    dehydratedState
+  };
 };
 
 export default appWithTranslation(MyApp);

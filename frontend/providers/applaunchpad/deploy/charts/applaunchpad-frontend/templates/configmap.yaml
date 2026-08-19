@@ -58,6 +58,9 @@ data:
         gtm:
           enabled: false
           gtmId: ""
+        rybbit:
+          host: ""
+          siteId: ""
       checkIcpReg:
         enabled: false
         endpoint: cdn.aliyuncs.com
