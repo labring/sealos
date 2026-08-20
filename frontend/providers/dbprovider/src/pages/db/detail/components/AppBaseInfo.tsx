@@ -4,16 +4,17 @@ import {
   editPassword,
   getDBSecret,
   getDBServiceByName,
-  getDBStatefulSetByName
+  getDBStatefulSetByName,
+  resolveDBConnectTarget
 } from '@/api/db';
 import FormControl from '@/components/FormControl';
 import MyIcon from '@/components/Icon';
-import { DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
+import { DBStatusEnum, DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
 import { startDriver, detailDriverObj } from '@/hooks/driver';
 import useEnvStore from '@/store/env';
 import { useGuideStore } from '@/store/guide';
 import { SOURCE_PRICE } from '@/store/static';
-import type { DBDetailType, DBType } from '@/types/db';
+import type { DBComponentsName, DBDetailType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { json2NetworkService } from '@/utils/json2Yaml';
 import { printMemory, useCopyData } from '@/utils/tools';
@@ -109,6 +110,15 @@ export interface ConnectionInfo {
   dbName: string;
 }
 
+const directConnectComponentMap: Partial<Record<DBType, DBComponentsName>> = {
+  [DBTypeEnum.postgresql]: 'postgresql',
+  [DBTypeEnum.mongodb]: 'mongodb',
+  [DBTypeEnum.mysql]: 'mysql',
+  [DBTypeEnum.polardbx]: 'cn',
+  [DBTypeEnum.redis]: 'redis',
+  [DBTypeEnum.milvus]: 'milvus'
+};
+
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
@@ -158,10 +168,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   }, [applistCompleted, detailCompleted, router?.query?.guide, t]);
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'polardbx', 'redis', 'milvus'].find(
-      (item) => item === db?.dbType
-    );
-  }, [db?.dbType]);
+    return !!directConnectComponentMap[db.dbType];
+  }, [db.dbType]);
   const supportExternalNetwork = useMemo(() => {
     return !!['postgresql', 'mongodb', 'apecloud-mysql', 'polardbx', 'redis', 'milvus'].find(
       (item) => item === db?.dbType
@@ -271,12 +279,13 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     [db]
   );
 
-  const onclickConnectDB = useCallback(() => {
-    if (!secret) return;
+  const directConnectComponent = directConnectComponentMap[db.dbType];
+  const directConnectDisabled = !supportConnectDB || db.status.value !== DBStatusEnum.Running;
+
+  const onclickConnectDB = useCallback(async () => {
+    if (!secret || !directConnectComponent || directConnectDisabled) return;
     const ns = getUserSession()?.user?.nsid;
-    const statefulSetName = dbStatefulSet?.metadata?.name;
-    const container = dbStatefulSet?.spec?.template?.spec?.containers?.[0]?.name;
-    if (!ns || !statefulSetName || !container) {
+    if (!ns) {
       toast({
         title: 'Missing terminal parameters',
         status: 'error'
@@ -284,49 +293,61 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       return;
     }
 
-    const commandMap = {
-      [DBTypeEnum.postgresql]: `psql '${secret.connection}'`,
-      [DBTypeEnum.mongodb]: `mongosh '${secret.connection}'`,
-      [DBTypeEnum.mysql]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
-      [DBTypeEnum.polardbx]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
-      [DBTypeEnum.redis]: `redis-cli -u redis://${secret.username}:${secret.password}@${secret.host}:${secret.port}`,
-      [DBTypeEnum.kafka]: ``,
-      [DBTypeEnum.qdrant]: ``,
-      [DBTypeEnum.nebula]: ``,
-      [DBTypeEnum.weaviate]: ``,
-      [DBTypeEnum.milvus]: ``,
-      [DBTypeEnum.clickhouse]: ``,
-      [DBTypeEnum.pulsar]: ``
-    };
+    try {
+      const { podName } = await resolveDBConnectTarget({
+        dbName: db.dbName,
+        component: directConnectComponent
+      });
 
-    const defaultCommand = commandMap[db.dbType];
-    const command = defaultCommand ? ['sh', '-lc', defaultCommand] : undefined;
+      const commandMap = {
+        [DBTypeEnum.postgresql]: `psql '${secret.connection}'`,
+        [DBTypeEnum.mongodb]: `mongosh '${secret.connection}'`,
+        [DBTypeEnum.mysql]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
+        [DBTypeEnum.polardbx]: `mysql -h ${secret.host} -P ${secret.port} -u ${secret.username} -p${secret.password}`,
+        [DBTypeEnum.redis]: `redis-cli -u redis://${secret.username}:${secret.password}@${secret.host}:${secret.port}`,
+        [DBTypeEnum.kafka]: ``,
+        [DBTypeEnum.qdrant]: ``,
+        [DBTypeEnum.nebula]: ``,
+        [DBTypeEnum.weaviate]: ``,
+        [DBTypeEnum.milvus]: ``,
+        [DBTypeEnum.clickhouse]: ``,
+        [DBTypeEnum.pulsar]: ``
+      };
 
-    track({
-      event: 'deployment_action',
-      module: 'database',
-      event_type: 'terminal_open',
-      context: 'app'
-    } as any);
+      const defaultCommand = commandMap[db.dbType];
+      const command = defaultCommand ? ['sh', '-lc', defaultCommand] : undefined;
 
-    sealosApp.runEvents('openDesktopApp', {
-      appKey: 'system-terminal',
-      pathname: '/exec',
-      query: {
-        ns,
-        pod: `${statefulSetName}-0`,
-        container,
-        ...(command ? { command: JSON.stringify(command) } : {})
-      },
-      messageData: {
-        type: 'InternalAppCall',
-        ns,
-        pod: `${statefulSetName}-0`,
-        container,
-        ...(command ? { command } : {})
-      }
-    });
-  }, [db.dbType, dbStatefulSet, secret, toast]);
+      track({
+        event: 'deployment_action',
+        module: 'database',
+        event_type: 'terminal_open',
+        context: 'app'
+      } as any);
+
+      sealosApp.runEvents('openDesktopApp', {
+        appKey: 'system-terminal',
+        pathname: '/exec',
+        query: {
+          ns,
+          pod: podName,
+          container: directConnectComponent,
+          ...(command ? { command: JSON.stringify(command) } : {})
+        },
+        messageData: {
+          type: 'InternalAppCall',
+          ns,
+          pod: podName,
+          container: directConnectComponent,
+          ...(command ? { command } : {})
+        }
+      });
+    } catch (error) {
+      toast({
+        title: error instanceof Error ? error.message : String(error),
+        status: 'error'
+      });
+    }
+  }, [db.dbName, db.dbType, directConnectComponent, directConnectDisabled, secret, toast]);
 
   const refetchAll = () => {
     refetchDBStatefulSet();
@@ -655,12 +676,18 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   border="1px solid #DFE2EA"
                   borderRadius={'md'}
                   px="8px"
-                  cursor={'pointer'}
+                  cursor={directConnectDisabled ? 'not-allowed' : 'pointer'}
                   fontWeight={'bold'}
-                  onClick={() => onclickConnectDB()}
-                  _hover={{
-                    color: 'brightBlue.600'
-                  }}
+                  opacity={directConnectDisabled ? 0.4 : 1}
+                  aria-disabled={directConnectDisabled}
+                  onClick={directConnectDisabled ? undefined : () => void onclickConnectDB()}
+                  _hover={
+                    directConnectDisabled
+                      ? undefined
+                      : {
+                          color: 'brightBlue.600'
+                        }
+                  }
                 >
                   <MyIcon name="terminal" w="16px" h="16px" />
                   {t('direct_connection')}

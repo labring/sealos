@@ -3,6 +3,8 @@ import { KubeFileSystem } from './kubeFileSystem';
 import { DBComponentsName, DBEditType, DBType } from '@/types/db';
 import { DBComponentNameMap, DBTypeEnum, RedisHAConfig } from '@/constants/db';
 import { formatNumber, str2Num } from './tools';
+export { selectConnectPodFromMembersStatus } from './connectTarget';
+export type { InstanceSetMemberStatus } from './connectTarget';
 
 const base = {
   passwordKey: 'password',
@@ -127,6 +129,15 @@ export const buildConnectionInfo = (
       connection: `${dbTypeMap[dbType].connectKey}://${username}:${password}@${host}:${port}`
     };
   }
+};
+
+export type ResolveDBConnectTargetParams = {
+  dbName: string;
+  component: DBComponentsName;
+};
+
+export type ResolveDBConnectTargetResponse = {
+  podName: string;
 };
 
 export async function fetchDBSecret(
