@@ -33,6 +33,7 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -184,6 +185,11 @@ func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 		// cluster status might be overwrite by inappropriate usage, add mounts if loss.
 		if err = MountClusterImages(c.Buildah, cluster, true); err != nil {
 			return err
+		}
+		// env in cluster.spec will be merged into every mounts object
+		env := maps.FromSlice(cluster.Spec.Env)
+		for i := range cluster.Status.Mounts {
+			cluster.Status.Mounts[i].Env = maps.Merge(cluster.Status.Mounts[i].Env, env)
 		}
 		if cluster.GetRootfsImage().KubeVersion() == "" {
 			return fmt.Errorf("rootfs image not found kube version")
