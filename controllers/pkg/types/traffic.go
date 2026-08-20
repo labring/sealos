@@ -64,9 +64,13 @@ type WorkspaceTraffic struct {
 	WorkspaceSubscriptionID uuid.UUID              `gorm:"type:uuid"                                                                        json:"workspace_subscription_id" bson:"workspace_subscription_id"`
 	Status                  WorkspaceTrafficStatus `gorm:"type:workspace_traffic_status;default:'active'"                                   json:"status"                    bson:"status"`
 	From                    WorkspaceTrafficFrom   `gorm:"type:varchar(50)"                                                                 json:"from"                      bson:"from"`
-	FromID                  string                 `gorm:"type:varchar(50)"                                                                 json:"from_id"                   bson:"from_id"`
-	TotalBytes              int64                  `gorm:"type:bigint;default:0"                                                            json:"total_bytes"               bson:"total_bytes"`
-	UsedBytes               int64                  `gorm:"type:bigint;default:0"                                                            json:"used_bytes"                bson:"used_bytes"`
+	// FromID is the granting transaction's ID and is the grant's idempotency key.
+	// The unique index only reaches tables created after its introduction
+	// (CreateTableIfNotExist skips existing tables); pre-existing deployments
+	// rely on the subscription row lock taken by the grant functions.
+	FromID     string `gorm:"type:varchar(50);uniqueIndex:uniq_workspace_traffic_from_id"                      json:"from_id"                   bson:"from_id"`
+	TotalBytes int64  `gorm:"type:bigint;default:0"                                                            json:"total_bytes"               bson:"total_bytes"`
+	UsedBytes  int64  `gorm:"type:bigint;default:0"                                                            json:"used_bytes"                bson:"used_bytes"`
 }
 
 type (

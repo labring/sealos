@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (c *Cockroach) GetWorkspaceSubscriptionPlan(
@@ -155,9 +156,13 @@ func AddWorkspaceSubscriptionTrafficPackage(
 	fromID string,
 ) error {
 	totalBytes := totalMiB * 1024 * 1024 // Convert MiB to Bytes
-	// Get workspace subscription
+	// Lock the subscription row so concurrent grants for the same subscription
+	// (e.g. replayed Stripe webhooks) serialize: the second transaction blocks
+	// here until the first commits, then its dedup check sees the created row.
+	// Callers run inside a transaction, which the lock requires to be effective.
 	var subscription types.WorkspaceSubscription
-	err := globalDB.Where(&types.WorkspaceSubscription{ID: subscriptionID}).
+	err := globalDB.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where(&types.WorkspaceSubscription{ID: subscriptionID}).
 		Find(&subscription).
 		Error
 	if err != nil {
@@ -178,9 +183,23 @@ func AddWorkspaceSubscriptionTrafficPackage(
 		CreatedAt:               time.Now(),
 		UpdatedAt:               time.Now(),
 	}
-	err = globalDB.Where("from_id = ?", fromID).FirstOrCreate(&trafficPackage).Error
+	// Look up by from_id explicitly: FirstOrCreate on a struct with a preset
+	// primary key adds that key to the query and never finds the existing row.
+	var existingCount int64
+	err = globalDB.Model(&types.WorkspaceTraffic{}).
+		Where("from_id = ?", fromID).
+		Count(&existingCount).Error
 	if err != nil {
-		return fmt.Errorf("failed to create traffic package: %w", err)
+		return fmt.Errorf("failed to check existing traffic package: %w", err)
+	}
+	if existingCount == 0 {
+		// ON CONFLICT DO NOTHING backstops the dedup where the from_id unique
+		// index exists; it is a no-op (and still valid SQL) on tables that
+		// predate the index, where the subscription row lock alone serializes.
+		if err := globalDB.Clauses(clause.OnConflict{DoNothing: true}).
+			Create(&trafficPackage).Error; err != nil {
+			return fmt.Errorf("failed to create traffic package: %w", err)
+		}
 	}
 	return nil
 }
@@ -201,11 +220,12 @@ func AddWorkspaceSubscriptionAIQuotaPackage(
 		from,
 		fromID,
 		false,
-		0,
 	)
 }
 
-// AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade adds AI quota package with upgrade support
+// AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade adds AI quota package with upgrade support.
+// On upgrade the old plan's packages are expired and the new plan's full quota is granted,
+// so the workspace always holds the new plan's allowance for the reset billing cycle.
 func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 	globalDB *gorm.DB,
 	subscriptionID uuid.UUID,
@@ -214,27 +234,32 @@ func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 	from types.PackageFrom,
 	fromID string,
 	isUpgrade bool,
-	oldPlanAIQuota int64,
 ) error {
-	if aiQuota <= 0 {
-		return nil
+	// Lock the subscription row before any package mutation so concurrent
+	// grants for the same subscription (e.g. replayed Stripe webhooks)
+	// serialize: the second transaction blocks here until the first commits,
+	// then its dedup check sees the created row and the expiry query sees the
+	// rotated packages. Callers run inside a transaction, which the lock
+	// requires to be effective.
+	var subscription types.WorkspaceSubscription
+	err := globalDB.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where(&types.WorkspaceSubscription{ID: subscriptionID}).
+		Find(&subscription).
+		Error
+	if err != nil {
+		return fmt.Errorf("failed to get workspace subscription: %w", err)
 	}
 
-	// For upgrade scenarios, expire existing AI quota packages from the old plan
-	if isUpgrade && oldPlanAIQuota > 0 {
+	// Expire before the aiQuota guard: an upgrade must retire the old plan's
+	// packages even when the new plan grants no AI quota.
+	if isUpgrade {
 		err := expireOldAIQuotaPackages(globalDB, subscriptionID, fromID)
 		if err != nil {
 			return fmt.Errorf("failed to expire old AI quota packages: %w", err)
 		}
 	}
-
-	// Get workspace subscription
-	var subscription types.WorkspaceSubscription
-	err := globalDB.Where(&types.WorkspaceSubscription{ID: subscriptionID}).
-		Find(&subscription).
-		Error
-	if err != nil {
-		return fmt.Errorf("failed to get workspace subscription: %w", err)
+	if aiQuota <= 0 {
+		return nil
 	}
 	// Create new AI quota package
 	aiQuotaPackage := types.WorkspaceAIQuotaPackage{
@@ -251,23 +276,37 @@ func AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 		CreatedAt:               time.Now(),
 		UpdatedAt:               time.Now(),
 	}
-	err = globalDB.Where("from_id = ?", fromID).FirstOrCreate(&aiQuotaPackage).Error
+	// Look up by from_id explicitly: FirstOrCreate on a struct with a preset
+	// primary key adds that key to the query and never finds the existing row.
+	var existingCount int64
+	err = globalDB.Model(&types.WorkspaceAIQuotaPackage{}).
+		Where("from_id = ?", fromID).
+		Count(&existingCount).Error
 	if err != nil {
-		return fmt.Errorf("failed to create AI quota package: %w", err)
+		return fmt.Errorf("failed to check existing AI quota package: %w", err)
+	}
+	if existingCount == 0 {
+		// ON CONFLICT DO NOTHING backstops the dedup where the from_id unique
+		// index exists; it is a no-op (and still valid SQL) on tables that
+		// predate the index, where the subscription row lock alone serializes.
+		if err := globalDB.Clauses(clause.OnConflict{DoNothing: true}).
+			Create(&aiQuotaPackage).Error; err != nil {
+			return fmt.Errorf("failed to create AI quota package: %w", err)
+		}
 	}
 	return nil
 }
 
 // expireOldAIQuotaPackages expires existing AI quota packages from old subscription plan
-func expireOldAIQuotaPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, _ string) error {
+func expireOldAIQuotaPackages(globalDB *gorm.DB, subscriptionID uuid.UUID, newFromID string) error {
 	now := time.Now()
 
-	// Update all existing active AI quota packages to expired status
-	// We don't need to exclude newFromID because the new package hasn't been created yet
-	// The newFromID parameter is kept for API consistency but not used in the query
+	// Only plan-granted packages are rotated on upgrade; packages from other
+	// sources (purchased or promotional) must survive.
+	// Exclude newFromID so a replayed transaction cannot expire the package it created.
 	err := globalDB.Model(&types.WorkspaceAIQuotaPackage{}).
-		Where("workspace_subscription_id = ? AND status = ?",
-			subscriptionID, types.PackageStatusActive).
+		Where(`workspace_subscription_id = ? AND status = ? AND "from" = ? AND from_id <> ?`,
+			subscriptionID, types.PackageStatusActive, types.PKGFromWorkspaceSubscription, newFromID).
 		Updates(map[string]any{
 			"status":     types.PackageStatusExpired,
 			"expired_at": now,

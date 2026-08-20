@@ -325,7 +325,9 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(
 		return fmt.Errorf("failed to get workspace subscription plan: %w", err)
 	}
 
-	if err = helper.AddTrafficPackage(
+	// Upgrade semantics: expire the old plan's packages and grant the new plan's
+	// full allowance for the reset billing cycle (labring/sealos-private#108).
+	if err = helper.AddTrafficPackageWithUpgrade(
 		dbTx,
 		dao.K8sManager.GetClient(),
 		&sub,
@@ -333,16 +335,18 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(
 		sub.CurrentPeriodEndAt,
 		types.WorkspaceTrafficFromWorkspaceSubscription,
 		tx.ID.String(),
+		true,
 	); err != nil {
 		return fmt.Errorf("failed to add traffic package: %w", err)
 	}
-	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackage(
+	if err = cockroach.AddWorkspaceSubscriptionAIQuotaPackageWithUpgrade(
 		dbTx,
 		sub.ID,
 		plan.AIQuota,
 		sub.CurrentPeriodEndAt,
 		types.PKGFromWorkspaceSubscription,
 		tx.ID.String(),
+		true,
 	); err != nil {
 		return fmt.Errorf("failed to create AI quota package: %w", err)
 	}
