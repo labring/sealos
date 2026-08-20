@@ -196,6 +196,7 @@
     "Used": "已用"
   },
   "cpu": "CPU",
+  "pod": "Pod",
   "cronjob": "定时任务",
   "database": "数据库",
   "delete message": "您确定要删除此应用程序吗？\n如果继续，该项目的所有数据都将被删除。",

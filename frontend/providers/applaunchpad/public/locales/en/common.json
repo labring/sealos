@@ -288,6 +288,7 @@
   "confirm_to_go": "Confirm",
   "contains": "contains",
   "cpu": "CPU",
+  "pod": "Pod",
   "cpu_exceeds_quota": "CPU Insufficient Resources: Your setting of {{requested}} cores exceeds the available {{limit}} cores ({{used}} cores used).",
   "custom_domain_input_title": "Your Domain",
   "day": "days",

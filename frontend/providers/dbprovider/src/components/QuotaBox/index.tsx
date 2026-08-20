@@ -21,6 +21,9 @@ const sourceMap = {
   nodeport: {
     color: '#FFA500'
   },
+  pod: {
+    color: '#EC4899'
+  },
   traffic: {
     color: '#FF6B6B'
   }

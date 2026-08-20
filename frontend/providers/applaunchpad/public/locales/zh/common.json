@@ -287,6 +287,7 @@
   "confirm_to_go": "确认前往",
   "contains": "包含",
   "cpu": "CPU",
+  "pod": "Pod",
   "cpu_exceeds_quota": "CPU 资源不足：你设置的 {{requested}} 核心超出工作空间可用 {{limit}} 核限制（已使用 {{used}} 核）。",
   "custom_domain_input_title": "您的域名",
   "day": "天",

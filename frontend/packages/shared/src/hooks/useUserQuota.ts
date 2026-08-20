@@ -11,7 +11,9 @@ import { useQuotaGuardConfig } from './QuotaGuardProvider';
 
 export interface UseUserQuotaOptions {
   /** Resource requirements to check against */
-  requirements?: Partial<Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'storage', number>> & {
+  requirements?: Partial<
+    Record<'cpu' | 'memory' | 'gpu' | 'nodeport' | 'pod' | 'storage', number>
+  > & {
     traffic?: boolean | number;
   };
   /** Types to show in requirements dialog */

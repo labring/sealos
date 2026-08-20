@@ -79,6 +79,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    if (hard.pods !== undefined || used.pods !== undefined) {
+      quota.push({
+        type: 'pod',
+        limit: Number(hard.pods) || 0,
+        used: Number(used.pods) || 0
+      });
+    }
+
     if (hard['services.nodeports'] !== undefined || used['services.nodeports'] !== undefined) {
       quota.push({
         type: 'nodeport',

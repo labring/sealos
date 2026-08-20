@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const WorkspaceQuotaItemSchema = z.object({
-  type: z.enum(['cpu', 'memory', 'storage', 'gpu', 'traffic', 'nodeport']),
+  type: z.enum(['cpu', 'memory', 'storage', 'pod', 'gpu', 'traffic', 'nodeport']),
   used: z.number(),
   limit: z.number()
 });

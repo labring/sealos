@@ -8,7 +8,7 @@ import {
 } from '@sealos/shadcn-ui/tooltip';
 import { Progress } from '@sealos/shadcn-ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@sealos/shadcn-ui/card';
-import { Cpu, MemoryStick, HardDrive, CircuitBoard, HdmiPort, ArrowUpDown } from 'lucide-react';
+import { Cpu, MemoryStick, HardDrive, CircuitBoard, HdmiPort, ArrowUpDown, Layers } from 'lucide-react';
 
 import { useUserQuota, resourcePropertyMap, formatResourceQuotaValue } from '@sealos/shared';
 
@@ -18,6 +18,7 @@ const iconMap: Record<string, React.ReactNode> = {
   storage: <HardDrive className="h-5 w-5" />,
   gpu: <CircuitBoard className="h-5 w-5" />,
   nodeport: <HdmiPort className="h-5 w-5" />,
+  pod: <Layers className="h-5 w-5" />,
   traffic: <ArrowUpDown className="h-5 w-5" />
 };
 
