@@ -12,11 +12,19 @@ type ExtractEventByType<T extends GTMEventType> = Extract<GTMEvent, { event: T }
 
 type EventProperties<T extends GTMEventType> = Omit<ExtractEventByType<T>, 'event' | 'context'>;
 
+interface RybbitQueuedEvent {
+  event: string;
+  properties: Record<string, string | number>;
+}
+
 class GTMTracker {
   private config: GTMConfig = {
     enabled: true,
     debug: false
   };
+  // window.rybbit appears only after the async script loads; queue early
+  // events and replay them (same pattern as GTM's dataLayer buffer).
+  private rybbitQueue: RybbitQueuedEvent[] = [];
 
   configure(config: GTMConfig) {
     this.config = { ...this.config, ...config };
@@ -60,7 +68,7 @@ class GTMTracker {
   }
 
   private forwardToRybbit(gtmEvent: GTMEvent): void {
-    if (typeof window === 'undefined' || typeof window.rybbit?.event !== 'function') return;
+    if (typeof window === 'undefined') return;
 
     const { event, ...payload } = gtmEvent;
     const properties: Record<string, string | number> = {};
@@ -75,14 +83,35 @@ class GTMTracker {
           : serialized;
     }
 
+    if (typeof window.rybbit?.event !== 'function') {
+      if (this.config.debug) {
+        console.log('[Sealos Rybbit] script not loaded yet, event queued:', event);
+      }
+      this.rybbitQueue.push({ event, properties });
+      return;
+    }
+
     if (this.config.debug) {
       console.log('[Sealos Rybbit] event forwarded:', event, properties);
     }
 
     window.rybbit.event(event, properties);
   }
+
+  flushRybbitQueue(): void {
+    if (typeof window === 'undefined' || typeof window.rybbit?.event !== 'function') return;
+    while (this.rybbitQueue.length > 0) {
+      const queued = this.rybbitQueue.shift();
+      if (!queued) continue;
+      if (this.config.debug) {
+        console.log('[Sealos Rybbit] queued event flushed:', queued.event);
+      }
+      window.rybbit.event(queued.event, queued.properties);
+    }
+  }
 }
 
 export const gtmTracker = new GTMTracker();
 export const track = gtmTracker.track.bind(gtmTracker);
 export const configureGTM = gtmTracker.configure.bind(gtmTracker);
+export const flushRybbitQueue = gtmTracker.flushRybbitQueue.bind(gtmTracker);

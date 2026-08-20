@@ -1,6 +1,8 @@
 'use client';
 import Script from 'next/script';
 
+import { flushRybbitQueue } from '../track';
+
 export interface Rybbit {
   event: (eventName: string, properties?: Record<string, string | number>) => void;
   pageview: () => void;
@@ -33,6 +35,7 @@ export function RybbitScript({ host, siteId, debug = false }: RybbitScriptProps)
       strategy="afterInteractive"
       src={`${host.replace(/\/+$/, '')}/api/script.js`}
       data-site-id={siteId}
+      onLoad={() => flushRybbitQueue()}
     />
   );
 }

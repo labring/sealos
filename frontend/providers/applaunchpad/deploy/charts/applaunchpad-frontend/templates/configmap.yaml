@@ -59,8 +59,8 @@ data:
           enabled: false
           gtmId: ""
         rybbit:
-          host: ""
-          siteId: ""
+          host: {{ .Values.applaunchpadConfig.rybbitHost | quote }}
+          siteId: {{ .Values.applaunchpadConfig.rybbitSiteId | quote }}
       checkIcpReg:
         enabled: false
         endpoint: cdn.aliyuncs.com
