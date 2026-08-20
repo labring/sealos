@@ -32,9 +32,13 @@ func TestCounterTracksInformerEvents(t *testing.T) {
 		},
 	}
 
-	counter.Initialize([]interface{}{active})
+	counter.Initialize([]any{active})
 	if !counter.Initialized() || counter.Count() != 1 {
-		t.Fatalf("initialized counter = (%t, %d), want (true, 1)", counter.Initialized(), counter.Count())
+		t.Fatalf(
+			"initialized counter = (%t, %d), want (true, 1)",
+			counter.Initialized(),
+			counter.Count(),
+		)
 	}
 	if got := counter.CountExcluding("active-user"); got != 0 {
 		t.Fatalf("CountExcluding() = %d, want 0", got)
@@ -57,7 +61,7 @@ func TestCounterTracksInformerEvents(t *testing.T) {
 
 func TestCounterIgnoresDeletedFinalStateUnknown(t *testing.T) {
 	counter := NewCounter()
-	counter.Initialize([]interface{}{
+	counter.Initialize([]any{
 		&metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "user"}},
 	})
 

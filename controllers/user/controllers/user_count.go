@@ -28,7 +28,7 @@ import (
 
 type userCountRunnable struct {
 	counter    *usercount.Counter
-	initialize func(context.Context) ([]interface{}, error)
+	initialize func(context.Context) ([]any, error)
 }
 
 func (r *userCountRunnable) Start(ctx context.Context) error {
@@ -59,7 +59,7 @@ func SetupUserCount(mgr ctrl.Manager) (*usercount.Counter, error) {
 		return nil, fmt.Errorf("add user count event handler: %w", err)
 	}
 
-	initialize := func(ctx context.Context) ([]interface{}, error) {
+	initialize := func(ctx context.Context) ([]any, error) {
 		if storeInformer, ok := informer.(interface{ GetStore() toolscache.Store }); ok {
 			return storeInformer.GetStore().List(), nil
 		}
@@ -68,7 +68,7 @@ func SetupUserCount(mgr ctrl.Manager) (*usercount.Counter, error) {
 		if err := mgr.GetClient().List(ctx, list); err != nil {
 			return nil, err
 		}
-		objects := make([]interface{}, len(list.Items))
+		objects := make([]any, len(list.Items))
 		for i := range list.Items {
 			objects[i] = &list.Items[i]
 		}

@@ -63,7 +63,7 @@ func (c *Counter) CountExcluding(name string) int {
 
 // Initialize replaces the counter from objects already present in the local
 // informer store. Event handlers can run concurrently with initialization.
-func (c *Counter) Initialize(objects []interface{}) {
+func (c *Counter) Initialize(objects []any) {
 	if c == nil {
 		return
 	}
@@ -85,7 +85,7 @@ func (c *Counter) Initialize(objects []interface{}) {
 	c.initialized.Store(true)
 }
 
-func (c *Counter) Add(obj interface{}) {
+func (c *Counter) Add(obj any) {
 	metadata, ok := objectMetadata(obj)
 	if !ok {
 		return
@@ -93,7 +93,7 @@ func (c *Counter) Add(obj interface{}) {
 	c.set(metadata.GetName(), isQuotaUser(metadata))
 }
 
-func (c *Counter) Update(oldObj, newObj interface{}) {
+func (c *Counter) Update(oldObj, newObj any) {
 	oldMetadata, oldOK := objectMetadata(oldObj)
 	newMetadata, newOK := objectMetadata(newObj)
 	if oldOK && newOK && oldMetadata.GetName() != newMetadata.GetName() {
@@ -105,7 +105,7 @@ func (c *Counter) Update(oldObj, newObj interface{}) {
 	c.set(newMetadata.GetName(), isQuotaUser(newMetadata))
 }
 
-func (c *Counter) Delete(obj interface{}) {
+func (c *Counter) Delete(obj any) {
 	metadata, ok := objectMetadata(obj)
 	if !ok {
 		return
@@ -143,7 +143,7 @@ func isQuotaUser(obj metav1.Object) bool {
 		(obj.GetDeletionTimestamp() == nil || obj.GetDeletionTimestamp().IsZero())
 }
 
-func objectMetadata(obj interface{}) (metav1.Object, bool) {
+func objectMetadata(obj any) (metav1.Object, bool) {
 	switch tombstone := obj.(type) {
 	case toolscache.DeletedFinalStateUnknown:
 		obj = tombstone.Obj
