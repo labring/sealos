@@ -13,7 +13,10 @@ type fakeMetadataReader struct {
 	err  error
 }
 
-func (f fakeMetadataReader) List(context.Context, metav1.ListOptions) (*metav1.PartialObjectMetadataList, error) {
+func (f fakeMetadataReader) List(
+	context.Context,
+	metav1.ListOptions,
+) (*metav1.PartialObjectMetadataList, error) {
 	return f.list, f.err
 }
 
@@ -23,7 +26,12 @@ func TestCountQuotaUsersMetadataExcluding(t *testing.T) {
 		list: &metav1.PartialObjectMetadataList{
 			Items: []metav1.PartialObjectMetadata{
 				{ObjectMeta: metav1.ObjectMeta{Name: "active-user"}},
-				{ObjectMeta: metav1.ObjectMeta{Name: "deleted-user", DeletionTimestamp: &deletionTimestamp}},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:              "deleted-user",
+						DeletionTimestamp: &deletionTimestamp,
+					},
+				},
 				{ObjectMeta: metav1.ObjectMeta{Name: "excluded-user"}},
 			},
 		},

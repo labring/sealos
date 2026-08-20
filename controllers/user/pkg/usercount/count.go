@@ -92,7 +92,7 @@ func CountQuotaUsersExcluding(
 // objects contain kubeconfigs in status, so full lists are too expensive for
 // admission requests that only need metadata.
 type MetadataReader interface {
-	List(context.Context, metav1.ListOptions) (*metav1.PartialObjectMetadataList, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*metav1.PartialObjectMetadataList, error)
 }
 
 func CountQuotaUsersMetadata(ctx context.Context, reader MetadataReader) (int, error) {
