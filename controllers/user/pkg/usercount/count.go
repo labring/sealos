@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -84,6 +85,45 @@ func CountQuotaUsersExcluding(
 	if err != nil {
 		return 0, fmt.Errorf("unable to get quota user count excluding %s: %w", excludeName, err)
 	}
+	return count, nil
+}
+
+// MetadataReader lists resources without fetching their full objects. User
+// objects contain kubeconfigs in status, so full lists are too expensive for
+// admission requests that only need metadata.
+type MetadataReader interface {
+	List(context.Context, metav1.ListOptions) (*metav1.PartialObjectMetadataList, error)
+}
+
+func CountQuotaUsersMetadata(ctx context.Context, reader MetadataReader) (int, error) {
+	return CountQuotaUsersMetadataExcluding(ctx, reader, "")
+}
+
+func CountQuotaUsersMetadataExcluding(
+	ctx context.Context,
+	reader MetadataReader,
+	excludeName string,
+) (int, error) {
+	if reader == nil {
+		return 0, errors.New("metadata reader is nil")
+	}
+
+	list, err := reader.List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return 0, fmt.Errorf("failed to list user metadata: %w", err)
+	}
+
+	var count int
+	for _, item := range list.Items {
+		if excludeName != "" && item.Name == excludeName {
+			continue
+		}
+		if item.DeletionTimestamp != nil && !item.DeletionTimestamp.IsZero() {
+			continue
+		}
+		count++
+	}
+
 	return count, nil
 }
 

@@ -25,7 +25,6 @@ import (
 	"github.com/labring/sealos/controllers/user/pkg/usercount"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -33,8 +32,8 @@ import (
 
 // log is for logging in this package.
 var (
-	userlog           = logf.Log.WithName("user-webhook")
-	userWebhookReader client.Reader
+	userlog                   = logf.Log.WithName("user-webhook")
+	userWebhookMetadataReader usercount.MetadataReader
 )
 
 const (
@@ -56,8 +55,14 @@ func buildUserCountLimitErrorMessage() string {
 	)
 }
 
-func (r *User) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	userWebhookReader = mgr.GetAPIReader()
+func (r *User) SetupWebhookWithManager(
+	mgr ctrl.Manager,
+	metadataReader usercount.MetadataReader,
+) error {
+	if metadataReader == nil {
+		return errors.New("user webhook metadata reader is not initialized")
+	}
+	userWebhookMetadataReader = metadataReader
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		WithDefaulter(r).
@@ -92,7 +97,7 @@ func (r *User) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-user-sealos-io-v1-user,mutating=false,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=users,verbs=create;update,versions=v1,name=vuser.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-user-sealos-io-v1-user,mutating=false,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=users,verbs=create;update,versions=v1,name=vuser.kb.io,admissionReviewVersions=v1,timeoutSeconds=30
 
 var _ webhook.CustomValidator = &User{}
 
@@ -106,13 +111,10 @@ func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admissio
 	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
 	}
-	if userWebhookReader == nil {
-		return admission.Warnings{}, errors.New("user webhook reader is not initialized")
+	if userWebhookMetadataReader == nil {
+		return admission.Warnings{}, errors.New("user webhook metadata reader is not initialized")
 	}
-	if err := usercount.Init(ctx, userWebhookReader); err != nil {
-		return admission.Warnings{}, err
-	}
-	currentCount, err := usercount.CountQuotaUsers(ctx, userWebhookReader)
+	currentCount, err := usercount.CountQuotaUsersMetadata(ctx, userWebhookMetadataReader)
 	if err != nil {
 		return admission.Warnings{}, err
 	}

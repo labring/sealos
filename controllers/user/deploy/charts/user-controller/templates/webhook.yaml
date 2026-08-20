@@ -81,6 +81,7 @@ webhooks:
         name: {{ include "user.fullname" . }}-webhook-service
         namespace: {{ .Release.Namespace }}
         path: /validate-user-sealos-io-v1-user
+    timeoutSeconds: 30
     failurePolicy: Fail
     rules:
       - apiGroups:

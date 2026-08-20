@@ -30,6 +30,8 @@ import (
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	//+kubebuilder:scaffold:imports
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/metadata"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -92,6 +94,13 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
+	metadataClient, err := metadata.NewForConfig(cfg)
+	Expect(err).NotTo(HaveOccurred())
+	userMetadataReader := metadataClient.Resource(schema.GroupVersionResource{
+		Group:    "user.sealos.io",
+		Version:  "v1",
+		Resource: "users",
+	})
 
 	// start webhook server using Manager
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
@@ -102,7 +111,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&User{}).SetupWebhookWithManager(mgr)
+	err = (&User{}).SetupWebhookWithManager(mgr, userMetadataReader)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = (&Operationrequest{}).SetupWebhookWithManager(mgr)
