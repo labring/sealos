@@ -103,7 +103,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	userCounter := usercount.NewCounter()
-	userCounter.Initialize(nil)
+	userCounter.MarkInitialized()
 	err = (&User{}).SetupWebhookWithManager(mgr, userCounter)
 	Expect(err).NotTo(HaveOccurred())
 

@@ -61,27 +61,12 @@ func (c *Counter) CountExcluding(name string) int {
 	return count
 }
 
-// Initialize replaces the counter from objects already present in the local
-// informer store. Event handlers can run concurrently with initialization.
-func (c *Counter) Initialize(objects []any) {
+// MarkInitialized marks the counter ready after the informer's initial events
+// have been delivered to the counter's event handler.
+func (c *Counter) MarkInitialized() {
 	if c == nil {
 		return
 	}
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.users = make(map[string]struct{}, len(objects))
-	var count int64
-	for _, obj := range objects {
-		metadata, ok := objectMetadata(obj)
-		if !ok || !isQuotaUser(metadata) {
-			continue
-		}
-		c.users[metadata.GetName()] = struct{}{}
-		count++
-	}
-	c.count.Store(count)
 	c.initialized.Store(true)
 }
 

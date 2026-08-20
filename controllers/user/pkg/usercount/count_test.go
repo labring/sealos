@@ -32,7 +32,8 @@ func TestCounterTracksInformerEvents(t *testing.T) {
 		},
 	}
 
-	counter.Initialize([]any{active})
+	counter.Add(active)
+	counter.MarkInitialized()
 	if !counter.Initialized() || counter.Count() != 1 {
 		t.Fatalf(
 			"initialized counter = (%t, %d), want (true, 1)",
@@ -61,9 +62,8 @@ func TestCounterTracksInformerEvents(t *testing.T) {
 
 func TestCounterIgnoresDeletedFinalStateUnknown(t *testing.T) {
 	counter := NewCounter()
-	counter.Initialize([]any{
-		&metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "user"}},
-	})
+	counter.Add(&metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: "user"}})
+	counter.MarkInitialized()
 
 	counter.Delete(toolscache.DeletedFinalStateUnknown{
 		Key: "user",

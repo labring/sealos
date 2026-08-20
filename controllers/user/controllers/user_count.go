@@ -27,16 +27,18 @@ import (
 )
 
 type userCountRunnable struct {
-	counter    *usercount.Counter
-	initialize func(context.Context) ([]any, error)
+	counter             *usercount.Counter
+	handlerRegistration toolscache.ResourceEventHandlerRegistration
 }
 
 func (r *userCountRunnable) Start(ctx context.Context) error {
-	objects, err := r.initialize(ctx)
-	if err != nil {
-		return fmt.Errorf("initialize user count: %w", err)
+	if !toolscache.WaitForCacheSync(ctx.Done(), r.handlerRegistration.HasSynced) {
+		if ctx.Err() != nil {
+			return nil
+		}
+		return errors.New("user count event handler failed to sync")
 	}
-	r.counter.Initialize(objects)
+	r.counter.MarkInitialized()
 	<-ctx.Done()
 	return nil
 }
@@ -51,31 +53,19 @@ func SetupUserCount(mgr ctrl.Manager) (*usercount.Counter, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get user informer: %w", err)
 	}
-	if _, err := informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
+	registration, err := informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
 		AddFunc:    counter.Add,
 		UpdateFunc: counter.Update,
 		DeleteFunc: counter.Delete,
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, fmt.Errorf("add user count event handler: %w", err)
 	}
 
-	initialize := func(ctx context.Context) ([]any, error) {
-		if storeInformer, ok := informer.(interface{ GetStore() toolscache.Store }); ok {
-			return storeInformer.GetStore().List(), nil
-		}
-
-		list := &userv1.UserList{}
-		if err := mgr.GetClient().List(ctx, list); err != nil {
-			return nil, err
-		}
-		objects := make([]any, len(list.Items))
-		for i := range list.Items {
-			objects[i] = &list.Items[i]
-		}
-		return objects, nil
-	}
-
-	if err := mgr.Add(&userCountRunnable{counter: counter, initialize: initialize}); err != nil {
+	if err := mgr.Add(&userCountRunnable{
+		counter:             counter,
+		handlerRegistration: registration,
+	}); err != nil {
 		return nil, fmt.Errorf("add user count runnable: %w", err)
 	}
 	if err := mgr.AddReadyzCheck("user-count-cache", func(_ *http.Request) error {
